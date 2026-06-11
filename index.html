@@ -1,0 +1,2502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synapse — AI Real Estate Advisory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<style>
+/* ─── RESET ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand: #FF7B2C;
+  --brand-dim: #E86B1A;
+  --brand-glow: rgba(255,123,44,0.15);
+  --bg: #fafaf8;
+  --bg-1: #f3f2ef;
+  --text: #15171a;
+  --text-muted: rgba(21,23,26,0.55);
+  --text-dim: rgba(21,23,26,0.35);
+
+  /* Crystal surface tokens — the physical material */
+  --crystal-bg: rgba(15,18,24,0.028);
+  --crystal-border: rgba(15,18,24,0.10);
+  --crystal-border-bright: rgba(15,18,24,0.22);
+  --crystal-highlight-top: rgba(15,18,24,0.18);
+  --crystal-shadow: rgba(20,26,38,0.165);
+  --crystal-glow: rgba(255,123,44,0.04);
+  --crystal-chroma-r: rgba(255,60,40,0.06);
+  --crystal-chroma-b: rgba(40,80,255,0.06);
+
+  --f-sans: 'Inter', system-ui, sans-serif;
+  --f-serif: 'Fraunces', Georgia, serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--f-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--brand-dim); border-radius: 2px; }
+
+/* ─── OPTICAL GLASS SYSTEM ─── */
+/* Not frosted. Not blurred rectangles. Crystal. */
+.crystal {
+  background: var(--crystal-bg);
+  border: 1px solid var(--crystal-border);
+  position: relative;
+  overflow: hidden;
+}
+
+/* The top-edge light catch — light entering the crystal from above */
+.crystal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--crystal-border-bright) 30%,
+    rgba(15,18,24,0.35) 50%,
+    var(--crystal-border-bright) 70%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+/* Prismatic corner catch — chromatic split where light enters at angles */
+.crystal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,100,80,0.05) 0%, transparent 40%),
+    radial-gradient(circle at 100% 0%, rgba(80,120,255,0.05) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(255,100,80,0.03) 0%, transparent 30%),
+    radial-gradient(circle at 0% 100%, rgba(80,120,255,0.03) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Box-shadow for optical depth — not just a drop shadow */
+.crystal-depth {
+  box-shadow:
+    inset 0 1px 0 var(--crystal-highlight-top),
+    inset 0 -1px 0 rgba(20,26,38,0.12),
+    inset 1px 0 0 rgba(15,18,24,0.05),
+    inset -1px 0 0 rgba(15,18,24,0.05),
+    0 1px 0 rgba(15,18,24,0.06),
+    0 32px 64px var(--crystal-shadow),
+    0 0 120px var(--crystal-glow);
+}
+
+/* Minimal blur — 1px, not 20px. We want transmission, not fog */
+.crystal-trans {
+  backdrop-filter: blur(1px) brightness(1.04) saturate(1.15) contrast(0.97);
+  -webkit-backdrop-filter: blur(1px) brightness(1.04) saturate(1.15) contrast(0.97);
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  height: 68px;
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.5s var(--ease);
+  border-bottom: 1px solid transparent;
+}
+nav.solid {
+  background: rgba(255,255,255,0.85);
+  border-bottom-color: rgba(15,18,24,0.06);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  color: var(--text);
+}
+.nav-logo-mark svg { width: 30px; height: 36px; }
+.nav-logo-word {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+
+.btn-ghost {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--f-sans);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid rgba(15,18,24,0.1);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+.btn-ghost:hover { color: var(--text); border-color: rgba(15,18,24,0.2); }
+
+.btn-brand {
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--f-sans);
+  color: #000;
+  background: var(--brand);
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 28px rgba(255,123,44,0.28);
+}
+.btn-brand:hover {
+  background: var(--brand-dim);
+  box-shadow: 0 0 48px rgba(255,123,44,0.45);
+  transform: translateY(-1px);
+}
+
+/* ─── HERO ─── */
+#hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 820px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Three.js scene fills the whole hero */
+#hero-three {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Hero local image fallback layer */
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: url('images/hero.jpg') center 40%/cover no-repeat;
+  opacity: 0.22;
+  filter: saturate(0.65) brightness(1.05);
+}
+
+/* The crystal panel — Toju conversation lives inside this */
+.hero-crystal-panel {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) perspective(1200px) rotateY(-3deg) rotateX(1.5deg);
+  width: min(680px, 72vw);
+  height: min(520px, 62vh);
+  z-index: 5;
+
+  background: linear-gradient(
+    135deg,
+    rgba(15,18,24,0.035) 0%,
+    rgba(15,18,24,0.018) 50%,
+    rgba(15,18,24,0.028) 100%
+  );
+  border: 1px solid rgba(15,18,24,0.12);
+  border-radius: 28px;
+
+  /* Optical depth */
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.22),
+    inset 0 -1px 0 rgba(20,26,38,0.15),
+    inset 1px 0 0 rgba(15,18,24,0.08),
+    inset -1px 0 0 rgba(15,18,24,0.04),
+    0 0 0 0.5px rgba(15,18,24,0.06),
+    0 40px 120px rgba(20,26,38,0.21),
+    0 0 200px rgba(255,123,44,0.06),
+    0 0 60px rgba(255,123,44,0.04);
+
+  backdrop-filter: blur(2px) brightness(1.06) saturate(1.2) contrast(0.96);
+  -webkit-backdrop-filter: blur(2px) brightness(1.06) saturate(1.2) contrast(0.96);
+  overflow: hidden;
+}
+
+/* Chromatic aberration at panel edges */
+.hero-crystal-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 27px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(255,60,40,0.08) 0%, transparent 35%),
+    radial-gradient(ellipse at 100% 0%, rgba(40,80,255,0.08) 0%, transparent 35%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,180,40,0.04) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Top edge light transmission */
+.hero-crystal-panel::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(15,18,24,0.5) 40%,
+    rgba(15,18,24,0.7) 50%,
+    rgba(15,18,24,0.5) 60%,
+    transparent
+  );
+  z-index: 10;
+}
+
+/* The conversation inside the panel */
+.panel-conversation {
+  position: absolute;
+  inset: 0;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 5;
+}
+
+.panel-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-eyebrow::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--brand);
+}
+
+.panel-headline {
+  font-family: var(--f-serif);
+  font-size: clamp(32px, 4.5vw, 56px);
+  font-weight: 200;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.panel-headline em {
+  font-style: italic;
+  color: rgba(15,18,24,0.9);
+}
+
+.panel-subtext {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 420px;
+  font-weight: 300;
+  margin-bottom: 36px;
+}
+
+.panel-ctas {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.panel-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--f-sans);
+  color: #000;
+  background: var(--brand);
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  box-shadow: 0 0 40px rgba(255,123,44,0.32);
+  letter-spacing: 0.01em;
+}
+.panel-btn-primary:hover {
+  background: var(--brand-dim);
+  box-shadow: 0 0 60px rgba(255,123,44,0.5);
+  transform: translateY(-2px);
+}
+.panel-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: var(--f-sans);
+  color: var(--text-muted);
+  background: rgba(15,18,24,0.04);
+  border: 1px solid rgba(15,18,24,0.1);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  letter-spacing: 0.01em;
+}
+.panel-btn-secondary:hover {
+  color: var(--text);
+  border-color: rgba(15,18,24,0.2);
+  background: rgba(15,18,24,0.07);
+  transform: translateY(-2px);
+}
+
+/* Toju node indicator inside panel */
+.panel-toju-node {
+  position: absolute;
+  top: 28px; right: 36px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--brand);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.toju-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 10px var(--brand), 0 0 20px rgba(255,123,44,0.4);
+  animation: breathe 2.5s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Panel bottom stat bar */
+.panel-stat-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(20,26,38,0.09);
+  border-top: 1px solid rgba(15,18,24,0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 36px;
+  gap: 32px;
+}
+.panel-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-stat-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.panel-stat-val span { color: var(--brand); }
+.panel-stat-label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.panel-stat-sep { width: 1px; height: 20px; background: rgba(15,18,24,0.08); }
+
+/* Secondary floating crystal panels */
+.hero-float-left {
+  position: absolute;
+  left: max(24px, calc(50% - 480px));
+  top: 50%;
+  transform: translateY(-50%) perspective(800px) rotateY(8deg);
+  z-index: 4;
+  width: 200px;
+}
+.hero-float-right {
+  position: absolute;
+  right: max(24px, calc(50% - 480px));
+  top: 50%;
+  transform: translateY(-50%) perspective(800px) rotateY(-8deg);
+  z-index: 4;
+  width: 180px;
+}
+.float-card {
+  background: rgba(15,18,24,0.022);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.15),
+    0 20px 48px rgba(20,26,38,0.15),
+    0 0 80px rgba(255,123,44,0.03);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+}
+.float-card-val {
+  font-family: var(--f-serif);
+  font-size: 28px;
+  font-weight: 200;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.float-card-val span { color: var(--brand); }
+.float-card-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* scroll tell */
+.hero-scroll-indicator {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dim);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.scroll-chevron {
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, rgba(255,123,44,0.5));
+  position: relative;
+  overflow: hidden;
+}
+.scroll-chevron::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,123,44,0.8);
+  animation: scrollfall 2s ease-in-out infinite;
+}
+@keyframes scrollfall {
+  0% { top: -100%; }
+  100% { top: 100%; }
+}
+
+/* ─── SECTION COMMONS ─── */
+section { padding: 120px 0; }
+.container { max-width: 1180px; margin: 0 auto; padding: 0 48px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand);
+  border: 1px solid rgba(255,123,44,0.22);
+  background: rgba(255,123,44,0.05);
+  padding: 5px 12px;
+  border-radius: 100px;
+  margin-bottom: 22px;
+}
+.chip::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 8px var(--brand);
+}
+
+.section-title {
+  font-family: var(--f-serif);
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 200;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  color: var(--text);
+}
+.section-title em {
+  font-style: italic;
+  color: rgba(15,18,24,0.9);
+}
+.section-body {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  max-width: 480px;
+  font-weight: 300;
+  margin-top: 18px;
+}
+
+/* reveal */
+.reveal { opacity: 0; transform: translateY(44px); }
+.reveal-l { opacity: 0; transform: translateX(-52px); }
+.reveal-r { opacity: 0; transform: translateX(52px); }
+
+/* ─── FOR EVERYONE — numbered editorial list ─── */
+#for-everyone {
+  background: var(--bg-1);
+  border-top: 1px solid rgba(15,18,24,0.04);
+}
+
+.persona-list {
+  margin-top: 56px;
+  display: flex;
+  flex-direction: column;
+}
+.persona-row {
+  display: grid;
+  grid-template-columns: 110px 64px 1fr 56px;
+  align-items: center;
+  gap: 28px;
+  padding: 34px 8px;
+  border-top: 1px solid rgba(15,18,24,0.06);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.45s var(--ease);
+  text-decoration: none;
+}
+.persona-row:last-child { border-bottom: 1px solid rgba(15,18,24,0.06); }
+.persona-row:hover { background: rgba(15,18,24,0.018); padding-left: 20px; }
+
+.persona-ghost-num {
+  font-family: var(--f-serif);
+  font-size: 64px;
+  font-weight: 200;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,123,44,0.25);
+  transition: all 0.45s var(--ease);
+}
+.persona-row:hover .persona-ghost-num {
+  -webkit-text-stroke: 1px rgba(255,123,44,0.7);
+  text-shadow: 0 0 40px rgba(255,123,44,0.2);
+}
+
+.persona-icon-tile {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: rgba(255,123,44,0.06);
+  border: 1px solid rgba(255,123,44,0.16);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: inset 0 1px 0 rgba(255,200,120,0.12);
+  transition: all 0.45s var(--ease);
+}
+.persona-row:hover .persona-icon-tile {
+  background: rgba(255,123,44,0.12);
+  border-color: rgba(255,123,44,0.35);
+  box-shadow: inset 0 1px 0 rgba(255,200,120,0.2), 0 0 32px rgba(255,123,44,0.12);
+}
+
+.persona-text .persona-name {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  margin-bottom: 5px;
+}
+.persona-text .persona-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-weight: 300;
+  max-width: 560px;
+}
+
+.persona-arrow {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(15,18,24,0.12);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.45s var(--ease);
+  flex-shrink: 0;
+}
+.persona-row:hover .persona-arrow {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #000;
+  transform: rotate(-45deg);
+  box-shadow: 0 0 28px rgba(255,123,44,0.4);
+}
+
+/* ─── ROADMAP — 3-step journey ─── */
+#roadmap {
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+.roadmap-track {
+  position: relative;
+  max-width: 760px;
+  margin: 64px auto 0;
+  padding-left: 40px;
+}
+.roadmap-line {
+  position: absolute;
+  left: 10px; top: 16px; bottom: 16px;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(255,123,44,0.5), rgba(255,123,44,0.08));
+}
+.roadmap-step {
+  position: relative;
+  background: rgba(15,18,24,0.022);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 22px;
+  padding: 34px 36px;
+  margin-bottom: 22px;
+  overflow: hidden;
+  transition: all 0.4s var(--ease);
+}
+.roadmap-step::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.16), transparent);
+}
+.roadmap-step:hover {
+  border-color: rgba(255,123,44,0.2);
+  transform: translateX(8px);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.12), 0 24px 64px rgba(20,26,38,0.135);
+}
+.roadmap-dot {
+  position: absolute;
+  left: -36px; top: 42px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 14px rgba(255,123,44,0.6), 0 0 30px rgba(255,123,44,0.25);
+}
+.roadmap-num {
+  font-family: var(--f-serif);
+  font-size: 44px;
+  font-weight: 200;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,123,44,0.3);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.roadmap-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; letter-spacing: -0.015em; }
+.roadmap-desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; font-weight: 300; }
+
+/* ─── AGENCY cards (CRM + Proximity) ─── */
+.agency-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 48px;
+  position: relative;
+  z-index: 1;
+}
+.agency-card {
+  background: rgba(15,18,24,0.025);
+  border: 1px solid rgba(15,18,24,0.09);
+  border-radius: 24px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s var(--ease);
+}
+.agency-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.18), transparent);
+}
+.agency-card:hover {
+  border-color: rgba(255,123,44,0.22);
+  transform: translateY(-6px);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.14), 0 28px 72px rgba(20,26,38,0.15), 0 0 80px rgba(255,123,44,0.05);
+}
+.ac-badge {
+  position: absolute;
+  top: 24px; right: 26px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+.ac-badge.builtin { background: rgba(15,18,24,0.06); color: var(--text-muted); border: 1px solid rgba(15,18,24,0.1); }
+.ac-badge.new { background: var(--brand); color: #000; }
+.ac-icon {
+  width: 50px; height: 50px;
+  border-radius: 14px;
+  background: rgba(255,123,44,0.1);
+  border: 1px solid rgba(255,123,44,0.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 22px;
+  box-shadow: inset 0 1px 0 rgba(255,200,120,0.15);
+}
+.ac-title { font-size: 19px; font-weight: 600; color: var(--text); margin-bottom: 10px; letter-spacing: -0.015em; }
+.ac-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.65; font-weight: 300; }
+.ac-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 24px;
+}
+.ac-stat {
+  background: rgba(20,26,38,0.075);
+  border: 1px solid rgba(15,18,24,0.06);
+  border-radius: 12px;
+  padding: 14px;
+}
+.ac-stat-val { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+.ac-stat-label { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-top: 3px; }
+
+/* Proximity notification mock */
+.proximity-notif {
+  margin-top: 24px;
+  background: rgba(20,26,38,0.135);
+  border: 1px solid rgba(15,18,24,0.09);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.06);
+}
+.pn-bell {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: rgba(15,18,24,0.07);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.pn-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+.pn-main { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.pn-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.pn-time { margin-left: auto; font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
+
+/* ─── DEMO SECTION ─── */
+#demo {
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+#demo::before {
+  content: '';
+  position: absolute;
+  top: -300px; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 900px;
+  background: radial-gradient(circle, rgba(255,123,44,0.04) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 72px;
+  align-items: start;
+}
+
+/* The chat window is a crystal panel */
+.demo-crystal-window {
+  background: rgba(15,18,24,0.022);
+  border: 1px solid rgba(15,18,24,0.09);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.16),
+    inset 0 -1px 0 rgba(20,26,38,0.12),
+    0 40px 100px rgba(20,26,38,0.195),
+    0 0 120px rgba(255,123,44,0.04);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  position: relative;
+}
+.demo-crystal-window::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.35), transparent);
+  z-index: 10;
+}
+.demo-crystal-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,80,40,0.04) 0%, transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(60,80,255,0.04) 0%, transparent 30%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(15,18,24,0.06);
+  background: rgba(20,26,38,0.045);
+  position: relative;
+  z-index: 2;
+}
+.toju-orb {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(255,155,60,0.9), rgba(180,60,0,0.8));
+  border: 1px solid rgba(255,123,44,0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,200,100,0.5),
+    0 0 20px rgba(255,123,44,0.35),
+    0 0 40px rgba(255,123,44,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: rgba(15,18,24,0.95);
+  flex-shrink: 0;
+}
+.demo-header-text .name {
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.demo-header-text .status {
+  font-size: 11px; color: var(--brand);
+  display: flex; align-items: center; gap: 5px;
+}
+.demo-header-text .status::before {
+  content: ''; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--brand);
+  box-shadow: 0 0 6px var(--brand);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.demo-messages {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 400px;
+  position: relative;
+  z-index: 2;
+}
+
+.msg { display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+.msg.show { opacity: 1; transform: translateY(0); }
+.msg-sender { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.msg-user { align-items: flex-end; }
+.msg-toju { align-items: flex-start; }
+.msg-user .msg-sender { color: var(--text-dim); }
+.msg-toju .msg-sender { color: var(--brand); }
+
+.bubble {
+  padding: 11px 15px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 88%;
+  position: relative;
+}
+.msg-user .bubble {
+  background: rgba(15,18,24,0.052);
+  border: 1px solid rgba(15,18,24,0.09);
+  border-radius: 16px 16px 4px 16px;
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.1);
+}
+.msg-toju .bubble {
+  background: rgba(255,123,44,0.07);
+  border: 1px solid rgba(255,123,44,0.16);
+  border-radius: 16px 16px 16px 4px;
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255,150,80,0.12);
+}
+.bubble ul { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.bubble ul li { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); }
+.bubble ul li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
+
+.typing-dots { display: none; gap: 4px; padding: 11px 15px; background: rgba(255,123,44,0.06); border: 1px solid rgba(255,123,44,0.13); border-radius: 16px 16px 16px 4px; width: fit-content; }
+.typing-dots.show { display: flex; }
+.typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); animation: typebounce 1.2s ease-in-out infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes typebounce {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
+
+.prop-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.prop-card {
+  display: flex; gap: 11px; align-items: center;
+  background: rgba(15,18,24,0.03); border: 1px solid rgba(15,18,24,0.07);
+  border-radius: 12px; padding: 12px;
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.06);
+}
+.prop-thumb { width: 48px; height: 48px; border-radius: 8px; background: rgba(255,123,44,0.1); border: 1px solid rgba(255,123,44,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.prop-info { flex: 1; }
+.prop-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.prop-meta { font-size: 11px; color: var(--text-dim); }
+.prop-badge { display: inline-block; font-size: 10px; background: rgba(255,123,44,0.12); color: var(--brand); border: 1px solid rgba(255,123,44,0.2); padding: 2px 7px; border-radius: 100px; margin-top: 3px; }
+.prop-price { font-size: 13px; font-weight: 700; color: var(--brand); }
+
+/* ─── WHY SECTION ─── */
+#why {
+  background: var(--bg-1);
+  border-top: 1px solid rgba(15,18,24,0.04);
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 64px;
+}
+.why-crystal {
+  background: rgba(15,18,24,0.022);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 24px;
+  padding: 38px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s var(--ease);
+}
+.why-crystal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.18), transparent);
+}
+.why-crystal:hover {
+  border-color: rgba(255,123,44,0.2);
+  transform: translateY(-8px);
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.15),
+    0 32px 80px rgba(20,26,38,0.15),
+    0 0 100px rgba(255,123,44,0.04);
+}
+.why-num {
+  font-family: var(--f-serif);
+  font-size: 72px;
+  font-weight: 200;
+  color: rgba(15,18,24,0.06);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+.why-title { font-size: 19px; font-weight: 600; color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em; }
+.why-desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+
+/* ─── TRUST SECTION ─── */
+#trust {
+  background: var(--bg);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Dark environment — single verification mark, luxury financial feel */
+.trust-void {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,123,44,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.verification-emblem {
+  position: relative;
+  width: 180px; height: 180px;
+  margin: 64px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Outer refractive ring */
+.ve-ring-1 {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255,123,44,0.3);
+  animation: rotatering 14s linear infinite;
+  background: linear-gradient(135deg, transparent 0%, rgba(255,123,44,0.04) 50%, transparent 100%);
+}
+.ve-ring-1::before {
+  content: '';
+  position: absolute;
+  top: -3px; left: 50%;
+  transform: translateX(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 14px var(--brand), 0 0 28px rgba(255,123,44,0.5);
+}
+/* Light-catch on ring */
+.ve-ring-1::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px solid rgba(15,18,24,0.06);
+}
+
+.ve-ring-2 {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(15,18,24,0.06);
+  animation: rotatering 9s linear infinite reverse;
+}
+.ve-ring-3 {
+  position: absolute;
+  inset: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,123,44,0.1);
+}
+
+/* The crystal core of the emblem */
+.ve-core {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(255,200,120,0.15), rgba(255,123,44,0.06));
+  border: 1px solid rgba(255,123,44,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  color: var(--brand);
+  box-shadow:
+    inset 0 1px 0 rgba(255,200,100,0.3),
+    0 0 48px rgba(255,123,44,0.2),
+    0 0 100px rgba(255,123,44,0.08);
+  position: relative;
+  z-index: 1;
+}
+.ve-core::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, rgba(255,80,40,0.12), transparent 50%),
+              radial-gradient(circle at 70% 25%, rgba(60,80,255,0.1), transparent 50%);
+}
+
+@keyframes rotatering {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.trust-stats {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  margin-top: 48px;
+  position: relative;
+  z-index: 1;
+}
+.trust-stat-val {
+  font-family: var(--f-serif);
+  font-size: 52px;
+  font-weight: 200;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.trust-stat-val span { color: var(--brand); }
+.trust-stat-label { font-size: 12px; color: var(--text-dim); margin-top: 8px; }
+
+/* ─── CO-LIVING ─── */
+#coliving {
+  background: var(--bg-1);
+  border-top: 1px solid rgba(15,18,24,0.04);
+}
+.coliving-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+.coliving-visual {
+  position: relative;
+  height: 540px;
+  border-radius: 24px;
+  overflow: hidden;
+}
+.coliving-photo {
+  position: absolute;
+  inset: 0;
+  background: url('images/interior.jpg') center/cover no-repeat;
+  filter: brightness(0.75) saturate(0.85);
+}
+/* Crystal overlay on photo — light transmission through architectural glass */
+.coliving-glass-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(10,12,15,0.2) 0%,
+      rgba(10,12,15,0.0) 30%,
+      rgba(10,12,15,0.0) 60%,
+      rgba(10,12,15,0.55) 100%
+    );
+}
+/* Chromatic light leak from top-right */
+.coliving-light-leak {
+  position: absolute;
+  top: 0; right: 0;
+  width: 300px; height: 200px;
+  background: radial-gradient(ellipse at 100% 0%,
+    rgba(255,123,44,0.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.coliving-feat-row {
+  position: absolute;
+  bottom: 24px;
+  left: 16px; right: 16px;
+  display: flex;
+  gap: 10px;
+}
+.cf-chip {
+  flex: 1;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(15,18,24,0.09);
+  border-radius: 14px;
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.1);
+}
+.cf-chip-icon { font-size: 16px; margin-bottom: 6px; }
+.cf-chip-name { font-size: 11px; font-weight: 600; color: var(--text); }
+.cf-chip-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+.feature-list { display: flex; flex-direction: column; gap: 14px; margin-top: 36px; }
+.feature-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 18px;
+  background: rgba(15,18,24,0.02);
+  border: 1px solid rgba(15,18,24,0.07);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s var(--ease);
+}
+.feature-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.12), transparent);
+}
+.feature-item:hover {
+  border-color: rgba(255,123,44,0.18);
+  background: rgba(15,18,24,0.032);
+}
+.fi-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  background: rgba(255,123,44,0.07);
+  border: 1px solid rgba(255,123,44,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,200,100,0.1);
+}
+.fi-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.fi-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+/* ─── FLEX PAY ─── */
+#flexpay {
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+/* Abstract architectural glass — no people, no buildings. Visual metaphor. */
+.flexpay-abstract {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* Folding glass planes */
+.fp-plane {
+  position: absolute;
+  border: 1px solid rgba(15,18,24,0.04);
+  background: rgba(15,18,24,0.01);
+  transform-origin: center;
+  border-radius: 4px;
+}
+.fp-plane:nth-child(1) { width: 400px; height: 600px; top: -100px; right: -80px; transform: rotate(25deg) skewX(-5deg); border-color: rgba(255,123,44,0.06); }
+.fp-plane:nth-child(2) { width: 300px; height: 500px; top: 50px; right: 60px; transform: rotate(18deg) skewX(-3deg); }
+.fp-plane:nth-child(3) { width: 200px; height: 400px; top: 100px; right: 180px; transform: rotate(12deg); border-color: rgba(255,123,44,0.04); }
+.fp-plane:nth-child(4) { width: 100px; height: 300px; top: 150px; right: 260px; transform: rotate(6deg); }
+
+.flexpay-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 64px;
+  position: relative;
+  z-index: 1;
+}
+.fp-crystal {
+  background: rgba(15,18,24,0.02);
+  border: 1px solid rgba(15,18,24,0.07);
+  border-radius: 22px;
+  padding: 32px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s var(--ease);
+}
+.fp-crystal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.15), transparent);
+}
+.fp-crystal:hover {
+  border-color: rgba(255,123,44,0.22);
+  background: rgba(15,18,24,0.032);
+  transform: translateY(-8px);
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.14),
+    0 28px 72px rgba(20,26,38,0.15),
+    0 0 80px rgba(255,123,44,0.04);
+}
+.fp-num {
+  font-family: var(--f-serif);
+  font-size: 48px;
+  font-weight: 200;
+  color: rgba(15,18,24,0.06);
+  letter-spacing: -0.04em;
+  margin-bottom: 18px;
+}
+.fp-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.fp-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+/* ─── AGENCY STRIP ─── */
+#agency-strip {
+  position: relative;
+  border-top: 1px solid rgba(255,123,44,0.15);
+  border-bottom: 1px solid rgba(255,123,44,0.15);
+  padding: 88px 0;
+  overflow: hidden;
+}
+.agency-photo-layer {
+  position: absolute;
+  inset: 0;
+  background: url('images/estate.jpg') center/cover no-repeat;
+  opacity: 0.06;
+  filter: saturate(0.3) brightness(0.7);
+}
+.agency-dark {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(250,250,248,0.96), rgba(248,246,240,0.92), rgba(250,250,248,0.96));
+}
+.agency-strip-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.agency-title {
+  font-family: var(--f-serif);
+  font-size: clamp(28px, 3.5vw, 48px);
+  font-weight: 200;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  color: var(--text);
+}
+.agency-title em { font-style: italic; }
+
+.agency-chain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+.chain-node {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  background: rgba(15,18,24,0.025);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.chain-node.final {
+  color: var(--brand);
+  border-color: rgba(255,123,44,0.25);
+  background: rgba(255,123,44,0.06);
+}
+.chain-arrow { color: rgba(255,123,44,0.5); font-size: 12px; }
+
+.agency-btns { display: flex; flex-direction: column; gap: 10px; min-width: 196px; }
+.btn-large-brand {
+  padding: 14px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--f-sans);
+  color: #000;
+  background: var(--brand);
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s var(--ease);
+  box-shadow: 0 0 36px rgba(255,123,44,0.3);
+}
+.btn-large-brand:hover { background: var(--brand-dim); transform: translateY(-2px); box-shadow: 0 0 56px rgba(255,123,44,0.45); }
+.btn-large-ghost {
+  padding: 13px 28px;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: var(--f-sans);
+  color: var(--text-muted);
+  background: rgba(15,18,24,0.03);
+  border: 1px solid rgba(15,18,24,0.1);
+  border-radius: 100px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s var(--ease);
+}
+.btn-large-ghost:hover { color: var(--text); border-color: rgba(15,18,24,0.2); transform: translateY(-2px); }
+
+/* ─── BROWSE ─── */
+#browse {
+  background: var(--bg-1);
+  border-top: 1px solid rgba(15,18,24,0.04);
+  position: relative;
+}
+.browse-photo-hint {
+  position: absolute;
+  inset: 0;
+  background: url('images/balcony.jpg') center/cover no-repeat;
+  opacity: 0.03;
+  filter: saturate(0.2);
+}
+.browse-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Crystal window — a browser frame */
+.browse-window {
+  background: rgba(15,18,24,0.018);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(15,18,24,0.14),
+    0 40px 100px rgba(20,26,38,0.18);
+  position: relative;
+}
+.browse-window::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.3), transparent);
+}
+.browse-titlebar {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(15,18,24,0.06);
+  background: rgba(20,26,38,0.054);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.tb-dot { width: 10px; height: 10px; border-radius: 50%; }
+.tb-r { background: #ff5f57; }
+.tb-y { background: #ffbd2e; }
+.tb-g { background: #28ca41; }
+.tb-search {
+  flex: 1;
+  background: rgba(15,18,24,0.04);
+  border: 1px solid rgba(15,18,24,0.07);
+  border-radius: 7px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex; align-items: center; gap: 7px;
+}
+.browse-listings { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.b-listing {
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px;
+  background: rgba(15,18,24,0.018);
+  border: 1px solid rgba(15,18,24,0.06);
+  border-radius: 12px;
+  transition: all 0.25s var(--ease);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.b-listing::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.1), transparent);
+}
+.b-listing:hover {
+  border-color: rgba(255,123,44,0.2);
+  background: rgba(15,18,24,0.03);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.08);
+}
+.b-thumb {
+  width: 56px; height: 56px;
+  border-radius: 9px;
+  background: rgba(255,123,44,0.08);
+  border: 1px solid rgba(255,123,44,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.b-info { flex: 1; }
+.b-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.b-sub { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.b-tags { display: flex; gap: 5px; }
+.b-tag { font-size: 10px; padding: 2px 7px; background: rgba(15,18,24,0.03); border: 1px solid rgba(15,18,24,0.06); border-radius: 100px; color: var(--text-dim); }
+.b-price { text-align: right; flex-shrink: 0; }
+.b-price-val { font-size: 13px; font-weight: 700; color: var(--brand); }
+.b-verified { font-size: 10px; color: var(--brand); display: flex; align-items: center; gap: 3px; margin-top: 3px; justify-content: flex-end; }
+
+/* ─── TESTIMONIALS ─── */
+#testimonials { background: var(--bg-1); border-top: 1px solid rgba(15,18,24,0.04); }
+.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 56px; }
+.testi-card {
+  background: rgba(15,18,24,0.022);
+  border: 1px solid rgba(15,18,24,0.08);
+  border-radius: 22px;
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s var(--ease);
+  display: flex; flex-direction: column; gap: 22px;
+}
+.testi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 14%; right: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.16), transparent);
+}
+.testi-card:hover {
+  border-color: rgba(255,123,44,0.2);
+  transform: translateY(-6px);
+  box-shadow: inset 0 1px 0 rgba(15,18,24,0.12), 0 28px 70px rgba(20,26,38,0.15);
+}
+.testi-quote { font-size: 15px; color: var(--text); line-height: 1.7; font-weight: 300; font-style: italic; }
+.testi-quote::before { content: '"'; color: var(--brand); font-family: var(--f-serif); font-size: 28px; line-height: 0; margin-right: 2px; }
+.testi-person { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.testi-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,123,44,0.1); border: 1px solid rgba(255,123,44,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--brand);
+  box-shadow: inset 0 1px 0 rgba(255,200,120,0.15);
+}
+.testi-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.testi-role { font-size: 11.5px; color: var(--text-dim); }
+
+/* ─── FAQ ─── */
+#faq { background: var(--bg); }
+.faq-list { max-width: 760px; margin: 56px auto 0; }
+.faq-item { border-top: 1px solid rgba(15,18,24,0.07); }
+.faq-item:last-child { border-bottom: 1px solid rgba(15,18,24,0.07); }
+.faq-q {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 24px 8px;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--f-sans); font-size: 15.5px; font-weight: 600;
+  color: var(--text); text-align: left;
+  transition: color 0.2s;
+}
+.faq-q:hover { color: var(--brand); }
+.faq-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid rgba(255,123,44,0.3);
+  color: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 400;
+  flex-shrink: 0;
+  transition: all 0.35s var(--ease);
+}
+.faq-item.open .faq-icon { background: var(--brand); color: #000; transform: rotate(45deg); }
+.faq-a {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.45s var(--ease);
+}
+.faq-a-inner {
+  padding: 0 8px 26px;
+  font-size: 14px; color: var(--text-muted); line-height: 1.75; font-weight: 300;
+  max-width: 640px;
+}
+
+/* ─── FINAL CTA ─── */
+#final-cta {
+  background: var(--bg);
+  text-align: center;
+  padding: 160px 0;
+  position: relative;
+  overflow: hidden;
+}
+.cta-ambient {
+  position: absolute;
+  inset: 0;
+  background: url('images/balcony.jpg') center/cover;
+  opacity: 0.05;
+  filter: saturate(0.2) brightness(0.6);
+}
+.cta-dark {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(250,250,248,0.7), var(--bg) 70%);
+}
+.cta-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(255,123,44,0.08), transparent 70%);
+  pointer-events: none;
+}
+.cta-content { position: relative; z-index: 1; }
+
+.cta-headline {
+  font-family: var(--f-serif);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 200;
+  letter-spacing: -0.04em;
+  line-height: 1.03;
+  max-width: 840px;
+  margin: 0 auto 24px;
+  color: var(--text);
+}
+.cta-headline em { font-style: italic; color: rgba(15,18,24,0.9); }
+.cta-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 400px;
+  margin: 0 auto 52px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+.cta-btns { display: flex; justify-content: center; gap: 14px; }
+.btn-cta-primary {
+  padding: 17px 44px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--f-sans);
+  color: #000;
+  background: var(--brand);
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  box-shadow: 0 0 60px rgba(255,123,44,0.35);
+  letter-spacing: 0.01em;
+}
+.btn-cta-primary:hover { background: var(--brand-dim); transform: translateY(-3px); box-shadow: 0 0 80px rgba(255,123,44,0.5); }
+.btn-cta-ghost {
+  padding: 16px 36px;
+  font-size: 15px;
+  font-weight: 400;
+  font-family: var(--f-sans);
+  color: var(--text-muted);
+  background: rgba(15,18,24,0.04);
+  border: 1px solid rgba(15,18,24,0.1);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.btn-cta-ghost:hover { color: var(--text); border-color: rgba(15,18,24,0.2); transform: translateY(-3px); }
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--bg-1);
+  border-top: 1px solid rgba(15,18,24,0.05);
+  padding: 64px 0 40px;
+}
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; }
+.footer-brand p { font-size: 13px; color: var(--text-muted); margin-top: 16px; max-width: 260px; line-height: 1.65; font-weight: 300; }
+.footer-col-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 18px; }
+.footer-links { display: flex; flex-direction: column; gap: 11px; list-style: none; }
+.footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+.footer-links a:hover { color: var(--brand); }
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 56px; padding-top: 28px;
+  border-top: 1px solid rgba(15,18,24,0.05);
+  font-size: 12px; color: var(--text-dim);
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1060px) {
+  .flexpay-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 780px) {
+  .persona-row { grid-template-columns: 56px 1fr 44px; gap: 16px; }
+  .persona-ghost-num { display: none; }
+  .agency-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 880px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .container { padding: 0 24px; }
+  section { padding: 80px 0; }
+  .demo-grid, .coliving-layout, .browse-layout { grid-template-columns: 1fr; gap: 40px; }
+  .why-grid { grid-template-columns: 1fr !important; }
+  .testi-grid { grid-template-columns: 1fr; }
+  .personas-grid { grid-template-columns: repeat(2, 1fr); }
+  .agency-strip-layout { grid-template-columns: 1fr; }
+  .hero-float-left, .hero-float-right { display: none; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 64 78" fill="#15171a" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="10" height="78" rx="1"/>
+        <rect x="10" y="0" width="44" height="10" rx="1"/>
+        <rect x="44" y="10" width="10" height="17" rx="1"/>
+        <rect x="10" y="17" width="44" height="10" rx="1"/>
+        <rect x="10" y="36" width="44" height="10" rx="1"/>
+        <rect x="46" y="46" width="8" height="22" rx="1"/>
+        <rect x="18" y="46" width="8" height="22" rx="1"/>
+        <rect x="10" y="68" width="44" height="10" rx="1"/>
+      </svg>
+    </div>
+    <span class="nav-logo-word">Synapse</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#demo">See Toju</a></li>
+    <li><a href="#why">Why Synapse</a></li>
+    <li><a href="#coliving">Co-Living</a></li>
+    <li><a href="#agency-strip">For Agencies</a></li>
+    <li><a href="#browse">Browse</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="btn-ghost">Log in</button>
+    <button class="btn-brand">Chat With Toju</button>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <canvas id="hero-three"></canvas>
+  <div class="hero-photo"></div>
+
+  <!-- Left floating crystal panels -->
+  <div class="hero-float-left">
+    <div class="float-card">
+      <div class="float-card-val">₦<span>2.4B+</span></div>
+      <div class="float-card-label">Verified on platform</div>
+    </div>
+    <div class="float-card">
+      <div class="float-card-val"><span>3</span>min</div>
+      <div class="float-card-label">Avg. time to first match</div>
+    </div>
+  </div>
+
+  <!-- The main crystal panel — Toju lives inside here -->
+  <div class="hero-crystal-panel" id="hero-panel">
+    <div class="panel-toju-node">
+      <div class="toju-dot"></div>
+      Toju · Active
+    </div>
+
+    <div class="panel-conversation">
+      <div class="panel-eyebrow">Synapse · 2026</div>
+      <h1 class="panel-headline" style="font-size:clamp(26px,3.4vw,42px)">
+        Nigeria's real estate market is one of the largest asset classes in the <em>country.</em>
+      </h1>
+      <p class="panel-subtext">
+        The buyers are there. The agencies are there. The properties are there.
+        What's missing is the infrastructure that connects them efficiently, safely, and at scale.
+      </p>
+      <p style="font-size:12.5px;font-style:italic;color:var(--text-dim);max-width:430px;margin:-22px 0 30px;line-height:1.6">
+        Meet Toju — Synapse's AI property consultant. He doesn't just find properties.
+        He advises, recommends, and guides you to the best decision for your life.
+      </p>
+      <div class="panel-ctas">
+        <button class="panel-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Talk to Toju — it's free
+        </button>
+        <button class="panel-btn-secondary">List with Synapse</button>
+      </div>
+      <div style="margin-top:18px;font-size:11px;color:var(--text-dim);display:flex;gap:14px;flex-wrap:wrap">
+        <span>✓ No registration required</span>
+        <span>✓ Every listing independently verified</span>
+        <span>✓ Free for buyers &amp; renters</span>
+      </div>
+    </div>
+
+    <div class="panel-stat-bar">
+      <div class="panel-stat">
+        <div class="panel-stat-val"><span>₦21T</span></div>
+        <div class="panel-stat-label">Nigerian market value</div>
+      </div>
+      <div class="panel-stat-sep"></div>
+      <div class="panel-stat">
+        <div class="panel-stat-val"><span>94.2</span></div>
+        <div class="panel-stat-label">Avg. trust score / 100</div>
+      </div>
+      <div class="panel-stat-sep"></div>
+      <div class="panel-stat">
+        <div class="panel-stat-val"><span>&lt;48h</span></div>
+        <div class="panel-stat-label">Brief to verified report</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right floating crystals -->
+  <div class="hero-float-right">
+    <div class="float-card">
+      <div class="float-card-val"><span>98</span>%</div>
+      <div class="float-card-label">Agency verification rate</div>
+    </div>
+    <div class="float-card">
+      <div class="float-card-val"><span>Lagos</span></div>
+      <div class="float-card-label">Nigeria's largest market covered</div>
+    </div>
+  </div>
+
+  <div class="hero-scroll-indicator">
+    <div class="scroll-chevron"></div>
+    Scroll
+  </div>
+</section>
+
+<!-- ══ FOR EVERYONE ══ -->
+<section id="for-everyone">
+  <div class="container">
+    <div class="reveal"><span class="chip">Who It's For</span></div>
+    <h2 class="section-title reveal">Built for <em>everyone.</em></h2>
+    <p class="section-body reveal">Whatever your property goal — Toju has a verified path for you.</p>
+    <div class="persona-list">
+      <a class="persona-row" href="#demo">
+        <div class="persona-ghost-num">01</div>
+        <div class="persona-icon-tile">🏠</div>
+        <div class="persona-text"><div class="persona-name">Buyers</div><div class="persona-desc">Find your verified forever home across Lagos and beyond — before you spend a single naira.</div></div>
+        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+      <a class="persona-row" href="#demo">
+        <div class="persona-ghost-num">02</div>
+        <div class="persona-icon-tile">📈</div>
+        <div class="persona-text"><div class="persona-name">Investors</div><div class="persona-desc">High-yield Nigerian assets, vetted for clear title, zero excision issues, and strong ROI.</div></div>
+        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+      <a class="persona-row" href="#coliving">
+        <div class="persona-ghost-num">03</div>
+        <div class="persona-icon-tile">🤝</div>
+        <div class="persona-text"><div class="persona-name">Shared Living</div><div class="persona-desc">Premium co-living designed for professionals who value community and trust.</div></div>
+        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+      <a class="persona-row" href="#browse">
+        <div class="persona-ghost-num">04</div>
+        <div class="persona-icon-tile">🔑</div>
+        <div class="persona-text"><div class="persona-name">Rentals</div><div class="persona-desc">Short and long-term rentals, ground-truth verified before you ever sign anything.</div></div>
+        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+      <a class="persona-row" href="#flexpay">
+        <div class="persona-ghost-num">05</div>
+        <div class="persona-icon-tile">💳</div>
+        <div class="persona-text"><div class="persona-name">Flex Plans</div><div class="persona-desc">Start your property journey today — with exactly what you have right now.</div></div>
+        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ DEMO ══ -->
+<section id="demo">
+  <div class="container">
+    <div class="demo-grid">
+      <!-- Crystal chat window -->
+      <div class="demo-crystal-window reveal-l" id="demo-window">
+        <div class="demo-header">
+          <div class="toju-orb">T</div>
+          <div class="demo-header-text">
+            <div class="name">Toju</div>
+            <div class="status">Online · AI Real Estate Advisor</div>
+          </div>
+        </div>
+        <div class="demo-messages" id="demo-msgs"></div>
+      </div>
+
+      <!-- Right copy -->
+      <div class="reveal-r" style="padding-top:16px">
+        <span class="chip">Interactive Demo</span>
+        <h2 class="section-title">Toju <em>advises.</em><br>Not just searches.</h2>
+        <p class="section-body">Traditional portals make you search. Toju understands your goals, compares trade-offs, and connects you to verified agencies — before a single cold call.</p>
+        <div style="margin-top:40px;background:rgba(255,123,44,0.04);border:1px solid rgba(255,123,44,0.14);border-radius:16px;padding:22px 26px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,150,80,0.25),transparent)"></div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--brand);margin-bottom:10px">Design Philosophy</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.65;font-style:italic">"Notice how Toju sounds like an advisor, not a database. Every question has a purpose. Every answer moves you closer to a decision."</div>
+        </div>
+        <button class="panel-btn-primary" style="margin-top:36px">Start Your Conversation</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ROADMAP ══ -->
+<section id="roadmap">
+  <div class="container">
+    <div style="text-align:center;max-width:560px;margin:0 auto">
+      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">How Synapse Works</span></div>
+      <h2 class="section-title reveal">Tell Toju. Find. Verify. Pay <em>safely.</em></h2>
+    </div>
+    <div class="roadmap-track">
+      <div class="roadmap-line"></div>
+      <div class="roadmap-step">
+        <div class="roadmap-dot"></div>
+        <div class="roadmap-num">01</div>
+        <div class="roadmap-title">Tell Toju</div>
+        <div class="roadmap-desc">Describe what you want. Toju asks the right questions and builds your brief.</div>
+      </div>
+      <div class="roadmap-step">
+        <div class="roadmap-dot"></div>
+        <div class="roadmap-num">02</div>
+        <div class="roadmap-title">Browse Verified Listings</div>
+        <div class="roadmap-desc">Toju recommends properties ranked by trust score, value, and fit. Not just availability.</div>
+      </div>
+      <div class="roadmap-step">
+        <div class="roadmap-dot"></div>
+        <div class="roadmap-num">03</div>
+        <div class="roadmap-title">Verify Before You Commit</div>
+        <div class="roadmap-desc">Scouts, surveyors, and lawyers confirm title, structure, and risk. Every node must pass.</div>
+      </div>
+      <div class="roadmap-step">
+        <div class="roadmap-dot"></div>
+        <div class="roadmap-num">04</div>
+        <div class="roadmap-title">Pay Safely</div>
+        <div class="roadmap-desc">Funds sit in escrow. The seller is paid only when every milestone is met.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ WHY ══ -->
+<section id="why">
+  <div class="container">
+    <div style="text-align:center;max-width:680px;margin:0 auto 24px">
+      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">For Buyers and Renters</span></div>
+      <h2 class="section-title reveal">Finding a home should feel like talking to someone who actually <em>knows.</em></h2>
+      <p class="reveal" style="font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;margin-top:18px">Toju doesn't show you a list and leave you to figure it out. He asks the right questions, understands your life — your budget, your neighbourhood, your timeline — and recommends the best options available. Including ones you wouldn't have thought to look for.</p>
+    </div>
+    <div class="why-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="why-crystal reveal"><div class="why-num">01</div><div class="why-title">AI That Advises, Not Just Matches</div><div class="why-desc">Toju counsels you through the process. He challenges assumptions, surfaces better options, and helps you decide with confidence.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">02</div><div class="why-title">Every Listing Verified Before You See It</div><div class="why-desc">A 7-node trust score covers title, structure, flood risk, legal standing, and more. No ghost listings. No surprises.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">03</div><div class="why-title">Walk Past It, Get Notified</div><div class="why-desc">Proximity alerts fire when you walk within range of a verified property matching your brief. Real intent, at the right moment.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">04</div><div class="why-title">Only Verified Agencies</div><div class="why-desc">Every agency on Synapse is independently checked — identity, registration, and track record. You know exactly who you're dealing with.</div></div>
+    </div>
+    <div style="text-align:center;margin-top:44px"><button class="panel-btn-primary">Start talking to Toju</button></div>
+  </div>
+</section>
+
+<!-- ══ TRUST ══ -->
+<section id="trust">
+  <div class="trust-void"></div>
+  <div class="container" style="position:relative;z-index:1">
+    <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Verified Platform</span></div>
+    <h2 class="section-title reveal" style="text-align:center;max-width:600px;margin:0 auto">Every recommendation backed by <em>verified</em> agencies.</h2>
+    <p class="reveal" style="text-align:center;font-size:16px;color:var(--text-muted);max-width:440px;margin:18px auto 0;line-height:1.7;font-weight:300">Every agency undergoes rigorous verification before earning trusted status. Browse with confidence. Your capital is protected.</p>
+
+    <div class="verification-emblem reveal">
+      <div class="ve-ring-1"></div>
+      <div class="ve-ring-2"></div>
+      <div class="ve-ring-3"></div>
+      <div class="ve-core">✓</div>
+    </div>
+
+    <div class="trust-stats">
+      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>100</span>%</div><div class="trust-stat-label">Agency verification before listing</div></div>
+      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>7</span></div><div class="trust-stat-label">Verification nodes per property</div></div>
+      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>2</span></div><div class="trust-stat-label">Phase review cycle</div></div>
+      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>0</span></div><div class="trust-stat-label">Fake listings on platform</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CO-LIVING ══ -->
+<section id="coliving">
+  <div class="container">
+    <div class="coliving-layout">
+      <div class="coliving-visual reveal-l">
+        <div class="coliving-photo"></div>
+        <div class="coliving-glass-overlay"></div>
+        <div class="coliving-light-leak"></div>
+        <div class="coliving-feat-row">
+          <div class="cf-chip"><div class="cf-chip-icon">🧠</div><div class="cf-chip-name">Smart Match</div><div class="cf-chip-sub">Compatible lifestyles</div></div>
+          <div class="cf-chip"><div class="cf-chip-icon">✅</div><div class="cf-chip-name">Verified</div><div class="cf-chip-sub">Identity-checked</div></div>
+          <div class="cf-chip"><div class="cf-chip-icon">💰</div><div class="cf-chip-name">Shared Rent</div><div class="cf-chip-sub">Split fairly</div></div>
+        </div>
+      </div>
+      <div class="reveal-r">
+        <span class="chip">Shared Living</span>
+        <h2 class="section-title">Find the right home.<br>Or the right <em>housemate.</em></h2>
+        <p class="section-body">Lagos rent is expensive. We made it flexible. Find co-living arrangements with people whose lifestyles match yours — all with verified profiles and transparent agreements.</p>
+        <div class="feature-list">
+          <div class="feature-item"><div class="fi-icon">🧠</div><div><div class="fi-title">Lifestyle Compatibility Matching</div><div class="fi-desc">Toju matches you with housemates whose schedules, habits, and preferences align with yours.</div></div></div>
+          <div class="feature-item"><div class="fi-icon">🔒</div><div><div class="fi-title">Identity-Verified Profiles</div><div class="fi-desc">Every co-living applicant is verified. Know who you're living with before you sign anything.</div></div></div>
+          <div class="feature-item"><div class="fi-icon">📋</div><div><div class="fi-title">Transparent Shared Agreements</div><div class="fi-desc">Clear rent splits, bills, and house rules — documented before move-in day.</div></div></div>
+        </div>
+        <button class="panel-btn-primary" style="margin-top:36px">Find Shared Living Options</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FLEX PAY ══ -->
+<section id="flexpay">
+  <div class="flexpay-abstract">
+    <div class="fp-plane"></div><div class="fp-plane"></div>
+    <div class="fp-plane"></div><div class="fp-plane"></div>
+  </div>
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:0;position:relative;z-index:1">
+      <div><div class="reveal"><span class="chip">Flexible Payments</span></div><h2 class="section-title reveal">More ways to pay.<br>More ways to <em>move.</em></h2></div>
+      <p class="reveal" style="font-size:16px;color:var(--text-muted);line-height:1.75;font-weight:300;padding-bottom:10px">Ownership shouldn't require a lump sum. Synapse structures payment paths that meet you where you are.</p>
+    </div>
+    <div class="flexpay-grid">
+      <div class="fp-crystal reveal"><div class="fp-num">01</div><div class="fp-title">Annual Payments</div><div class="fp-desc">Lock in properties with a single annual commitment. Predictable, widely accepted.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">02</div><div class="fp-title">Installment Plans</div><div class="fp-desc">Break into structured monthly tranches. Move in sooner. Pay over time.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">03</div><div class="fp-title">Developer Schedules</div><div class="fp-desc">Off-plan properties with developer-approved payment milestones. Every naira tracked.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">04</div><div class="fp-title">Flexible Arrangements</div><div class="fp-desc">Non-standard arrangements negotiated through Synapse — with every party protected.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ AGENCY STRIP ══ -->
+<section id="agency-strip">
+  <div class="agency-photo-layer"></div>
+  <div class="agency-dark"></div>
+  <div class="container">
+    <div class="agency-strip-layout">
+      <div>
+        <div class="reveal"><span class="chip">For Agencies and Developers</span></div>
+        <h2 class="agency-title reveal">Agencies don't chase leads on Synapse.<br>Leads <em>arrive.</em></h2>
+        <p class="reveal" style="font-size:14px;color:var(--text-muted);margin-top:16px;max-width:480px;line-height:1.75;font-weight:300">Run your entire pipeline from one place. Every lead captured. Every listing marketed automatically. Every buyer verified before they reach you.</p>
+      </div>
+      <div class="agency-btns reveal-r">
+        <button class="btn-large-brand">Open agency portal</button>
+        <button class="btn-large-ghost">See how it works</button>
+      </div>
+    </div>
+
+    <div class="agency-rows reveal" style="margin-top:48px;position:relative;z-index:1">
+      <div class="feature-item" style="margin-bottom:10px"><div class="fi-icon">📥</div><div><div class="fi-title">Automatic Lead Capture</div><div class="fi-desc">Every inquiry from every channel lands in one pipeline. Nothing gets lost.</div></div></div>
+      <div class="feature-item" style="margin-bottom:10px"><div class="fi-icon">📣</div><div><div class="fi-title">Automated Social Syndication</div><div class="fi-desc">List a property. Synapse generates content and posts it to Instagram, TikTok, and Facebook. No marketing team needed.</div></div></div>
+      <div class="feature-item" style="margin-bottom:10px"><div class="fi-icon">🛡️</div><div><div class="fi-title">Verification Badge</div><div class="fi-desc">Independent identity and CAC verification. Buyers see you as legitimate before they ever reach out.</div></div></div>
+      <div class="feature-item" style="margin-bottom:10px"><div class="fi-icon">💬</div><div><div class="fi-title">Leads Delivered to WhatsApp</div><div class="fi-desc">The moment a buyer shows interest, you get a warm, qualified lead with full context on your phone.</div></div></div>
+      <div class="feature-item"><div class="fi-icon">📍</div><div><div class="fi-title">Proximity Marketing</div><div class="fi-desc">Your listings notify matched buyers when they walk past the property. Catch real intent at the right moment.</div></div></div>
+    </div>
+
+    <div class="agency-cards">
+      <div class="agency-card">
+        <span class="ac-badge builtin">Built-In</span>
+        <div class="ac-icon">📊</div>
+        <div class="ac-title">Agency CRM</div>
+        <div class="ac-desc">Track every listing, lead and verification node. Know exactly where each deal stands — without spreadsheets.</div>
+        <div class="ac-stats">
+          <div class="ac-stat"><div class="ac-stat-val">47</div><div class="ac-stat-label">Listings</div></div>
+          <div class="ac-stat"><div class="ac-stat-val">31</div><div class="ac-stat-label">Verified</div></div>
+          <div class="ac-stat"><div class="ac-stat-val">₦2.4B</div><div class="ac-stat-label">Sales</div></div>
+        </div>
+      </div>
+      <div class="agency-card">
+        <span class="ac-badge new">New</span>
+        <div class="ac-icon">📍</div>
+        <div class="ac-title">Proximity Marketing</div>
+        <div class="ac-desc">Push your listing as a notification to anyone walking past the property. Catch real, local intent the moment it happens.</div>
+        <div class="proximity-notif">
+          <div class="pn-bell">🔔</div>
+          <div>
+            <div class="pn-title">Synapse · Nearby</div>
+            <div class="pn-main">4-Bed Duplex, Lekki · ₦185M</div>
+            <div class="pn-sub">You're 200m away. Tap to view this verified listing.</div>
+          </div>
+          <div class="pn-time">now</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BROWSE ══ -->
+<section id="browse">
+  <div class="browse-photo-hint"></div>
+  <div class="container">
+    <div class="browse-layout">
+      <div class="reveal-l">
+        <span class="chip">Property Discovery</span>
+        <h2 class="section-title">Prefer to <em>browse?</em></h2>
+        <p class="section-body">Search remains available. Toju simply gets you there faster. Filter by location, price, bedrooms, and verification status — or let Toju do it.</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:40px">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">All listings verified before going live</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">Real pricing — no inflated agency markups</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">Schedule viewings directly through Toju</span></div>
+        </div>
+      </div>
+      <div class="browse-window reveal-r">
+        <div class="browse-titlebar">
+          <div class="tb-dot tb-r"></div><div class="tb-dot tb-y"></div><div class="tb-dot tb-g"></div>
+          <div class="tb-search">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Lekki, Lagos · 3 bed · ₦80–₦150m
+          </div>
+        </div>
+        <div class="browse-listings">
+          <div class="b-listing"><div class="b-thumb">🏢</div><div class="b-info"><div class="b-name">Eko Atlantic Apartment</div><div class="b-sub">3 bed · Eko Atlantic City</div><div class="b-tags"><span class="b-tag">New Build</span><span class="b-tag">Sea View</span></div></div><div class="b-price"><div class="b-price-val">₦145m</div><div class="b-verified">✓ Verified</div></div></div>
+          <div class="b-listing"><div class="b-thumb">🏠</div><div class="b-info"><div class="b-name">Lekki Phase 1 Terrace</div><div class="b-sub">3 bed · Lekki Phase 1</div><div class="b-tags"><span class="b-tag">BQ</span><span class="b-tag">Generator</span></div></div><div class="b-price"><div class="b-price-val">₦95m</div><div class="b-verified">✓ Verified</div></div></div>
+          <div class="b-listing"><div class="b-thumb">🌆</div><div class="b-info"><div class="b-name">Ikoyi Penthouse</div><div class="b-sub">3 bed · Old Ikoyi</div><div class="b-tags"><span class="b-tag">Penthouse</span><span class="b-tag">24hr Security</span></div></div><div class="b-price"><div class="b-price-val">₦130m</div><div class="b-verified">✓ Verified</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TESTIMONIALS ══ -->
+<section id="testimonials">
+  <div class="container">
+    <div style="text-align:center;max-width:620px;margin:0 auto">
+      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Real Stories</span></div>
+      <h2 class="section-title reveal">Trusted by Nigerians who demanded <em>better.</em></h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-quote">Toju flagged a government committed route through my plot before I paid. Saved me ₦45M.</div>
+        <div class="testi-person"><div class="testi-avatar">KA</div><div><div class="testi-name">Kemi A.</div><div class="testi-role">First-time buyer, Ibeju-Lekki</div></div></div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">The 7-node score gave me more confidence than two lawyers combined. My diaspora clients love it.</div>
+        <div class="testi-person"><div class="testi-avatar">DO</div><div><div class="testi-name">Dare O.</div><div class="testi-role">Property investor, UK</div></div></div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-quote">I listed on a Monday. By Wednesday I had three qualified leads on WhatsApp. I didn't do anything.</div>
+        <div class="testi-person"><div class="testi-avatar">AT</div><div><div class="testi-name">Amaka T.</div><div class="testi-role">Agency principal, Victoria Island</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FAQ ══ -->
+<section id="faq">
+  <div class="container">
+    <div style="text-align:center"><h2 class="section-title reveal">Questions, <em>answered.</em></h2></div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">Is Synapse free for buyers and renters?<span class="faq-icon">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. Talking to Toju, browsing verified listings, and getting your first trust score are completely free. You only pay when you choose to move forward — and even then, fees are flat and disclosed upfront.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How does the 7-node verification work?<span class="faq-icon">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Every listing goes through seven independent checks: title verification, ground survey, structural assessment, flood risk analysis, neighbourhood intelligence, legal review, and financial analysis. Every node must pass before the listing appears on the platform.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What stops me from being scammed by a fake listing?<span class="faq-icon">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Every property on Synapse is physically verified by a scout before it appears. Every agency is independently verified for identity and registration. And every listing has a timestamped trust score that tells you exactly what was checked and what passed.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">I live abroad — can I still buy through Synapse?<span class="faq-icon">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. Synapse was built with diaspora buyers in mind. Toju advises you remotely, scouts verify properties on the ground, and escrow protects your funds until every condition is met.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How does the agency CRM work?<span class="faq-icon">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Every lead that touches Synapse — from social media, proximity alerts, or direct listings — is automatically captured and delivered to your WhatsApp and your pipeline dashboard. You see every lead, every interaction, and every deal stage in one place.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINAL CTA ══ -->
+<section id="final-cta">
+  <div class="cta-ambient"></div>
+  <div class="cta-dark"></div>
+  <div class="cta-glow"></div>
+  <div class="cta-content container">
+    <div class="reveal"><span class="chip">Get Started</span></div>
+    <h2 class="cta-headline reveal">The infrastructure layer for Nigerian real estate is being built <em>right now.</em></h2>
+    <p class="cta-sub reveal">Whether you are looking for a home, running an agency, or building with us — Synapse is where you start.</p>
+    <div class="cta-btns reveal">
+      <button class="btn-cta-primary">Talk to Toju — it's free</button>
+      <button class="btn-cta-ghost">Partner with us</button>
+    </div>
+    <p class="reveal" style="margin-top:32px;font-size:13px;color:var(--text-dim)">partnerships@synapse.ng</p>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo" style="text-decoration:none;color:var(--text)">
+          <div class="nav-logo-mark">
+            <svg viewBox="0 0 64 78" fill="#15171a" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="0" width="10" height="78" rx="1"/>
+              <rect x="10" y="0" width="44" height="10" rx="1"/>
+              <rect x="44" y="10" width="10" height="17" rx="1"/>
+              <rect x="10" y="17" width="44" height="10" rx="1"/>
+              <rect x="10" y="36" width="44" height="10" rx="1"/>
+              <rect x="46" y="46" width="8" height="22" rx="1"/>
+              <rect x="18" y="46" width="8" height="22" rx="1"/>
+              <rect x="10" y="68" width="44" height="10" rx="1"/>
+            </svg>
+          </div>
+          <span class="nav-logo-word">Synapse</span>
+        </a>
+        <p>The infrastructure layer for Nigerian real estate. Every recommendation backed by verified data, verified agencies, and Toju.</p>
+      </div>
+      <div><div class="footer-col-title">Platform</div><ul class="footer-links"><li><a href="#">Chat With Toju</a></li><li><a href="#">Browse Properties</a></li><li><a href="#">Co-Living</a></li><li><a href="#">Flex Pay</a></li></ul></div>
+      <div><div class="footer-col-title">Agencies</div><ul class="footer-links"><li><a href="#">List Properties</a></li><li><a href="#">Agency CRM</a></li><li><a href="#">Proximity Marketing</a></li><li><a href="#">Book Demo</a></li></ul></div>
+      <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="#">About Synapse</a></li><li><a href="#">Verification</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Synapse. Lagos, Nigeria.</span>
+      <span>partnerships@synapse.ng</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// ─── NAV solid on scroll ───
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('solid', window.scrollY > 10);
+});
+
+// ─── HERO THREE.JS — Lagos city lights bokeh behind crystal ───
+(function() {
+  const canvas = document.getElementById('hero-three');
+  const hero = document.getElementById('hero');
+  const W = hero.offsetWidth || window.innerWidth;
+  const H = hero.offsetHeight || window.innerHeight;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setSize(W, H, false);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(65, W / H, 0.1, 100);
+  camera.position.z = 5;
+
+  // Lagos city lights — warm golden/amber bokeh point field
+  const LIGHTS = 2200;
+  const positions = new Float32Array(LIGHTS * 3);
+  const colors = new Float32Array(LIGHTS * 3);
+  const sizes = new Float32Array(LIGHTS);
+
+  // Warm Lagos palette: amber, gold, soft white, cool blue for water reflections
+  const palette = [
+    [1.0, 0.78, 0.3],   // warm gold
+    [1.0, 0.65, 0.2],   // amber
+    [1.0, 0.88, 0.65],  // soft warm white
+    [0.9, 0.9, 1.0],    // cool white
+    [1.0, 0.48, 0.17],  // brand orange
+    [0.8, 0.6, 0.3],    // dim gold
+  ];
+
+  for (let i = 0; i < LIGHTS; i++) {
+    // Cluster lights toward center-bottom (city horizon)
+    const spread = Math.random() > 0.7 ? 1.5 : 0.5;
+    positions[i * 3]     = (Math.random() - 0.5) * 14 * spread;
+    positions[i * 3 + 1] = (Math.random() - 0.7) * 8;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
+    sizes[i] = Math.random() > 0.85 ? Math.random() * 3 + 1.5 : Math.random() * 1.2 + 0.3;
+
+    const c = palette[Math.floor(Math.random() * palette.length)];
+    colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2];
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.022,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.75,
+    sizeAttenuation: true,
+    depthWrite: false,
+  });
+
+  const lights = new THREE.Points(geo, mat);
+  scene.add(lights);
+
+  // Subtle city horizon glow — warm amber fog at bottom
+  const glowGeo = new THREE.PlaneGeometry(16, 4);
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0xFF7B2C,
+    transparent: true,
+    opacity: 0.03,
+    depthWrite: false,
+  });
+  const glowPlane = new THREE.Mesh(glowGeo, glowMat);
+  glowPlane.position.set(0, -3.5, -1);
+  scene.add(glowPlane);
+
+  let mouse = { x: 0, y: 0 };
+  document.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth - 0.5) * 0.3;
+    mouse.y = -(e.clientY / window.innerHeight - 0.5) * 0.2;
+  });
+
+  window.addEventListener('resize', () => {
+    const nW = hero.offsetWidth, nH = hero.offsetHeight;
+    camera.aspect = nW / nH;
+    camera.updateProjectionMatrix();
+    renderer.setSize(nW, nH, false);
+  });
+
+  let frame = 0;
+  function tick() {
+    frame++;
+    requestAnimationFrame(tick);
+    // Very slow drift — city at rest, not a disco
+    lights.rotation.y += 0.00008 + mouse.x * 0.0008;
+    lights.rotation.x += mouse.y * 0.0005;
+    lights.position.y = Math.sin(frame * 0.003) * 0.05;
+    renderer.render(scene, camera);
+  }
+  tick();
+})();
+
+// ─── GSAP hero entrance ───
+gsap.timeline({ delay: 0.15 })
+  .from('.hero-crystal-panel', { opacity: 0, scale: 0.94, y: 40, duration: 1.4, ease: 'power3.out' })
+  .from('.panel-eyebrow', { opacity: 0, y: 16, duration: 0.7, ease: 'power3.out' }, '-=0.8')
+  .from('.panel-headline', { opacity: 0, y: 24, duration: 0.9, ease: 'power3.out' }, '-=0.6')
+  .from('.panel-subtext', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' }, '-=0.5')
+  .from('.panel-ctas', { opacity: 0, y: 14, duration: 0.6, ease: 'power3.out' }, '-=0.4')
+  .from('.panel-toju-node', { opacity: 0, x: 10, duration: 0.5 }, '-=0.8')
+  .from('.panel-stat-bar', { opacity: 0, duration: 0.5 }, '-=0.5')
+  .from('.hero-float-left', { opacity: 0, x: -28, duration: 0.8, ease: 'power3.out' }, '-=1.0')
+  .from('.hero-float-right', { opacity: 0, x: 28, duration: 0.8, ease: 'power3.out' }, '-=0.8')
+  .from('.hero-scroll-indicator', { opacity: 0, duration: 0.5 }, '-=0.3');
+
+// ─── GSAP scroll reveals ───
+document.querySelectorAll('.reveal').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, y: 48 }, {
+    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+document.querySelectorAll('.reveal-l').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: -56 }, {
+    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+document.querySelectorAll('.reveal-r').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: 56 }, {
+    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+
+// Stagger persona list rows
+gsap.fromTo('.persona-row', { opacity: 0, x: -36 }, {
+  opacity: 1, x: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
+  scrollTrigger: { trigger: '.persona-list', start: 'top 85%' }
+});
+gsap.fromTo('.roadmap-step', { opacity: 0, x: 40 }, {
+  opacity: 1, x: 0, duration: 0.8, stagger: 0.16, ease: 'power3.out',
+  scrollTrigger: { trigger: '.roadmap-track', start: 'top 82%' }
+});
+gsap.fromTo('.agency-card', { opacity: 0, y: 40 }, {
+  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
+  scrollTrigger: { trigger: '.agency-cards', start: 'top 85%' }
+});
+gsap.fromTo('.why-crystal', { opacity: 0, y: 44 }, {
+  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
+  scrollTrigger: { trigger: '.why-grid', start: 'top 85%' }
+});
+gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
+  opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
+  scrollTrigger: { trigger: '.flexpay-grid', start: 'top 85%' }
+});
+
+// Crystal panel parallax
+gsap.to('.hero-crystal-panel', {
+  y: -60, ease: 'none',
+  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1.5 }
+});
+gsap.to('.hero-float-left', {
+  y: -40, ease: 'none',
+  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2 }
+});
+gsap.to('.hero-float-right', {
+  y: -30, ease: 'none',
+  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2.5 }
+});
+
+// ─── DEMO CHAT SEQUENCE ───
+(function() {
+  const msgs = [
+    { t: 'user', s: 'Bola', text: 'I want to buy a house.' },
+    { t: 'toju', s: 'Toju', text: 'Congratulations. Before we look at properties, I\'d like to understand your goal.', list: ['A home to live in', 'An investment property', 'A mix of both'] },
+    { t: 'user', s: 'Bola', text: 'A mix of both.' },
+    { t: 'toju', s: 'Toju', text: 'That\'s helpful — those goals often lead to different decisions. What\'s your target budget?' },
+    { t: 'user', s: 'Bola', text: '₦120 million.' },
+    { t: 'toju', s: 'Toju', text: 'At that budget you could afford properties across several parts of Lagos. But the best option depends on what matters most to you.', list: ['Rental income', 'Capital appreciation', 'Lifestyle and convenience'] },
+    { t: 'user', s: 'Bola', text: 'Capital appreciation.' },
+    { t: 'toju', s: 'Toju', text: 'In that case I\'d focus less on finished luxury and more on areas where demand is growing. I\'ve found two opportunities listed below market for their locations.', cards: [
+      { icon: '🏢', name: 'Lekki Phase 2 Apartment', meta: '3 bed · New Build · Lekki Ph2', badge: '↓ 8% Below Market', price: '₦98m' },
+      { icon: '🌆', name: 'Ojodu Berger Duplex', meta: '4 bed · Corner Piece · Ojodu', badge: 'High Appreciation Zone', price: '₦105m' }
+    ]}
+  ];
+
+  const container = document.getElementById('demo-msgs');
+  let idx = 0, started = false;
+
+  function buildMsg(m) {
+    const el = document.createElement('div');
+    el.className = `msg msg-${m.t}`;
+    let inner = `<div class="msg-sender">${m.s}</div><div class="bubble">${m.text}`;
+    if (m.list) { inner += `<ul>`; m.list.forEach(i => inner += `<li>${i}</li>`); inner += `</ul>`; }
+    if (m.cards) {
+      inner += `<div class="prop-cards">`;
+      m.cards.forEach(c => {
+        inner += `<div class="prop-card"><div class="prop-thumb">${c.icon}</div><div class="prop-info"><div class="prop-name">${c.name}</div><div class="prop-meta">${c.meta}</div><span class="prop-badge">${c.badge}</span></div><div class="prop-price">${c.price}</div></div>`;
+      });
+      inner += `</div>`;
+    }
+    inner += `</div>`;
+    el.innerHTML = inner;
+    return el;
+  }
+
+  function next() {
+    if (idx >= msgs.length) return;
+    const m = msgs[idx++];
+    if (m.t === 'toju') {
+      const typing = document.createElement('div');
+      typing.className = 'msg msg-toju';
+      const dots = document.createElement('div');
+      dots.className = 'typing-dots show';
+      dots.innerHTML = '<span></span><span></span><span></span>';
+      typing.appendChild(dots);
+      container.appendChild(typing);
+      container.scrollTop = container.scrollHeight;
+      setTimeout(() => {
+        typing.remove();
+        const el = buildMsg(m);
+        container.appendChild(el);
+        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+        container.scrollTop = container.scrollHeight;
+        setTimeout(next, m.cards ? 2400 : 1800);
+      }, 1100);
+    } else {
+      const el = buildMsg(m);
+      container.appendChild(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+      container.scrollTop = container.scrollHeight;
+      setTimeout(next, 900);
+    }
+  }
+
+  ScrollTrigger.create({
+    trigger: '#demo',
+    start: 'top 72%',
+    once: true,
+    onEnter: () => { if (!started) { started = true; setTimeout(next, 500); } }
+  });
+})();
+
+// ─── FAQ accordion — one open at a time ───
+document.querySelectorAll('.faq-item').forEach(item => {
+  const btn = item.querySelector('.faq-q');
+  const ans = item.querySelector('.faq-a');
+  btn.addEventListener('click', () => {
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(o => {
+      o.classList.remove('open');
+      o.querySelector('.faq-a').style.maxHeight = '0px';
+    });
+    if (!isOpen) {
+      item.classList.add('open');
+      ans.style.maxHeight = ans.scrollHeight + 'px';
+    }
+  });
+});
+</script>
+</body>
+</html>
