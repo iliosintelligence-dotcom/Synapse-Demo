@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
@@ -204,148 +203,155 @@ nav.solid {
   transform: translateY(-1px);
 }
 
-/* ─── HERO ─── */
+/* ─── HERO — clean editorial split ─── */
 #hero {
   position: relative;
   width: 100%;
-  height: 100vh;
-  min-height: 820px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Three.js scene fills the whole hero */
-#hero-three {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-/* Hero local image fallback layer */
-.hero-photo {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: url('images/hero.jpg') center 40%/cover no-repeat;
-  opacity: 0.22;
-  filter: saturate(0.65) brightness(1.05);
-}
-
-/* The crystal panel — Toju conversation lives inside this */
-.hero-crystal-panel {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) perspective(1200px) rotateY(-3deg) rotateX(1.5deg);
-  width: min(680px, 72vw);
-  height: min(520px, 62vh);
-  z-index: 5;
-
-  background: linear-gradient(
-    135deg,
-    rgba(15,18,24,0.035) 0%,
-    rgba(15,18,24,0.018) 50%,
-    rgba(15,18,24,0.028) 100%
-  );
-  border: 1px solid rgba(15,18,24,0.12);
-  border-radius: 28px;
-
-  /* Optical depth */
-  box-shadow:
-    inset 0 1px 0 rgba(15,18,24,0.22),
-    inset 0 -1px 0 rgba(20,26,38,0.15),
-    inset 1px 0 0 rgba(15,18,24,0.08),
-    inset -1px 0 0 rgba(15,18,24,0.04),
-    0 0 0 0.5px rgba(15,18,24,0.06),
-    0 40px 120px rgba(20,26,38,0.21),
-    0 0 200px rgba(255,123,44,0.06),
-    0 0 60px rgba(255,123,44,0.04);
-
-  backdrop-filter: blur(2px) brightness(1.06) saturate(1.2) contrast(0.96);
-  -webkit-backdrop-filter: blur(2px) brightness(1.06) saturate(1.2) contrast(0.96);
-  overflow: hidden;
-}
-
-/* Chromatic aberration at panel edges */
-.hero-crystal-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 27px;
-  background:
-    radial-gradient(ellipse at 0% 0%, rgba(255,60,40,0.08) 0%, transparent 35%),
-    radial-gradient(ellipse at 100% 0%, rgba(40,80,255,0.08) 0%, transparent 35%),
-    radial-gradient(ellipse at 50% 100%, rgba(255,180,40,0.04) 0%, transparent 40%);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Top edge light transmission */
-.hero-crystal-panel::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent,
-    rgba(15,18,24,0.5) 40%,
-    rgba(15,18,24,0.7) 50%,
-    rgba(15,18,24,0.5) 60%,
-    transparent
-  );
-  z-index: 10;
-}
-
-/* The conversation inside the panel */
-.panel-conversation {
-  position: absolute;
-  inset: 0;
-  padding: 36px 40px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  z-index: 5;
+  padding: 130px 0 0;
+  background: var(--bg);
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 72px;
+  align-items: center;
 }
 
-.panel-eyebrow {
-  font-size: 10px;
+.hero-eyebrow {
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--brand);
-  margin-bottom: 28px;
+  margin-bottom: 26px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
-.panel-eyebrow::before {
+.hero-eyebrow::before {
   content: '';
-  width: 20px; height: 1px;
+  width: 24px; height: 1px;
   background: var(--brand);
 }
 
-.panel-headline {
+.hero-headline {
   font-family: var(--f-serif);
-  font-size: clamp(32px, 4.5vw, 56px);
+  font-size: clamp(38px, 4.6vw, 64px);
   font-weight: 200;
-  letter-spacing: -0.04em;
-  line-height: 1.06;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
   color: var(--text);
-  margin-bottom: 20px;
+  margin-bottom: 26px;
 }
-.panel-headline em {
+.hero-headline em { font-style: italic; }
+
+.hero-sub {
+  font-size: 16.5px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  max-width: 480px;
+  font-weight: 300;
+  margin-bottom: 18px;
+}
+.hero-toju-line {
+  font-size: 14px;
   font-style: italic;
-  color: rgba(15,18,24,0.9);
+  color: var(--text-dim);
+  max-width: 460px;
+  line-height: 1.65;
+  margin-bottom: 36px;
+  padding-left: 16px;
+  border-left: 2px solid rgba(255,123,44,0.35);
 }
 
-.panel-subtext {
-  font-size: 14px;
+.hero-ctas { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.hero-trust {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.hero-trust span { display: flex; align-items: center; gap: 5px; }
+.hero-trust b { color: var(--brand); font-weight: 600; }
+
+/* Right — sharp, full-colour image. No haze, no overlay wash. */
+.hero-media {
+  position: relative;
+  height: min(620px, 68vh);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(20,26,38,0.18), 0 4px 16px rgba(20,26,38,0.08);
+}
+.hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* One quiet glass chip — Toju speaking, not a card cluster */
+.hero-toju-chip {
+  position: absolute;
+  left: 18px; right: 18px; bottom: 18px;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  box-shadow: 0 12px 36px rgba(20,26,38,0.16);
+}
+.hero-chip-orb {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #FF9B4A, #D85A10);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(255,123,44,0.4);
+}
+.hero-chip-name {
+  font-size: 11px; font-weight: 600; color: var(--brand);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 2px;
+}
+.hero-chip-msg { font-size: 13px; color: var(--text); line-height: 1.45; font-weight: 400; }
+
+/* Stats — a typographic strip, not cards */
+.hero-statline {
+  margin-top: 72px;
+  border-top: 1px solid rgba(15,18,24,0.09);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.hero-stat {
+  padding: 28px 8px 36px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.hero-stat + .hero-stat { border-left: 1px solid rgba(15,18,24,0.09); padding-left: 36px; }
+.hero-stat-val {
+  font-family: var(--f-serif);
+  font-size: clamp(30px, 3vw, 44px);
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  color: var(--brand);
+  line-height: 1;
+}
+.hero-stat-label {
+  font-size: 12.5px;
   color: var(--text-muted);
-  line-height: 1.7;
-  max-width: 420px;
-  font-weight: 300;
-  margin-bottom: 36px;
+  line-height: 1.45;
+  max-width: 170px;
 }
 
 .panel-ctas {
@@ -398,18 +404,6 @@ nav.solid {
   transform: translateY(-2px);
 }
 
-/* Toju node indicator inside panel */
-.panel-toju-node {
-  position: absolute;
-  top: 28px; right: 36px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  color: var(--brand);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
 .toju-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
@@ -420,120 +414,6 @@ nav.solid {
 @keyframes breathe {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.8); }
-}
-
-/* Panel bottom stat bar */
-.panel-stat-bar {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 52px;
-  background: rgba(20,26,38,0.09);
-  border-top: 1px solid rgba(15,18,24,0.07);
-  display: flex;
-  align-items: center;
-  padding: 0 36px;
-  gap: 32px;
-}
-.panel-stat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.panel-stat-val {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.02em;
-}
-.panel-stat-val span { color: var(--brand); }
-.panel-stat-label {
-  font-size: 11px;
-  color: var(--text-dim);
-}
-.panel-stat-sep { width: 1px; height: 20px; background: rgba(15,18,24,0.08); }
-
-/* Secondary floating crystal panels */
-.hero-float-left {
-  position: absolute;
-  left: max(24px, calc(50% - 480px));
-  top: 50%;
-  transform: translateY(-50%) perspective(800px) rotateY(8deg);
-  z-index: 4;
-  width: 200px;
-}
-.hero-float-right {
-  position: absolute;
-  right: max(24px, calc(50% - 480px));
-  top: 50%;
-  transform: translateY(-50%) perspective(800px) rotateY(-8deg);
-  z-index: 4;
-  width: 180px;
-}
-.float-card {
-  background: rgba(15,18,24,0.022);
-  border: 1px solid rgba(15,18,24,0.08);
-  border-radius: 18px;
-  padding: 20px;
-  margin-bottom: 12px;
-  box-shadow:
-    inset 0 1px 0 rgba(15,18,24,0.15),
-    0 20px 48px rgba(20,26,38,0.15),
-    0 0 80px rgba(255,123,44,0.03);
-  backdrop-filter: blur(1.5px);
-  -webkit-backdrop-filter: blur(1.5px);
-}
-.float-card-val {
-  font-family: var(--f-serif);
-  font-size: 28px;
-  font-weight: 200;
-  color: var(--text);
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-.float-card-val span { color: var(--brand); }
-.float-card-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-top: 6px;
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-/* scroll tell */
-.hero-scroll-indicator {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-dim);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.scroll-chevron {
-  width: 1px;
-  height: 36px;
-  background: linear-gradient(to bottom, transparent, rgba(255,123,44,0.5));
-  position: relative;
-  overflow: hidden;
-}
-.scroll-chevron::after {
-  content: '';
-  position: absolute;
-  top: -100%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255,123,44,0.8);
-  animation: scrollfall 2s ease-in-out infinite;
-}
-@keyframes scrollfall {
-  0% { top: -100%; }
-  100% { top: 100%; }
 }
 
 /* ─── SECTION COMMONS ─── */
@@ -1715,7 +1595,10 @@ footer {
   .testi-grid { grid-template-columns: 1fr; }
   .personas-grid { grid-template-columns: repeat(2, 1fr); }
   .agency-strip-layout { grid-template-columns: 1fr; }
-  .hero-float-left, .hero-float-right { display: none; }
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero-media { height: 340px; }
+  .hero-statline { grid-template-columns: 1fr; }
+  .hero-stat + .hero-stat { border-left: none; padding-left: 8px; border-top: 1px solid rgba(15,18,24,0.09); }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 </style>
@@ -1754,88 +1637,64 @@ footer {
 
 <!-- ══ HERO ══ -->
 <section id="hero">
-  <canvas id="hero-three"></canvas>
-  <div class="hero-photo"></div>
-
-  <!-- Left floating crystal panels -->
-  <div class="hero-float-left">
-    <div class="float-card">
-      <div class="float-card-val">₦<span>2.4B+</span></div>
-      <div class="float-card-label">Verified on platform</div>
-    </div>
-    <div class="float-card">
-      <div class="float-card-val"><span>3</span>min</div>
-      <div class="float-card-label">Avg. time to first match</div>
-    </div>
-  </div>
-
-  <!-- The main crystal panel — Toju lives inside here -->
-  <div class="hero-crystal-panel" id="hero-panel">
-    <div class="panel-toju-node">
-      <div class="toju-dot"></div>
-      Toju · Active
-    </div>
-
-    <div class="panel-conversation">
-      <div class="panel-eyebrow">Synapse · 2026</div>
-      <h1 class="panel-headline" style="font-size:clamp(26px,3.4vw,42px)">
-        Nigeria's real estate market is one of the largest asset classes in the <em>country.</em>
-      </h1>
-      <p class="panel-subtext">
-        The buyers are there. The agencies are there. The properties are there.
-        What's missing is the infrastructure that connects them efficiently, safely, and at scale.
-      </p>
-      <p style="font-size:12.5px;font-style:italic;color:var(--text-dim);max-width:430px;margin:-22px 0 30px;line-height:1.6">
-        Meet Toju — Synapse's AI property consultant. He doesn't just find properties.
-        He advises, recommends, and guides you to the best decision for your life.
-      </p>
-      <div class="panel-ctas">
-        <button class="panel-btn-primary">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Talk to Toju — it's free
-        </button>
-        <button class="panel-btn-secondary">List with Synapse</button>
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Left — editorial typography -->
+      <div class="hero-copy">
+        <div class="hero-eyebrow">Synapse · 2026</div>
+        <h1 class="hero-headline">
+          Nigeria's real estate market is one of the largest asset classes in the <em>country.</em>
+        </h1>
+        <p class="hero-sub">
+          The buyers are there. The agencies are there. The properties are there.
+          What's missing is the infrastructure that connects them efficiently, safely, and at scale.
+        </p>
+        <p class="hero-toju-line">
+          Meet Toju — Synapse's AI property consultant. He doesn't just find properties.
+          He advises, recommends, and guides you to the best decision for your life.
+        </p>
+        <div class="hero-ctas">
+          <button class="panel-btn-primary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Talk to Toju — it's free
+          </button>
+          <button class="panel-btn-secondary">List with Synapse</button>
+        </div>
+        <div class="hero-trust">
+          <span><b>✓</b> No registration required</span>
+          <span><b>✓</b> Every listing independently verified</span>
+          <span><b>✓</b> Free for buyers &amp; renters</span>
+        </div>
       </div>
-      <div style="margin-top:18px;font-size:11px;color:var(--text-dim);display:flex;gap:14px;flex-wrap:wrap">
-        <span>✓ No registration required</span>
-        <span>✓ Every listing independently verified</span>
-        <span>✓ Free for buyers &amp; renters</span>
+
+      <!-- Right — sharp Lagos photography, one Toju chip -->
+      <div class="hero-media">
+        <img src="images/hero.jpg" alt="Lekki–Ikoyi Link Bridge, Lagos" />
+        <div class="hero-toju-chip">
+          <div class="hero-chip-orb">T</div>
+          <div>
+            <div class="hero-chip-name"><span class="toju-dot"></span> Toju · Active now</div>
+            <div class="hero-chip-msg">I found 2 verified listings below market in Lekki. Want the reasoning?</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="panel-stat-bar">
-      <div class="panel-stat">
-        <div class="panel-stat-val"><span>₦21T</span></div>
-        <div class="panel-stat-label">Nigerian market value</div>
+    <!-- Stats — typographic strip, no cards -->
+    <div class="hero-statline">
+      <div class="hero-stat">
+        <div class="hero-stat-val">₦21T</div>
+        <div class="hero-stat-label">Total Nigerian real estate market value</div>
       </div>
-      <div class="panel-stat-sep"></div>
-      <div class="panel-stat">
-        <div class="panel-stat-val"><span>94.2</span></div>
-        <div class="panel-stat-label">Avg. trust score / 100</div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">94.2</div>
+        <div class="hero-stat-label">Average Synapse trust score out of 100</div>
       </div>
-      <div class="panel-stat-sep"></div>
-      <div class="panel-stat">
-        <div class="panel-stat-val"><span>&lt;48h</span></div>
-        <div class="panel-stat-label">Brief to verified report</div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">&lt;48h</div>
+        <div class="hero-stat-label">Scout turnaround from brief to verified report</div>
       </div>
     </div>
-  </div>
-
-  <!-- Right floating crystals -->
-  <div class="hero-float-right">
-    <div class="float-card">
-      <div class="float-card-val"><span>98</span>%</div>
-      <div class="float-card-label">Agency verification rate</div>
-    </div>
-    <div class="float-card">
-      <div class="float-card-val"><span>Lagos</span></div>
-      <div class="float-card-label">Nigeria's largest market covered</div>
-    </div>
-  </div>
-
-  <div class="hero-scroll-indicator">
-    <div class="scroll-chevron"></div>
-    Scroll
   </div>
 </section>
 
@@ -2240,118 +2099,17 @@ window.addEventListener('scroll', () => {
   document.getElementById('navbar').classList.toggle('solid', window.scrollY > 10);
 });
 
-// ─── HERO THREE.JS — Lagos city lights bokeh behind crystal ───
-(function() {
-  const canvas = document.getElementById('hero-three');
-  const hero = document.getElementById('hero');
-  const W = hero.offsetWidth || window.innerWidth;
-  const H = hero.offsetHeight || window.innerHeight;
-
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-  renderer.setSize(W, H, false);
-  renderer.setClearColor(0x000000, 0);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(65, W / H, 0.1, 100);
-  camera.position.z = 5;
-
-  // Lagos city lights — warm golden/amber bokeh point field
-  const LIGHTS = 2200;
-  const positions = new Float32Array(LIGHTS * 3);
-  const colors = new Float32Array(LIGHTS * 3);
-  const sizes = new Float32Array(LIGHTS);
-
-  // Warm Lagos palette: amber, gold, soft white, cool blue for water reflections
-  const palette = [
-    [1.0, 0.78, 0.3],   // warm gold
-    [1.0, 0.65, 0.2],   // amber
-    [1.0, 0.88, 0.65],  // soft warm white
-    [0.9, 0.9, 1.0],    // cool white
-    [1.0, 0.48, 0.17],  // brand orange
-    [0.8, 0.6, 0.3],    // dim gold
-  ];
-
-  for (let i = 0; i < LIGHTS; i++) {
-    // Cluster lights toward center-bottom (city horizon)
-    const spread = Math.random() > 0.7 ? 1.5 : 0.5;
-    positions[i * 3]     = (Math.random() - 0.5) * 14 * spread;
-    positions[i * 3 + 1] = (Math.random() - 0.7) * 8;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
-    sizes[i] = Math.random() > 0.85 ? Math.random() * 3 + 1.5 : Math.random() * 1.2 + 0.3;
-
-    const c = palette[Math.floor(Math.random() * palette.length)];
-    colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2];
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-  const mat = new THREE.PointsMaterial({
-    size: 0.022,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.75,
-    sizeAttenuation: true,
-    depthWrite: false,
-  });
-
-  const lights = new THREE.Points(geo, mat);
-  scene.add(lights);
-
-  // Subtle city horizon glow — warm amber fog at bottom
-  const glowGeo = new THREE.PlaneGeometry(16, 4);
-  const glowMat = new THREE.MeshBasicMaterial({
-    color: 0xFF7B2C,
-    transparent: true,
-    opacity: 0.03,
-    depthWrite: false,
-  });
-  const glowPlane = new THREE.Mesh(glowGeo, glowMat);
-  glowPlane.position.set(0, -3.5, -1);
-  scene.add(glowPlane);
-
-  let mouse = { x: 0, y: 0 };
-  document.addEventListener('mousemove', e => {
-    mouse.x = (e.clientX / window.innerWidth - 0.5) * 0.3;
-    mouse.y = -(e.clientY / window.innerHeight - 0.5) * 0.2;
-  });
-
-  window.addEventListener('resize', () => {
-    const nW = hero.offsetWidth, nH = hero.offsetHeight;
-    camera.aspect = nW / nH;
-    camera.updateProjectionMatrix();
-    renderer.setSize(nW, nH, false);
-  });
-
-  let frame = 0;
-  function tick() {
-    frame++;
-    requestAnimationFrame(tick);
-    // Very slow drift — city at rest, not a disco
-    lights.rotation.y += 0.00008 + mouse.x * 0.0008;
-    lights.rotation.x += mouse.y * 0.0005;
-    lights.position.y = Math.sin(frame * 0.003) * 0.05;
-    renderer.render(scene, camera);
-  }
-  tick();
-})();
-
 // ─── GSAP hero entrance ───
-gsap.timeline({ delay: 0.15 })
-  .from('.hero-crystal-panel', { opacity: 0, scale: 0.94, y: 40, duration: 1.4, ease: 'power3.out' })
-  .from('.panel-eyebrow', { opacity: 0, y: 16, duration: 0.7, ease: 'power3.out' }, '-=0.8')
-  .from('.panel-headline', { opacity: 0, y: 24, duration: 0.9, ease: 'power3.out' }, '-=0.6')
-  .from('.panel-subtext', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' }, '-=0.5')
-  .from('.panel-ctas', { opacity: 0, y: 14, duration: 0.6, ease: 'power3.out' }, '-=0.4')
-  .from('.panel-toju-node', { opacity: 0, x: 10, duration: 0.5 }, '-=0.8')
-  .from('.panel-stat-bar', { opacity: 0, duration: 0.5 }, '-=0.5')
-  .from('.hero-float-left', { opacity: 0, x: -28, duration: 0.8, ease: 'power3.out' }, '-=1.0')
-  .from('.hero-float-right', { opacity: 0, x: 28, duration: 0.8, ease: 'power3.out' }, '-=0.8')
-  .from('.hero-scroll-indicator', { opacity: 0, duration: 0.5 }, '-=0.3');
-
+gsap.timeline({ delay: 0.1 })
+  .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
+  .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
+  .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
+  .from('.hero-toju-line', { opacity: 0, y: 18, duration: 0.6, ease: 'power3.out' }, '-=0.45')
+  .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
+  .from('.hero-trust', { opacity: 0, duration: 0.5 }, '-=0.3')
+  .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
+  .from('.hero-toju-chip', { opacity: 0, y: 24, duration: 0.7, ease: 'power3.out' }, '-=0.5')
+  .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
 // ─── GSAP scroll reveals ───
 document.querySelectorAll('.reveal').forEach(el => {
   gsap.fromTo(el, { opacity: 0, y: 48 }, {
@@ -2394,20 +2152,11 @@ gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
   scrollTrigger: { trigger: '.flexpay-grid', start: 'top 85%' }
 });
 
-// Crystal panel parallax
-gsap.to('.hero-crystal-panel', {
-  y: -60, ease: 'none',
+// Hero image parallax — subtle
+gsap.to('.hero-media img', {
+  y: 40, ease: 'none',
   scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1.5 }
 });
-gsap.to('.hero-float-left', {
-  y: -40, ease: 'none',
-  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2 }
-});
-gsap.to('.hero-float-right', {
-  y: -30, ease: 'none',
-  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 2.5 }
-});
-
 // ─── DEMO CHAT SEQUENCE ───
 (function() {
   const msgs = [
