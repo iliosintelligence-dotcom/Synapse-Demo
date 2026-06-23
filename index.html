@@ -2152,6 +2152,31 @@ gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
   scrollTrigger: { trigger: '.flexpay-grid', start: 'top 85%' }
 });
 
+// ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
+// Guarantees content is never left invisible if ScrollTrigger cannot detect
+// the scroller (e.g. embedded preview/iframe contexts) — which would leave
+// the lower page blank. Uses native scroll events + getBoundingClientRect,
+// which work everywhere, to reveal each element once it enters the viewport.
+// No-op when ScrollTrigger already revealed an element (opacity already 1).
+(function () {
+  var sel = '.reveal, .reveal-l, .reveal-r, .persona-row, .roadmap-step, .agency-card, .why-crystal, .fp-crystal';
+  function revealInView() {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    document.querySelectorAll(sel).forEach(function (el) {
+      if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < vh * 0.92 && r.bottom > 0) {
+        gsap.to(el, { opacity: 1, x: 0, y: 0, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+      }
+    });
+  }
+  window.addEventListener('scroll', revealInView, { passive: true });
+  window.addEventListener('resize', revealInView);
+  window.addEventListener('load', revealInView);
+  [100, 600, 1500, 3000].forEach(function (t) { setTimeout(revealInView, t); });
+  revealInView();
+})();
+
 // Hero image parallax — subtle
 gsap.to('.hero-media img', {
   y: 40, ease: 'none',
