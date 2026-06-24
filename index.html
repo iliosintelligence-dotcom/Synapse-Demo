@@ -2271,6 +2271,47 @@ document.querySelectorAll('.faq-item').forEach(item => {
     }
   });
 });
+
+// ─── Wire the CTA buttons to the application ───
+// The CTAs open the actual app screens (clickable browser prototypes of the
+// real @synapse mobile/dashboard pages, served from /app/*.html). Marketing
+// sections (Why Synapse, Co-Living) stay as in-page scroll anchors.
+(function () {
+  // Where each call-to-action leads, matched by button text.
+  var routes = [
+    { match: /talk to toju|chat with toju|start your conversation|start talking to toju|see toju|log in/i, target: 'app/toju.html' },
+    { match: /browse/i, target: 'app/browse.html' },
+    { match: /list with synapse|agency portal|partner|book a demo|see how it works|for agencies/i, target: 'app/agency.html' },
+    { match: /shared living|co-?living/i, scroll: '#coliving' },
+  ];
+  // CTA buttons only — never the FAQ accordion buttons (.faq-q).
+  var ctas = document.querySelectorAll(
+    '.btn-brand, .btn-ghost, .panel-btn-primary, .panel-btn-secondary, ' +
+    '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
+  );
+  ctas.forEach(function (btn) {
+    var label = (btn.textContent || '').trim();
+    var route = routes.find(function (r) { return r.match.test(label); });
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function () {
+      if (route && route.target) {
+        window.location.href = route.target;
+      } else if (route && route.scroll) {
+        var el = document.querySelector(route.scroll);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.location.href = 'app/toju.html';
+      }
+    });
+  });
+
+  // Nav items that map directly to app screens jump straight into the app.
+  var navMap = { 'See Toju': 'app/toju.html', 'Browse': 'app/browse.html', 'For Agencies': 'app/agency.html' };
+  document.querySelectorAll('.nav-links a').forEach(function (a) {
+    var dest = navMap[(a.textContent || '').trim()];
+    if (dest) a.setAttribute('href', dest);
+  });
+})();
 </script>
 </body>
 </html>
