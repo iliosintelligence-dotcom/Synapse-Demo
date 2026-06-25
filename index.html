@@ -203,8 +203,41 @@ nav.solid {
   transform: translateY(-1px);
 }
 
-/* ─── HERO — clean editorial split ─── */
-#hero {
+/* Audience segmented toggle — the core of the nav */
+.aud-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(15,18,24,0.05);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+}
+.aud-seg {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  white-space: nowrap;
+}
+.aud-seg:hover { color: var(--text); }
+.aud-seg.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(20,26,38,0.12), 0 1px 0 rgba(255,255,255,0.6) inset;
+}
+
+/* Toggling which audience's sections are shown */
+.aud-hidden { display: none !important; }
+
+/* ─── HERO — clean editorial split (one per audience) ─── */
+.hero-section {
   position: relative;
   width: 100%;
   min-height: 100vh;
@@ -1586,8 +1619,12 @@ footer {
   .agency-cards { grid-template-columns: 1fr; }
 }
 @media (max-width: 880px) {
-  nav { padding: 0 24px; }
-  .nav-links { display: none; }
+  nav { padding: 0 16px; gap: 10px; }
+  /* keep the audience toggle (the core control); tighten it + drop the
+     secondary nav button to fit small screens */
+  .aud-seg { padding: 7px 13px; font-size: 12px; }
+  #nav-secondary { display: none; }
+  .nav-logo-word { display: none; }
   .container { padding: 0 24px; }
   section { padding: 80px 0; }
   .demo-grid, .coliving-layout, .browse-layout { grid-template-columns: 1fr; gap: 40px; }
@@ -1622,84 +1659,146 @@ footer {
     </div>
     <span class="nav-logo-word">Synapse</span>
   </a>
-  <ul class="nav-links">
-    <li><a href="#demo">See Toju</a></li>
-    <li><a href="#why">Why Synapse</a></li>
-    <li><a href="#coliving">Co-Living</a></li>
-    <li><a href="#agency-strip">For Agencies</a></li>
-    <li><a href="#browse">Browse</a></li>
-  </ul>
+  <div class="aud-toggle" role="tablist" aria-label="Audience">
+    <button class="aud-seg active" data-aud-btn="customer" role="tab">For Customers</button>
+    <button class="aud-seg" data-aud-btn="agency" role="tab">For Agencies</button>
+  </div>
   <div class="nav-actions">
-    <button class="btn-ghost">Log in</button>
-    <button class="btn-brand">Chat With Toju</button>
+    <button class="btn-ghost" id="nav-secondary">Browse</button>
+    <button class="btn-brand" id="nav-primary">Talk to Toju</button>
   </div>
 </nav>
 
-<!-- ══ HERO ══ -->
-<section id="hero">
+<!-- ══ HERO · CUSTOMERS ══ -->
+<section id="hero" class="hero-section" data-aud="customer">
   <div class="container">
     <div class="hero-grid">
       <!-- Left — editorial typography -->
       <div class="hero-copy">
-        <div class="hero-eyebrow">Synapse · 2026</div>
+        <div class="hero-eyebrow">For buyers &amp; renters</div>
         <h1 class="hero-headline">
-          Nigeria's real estate market is one of the largest asset classes in the <em>country.</em>
+          Most Lagos deals are a gamble.<br><em>Synapse ends that.</em>
         </h1>
         <p class="hero-sub">
-          The buyers are there. The agencies are there. The properties are there.
-          What's missing is the infrastructure that connects them efficiently, safely, and at scale.
+          Seven verification nodes. Two review phases. One clear verdict. Toju checks
+          the title, the survey, the structure and the seller before a single naira moves —
+          so the home you fall for is a home you can trust.
         </p>
         <p class="hero-toju-line">
-          Meet Toju — Synapse's AI property consultant. He doesn't just find properties.
-          He advises, recommends, and guides you to the best decision for your life.
+          Tell Toju what you're looking for. He weighs the trade-offs, surfaces options you
+          wouldn't have found, and walks you to the right decision — not just a longer list.
         </p>
         <div class="hero-ctas">
           <button class="panel-btn-primary">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Talk to Toju — it's free
           </button>
-          <button class="panel-btn-secondary">List with Synapse</button>
+          <button class="panel-btn-secondary">Browse verified homes</button>
         </div>
         <div class="hero-trust">
-          <span><b>✓</b> No registration required</span>
+          <span><b>✓</b> No registration to start</span>
           <span><b>✓</b> Every listing independently verified</span>
           <span><b>✓</b> Free for buyers &amp; renters</span>
         </div>
       </div>
 
-      <!-- Right — sharp Lagos photography, one Toju chip -->
+      <!-- Right — an intimate, lived-in home; one Toju chip -->
       <div class="hero-media">
-        <img src="images/hero.jpg" alt="Lekki–Ikoyi Link Bridge, Lagos" />
+        <img src="images/interior.jpg" alt="A warm, light-filled Lagos home interior" />
         <div class="hero-toju-chip">
           <div class="hero-chip-orb">T</div>
           <div>
             <div class="hero-chip-name"><span class="toju-dot"></span> Toju · Active now</div>
-            <div class="hero-chip-msg">I found 2 verified listings below market in Lekki. Want the reasoning?</div>
+            <div class="hero-chip-msg">Two verified homes in Lekki match your brief — and both cleared all 7 checks. Want my take?</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Stats — typographic strip, no cards -->
+    <!-- Stats — what trust means to a buyer -->
     <div class="hero-statline">
       <div class="hero-stat">
-        <div class="hero-stat-val">₦21T</div>
-        <div class="hero-stat-label">Total Nigerian real estate market value</div>
+        <div class="hero-stat-val">7</div>
+        <div class="hero-stat-label">Independent checks before a listing reaches you</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-val">94.2</div>
-        <div class="hero-stat-label">Average Synapse trust score out of 100</div>
+        <div class="hero-stat-label">Average trust score on verified listings</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-val">&lt;48h</div>
-        <div class="hero-stat-label">Scout turnaround from brief to verified report</div>
+        <div class="hero-stat-val">0</div>
+        <div class="hero-stat-label">Fake or unverified listings you'll ever see</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HERO · AGENCIES ══ -->
+<section id="hero-agency" class="hero-section" data-aud="agency">
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Left — editorial typography -->
+      <div class="hero-copy">
+        <div class="hero-eyebrow">For agencies &amp; developers</div>
+        <h1 class="hero-headline">
+          Stop chasing leads.<br><em>Start closing them.</em>
+        </h1>
+        <p class="hero-sub">
+          List once and Synapse markets it everywhere, qualifies the demand against real
+          budgets, and drops warm, ready-to-move buyers straight onto your WhatsApp —
+          with the full pipeline, capture to close, in one place.
+        </p>
+        <p class="hero-toju-line">
+          Verified agencies rank higher in Toju's recommendations, win better placement,
+          and turn more interest into signed deals. Your reputation compounds.
+        </p>
+        <div class="hero-ctas">
+          <button class="panel-btn-primary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Open agency portal
+          </button>
+          <button class="panel-btn-secondary">Book a demo</button>
+        </div>
+        <div class="hero-trust">
+          <span><b>✓</b> CAC-verified agencies only</span>
+          <span><b>✓</b> Leads delivered to WhatsApp</span>
+          <span><b>✓</b> No marketing team needed</span>
+        </div>
+      </div>
+
+      <!-- Right — Lagos at scale, the infrastructure story -->
+      <div class="hero-media">
+        <img src="images/hero.jpg" alt="Lekki–Ikoyi Link Bridge, Lagos" />
+        <div class="hero-toju-chip">
+          <div class="hero-chip-orb">S</div>
+          <div>
+            <div class="hero-chip-name"><span class="toju-dot"></span> Synapse · Live</div>
+            <div class="hero-chip-msg">New qualified lead — Bola A., budget ₦150–180M, matched to your Lekki listing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats — what value means to an agency -->
+    <div class="hero-statline">
+      <div class="hero-stat">
+        <div class="hero-stat-val">&lt;60s</div>
+        <div class="hero-stat-label">From buyer interest to a lead on your WhatsApp</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">1</div>
+        <div class="hero-stat-label">Upload — marketed across every channel automatically</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">100%</div>
+        <div class="hero-stat-label">Buyers budget-matched before they reach you</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ══ FOR EVERYONE ══ -->
-<section id="for-everyone">
+<section id="for-everyone" data-aud="customer">
   <div class="container">
     <div class="reveal"><span class="chip">Who It's For</span></div>
     <h2 class="section-title reveal">Built for <em>everyone.</em></h2>
@@ -1740,7 +1839,7 @@ footer {
 </section>
 
 <!-- ══ DEMO ══ -->
-<section id="demo">
+<section id="demo" data-aud="customer">
   <div class="container">
     <div class="demo-grid">
       <!-- Crystal chat window -->
@@ -1772,7 +1871,7 @@ footer {
 </section>
 
 <!-- ══ ROADMAP ══ -->
-<section id="roadmap">
+<section id="roadmap" data-aud="customer">
   <div class="container">
     <div style="text-align:center;max-width:560px;margin:0 auto">
       <div class="reveal" style="display:flex;justify-content:center"><span class="chip">How Synapse Works</span></div>
@@ -1809,7 +1908,7 @@ footer {
 </section>
 
 <!-- ══ WHY ══ -->
-<section id="why">
+<section id="why" data-aud="customer">
   <div class="container">
     <div style="text-align:center;max-width:680px;margin:0 auto 24px">
       <div class="reveal" style="display:flex;justify-content:center"><span class="chip">For Buyers and Renters</span></div>
@@ -1827,7 +1926,7 @@ footer {
 </section>
 
 <!-- ══ TRUST ══ -->
-<section id="trust">
+<section id="trust" data-aud="both">
   <div class="trust-void"></div>
   <div class="container" style="position:relative;z-index:1">
     <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Verified Platform</span></div>
@@ -1851,7 +1950,7 @@ footer {
 </section>
 
 <!-- ══ CO-LIVING ══ -->
-<section id="coliving">
+<section id="coliving" data-aud="customer">
   <div class="container">
     <div class="coliving-layout">
       <div class="coliving-visual reveal-l">
@@ -1880,7 +1979,7 @@ footer {
 </section>
 
 <!-- ══ FLEX PAY ══ -->
-<section id="flexpay">
+<section id="flexpay" data-aud="customer">
   <div class="flexpay-abstract">
     <div class="fp-plane"></div><div class="fp-plane"></div>
     <div class="fp-plane"></div><div class="fp-plane"></div>
@@ -1900,7 +1999,7 @@ footer {
 </section>
 
 <!-- ══ AGENCY STRIP ══ -->
-<section id="agency-strip">
+<section id="agency-strip" data-aud="agency">
   <div class="agency-photo-layer"></div>
   <div class="agency-dark"></div>
   <div class="container">
@@ -1956,7 +2055,7 @@ footer {
 </section>
 
 <!-- ══ BROWSE ══ -->
-<section id="browse">
+<section id="browse" data-aud="customer">
   <div class="browse-photo-hint"></div>
   <div class="container">
     <div class="browse-layout">
@@ -1989,7 +2088,7 @@ footer {
 </section>
 
 <!-- ══ TESTIMONIALS ══ -->
-<section id="testimonials">
+<section id="testimonials" data-aud="both">
   <div class="container">
     <div style="text-align:center;max-width:620px;margin:0 auto">
       <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Real Stories</span></div>
@@ -2013,7 +2112,7 @@ footer {
 </section>
 
 <!-- ══ FAQ ══ -->
-<section id="faq">
+<section id="faq" data-aud="both">
   <div class="container">
     <div style="text-align:center"><h2 class="section-title reveal">Questions, <em>answered.</em></h2></div>
     <div class="faq-list">
@@ -2042,7 +2141,7 @@ footer {
 </section>
 
 <!-- ══ FINAL CTA ══ -->
-<section id="final-cta">
+<section id="final-cta" data-aud="both">
   <div class="cta-ambient"></div>
   <div class="cta-dark"></div>
   <div class="cta-glow"></div>
@@ -2177,10 +2276,13 @@ gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
   revealInView();
 })();
 
-// Hero image parallax — subtle
-gsap.to('.hero-media img', {
-  y: 40, ease: 'none',
-  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: 1.5 }
+// Hero image parallax — subtle, per hero so it works for either audience.
+document.querySelectorAll('.hero-section').forEach(function (sec) {
+  var img = sec.querySelector('.hero-media img');
+  if (img) gsap.to(img, {
+    y: 40, ease: 'none',
+    scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
+  });
 });
 // ─── DEMO CHAT SEQUENCE ───
 (function() {
@@ -2273,20 +2375,18 @@ document.querySelectorAll('.faq-item').forEach(item => {
 });
 
 // ─── Wire the CTA buttons to the application ───
-// The CTAs open the actual app screens (clickable browser prototypes of the
-// real @synapse mobile/dashboard pages, served from /app/*.html). Marketing
-// sections (Why Synapse, Co-Living) stay as in-page scroll anchors.
+// CTAs open the actual app screens (clickable prototypes of the real
+// @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
+// primary/secondary buttons are handled by the audience toggle below.
 (function () {
-  // Where each call-to-action leads, matched by button text.
   var routes = [
     { match: /talk to toju|chat with toju|start your conversation|start talking to toju|see toju|log in/i, target: 'app/toju.html' },
     { match: /browse/i, target: 'app/browse.html' },
     { match: /list with synapse|agency portal|partner|book a demo|see how it works|for agencies/i, target: 'app/agency.html' },
     { match: /shared living|co-?living/i, scroll: '#coliving' },
   ];
-  // CTA buttons only — never the FAQ accordion buttons (.faq-q).
   var ctas = document.querySelectorAll(
-    '.btn-brand, .btn-ghost, .panel-btn-primary, .panel-btn-secondary, ' +
+    '.panel-btn-primary, .panel-btn-secondary, ' +
     '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
   );
   ctas.forEach(function (btn) {
@@ -2294,23 +2394,64 @@ document.querySelectorAll('.faq-item').forEach(item => {
     var route = routes.find(function (r) { return r.match.test(label); });
     btn.style.cursor = 'pointer';
     btn.addEventListener('click', function () {
-      if (route && route.target) {
-        window.location.href = route.target;
-      } else if (route && route.scroll) {
+      if (route && route.target) window.location.href = route.target;
+      else if (route && route.scroll) {
         var el = document.querySelector(route.scroll);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.location.href = 'app/toju.html';
-      }
+      } else window.location.href = 'app/toju.html';
     });
   });
+})();
 
-  // Nav items that map directly to app screens jump straight into the app.
-  var navMap = { 'See Toju': 'app/toju.html', 'Browse': 'app/browse.html', 'For Agencies': 'app/agency.html' };
-  document.querySelectorAll('.nav-links a').forEach(function (a) {
-    var dest = navMap[(a.textContent || '').trim()];
-    if (dest) a.setAttribute('href', dest);
+// ─── Audience toggle — show only Customers' or Agencies' sections ───
+// The nav segmented control filters the page to one audience. Shared
+// sections (data-aud="both") are always visible. The nav's own primary +
+// secondary buttons adapt to the active audience.
+(function () {
+  var REVEAL_SEL = '.reveal, .reveal-l, .reveal-r, .persona-row, .roadmap-step, .agency-card, .why-crystal, .fp-crystal';
+  var nav = {
+    primary: { customer: { label: 'Talk to Toju', href: 'app/toju.html' }, agency: { label: 'Agency portal', href: 'app/agency.html' } },
+    secondary: { customer: { label: 'Browse', href: 'app/browse.html' }, agency: { label: 'Book a demo', href: 'app/agency.html' } },
+  };
+
+  function hardReveal(section) {
+    section.querySelectorAll(REVEAL_SEL).forEach(function (el) {
+      gsap.killTweensOf(el);
+      gsap.set(el, { opacity: 1, x: 0, y: 0, clearProps: 'transform' });
+    });
+  }
+
+  function setAudience(aud, isInit) {
+    document.querySelectorAll('section[data-aud]').forEach(function (sec) {
+      var a = sec.getAttribute('data-aud');
+      var show = a === 'both' || a === aud;
+      sec.classList.toggle('aud-hidden', !show);
+      // On a deliberate switch, reveal the now-visible sections immediately
+      // (they may have been display:none and never scrolled into view).
+      if (show && !isInit) hardReveal(sec);
+    });
+
+    document.querySelectorAll('.aud-seg').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-aud-btn') === aud);
+    });
+
+    var p = nav.primary[aud], s = nav.secondary[aud];
+    var pe = document.getElementById('nav-primary'), se = document.getElementById('nav-secondary');
+    if (pe) { pe.textContent = p.label; pe.onclick = function () { window.location.href = p.href; }; pe.style.cursor = 'pointer'; }
+    if (se) { se.textContent = s.label; se.onclick = function () { window.location.href = s.href; }; se.style.cursor = 'pointer'; }
+
+    if (!isInit) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
+    }
+  }
+
+  document.querySelectorAll('.aud-seg').forEach(function (b) {
+    b.addEventListener('click', function () { setAudience(b.getAttribute('data-aud-btn'), false); });
   });
+
+  // Default view: Customers.
+  setAudience('customer', true);
 })();
 </script>
 </body>
