@@ -71,9 +71,14 @@
     .composer input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: #FBEFE7; }
     .composer input::placeholder { color: rgba(251,239,231,0.5); }
     .composer .mic, .composer .send { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
-    .composer .mic { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; font-size: 16px; }
+    .composer .mic { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; }
+    .composer .mic.listening { background: var(--brand); border-color: transparent; color: #fff; animation: micpulse 1.3s infinite; }
+    @keyframes micpulse { 0% { box-shadow: 0 0 0 0 rgba(255,123,44,0.55); } 70% { box-shadow: 0 0 0 11px rgba(255,123,44,0); } 100% { box-shadow: 0 0 0 0 rgba(255,123,44,0); } }
     .composer .send { background: var(--brand); color: #fff; font-size: 18px; }
     .composer .send:disabled { opacity: .45; cursor: default; }
+    .tj-hint { max-width: 480px; margin: 0 auto 8px; text-align: center; font-size: 12.5px; color: rgba(251,239,231,0.85);
+      background: rgba(28,16,10,0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 8px 14px; }
     .convo-wrap { padding-bottom: 96px; }
   </style>
 </head>
@@ -102,9 +107,12 @@
   </div>
 
   <div class="composer">
+    <div id="tjHint" class="tj-hint" hidden></div>
     <div class="pill">
       <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
-      <button class="mic" title="Voice" aria-label="Voice">🎙</button>
+      <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      </button>
       <button class="send" id="tjSend" title="Send" aria-label="Send">↑</button>
     </div>
   </div>
@@ -182,6 +190,52 @@
 
     sendBtn.addEventListener('click', () => send());
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+
+    /* ───────── voice typing (Web Speech API) ───────── */
+    const micBtn = document.getElementById('tjMic');
+    const hintEl = document.getElementById('tjHint');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recog = null, listening = false, hintTimer = null;
+
+    function hint(msg) {
+      hintEl.textContent = msg; hintEl.hidden = false;
+      clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 4200);
+    }
+    function stopMicUI() {
+      listening = false; micBtn.classList.remove('listening');
+      input.placeholder = "Tell Toju what you're looking for…";
+    }
+    function startMic() {
+      recog = new SR();
+      recog.lang = 'en-NG';
+      recog.interimResults = true;
+      recog.continuous = true;
+      const base = input.value.trim() ? input.value.trim() + ' ' : '';
+      recog.onresult = (e) => {
+        let txt = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+        input.value = base + txt;
+      };
+      recog.onerror = (e) => {
+        stopMicUI();
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
+          hint('Microphone is blocked. Allow it from the address bar, then tap the mic again.');
+        else if (e.error === 'no-speech') hint("Didn't catch that — tap the mic and try again.");
+      };
+      recog.onend = () => stopMicUI();
+      try {
+        recog.start();
+        listening = true; micBtn.classList.add('listening');
+        input.placeholder = 'Listening… speak now';
+        input.focus();
+      } catch (err) { stopMicUI(); }
+    }
+    function toggleMic() {
+      if (!SR) { hint('Voice typing needs Chrome or Edge on this device.'); return; }
+      if (listening) { try { recog && recog.stop(); } catch (e) {} stopMicUI(); return; }
+      startMic();
+    }
+    micBtn.addEventListener('click', toggleMic);
 
     // opening greeting — greeting only; the consumer leads from here.
     const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
