@@ -9,86 +9,82 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
   <style>
-    /* ── liquid-glass Toju over a warm interior. Swap the photo by dropping your
-          image at app/toju-bg.jpg and changing the url() below. ── */
-    body { background: #2c180f; }
-    .tj-bg { position: fixed; inset: 0; background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; z-index: 0; }
-    .tj-scrim { position: fixed; inset: 0; z-index: 0;
-      background: radial-gradient(circle at 78% 12%, rgba(255,210,170,0.18), transparent 45%), rgba(28,16,10,0.5); }
-
-    .appbar { background: rgba(28,16,10,0.5); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-bottom: 1px solid rgba(255,255,255,0.12); }
-    .appbar .brand { color: #FBEFE7; }
-    .appbar .brand svg { fill: #FBEFE7; }
-    .appbar nav a { color: rgba(251,239,231,0.6); }
-    .appbar nav a:hover { color: #FBEFE7; background: rgba(255,255,255,0.08); }
-    .appbar nav a.active { color: var(--brand); background: rgba(255,123,44,0.16); }
-    .appbar .home { color: rgba(251,239,231,0.5); }
-    .appbar .home:hover { color: #FBEFE7; }
+    /* Light, warm, glassy — the same world as the landing page. A faint interior
+       sits under a cream wash so it reads bright and airy, not like a new app.
+       Swap the photo by dropping app/toju-bg.jpg and editing the url() below. */
+    body { background: var(--bg); }
+    .tj-bg { position: fixed; inset: 0; z-index: 0; opacity: .5;
+      background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
+    .tj-wash { position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(120% 90% at 80% 0%, rgba(255,123,44,0.08), transparent 55%), linear-gradient(180deg, rgba(250,250,248,0.78), rgba(250,250,248,0.9) 60%, var(--bg) 100%); }
 
     .wrap { position: relative; z-index: 1; }
-    .tj-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(251,239,231,0.55); }
-    .tj-title { font-family: var(--f-serif); font-weight: 300; font-size: 40px; letter-spacing: -0.02em; color: #FBEFE7; display: flex; align-items: center; gap: 10px; }
-    .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px rgba(46,125,79,0.7); }
+    .tj-head { padding-top: 8px; }
+    .tj-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brand); }
+    .tj-title { font-family: var(--f-serif); font-weight: 300; font-size: 40px; letter-spacing: -0.02em; color: var(--ink); display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+    .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(46,125,79,0.14); }
 
     .convo { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
-    .msg { display: flex; align-items: flex-end; gap: 9px; max-width: 100%; }
+    .msg { display: flex; align-items: flex-end; gap: 9px; }
     .msg.user { flex-direction: row-reverse; }
     .col { max-width: 84%; display: flex; flex-direction: column; }
     .av { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 14px; }
     .av-toju { background: var(--brand); color: #fff; }
-    .av-user { background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; font-size: 13px; font-weight: 600; }
-    .sender { font-size: 11.5px; font-weight: 500; color: rgba(251,239,231,0.7); margin: 0 0 5px 3px; }
+    .av-user { background: rgba(15,18,24,0.05); border: 1px solid var(--border); color: var(--ink-muted); font-size: 13px; font-weight: 600; }
+    .sender { font-size: 11.5px; font-weight: 600; color: var(--brand); margin: 0 0 5px 3px; }
 
-    .bubble { padding: 13px 16px; border-radius: 22px; font-size: 14.5px; line-height: 1.55; }
-    .toju .bubble { background: rgba(255,255,255,0.10); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; border-bottom-left-radius: 7px; }
-    .user .bubble { background: rgba(255,123,44,0.88); border: 1px solid rgba(255,255,255,0.22); color: #fff; border-bottom-right-radius: 7px; }
-
-    .opts { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 7px; }
-    .opt { font-family: var(--f-sans); font-size: 13px; color: #FBEFE7; cursor: pointer;
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); border-radius: 100px; padding: 7px 14px; transition: all .18s; }
-    .opt:hover { background: rgba(255,255,255,0.16); }
+    .bubble { padding: 13px 16px; border-radius: 20px; font-size: 14.5px; line-height: 1.55; }
+    .toju .bubble { background: rgba(255,255,255,0.74); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border: 1px solid var(--border); color: var(--ink); border-bottom-left-radius: 6px; box-shadow: 0 12px 32px rgba(20,26,38,0.06); }
+    .user .bubble { background: var(--brand); color: #fff; border-bottom-right-radius: 6px; box-shadow: 0 8px 22px rgba(255,123,44,0.22); }
 
     .matches-h { display: flex; align-items: center; gap: 7px; margin: 12px 0 8px; }
-    .matches-h .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.13em; color: var(--brand); }
-    .matches-h .cnt { font-size: 11px; font-weight: 700; color: #F0B894; background: rgba(255,123,44,0.2); border-radius: 9px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
-    .pcard { display: flex; gap: 13px; margin-top: 9px; padding: 11px; border-radius: 16px; cursor: pointer; transition: all .2s;
-      background: rgba(255,255,255,0.10); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border: 1px solid rgba(255,255,255,0.24); }
-    .pcard:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+    .matches-h .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--brand); }
+    .matches-h .cnt { font-size: 11px; font-weight: 700; color: var(--brand); background: rgba(255,123,44,0.12); border-radius: 9px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+    .pcard { display: flex; gap: 13px; margin-top: 9px; padding: 11px; border-radius: 15px; cursor: pointer; transition: all .2s;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--border); box-shadow: 0 10px 26px rgba(20,26,38,0.06); }
+    .pcard:hover { transform: translateY(-1px); border-color: rgba(255,123,44,0.25); }
     .pcard img { width: 62px; height: 62px; border-radius: 12px; object-fit: cover; }
-    .pcard .price { font-family: var(--f-serif); font-size: 21px; color: #FBEFE7; }
-    .pcard .ttl { font-size: 13px; font-weight: 500; color: #FBEFE7; }
-    .pcard .meta { font-size: 11.5px; color: rgba(251,239,231,0.6); }
+    .pcard .price { font-family: var(--f-serif); font-size: 21px; color: var(--brand); }
+    .pcard .ttl { font-size: 13px; font-weight: 500; color: var(--ink); }
+    .pcard .meta { font-size: 11.5px; color: var(--ink-dim); }
 
     .typing .bubble { display: flex; align-items: center; gap: 9px; }
     .typing-dots { display: flex; gap: 4px; }
-    .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: #E8A06A; display: inline-block; animation: tjpulse 1.1s infinite; }
+    .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); display: inline-block; animation: tjpulse 1.1s infinite; }
     .typing-dots i:nth-child(2) { animation-delay: .18s; } .typing-dots i:nth-child(3) { animation-delay: .36s; }
-    @keyframes tjpulse { 0%,60%,100%{opacity:.3} 30%{opacity:1} }
+    @keyframes tjpulse { 0%,60%,100%{opacity:.25} 30%{opacity:1} }
 
-    .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 18px 22px 26px; display: flex; justify-content: center; }
-    .composer .pill { width: 100%; max-width: 480px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 18px; border-radius: 100px;
-      background: rgba(255,255,255,0.12); backdrop-filter: blur(26px) saturate(1.5); -webkit-backdrop-filter: blur(26px) saturate(1.5); border: 1px solid rgba(255,255,255,0.28); }
-    .composer input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: #FBEFE7; }
-    .composer input::placeholder { color: rgba(251,239,231,0.5); }
-    .composer .mic, .composer .send { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
-    .composer .mic { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; }
-    .composer .mic.listening { background: var(--brand); border-color: transparent; color: #fff; animation: micpulse 1.3s infinite; }
-    @keyframes micpulse { 0% { box-shadow: 0 0 0 0 rgba(255,123,44,0.55); } 70% { box-shadow: 0 0 0 11px rgba(255,123,44,0); } 100% { box-shadow: 0 0 0 0 rgba(255,123,44,0); } }
-    .composer .send { background: var(--brand); color: #fff; font-size: 18px; }
-    .composer .send:disabled { opacity: .45; cursor: default; }
-    .tj-hint { max-width: 480px; margin: 0 auto 8px; text-align: center; font-size: 12.5px; color: rgba(251,239,231,0.85);
-      background: rgba(28,16,10,0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 8px 14px; }
-    .convo-wrap { padding-bottom: 96px; }
+    /* composer — rounded rectangle, narrower, with suggestion chips above it */
+    .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px 22px 22px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      background: linear-gradient(transparent, var(--bg) 38%); }
+    .suggest { width: 100%; max-width: 460px; display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+    .suggest button { font-family: var(--f-sans); font-size: 12.5px; color: var(--ink-muted); cursor: pointer;
+      background: rgba(255,255,255,0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: 100px; padding: 7px 13px; transition: all .18s; box-shadow: 0 4px 14px rgba(20,26,38,0.05); }
+    .suggest button:hover { color: var(--ink); border-color: rgba(255,123,44,0.3); }
+    .tj-hint { width: 100%; max-width: 460px; text-align: center; font-size: 12.5px; color: var(--ink-muted);
+      background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; box-shadow: 0 6px 18px rgba(20,26,38,0.06); }
+    .pill { width: 100%; max-width: 460px; display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 16px; border-radius: 18px;
+      background: rgba(255,255,255,0.82); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      border: 1px solid var(--border); box-shadow: 0 16px 40px rgba(20,26,38,0.1); }
+    .pill input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: var(--ink); }
+    .pill input::placeholder { color: var(--ink-dim); }
+    .pill .mic, .pill .send { width: 38px; height: 38px; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
+    .pill .mic { background: rgba(15,18,24,0.05); color: var(--ink-muted); }
+    .pill .mic.listening { background: var(--brand); color: #fff; animation: micpulse 1.3s infinite; }
+    @keyframes micpulse { 0%{ box-shadow: 0 0 0 0 rgba(255,123,44,0.5);} 70%{ box-shadow: 0 0 0 10px rgba(255,123,44,0);} 100%{ box-shadow: 0 0 0 0 rgba(255,123,44,0);} }
+    .pill .send { background: var(--brand); color: #fff; font-size: 17px; }
+    .convo-wrap { padding-bottom: 150px; }
   </style>
 </head>
 <body>
   <div class="tj-bg"></div>
-  <div class="tj-scrim"></div>
+  <div class="tj-wash"></div>
 
   <div class="appbar">
     <a class="brand" href="../index.html">
-      <svg viewBox="0 0 64 78"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
+      <svg viewBox="0 0 64 78" fill="#15171a"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
       Synapse
     </a>
     <nav>
@@ -101,13 +97,20 @@
   </div>
 
   <div class="wrap phone convo-wrap">
-    <div class="tj-eyebrow" style="margin-bottom:4px">AI Property Consultant</div>
-    <div class="tj-title">Toju <span class="tj-dot"></span></div>
+    <div class="tj-head">
+      <div class="tj-eyebrow">AI Property Consultant</div>
+      <div class="tj-title">Toju <span class="tj-dot"></span></div>
+    </div>
     <div class="convo" id="convo"></div>
   </div>
 
   <div class="composer">
     <div id="tjHint" class="tj-hint" hidden></div>
+    <div class="suggest" id="tjSuggest">
+      <button data-send="3-bed in Lekki under ₦180M">3-bed in Lekki under ₦180M</button>
+      <button data-send="What can I afford on ₦2M a month?">What can I afford monthly?</button>
+      <button data-send="Best value areas for a first home">Good areas for a first home</button>
+    </div>
     <div class="pill">
       <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
       <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
@@ -118,8 +121,6 @@
   </div>
 
   <script>
-    /* Toju is powered by the live toju-demo Edge Function (Claude). Stateless:
-       the running history is sent each turn, a coherent reply comes back. */
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
 
@@ -152,7 +153,7 @@
     function typing() {
       const el = document.createElement('div');
       el.className = 'msg toju typing';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:rgba(251,239,231,0.8);font-style:italic">thinking…</span></div></div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el); scrollDown(); return el;
     }
 
@@ -188,6 +189,9 @@
       ask();
     }
 
+    document.getElementById('tjSuggest').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-send]'); if (b) send(b.getAttribute('data-send'));
+    });
     sendBtn.addEventListener('click', () => send());
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
 
@@ -195,21 +199,17 @@
     const micBtn = document.getElementById('tjMic');
     const hintEl = document.getElementById('tjHint');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const inIframe = window.self !== window.top;
     let recog = null, listening = false, hintTimer = null;
 
     function hint(msg) {
       hintEl.textContent = msg; hintEl.hidden = false;
-      clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 4200);
+      clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 5000);
     }
-    function stopMicUI() {
-      listening = false; micBtn.classList.remove('listening');
-      input.placeholder = "Tell Toju what you're looking for…";
-    }
+    function stopMicUI() { listening = false; micBtn.classList.remove('listening'); input.placeholder = "Tell Toju what you're looking for…"; }
     function startMic() {
       recog = new SR();
-      recog.lang = 'en-NG';
-      recog.interimResults = true;
-      recog.continuous = true;
+      recog.lang = 'en-NG'; recog.interimResults = true; recog.continuous = true;
       const base = input.value.trim() ? input.value.trim() + ' ' : '';
       recog.onresult = (e) => {
         let txt = '';
@@ -218,20 +218,19 @@
       };
       recog.onerror = (e) => {
         stopMicUI();
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
-          hint('Microphone is blocked. Allow it from the address bar, then tap the mic again.');
-        else if (e.error === 'no-speech') hint("Didn't catch that — tap the mic and try again.");
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          hint(inIframe
+            ? 'Open this page in its own browser tab to use voice — it’s blocked inside the embedded preview.'
+            : 'Microphone is blocked. Click the mic/🔒 icon in the address bar → Allow, then tap the mic again.');
+        } else if (e.error === 'no-speech') { hint("Didn’t catch that — tap the mic and speak."); }
       };
       recog.onend = () => stopMicUI();
-      try {
-        recog.start();
-        listening = true; micBtn.classList.add('listening');
-        input.placeholder = 'Listening… speak now';
-        input.focus();
-      } catch (err) { stopMicUI(); }
+      try { recog.start(); listening = true; micBtn.classList.add('listening'); input.placeholder = 'Listening… speak now'; input.focus(); }
+      catch (err) { stopMicUI(); }
     }
     function toggleMic() {
       if (!SR) { hint('Voice typing needs Chrome or Edge on this device.'); return; }
+      if (!window.isSecureContext) { hint('Voice needs a secure (https) page to access the mic.'); return; }
       if (listening) { try { recog && recog.stop(); } catch (e) {} stopMicUI(); return; }
       startMic();
     }
