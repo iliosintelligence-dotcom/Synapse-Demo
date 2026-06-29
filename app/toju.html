@@ -9,34 +9,81 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
   <style>
-    .convo { display: flex; flex-direction: column; gap: 14px; }
-    .msg { max-width: 86%; }
-    .msg.user { align-self: flex-end; }
-    .bubble { padding: 13px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; }
-    .user .bubble { background: var(--ink); color: #fff; border-bottom-right-radius: 5px; }
-    .toju .bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 5px; box-shadow: 0 8px 24px rgba(20,26,38,0.05); }
-    .sender { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
-    .user .sender { color: var(--ink-dim); text-align: right; }
-    .toju .sender { color: var(--brand); }
-    .opts { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-    .opts li { font-size: 13px; color: var(--ink-muted); display: flex; gap: 8px; align-items: center; }
-    .opts li::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
-    .pcard { display: flex; gap: 13px; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all .2s; }
-    .pcard:hover { background: rgba(255,123,44,0.05); border-color: rgba(255,123,44,0.2); }
-    .pcard img { width: 64px; height: 64px; border-radius: 11px; object-fit: cover; }
-    .pcard .price { font-family: var(--f-serif); font-size: 22px; color: var(--brand); }
-    .pcard .ttl { font-size: 13px; font-weight: 500; }
-    .pcard .meta { font-size: 11.5px; color: var(--ink-dim); }
-    .composer { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 30%); }
-    .composer .pill { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 8px 8px 8px 18px; box-shadow: 0 12px 30px rgba(20,26,38,0.08); }
-    .composer input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; }
-    .composer .send { width: 40px; height: 40px; border-radius: 50%; background: var(--brand); color: #fff; border: none; font-size: 17px; cursor: pointer; }
+    /* ── liquid-glass Toju over a warm interior. Swap the photo by dropping your
+          image at app/toju-bg.jpg and changing the url() below. ── */
+    body { background: #2c180f; }
+    .tj-bg { position: fixed; inset: 0; background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; z-index: 0; }
+    .tj-scrim { position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(circle at 78% 12%, rgba(255,210,170,0.18), transparent 45%), rgba(28,16,10,0.5); }
+
+    .appbar { background: rgba(28,16,10,0.5); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-bottom: 1px solid rgba(255,255,255,0.12); }
+    .appbar .brand { color: #FBEFE7; }
+    .appbar .brand svg { fill: #FBEFE7; }
+    .appbar nav a { color: rgba(251,239,231,0.6); }
+    .appbar nav a:hover { color: #FBEFE7; background: rgba(255,255,255,0.08); }
+    .appbar nav a.active { color: var(--brand); background: rgba(255,123,44,0.16); }
+    .appbar .home { color: rgba(251,239,231,0.5); }
+    .appbar .home:hover { color: #FBEFE7; }
+
+    .wrap { position: relative; z-index: 1; }
+    .tj-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(251,239,231,0.55); }
+    .tj-title { font-family: var(--f-serif); font-weight: 300; font-size: 40px; letter-spacing: -0.02em; color: #FBEFE7; display: flex; align-items: center; gap: 10px; }
+    .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px rgba(46,125,79,0.7); }
+
+    .convo { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
+    .msg { display: flex; align-items: flex-end; gap: 9px; max-width: 100%; }
+    .msg.user { flex-direction: row-reverse; }
+    .col { max-width: 84%; display: flex; flex-direction: column; }
+    .av { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .av-toju { background: var(--brand); color: #fff; }
+    .av-user { background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; font-size: 13px; font-weight: 600; }
+    .sender { font-size: 11.5px; font-weight: 500; color: rgba(251,239,231,0.7); margin: 0 0 5px 3px; }
+
+    .bubble { padding: 13px 16px; border-radius: 22px; font-size: 14.5px; line-height: 1.55; }
+    .toju .bubble { background: rgba(255,255,255,0.10); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; border-bottom-left-radius: 7px; }
+    .user .bubble { background: rgba(255,123,44,0.88); border: 1px solid rgba(255,255,255,0.22); color: #fff; border-bottom-right-radius: 7px; }
+
+    .opts { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 7px; }
+    .opt { font-family: var(--f-sans); font-size: 13px; color: #FBEFE7; cursor: pointer;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); border-radius: 100px; padding: 7px 14px; transition: all .18s; }
+    .opt:hover { background: rgba(255,255,255,0.16); }
+
+    .matches-h { display: flex; align-items: center; gap: 7px; margin: 12px 0 8px; }
+    .matches-h .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.13em; color: var(--brand); }
+    .matches-h .cnt { font-size: 11px; font-weight: 700; color: #F0B894; background: rgba(255,123,44,0.2); border-radius: 9px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+    .pcard { display: flex; gap: 13px; margin-top: 9px; padding: 11px; border-radius: 16px; cursor: pointer; transition: all .2s;
+      background: rgba(255,255,255,0.10); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); border: 1px solid rgba(255,255,255,0.24); }
+    .pcard:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+    .pcard img { width: 62px; height: 62px; border-radius: 12px; object-fit: cover; }
+    .pcard .price { font-family: var(--f-serif); font-size: 21px; color: #FBEFE7; }
+    .pcard .ttl { font-size: 13px; font-weight: 500; color: #FBEFE7; }
+    .pcard .meta { font-size: 11.5px; color: rgba(251,239,231,0.6); }
+
+    .typing .bubble { display: flex; align-items: center; gap: 9px; }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: #E8A06A; display: inline-block; animation: tjpulse 1.1s infinite; }
+    .typing-dots i:nth-child(2) { animation-delay: .18s; } .typing-dots i:nth-child(3) { animation-delay: .36s; }
+    @keyframes tjpulse { 0%,60%,100%{opacity:.3} 30%{opacity:1} }
+
+    .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 18px 22px 26px; display: flex; justify-content: center; }
+    .composer .pill { width: 100%; max-width: 480px; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 18px; border-radius: 100px;
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(26px) saturate(1.5); -webkit-backdrop-filter: blur(26px) saturate(1.5); border: 1px solid rgba(255,255,255,0.28); }
+    .composer input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: #FBEFE7; }
+    .composer input::placeholder { color: rgba(251,239,231,0.5); }
+    .composer .mic, .composer .send { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
+    .composer .mic { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.26); color: #FBEFE7; font-size: 16px; }
+    .composer .send { background: var(--brand); color: #fff; font-size: 18px; }
+    .composer .send:disabled { opacity: .45; cursor: default; }
+    .convo-wrap { padding-bottom: 96px; }
   </style>
 </head>
 <body>
+  <div class="tj-bg"></div>
+  <div class="tj-scrim"></div>
+
   <div class="appbar">
     <a class="brand" href="../index.html">
-      <svg viewBox="0 0 64 78" fill="#15171a"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
+      <svg viewBox="0 0 64 78"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
       Synapse
     </a>
     <nav>
@@ -48,54 +95,96 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
-  <div class="wrap phone">
-    <div class="eyebrow" style="margin-bottom:4px">AI Property Consultant</div>
-    <div class="h1" style="margin-bottom:22px">Toju</div>
-
-    <div class="convo">
-      <div class="msg user"><div class="sender">You</div><div class="bubble">I want to buy a house in Lekki.</div></div>
-      <div class="msg toju">
-        <div class="sender">Toju</div>
-        <div class="bubble">
-          Good choice. Before I show you anything, what matters most to you?
-          <ul class="opts">
-            <li>A home to live in</li>
-            <li>An investment</li>
-            <li>A mix of both</li>
-          </ul>
-        </div>
-      </div>
-      <div class="msg user"><div class="sender">You</div><div class="bubble">A mix of both. Budget ₦150 million, I work on the Island and hate traffic.</div></div>
-      <div class="msg toju">
-        <div class="sender">Toju</div>
-        <div class="bubble">
-          Then I'd skip finished luxury and lean into value. Here are two verified homes below market with stronger appreciation and an 11-minute commute. Tap one to see my full reasoning.
-          <a class="pcard" href="property.html">
-            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=70" alt="" />
-            <div>
-              <div class="price">₦165M</div>
-              <div class="ttl">3-Bed Apartment, Lekki Phase 1</div>
-              <div class="meta">Trust 94 · ↓ below market</div>
-            </div>
-          </a>
-          <a class="pcard" href="property.html">
-            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=70" alt="" />
-            <div>
-              <div class="price">₦148M</div>
-              <div class="ttl">3-Bed Terrace, Ikate</div>
-              <div class="meta">Trust 91 · high-growth area</div>
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
+  <div class="wrap phone convo-wrap">
+    <div class="tj-eyebrow" style="margin-bottom:4px">AI Property Consultant</div>
+    <div class="tj-title">Toju <span class="tj-dot"></span></div>
+    <div class="convo" id="convo"></div>
   </div>
 
-  <div class="wrap phone composer" style="padding-top:0">
+  <div class="composer">
     <div class="pill">
-      <input placeholder="Ask Toju anything…" />
-      <button class="send">↑</button>
+      <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
+      <button class="mic" title="Voice" aria-label="Voice">🎙</button>
+      <button class="send" id="tjSend" title="Send" aria-label="Send">↑</button>
     </div>
   </div>
+
+  <script>
+    const convo = document.getElementById('convo');
+    const input = document.getElementById('tjInput');
+    const sendBtn = document.getElementById('tjSend');
+    let step = 0, busy = false;
+
+    const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+    function optsHtml(opts) {
+      if (!opts || !opts.length) return '';
+      return '<div class="opts">' + opts.map((o) => `<button class="opt" data-send="${esc(o)}">${esc(o)}</button>`).join('') + '</div>';
+    }
+    function tojuMsg(inner) {
+      const el = document.createElement('div');
+      el.className = 'msg toju';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + inner + '</div></div>';
+      convo.appendChild(el); scrollDown();
+    }
+    function userMsg(text) {
+      const el = document.createElement('div');
+      el.className = 'msg user';
+      el.innerHTML = '<div class="col"><div class="bubble">' + esc(text) + '</div></div><div class="av av-user">A</div>';
+      convo.appendChild(el); scrollDown();
+    }
+    function typing() {
+      const el = document.createElement('div');
+      el.className = 'msg toju typing';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:rgba(251,239,231,0.8);font-style:italic">checking verified listings…</span></div></div>';
+      convo.appendChild(el); scrollDown(); return el;
+    }
+
+    const FLOW = [
+      { text: 'Good choice. Which area in Lagos are you focused on?', opts: ['Lekki', 'Ikoyi', 'Victoria Island'] },
+      { text: "Noted. What's your budget?", opts: ['₦120M', '₦150M', '₦180M'] },
+      { text: 'And what matters most — somewhere to live, an investment, or a mix?', opts: ['To live in', 'Investment', 'A mix of both'] },
+      { recommend: true },
+    ];
+
+    const RECO =
+      "Then I'd skip finished luxury and lean into value. Two verified homes stand out — both below market for their location, with stronger appreciation and an 11-minute commute to the Island. Tap one for my full reasoning."
+      + '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span><span class="cnt">2</span></div>'
+      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=70" alt="" /><div><div class="price">₦165M</div><div class="ttl">3-Bed Apartment, Lekki Phase 1</div><div class="meta">Trust 94 · ↓ below market</div></div></a>'
+      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=70" alt="" /><div><div class="price">₦148M</div><div class="ttl">3-Bed Terrace, Ikate</div><div class="meta">Trust 91 · high-growth area</div></div></a>';
+
+    function respond() {
+      const t = typing();
+      setTimeout(() => {
+        t.remove();
+        const node = FLOW[Math.min(step, FLOW.length - 1)];
+        if (node.recommend) tojuMsg(RECO);
+        else tojuMsg(esc(node.text) + optsHtml(node.opts));
+        step++; busy = false;
+        scrollDown();
+      }, 850);
+    }
+    function send(text) {
+      const v = (text != null ? text : input.value).trim();
+      if (!v || busy) return;
+      busy = true; input.value = '';
+      userMsg(v);
+      respond();
+    }
+
+    convo.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-send]');
+      if (b) send(b.getAttribute('data-send'));
+    });
+    sendBtn.addEventListener('click', () => send());
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
+
+    // opening greeting
+    tojuMsg(
+      "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling."
+      + optsHtml(['I want to buy a home', "I'm looking to invest", '3-bed in Lekki under ₦180M'])
+    );
+  </script>
 </body>
 </html>
