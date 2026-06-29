@@ -110,22 +110,29 @@
   </div>
 
   <script>
+    /* Toju is powered by the live toju-demo Edge Function (Claude). Stateless:
+       the running history is sent each turn, a coherent reply comes back. */
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+
     const convo = document.getElementById('convo');
     const input = document.getElementById('tjInput');
     const sendBtn = document.getElementById('tjSend');
-    let step = 0, busy = false;
+    let busy = false;
+    const history = [];
 
     const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 
-    function optsHtml(opts) {
-      if (!opts || !opts.length) return '';
-      return '<div class="opts">' + opts.map((o) => `<button class="opt" data-send="${esc(o)}">${esc(o)}</button>`).join('') + '</div>';
-    }
-    function tojuMsg(inner) {
+    const MATCHES_HTML =
+      '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span><span class="cnt">2</span></div>'
+      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=70" alt="" /><div><div class="price">₦165M</div><div class="ttl">3-Bed Apartment, Lekki Phase 1</div><div class="meta">Trust 94 · ↓ below market</div></div></a>'
+      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=70" alt="" /><div><div class="price">₦148M</div><div class="ttl">3-Bed Terrace, Ikate</div><div class="meta">Trust 91 · high-growth area</div></div></a>';
+
+    function tojuMsg(text, withMatches) {
       const el = document.createElement('div');
       el.className = 'msg toju';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + inner + '</div></div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + esc(text) + '</div>' + (withMatches ? MATCHES_HTML : '') + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -137,53 +144,49 @@
     function typing() {
       const el = document.createElement('div');
       el.className = 'msg toju typing';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:rgba(251,239,231,0.8);font-style:italic">checking verified listings…</span></div></div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:rgba(251,239,231,0.8);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el); scrollDown(); return el;
     }
 
-    const FLOW = [
-      { text: 'Good choice. Which area in Lagos are you focused on?', opts: ['Lekki', 'Ikoyi', 'Victoria Island'] },
-      { text: "Noted. What's your budget?", opts: ['₦120M', '₦150M', '₦180M'] },
-      { text: 'And what matters most — somewhere to live, an investment, or a mix?', opts: ['To live in', 'Investment', 'A mix of both'] },
-      { recommend: true },
-    ];
-
-    const RECO =
-      "Then I'd skip finished luxury and lean into value. Two verified homes stand out — both below market for their location, with stronger appreciation and an 11-minute commute to the Island. Tap one for my full reasoning."
-      + '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span><span class="cnt">2</span></div>'
-      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=70" alt="" /><div><div class="price">₦165M</div><div class="ttl">3-Bed Apartment, Lekki Phase 1</div><div class="meta">Trust 94 · ↓ below market</div></div></a>'
-      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=70" alt="" /><div><div class="price">₦148M</div><div class="ttl">3-Bed Terrace, Ikate</div><div class="meta">Trust 91 · high-growth area</div></div></a>';
-
-    function respond() {
+    async function ask() {
       const t = typing();
-      setTimeout(() => {
+      try {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+          body: JSON.stringify({ messages: history.slice(-14) }),
+        });
+        const data = await res.json().catch(() => ({}));
         t.remove();
-        const node = FLOW[Math.min(step, FLOW.length - 1)];
-        if (node.recommend) tojuMsg(RECO);
-        else tojuMsg(esc(node.text) + optsHtml(node.opts));
-        step++; busy = false;
-        scrollDown();
-      }, 850);
+        if (!res.ok || data.error || !data.reply) {
+          tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
+        } else {
+          history.push({ role: 'assistant', content: data.reply });
+          tojuMsg(data.reply, data.showMatches === true);
+        }
+      } catch (e) {
+        t.remove();
+        tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
+      }
+      busy = false; scrollDown();
     }
+
     function send(text) {
       const v = (text != null ? text : input.value).trim();
       if (!v || busy) return;
       busy = true; input.value = '';
+      history.push({ role: 'user', content: v });
       userMsg(v);
-      respond();
+      ask();
     }
 
-    convo.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-send]');
-      if (b) send(b.getAttribute('data-send'));
-    });
     sendBtn.addEventListener('click', () => send());
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } });
 
     // opening greeting — greeting only; the consumer leads from here.
-    tojuMsg(
-      "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling."
-    );
+    const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
+    history.push({ role: 'assistant', content: GREETING });
+    tojuMsg(GREETING);
   </script>
 </body>
 </html>
