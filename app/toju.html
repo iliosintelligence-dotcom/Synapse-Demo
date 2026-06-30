@@ -40,8 +40,8 @@
     .sender { font-size: 11.5px; font-weight: 600; color: var(--brand); margin: 0 0 5px 3px; }
 
     .bubble { padding: 13px 16px; border-radius: 20px; font-size: 14.5px; line-height: 1.55; }
-    .toju .bubble { background: rgba(255,250,246,0.44); backdrop-filter: blur(30px) saturate(1.9); -webkit-backdrop-filter: blur(30px) saturate(1.9); border: 1px solid rgba(255,255,255,0.45); border-top-color: rgba(255,255,255,0.72); color: var(--ink); border-bottom-left-radius: 6px; box-shadow: 0 14px 38px rgba(20,26,38,0.1); }
-    .user .bubble { background: rgba(255,123,44,0.58); backdrop-filter: blur(18px) saturate(1.7); -webkit-backdrop-filter: blur(18px) saturate(1.7); color: #fff; border: 1px solid rgba(255,255,255,0.38); border-top-color: rgba(255,255,255,0.6); border-bottom-right-radius: 6px; box-shadow: 0 10px 26px rgba(255,123,44,0.22); }
+    .toju .bubble { background: rgba(255,250,246,0.44); backdrop-filter: blur(30px) saturate(1.9); -webkit-backdrop-filter: blur(30px) saturate(1.9); border: 1px solid rgba(40,24,14,0.06); color: var(--ink); border-bottom-left-radius: 6px; box-shadow: 0 14px 38px rgba(20,26,38,0.08); }
+    .user .bubble { background: rgba(255,123,44,0.58); backdrop-filter: blur(18px) saturate(1.7); -webkit-backdrop-filter: blur(18px) saturate(1.7); color: #fff; border: 1px solid rgba(150,60,25,0.12); border-bottom-right-radius: 6px; box-shadow: 0 10px 26px rgba(255,123,44,0.2); }
 
     .matches-h { display: flex; align-items: center; gap: 7px; margin: 12px 0 8px; }
     .matches-h .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--brand); }
@@ -64,11 +64,11 @@
     .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px 22px 34px;
       display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; }
     .tj-hint { width: 100%; max-width: 480px; text-align: center; font-size: 12.5px; color: var(--ink-muted);
-      background: rgba(255,250,246,0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.5); border-radius: 12px; padding: 8px 14px; box-shadow: 0 6px 18px rgba(20,26,38,0.08); }
+      background: rgba(255,250,246,0.6); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; box-shadow: 0 6px 18px rgba(20,26,38,0.08); }
     /* one liquid-glass chat box: input on top, suggestions tucked at the bottom */
     .chatbox { width: 100%; max-width: 480px; border-radius: 24px; padding: 6px 6px 8px;
       background: rgba(255,250,246,0.34); backdrop-filter: blur(32px) saturate(1.9); -webkit-backdrop-filter: blur(32px) saturate(1.9);
-      border: 1px solid rgba(255,255,255,0.45); border-top-color: rgba(255,255,255,0.78); box-shadow: 0 22px 54px rgba(20,26,38,0.18); }
+      border: 1px solid rgba(40,24,14,0.06); box-shadow: 0 22px 54px rgba(20,26,38,0.16); }
     .pillrow { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 15px; }
     .pillrow input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: var(--ink); }
     .pillrow input::placeholder { color: var(--ink-dim); }
@@ -80,7 +80,7 @@
     .chatbox .suggest { display: flex; gap: 7px; padding: 9px 5px 2px; margin-top: 4px; overflow-x: auto; border-top: 1px solid rgba(255,255,255,0.42); }
     .chatbox .suggest::-webkit-scrollbar { display: none; }
     .chatbox .suggest button { white-space: nowrap; font-family: var(--f-sans); font-size: 12px; color: var(--ink-muted); cursor: pointer;
-      background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.5); border-radius: 100px; padding: 6px 12px; transition: all .18s; }
+      background: rgba(255,250,246,0.35); border: 1px solid var(--border); border-radius: 100px; padding: 6px 12px; transition: all .18s; }
     .chatbox .suggest button:hover { color: var(--ink); border-color: rgba(255,123,44,0.35); }
     .convo-wrap { padding-bottom: 180px; }
   </style>
@@ -100,6 +100,7 @@
       <a href="agency.html">For Agencies</a>
     </nav>
     <span class="spacer"></span>
+    <button id="tjNew" class="home" style="background:none;border:none;cursor:pointer;font:inherit;margin-right:18px">↺ New chat</button>
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
@@ -137,7 +138,10 @@
     const input = document.getElementById('tjInput');
     const sendBtn = document.getElementById('tjSend');
     let busy = false;
-    const history = [];
+    const STORE = 'toju_chat_v1';
+    const loadSaved = () => { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch (e) { return []; } };
+    const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} };
+    let saved = loadSaved();
 
     const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -172,14 +176,15 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ messages: history.slice(-14) }),
+          body: JSON.stringify({ messages: saved.slice(-14).map((m) => ({ role: m.role, content: m.content })) }),
         });
         const data = await res.json().catch(() => ({}));
         t.remove();
         if (!res.ok || data.error || !data.reply) {
           tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
         } else {
-          history.push({ role: 'assistant', content: data.reply });
+          saved.push({ role: 'assistant', content: data.reply, matches: data.showMatches === true });
+          persist();
           tojuMsg(data.reply, data.showMatches === true);
         }
       } catch (e) {
@@ -193,7 +198,8 @@
       const v = (text != null ? text : input.value).trim();
       if (!v || busy) return;
       busy = true; input.value = '';
-      history.push({ role: 'user', content: v });
+      saved.push({ role: 'user', content: v });
+      persist();
       userMsg(v);
       ask();
     }
@@ -245,10 +251,15 @@
     }
     micBtn.addEventListener('click', toggleMic);
 
-    // opening greeting — greeting only; the consumer leads from here.
+    // restore the saved conversation so people continue where they left off
     const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
-    history.push({ role: 'assistant', content: GREETING });
-    tojuMsg(GREETING);
+    if (saved.length === 0) { saved = [{ role: 'assistant', content: GREETING }]; persist(); }
+    saved.forEach((m) => (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, !!m.matches)));
+
+    // new chat — clear the saved thread and start fresh
+    function newChat() { localStorage.removeItem(STORE); saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING); }
+    const nc = document.getElementById('tjNew');
+    if (nc) nc.addEventListener('click', newChat);
   </script>
 </body>
 </html>
