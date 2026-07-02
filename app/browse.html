@@ -3,32 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Browse — Synapse</title>
+  <title>Your matches — Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <style>
-    .listing { transition-property: opacity, transform, box-shadow; }
+    /* This page is not a catalogue. It only shows the homes Toju picked for
+       this person's brief — you arrive here from "View all →" in the chat. */
+    .brief { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin: 18px 0 22px; }
+    .brief .orb { width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+    .brief .txt { flex: 1; font-size: 13.5px; color: var(--ink-muted); }
+    .brief .txt b { color: var(--ink); font-weight: 600; }
+    .brief .refine { white-space: nowrap; font-size: 13px; font-weight: 600; color: #C2552B; }
+    .brief .refine:hover { text-decoration: underline; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+
+    /* frosted match card — text UP, photo DOWN (per the reference) */
+    .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer;
+      transition: opacity var(--m-expanded) var(--m-ease), transform var(--m-expanded) var(--m-ease), box-shadow .25s, border-color .25s; }
+    .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(255,123,44,0.4); }
+    .listing .body { padding: 18px 18px 14px; }
+    .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+    .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.22); padding: 3px 9px; border-radius: 100px; }
+    .listing .price { font-family: var(--f-serif); font-size: 27px; color: var(--brand); }
+    .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
+    .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+    .listing .why { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.7); }
+    .listing .why b { color: #b0521f; font-weight: 600; }
+    .listing .score { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--ink-muted); }
+    .listing .ring { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--ink); }
+    .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
+    .listing .img img { width: 100%; height: 100%; object-fit: cover; }
+    .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.7);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; }
     .empty { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: var(--ink-muted); font-size: 14px; }
     .grid:empty + .empty { display: flex; }
-    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 24px; }
-    .filters .f { font-size: 12.5px; font-weight: 500; color: var(--ink-muted); padding: 8px 15px; border-radius: 100px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; }
-    .filters .f.on { color: var(--brand); background: rgba(255,123,44,0.08); border-color: rgba(255,123,44,0.22); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
-    .listing { overflow: hidden; cursor: pointer; transition: all .25s; }
-    .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(20,26,38,0.12); }
-    .listing .img { position: relative; height: 180px; }
-    .listing .img img { width: 100%; height: 100%; object-fit: cover; }
-    .listing .verified { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.92); }
-    .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.92); display: flex; align-items: center; justify-content: center; font-size: 15px; }
-    .listing .body { padding: 16px; }
-    .listing .price { font-family: var(--f-serif); font-size: 26px; color: var(--brand); }
-    .listing .ttl { font-size: 14px; font-weight: 500; margin-top: 2px; }
-    .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
-    .listing .score { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
-    .listing .ring { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -39,7 +52,7 @@
     </a>
     <nav>
       <a href="toju.html">Toju</a>
-      <a href="browse.html" class="active">Browse</a>
+      <a href="browse.html" class="active">Your matches</a>
       <a href="agency.html">For Agencies</a>
     </nav>
     <span class="spacer"></span>
@@ -47,46 +60,47 @@
   </div>
 
   <div class="wrap">
-    <div class="eyebrow">Property Discovery</div>
-    <div class="h1">Browse</div>
-    <p class="muted" style="margin-top:4px;font-size:14px">4 verified listings · ordered by trust</p>
+    <div class="eyebrow">Picked for you</div>
+    <div class="h1">Your matches</div>
 
-    <div class="filters">
-      <div class="f on">All Lagos</div>
-      <div class="f">Lekki</div>
-      <div class="f">Victoria Island</div>
-      <div class="f">Ikoyi</div>
-      <div class="f" style="opacity:.6">Sale</div>
-      <div class="f" style="opacity:.6">Rent</div>
+    <div class="card brief">
+      <div class="orb">✦</div>
+      <div class="txt"><b>Your brief:</b> 3-bed for a family in Lagos, under ₦150M, near good schools. Toju found 5 verified homes that fit.</div>
+      <a class="refine" href="toju.html">Refine with Toju →</a>
     </div>
 
     <div class="grid" id="grid"></div>
     <div class="empty">
       <span data-lottie="empty-search" style="width:150px;height:120px"></span>
-      No homes match those filters yet — ask Toju instead.
+      Nothing fits this brief yet — tell Toju what to change.
     </div>
   </div>
 
   <script>
-    const listings = [
-      { img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', price: '₦176M', ttl: '3-Bed Penthouse, Ikoyi', loc: 'Old Ikoyi, Lagos', score: 97 },
-      { img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', price: '₦178M', ttl: '4-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 96 },
-      { img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', price: '₦165M', ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94 },
-      { img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', price: '₦148M', ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91 },
-      { img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', price: '₦142M', ttl: '2-Bed Flat, Victoria Island', loc: 'Victoria Island, Lagos', score: 89 },
+    // Only the homes Toju matched to this brief — not the whole inventory.
+    const matches = [
+      { img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', price: '₦148M', ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
+      { img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', price: '₦165M', ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94, match: 87, why: '<b>Why:</b> slightly over budget, but ₦12M below area median with an 8.4% yield.' },
+      { img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', price: '₦142M', ttl: '2-Bed Flat + Study, Victoria Island', loc: 'Victoria Island, Lagos', score: 89, match: 82, why: '<b>Why:</b> shortest commute of the five; the study converts to a third bedroom.' },
+      { img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', price: '₦150M', ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
+      { img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', price: '₦139M', ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
     ];
-    document.getElementById('grid').innerHTML = listings.map(l => `
+    document.getElementById('grid').innerHTML = matches.map(l => `
       <a class="card listing" href="property.html">
-        <div class="img">
-          <img src="${l.img}" alt="" />
-          <span class="chip chip-pass verified">✓ Verified</span>
-          <div class="save">♡</div>
-        </div>
         <div class="body">
+          <div class="tags">
+            <span class="chip chip-pass">✓ Verified</span>
+            <span class="match">${l.match}% match</span>
+          </div>
           <div class="price">${l.price}</div>
           <div class="ttl">${l.ttl}</div>
           <div class="loc">${l.loc}</div>
+          <div class="why">${l.why}</div>
           <div class="score"><span class="ring">${l.score}</span> Trust score</div>
+        </div>
+        <div class="img">
+          <img src="${l.img}" alt="" />
+          <div class="save">♡</div>
         </div>
       </a>
     `).join('');
