@@ -8,7 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
   <style>
+    .tj-orb { position: absolute; width: 56px; height: 56px; margin: -16px 0 0 -6px; opacity: .6; pointer-events: none; }
     /* Light, warm, glassy — the same world as the landing page. A faint interior
        sits under a cream wash so it reads bright and airy, not like a new app.
        Swap the photo by dropping app/toju-bg.jpg and editing the url() below. */
@@ -117,7 +119,7 @@
   <div class="wrap phone convo-wrap">
     <div class="tj-head">
       <div class="tj-eyebrow">AI Property Consultant</div>
-      <div class="tj-title">Toju <span class="tj-dot"></span></div>
+      <div class="tj-title">Toju <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
     </div>
     <div class="convo" id="convo"></div>
   </div>
@@ -140,6 +142,7 @@
     </div>
   </div>
 
+  <script src="motion.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
@@ -182,21 +185,23 @@
 
     function tojuMsg(text, matches) {
       const el = document.createElement('div');
-      el.className = 'msg toju';
+      el.className = 'msg toju m-enter';
       el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + esc(text) + '</div>' + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
       const el = document.createElement('div');
-      el.className = 'msg user';
+      el.className = 'msg user m-enter';
       el.innerHTML = '<div class="col"><div class="bubble">' + esc(text) + '</div></div><div class="av av-user">A</div>';
       convo.appendChild(el); scrollDown();
     }
     function typing() {
       const el = document.createElement('div');
-      el.className = 'msg toju typing';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span class="typing-dots"><i></i><i></i><i></i></span><span style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
-      convo.appendChild(el); scrollDown(); return el;
+      el.className = 'msg toju typing m-enter';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span><span style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
+      convo.appendChild(el);
+      if (window.synMotion) synMotion.mount(el.querySelector('[data-lottie]'));
+      scrollDown(); return el;
     }
 
     async function ask() {

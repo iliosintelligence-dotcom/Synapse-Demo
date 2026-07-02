@@ -1,0 +1,103 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Synapse motion system (web runtime).
+   - Mounts Lottie animations on [data-lottie="name"] via lottie-web (CDN).
+   - Scroll-reveals cards/sections ([data-reveal], auto-tagged on .card).
+   - Adds micro press feedback to tappable elements.
+   Mirrors the RN system in packages/ui/src/motion — same JSON files,
+   same tokens (see motion.css).
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const BASE = (document.currentScript && document.currentScript.getAttribute('data-motion-base')) || 'motion/';
+
+  /* ── lottie-web loader (lazy, one script) ── */
+  let lottieReady = null;
+  function loadLottie() {
+    if (lottieReady) return lottieReady;
+    lottieReady = new Promise((resolve, reject) => {
+      if (window.lottie) return resolve(window.lottie);
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie_light.min.js';
+      s.onload = () => resolve(window.lottie);
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return lottieReady;
+  }
+
+  const players = new Map();
+
+  function mount(el) {
+    if (players.has(el) || REDUCED) return;
+    const name = el.getAttribute('data-lottie');
+    if (!name) return;
+    players.set(el, true);
+    loadLottie().then((lottie) => {
+      const anim = lottie.loadAnimation({
+        container: el,
+        renderer: 'svg',
+        loop: el.getAttribute('data-loop') !== 'false',
+        autoplay: el.getAttribute('data-autoplay') !== 'false',
+        path: BASE + name + '.json',
+      });
+      anim.setSpeed(parseFloat(el.getAttribute('data-speed') || '1'));
+      players.set(el, anim);
+      // hold last frame for play-once badges
+      if (el.getAttribute('data-loop') === 'false' && el.getAttribute('data-hold') !== 'false') {
+        anim.addEventListener('complete', () => anim.goToAndStop(anim.totalFrames - 1, true));
+      }
+    }).catch(() => {});
+  }
+
+  /* Only run looping animations while visible — battery + perf rule */
+  const lottieIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      const p = players.get(e.target);
+      if (e.isIntersecting) {
+        if (!p) mount(e.target);
+        else if (p !== true && p.isPaused) p.play();
+      } else if (p && p !== true) {
+        p.pause();
+      }
+    });
+  }, { rootMargin: '60px' });
+
+  /* ── scroll reveal ── */
+  const revealIO = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); revealIO.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+
+  function initRoot(root) {
+    root.querySelectorAll('[data-lottie]').forEach((el) => lottieIO.observe(el));
+    // auto-tag cards + sections for reveal, staggered within their parent
+    const autoTargets = root.querySelectorAll('.card:not([data-reveal]), [data-reveal]:not(.in)');
+    const counters = new Map();
+    autoTargets.forEach((el) => {
+      if (!el.hasAttribute('data-reveal')) el.setAttribute('data-reveal', '');
+      const parent = el.parentElement;
+      const i = (counters.get(parent) || 0);
+      counters.set(parent, i + 1);
+      el.style.setProperty('--reveal-i', Math.min(i, 6));
+      revealIO.observe(el);
+    });
+    root.querySelectorAll('button, .btn, .f, .wa, .chip, nav a').forEach((el) => el.classList.add('m-press'));
+  }
+
+  function api() {
+    return {
+      mount,
+      play: (el) => { const p = players.get(el); if (p && p !== true) { p.goToAndStop(0, true); p.play(); } },
+      refresh: () => initRoot(document),
+    };
+  }
+
+  window.synMotion = api();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initRoot(document));
+  } else {
+    initRoot(document);
+  }
+})();
