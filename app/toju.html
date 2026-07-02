@@ -47,12 +47,22 @@
     .matches-h .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--brand); }
     .matches-h .cnt { font-size: 11px; font-weight: 700; color: var(--brand); background: rgba(255,123,44,0.12); border-radius: 9px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
     .pcard { display: flex; gap: 13px; margin-top: 9px; padding: 11px; border-radius: 15px; cursor: pointer; transition: all .2s;
+      text-decoration: none; color: var(--ink);
       background: rgba(255,255,255,0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--border); box-shadow: 0 10px 26px rgba(20,26,38,0.06); }
+    .pcard, .pcard * { text-decoration: none; }
     .pcard:hover { transform: translateY(-1px); border-color: rgba(255,123,44,0.25); }
     .pcard img { width: 62px; height: 62px; border-radius: 12px; object-fit: cover; }
+    .pcard .pthumb { width: 62px; height: 62px; border-radius: 12px; flex: none; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; color: #fff; font-family: var(--f-serif);
+      background: linear-gradient(135deg, #C2552B, #FF7B2C); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25); }
+    .pcard .pthumb b { font-size: 20px; line-height: 1; }
+    .pcard .pthumb span { font-size: 9px; letter-spacing: .08em; opacity: .9; margin-top: 3px; }
     .pcard .price { font-family: var(--f-serif); font-size: 21px; color: var(--brand); }
     .pcard .ttl { font-size: 13px; font-weight: 500; color: var(--ink); }
     .pcard .meta { font-size: 11.5px; color: var(--ink-dim); }
+    .pcard .watch { font-size: 11px; color: var(--ink-dim); margin-top: 3px; }
+    .pcard .watch b { color: #b0521f; font-weight: 600; }
+    .pcard .trust { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: var(--brand); }
 
     .typing .bubble { display: flex; align-items: center; gap: 9px; }
     .typing-dots { display: flex; gap: 4px; }
@@ -146,15 +156,34 @@
     const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 
-    const MATCHES_HTML =
-      '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span><span class="cnt">2</span></div>'
-      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=70" alt="" /><div><div class="price">₦165M</div><div class="ttl">3-Bed Apartment, Lekki Phase 1</div><div class="meta">Trust 94 · ↓ below market</div></div></a>'
-      + '<a class="pcard" href="property.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=70" alt="" /><div><div class="price">₦148M</div><div class="ttl">3-Bed Terrace, Ikate</div><div class="meta">Trust 91 · high-growth area</div></div></a>';
+    const naira = (n) => {
+      n = Number(n) || 0;
+      if (n >= 1e9) return '₦' + (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 1) + 'B';
+      if (n >= 1e6) return '₦' + Math.round(n / 1e6) + 'M';
+      return '₦' + n.toLocaleString();
+    };
+    function matchesHtml(matches) {
+      if (!Array.isArray(matches) || matches.length === 0) return '';
+      const cards = matches.map((m) => {
+        const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
+          ? '<div class="watch"><b>Watch:</b> ' + esc(m.whatToWatch) + '</div>' : '';
+        const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
+        return '<a class="pcard" href="property.html">'
+          + '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>'
+          + '<div><div class="price">' + naira(m.price) + '</div>'
+          + '<div class="ttl">' + esc(m.title || '') + '</div>'
+          + '<div class="meta"><span class="trust">✦ Trust ' + (Number(m.trustScore) || 0) + '</span> · '
+          + esc(m.city || '') + yld + '</div>'
+          + watch + '</div></a>';
+      }).join('');
+      return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span>'
+        + '<span class="cnt">' + matches.length + '</span></div>' + cards;
+    }
 
-    function tojuMsg(text, withMatches) {
+    function tojuMsg(text, matches) {
       const el = document.createElement('div');
       el.className = 'msg toju';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + esc(text) + '</div>' + (withMatches ? MATCHES_HTML : '') + '</div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + esc(text) + '</div>' + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -183,9 +212,10 @@
         if (!res.ok || data.error || !data.reply) {
           tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
         } else {
-          saved.push({ role: 'assistant', content: data.reply, matches: data.showMatches === true });
+          const matches = (data.showMatches === true && Array.isArray(data.matches)) ? data.matches : [];
+          saved.push({ role: 'assistant', content: data.reply, matches });
           persist();
-          tojuMsg(data.reply, data.showMatches === true);
+          tojuMsg(data.reply, matches);
         }
       } catch (e) {
         t.remove();
@@ -254,7 +284,7 @@
     // restore the saved conversation so people continue where they left off
     const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
     if (saved.length === 0) { saved = [{ role: 'assistant', content: GREETING }]; persist(); }
-    saved.forEach((m) => (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, !!m.matches)));
+    saved.forEach((m) => (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])));
 
     // new chat — clear the saved thread and start fresh
     function newChat() { localStorage.removeItem(STORE); saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING); }
