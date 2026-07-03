@@ -204,7 +204,7 @@
               <span class="match">${l.match}% match</span>
               <label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>
             </div>
-            <div class="price">${naira(l.priceN)}</div>
+            <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
             <div class="ttl">${esc(l.ttl)}</div>
             <div class="loc">${esc(l.loc)}</div>
             <div class="why">${l.why}</div>
@@ -315,6 +315,7 @@
         items = d.matches.map((m, i) => ({
           id: m.id || 'r' + i,
           img: null,
+          per: m.listingType === 'rent',
           priceN: Number(m.price) || 0,
           ttl: m.title,
           loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : m.city,
