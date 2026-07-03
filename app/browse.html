@@ -9,11 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* This page is not a catalogue. It only shows the homes Toju picked for
-       this person's brief — you arrive here from "View all →" in the chat. */
-    /* same warm scene as the Toju chat, kept clear — the frosted cards
-       refract it, which is what makes the glassmorphism real */
+    /* Not a catalogue — only the homes Toju picked for this brief.
+       Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
     body { background: #f7efe7; }
     .bg-scene { position: fixed; inset: 0; z-index: 0;
       background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
@@ -23,25 +22,37 @@
         linear-gradient(180deg, rgba(250,242,234,0.3) 0%, rgba(248,238,228,0.4) 55%, rgba(244,230,216,0.55) 100%); }
     .wrap { position: relative; z-index: 1; }
     .appbar { background: rgba(250,245,239,0.55); backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
-    /* stronger frost so text stays readable over the photo */
     .card { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
       backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
-    .brief { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin: 18px 0 22px; }
+
+    .brief { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin: 18px 0 14px; }
     .brief .orb { width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
     .brief .txt { flex: 1; font-size: 13.5px; color: var(--ink-muted); }
     .brief .txt b { color: var(--ink); font-weight: 600; }
     .brief .refine { white-space: nowrap; font-size: 13px; font-weight: 600; color: #C2552B; }
     .brief .refine:hover { text-decoration: underline; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    /* map — the Zillow-parity view, but only YOUR pins */
+    #map { height: 250px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
+      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13); }
+    .price-pin { background: var(--brand); color: #fff; font: 700 11px/1 var(--f-sans); padding: 5px 9px; border-radius: 100px;
+      box-shadow: 0 4px 12px rgba(150,70,20,0.4); white-space: nowrap; border: 1.5px solid #fff; }
+    .price-pin.dim { background: #8b8b8b; }
 
-    /* frosted match card — text UP, photo DOWN (per the reference) */
-    .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer;
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .toolbar select { font: 500 12.5px var(--f-sans); color: var(--ink); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; outline: none; cursor: pointer; }
+    .toolbar .hintt { font-size: 12px; color: var(--ink-dim); margin-left: auto; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative;
       transition: opacity var(--m-expanded) var(--m-ease), transform var(--m-expanded) var(--m-ease), box-shadow .25s, border-color .25s; }
     .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(255,123,44,0.4); }
+    .listing.cmp { border-color: rgba(194,85,43,0.55); box-shadow: 0 0 0 2px rgba(194,85,43,0.25), 0 26px 56px rgba(122,62,22,0.12); }
     .listing .body { padding: 18px 18px 14px; }
-    .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+    .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
     .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.22); padding: 3px 9px; border-radius: 100px; }
+    .listing .cmpbox { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-dim); cursor: pointer; }
+    .listing .cmpbox input { accent-color: #C2552B; }
     .listing .price { font-family: var(--f-serif); font-size: 27px; color: var(--brand); }
     .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
     .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
@@ -52,8 +63,33 @@
     .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
     .listing .img img { width: 100%; height: 100%; object-fit: cover; }
     .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
-      background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.7);
-      display: flex; align-items: center; justify-content: center; font-size: 15px; }
+      background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
+    .listing .save.on { color: #C2552B; background: rgba(255,255,255,0.85); }
+    .listing .save:active { transform: scale(0.85); }
+
+    /* compare bar + overlay */
+    .cmpbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 20; display: none;
+      align-items: center; gap: 14px; padding: 12px 12px 12px 20px; border-radius: 100px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(28px) saturate(1.6); border: 1px solid rgba(255,255,255,0.85);
+      box-shadow: 0 22px 54px rgba(122,62,22,0.22); font-size: 13px; color: var(--ink-muted); }
+    .cmpbar.on { display: flex; }
+    .cmpbar b { color: var(--ink); }
+    .cmpbar button { background: var(--brand); color: #fff; font: 600 13px var(--f-sans); border: none; border-radius: 100px; padding: 10px 18px; cursor: pointer; }
+    .cmpwrap { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .cmpwrap.on { display: flex; }
+    .cmpwrap .veil { position: absolute; inset: 0; background: rgba(40,20,8,0.3); backdrop-filter: blur(3px); }
+    .cmpsheet { position: relative; width: 100%; max-width: 760px; max-height: 86vh; overflow: auto; padding: 26px; border-radius: var(--radius); }
+    .cmpsheet h3 { font-family: var(--f-serif); font-weight: 300; font-size: 24px; margin-bottom: 4px; }
+    .cmpsheet .sub { font-size: 12.5px; color: var(--ink-muted); margin-bottom: 18px; }
+    .cmptable { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cmptable th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-dim); font-weight: 600; padding: 9px 10px; }
+    .cmptable td { padding: 9px 10px; border-top: 1px solid rgba(0,0,0,0.05); vertical-align: top; }
+    .cmptable td.h { color: var(--ink-muted); white-space: nowrap; font-weight: 500; }
+    .cmptable .best { color: var(--success); font-weight: 700; }
+    .cmptable .warn { color: #b0521f; font-weight: 600; }
+    .cmpclose { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 17px; color: var(--ink-dim); cursor: pointer; }
+
     .empty { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: var(--ink-muted); font-size: 14px; }
     .grid:empty + .empty { display: flex; }
   </style>
@@ -84,6 +120,17 @@
       <a class="refine" href="toju.html">Refine with Toju →</a>
     </div>
 
+    <div id="map"></div>
+
+    <div class="toolbar">
+      <select id="sortSel">
+        <option value="match">Sort: Best match</option>
+        <option value="price">Sort: Price (low → high)</option>
+        <option value="trust">Sort: Trust score</option>
+      </select>
+      <span class="hintt">♡ saves this home · tick two or more to compare side by side</span>
+    </div>
+
     <div class="grid" id="grid"></div>
     <div class="empty">
       <span data-lottie="empty-search" style="width:150px;height:120px"></span>
@@ -91,33 +138,73 @@
     </div>
   </div>
 
+  <div class="cmpbar" id="cmpbar">
+    <span><b id="cmpCount">0</b> selected</span>
+    <button id="cmpGo">Compare side by side</button>
+  </div>
+
+  <div class="cmpwrap" id="cmpwrap">
+    <div class="veil" id="cmpVeil"></div>
+    <div class="card cmpsheet">
+      <button class="cmpclose" id="cmpClose">✕</button>
+      <h3>Side by side</h3>
+      <p class="sub">Toju's read: green = strongest of the set, terracotta = watch it.</p>
+      <div id="cmpTable"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Only the homes Toju matched to this brief — not the whole inventory.
-    // Loads the REAL matched set for this visitor's session; the demo cards
-    // below are the fallback before anyone has talked to Toju.
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
     const VISITOR = localStorage.getItem('toju_visitor_v1');
     const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + Math.round(n/1e6) + 'M' : '₦' + n.toLocaleString(); };
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+    // area → coords (prototype geocoder; real app uses listing lat/lon)
+    const GEO = {
+      'ikate': [6.437, 3.522], 'lekki phase 1': [6.447, 3.47], 'lekki': [6.45, 3.5],
+      'victoria island': [6.428, 3.421], 'osapa': [6.443, 3.49], 'sangotedo': [6.468, 3.628],
+      'surulere': [6.5, 3.35], 'ajah': [6.468, 3.57], 'epe': [6.585, 3.983], 'yaba': [6.507, 3.371],
+      'ikoyi': [6.452, 3.435], 'ikeja': [6.601, 3.351], 'magodo': [6.617, 3.38],
+      'lagos': [6.52, 3.38], 'abuja': [9.06, 7.49], 'port harcourt': [4.82, 7.03],
+      'ibadan': [7.38, 3.94], 'calabar': [4.97, 8.34], 'enugu': [6.45, 7.54],
+    };
+    function coords(loc, i) {
+      const k = Object.keys(GEO).find((k) => String(loc).toLowerCase().includes(k));
+      const base = k ? GEO[k] : GEO['lagos'];
+      return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
+    }
+
     const demoMatches = [
-      { img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', price: '₦148M', ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
-      { img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', price: '₦165M', ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94, match: 87, why: '<b>Why:</b> slightly over budget, but ₦12M below area median with an 8.4% yield.' },
-      { img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', price: '₦142M', ttl: '2-Bed Flat + Study, Victoria Island', loc: 'Victoria Island, Lagos', score: 89, match: 82, why: '<b>Why:</b> shortest commute of the five; the study converts to a third bedroom.' },
-      { img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', price: '₦150M', ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
-      { img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', price: '₦139M', ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
+      { id: 'd1', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', priceN: 148e6, ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, flood: 22, power: 68, yield: 7.1, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
+      { id: 'd2', img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', priceN: 165e6, ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94, match: 87, flood: 28, power: 74, yield: 8.4, why: '<b>Why:</b> slightly over budget, but ₦12M below area median with an 8.4% yield.' },
+      { id: 'd3', img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', priceN: 142e6, ttl: '2-Bed Flat + Study, Victoria Island', loc: 'Victoria Island, Lagos', score: 89, match: 82, flood: 51, power: 79, yield: 6.2, why: '<b>Why:</b> shortest commute of the five; the study converts to a third bedroom.' },
+      { id: 'd4', img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', priceN: 150e6, ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, flood: 33, power: 66, yield: 6.8, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
+      { id: 'd5', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', priceN: 139e6, ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, flood: 58, power: 55, yield: 7.7, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
     ];
     const IMG_POOL = demoMatches.map((d) => d.img);
-    function renderCards(list) {
-      document.getElementById('grid').innerHTML = list.map((l, i) => `
-        <a class="card listing" href="property.html">
+    let items = demoMatches.slice();
+    let saves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
+    let picked = new Set();
+    let map, markerLayer;
+
+    function sortItems() {
+      const s = document.getElementById('sortSel').value;
+      items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? b.score - a.score : b.match - a.match);
+    }
+
+    function render() {
+      sortItems();
+      document.getElementById('grid').innerHTML = items.map((l, i) => `
+        <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
           <div class="body">
             <div class="tags">
               <span class="chip chip-pass">✓ Verified</span>
               <span class="match">${l.match}% match</span>
+              <label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>
             </div>
-            <div class="price">${l.price}</div>
+            <div class="price">${naira(l.priceN)}</div>
             <div class="ttl">${esc(l.ttl)}</div>
             <div class="loc">${esc(l.loc)}</div>
             <div class="why">${l.why}</div>
@@ -125,15 +212,89 @@
           </div>
           <div class="img">
             <img src="${l.img || IMG_POOL[i % IMG_POOL.length]}" alt="" />
-            <div class="save">♡</div>
+            <div class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${saves.has(l.id) ? '♥' : '♡'}</div>
           </div>
-        </a>
+        </div>
       `).join('');
       if (window.synMotion) synMotion.refresh();
+      drawMap();
+      updateBar();
     }
-    renderCards(demoMatches);
 
-    // real matches from this visitor's Toju session
+    function drawMap() {
+      if (!window.L) return;
+      if (!map) {
+        map = L.map('map', { scrollWheelZoom: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
+        }).addTo(map);
+        markerLayer = L.layerGroup().addTo(map);
+      }
+      markerLayer.clearLayers();
+      const pts = [];
+      items.forEach((l, i) => {
+        const c = coords(l.loc, i);
+        pts.push(c);
+        L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
+          .addTo(markerLayer)
+          .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match}% match · Trust ${l.score}`);
+      });
+      if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35));
+    }
+
+    function updateBar() {
+      const bar = document.getElementById('cmpbar');
+      document.getElementById('cmpCount').textContent = picked.size;
+      bar.classList.toggle('on', picked.size >= 2);
+    }
+
+    document.getElementById('grid').addEventListener('click', (e) => {
+      const sv = e.target.closest('[data-save]');
+      if (sv) {
+        const id = sv.getAttribute('data-save');
+        saves.has(id) ? saves.delete(id) : saves.add(id);
+        localStorage.setItem('synapse_saved', JSON.stringify([...saves]));
+        render(); return;
+      }
+      const cb = e.target.closest('[data-cmp]');
+      if (cb) {
+        const id = cb.getAttribute('data-cmp');
+        picked.has(id) ? picked.delete(id) : picked.add(id);
+        if (picked.size > 3) { picked.delete(id); cb.checked = false; }
+        render(); return;
+      }
+      if (e.target.closest('.listing')) location.href = 'property.html';
+    });
+    document.getElementById('sortSel').addEventListener('change', render);
+
+    // ── compare overlay ──
+    function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
+    document.getElementById('cmpGo').addEventListener('click', () => {
+      const sel = items.filter((l) => picked.has(l.id));
+      const rows = [
+        ['Price', sel.map((l) => l.priceN), (v, b) => `<span class="${v === b ? 'best' : ''}">${naira(v)}</span>`, 'min'],
+        ['Match', sel.map((l) => l.match), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
+        ['Trust score', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
+        ['Flood risk', sel.map((l) => l.flood ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : v >= 50 ? 'warn' : ''}">${v}/100${v >= 50 ? ' ⚠' : ''}</span>`, 'min'],
+        ['Power reliability', sel.map((l) => l.power ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}/100</span>`, 'max'],
+        ['Gross yield', sel.map((l) => l.yield ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
+      ];
+      let html = '<table class="cmptable"><tr><th></th>' + sel.map((l) => `<th>${esc(l.ttl)}</th>`).join('') + '</tr>';
+      rows.forEach(([label, vals, fmt, dir]) => {
+        const nums = vals.filter((v) => typeof v === 'number');
+        const b = nums.length ? best(nums, dir) : null;
+        html += `<tr><td class="h">${label}</td>` + vals.map((v) => `<td>${fmt(v, b)}</td>`).join('') + '</tr>';
+      });
+      html += '</table>';
+      document.getElementById('cmpTable').innerHTML = html;
+      document.getElementById('cmpwrap').classList.add('on');
+    });
+    document.getElementById('cmpClose').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
+    document.getElementById('cmpVeil').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
+
+    render();
+
+    // ── real matches from this visitor's Toju session ──
     if (VISITOR) {
       fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
         method: 'POST',
@@ -141,20 +302,26 @@
         body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
       }).then((r) => r.json()).then((d) => {
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
-        renderCards(d.matches.map((m) => ({
+        items = d.matches.map((m, i) => ({
+          id: m.id || 'r' + i,
           img: null,
-          price: naira(m.price),
+          priceN: Number(m.price) || 0,
           ttl: m.title,
           loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : m.city,
           score: m.trustScore,
           match: m.fitScore || 80,
+          flood: m.neighbourhood ? m.neighbourhood.flood : null,
+          power: m.neighbourhood ? m.neighbourhood.power : null,
+          yield: m.yieldPct,
           why: m.why ? '<b>Why:</b> ' + esc(m.why)
              : (m.whatToWatch && m.whatToWatch !== 'No major synthetic flags' ? '<b>Watch:</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
-        })));
+        }));
+        picked = new Set();
         if (d.criteria && d.criteria.brief) {
           document.querySelector('.brief .txt').innerHTML =
-            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + d.matches.length + ' verified home' + (d.matches.length > 1 ? 's' : '') + ' that fit.';
+            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
         }
+        render();
       }).catch(() => {});
     }
   </script>

@@ -10,13 +10,27 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <style>
-    .hero { position: relative; height: 360px; border-radius: var(--radius); overflow: hidden; }
-    .hero img { width: 100%; height: 100%; object-fit: cover; }
+    /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
+       monthly cost, neighbourhood intelligence, commute, similar homes. */
+    .hero { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; }
+    .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
     .hero .counter { position: absolute; top: 16px; right: 16px; background: rgba(21,23,26,0.5); color: #fff; font-size: 12px; padding: 5px 11px; border-radius: 100px; }
-    .summary { margin-top: -46px; position: relative; padding: 24px; }
+    .hero .actions { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; }
+    .hero .act { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; }
+    .hero .act.on { color: #C2552B; background: rgba(255,255,255,0.9); }
+    .thumbs { display: flex; gap: 8px; margin-top: 10px; }
+    .thumbs img { width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: all var(--m-micro) var(--m-ease); }
+    .thumbs img.on { opacity: 1; border-color: var(--brand); }
+
+    .summary { margin-top: 14px; position: relative; padding: 24px; }
     .summary .price { font-family: var(--f-serif); font-size: 40px; color: var(--brand); }
-    .summary .ttl { font-size: 18px; font-weight: 500; }
+    .summary .ctx { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
+    .summary .ctx b { color: var(--success); font-weight: 700; }
+    .summary .ttl { font-size: 18px; font-weight: 500; margin-top: 6px; }
     .summary .loc { color: var(--ink-muted); font-size: 14px; margin-top: 2px; }
+    .facts { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--ink-muted); flex-wrap: wrap; }
+    .facts b { color: var(--ink); font-weight: 600; }
+
     .section { padding: 22px 24px; margin-top: 16px; }
     .section .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
     .reason { font-size: 14.5px; line-height: 1.7; }
@@ -24,7 +38,42 @@
     .ringbig { width: 56px; height: 56px; border-radius: 50%; border: 3.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 20px; color: var(--ink); }
     .agency { display: flex; align-items: center; gap: 14px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,123,44,0.1); border: 1px solid rgba(255,123,44,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
-    .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); }
+
+    /* true cost */
+    .cost-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .cost-row { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--ink-muted); }
+    .cost-row b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cost-row.total { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 10px; margin-top: 4px; font-weight: 600; color: var(--ink); }
+    .cost-row.total b { color: var(--brand); font-family: var(--f-serif); font-size: 18px; }
+    .cost-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+
+    /* neighbourhood intelligence bars */
+    .nb { display: flex; flex-direction: column; gap: 10px; }
+    .nb .row { display: grid; grid-template-columns: 120px 1fr 34px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-muted); }
+    .nb .bar { height: 7px; border-radius: 100px; background: rgba(0,0,0,0.06); overflow: hidden; }
+    .nb .bar i { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, #C2552B, #FF7B2C); width: 0; transition: width .8s var(--m-ease); }
+    .nb .bar i.good { background: linear-gradient(90deg, #2e7d4f, #4fb87e); }
+    .nb .v { font-weight: 700; color: var(--ink); font-size: 12px; text-align: right; }
+    .nb-note { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06); }
+
+    /* commute */
+    .commute { display: flex; gap: 8px; flex-wrap: wrap; }
+    .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
+    .commute .c b { color: var(--ink); font-weight: 600; }
+
+    /* similar homes */
+    .sim { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .sim::-webkit-scrollbar { display: none; }
+    .sim a { flex: none; width: 168px; border-radius: 15px; overflow: hidden; background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.09); transition: transform var(--m-standard) var(--m-ease); }
+    .sim a:hover { transform: translateY(-3px); }
+    .sim img { width: 100%; height: 92px; object-fit: cover; }
+    .sim .b { padding: 9px 11px 11px; }
+    .sim .p { font-family: var(--f-serif); font-size: 16px; color: var(--brand); }
+    .sim .t { font-size: 11.5px; font-weight: 500; margin-top: 1px; }
+    .sim .m { font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
+
+    .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); display: flex; gap: 10px; }
+    .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #C2552B; border: 1px solid rgba(194,85,43,0.3); }
   </style>
 </head>
 <body>
@@ -38,20 +87,27 @@
       <a href="browse.html">Your matches</a>
     </nav>
     <span class="spacer"></span>
-    <a class="home" href="browse.html">← Back to browse</a>
+    <a class="home" href="browse.html">← Back to matches</a>
   </div>
 
   <div class="wrap phone">
     <div class="hero">
-      <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
-      <span class="counter">1 / 8</span>
+      <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
+      <span class="counter" id="counter">1 / 5</span>
+      <div class="actions">
+        <div class="act" id="saveBtn" title="Save">♡</div>
+        <div class="act" id="shareBtn" title="Share">↗</div>
+      </div>
     </div>
+    <div class="thumbs" id="thumbs"></div>
 
     <div class="card summary">
       <div class="price">₦165M</div>
+      <div class="ctx">₦1.02M/m² · <b>₦12M below</b> the Lekki Phase 1 median</div>
       <div class="ttl">3-Bed Apartment, Lekki Phase 1</div>
       <div class="loc">Lekki Phase 1, Lagos</div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:18px">
+      <div class="facts"><span><b>3</b> beds</span><span><b>3</b> baths</span><span><b>2</b> parking</span><span><b>162</b> m²</span><span>built <b>2019</b></span></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:16px">
         <div class="ringbig">94</div>
         <div>
           <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
@@ -66,6 +122,45 @@
     <div class="card section">
       <div class="lbl">✦ Toju's take</div>
       <p class="reason">87% match. Your commute from here to Lagos Island is 14 minutes shorter than comparable listings in this band, it's ₦12M below the area median, and the 8.4% rental yield in this corridor beats the Lagos average of 6.1%. For a mix of home and investment, this is the strongest of the two I found.</p>
+    </div>
+
+    <!-- true monthly cost — the Zillow calculator, Lagos reality -->
+    <div class="card section">
+      <div class="lbl">₦ What it really costs</div>
+      <div class="cost-rows">
+        <div class="cost-row"><span>Mortgage · 20% down, 20 yrs @ 22%</span><b>₦2.44M/mo</b></div>
+        <div class="cost-row"><span>Service charge</span><b>₦83k/mo</b></div>
+        <div class="cost-row"><span>Power backup &amp; utilities (est.)</span><b>₦120k/mo</b></div>
+        <div class="cost-row"><span>School run fuel — 12 min route (est.)</span><b>₦45k/mo</b></div>
+        <div class="cost-row total"><span>True monthly cost</span><b>≈ ₦2.69M/mo</b></div>
+      </div>
+      <p class="cost-note">Buying cash? Your ₦165M earns back ≈ ₦13.9M/yr at the corridor's 8.4% gross yield if you ever rent it out. Estimates from verified listing data + area intelligence — refine with Toju.</p>
+    </div>
+
+    <!-- neighbourhood intelligence (RentCast-style, from the twin) -->
+    <div class="card section">
+      <div class="lbl">◎ Neighbourhood intelligence — Lekki Phase 1</div>
+      <div class="nb">
+        <div class="row"><span>Safety</span><div class="bar"><i class="good" data-w="82"></i></div><span class="v">82</span></div>
+        <div class="row"><span>Family life</span><div class="bar"><i class="good" data-w="85"></i></div><span class="v">85</span></div>
+        <div class="row"><span>Schools access</span><div class="bar"><i class="good" data-w="88"></i></div><span class="v">88</span></div>
+        <div class="row"><span>Power reliability</span><div class="bar"><i data-w="74"></i></div><span class="v">74</span></div>
+        <div class="row"><span>Internet</span><div class="bar"><i class="good" data-w="86"></i></div><span class="v">86</span></div>
+        <div class="row"><span>Flood risk</span><div class="bar"><i data-w="28"></i></div><span class="v">28</span></div>
+      </div>
+      <p class="nb-note">Prices in this corridor are <b style="color:var(--success)">rising</b> · typical 3-bed rent ₦8.5M/yr · rental demand high. 4 schools, 2 hospitals and 3 supermarkets within 10 minutes.</p>
+    </div>
+
+    <!-- commute -->
+    <div class="card section">
+      <div class="lbl">⌖ Commute from here</div>
+      <div class="commute">
+        <span class="c">Lagos Island <b>35 min</b></span>
+        <span class="c">Victoria Island <b>25 min</b></span>
+        <span class="c">Lekki Phase 1 gate <b>6 min</b></span>
+        <span class="c">Airport (MMIA) <b>1h 10m</b></span>
+        <span class="c">Greenwood School <b>12 min</b></span>
+      </div>
     </div>
 
     <div class="card section">
@@ -93,11 +188,65 @@
         <span class="chip chip-gold">✦ Gold</span>
       </div>
     </div>
+
+    <!-- similar verified homes -->
+    <div class="card section">
+      <div class="lbl">More like this — verified</div>
+      <div class="sim">
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=340&q=60" alt=""><div class="b"><div class="p">₦148M</div><div class="t">3-Bed Terrace, Ikate</div><div class="m">Trust 91 · 94% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=340&q=60" alt=""><div class="b"><div class="p">₦150M</div><div class="t">3-Bed Duplex, Osapa</div><div class="m">Trust 88 · 80% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Trust 84 · 76% match</div></div></a>
+      </div>
+    </div>
   </div>
 
   <div class="wrap phone cta-dock" style="padding-top:0">
-    <button class="btn btn-primary btn-block" onclick="alert('In the live app this opens a WhatsApp lead to the agency within seconds.')">Contact Agency</button>
+    <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?">✦ Ask Toju about this home</a>
+    <button class="btn btn-primary" style="flex:1" onclick="alert('In the live app this opens a WhatsApp lead to the agency within seconds.')">Contact Agency</button>
   </div>
+
+  <script>
+    // gallery
+    const PHOTOS = [
+      'photo-1600596542815-ffad4c1539a9', 'photo-1600607687939-ce8a6c25118c', 'photo-1600566753086-00f18fb6b3ea',
+      'photo-1600585154340-be6161a56a0c', 'photo-1512917774080-9991f1c4c750',
+    ].map((p) => `https://images.unsplash.com/${p}?w=900&q=80`);
+    const hero = document.getElementById('heroImg');
+    const thumbs = document.getElementById('thumbs');
+    thumbs.innerHTML = PHOTOS.map((p, i) => `<img src="${p.replace('w=900', 'w=200')}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`).join('');
+    thumbs.addEventListener('click', (e) => {
+      const t = e.target.closest('img[data-i]');
+      if (!t) return;
+      const i = Number(t.dataset.i);
+      hero.style.opacity = 0;
+      setTimeout(() => { hero.src = PHOTOS[i]; hero.style.opacity = 1; }, 160);
+      document.getElementById('counter').textContent = (i + 1) + ' / ' + PHOTOS.length;
+      thumbs.querySelectorAll('img').forEach((im) => im.classList.toggle('on', im === t));
+    });
+
+    // save + share
+    const saveBtn = document.getElementById('saveBtn');
+    const SAVED_KEY = 'synapse_saved';
+    const PROP_ID = 'lekki-ph1-3bed';
+    let savedSet = new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'));
+    function paintSave() { saveBtn.textContent = savedSet.has(PROP_ID) ? '♥' : '♡'; saveBtn.classList.toggle('on', savedSet.has(PROP_ID)); }
+    saveBtn.addEventListener('click', () => {
+      savedSet.has(PROP_ID) ? savedSet.delete(PROP_ID) : savedSet.add(PROP_ID);
+      localStorage.setItem(SAVED_KEY, JSON.stringify([...savedSet])); paintSave();
+    });
+    paintSave();
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      const data = { title: '3-Bed Apartment, Lekki Phase 1 — Synapse', text: 'Verified · Trust 94 · ₦165M', url: location.href };
+      if (navigator.share) { try { await navigator.share(data); } catch (e) {} }
+      else { await navigator.clipboard.writeText(location.href); alert('Link copied'); }
+    });
+
+    // animate neighbourhood bars on view
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { e.target.querySelectorAll('.bar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }); io.unobserve(e.target); }
+    }), { threshold: 0.3 });
+    document.querySelectorAll('.nb').forEach((el) => io.observe(el));
+  </script>
   <script src="motion.js"></script>
 </body>
 </html>

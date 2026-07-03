@@ -319,6 +319,10 @@
       }
     }).catch(() => {});
 
+    // deep link from a listing: ?ask=... pre-fills the composer
+    const askParam = new URLSearchParams(location.search).get('ask');
+    if (askParam) { input.value = askParam.slice(0, 300); input.focus(); scrollDown(); }
+
     // new chat — fresh visitor id, so the server thread starts clean too
     function newChat() {
       localStorage.removeItem(STORE);
