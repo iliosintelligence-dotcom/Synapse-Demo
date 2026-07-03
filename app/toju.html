@@ -181,6 +181,11 @@
       if (!Array.isArray(matches) || matches.length === 0) return '';
       const cards = matches.map((m) => {
         const why = m.why ? '<div class="watch"><b>Why:</b> ' + esc(m.why) + '</div>' : '';
+        const room = m.room ? '<div class="watch">' +
+          (m.room.totalRooms - m.room.housematesIn) + ' of ' + m.room.totalRooms + ' rooms free · ' +
+          (m.room.genderPreference === 'any' ? 'any gender' : m.room.genderPreference + '-only') +
+          (m.room.ensuite ? ' · ensuite' : '') + (m.room.billsIncluded ? ' · bills incl.' : '') +
+          (m.room.vibe ? ' · ' + esc(m.room.vibe) : '') + '</div>' : '';
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
           ? '<div class="watch"><b>Watch:</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
@@ -190,7 +195,7 @@
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
           + '<div class="meta"><span class="trust">✦ Trust ' + (Number(m.trustScore) || 0) + '</span> · '
           + esc(m.city || '') + yld + '</div>'
-          + why + watch + '</div></a>';
+          + room + why + watch + '</div></a>';
       }).join('');
       return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span>'
         + '<span class="cnt">' + matches.length + '</span>'
@@ -235,6 +240,7 @@
           saved.push({ role: 'assistant', content: data.reply, matches });
           persist();
           tojuMsg(data.reply, matches);
+          renderSuggest(data.suggestions);
         }
       } catch (e) {
         t.remove();
@@ -253,7 +259,19 @@
       ask();
     }
 
-    document.getElementById('tjSuggest').addEventListener('click', (e) => {
+    // suggestions are DYNAMIC — Toju sends tap-to-answer options for the
+    // question it just asked ("Married with kids", "Just me", …)
+    const suggestEl = document.getElementById('tjSuggest');
+    const DEFAULT_SUGGEST = suggestEl.innerHTML;
+    function renderSuggest(list) {
+      if (Array.isArray(list) && list.length) {
+        suggestEl.innerHTML = list.map((s) =>
+          '<button data-send="' + esc(s) + '">' + esc(s) + '</button>').join('');
+      } else {
+        suggestEl.innerHTML = DEFAULT_SUGGEST;
+      }
+    }
+    suggestEl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-send]'); if (b) send(b.getAttribute('data-send'));
     });
     sendBtn.addEventListener('click', () => send());
@@ -328,6 +346,7 @@
       localStorage.removeItem(STORE);
       VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {}
       saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING);
+      renderSuggest(null);
     }
     const nc = document.getElementById('tjNew');
     if (nc) nc.addEventListener('click', newChat);
