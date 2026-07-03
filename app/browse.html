@@ -301,6 +301,16 @@
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
         body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
       }).then((r) => r.json()).then((d) => {
+        // A real session exists but nothing matched: show the honest empty
+        // state — never fall back to demo homes from a different city.
+        if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
+          items = []; picked = new Set();
+          if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
+            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Nothing verified fits yet — refine with Toju.';
+          document.getElementById('map').style.display = 'none';
+          render();
+          return;
+        }
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
         items = d.matches.map((m, i) => ({
           id: m.id || 'r' + i,
