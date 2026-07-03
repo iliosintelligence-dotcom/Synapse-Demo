@@ -160,6 +160,10 @@
     const sendBtn = document.getElementById('tjSend');
     let busy = false;
     const STORE = 'toju_chat_v1';
+    // stable anonymous visitor id -> server-side memory (continue anywhere this id exists)
+    const VKEY = 'toju_visitor_v1';
+    let VISITOR = localStorage.getItem(VKEY);
+    if (!VISITOR) { VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {} }
     const loadSaved = () => { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch (e) { return []; } };
     const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} };
     let saved = loadSaved();
@@ -176,6 +180,7 @@
     function matchesHtml(matches) {
       if (!Array.isArray(matches) || matches.length === 0) return '';
       const cards = matches.map((m) => {
+        const why = m.why ? '<div class="watch"><b>Why:</b> ' + esc(m.why) + '</div>' : '';
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
           ? '<div class="watch"><b>Watch:</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
@@ -185,7 +190,7 @@
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
           + '<div class="meta"><span class="trust">✦ Trust ' + (Number(m.trustScore) || 0) + '</span> · '
           + esc(m.city || '') + yld + '</div>'
-          + watch + '</div></a>';
+          + why + watch + '</div></a>';
       }).join('');
       return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span>'
         + '<span class="cnt">' + matches.length + '</span>'
@@ -219,7 +224,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ messages: saved.slice(-14).map((m) => ({ role: m.role, content: m.content })) }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: saved.slice(-14).map((m) => ({ role: m.role, content: m.content })) }),
         });
         const data = await res.json().catch(() => ({}));
         t.remove();
@@ -295,13 +300,31 @@
     }
     micBtn.addEventListener('click', toggleMic);
 
-    // restore the saved conversation so people continue where they left off
+    // restore the saved conversation so people continue where they left off:
+    // local copy renders instantly, then the server copy (visitor id) wins.
     const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
+    function render() {
+      convo.innerHTML = '';
+      saved.forEach((m) => (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])));
+    }
     if (saved.length === 0) { saved = [{ role: 'assistant', content: GREETING }]; persist(); }
-    saved.forEach((m) => (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])));
+    render();
+    fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+      body: JSON.stringify({ action: 'restore', visitorId: VISITOR }),
+    }).then((r) => r.json()).then((d) => {
+      if (Array.isArray(d.messages) && d.messages.length > saved.length) {
+        saved = d.messages; persist(); render();
+      }
+    }).catch(() => {});
 
-    // new chat — clear the saved thread and start fresh
-    function newChat() { localStorage.removeItem(STORE); saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING); }
+    // new chat — fresh visitor id, so the server thread starts clean too
+    function newChat() {
+      localStorage.removeItem(STORE);
+      VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {}
+      saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING);
+    }
     const nc = document.getElementById('tjNew');
     if (nc) nc.addEventListener('click', newChat);
   </script>

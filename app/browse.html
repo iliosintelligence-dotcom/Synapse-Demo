@@ -93,32 +93,70 @@
 
   <script>
     // Only the homes Toju matched to this brief — not the whole inventory.
-    const matches = [
+    // Loads the REAL matched set for this visitor's session; the demo cards
+    // below are the fallback before anyone has talked to Toju.
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const VISITOR = localStorage.getItem('toju_visitor_v1');
+    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + Math.round(n/1e6) + 'M' : '₦' + n.toLocaleString(); };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const demoMatches = [
       { img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', price: '₦148M', ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
       { img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', price: '₦165M', ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94, match: 87, why: '<b>Why:</b> slightly over budget, but ₦12M below area median with an 8.4% yield.' },
       { img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', price: '₦142M', ttl: '2-Bed Flat + Study, Victoria Island', loc: 'Victoria Island, Lagos', score: 89, match: 82, why: '<b>Why:</b> shortest commute of the five; the study converts to a third bedroom.' },
       { img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', price: '₦150M', ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
       { img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', price: '₦139M', ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
     ];
-    document.getElementById('grid').innerHTML = matches.map(l => `
-      <a class="card listing" href="property.html">
-        <div class="body">
-          <div class="tags">
-            <span class="chip chip-pass">✓ Verified</span>
-            <span class="match">${l.match}% match</span>
+    const IMG_POOL = demoMatches.map((d) => d.img);
+    function renderCards(list) {
+      document.getElementById('grid').innerHTML = list.map((l, i) => `
+        <a class="card listing" href="property.html">
+          <div class="body">
+            <div class="tags">
+              <span class="chip chip-pass">✓ Verified</span>
+              <span class="match">${l.match}% match</span>
+            </div>
+            <div class="price">${l.price}</div>
+            <div class="ttl">${esc(l.ttl)}</div>
+            <div class="loc">${esc(l.loc)}</div>
+            <div class="why">${l.why}</div>
+            <div class="score"><span class="ring">${l.score}</span> Trust score</div>
           </div>
-          <div class="price">${l.price}</div>
-          <div class="ttl">${l.ttl}</div>
-          <div class="loc">${l.loc}</div>
-          <div class="why">${l.why}</div>
-          <div class="score"><span class="ring">${l.score}</span> Trust score</div>
-        </div>
-        <div class="img">
-          <img src="${l.img}" alt="" />
-          <div class="save">♡</div>
-        </div>
-      </a>
-    `).join('');
+          <div class="img">
+            <img src="${l.img || IMG_POOL[i % IMG_POOL.length]}" alt="" />
+            <div class="save">♡</div>
+          </div>
+        </a>
+      `).join('');
+      if (window.synMotion) synMotion.refresh();
+    }
+    renderCards(demoMatches);
+
+    // real matches from this visitor's Toju session
+    if (VISITOR) {
+      fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
+      }).then((r) => r.json()).then((d) => {
+        if (!Array.isArray(d.matches) || d.matches.length === 0) return;
+        renderCards(d.matches.map((m) => ({
+          img: null,
+          price: naira(m.price),
+          ttl: m.title,
+          loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : m.city,
+          score: m.trustScore,
+          match: m.fitScore || 80,
+          why: m.why ? '<b>Why:</b> ' + esc(m.why)
+             : (m.whatToWatch && m.whatToWatch !== 'No major synthetic flags' ? '<b>Watch:</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
+        })));
+        if (d.criteria && d.criteria.brief) {
+          document.querySelector('.brief .txt').innerHTML =
+            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + d.matches.length + ' verified home' + (d.matches.length > 1 ? 's' : '') + ' that fit.';
+        }
+      }).catch(() => {});
+    }
   </script>
   <script src="motion.js"></script>
 </body>
