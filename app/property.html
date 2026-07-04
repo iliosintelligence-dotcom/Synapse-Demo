@@ -102,6 +102,29 @@
     .vphotos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .vphotos img { width: 66px; height: 66px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.9); }
     .vphotos .add { width: 66px; height: 66px; border-radius: 10px; border: 1px dashed rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 20px; cursor: pointer; }
+
+    /* ── SWIPE DECK: the property image never scrolls away. The info cards
+       (overview, Toju's take, negotiate, cost…) swipe left/right instead of
+       stacking vertically. One screen, no vertical page scroll. ── */
+    html { height: 100%; }
+    body { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+    .pdp { flex: 1; min-height: 0; position: relative; z-index: 1; max-width: 460px; width: 100%; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; }
+    .pdp .hero { height: 230px; flex: none; }
+    .pdp .thumbs { flex: none; }
+    .deckbar { display: flex; align-items: center; gap: 10px; padding: 12px 2px 6px; flex: none; }
+    .deckbar .arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--ink); flex: none; transition: all var(--m-micro, .1s) ease; }
+    .deckbar .arrow:active { transform: scale(0.9); }
+    .deckbar .arrow:disabled { opacity: .28; cursor: default; }
+    .deckbar .dlabel { flex: 1; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--ink); }
+    .deckbar .dlabel small { display: block; font-weight: 500; font-size: 10.5px; letter-spacing: .04em; color: var(--ink-dim); margin-top: 1px; }
+    .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .deck::-webkit-scrollbar { display: none; }
+    .deck > .card { flex: 0 0 100%; scroll-snap-align: center; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
+    .deck > .card::-webkit-scrollbar { display: none; }
+    .dots { display: flex; gap: 6px; justify-content: center; padding: 9px 0 8px; flex: none; }
+    .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.16); transition: all .2s ease; cursor: pointer; }
+    .dots i.on { background: var(--brand); width: 18px; border-radius: 100px; }
+    .pdp .cta-dock { position: static; flex: none; padding: 10px 0 14px; background: none; }
   </style>
 </head>
 <body>
@@ -119,7 +142,7 @@
     <a class="home" href="browse.html">← Back to matches</a>
   </div>
 
-  <div class="wrap phone">
+  <div class="pdp">
     <div class="hero">
       <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
       <span class="counter" id="counter">1 / 5</span>
@@ -130,7 +153,15 @@
     </div>
     <div class="thumbs" id="thumbs"></div>
 
-    <div class="card summary">
+    <div class="deckbar">
+      <button class="arrow" id="deckPrev" aria-label="Previous card">‹</button>
+      <div class="dlabel" id="deckLabel">Overview</div>
+      <button class="arrow" id="deckNext" aria-label="Next card">›</button>
+    </div>
+    <div class="dots" id="deckDots"></div>
+
+    <div class="deck" id="deck">
+    <div class="card summary" data-title="Overview">
       <div class="price">₦165M</div>
       <div class="ctx">₦1.02M/m² · <b>₦12M below</b> the Lekki Phase 1 median</div>
       <div class="ttl">3-Bed Apartment, Lekki Phase 1</div>
@@ -250,12 +281,13 @@
         <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Trust 84 · 76% match</div></div></a>
       </div>
     </div>
-  </div>
+    </div><!-- /deck -->
 
-  <div class="wrap phone cta-dock" style="padding-top:0">
-    <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?">✦ Ask Toju about this home</a>
-    <button class="btn btn-primary" style="flex:1" onclick="alert('In the live app this opens a WhatsApp lead to the agency within seconds.')">Contact Agency</button>
-  </div>
+    <div class="cta-dock">
+      <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?">✦ Ask Toju</a>
+      <button class="btn btn-primary" style="flex:1" onclick="alert('In the live app this opens a WhatsApp lead to the agency within seconds.')">Contact Agency</button>
+    </div>
+  </div><!-- /pdp -->
 
   <script>
     // gallery
@@ -275,6 +307,49 @@
       document.getElementById('counter').textContent = (i + 1) + ' / ' + PHOTOS.length;
       thumbs.querySelectorAll('img').forEach((im) => im.classList.toggle('on', im === t));
     });
+
+    /* ── swipe deck: cards move left/right, image stays put ── */
+    const deck = document.getElementById('deck');
+    const deckCards = [...deck.children];
+    const deckLabel = document.getElementById('deckLabel');
+    const deckDots = document.getElementById('deckDots');
+    const deckPrev = document.getElementById('deckPrev');
+    const deckNext = document.getElementById('deckNext');
+    deckDots.innerHTML = deckCards.map((_, i) => `<i data-i="${i}"></i>`).join('');
+    let deckIdx = 0;
+    function cardTitle(c) {
+      if (c.dataset.title) return c.dataset.title;
+      const l = c.querySelector('.lbl');
+      if (!l) return '';
+      // strip a leading emoji/symbol (✦ 🤝 ₦ ◎ ⌖ 📋 🛡) but keep the words
+      return l.textContent.replace(/^[^\p{L}]+/u, '').trim() || l.textContent.trim();
+    }
+    function goCard(i) {
+      i = Math.max(0, Math.min(deckCards.length - 1, i));
+      deck.scrollTo({ left: i * deck.clientWidth, behavior: 'smooth' });
+    }
+    function syncDeck() {
+      const i = Math.round(deck.scrollLeft / deck.clientWidth);
+      deckIdx = Math.max(0, Math.min(deckCards.length - 1, i));
+      deckLabel.innerHTML = cardTitle(deckCards[deckIdx]) + ' <small>' + (deckIdx + 1) + ' OF ' + deckCards.length + '</small>';
+      deckDots.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === deckIdx));
+      deckPrev.disabled = deckIdx === 0;
+      deckNext.disabled = deckIdx === deckCards.length - 1;
+      // fill any neighbourhood bars on the active card
+      deckCards[deckIdx].querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; });
+    }
+    let deckRaf;
+    deck.addEventListener('scroll', () => { cancelAnimationFrame(deckRaf); deckRaf = requestAnimationFrame(syncDeck); });
+    deckPrev.addEventListener('click', () => goCard(deckIdx - 1));
+    deckNext.addEventListener('click', () => goCard(deckIdx + 1));
+    deckDots.addEventListener('click', (e) => { const d = e.target.closest('[data-i]'); if (d) goCard(+d.dataset.i); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') goCard(deckIdx + 1); if (e.key === 'ArrowLeft') goCard(deckIdx - 1); });
+    let deckReady = false;
+    window.addEventListener('resize', () => { if (deckReady) deck.scrollTo({ left: deckIdx * deck.clientWidth }); });
+    // always open on the first card (ignore any browser scroll restoration)
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    requestAnimationFrame(() => { deck.scrollLeft = 0; syncDeck(); deckReady = true; });
+    syncDeck();
 
     // save + share
     const saveBtn = document.getElementById('saveBtn');
