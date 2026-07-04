@@ -39,6 +39,13 @@
       box-shadow: 0 4px 12px rgba(150,70,20,0.4); white-space: nowrap; border: 1.5px solid #fff; }
     .price-pin.dim { background: #8b8b8b; }
 
+    .searchbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 16px; border-radius: 100px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46)); backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 14px 34px rgba(122,62,22,0.1); color: var(--ink-muted); }
+    .searchbar svg { flex: none; color: #C2552B; }
+    .searchbar input { flex: 1; border: none; outline: none; background: transparent; font: 14.5px var(--f-sans); color: var(--ink); }
+    .searchbar input::placeholder { color: var(--ink-dim); }
+    .searchbar button { flex: none; border: none; background: rgba(0,0,0,0.05); color: var(--ink-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; }
     .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
     .toolbar select { font: 500 12.5px var(--f-sans); color: var(--ink); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; outline: none; cursor: pointer; }
     .toolbar .hintt { font-size: 12px; color: var(--ink-dim); margin-left: auto; }
@@ -121,6 +128,12 @@
       <a class="refine" href="toju.html">Talk to Toju →</a>
     </div>
 
+    <div class="searchbar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search by area, city, type or price — e.g. Lekki, 3-bed, duplex, under 150M…" autocomplete="off" />
+      <button id="searchClear" hidden aria-label="Clear">✕</button>
+    </div>
+
     <div id="map"></div>
 
     <div class="toolbar">
@@ -189,15 +202,34 @@
     let saves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
     let picked = new Set();
     let map, markerLayer;
+    let searchQ = '';
+    let shownItems = [];
 
     function sortItems() {
       const s = document.getElementById('sortSel').value;
       items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? b.score - a.score : b.match - a.match);
     }
 
+    // keyword search across title, area/city, deal, and price (e.g. "under 150m", "3-bed")
+    function matchesSearch(l) {
+      if (!searchQ) return true;
+      const hay = (l.ttl + ' ' + l.loc + ' ' + (l.deal || '') + ' ' + naira(l.priceN)).toLowerCase();
+      return searchQ.split(/\s+/).every((term) => {
+        if (!term) return true;
+        const under = term.match(/^(?:under|below|<)?₦?(\d+)m?$/);
+        if (under && /\d/.test(term)) {
+          const cap = parseInt(under[1], 10) * (term.includes('m') || parseInt(under[1],10) < 10000 ? 1e6 : 1);
+          if (/^(under|below|<)/.test(searchQ) || searchQ.includes('under') || searchQ.includes('below')) return l.priceN <= cap;
+        }
+        return hay.includes(term);
+      });
+    }
+
     function render() {
       sortItems();
-      document.getElementById('grid').innerHTML = items.map((l, i) => `
+      shownItems = items.filter(matchesSearch);
+      const grid = document.getElementById('grid');
+      grid.innerHTML = shownItems.map((l, i) => `
         <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
           <div class="body">
             <div class="tags">
@@ -233,7 +265,7 @@
       }
       markerLayer.clearLayers();
       const pts = [];
-      items.forEach((l, i) => {
+      (shownItems.length || searchQ ? shownItems : items).forEach((l, i) => {
         const c = coords(l.loc, i);
         pts.push(c);
         L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
@@ -267,6 +299,16 @@
       if (e.target.closest('.listing')) location.href = 'property.html';
     });
     document.getElementById('sortSel').addEventListener('change', render);
+
+    // keyword search
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    searchInput.addEventListener('input', () => {
+      searchQ = searchInput.value.trim().toLowerCase();
+      searchClear.hidden = !searchQ;
+      render();
+    });
+    searchClear.addEventListener('click', () => { searchInput.value = ''; searchQ = ''; searchClear.hidden = true; render(); searchInput.focus(); });
 
     // ── compare overlay ──
     function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
