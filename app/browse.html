@@ -48,6 +48,10 @@
     .searchbar button { flex: none; border: none; background: rgba(0,0,0,0.05); color: var(--ink-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; }
     .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
     .toolbar select { font: 500 12.5px var(--f-sans); color: var(--ink); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; outline: none; cursor: pointer; }
+    .dealfilter { display: flex; gap: 6px; }
+    .dealfilter button { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: all var(--m-micro, .12s) ease; }
+    .dealfilter button:hover { color: var(--ink); }
+    .dealfilter button.on { color: #fff; background: var(--brand); border-color: transparent; box-shadow: 0 6px 16px rgba(255,123,44,0.3); }
     .toolbar .hintt { font-size: 12px; color: var(--ink-dim); margin-left: auto; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
@@ -142,6 +146,11 @@
         <option value="price">Sort: Price (low → high)</option>
         <option value="trust">Sort: Trust score</option>
       </select>
+      <div class="dealfilter" id="dealFilter">
+        <button data-deal="sale">Buy</button>
+        <button data-deal="rent">Rent</button>
+        <button data-deal="shared">Shared living</button>
+      </div>
       <span class="hintt">♡ saves this home · tick up to four to compare side by side</span>
     </div>
 
@@ -203,7 +212,13 @@
     let picked = new Set();
     let map, markerLayer;
     let searchQ = '';
+    let dealFilter = 'all'; // all | sale | rent | shared
     let shownItems = [];
+
+    function matchesDeal(l) {
+      if (dealFilter === 'all') return true;
+      return (l.kind || 'sale') === dealFilter;
+    }
 
     function sortItems() {
       const s = document.getElementById('sortSel').value;
@@ -227,7 +242,7 @@
 
     function render() {
       sortItems();
-      shownItems = items.filter(matchesSearch);
+      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l));
       const grid = document.getElementById('grid');
       grid.innerHTML = shownItems.map((l, i) => `
         <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
@@ -310,6 +325,15 @@
     });
     searchClear.addEventListener('click', () => { searchInput.value = ''; searchQ = ''; searchClear.hidden = true; render(); searchInput.focus(); });
 
+    // quick deal-type filters (Buy / Rent / Shared living) — click again to clear
+    document.getElementById('dealFilter').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-deal]'); if (!b) return;
+      const d = b.getAttribute('data-deal');
+      dealFilter = (dealFilter === d) ? 'all' : d;
+      document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
+      render();
+    });
+
     // ── compare overlay ──
     function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
     document.getElementById('cmpGo').addEventListener('click', () => {
@@ -365,15 +389,22 @@
     // Toju refines this into "Your matches" only after a real conversation.
     render();
     let hasSessionView = false;
-    fetch(SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
-        + '&status=eq.live&verification_status=eq.verified&is_active=is.true&order=trust_score.desc,price.asc&limit=60', {
-      headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-    }).then((r) => r.json()).then((rows) => {
-      if (hasSessionView || !Array.isArray(rows) || rows.length === 0) return;
+    // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
+    // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
+      + '&status=eq.live&verification_status=eq.verified&is_active=is.true';
+    const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+    Promise.all([
+      fetch(BROWSE_BASE + '&property_type=neq.shared&order=trust_score.desc&limit=66', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=eq.shared&order=trust_score.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
+    ]).then(([main, sharedRows]) => {
+      const rows = [...(Array.isArray(main) ? main : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
+      if (hasSessionView || rows.length === 0) return;
       items = rows.map((p, i) => ({
         id: p.id, img: null,
+        kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
         per: p.listing_type === 'rent',
-        deal: p.listing_type === 'rent' ? 'For rent' : 'For sale',
+        deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'rent' ? 'For rent' : 'For sale',
         priceN: Number(p.price) || 0,
         ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
@@ -410,6 +441,7 @@
         items = d.matches.map((m, i) => ({
           id: m.id || 'r' + i,
           img: null,
+          kind: m.room ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
           per: m.listingType === 'rent',
           priceN: Number(m.price) || 0,
           ttl: m.title,
