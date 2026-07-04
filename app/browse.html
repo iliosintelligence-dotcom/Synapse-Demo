@@ -105,19 +105,20 @@
     <nav>
       <a href="toju.html">Toju</a>
       <a href="browse.html" class="active">Your matches</a>
+      <a href="dream.html">Dream Home</a>
     </nav>
     <span class="spacer"></span>
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
   <div class="wrap">
-    <div class="eyebrow">Picked for you</div>
-    <div class="h1">Your matches</div>
+    <div class="eyebrow" id="pageEyebrow">Verified homes</div>
+    <div class="h1" id="pageTitle">Browse</div>
 
     <div class="card brief">
       <div class="orb">✦</div>
-      <div class="txt"><b>Your brief:</b> 3-bed for a family in Lagos, under ₦150M, near good schools. Toju found 5 verified homes that fit.</div>
-      <a class="refine" href="toju.html">Refine with Toju →</a>
+      <div class="txt" id="briefTxt">Every verified home on Synapse, across Nigeria. Chat with Toju and this page becomes <b>your matches</b> — refined to your life, not filters.</div>
+      <a class="refine" href="toju.html">Talk to Toju →</a>
     </div>
 
     <div id="map"></div>
@@ -128,7 +129,7 @@
         <option value="price">Sort: Price (low → high)</option>
         <option value="trust">Sort: Trust score</option>
       </select>
-      <span class="hintt">♡ saves this home · tick two or more to compare side by side</span>
+      <span class="hintt">♡ saves this home · tick up to four to compare side by side</span>
     </div>
 
     <div class="grid" id="grid"></div>
@@ -201,7 +202,7 @@
           <div class="body">
             <div class="tags">
               <span class="chip chip-pass">✓ Verified</span>
-              <span class="match">${l.match}% match</span>
+              ${l.match ? `<span class="match">${l.match}% match</span>` : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`}
               <label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>
             </div>
             <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
@@ -260,7 +261,7 @@
       if (cb) {
         const id = cb.getAttribute('data-cmp');
         picked.has(id) ? picked.delete(id) : picked.add(id);
-        if (picked.size > 3) { picked.delete(id); cb.checked = false; }
+        if (picked.size > 4) { picked.delete(id); cb.checked = false; }
         render(); return;
       }
       if (e.target.closest('.listing')) location.href = 'property.html';
@@ -286,13 +287,61 @@
         html += `<tr><td class="h">${label}</td>` + vals.map((v) => `<td>${fmt(v, b)}</td>`).join('') + '</tr>';
       });
       html += '</table>';
+      html += '<div style="margin-top:16px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">'
+        + '<button id="verdictBtn" class="btn btn-primary" style="padding:10px 18px;font-size:13px">✦ Ask Toju: which is better for me?</button>'
+        + '<div id="verdictBox" style="flex:1;min-width:240px;font-size:13.5px;line-height:1.6;color:var(--ink-muted)"></div></div>';
       document.getElementById('cmpTable').innerHTML = html;
       document.getElementById('cmpwrap').classList.add('on');
+
+      document.getElementById('verdictBtn').addEventListener('click', async () => {
+        const box = document.getElementById('verdictBox');
+        box.innerHTML = '<i>Toju is weighing them against your brief…</i>';
+        try {
+          const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+            body: JSON.stringify({
+              action: 'compare', visitorId: VISITOR,
+              items: sel.map((l) => ({ id: l.id, title: l.ttl, price: l.priceN, deal: l.per ? 'rent' : 'sale', trustScore: l.score, yieldPct: l.yield ?? null, flood: l.flood ?? null, power: l.power ?? null, area: l.loc })),
+            }),
+          });
+          const d = await r.json();
+          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">✦ Toju:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Toju — try again.';
+        } catch (e) { box.textContent = 'Connection hiccup — try again.'; }
+      });
     });
     document.getElementById('cmpClose').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
     document.getElementById('cmpVeil').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
 
+    function setMatchedHeadings() {
+      document.getElementById('pageEyebrow').textContent = 'Picked for you';
+      document.getElementById('pageTitle').textContent = 'Your matches';
+      document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
+    }
+
+    // ── default: EVERY verified home in the dataset (browse-all) ──
+    // Toju refines this into "Your matches" only after a real conversation.
     render();
+    let hasSessionView = false;
+    fetch(SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
+        + '&status=eq.live&verification_status=eq.verified&is_active=is.true&order=trust_score.desc,price.asc&limit=60', {
+      headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+    }).then((r) => r.json()).then((rows) => {
+      if (hasSessionView || !Array.isArray(rows) || rows.length === 0) return;
+      items = rows.map((p, i) => ({
+        id: p.id, img: null,
+        per: p.listing_type === 'rent',
+        deal: p.listing_type === 'rent' ? 'For rent' : 'For sale',
+        priceN: Number(p.price) || 0,
+        ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
+        score: p.trust_score, match: null,
+        flood: p.neighbourhoods ? p.neighbourhoods.flood_risk : null,
+        power: p.neighbourhoods ? p.neighbourhoods.power_reliability : null,
+        why: '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Toju if it fits your life',
+      }));
+      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> verified homes across Nigeria. Chat with Toju and this page becomes <b>your matches</b>.';
+      render();
+    }).catch(() => {});
 
     // ── real matches from this visitor's Toju session ──
     if (VISITOR) {
@@ -302,9 +351,11 @@
         body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
       }).then((r) => r.json()).then((d) => {
         // A real session exists but nothing matched: show the honest empty
-        // state — never fall back to demo homes from a different city.
+        // state — never fall back to other homes silently.
         if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
+          hasSessionView = true;
           items = []; picked = new Set();
+          setMatchedHeadings();
           if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
             '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Nothing verified fits yet — refine with Toju.';
           document.getElementById('map').style.display = 'none';
@@ -312,6 +363,8 @@
           return;
         }
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
+        hasSessionView = true;
+        setMatchedHeadings();
         items = d.matches.map((m, i) => ({
           id: m.id || 'r' + i,
           img: null,

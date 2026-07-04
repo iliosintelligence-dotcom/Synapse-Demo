@@ -74,6 +74,34 @@
 
     .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); display: flex; gap: 10px; }
     .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #C2552B; border: 1px solid rgba(194,85,43,0.3); }
+
+    /* instant AI summary */
+    .glance { margin-top: 16px; padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6;
+      background: rgba(194,85,43,0.07); border: 1px solid rgba(194,85,43,0.18); color: var(--ink); }
+    .glance b { color: #C2552B; }
+
+    /* negotiation assistant */
+    .neg-offer { font-family: var(--f-serif); font-size: 30px; color: var(--brand); margin: 8px 0 2px; }
+    .neg-draft { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(255,255,255,0.85); font-size: 13px; line-height: 1.6; color: var(--ink-muted); white-space: pre-wrap; }
+    .copybtn { margin-top: 8px; font: 600 12px var(--f-sans); color: #C2552B; background: none; border: 1px solid rgba(194,85,43,0.3); border-radius: 100px; padding: 6px 14px; cursor: pointer; }
+
+    /* commute time-of-day */
+    .tod { display: flex; gap: 5px; margin-bottom: 12px; }
+    .tod button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; cursor: pointer; }
+    .tod button.on { color: #C2552B; background: rgba(194,85,43,0.1); border-color: rgba(194,85,43,0.3); }
+    .addplace { font: 600 12px var(--f-sans); color: var(--ink-dim); background: none; border: 1px dashed rgba(0,0,0,0.2); border-radius: 100px; padding: 7px 13px; cursor: pointer; }
+    .addplace:hover { color: #C2552B; border-color: rgba(194,85,43,0.4); }
+
+    /* viewing assistant */
+    .vcheck { display: flex; flex-direction: column; gap: 7px; }
+    .vcheck label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
+    .vcheck input { accent-color: #C2552B; }
+    .vcheck label.done { text-decoration: line-through; opacity: .65; }
+    .vnotes { width: 100%; margin-top: 12px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font: 13.5px var(--f-sans); color: var(--ink); outline: none; resize: vertical; min-height: 64px; }
+    .vphotos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .vphotos img { width: 66px; height: 66px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.9); }
+    .vphotos .add { width: 66px; height: 66px; border-radius: 10px; border: 1px dashed rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 20px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -85,6 +113,7 @@
     <nav>
       <a href="toju.html">Toju</a>
       <a href="browse.html">Your matches</a>
+      <a href="dream.html">Dream Home</a>
     </nav>
     <span class="spacer"></span>
     <a class="home" href="browse.html">← Back to matches</a>
@@ -117,11 +146,25 @@
           <div class="dim" style="font-size:12.5px">6 of 7 checks passed · independently verified</div>
         </div>
       </div>
+      <div class="glance">✦ <b>At a glance:</b> Great for a young family or a live-and-invest buyer. Strong location, schools and security; watch the pending financial check and plan for backup power at peak hours.</div>
     </div>
 
     <div class="card section">
       <div class="lbl">✦ Toju's take</div>
       <p class="reason">87% match. Your commute from here to Lagos Island is 14 minutes shorter than comparable listings in this band, it's ₦12M below the area median, and the 8.4% rental yield in this corridor beats the Lagos average of 6.1%. For a mix of home and investment, this is the strongest of the two I found.</p>
+    </div>
+
+    <!-- AI negotiation assistant -->
+    <div class="card section">
+      <div class="lbl">🤝 Negotiate with Toju</div>
+      <p class="reason" style="font-size:13px;color:var(--ink-muted)">Toju reads the data — area medians, yield, verification flags — and suggests a respectful opening offer, plus a message you can send as-is.</p>
+      <button class="btn btn-primary" id="negBtn" style="margin-top:12px;padding:11px 20px;font-size:13.5px">Get my opening offer</button>
+      <div id="negOut" hidden>
+        <div class="neg-offer" id="negOffer"></div>
+        <p class="reason" id="negAdvice" style="font-size:13.5px"></p>
+        <div class="neg-draft" id="negDraft"></div>
+        <button class="copybtn" id="negCopy">Copy message</button>
+      </div>
     </div>
 
     <!-- true monthly cost — the Zillow calculator, Lagos reality -->
@@ -151,16 +194,25 @@
       <p class="nb-note">Prices in this corridor are <b style="color:var(--success)">rising</b> · typical 3-bed rent ₦8.5M/yr · rental demand high. 4 schools, 2 hospitals and 3 supermarkets within 10 minutes.</p>
     </div>
 
-    <!-- commute -->
+    <!-- commute intelligence: times shift with time of day; add your own places -->
     <div class="card section">
-      <div class="lbl">⌖ Commute from here</div>
-      <div class="commute">
-        <span class="c">Lagos Island <b>35 min</b></span>
-        <span class="c">Victoria Island <b>25 min</b></span>
-        <span class="c">Lekki Phase 1 gate <b>6 min</b></span>
-        <span class="c">Airport (MMIA) <b>1h 10m</b></span>
-        <span class="c">Greenwood School <b>12 min</b></span>
+      <div class="lbl">⌖ Commute intelligence</div>
+      <div class="tod" id="tod">
+        <button data-mult="1.55">Morning peak</button>
+        <button data-mult="1" class="on">Midday</button>
+        <button data-mult="1.75">Evening peak</button>
       </div>
+      <div class="commute" id="commute"></div>
+    </div>
+
+    <!-- viewing assistant: inspection checklist + notes + photos, saved to this home -->
+    <div class="card section">
+      <div class="lbl">📋 Viewing assistant</div>
+      <p class="reason" style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">Take this with you to the inspection — everything you tick, note or snap stays attached to this home.</p>
+      <div class="vcheck" id="vcheck"></div>
+      <textarea class="vnotes" id="vnotes" placeholder="Notes from the viewing — water pressure, smells, the agent's answers…"></textarea>
+      <div class="vphotos" id="vphotos"></div>
+      <input type="file" id="vfile" accept="image/*" hidden />
     </div>
 
     <div class="card section">
@@ -246,6 +298,95 @@
       if (e.isIntersecting) { e.target.querySelectorAll('.bar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }); io.unobserve(e.target); }
     }), { threshold: 0.3 });
     document.querySelectorAll('.nb').forEach((el) => io.observe(el));
+
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const VISITOR = localStorage.getItem('toju_visitor_v1');
+    // This demo page represents one listing; a real app passes the id in the URL.
+    const PROP = { id: 'lekki-ph1-3bed', title: '3-Bed Apartment, Lekki Phase 1', price: 165000000, deal: 'sale', trustScore: 94, yieldPct: 8.4, area: 'Lekki Phase 1', flood: 28, power: 74, whatToWatch: 'Financial check pending' };
+    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
+
+    /* ── 13 · AI negotiation assistant ── */
+    const negBtn = document.getElementById('negBtn');
+    negBtn.addEventListener('click', async () => {
+      negBtn.disabled = true; negBtn.textContent = 'Toju is working the numbers…';
+      try {
+        const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+          body: JSON.stringify({ action: 'negotiate', visitorId: VISITOR, property: PROP }),
+        });
+        const d = await r.json();
+        document.getElementById('negOut').hidden = false;
+        document.getElementById('negOffer').textContent = d.openingOffer ? 'Opening offer: ' + naira(d.openingOffer) : '';
+        document.getElementById('negAdvice').textContent = d.advice || '';
+        document.getElementById('negDraft').textContent = d.draft || '';
+        negBtn.hidden = true;
+      } catch (e) { negBtn.textContent = 'Try again'; negBtn.disabled = false; }
+    });
+    document.getElementById('negCopy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(document.getElementById('negDraft').textContent); document.getElementById('negCopy').textContent = 'Copied ✓'; } catch (e) {}
+    });
+
+    /* ── 10 · Commute intelligence (time-of-day multiplier + custom places) ── */
+    const BASE_COMMUTE = [
+      { place: 'Lagos Island', min: 35 }, { place: 'Victoria Island', min: 25 },
+      { place: 'Lekki Phase 1 gate', min: 6 }, { place: 'Airport (MMIA)', min: 70 },
+      { place: 'Nearest school', min: 12 },
+    ];
+    let commuteMult = 1;
+    let customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP.id) || '[]');
+    function fmtMin(m) { return m >= 60 ? Math.floor(m/60) + 'h ' + (m%60 ? (m%60)+'m' : '').trim() : Math.round(m) + ' min'; }
+    function renderCommute() {
+      const all = BASE_COMMUTE.concat(customPlaces);
+      document.getElementById('commute').innerHTML = all.map((c) =>
+        '<span class="c">' + c.place + ' <b>' + fmtMin(c.min * commuteMult) + '</b></span>').join('')
+        + '<button class="addplace" id="addPlace">+ add a place</button>';
+      document.getElementById('addPlace').addEventListener('click', () => {
+        const place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
+        const mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
+        if (!place.trim() || isNaN(mins)) return;
+        customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
+        localStorage.setItem('synapse_places_' + PROP.id, JSON.stringify(customPlaces));
+        renderCommute();
+      });
+    }
+    document.getElementById('tod').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-mult]'); if (!b) return;
+      commuteMult = parseFloat(b.dataset.mult);
+      document.querySelectorAll('#tod button').forEach((x) => x.classList.toggle('on', x === b));
+      renderCommute();
+    });
+    renderCommute();
+
+    /* ── 9 · Viewing assistant (checklist + notes + photos, saved to this home) ── */
+    const CHECKS = ['Check water pressure', 'Test electrical outlets & sockets', 'Ask about service charges', 'Inspect ceilings & walls for leaks/damp', 'Confirm legal documentation (C of O / deed)', 'Test the backup power / generator', 'Check mobile signal & internet', 'Walk the compound security & parking'];
+    const vKey = 'synapse_viewing_' + PROP.id;
+    let vState = JSON.parse(localStorage.getItem(vKey) || '{"done":[],"notes":"","photos":[]}');
+    function saveV() { localStorage.setItem(vKey, JSON.stringify(vState)); }
+    function renderChecks() {
+      document.getElementById('vcheck').innerHTML = CHECKS.map((c, i) =>
+        '<label class="' + (vState.done.includes(i) ? 'done' : '') + '"><input type="checkbox" data-i="' + i + '" ' + (vState.done.includes(i) ? 'checked' : '') + '/>' + c + '</label>').join('');
+    }
+    document.getElementById('vcheck').addEventListener('change', (e) => {
+      const i = Number(e.target.dataset.i);
+      vState.done.includes(i) ? vState.done = vState.done.filter((x) => x !== i) : vState.done.push(i);
+      saveV(); renderChecks();
+    });
+    const vnotes = document.getElementById('vnotes');
+    vnotes.value = vState.notes || '';
+    vnotes.addEventListener('input', () => { vState.notes = vnotes.value; saveV(); });
+    function renderPhotos() {
+      document.getElementById('vphotos').innerHTML = vState.photos.map((p) => '<img src="' + p + '" alt="" />').join('')
+        + '<div class="add" id="addPhoto">＋</div>';
+      document.getElementById('addPhoto').addEventListener('click', () => document.getElementById('vfile').click());
+    }
+    document.getElementById('vfile').addEventListener('change', (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => { vState.photos.push(rd.result); saveV(); renderPhotos(); };
+      rd.readAsDataURL(f);
+    });
+    renderChecks(); renderPhotos();
   </script>
   <script src="motion.js"></script>
 </body>
