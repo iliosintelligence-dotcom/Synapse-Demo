@@ -425,10 +425,13 @@
     const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+    // Freshest-first (not trust-first) so the feed spans many neighbourhoods
+    // instead of clustering the prime Lagos areas at the top. Users re-rank
+    // with the sort dropdown.
     Promise.all([
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=trust_score.desc&limit=52', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=trust_score.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=eq.shared&order=trust_score.desc&limit=16', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=52', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=eq.shared&order=listed_at.desc&limit=16', { headers: BROWSE_HDR }).then((r) => r.json()),
     ]).then(([verifiedRows, unvRows, sharedRows]) => {
       const rows = [...(Array.isArray(verifiedRows) ? verifiedRows : []), ...(Array.isArray(unvRows) ? unvRows : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
       if (hasSessionView || rows.length === 0) return;
