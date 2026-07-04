@@ -52,6 +52,14 @@
     .dealfilter button { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: all var(--m-micro, .12s) ease; }
     .dealfilter button:hover { color: var(--ink); }
     .dealfilter button.on { color: #fff; background: var(--brand); border-color: transparent; box-shadow: 0 6px 16px rgba(255,123,44,0.3); }
+    .vtoggle { display: inline-flex; align-items: center; gap: 7px; font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; cursor: pointer; transition: all var(--m-micro, .12s) ease; }
+    .vtoggle .box { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--ink-dim); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+    .vtoggle.on { color: var(--success); border-color: rgba(46,125,79,0.4); background: rgba(46,125,79,0.08); }
+    .vtoggle.on .box { background: var(--success); border-color: var(--success); }
+    .chip-unv { background: rgba(0,0,0,0.05); color: var(--ink-muted); border: 1px solid rgba(0,0,0,0.12); }
+    .chip-prog { background: rgba(176,125,43,0.1); color: #a8742b; border: 1px solid rgba(176,125,43,0.28); }
+    .listing .score.unv { color: var(--ink-dim); }
+    .listing .ring.unv { border-color: rgba(0,0,0,0.22); color: var(--ink-dim); font-size: 12px; }
     .toolbar .hintt { font-size: 12px; color: var(--ink-dim); margin-left: auto; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
@@ -151,7 +159,8 @@
         <button data-deal="rent">Rent</button>
         <button data-deal="shared">Shared living</button>
       </div>
-      <span class="hintt">♡ saves this home · tick up to four to compare side by side</span>
+      <button class="vtoggle" id="verifyToggle" title="Show only independently verified homes"><span class="box"></span> Verified only</button>
+      <span class="hintt">♡ save · tick up to four to compare · every card shows its verification status</span>
     </div>
 
     <div class="grid" id="grid"></div>
@@ -213,11 +222,21 @@
     let map, markerLayer;
     let searchQ = '';
     let dealFilter = 'all'; // all | sale | rent | shared
+    let verifiedOnly = false;
     let shownItems = [];
 
     function matchesDeal(l) {
       if (dealFilter === 'all') return true;
       return (l.kind || 'sale') === dealFilter;
+    }
+    function matchesVerify(l) {
+      return !verifiedOnly || (l.vstatus || 'verified') === 'verified';
+    }
+    // clear verification badge on every card so buyers know exactly what's checked
+    function verifyChip(v) {
+      if (v === 'unverified') return '<span class="chip chip-unv">◌ Not verified</span>';
+      if (v === 'in_progress') return '<span class="chip chip-prog">◷ Verifying…</span>';
+      return '<span class="chip chip-pass">✓ Verified</span>';
     }
 
     function sortItems() {
@@ -242,13 +261,13 @@
 
     function render() {
       sortItems();
-      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l));
+      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
       const grid = document.getElementById('grid');
       grid.innerHTML = shownItems.map((l, i) => `
         <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
           <div class="body">
             <div class="tags">
-              <span class="chip chip-pass">✓ Verified</span>
+              ${verifyChip(l.vstatus)}
               ${l.match ? `<span class="match">${l.match}% match</span>` : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`}
               <label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>
             </div>
@@ -256,7 +275,9 @@
             <div class="ttl">${esc(l.ttl)}</div>
             <div class="loc">${esc(l.loc)}</div>
             <div class="why">${l.why}</div>
-            <div class="score"><span class="ring">${l.score}</span> Trust score</div>
+            ${l.vstatus === 'verified'
+              ? `<div class="score"><span class="ring">${l.score}</span> Trust score</div>`
+              : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Verification in progress' : 'Not yet verified — ask Toju to check'}</div>`}
           </div>
           <div class="img">
             <img src="${l.img || IMG_POOL[i % IMG_POOL.length]}" alt="" />
@@ -334,6 +355,15 @@
       render();
     });
 
+    // "Verified only" — the customer's choice to hide unverified/in-progress homes
+    const verifyToggle = document.getElementById('verifyToggle');
+    verifyToggle.addEventListener('click', () => {
+      verifiedOnly = !verifiedOnly;
+      verifyToggle.classList.toggle('on', verifiedOnly);
+      verifyToggle.querySelector('.box').textContent = verifiedOnly ? '✓' : '';
+      render();
+    });
+
     // ── compare overlay ──
     function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
     document.getElementById('cmpGo').addEventListener('click', () => {
@@ -385,34 +415,40 @@
       document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
     }
 
-    // ── default: EVERY verified home in the dataset (browse-all) ──
-    // Toju refines this into "Your matches" only after a real conversation.
+    // ── default: EVERY live home in the dataset (browse-all) ──
+    // Verified AND unverified show, each clearly labelled; Toju only recommends
+    // verified. Refines into "Your matches" after a real conversation.
     render();
     let hasSessionView = false;
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
-      + '&status=eq.live&verification_status=eq.verified&is_active=is.true';
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
+      + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     Promise.all([
-      fetch(BROWSE_BASE + '&property_type=neq.shared&order=trust_score.desc&limit=66', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=eq.shared&order=trust_score.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
-    ]).then(([main, sharedRows]) => {
-      const rows = [...(Array.isArray(main) ? main : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=trust_score.desc&limit=52', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=trust_score.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=eq.shared&order=trust_score.desc&limit=16', { headers: BROWSE_HDR }).then((r) => r.json()),
+    ]).then(([verifiedRows, unvRows, sharedRows]) => {
+      const rows = [...(Array.isArray(verifiedRows) ? verifiedRows : []), ...(Array.isArray(unvRows) ? unvRows : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
       if (hasSessionView || rows.length === 0) return;
       items = rows.map((p, i) => ({
         id: p.id, img: null,
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
         per: p.listing_type === 'rent',
+        vstatus: p.verification_status,
         deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'rent' ? 'For rent' : 'For sale',
         priceN: Number(p.price) || 0,
         ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
         flood: p.neighbourhoods ? p.neighbourhoods.flood_risk : null,
         power: p.neighbourhoods ? p.neighbourhoods.power_reliability : null,
-        why: '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Toju if it fits your life',
+        why: p.verification_status === 'verified'
+          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Toju if it fits your life'
+          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · <b style="color:#a8742b">listed but not yet verified</b> — Toju can run the 7 checks before you commit',
       }));
-      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> verified homes across Nigeria. Chat with Toju and this page becomes <b>your matches</b>.';
+      const vCount = rows.filter((p) => p.verification_status === 'verified').length;
+      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
       render();
     }).catch(() => {});
 
@@ -443,6 +479,7 @@
           img: null,
           kind: m.room ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
           per: m.listingType === 'rent',
+          vstatus: 'verified', // Toju only ever recommends verified homes
           priceN: Number(m.price) || 0,
           ttl: m.title,
           loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : m.city,
