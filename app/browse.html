@@ -429,9 +429,9 @@
     // instead of clustering the prime Lagos areas at the top. Users re-rank
     // with the sort dropdown.
     Promise.all([
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=52', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=18', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=eq.shared&order=listed_at.desc&limit=16', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=800', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=300', { headers: BROWSE_HDR }).then((r) => r.json()),
+      fetch(BROWSE_BASE + '&property_type=eq.shared&order=listed_at.desc&limit=200', { headers: BROWSE_HDR }).then((r) => r.json()),
     ]).then(([verifiedRows, unvRows, sharedRows]) => {
       const rows = [...(Array.isArray(verifiedRows) ? verifiedRows : []), ...(Array.isArray(unvRows) ? unvRows : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
       if (hasSessionView || rows.length === 0) return;
