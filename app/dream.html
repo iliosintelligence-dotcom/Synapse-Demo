@@ -10,46 +10,50 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <style>
-    /* Dream Home Mode — for people not ready to buy today. Save the aspiration,
-       set a budget goal, track progress toward it over time. */
-    body { background: #f7efe7; }
-    .bg-scene { position: fixed; inset: 0; z-index: 0;
-      background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
-    .bg-wash { position: fixed; inset: 0; z-index: 0;
-      background: radial-gradient(120% 80% at 78% 0%, rgba(212,110,60,0.14), transparent 58%),
-        linear-gradient(180deg, rgba(250,242,234,0.32) 0%, rgba(248,238,228,0.42) 55%, rgba(244,230,216,0.58) 100%); }
-    .wrap { position: relative; z-index: 1; max-width: 620px; }
-    .appbar { background: rgba(250,245,239,0.55); backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
-    .card { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46)); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
+    /* Dream Home — a MOOD BOARD. Collect the homes, rooms and textures you're
+       dreaming of. Synapse reads the vibe and points Toju at real verified
+       homes that match it. Saved locally (synapse_moodboard_v1). */
+    body { background: var(--bg); }
+    .board-wrap { max-width: 1000px; margin: 0 auto; padding: 26px 22px 90px; }
+    .board-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .board-title { font-family: var(--f-serif); font-weight: 300; font-size: 34px; color: var(--ink); border: none; background: none; outline: none; letter-spacing: -0.02em; min-width: 220px; }
+    .board-title:focus { border-bottom: 1px dashed rgba(194,85,43,0.5); }
 
-    .dream { padding: 26px 24px; margin-top: 18px; }
-    .dream .name { font-family: var(--f-serif); font-weight: 300; font-size: 30px; color: var(--ink); }
-    .dream .edit { float: right; font: 600 12.5px var(--f-sans); color: #C2552B; background: none; border: none; cursor: pointer; }
-    .feat { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-    .feat span { font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 14px; }
-    .goal { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; }
-    .goal .lbl { font-size: 12px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .1em; }
-    .goal .val { font-family: var(--f-serif); font-size: 26px; color: var(--brand); }
-    .track { margin-top: 18px; }
-    .track .top { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-muted); margin-bottom: 8px; }
-    .track .top b { color: var(--ink); }
-    .bar { height: 12px; border-radius: 100px; background: rgba(0,0,0,0.06); overflow: hidden; }
-    .bar i { display: block; height: 100%; border-radius: 100px; width: 0; background: linear-gradient(90deg, #C2552B, #FF7B2C); transition: width 1s var(--m-ease); }
-    .saved-so-far { display: flex; gap: 10px; margin-top: 16px; }
-    .saved-so-far input { flex: 1; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font: 14px var(--f-sans); color: var(--ink); outline: none; }
-    .plan { margin-top: 16px; font-size: 13px; line-height: 1.7; color: var(--ink-muted); padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.06); }
-    .plan b { color: var(--ink); }
-    .empty { text-align: center; padding: 40px 0; }
-    .empty p { color: var(--ink-muted); font-size: 14.5px; margin: 12px 0 20px; }
-    .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 12px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
-    .field input { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.65); font: 14px var(--f-sans); color: var(--ink); outline: none; }
-    .hidden { display: none; }
+    /* vibe chips */
+    .vibe { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px; align-items: center; }
+    .vibe .v { font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 100px; padding: 7px 12px 7px 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(20,26,38,0.05); }
+    .vibe .v button { background: none; border: none; color: var(--ink-dim); cursor: pointer; font-size: 14px; line-height: 1; }
+    .vibe .v button:hover { color: #C2552B; }
+    .vibe input { font: 13px var(--f-sans); border: 1px dashed var(--border); background: rgba(255,255,255,0.5); border-radius: 100px; padding: 7px 14px; outline: none; color: var(--ink); width: 150px; }
+    .vibe input:focus { border-color: rgba(194,85,43,0.5); }
+
+    /* masonry board */
+    .masonry { columns: 3 220px; column-gap: 14px; margin-top: 18px; }
+    .tile { break-inside: avoid; margin-bottom: 14px; border-radius: 18px; overflow: hidden; position: relative; box-shadow: 0 12px 30px rgba(20,26,38,0.10); background: #eee; cursor: default; }
+    .tile img { width: 100%; display: block; border-radius: 18px; }
+    .tile .rm { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(20,20,22,0.55); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s; backdrop-filter: blur(4px); }
+    .tile:hover .rm { opacity: 1; }
+    .tile .cap { position: absolute; left: 10px; bottom: 10px; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+
+    /* palette / add */
+    .add-card { padding: 20px 22px; margin-top: 6px; }
+    .add-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .add-row input { flex: 1; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.65); font: 14px var(--f-sans); color: var(--ink); outline: none; }
+    .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+    .pal { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; border: none; padding: 0; box-shadow: 0 6px 16px rgba(20,26,38,0.08); }
+    .pal img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+    .pal:hover img { transform: scale(1.06); }
+    .pal.added::after { content: '✓ added'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(194,85,43,0.75); color: #fff; font: 700 11px var(--f-sans); }
+
+    .empty { text-align: center; padding: 44px 0; }
+    .empty p { color: var(--ink-muted); font-size: 14.5px; margin: 12px auto 20px; max-width: 420px; }
+    .toju-cta { display: flex; align-items: center; gap: 14px; padding: 18px 22px; margin-top: 20px; }
+    .toju-cta .t { flex: 1; font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
+    .toju-cta .t b { color: var(--ink); }
+    @media (max-width: 560px){ .masonry{ columns: 2 140px; } }
   </style>
 </head>
 <body>
-  <div class="bg-scene"></div>
-  <div class="bg-wash"></div>
   <div class="appbar">
     <a class="brand" href="../index.html">
       <svg viewBox="0 0 64 78" fill="#15171a"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
@@ -64,109 +68,137 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
-  <div class="wrap">
-    <div class="eyebrow">Not ready to buy today?</div>
-    <div class="h1">Dream Home</div>
-    <p class="muted" style="font-size:14px;margin-top:4px">Save the home you're working toward. Synapse tracks your progress and nudges you closer.</p>
+  <div class="board-wrap">
+    <div class="eyebrow">Your vision, in one place</div>
+    <div class="board-head">
+      <input class="board-title" id="boardTitle" value="My dream home" aria-label="Board title" />
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:6px">Pin the rooms, textures and views you love. Toju reads the vibe of your board and finds real verified homes that feel like this.</p>
 
-    <!-- view -->
-    <div class="card dream hidden" id="view">
-      <button class="edit" id="editBtn">Edit</button>
-      <div class="name" id="vName">Dream Home</div>
-      <div class="feat" id="vFeat"></div>
-      <div class="goal"><span class="lbl">Budget goal</span><span class="val" id="vGoal"></span></div>
-      <div class="track">
-        <div class="top"><span>Saved so far</span><span><b id="vSaved"></b> · <span id="vPct"></span></span></div>
-        <div class="bar"><i id="vBar"></i></div>
+    <!-- vibe chips -->
+    <div class="vibe" id="vibe"></div>
+
+    <!-- board -->
+    <div id="board"></div>
+
+    <!-- add palette -->
+    <div class="card add-card">
+      <div class="add-row">
+        <input id="urlInput" type="url" placeholder="Paste an image URL to pin it…" />
+        <button class="btn btn-primary" id="addUrlBtn" style="padding:11px 18px;font-size:13.5px">Pin it</button>
       </div>
-      <div class="saved-so-far">
-        <input id="savedInput" type="text" inputmode="numeric" placeholder="Update your savings, e.g. 55000000" />
-        <button class="btn btn-primary" id="saveSavedBtn" style="padding:11px 18px;font-size:13.5px">Update</button>
-      </div>
-      <div class="plan" id="vPlan"></div>
+      <p class="muted" style="font-size:12.5px;margin-bottom:10px">Or start from a little inspiration —</p>
+      <div class="palette" id="palette"></div>
     </div>
 
-    <!-- empty / form -->
-    <div class="card dream" id="empty">
-      <div class="empty" id="emptyState">
-        <span data-lottie="empty-saved" style="width:140px;height:110px;display:inline-block"></span>
-        <p>You haven't set a dream yet. Picture the home you're building toward — Synapse will help you get there.</p>
-        <button class="btn btn-primary" id="startBtn">Set my dream home</button>
-      </div>
-      <div class="hidden" id="form">
-        <div class="field"><label>Name it</label><input id="fName" placeholder="e.g. Our forever home" value="Dream Home" /></div>
-        <div class="field"><label>Must-haves (comma separated)</label><input id="fFeat" placeholder="4 bedrooms, ocean view, home office" /></div>
-        <div class="field"><label>Budget goal (₦)</label><input id="fGoal" inputmode="numeric" placeholder="120000000" /></div>
-        <div class="field"><label>Saved so far (₦)</label><input id="fSaved" inputmode="numeric" placeholder="50000000" /></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" id="saveDreamBtn" style="flex:1">Save dream</button>
-          <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-        </div>
-      </div>
+    <!-- Toju CTA -->
+    <div class="card toju-cta">
+      <span data-lottie="orb-pulse" data-speed="0.8" style="width:44px;height:44px;display:inline-block"></span>
+      <div class="t"><b>Turn this mood into homes.</b> Toju reads your board — the styles, the light, the space — and lines up verified listings that match the feeling.</div>
+      <a class="btn btn-primary" id="tojuBtn" href="toju.html" style="white-space:nowrap">Find my matches →</a>
     </div>
   </div>
 
   <script>
-    const KEY = 'synapse_dream_v1';
-    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
-    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    let dream = null;
-    try { dream = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    const KEY = 'synapse_moodboard_v1';
+    // curated starter inspiration — warm, characterful Nigerian-market-friendly interiors + textures
+    const PALETTE = [
+      { u: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', c: 'Open plan' },
+      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal' },
+      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft light' },
+      { u: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=70', c: 'Modern facade' },
+      { u: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&q=70', c: 'Quiet bedroom' },
+      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Kitchen' },
+      { u: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', c: 'Curb appeal' },
+      { u: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=70', c: 'Living room' },
+      { u: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=70', c: 'Lounge' },
+      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright & airy' },
+      { u: 'https://images.unsplash.com/photo-1585128792020-803d29415281?w=500&q=70', c: 'Terrace view' },
+      { u: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500&q=70', c: 'Poolside' },
+    ];
+    const DEFAULT = {
+      name: 'My dream home',
+      vibe: ['Warm minimal', 'Natural light', 'Open plan', 'Near water'],
+      images: [PALETTE[7], PALETTE[1], PALETTE[10], PALETTE[0], PALETTE[4]],
+    };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
-    function paint() {
-      const view = document.getElementById('view'), empty = document.getElementById('empty');
-      if (!dream) { view.classList.add('hidden'); empty.classList.remove('hidden'); return; }
-      empty.classList.add('hidden'); view.classList.remove('hidden');
-      const pct = Math.min(100, Math.round((dream.saved / dream.goal) * 100)) || 0;
-      document.getElementById('vName').textContent = dream.name || 'Dream Home';
-      document.getElementById('vFeat').innerHTML = (dream.feat || []).map((f) => '<span>' + esc(f) + '</span>').join('');
-      document.getElementById('vGoal').textContent = naira(dream.goal);
-      document.getElementById('vSaved').textContent = naira(dream.saved);
-      document.getElementById('vPct').textContent = pct + '%';
-      setTimeout(() => { document.getElementById('vBar').style.width = pct + '%'; }, 60);
-      const gap = Math.max(0, dream.goal - dream.saved);
-      const yrs = dream.saved > 0 && dream.goal > dream.saved ? (gap / (dream.saved * 0.15)) : null; // rough: 15%/yr growth
-      document.getElementById('vPlan').innerHTML = pct >= 100
-        ? '🎉 <b>You\'re there.</b> Your savings meet your goal — ready to talk to Toju about real verified homes that fit?'
-        : '<b>' + naira(gap) + '</b> to go. ' + (yrs ? 'Keep your current pace and you\'re on track in about <b>' + Math.ceil(yrs) + (Math.ceil(yrs) === 1 ? ' year' : ' years') + '</b>. ' : '') + 'Toju can already show you homes in this band to aim at — <a href="toju.html?ask=' + encodeURIComponent('Show me homes near my dream: ' + (dream.feat || []).join(', ') + ' around ' + naira(dream.goal)) + '" style="color:#C2552B;font-weight:600">explore the dream →</a>';
-    }
+    let board;
+    try { board = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!board) board = JSON.parse(JSON.stringify(DEFAULT));
+    const save = () => localStorage.setItem(KEY, JSON.stringify(board));
 
-    function showForm(prefill) {
-      document.getElementById('emptyState').classList.add('hidden');
-      document.getElementById('form').classList.remove('hidden');
-      document.getElementById('empty').classList.remove('hidden');
-      document.getElementById('view').classList.add('hidden');
-      if (prefill && dream) {
-        document.getElementById('fName').value = dream.name || '';
-        document.getElementById('fFeat').value = (dream.feat || []).join(', ');
-        document.getElementById('fGoal').value = dream.goal || '';
-        document.getElementById('fSaved').value = dream.saved || '';
+    const boardTitle = document.getElementById('boardTitle');
+    const boardEl = document.getElementById('board');
+    const vibeEl = document.getElementById('vibe');
+    const paletteEl = document.getElementById('palette');
+
+    function hasImg(u) { return board.images.some((i) => i.u === u); }
+
+    function renderBoard() {
+      if (board.images.length === 0) {
+        boardEl.innerHTML = '<div class="card add-card"><div class="empty"><p>Your board is empty. Pin a few images below and it starts to take shape — Toju does the rest.</p></div></div>';
+        return;
       }
+      boardEl.innerHTML = '<div class="masonry">' + board.images.map((im, i) => `
+        <div class="tile">
+          <img src="${esc(im.u)}" alt="${esc(im.c || 'pinned image')}" loading="lazy" onerror="this.closest('.tile').remove()" />
+          ${im.c ? `<span class="cap">${esc(im.c)}</span>` : ''}
+          <button class="rm" data-i="${i}" title="Remove">×</button>
+        </div>`).join('') + '</div>';
     }
-    document.getElementById('startBtn').addEventListener('click', () => showForm(false));
-    document.getElementById('editBtn').addEventListener('click', () => showForm(true));
-    document.getElementById('cancelBtn').addEventListener('click', () => { document.getElementById('form').classList.add('hidden'); document.getElementById('emptyState').classList.remove('hidden'); paint(); });
-    document.getElementById('saveDreamBtn').addEventListener('click', () => {
-      const goal = parseInt((document.getElementById('fGoal').value || '').replace(/[^\d]/g, ''), 10);
-      if (!goal) { document.getElementById('fGoal').focus(); return; }
-      dream = {
-        name: document.getElementById('fName').value.trim() || 'Dream Home',
-        feat: document.getElementById('fFeat').value.split(',').map((s) => s.trim()).filter(Boolean),
-        goal,
-        saved: parseInt((document.getElementById('fSaved').value || '0').replace(/[^\d]/g, ''), 10) || 0,
-      };
-      localStorage.setItem(KEY, JSON.stringify(dream));
-      document.getElementById('form').classList.add('hidden');
-      document.getElementById('emptyState').classList.remove('hidden');
-      paint();
+    function renderVibe() {
+      vibeEl.innerHTML = board.vibe.map((v, i) => `<span class="v">${esc(v)} <button data-i="${i}" title="Remove">×</button></span>`).join('')
+        + '<input id="vibeInput" placeholder="+ add a vibe…" />';
+      document.getElementById('vibeInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+          board.vibe.push(e.target.value.trim()); save(); renderVibe(); updateToju();
+          document.getElementById('vibeInput').focus();
+        }
+      });
+    }
+    function renderPalette() {
+      paletteEl.innerHTML = PALETTE.map((p) => `
+        <button class="pal ${hasImg(p.u) ? 'added' : ''}" data-u="${esc(p.u)}" data-c="${esc(p.c)}" title="${esc(p.c)}">
+          <img src="${esc(p.u)}" alt="${esc(p.c)}" loading="lazy" />
+        </button>`).join('');
+    }
+    function updateToju() {
+      const q = 'Find me verified homes that match my mood board: ' + board.vibe.join(', ') + '.';
+      document.getElementById('tojuBtn').href = 'toju.html?ask=' + encodeURIComponent(q);
+    }
+
+    boardTitle.value = board.name || 'My dream home';
+    boardTitle.addEventListener('input', () => { board.name = boardTitle.value; save(); });
+
+    // remove image (event delegation)
+    boardEl.addEventListener('click', (e) => {
+      const b = e.target.closest('.rm'); if (!b) return;
+      board.images.splice(+b.dataset.i, 1); save(); renderBoard();
     });
-    document.getElementById('saveSavedBtn').addEventListener('click', () => {
-      const v = parseInt((document.getElementById('savedInput').value || '').replace(/[^\d]/g, ''), 10);
-      if (isNaN(v)) return;
-      dream.saved = v; localStorage.setItem(KEY, JSON.stringify(dream));
-      document.getElementById('savedInput').value = ''; paint();
+    // remove vibe
+    vibeEl.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-i]'); if (!b) return;
+      board.vibe.splice(+b.dataset.i, 1); save(); renderVibe(); updateToju();
     });
-    paint();
+    // add from palette
+    paletteEl.addEventListener('click', (e) => {
+      const p = e.target.closest('.pal'); if (!p) return;
+      const u = p.dataset.u;
+      if (hasImg(u)) board.images = board.images.filter((i) => i.u !== u);
+      else board.images.push({ u, c: p.dataset.c });
+      save(); renderBoard(); renderPalette();
+    });
+    // add by URL
+    function addUrl() {
+      const inp = document.getElementById('urlInput');
+      const u = inp.value.trim(); if (!u) return;
+      board.images.push({ u, c: '' }); save(); inp.value = ''; renderBoard();
+    }
+    document.getElementById('addUrlBtn').addEventListener('click', addUrl);
+    document.getElementById('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUrl(); });
+
+    renderVibe(); renderBoard(); renderPalette(); updateToju();
   </script>
   <script src="motion.js"></script>
 </body>

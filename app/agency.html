@@ -79,6 +79,36 @@
     .camp .kpi span { display: block; font-size: 10.5px; color: var(--ink-dim); }
     .h2 { font-family: var(--f-serif); font-weight: 300; font-size: 22px; margin: 26px 0 4px; }
     .sub { font-size: 13px; color: var(--ink-muted); }
+
+    /* CRM attribution (Phase B — brought over from the standalone dashboard) */
+    .brk { padding: 14px 18px; margin-bottom: 14px; }
+    .brk .hd { display: flex; justify-content: space-between; align-items: center; }
+    .brk .hd .l { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+    .brk .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+    .brk .c2 { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); border-radius: 100px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+    .brk .c2 b { color: var(--brand); }
+    .brk .barline { display: flex; height: 8px; border-radius: 100px; overflow: hidden; margin-top: 12px; background: rgba(0,0,0,0.05); }
+    .chn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; color: #fff; font-size: 9px; font-weight: 700; flex: none; }
+    .score { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid; font-size: 11px; font-weight: 700; flex: none; }
+    .lead.click { cursor: pointer; transition: transform .12s; }
+    .lead.click:hover { transform: translateY(-1px); }
+
+    /* lead drawer */
+    .scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.22); backdrop-filter: blur(2px); z-index: 80; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .scrim.on { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform .28s cubic-bezier(.22,1,.36,1); overflow-y: auto; padding: 24px; }
+    .drawer.on { transform: translateX(0); }
+    .drawer .x { float: right; border: none; background: none; font-size: 20px; color: var(--ink-dim); cursor: pointer; line-height: 1; }
+    .chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+    .chain .step { border: 1px solid var(--border); background: rgba(255,255,255,0.72); border-radius: 100px; padding: 6px 11px; font-size: 11.5px; }
+    .chain .step small { color: var(--ink-dim); }
+    .chain .arw { color: var(--ink-dim); }
+    .sec { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-top: 14px; }
+    .sec .k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+    .sec.brief { border-color: rgba(255,123,44,0.25); background: rgba(255,123,44,0.06); }
+    .sec.brief .k { color: var(--brand); }
+    .sec.won { border-color: rgba(46,125,79,0.3); background: rgba(46,125,79,0.08); }
+    .sec.won .k { color: var(--success); }
     @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} }
   </style>
 </head>
@@ -120,6 +150,10 @@
             <span data-lottie="lead-arrived" data-loop="false" style="width:50px;height:40px"></span>
             New lead just arrived — Bola Adeyemi via Toju
           </div>
+
+          <!-- attribution breakdown: which marketing actually made leads -->
+          <div class="card brk" id="brk"></div>
+
           <div id="leads"></div>
         </section>
 
@@ -239,31 +273,107 @@
     </div>
   </div>
 
+  <!-- lead workspace drawer -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer"></aside>
+
   <script>
+    // Channel attribution (Phase B) — every lead carries a source→tap→Toju→lead chain.
+    const CH = {
+      instagram: { label: 'Instagram', color: '#DD2A7B', short: 'IG' },
+      tiktok:    { label: 'TikTok',    color: '#161616', short: 'TT' },
+      facebook:  { label: 'Facebook',  color: '#1877F2', short: 'f' },
+      whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
+      proximity: { label: 'Proximity', color: '#C2552B', short: '◎' },
+      direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
+    };
     const leads = [
-      { nm: 'Bola Adeyemi', ph: '+234 803 555 0142', pr: '3-Bed Apartment, Lekki Phase 1 · budget ₦150–180M', src: 'toju', t: '2m ago' },
-      { nm: 'Chidi Okafor', ph: '+234 701 555 0199', pr: '4-Bed Duplex, Osapa London · budget ₦170–200M', src: 'contact', t: '24m ago' },
-      { nm: 'Amina Yusuf', ph: '+234 814 555 0177', pr: '3-Bed Terrace, Ikate · budget ₦140–170M', src: 'browse', t: '1h ago' },
-      { nm: 'Tunde Bakare', ph: '+234 802 555 0118', pr: '2-Bed Flat, Victoria Island · budget ₦130–160M', src: 'toju', t: '5h ago', failed: true },
+      { nm: 'Bola Adeyemi', ph: '+234 803 555 0142', pr: '3-Bed Apartment, Lekki Phase 1 · budget ₦150–180M', price: '₦165M', src: 'toju', t: '2m ago', score: 92, stage: 'New',
+        brief: 'Family of four relocating from Abuja. Good schools within 15 min, works on the Island, moving within 3 months.',
+        attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: 'Today 5:00 PM', link: 'syn.ps/lk3b', campaign: 'lekki-family', toju: 9 } },
+      { nm: 'Chidi Okafor', ph: '+234 701 555 0199', pr: '4-Bed Duplex, Osapa London · budget ₦170–200M', price: '₦178M', src: 'contact', t: '24m ago', score: 78, stage: 'Contacted',
+        brief: 'Asked for the title report and service charge history before committing to a viewing.',
+        attr: { channel: 'facebook', post: 'Photo · 4-Bed Osapa Duplex', posted: '2 days ago', link: 'syn.ps/os4d', campaign: 'osapa-luxury', toju: 0 } },
+      { nm: 'Amina Yusuf', ph: '+234 814 555 0177', pr: '3-Bed Terrace, Ikate · budget ₦140–170M', price: '₦148M', src: 'browse', t: '1h ago', score: 85, stage: 'Viewing',
+        brief: 'First-time buyer, pre-approved mortgage with Stanbic. Toju matched on school access + commute.',
+        attr: { channel: 'tiktok', post: 'Video · 3-Bed Ikate Terrace', posted: 'Mon 7:30 PM', link: 'syn.ps/ik3t', campaign: 'ikate-firsthome', toju: 15 } },
+      { nm: 'Tunde Bakare', ph: '+234 802 555 0118', pr: '2-Bed Flat, Victoria Island · budget ₦130–160M', price: '₦142M', src: 'toju', t: '5h ago', score: 64, stage: 'New', failed: true,
+        brief: 'Investor — asked about short-let regulations and gross yield on VI 2-beds.',
+        attr: { channel: 'proximity', post: 'Walked within 300m of the VI 2-Bed', posted: '', link: '', campaign: '', toju: 6 } },
+      { nm: 'Ngozi Eze', ph: '+234 809 555 0104', pr: '4-Bed Duplex, Osapa London · budget ₦175M cash', price: '₦178M', src: 'browse', t: '3d ago', score: 96, stage: 'Negotiation',
+        brief: 'Cash buyer. Offered ₦170M, countered at ₦175M. Lawyer reviewing draft contract.',
+        attr: { channel: 'direct', post: 'Browsed verified listings in-app', posted: '', link: '', campaign: '', toju: 22 } },
+      { nm: 'Ibrahim Musa', ph: '+234 806 555 0121', pr: '3-Bed Apartment, Lekki Phase 1 · closed ₦161M', price: '₦161M', src: 'instagram', t: '2d ago', score: 88, stage: 'Won',
+        brief: 'Came from the Instagram syndicated post. Closed at ₦161M.',
+        attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: '11 days ago', link: 'syn.ps/lk3b', campaign: 'lekki-luxury', toju: 11 } },
     ];
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
-    document.getElementById('leads').innerHTML = leads.map(l => `
-      <div class="card lead">
-        <div class="av">${initials(l.nm)}</div>
+    const scoreTone = s => s >= 80 ? 'color:var(--success);border-color:var(--success)' : s >= 60 ? 'color:var(--brand);border-color:var(--brand)' : 'color:var(--ink-dim);border-color:var(--ink-dim)';
+    const chnBadge = c => `<span class="chn" style="background:${CH[c].color}" title="Attributed to ${CH[c].label}">${CH[c].short}</span>`;
+
+    // ── attribution breakdown bar ──
+    (function renderBrk(){
+      const counts = {};
+      leads.forEach(l => { const c = l.attr.channel; counts[c] = (counts[c]||0)+1; });
+      const order = Object.keys(CH).filter(c => counts[c]).sort((a,b)=>counts[b]-counts[a]);
+      document.getElementById('brk').innerHTML =
+        `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
+         <div class="chips">${order.map(c => `<span class="c2">${chnBadge(c)} ${CH[c].label} <b>${counts[c]}</b></span>`).join('')}</div>
+         <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`;
+    })();
+
+    document.getElementById('leads').innerHTML = leads.map((l, i) => `
+      <div class="card lead click" data-i="${i}">
+        <span class="score" style="${scoreTone(l.score)}">${l.score}</span>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span class="nm">${l.nm}</span>
-            <span class="src ${l.src}">${l.src === 'toju' ? 'Toju' : l.src === 'contact' ? 'Contact' : 'Browse'}</span>
+            <span class="src ${l.src === 'toju' ? 'toju' : l.src === 'contact' ? 'contact' : 'browse'}">${l.src === 'toju' ? 'Toju' : l.src === 'contact' ? 'Contact' : l.src === 'instagram' ? 'Instagram' : 'Browse'}</span>
+            ${chnBadge(l.attr.channel)}
+            <span class="src browse">${l.stage}</span>
             ${l.failed ? '<span class="failed">⚠ Delivery failed</span>' : ''}
           </div>
           <div class="pr">${l.pr}</div>
           <div class="ph">${l.ph}</div>
         </div>
         <span class="time">${l.t}</span>
-        <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">WhatsApp</a>
+        <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()">WhatsApp</a>
       </div>
     `).join('');
+
+    // ── lead drawer with the full attribution chain ──
+    const scrim = document.getElementById('scrim'), drawer = document.getElementById('drawer');
+    function chain(a){
+      const m = CH[a.channel];
+      const steps = [`<span class="step">${m.label}${a.post ? ': ' + a.post : ''}${a.posted ? ' <small>· ' + a.posted + '</small>' : ''}</span>`];
+      if (a.channel !== 'direct' && a.channel !== 'proximity') steps.push(`<span class="step">Tapped ${a.link || 'link'}</span>`);
+      if (a.toju > 0) steps.push(`<span class="step">Toju · ${a.toju} min</span>`);
+      steps.push('<span class="step">Lead created</span>');
+      return steps.join('<span class="arw">→</span>');
+    }
+    function openLead(i){
+      const l = leads[i], a = l.attr, m = CH[a.channel];
+      const won = l.stage === 'Won'
+        ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' — posted ' + a.posted : ''}.</p></div>` : '';
+      drawer.innerHTML = `
+        <button class="x" id="drawerX">×</button>
+        <div style="display:flex;align-items:center;gap:10px"><span class="score" style="${scoreTone(l.score)}">${l.score}</span><div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph}</div></div></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+          <span class="src ${l.src === 'toju' ? 'toju' : 'browse'}">${l.stage}</span>${chnBadge(a.channel)}
+          <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>
+        </div>
+        <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' · ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' · ').slice(1).join(' · ')}</p></div>
+        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' · campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}</div>
+        ${won}
+        <div class="sec brief"><div class="k">✦ Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>`;
+      scrim.classList.add('on'); drawer.classList.add('on');
+      document.getElementById('drawerX').addEventListener('click', closeLead);
+      if (window.synMotion) synMotion.refresh();
+    }
+    function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); }
+    document.getElementById('leads').addEventListener('click', (e) => { const c = e.target.closest('[data-i]'); if (c) openLead(+c.dataset.i); });
+    scrim.addEventListener('click', closeLead);
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
