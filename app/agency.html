@@ -136,7 +136,69 @@
     .sec.brief .k { color: var(--brand); }
     .sec.won { border-color: rgba(46,125,79,0.3); background: rgba(46,125,79,0.08); }
     .sec.won .k { color: var(--success); }
-    @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} }
+    /* overview */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .funnel { display: flex; flex-direction: column; gap: 9px; }
+    .funnel .row { display: flex; align-items: center; gap: 12px; }
+    .funnel .row .lb { width: 80px; font-size: 12.5px; color: var(--ink-muted); flex: none; }
+    .funnel .row .track { flex: 1; height: 24px; background: rgba(0,0,0,0.05); border-radius: 7px; overflow: hidden; }
+    .funnel .row .track i { display: block; height: 100%; background: linear-gradient(90deg,#C2552B,#FF7B2C); border-radius: 7px; }
+    .funnel .row .n { width: 40px; text-align: right; font-weight: 700; font-size: 13px; flex: none; }
+    .feed { display: flex; flex-direction: column; }
+    .feed .it { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .feed .it:last-child { border-bottom: none; }
+    .feed .it .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
+    .feed .it .tx { font-size: 13px; }
+    .feed .it .tm { font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
+    .attn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; }
+    .attn:last-child { margin-bottom: 0; }
+    .attn.warn { background: rgba(156,122,30,0.09); border: 1px solid rgba(156,122,30,0.25); color: #8a6a18; }
+    .attn.info { background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.2); color: var(--brand); }
+
+    /* listings */
+    .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-top: 18px; }
+    .lcard { padding: 0; overflow: hidden; }
+    .lcard img { width: 100%; height: 150px; object-fit: cover; display: block; }
+    .lcard .bd { padding: 14px 16px; }
+    .lcard .tt { font-size: 13.5px; font-weight: 600; }
+    .lcard .pr { font-family: var(--f-serif); font-size: 20px; color: var(--brand); margin-top: 2px; }
+    .lcard .ft { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .st-chip { font-size: 10.5px; font-weight: 600; padding: 3px 10px; border-radius: 100px; border: 1px solid; }
+    .st-chip.verified { color: var(--success); background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.25); }
+    .st-chip.pending { color: #a8742b; background: rgba(176,125,43,0.1); border-color: rgba(176,125,43,0.3); }
+    .st-chip.inactive { color: var(--ink-dim); background: rgba(0,0,0,0.03); border-color: var(--border); }
+    .lcard .ld { font-size: 12px; color: var(--ink-muted); }
+    .lcard .ld b { color: var(--ink); font-size: 14px; }
+
+    /* agents */
+    .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px,1fr)); gap: 14px; margin-top: 18px; }
+    .acard .hd { display: flex; align-items: center; gap: 12px; }
+    .acard .av { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,123,44,0.12); border: 1px solid rgba(255,123,44,0.28); color: var(--brand); font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+    .acard .nm { font-weight: 600; font-size: 14px; }
+    .acard .rl { font-size: 11.5px; color: var(--ink-dim); }
+    .acard .mt { display: flex; gap: 16px; margin-top: 14px; }
+    .acard .mt .k { font-family: var(--f-serif); font-size: 19px; color: var(--brand); }
+    .acard .mt .kl { font-size: 10.5px; color: var(--ink-dim); }
+    .acard .pbar { height: 6px; border-radius: 100px; background: rgba(0,0,0,0.06); margin-top: 12px; overflow: hidden; }
+    .acard .pbar i { display: block; height: 100%; background: linear-gradient(90deg,#C2552B,#FF7B2C); }
+
+    /* verification */
+    .vnodes { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 26px; }
+    .vnode { font-size: 12px; padding: 8px 13px; border-radius: 100px; background: rgba(46,125,79,0.08); border: 1px solid rgba(46,125,79,0.2); color: var(--success); }
+    .vq { padding: 16px 18px; margin-bottom: 12px; }
+    .vq .hd { display: flex; align-items: center; gap: 14px; }
+    .vq img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex: none; }
+    .vq .nm { font-weight: 600; font-size: 14px; }
+    .vq .pr2 { font-size: 12px; color: var(--ink-muted); }
+    .vq .prog { margin-left: auto; text-align: right; flex: none; }
+    .vq .prog b { font-family: var(--f-serif); font-size: 20px; color: var(--brand); }
+    .vq .prog span { font-size: 10.5px; color: var(--ink-dim); display: block; }
+    .checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .chk { font-size: 11px; padding: 4px 10px; border-radius: 100px; display: inline-flex; align-items: center; gap: 5px; }
+    .chk.pass { background: rgba(46,125,79,0.1); color: var(--success); }
+    .chk.wait { background: rgba(176,125,43,0.1); color: #a8742b; }
+
+    @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -153,15 +215,64 @@
   <div class="wrap">
     <div class="layout">
       <aside class="side" id="tabs">
-        <a class="on" data-pane="crm">≣ CRM · Leads</a>
-        <a data-pane="subscription">✦ Subscription</a>
+        <a class="on" data-pane="overview">◆ Overview</a>
+        <a data-pane="crm">≣ CRM · Leads</a>
+        <a data-pane="listings">▤ Listings</a>
         <a data-pane="social">◫ Social studio</a>
         <a data-pane="marketing">▲ Marketing</a>
+        <a data-pane="agents">◑ Agents</a>
+        <a data-pane="verification">✓ Verification</a>
+        <a data-pane="subscription">✦ Subscription</a>
       </aside>
 
       <main>
+        <!-- ══ OVERVIEW ══ -->
+        <section class="pane on" id="pane-overview">
+          <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
+          <div class="h1">Overview</div>
+          <p class="muted" style="font-size:14px;margin-top:4px">Your agency at a glance — leads, listings, and what needs you today.</p>
+
+          <div class="stats">
+            <div class="card stat"><div class="v">5</div><div class="l">Active leads</div></div>
+            <div class="card stat"><div class="v">34</div><div class="l">Viewings booked</div></div>
+            <div class="card stat"><div class="v">9</div><div class="l">Won this quarter</div></div>
+            <div class="card stat"><div class="v">₦2.4B</div><div class="l">Sales value</div></div>
+          </div>
+
+          <div class="two">
+            <div class="card" style="padding:18px 20px">
+              <div class="h2" style="margin:0 0 12px">Pipeline funnel</div>
+              <div class="funnel">
+                <div class="row"><span class="lb">Leads</span><span class="track"><i style="width:100%"></i></span><span class="n">128</span></div>
+                <div class="row"><span class="lb">Contacted</span><span class="track"><i style="width:66%"></i></span><span class="n">84</span></div>
+                <div class="row"><span class="lb">Viewings</span><span class="track"><i style="width:27%"></i></span><span class="n">34</span></div>
+                <div class="row"><span class="lb">Offers</span><span class="track"><i style="width:12%"></i></span><span class="n">15</span></div>
+                <div class="row"><span class="lb">Won</span><span class="track"><i style="width:7%"></i></span><span class="n">9</span></div>
+              </div>
+            </div>
+            <div class="card" style="padding:18px 20px">
+              <div class="h2" style="margin:0 0 12px">Needs your attention</div>
+              <div class="attn warn">⏳ Lead SLA expiring — Bola Adeyemi, respond within 13 min</div>
+              <div class="attn warn">🛡 1 listing pending verification — 3-Bed Terrace, Ikate (5/7)</div>
+              <div class="attn info">✦ 2 posts awaiting approval in Social studio</div>
+              <div class="attn info">📣 Osapa open house this weekend — 64 RSVPs</div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:18px 20px;margin-top:16px">
+            <div class="h2" style="margin:0 0 6px">This week</div>
+            <div class="feed">
+              <div class="it"><span class="dot" style="background:var(--brand)"></span><div><div class="tx"><b>New lead</b> — Bola Adeyemi via Instagram → Toju</div><div class="tm">2 minutes ago</div></div></div>
+              <div class="it"><span class="dot" style="background:var(--success)"></span><div><div class="tx"><b>Listing verified</b> — 4-Bed Duplex, Osapa London cleared all 7 checks</div><div class="tm">3 hours ago</div></div></div>
+              <div class="it"><span class="dot" style="background:#1877F2"></span><div><div class="tx"><b>Post published</b> — 3-Bed Terrace reel · 12.4k views · 31 DMs → CRM</div><div class="tm">Yesterday</div></div></div>
+              <div class="it"><span class="dot" style="background:#7a5cd6"></span><div><div class="tx"><b>Viewing booked</b> — Amina Yusuf, Saturday 11:00 AM</div><div class="tm">Yesterday</div></div></div>
+              <div class="it"><span class="dot" style="background:var(--success)"></span><div><div class="tx"><b>Deal won</b> — Ibrahim Musa closed at ₦161M (from Instagram)</div><div class="tm">2 days ago</div></div></div>
+            </div>
+          </div>
+        </section>
+
         <!-- ══ CRM ══ -->
-        <section class="pane on" id="pane-crm">
+        <section class="pane" id="pane-crm">
           <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
           <div class="h1">CRM</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Every inquiry that touches Synapse — newest first, in real time.</p>
@@ -278,6 +389,57 @@
             <div class="kpi"><b>64</b><span>RSVPs</span></div>
           </div>
           <button class="btn btn-primary" style="margin-top:8px">+ New campaign</button>
+        </section>
+
+        <!-- ══ LISTINGS ══ -->
+        <section class="pane" id="pane-listings">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="eyebrow">Inventory</div>
+              <div class="h1">Listings</div>
+              <p class="muted" style="font-size:14px;margin-top:4px">Your inventory and where each listing sits in verification.</p>
+            </div>
+            <button class="btn btn-primary">+ New listing</button>
+          </div>
+          <div class="stats" style="margin-top:18px">
+            <div class="card stat"><div class="v">47</div><div class="l">Total</div></div>
+            <div class="card stat"><div class="v">41</div><div class="l">Verified</div></div>
+            <div class="card stat"><div class="v">3</div><div class="l">Pending</div></div>
+            <div class="card stat"><div class="v">3</div><div class="l">Inactive</div></div>
+          </div>
+          <div class="lgrid" id="lgrid"></div>
+        </section>
+
+        <!-- ══ AGENTS ══ -->
+        <section class="pane" id="pane-agents">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="eyebrow">Your team</div>
+              <div class="h1">Agents</div>
+              <p class="muted" style="font-size:14px;margin-top:4px">Who&#39;s on the floor, and how they&#39;re performing.</p>
+            </div>
+            <button class="btn btn-primary">+ Invite agent</button>
+          </div>
+          <div class="stats" style="margin-top:18px">
+            <div class="card stat"><div class="v">5</div><div class="l">Agents</div></div>
+            <div class="card stat"><div class="v">8m</div><div class="l">Avg response</div></div>
+            <div class="card stat"><div class="v">34</div><div class="l">Active leads</div></div>
+            <div class="card stat"><div class="v">12</div><div class="l">Closed (qtr)</div></div>
+          </div>
+          <div class="agrid" id="agrid"></div>
+        </section>
+
+        <!-- ══ VERIFICATION ══ -->
+        <section class="pane" id="pane-verification">
+          <div class="eyebrow">Trust desk</div>
+          <div class="h1">Verification</div>
+          <p class="muted" style="font-size:14px;margin-top:4px">The 7 checks every listing clears before a buyer ever sees it. This is the product.</p>
+          <div class="vnodes">
+            <span class="vnode">① Title</span><span class="vnode">② Structure</span><span class="vnode">③ Flood risk</span><span class="vnode">④ Legal standing</span><span class="vnode">⑤ Ownership chain</span><span class="vnode">⑥ Media validation</span><span class="vnode">⑦ Freshness</span>
+          </div>
+          <div class="h2">In the queue</div>
+          <p class="sub" style="margin-bottom:10px">Listings being verified right now. Every node must pass before the listing goes live.</p>
+          <div id="vqueue"></div>
         </section>
       </main>
     </div>
@@ -449,6 +611,54 @@
       if (window.synMotion) synMotion.refresh();
     });
     renderPipeline();
+
+    // ── listings ──
+    const LISTINGS_DATA = [
+      { t: '3-Bed Apartment, Lekki Phase 1', pr: '₦165M', st: 'verified', leads: 6, img: IMG.lekki },
+      { t: '4-Bed Duplex, Osapa London', pr: '₦178M', st: 'verified', leads: 3, img: IMG.osapa },
+      { t: '5-Bed Detached, Old Ikoyi', pr: '₦420M', st: 'verified', leads: 4, img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=70' },
+      { t: '3-Bed Terrace, Ikate', pr: '₦148M', st: 'pending', leads: 1, img: IMG.ikate },
+      { t: '2-Bed Flat, Yaba', pr: '₦58M', st: 'pending', leads: 2, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=70' },
+      { t: '2-Bed Flat, Victoria Island', pr: '₦142M', st: 'inactive', leads: 0, img: IMG.vi },
+    ];
+    const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
+    document.getElementById('lgrid').innerHTML = LISTINGS_DATA.map(l => `
+      <div class="card lcard">
+        <img src="${l.img}" alt="" loading="lazy">
+        <div class="bd">
+          <div class="tt">${l.t}</div>
+          <div class="pr">${l.pr}</div>
+          <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
+        </div>
+      </div>`).join('');
+
+    // ── agents ──
+    const AGENTS = [
+      { nm: 'Funke Adebayo', rl: 'Senior agent · Island', active: 11, closed: 5, resp: '6m', perf: 92 },
+      { nm: 'Emeka Obi', rl: 'Agent · Mainland', active: 8, closed: 3, resp: '9m', perf: 78 },
+      { nm: 'Zainab Bello', rl: 'Agent · Lekki corridor', active: 7, closed: 2, resp: '7m', perf: 71 },
+      { nm: 'Ada Nwosu', rl: 'Agent · Diaspora desk', active: 3, closed: 1, resp: '5m', perf: 64 },
+      { nm: 'Tomiwa Cole', rl: 'Junior agent', active: 5, closed: 1, resp: '12m', perf: 55 },
+    ];
+    document.getElementById('agrid').innerHTML = AGENTS.map(a => `
+      <div class="card acard">
+        <div class="hd"><span class="av">${initials(a.nm)}</span><div><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div></div></div>
+        <div class="mt"><div><div class="k">${a.active}</div><div class="kl">active</div></div><div><div class="k">${a.closed}</div><div class="kl">closed</div></div><div><div class="k">${a.resp}</div><div class="kl">avg reply</div></div></div>
+        <div class="pbar"><i style="width:${a.perf}%"></i></div>
+      </div>`).join('');
+
+    // ── verification queue (7-node progress) ──
+    const NODES = ['Title', 'Structure', 'Flood', 'Legal', 'Ownership', 'Media', 'Freshness'];
+    const VQ = [
+      { nm: '3-Bed Terrace, Ikate', pr: '₦148M', img: IMG.ikate, checks: [1,1,1,1,1,0,0] },
+      { nm: 'Serviced Studio, Ikeja GRA', pr: '₦42M', img: IMG.osapa, checks: [1,1,1,1,1,1,0] },
+      { nm: '2-Bed Flat, Yaba', pr: '₦58M', img: IMG.vi, checks: [1,1,0,1,0,0,0] },
+    ];
+    document.getElementById('vqueue').innerHTML = VQ.map(v => {
+      const passed = v.checks.filter(Boolean).length;
+      const chks = v.checks.map((c, i) => `<span class="chk ${c ? 'pass' : 'wait'}">${c ? '✓' : '⏳'} ${NODES[i]}</span>`).join('');
+      return `<div class="card vq"><div class="hd"><img src="${v.img}" alt="" loading="lazy"><div style="flex:1;min-width:0"><div class="nm">${v.nm}</div><div class="pr2">${v.pr}</div></div><div class="prog"><b>${passed}/7</b><span>checks passed</span></div></div><div class="checks">${chks}</div></div>`;
+    }).join('');
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
