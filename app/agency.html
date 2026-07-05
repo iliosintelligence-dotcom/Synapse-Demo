@@ -198,6 +198,38 @@
     .chk.pass { background: rgba(46,125,79,0.1); color: var(--success); }
     .chk.wait { background: rgba(176,125,43,0.1); color: #a8742b; }
 
+    /* AI-native CRM — decisions, not records */
+    .temp { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
+    .temp.hot { color: #c2410c; background: rgba(255,90,30,0.12); border: 1px solid rgba(255,90,30,0.3); }
+    .temp.warm { color: #a8742b; background: rgba(176,125,43,0.12); border: 1px solid rgba(176,125,43,0.3); }
+    .temp.cold { color: #3b6ea5; background: rgba(59,110,165,0.1); border: 1px solid rgba(59,110,165,0.25); }
+    .temp.dormant { color: var(--ink-dim); background: rgba(0,0,0,0.04); border: 1px solid var(--border); }
+    .temp.won { color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.25); }
+    .nba-line { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--brand); font-weight: 600; margin-top: 7px; }
+    .sec.nba { border-color: rgba(255,123,44,0.3); background: linear-gradient(135deg, rgba(255,123,44,0.09), rgba(255,123,44,0.03)); }
+    .sec.nba .k { color: var(--brand); }
+    .btn.do { padding: 9px 16px; font-size: 12.5px; margin-top: 11px; }
+    .sec.ai { border-color: rgba(255,123,44,0.22); background: rgba(255,123,44,0.05); }
+    .gph { margin-top: 10px; }
+    .gnode { display: flex; align-items: center; gap: 10px; }
+    .gnode .r { font-size: 9.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .06em; width: 74px; flex: none; text-align: right; }
+    .gnode .n { font-size: 12.5px; font-weight: 600; }
+    .gline { width: 1px; height: 11px; background: var(--border); margin: 1px 0 1px 78px; }
+    .capture { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--success); background: rgba(46,125,79,0.08); border-radius: 100px; padding: 2px 9px; margin-top: 10px; }
+
+    /* AI business advisor (overview) */
+    .advisor { padding: 18px 20px; margin-top: 16px; }
+    .advisor .top { display: flex; align-items: center; gap: 10px; }
+    .advisor .orb { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex: none; }
+    .advisor .qs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+    .advisor .qs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 8px 13px; cursor: pointer; transition: all .15s; }
+    .advisor .qs button:hover, .advisor .qs button.on { border-color: rgba(255,123,44,0.45); color: var(--brand); background: rgba(255,123,44,0.06); }
+    .advisor .ans { border-left: 2px solid var(--brand); padding: 4px 0 4px 14px; margin-top: 12px; }
+    .advisor .ans .r { display: flex; gap: 8px; font-size: 13px; margin: 7px 0; line-height: 1.5; }
+    .advisor .ans .r .d { color: var(--brand); flex: none; }
+    .advisor .reco { margin-top: 12px; font-size: 13px; line-height: 1.6; background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.2); border-radius: 12px; padding: 11px 14px; }
+    .advisor .reco b { color: var(--brand); }
+
     @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -237,6 +269,12 @@
             <div class="card stat"><div class="v">34</div><div class="l">Viewings booked</div></div>
             <div class="card stat"><div class="v">9</div><div class="l">Won this quarter</div></div>
             <div class="card stat"><div class="v">₦2.4B</div><div class="l">Sales value</div></div>
+          </div>
+
+          <div class="card advisor" id="advisor">
+            <div class="top"><span class="orb">T</span><div><div class="h2" style="margin:0">Ask Toju about your business</div><div class="sub">Prescriptive answers — what's happening, and what to do about it.</div></div></div>
+            <div class="qs" id="advQs"></div>
+            <div id="advAns"></div>
           </div>
 
           <div class="two">
@@ -460,25 +498,44 @@
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
     };
     const leads = [
-      { nm: 'Bola Adeyemi', ph: '+234 803 555 0142', pr: '3-Bed Apartment, Lekki Phase 1 · budget ₦150–180M', price: '₦165M', src: 'toju', t: '2m ago', score: 92, stage: 'New',
+      { nm: 'Bola Adeyemi', ph: '+234 803 555 0142', pr: '3-Bed Apartment, Lekki Phase 1 · budget ₦150–180M', price: '₦165M', src: 'toju', t: '2m ago', score: 92, stage: 'New', temp: 'hot',
         brief: 'Family of four relocating from Abuja. Good schools within 15 min, works on the Island, moving within 3 months.',
+        summary: 'First-time relocating buyer, budget ₦150–180M, set on Lekki with schools ≤15 min. Mortgage-inclined, high urgency (moving <3 months). Most responsive after 6 pm.',
+        nba: { text: 'Call now — first-response SLA expires in 13 min', do: 'Call Bola', act: 'call' },
+        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Bola Adeyemi'],['Mortgage','GTBank'],['Property','3-Bed Lekki Phase 1']],
         attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: 'Today 5:00 PM', link: 'syn.ps/lk3b', campaign: 'lekki-family', toju: 9 } },
-      { nm: 'Chidi Okafor', ph: '+234 701 555 0199', pr: '4-Bed Duplex, Osapa London · budget ₦170–200M', price: '₦178M', src: 'contact', t: '24m ago', score: 78, stage: 'Contacted',
+      { nm: 'Chidi Okafor', ph: '+234 701 555 0199', pr: '4-Bed Duplex, Osapa London · budget ₦170–200M', price: '₦178M', src: 'contact', t: '24m ago', score: 78, stage: 'Contacted', temp: 'warm',
         brief: 'Asked for the title report and service charge history before committing to a viewing.',
+        summary: 'Detail-oriented buyer, ₦170–200M. Wants documentary proof before viewing — lead with the 7-node verification. Slower to commit; nurture with evidence, not pressure.',
+        nba: { text: 'Send the title report + service-charge history he asked for', do: 'Send documents', act: 'task' },
+        graph: [['You','Prestige Realty'],['Agent','Emeka Obi'],['Buyer','Chidi Okafor'],['Lawyer','Chidi’s counsel'],['Property','4-Bed Osapa Duplex']],
         attr: { channel: 'facebook', post: 'Photo · 4-Bed Osapa Duplex', posted: '2 days ago', link: 'syn.ps/os4d', campaign: 'osapa-luxury', toju: 0 } },
-      { nm: 'Amina Yusuf', ph: '+234 814 555 0177', pr: '3-Bed Terrace, Ikate · budget ₦140–170M', price: '₦148M', src: 'browse', t: '1h ago', score: 85, stage: 'Viewing',
+      { nm: 'Amina Yusuf', ph: '+234 814 555 0177', pr: '3-Bed Terrace, Ikate · budget ₦140–170M', price: '₦148M', src: 'browse', t: '1h ago', score: 85, stage: 'Viewing', temp: 'hot',
         brief: 'First-time buyer, pre-approved mortgage with Stanbic. Toju matched on school access + commute.',
+        summary: 'First-time buyer with Stanbic pre-approval in hand. Motivated by school access + commute. Viewing booked; decision-ready once drainage/flood concerns are addressed.',
+        nba: { text: 'Confirm Saturday viewing — bring the flood-risk annex she asked about', do: 'Confirm viewing', act: 'task' },
+        graph: [['You','Prestige Realty'],['Agent','Zainab Bello'],['Buyer','Amina Yusuf'],['Mortgage','Stanbic IBTC'],['Property','3-Bed Ikate Terrace']],
         attr: { channel: 'tiktok', post: 'Video · 3-Bed Ikate Terrace', posted: 'Mon 7:30 PM', link: 'syn.ps/ik3t', campaign: 'ikate-firsthome', toju: 15 } },
-      { nm: 'Tunde Bakare', ph: '+234 802 555 0118', pr: '2-Bed Flat, Victoria Island · budget ₦130–160M', price: '₦142M', src: 'toju', t: '5h ago', score: 64, stage: 'New', failed: true,
+      { nm: 'Tunde Bakare', ph: '+234 802 555 0118', pr: '2-Bed Flat, Victoria Island · budget ₦130–160M', price: '₦142M', src: 'toju', t: '5h ago', score: 64, stage: 'New', temp: 'cold', failed: true,
         brief: 'Investor — asked about short-let regulations and gross yield on VI 2-beds.',
+        summary: 'Yield-focused investor eyeing VI 2-beds and short-let. WhatsApp number unreachable — try SMS/call. Re-qualify budget and intent before investing more time.',
+        nba: { text: 'WhatsApp delivery failed — retry via SMS or a direct call', do: 'Retry by call', act: 'call' },
+        graph: [['You','Prestige Realty'],['Agent','Tomiwa Cole'],['Buyer','Tunde Bakare'],['Property','2-Bed Victoria Island']],
         attr: { channel: 'proximity', post: 'Walked within 300m of the VI 2-Bed', posted: '', link: '', campaign: '', toju: 6 } },
-      { nm: 'Ngozi Eze', ph: '+234 809 555 0104', pr: '4-Bed Duplex, Osapa London · budget ₦175M cash', price: '₦178M', src: 'browse', t: '3d ago', score: 96, stage: 'Negotiation',
+      { nm: 'Ngozi Eze', ph: '+234 809 555 0104', pr: '4-Bed Duplex, Osapa London · budget ₦175M cash', price: '₦178M', src: 'browse', t: '3d ago', score: 96, stage: 'Negotiation', temp: 'hot',
         brief: 'Cash buyer. Offered ₦170M, countered at ₦175M. Lawyer reviewing draft contract.',
+        summary: 'Decisive cash buyer. Offered ₦170M, sitting at ₦175M. Decision-maker (husband) abroad — allow 24h turnarounds. Lawyer engaged; at contract stage.',
+        nba: { text: 'Chase the ₦175M counter — her lawyer has the survey plan', do: 'Chase the offer', act: 'call' },
+        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Ngozi Eze (cash)'],['Lawyer','Ade & Partners'],['Developer','Osapa Estates'],['Property','4-Bed Osapa Duplex']],
         attr: { channel: 'direct', post: 'Browsed verified listings in-app', posted: '', link: '', campaign: '', toju: 22 } },
-      { nm: 'Ibrahim Musa', ph: '+234 806 555 0121', pr: '3-Bed Apartment, Lekki Phase 1 · closed ₦161M', price: '₦161M', src: 'instagram', t: '2d ago', score: 88, stage: 'Won',
+      { nm: 'Ibrahim Musa', ph: '+234 806 555 0121', pr: '3-Bed Apartment, Lekki Phase 1 · closed ₦161M', price: '₦161M', src: 'instagram', t: '2d ago', score: 88, stage: 'Won', temp: 'won',
         brief: 'Came from the Instagram syndicated post. Closed at ₦161M.',
+        summary: 'Closed at ₦161M via Instagram. Strong advocate and a good referral source. Move to post-sale: escrow milestones and a referral ask.',
+        nba: { text: 'Track escrow milestones + ask for a referral while he’s delighted', do: 'Request referral', act: 'task' },
+        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Ibrahim Musa'],['Escrow','Synapse Trust'],['Property','3-Bed Lekki Phase 1']],
         attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: '11 days ago', link: 'syn.ps/lk3b', campaign: 'lekki-luxury', toju: 11 } },
     ];
+    const TEMP_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', dormant: 'Dormant', won: 'Won' };
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
     const scoreTone = s => s >= 80 ? 'color:var(--success);border-color:var(--success)' : s >= 60 ? 'color:var(--brand);border-color:var(--brand)' : 'color:var(--ink-dim);border-color:var(--ink-dim)';
@@ -503,11 +560,13 @@
             <span class="nm">${l.nm}</span>
             <span class="src ${l.src === 'toju' ? 'toju' : l.src === 'contact' ? 'contact' : 'browse'}">${l.src === 'toju' ? 'Toju' : l.src === 'contact' ? 'Contact' : l.src === 'instagram' ? 'Instagram' : 'Browse'}</span>
             ${chnBadge(l.attr.channel)}
+            <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
             <span class="src browse">${l.stage}</span>
             ${l.failed ? '<span class="failed">⚠ Delivery failed</span>' : ''}
           </div>
           <div class="pr">${l.pr}</div>
           <div class="ph">${l.ph}</div>
+          <div class="nba-line">▶ Next: ${l.nba.text}</div>
         </div>
         <span class="time">${l.t}</span>
         <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()">WhatsApp</a>
@@ -524,6 +583,14 @@
       steps.push('<span class="step">Lead created</span>');
       return steps.join('<span class="arw">→</span>');
     }
+    const doBtn = (l) => {
+      const n = l.nba;
+      if (n.act === 'call') return `<a class="btn btn-primary do" href="tel:${l.ph.replace(/[^\d+]/g,'')}">${n.do}</a>`;
+      if (n.act === 'wa') return `<a class="btn btn-primary do" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">${n.do}</a>`;
+      return `<button class="btn btn-primary do" onclick="this.textContent='✓ Done · Toju logged it'; this.disabled=true; this.style.opacity=.7">${n.do}</button>`;
+    };
+    const graphHtml = (g) => `<div class="gph">${g.map((nd,i) => `<div class="gnode"><span class="r">${nd[0]}</span><span class="n">${nd[1]}</span></div>${i < g.length-1 ? '<div class="gline"></div>' : ''}`).join('')}</div>`;
+
     function openLead(i){
       const l = leads[i], a = l.attr, m = CH[a.channel];
       const won = l.stage === 'Won'
@@ -532,12 +599,16 @@
         <button class="x" id="drawerX">×</button>
         <div style="display:flex;align-items:center;gap:10px"><span class="score" style="${scoreTone(l.score)}">${l.score}</span><div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph}</div></div></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
+          <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
           <span class="src ${l.src === 'toju' ? 'toju' : 'browse'}">${l.stage}</span>${chnBadge(a.channel)}
           <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>
         </div>
+        <div class="sec nba"><div class="k">✦ Next best action</div><p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>${doBtn(l)}</div>
+        <div class="sec ai"><div class="k">AI summary</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p></div>
         <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' · ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' · ').slice(1).join(' · ')}</p></div>
-        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' · campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}</div>
+        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' · campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">⚡ Auto-captured — no manual entry</div></div>
         ${won}
+        <div class="sec"><div class="k">Relationship graph</div>${graphHtml(l.graph)}</div>
         <div class="sec brief"><div class="k">✦ Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
@@ -659,6 +730,36 @@
       const chks = v.checks.map((c, i) => `<span class="chk ${c ? 'pass' : 'wait'}">${c ? '✓' : '⏳'} ${NODES[i]}</span>`).join('');
       return `<div class="card vq"><div class="hd"><img src="${v.img}" alt="" loading="lazy"><div style="flex:1;min-width:0"><div class="nm">${v.nm}</div><div class="pr2">${v.pr}</div></div><div class="prog"><b>${passed}/7</b><span>checks passed</span></div></div><div class="checks">${chks}</div></div>`;
     }).join('');
+
+    // ── AI business advisor (overview) — prescriptive, not just dashboards ──
+    const ADVISOR = [
+      { q: 'Why are sales down this month?', points: [
+          'Average first-response time rose from 6 to 11 minutes — hot leads cool fast.',
+          'Lekki inventory dropped by 3 listings — your highest-demand band.',
+          'Follow-ups on “Contacted” leads fell 22% this week.',
+          'Facebook cost-per-lead is 2.4× your Instagram — spend is leaking.' ],
+        reco: 'Reassign the 2 stalled Lekki leads to Funke, refresh Lekki inventory, and shift budget from Facebook into the Instagram reel that’s actually converting.' },
+      { q: 'Where should I focus today?', points: [
+          'Bola Adeyemi (Hot · 92) — first-response SLA expires in 13 minutes.',
+          'Ngozi Eze at ₦175M negotiation — deal score 96, waiting on her counter.',
+          '3-Bed Ikate needs 2 more verification nodes before it can go live.' ],
+        reco: 'Call Bola first, then push Ngozi’s contract. Nudge the trust desk on Ikate’s media + freshness checks.' },
+      { q: 'Which listings are underperforming?', points: [
+          'VI 2-Bed: 1.9k reach on Facebook — 61% below your average.',
+          'It is your only inactive listing, with 0 leads in 14 days.',
+          'Its content has never been posted as video.' ],
+        reco: 'Repost the VI 2-Bed as a TikTok video (your VI content does 3× better there) and trim the ask ~4% to re-enter buyers’ budget bands.' },
+    ];
+    function renderAdvisor(idx){
+      const qsEl = document.getElementById('advQs'); if (!qsEl) return;
+      qsEl.innerHTML = ADVISOR.map((a, i) => `<button data-i="${i}" class="${i === idx ? 'on' : ''}">${a.q}</button>`).join('');
+      const a = ADVISOR[idx];
+      document.getElementById('advAns').innerHTML =
+        `<div class="ans">${a.points.map(p => `<div class="r"><span class="d">→</span><span>${p}</span></div>`).join('')}</div>` +
+        `<div class="reco"><b>Toju’s fix:</b> ${a.reco}</div>`;
+    }
+    document.getElementById('advQs').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) renderAdvisor(+b.dataset.i); });
+    renderAdvisor(0);
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
