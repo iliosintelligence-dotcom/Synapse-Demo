@@ -69,6 +69,33 @@
     .pill-st.q { color: #a8742b; background: rgba(176,125,43,0.1); border: 1px solid rgba(176,125,43,0.25); }
     .pill-st.p { color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.25); }
 
+    /* content pipeline (Phase A — brought over from the standalone dashboard) */
+    .pipeline { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-top: 10px; }
+    .col { min-width: 208px; flex: 1; background: rgba(0,0,0,0.015); border: 1px solid var(--border); border-radius: 16px; padding: 10px; }
+    .col > .ch { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 10px; }
+    .col .ch .t { font-size: 12.5px; font-weight: 700; }
+    .col .ch .w { font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
+    .col .ct { font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--surface); border-radius: 100px; padding: 1px 8px; }
+    .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); }
+    .pcard.warn { border-color: rgba(156,122,30,0.4); }
+    .pcard .ptop { display: flex; gap: 9px; }
+    .pcard .ptop img { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; }
+    .pcard .ptop .t { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pcard .ptop .p { font-size: 11px; color: var(--brand); }
+    .pcard .pmeta { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+    .pcard .reach { font-size: 10px; color: var(--ink-dim); margin-left: 2px; }
+    .pcard .cap { font-size: 11px; color: var(--ink-muted); line-height: 1.4; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pcard .act { width: 100%; margin-top: 9px; border: none; border-radius: 100px; padding: 7px; font: 600 11.5px var(--f-sans); cursor: pointer; }
+    .pcard .act.pri { background: var(--brand); color: #fff; }
+    .pcard .act.ok { background: rgba(46,125,79,0.1); color: var(--success); border: 1px solid rgba(46,125,79,0.3); }
+    .pcard .act.gh { background: rgba(0,0,0,0.04); color: var(--ink-muted); }
+    .pcard .gen { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--ink-muted); margin-top: 9px; }
+    .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,123,44,0.3); border-top-color: var(--brand); animation: spin .7s linear infinite; flex: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pcard .m { display: flex; gap: 10px; margin-top: 8px; font-size: 10px; color: var(--ink-dim); }
+    .pcard .m b { color: var(--ink); }
+    .pcard .rsn { font-size: 10.5px; color: var(--gold); line-height: 1.4; margin-top: 8px; }
+
     /* marketing */
     .camp { display: flex; align-items: center; gap: 16px; padding: 16px 18px; margin-bottom: 12px; }
     .camp .ic { width: 42px; height: 42px; border-radius: 13px; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -217,26 +244,9 @@
             <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
           </div>
 
-          <div class="h2">Post queue</div>
-          <p class="sub" style="margin-bottom:14px">Generated from your verified listings. Edit a caption or let it run.</p>
-          <div class="card post">
-            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=200&q=60" alt="" />
-            <div class="cap"><div class="t">3-Bed Apartment, Lekki Phase 1 · ₦165M</div><div class="c">“Trust score 94. Seven checks, zero surprises. The Lekki 3-bed that actually survives due diligence ✦”</div></div>
-            <span class="pill-st q">QUEUED · IG + TT</span>
-            <span class="when">Today 5:00 PM</span>
-          </div>
-          <div class="card post">
-            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=200&q=60" alt="" />
-            <div class="cap"><div class="t">4-Bed Duplex, Osapa London · ₦178M</div><div class="c">“Osapa. 4 beds. Independently verified title. DM ‘OSAPA’ and Toju sends the full report 🧾”</div></div>
-            <span class="pill-st q">QUEUED · IG + WA</span>
-            <span class="when">Tomorrow 9:00 AM</span>
-          </div>
-          <div class="card post">
-            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&q=60" alt="" />
-            <div class="cap"><div class="t">3-Bed Terrace, Ikate · ₦148M</div><div class="c">“Posted to Instagram + TikTok · 12.4k views · 218 saves · 31 DMs routed into your CRM”</div></div>
-            <span class="pill-st p">POSTED</span>
-            <span class="when">Yesterday</span>
-          </div>
+          <div class="h2">Content pipeline</div>
+          <p class="sub" style="margin-bottom:4px">Every verified listing flows left → right. Upload triggers GPT-4o captioning, you approve once, and Synapse auto-publishes to the connected platforms.</p>
+          <div class="pipeline" id="pipeline"></div>
         </section>
 
         <!-- ══ MARKETING ══ -->
@@ -374,6 +384,71 @@
     function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); }
     document.getElementById('leads').addEventListener('click', (e) => { const c = e.target.closest('[data-i]'); if (c) openLead(+c.dataset.i); });
     scrim.addEventListener('click', closeLead);
+
+    // ── content pipeline (Phase A) ──
+    const IMG = {
+      lekki: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=200&q=60',
+      osapa: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=200&q=60',
+      ikate: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&q=60',
+      vi:    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=200&q=60',
+    };
+    const PSTAGES = [
+      { id: 'uploaded', label: 'Listing uploaded', who: 'Auto-generation triggers' },
+      { id: 'generating', label: 'Content generating', who: 'GPT-4o — no action needed' },
+      { id: 'approval', label: 'Awaiting approval', who: 'You review before publishing' },
+      { id: 'scheduled', label: 'Scheduled', who: 'Auto-publishes at best time' },
+      { id: 'published', label: 'Published', who: 'Metrics collected every 6h' },
+      { id: 'underperforming', label: 'Underperforming', who: 'Toju suggests a boost' },
+    ];
+    let posts = [
+      { id: 'u1', listing: '2-Bed Flat, Victoria Island', price: '₦142M', img: IMG.vi, stage: 'uploaded', channels: [] },
+      { id: 'g1', listing: '3-Bed Terrace, Ikate', price: '₦148M', img: IMG.ikate, stage: 'generating', channels: ['instagram','tiktok','facebook'] },
+      { id: 'a1', listing: '3-Bed Apartment, Lekki Phase 1', price: '₦165M', img: IMG.lekki, stage: 'approval', channels: ['instagram','tiktok','facebook'], caption: '₦165M · gross yield beats the Lagos average. DM ‘REPORT’ and Toju sends the full verification + yield breakdown 🧾', reach: 13200 },
+      { id: 'p1', listing: '3-Bed Apartment, Lekki Phase 1', price: '₦165M', img: IMG.lekki, stage: 'scheduled', channels: ['instagram','tiktok'], when: 'Today 5:00 PM', reach: 11800 },
+      { id: 'p2', listing: '4-Bed Duplex, Osapa London', price: '₦178M', img: IMG.osapa, stage: 'scheduled', channels: ['instagram','whatsapp'], when: 'Tomorrow 9:00 AM', reach: 4100 },
+      { id: 'p4', listing: '3-Bed Terrace, Ikate', price: '₦148M', img: IMG.ikate, stage: 'published', channels: ['instagram','tiktok'], reach: 12400, metrics: { views: 12400, dms: 31, leads: 9 } },
+      { id: 'p5', listing: '4-Bed Duplex, Osapa London', price: '₦178M', img: IMG.osapa, stage: 'published', channels: ['tiktok'], reach: 48200, metrics: { views: 48200, dms: 87, leads: 22 } },
+      { id: 'up1', listing: '2-Bed Flat, Victoria Island', price: '₦142M', img: IMG.vi, stage: 'underperforming', channels: ['facebook'], reach: 1900, rsn: 'Facebook photo — 61% below your average reach. Your VI listings do 3× better as TikTok video.', metrics: { views: 1900, dms: 2, leads: 0 } },
+    ];
+    const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
+    const CHR = { instagram: 3200, tiktok: 8600, facebook: 1500, whatsapp: 900 };
+    const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
+
+    function pcard(p, stage){
+      const chans = p.channels.length ? `<div class="pmeta">${p.channels.map(chnBadge).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>` : '';
+      let body = '';
+      if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
+      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> GPT-4o writing…</div>`;
+      else if (stage === 'approval') body = `<div class="cap">${p.caption || ''}</div><button class="act pri" data-act="approve" data-id="${p.id}">Approve &amp; schedule</button>`;
+      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:6px">${p.when || ''}</div><button class="act ok" data-act="publish" data-id="${p.id}">Publish now</button>`;
+      else if (stage === 'published' && p.metrics) body = `<div class="m"><span><b>${fmt(p.metrics.views)}</b> views</span><span><b>${p.metrics.dms}</b> DMs</span><span><b>${p.metrics.leads}</b> leads</span></div>`;
+      else if (stage === 'underperforming') body = `<div class="rsn">${p.rsn || ''}</div><button class="act gh" data-act="approve" data-id="${p.id}">Regenerate variation</button>`;
+      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}"><div class="ptop"><img src="${p.img}" alt=""><div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chans}${body}</div>`;
+    }
+    function renderPipeline(){
+      const el = document.getElementById('pipeline'); if (!el) return;
+      el.innerHTML = PSTAGES.map(s => {
+        const col = posts.filter(p => p.stage === s.id);
+        return `<div class="col"><div class="ch"><div><div class="t">${s.label}</div><div class="w">${s.who}</div></div><span class="ct">${col.length}</span></div>
+          ${col.map(p => pcard(p, s.id)).join('') || '<div class="w" style="text-align:center;padding:14px 0">—</div>'}</div>`;
+      }).join('');
+    }
+    document.getElementById('pipeline').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-act]'); if (!b) return;
+      const p = posts.find(x => x.id === b.dataset.id); if (!p) return;
+      if (b.dataset.act === 'gen') {
+        p.stage = 'generating'; renderPipeline();
+        setTimeout(() => {
+          p.stage = 'approval';
+          if (!p.channels.length) p.channels = ['instagram','tiktok','facebook'];
+          p.caption = 'Verified ' + p.listing.split(',')[0] + ' · ' + p.price + '. Seven checks, zero surprises — DM ‘REPORT’ for the full verification ✦';
+          p.reach = estReach(p.channels); renderPipeline();
+        }, 1400);
+      } else if (b.dataset.act === 'approve') { p.stage = 'scheduled'; p.when = p.when || 'Today 5:00 PM'; renderPipeline(); }
+      else if (b.dataset.act === 'publish') { p.stage = 'published'; const r = p.reach || estReach(p.channels); p.metrics = p.metrics || { views: r, dms: Math.round(r*0.0022), leads: Math.round(r*0.0007) }; p.when = 'Just now'; renderPipeline(); }
+      if (window.synMotion) synMotion.refresh();
+    });
+    renderPipeline();
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
