@@ -273,7 +273,40 @@
     .msg.toju { background: rgba(255,123,44,0.08); border: 1px solid rgba(255,123,44,0.18); border-bottom-left-radius: 4px; }
     .msg.buyer { background: rgba(0,0,0,0.04); margin-left: auto; border-bottom-right-radius: 4px; }
 
-    @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } }
+    /* toast (button feedback) */
+    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 100; background: var(--ink); color: #fff; font-size: 13px; font-weight: 500; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 34px rgba(20,26,38,0.3); opacity: 0; pointer-events: none; transition: all .25s; max-width: 88vw; text-align: center; }
+    .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* social composer modal */
+    .modal-scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.3); backdrop-filter: blur(2px); z-index: 90; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .modal-scrim.on { opacity: 1; pointer-events: auto; }
+    .modal { position: fixed; z-index: 91; left: 50%; top: 50%; transform: translate(-50%,-47%) scale(.98); opacity: 0; pointer-events: none;
+      width: min(93vw, 640px); max-height: 88vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(20,26,38,0.28); padding: 24px 26px; transition: opacity .22s, transform .22s; }
+    .modal.on { opacity: 1; pointer-events: auto; transform: translate(-50%,-50%) scale(1); }
+    .modal .x { float: right; border: none; background: none; font-size: 20px; color: var(--ink-dim); cursor: pointer; line-height: 1; }
+    .cmp-step { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 0 8px; }
+    .cmp-listings { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .cmp-lst { display: flex; align-items: center; gap: 10px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; background: var(--surface); text-align: left; }
+    .cmp-lst.on { border-color: rgba(255,123,44,0.55); background: rgba(255,123,44,0.06); }
+    .cmp-lst img { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; flex: none; }
+    .cmp-lst .t { font-size: 12px; font-weight: 600; } .cmp-lst .p { font-size: 11px; color: var(--brand); }
+    .cmp-chans { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cmp-chan { display: flex; align-items: center; gap: 7px; padding: 7px 13px; border: 1px solid var(--border); border-radius: 100px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
+    .cmp-chan.on { border-color: rgba(255,123,44,0.55); background: rgba(255,123,44,0.06); color: var(--brand); }
+    .cmp-gen { width: 100%; margin-top: 18px; }
+    .cap-card { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-top: 10px; }
+    .cap-card .ch { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; }
+    .cap-card .rec { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.3); border-radius: 100px; padding: 2px 8px; }
+    .cap-card textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.02); padding: 9px 11px; font: 13px var(--f-sans); color: var(--ink); resize: vertical; min-height: 66px; outline: none; }
+    .cap-card textarea:focus { border-color: rgba(255,123,44,0.4); }
+    .cmp-tags { margin-top: 12px; font-size: 12px; color: var(--brand); font-weight: 500; line-height: 1.6; }
+    .cmp-note { margin-top: 12px; font-size: 12px; color: var(--ink-muted); background: rgba(255,123,44,0.06); border: 1px solid rgba(255,123,44,0.18); border-radius: 10px; padding: 9px 12px; line-height: 1.5; }
+    .cmp-note b { color: var(--brand); }
+    .cmp-err { margin-top: 12px; font-size: 12.5px; color: #b0521f; }
+    .spin2 { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin .7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
+
+    @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -426,9 +459,14 @@
 
         <!-- ══ SOCIAL STUDIO ══ -->
         <section class="pane" id="pane-social">
-          <div class="eyebrow">Syndication &amp; posting</div>
-          <div class="h1">Social studio</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Every verified listing becomes content — captioned by AI, posted on schedule, everywhere at once.</p>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="eyebrow">Syndication &amp; posting</div>
+              <div class="h1">Social studio</div>
+              <p class="muted" style="font-size:14px;margin-top:4px">Every verified listing becomes content — captioned by AI, posted on schedule, everywhere at once.</p>
+            </div>
+            <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px">✨ New post</button>
+          </div>
 
           <div class="channels">
             <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">@prestigerealty · connected</div></div><div class="tog"></div></div>
@@ -565,6 +603,10 @@
   <!-- lead workspace drawer -->
   <div class="scrim" id="scrim"></div>
   <aside class="drawer" id="drawer"></aside>
+
+  <!-- social composer: pick a listing → AI captions per channel → schedule -->
+  <div class="modal-scrim" id="cmpScrim"></div>
+  <div class="modal" id="cmpModal"></div>
 
   <script>
     // Channel attribution (Phase B) — every lead carries a source→tap→Toju→lead chain.
@@ -938,6 +980,99 @@
     }
     document.getElementById('handoffs').addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr); });
     renderHandoffs();
+
+    // ── social composer: New post → AI captions (edge fn) → schedule ──
+    const SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const SB_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const POST_LISTINGS = [
+      { title: '3-Bed Apartment, Lekki Phase 1', price: 165000000, city: 'Lagos', area: 'Lekki Phase 1', bedrooms: 3, listingType: 'sale', trustScore: 94, img: IMG.lekki },
+      { title: '4-Bed Duplex, Osapa London', price: 178000000, city: 'Lagos', area: 'Osapa London', bedrooms: 4, listingType: 'sale', trustScore: 91, img: IMG.osapa },
+      { title: '3-Bed Terrace, Ikate', price: 148000000, city: 'Lagos', area: 'Ikate', bedrooms: 3, listingType: 'sale', trustScore: 88, img: IMG.ikate },
+      { title: '2-Bed Flat, Victoria Island', price: 142000000, city: 'Lagos', area: 'Victoria Island', bedrooms: 2, listingType: 'sale', trustScore: 90, img: IMG.vi },
+    ];
+    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', whatsapp: 'WhatsApp' };
+    const escT = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const cmpScrim = document.getElementById('cmpScrim'), cmpModal = document.getElementById('cmpModal');
+    let cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
+
+    function renderComposer(){
+      const chanChip = (id) => `<button class="cmp-chan ${cmp.chans.has(id) ? 'on' : ''}" data-chan="${id}">${chnBadge(id)} ${CH_LABEL[id]}</button>`;
+      let html = `<button class="x" id="cmpX">×</button><h2 style="font-size:19px;font-weight:700">New post</h2>
+        <p class="muted" style="font-size:12.5px;margin-top:2px">Pick a verified listing, choose channels, and Synapse writes the captions.</p>
+        <div class="cmp-step">1 · Verified listing</div>
+        <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}"><img src="${l.img}" alt=""><div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">₦${Math.round(l.price / 1e6)}M</div></div></button>`).join('')}</div>
+        <div class="cmp-step">2 · Channels</div>
+        <div class="cmp-chans">${['instagram', 'tiktok', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
+        <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '✨ Generate captions with AI'}</button>`;
+      if (cmp.err) html += `<div class="cmp-err">${cmp.err}</div>`;
+      if (cmp.captions) {
+        html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
+        Object.keys(cmp.captions).forEach((ch) => {
+          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea></div>`;
+        });
+        if (cmp.hashtags.length) html += `<div class="cmp-tags">${cmp.hashtags.map(escT).join('  ')}</div>`;
+        if (cmp.note) html += `<div class="cmp-note"><b>Toju's tip:</b> ${escT(cmp.note)}</div>`;
+        html += `<button class="btn btn-primary" style="width:100%;margin-top:16px" id="cmpSchedule">Schedule to pipeline →</button>`;
+      }
+      cmpModal.innerHTML = html;
+    }
+    function openComposer(){ cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' }; renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on'); }
+    function closeComposer(){ cmpScrim.classList.remove('on'); cmpModal.classList.remove('on'); }
+    async function generateCaptions(){
+      if (cmp.chans.size === 0) return;
+      cmp.loading = true; cmp.err = ''; renderComposer();
+      try {
+        const l = POST_LISTINGS[cmp.li];
+        const res = await fetch(SB_URL + '/functions/v1/social-generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+          body: JSON.stringify({ property: l, channels: [...cmp.chans] }),
+        });
+        const d = await res.json().catch(() => ({}));
+        cmp.loading = false;
+        if (!res.ok || d.error || !d.captions || !Object.keys(d.captions).length) { cmp.err = 'Couldn’t generate captions right now — please try again.'; renderComposer(); return; }
+        cmp.captions = d.captions; cmp.hashtags = d.hashtags || []; cmp.note = d.note || ''; cmp.rec = d.recommendedChannel || '';
+        renderComposer();
+      } catch (e) { cmp.loading = false; cmp.err = 'Network hiccup — please try again.'; renderComposer(); }
+    }
+    function scheduleFromComposer(){
+      const l = POST_LISTINGS[cmp.li];
+      cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
+      const chans = [...cmp.chans];
+      const primary = cmp.captions[cmp.rec] || cmp.captions[chans[0]] || Object.values(cmp.captions)[0] || '';
+      posts.unshift({ id: 'np' + Date.now(), listing: l.title, price: '₦' + Math.round(l.price / 1e6) + 'M', img: l.img, stage: 'scheduled', channels: chans, caption: primary, when: 'Today 5:00 PM', reach: estReach(chans) });
+      renderPipeline();
+      closeComposer();
+    }
+    // toast + wire the remaining action buttons so every CTA responds
+    function toast(msg){
+      let t = document.getElementById('toast');
+      if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+      t.textContent = msg; t.classList.add('on');
+      clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800);
+    }
+    const CTA_TOASTS = {
+      '+ New listing': 'Listing upload — add photos and the 7-node verification kicks off automatically.',
+      '+ New campaign': 'Campaign builder — target Toju briefs by area, budget and intent.',
+      '+ Invite agent': 'Invite sent — your teammate gets a link to join this workspace.',
+      'Upgrade to Growth': 'Growth plan: 40 listings · 5 seats · social syndication. Checkout opens in your live workspace.',
+      'Talk to sales': 'Thanks — our team will reach out about the Gold plan and proximity marketing.',
+      'Current plan': 'You’re on Starter — free forever. Upgrade any time.',
+      'See how it works': 'A 2-minute tour of the agency portal is on the way.',
+    };
+    document.querySelectorAll('button').forEach((b) => {
+      const msg = CTA_TOASTS[b.textContent.trim()];
+      if (msg && !b.dataset.wired) { b.dataset.wired = '1'; b.addEventListener('click', () => toast(msg)); }
+    });
+
+    document.getElementById('newPostBtn').addEventListener('click', openComposer);
+    cmpScrim.addEventListener('click', closeComposer);
+    cmpModal.addEventListener('click', (e) => {
+      if (e.target.closest('#cmpX')) { closeComposer(); return; }
+      const lst = e.target.closest('[data-li]'); if (lst) { cmp.li = +lst.dataset.li; renderComposer(); return; }
+      const chan = e.target.closest('[data-chan]'); if (chan) { const id = chan.dataset.chan; cmp.chans.has(id) ? cmp.chans.delete(id) : cmp.chans.add(id); renderComposer(); return; }
+      if (e.target.closest('#cmpGen')) { generateCaptions(); return; }
+      if (e.target.closest('#cmpSchedule')) { scheduleFromComposer(); return; }
+    });
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
