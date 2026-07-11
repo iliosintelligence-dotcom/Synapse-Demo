@@ -125,7 +125,8 @@
     .brk .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
     .brk .c2 { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); border-radius: 100px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
     .brk .c2 b { color: var(--brand); }
-    .brk .barline { display: flex; height: 8px; border-radius: 100px; overflow: hidden; margin-top: 12px; background: rgba(0,0,0,0.05); }
+    .brk .barline { display: flex; gap: 2px; height: 10px; margin-top: 12px; }
+    .brk .barline span { border-radius: 3px; }
     .chn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; color: #fff; font-size: 9px; font-weight: 700; flex: none; }
     .score { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid; font-size: 11px; font-weight: 700; flex: none; }
     .lead.click { cursor: pointer; transition: transform .12s; }
@@ -152,8 +153,8 @@
     .funnel { display: flex; flex-direction: column; gap: 9px; }
     .funnel .row { display: flex; align-items: center; gap: 12px; }
     .funnel .row .lb { width: 80px; font-size: 12.5px; color: var(--ink-muted); flex: none; }
-    .funnel .row .track { flex: 1; height: 24px; background: rgba(0,0,0,0.05); border-radius: 7px; overflow: hidden; }
-    .funnel .row .track i { display: block; height: 100%; background: linear-gradient(90deg,#C2552B,#FF7B2C); border-radius: 7px; }
+    .funnel .row .track { flex: 1; height: 16px; background: rgba(0,0,0,0.05); border-radius: 4px; }
+    .funnel .row .track i { display: block; height: 100%; background: #C2552B; border-radius: 4px; min-width: 3px; }
     .funnel .row .n { width: 40px; text-align: right; font-weight: 700; font-size: 13px; flex: none; }
     .feed { display: flex; flex-direction: column; }
     .feed .it { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
@@ -184,14 +185,39 @@
     /* agents */
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px,1fr)); gap: 14px; margin-top: 18px; }
     .acard .hd { display: flex; align-items: center; gap: 12px; }
-    .acard .av { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,123,44,0.12); border: 1px solid rgba(255,123,44,0.28); color: var(--brand); font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+    .acard .av, .drawer .av { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,123,44,0.12); border: 1px solid rgba(255,123,44,0.28); color: var(--brand); font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+    .drawer .rl { font-size: 11.5px; color: var(--ink-dim); }
     .acard .nm { font-weight: 600; font-size: 14px; }
     .acard .rl { font-size: 11.5px; color: var(--ink-dim); }
-    .acard .mt { display: flex; gap: 16px; margin-top: 14px; }
+    .acard .mt { display: flex; gap: 16px; margin-top: 12px; }
     .acard .mt .k { font-family: var(--f-serif); font-size: 19px; color: var(--brand); }
     .acard .mt .kl { font-size: 10.5px; color: var(--ink-dim); }
-    .acard .pbar { height: 6px; border-radius: 100px; background: rgba(0,0,0,0.06); margin-top: 12px; overflow: hidden; }
-    .acard .pbar i { display: block; height: 100%; background: linear-gradient(90deg,#C2552B,#FF7B2C); }
+    .acard { cursor: pointer; transition: transform .15s; }
+    .acard:hover { transform: translateY(-2px); }
+    .acard .sparkrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 14px; }
+    .acard .sparklbl { font-size: 10px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .07em; }
+
+    /* ── chart primitives — single hue on a muted track, labels in ink ── */
+    .hbars { display: flex; flex-direction: column; gap: 9px; }
+    .hbars .hrow { display: flex; align-items: center; gap: 11px; }
+    .hbars .hlb { width: 96px; font-size: 12px; color: var(--ink-muted); flex: none; text-align: right; }
+    .hbars .htrack { flex: 1; height: 14px; background: rgba(0,0,0,0.05); border-radius: 4px; }
+    .hbars .htrack i { display: block; height: 100%; border-radius: 4px; background: #C2552B; min-width: 3px; }
+    .hbars .hn { width: 44px; font-size: 12.5px; font-weight: 700; color: var(--ink); flex: none; }
+    .statspark { display: block; margin: 8px auto 0; }
+    .ringwrap { display: flex; align-items: center; justify-content: center; }
+    .ctip { position: fixed; z-index: 120; background: #17191d; color: #fff; font: 600 11.5px var(--f-sans); padding: 6px 10px; border-radius: 8px; pointer-events: none; opacity: 0; transition: opacity .12s; white-space: nowrap; }
+    .ctip small { display: block; font-weight: 400; color: rgba(255,255,255,0.65); }
+
+    /* agent profile drawer */
+    .ap-hero { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-top: 16px; }
+    .ap-hero div { border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; text-align: center; }
+    .ap-hero .v { font-family: var(--f-serif); font-size: 21px; color: var(--brand); }
+    .ap-hero .l { font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
+    .ap-sec { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-top: 13px; }
+    .ap-sec .k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .ap-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 13px; }
+    .ap-duo .ap-sec { margin-top: 0; }
 
     /* verification */
     .vnodes { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 26px; }
@@ -419,12 +445,7 @@
           <div class="h1">Overview</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Your agency at a glance — leads, listings, and what needs you today.</p>
 
-          <div class="stats">
-            <div class="card stat"><div class="v">5</div><div class="l">Active leads</div></div>
-            <div class="card stat"><div class="v">34</div><div class="l">Viewings booked</div></div>
-            <div class="card stat"><div class="v">9</div><div class="l">Won this quarter</div></div>
-            <div class="card stat"><div class="v">₦2.4B</div><div class="l">Sales value</div></div>
-          </div>
+          <div class="stats" id="ovstats"></div>
 
           <div class="card advisor" id="advisor">
             <div class="top"><span class="orb">T</span><div><div class="h2" style="margin:0">Ask Toju about your business</div><div class="sub">Prescriptive answers — what's happening, and what to do about it.</div></div></div>
@@ -470,12 +491,7 @@
           <div class="h1">CRM</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Every inquiry that touches Synapse — newest first, in real time.</p>
 
-          <div class="stats">
-            <div class="card stat"><div class="v">47</div><div class="l">Listings</div></div>
-            <div class="card stat"><div class="v">128</div><div class="l">Leads</div></div>
-            <div class="card stat"><div class="v">94.2</div><div class="l">Trust score</div></div>
-            <div class="card stat"><div class="v">₦2.4B</div><div class="l">Sales</div></div>
-          </div>
+          <div class="stats" id="crmstats"></div>
 
           <div class="card lead-banner">
             <span data-lottie="lead-arrived" data-loop="false" style="width:50px;height:40px"></span>
@@ -638,11 +654,16 @@
             </div>
             <button class="btn btn-primary">+ Invite agent</button>
           </div>
-          <div class="stats" style="margin-top:18px">
-            <div class="card stat"><div class="v">5</div><div class="l">Agents</div></div>
-            <div class="card stat"><div class="v">8m</div><div class="l">Avg response</div></div>
-            <div class="card stat"><div class="v">34</div><div class="l">Active leads</div></div>
-            <div class="card stat"><div class="v">12</div><div class="l">Closed (qtr)</div></div>
+          <div class="stats" style="margin-top:18px" id="agstats"></div>
+          <div class="two" style="margin-top:16px">
+            <div class="card" style="padding:18px 20px">
+              <div class="h2" style="margin:0 0 12px">Closed deals · this quarter</div>
+              <div class="hbars" id="agClosed"></div>
+            </div>
+            <div class="card" style="padding:18px 20px">
+              <div class="h2" style="margin:0 0 12px">Avg first reply · minutes</div>
+              <div class="hbars" id="agReply"></div>
+            </div>
           </div>
           <div class="agrid" id="agrid"></div>
         </section>
@@ -800,7 +821,7 @@
       document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.synMotion) synMotion.refresh();
     }
-    function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); }
+    function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
     document.getElementById('leads').addEventListener('click', (e) => { const c = e.target.closest('[data-i]'); if (c) openLead(+c.dataset.i); });
     scrim.addEventListener('click', closeLead);
 
@@ -1145,20 +1166,144 @@
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderInsights(); renderCampaigns();
 
-    // ── agents ──
+    // ── chart primitives — one brand hue on a muted track; labels wear ink ──
+    const C_BRAND = '#C2552B', C_TRACK = 'rgba(0,0,0,0.06)';
+    function sparkSVG(pts, o) {
+      o = o || {};
+      const w = o.w || 116, h = o.h || 32, pad = 4;
+      const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
+      const nx = i => pad + (i / (pts.length - 1)) * (w - pad * 2);
+      const ny = v => max === min ? h / 2 : (h - pad) - ((v - min) / (max - min)) * (h - pad * 2);
+      const line = pts.map((v, i) => (i ? 'L' : 'M') + nx(i).toFixed(1) + ' ' + ny(v).toFixed(1)).join(' ');
+      const area = o.area ? `<path d="${line} L${nx(pts.length - 1).toFixed(1)} ${h - 1} L${nx(0).toFixed(1)} ${h - 1} Z" fill="${C_BRAND}" opacity="0.09"/>` : '';
+      const dot = `<circle cx="${nx(pts.length - 1).toFixed(1)}" cy="${ny(pts.length - 1 >= 0 ? pts[pts.length - 1] : 0).toFixed(1)}" r="3" fill="${C_BRAND}"/>`;
+      return `<svg class="statspark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" data-pts="${pts.join(',')}" data-pad="${pad}" aria-hidden="true">${area}<path d="${line}" fill="none" stroke="${C_BRAND}" stroke-width="2" stroke-linecap="round"/>${dot}</svg>`;
+    }
+    function ringSVG(pct, o) {
+      o = o || {};
+      const s = o.size || 54, sw = o.sw || 6, r = (s - sw) / 2, c = 2 * Math.PI * r;
+      const val = o.label != null ? o.label : Math.round(pct) + '%';
+      return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true">
+        <circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${C_TRACK}" stroke-width="${sw}"/>
+        <circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${C_BRAND}" stroke-width="${sw}" stroke-linecap="round"
+          stroke-dasharray="${(c * pct / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${s / 2} ${s / 2})"/>
+        <text x="50%" y="50%" dy="0.36em" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="${o.fs || 12.5}" font-weight="700" fill="#15171a">${val}</text>
+      </svg>`;
+    }
+    function hbarsHTML(rows, unit) {
+      const max = Math.max.apply(null, rows.map(r => r[1]));
+      return rows.map(r =>
+        `<div class="hrow" title="${r[0]}: ${r[1]}${unit || ''}"><span class="hlb">${r[0]}</span><span class="htrack"><i style="width:${max ? (r[1] / max * 100) : 0}%"></i></span><span class="hn">${r[1]}${unit || ''}</span></div>`
+      ).join('');
+    }
+    function statTile(v, l, pts) {
+      return `<div class="card stat"><div class="v">${v}</div><div class="l">${l}</div>${pts ? sparkSVG(pts) : ''}</div>`;
+    }
+
+    // shared chart tooltip (hover layer for the profile spark)
+    const ctip = document.createElement('div'); ctip.className = 'ctip'; document.body.appendChild(ctip);
+    function wireSparkHover(svg, labelFn) {
+      const pts = svg.getAttribute('data-pts').split(',').map(Number);
+      const pad = +svg.getAttribute('data-pad') || 4;
+      let mark = null;
+      svg.style.pointerEvents = 'all';
+      svg.addEventListener('mousemove', (e) => {
+        const r = svg.getBoundingClientRect();
+        const vw = svg.viewBox.baseVal.width || r.width, vh = svg.viewBox.baseVal.height || r.height;
+        const x = (e.clientX - r.left) / r.width * vw;
+        const i = Math.max(0, Math.min(pts.length - 1, Math.round((x - pad) / ((vw - pad * 2) / (pts.length - 1)))));
+        const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
+        const cx = pad + (i / (pts.length - 1)) * (vw - pad * 2);
+        const cy = max === min ? vh / 2 : (vh - pad) - ((pts[i] - min) / (max - min)) * (vh - pad * 2);
+        if (!mark) { mark = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); mark.setAttribute('r', '4'); mark.setAttribute('fill', '#fff'); mark.setAttribute('stroke', C_BRAND); mark.setAttribute('stroke-width', '2.5'); svg.appendChild(mark); }
+        mark.setAttribute('cx', cx); mark.setAttribute('cy', cy);
+        ctip.innerHTML = labelFn(i, pts[i]);
+        ctip.style.left = (e.clientX + 12) + 'px'; ctip.style.top = (e.clientY - 34) + 'px'; ctip.style.opacity = '1';
+      });
+      svg.addEventListener('mouseleave', () => { ctip.style.opacity = '0'; if (mark) { mark.remove(); mark = null; } });
+    }
+    const WKS = ['7 wks ago', '6 wks ago', '5 wks ago', '4 wks ago', '3 wks ago', '2 wks ago', 'Last week', 'This week'];
+
+    // ── overview + CRM stat tiles (hero number + 8-week trend) ──
+    document.getElementById('ovstats').innerHTML =
+      statTile(5, 'Active leads', [3, 4, 4, 6, 5, 7, 6, 5]) +
+      statTile(34, 'Viewings booked', [2, 3, 4, 5, 4, 6, 5, 5]) +
+      statTile(9, 'Won this quarter', [0, 1, 1, 2, 1, 2, 1, 1]) +
+      statTile('₦2.4B', 'Sales value', [1.1, 1.3, 1.4, 1.7, 1.8, 2.0, 2.2, 2.4]);
+    document.getElementById('crmstats').innerHTML =
+      statTile(128, 'Leads', [9, 11, 14, 12, 16, 18, 17, 19]) +
+      statTile(34, 'Viewings', [2, 3, 4, 5, 4, 6, 5, 5]) +
+      `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(7, { label: '7%' })}</div></div>` +
+      statTile('₦2.4B', 'Sales', [1.1, 1.3, 1.4, 1.7, 1.8, 2.0, 2.2, 2.4]);
+
+    // ── agents — data-first cards + clickable profiles ──
     const AGENTS = [
-      { nm: 'Funke Adebayo', rl: 'Senior agent · Island', active: 11, closed: 5, resp: '6m', perf: 92 },
-      { nm: 'Emeka Obi', rl: 'Agent · Mainland', active: 8, closed: 3, resp: '9m', perf: 78 },
-      { nm: 'Zainab Bello', rl: 'Agent · Lekki corridor', active: 7, closed: 2, resp: '7m', perf: 71 },
-      { nm: 'Ada Nwosu', rl: 'Agent · Diaspora desk', active: 3, closed: 1, resp: '5m', perf: 64 },
-      { nm: 'Tomiwa Cole', rl: 'Junior agent', active: 5, closed: 1, resp: '12m', perf: 55 },
+      { nm: 'Funke Adebayo', rl: 'Senior agent · Island', active: 11, closed: 5, respM: 6, win: 42,
+        weekly: [6, 8, 7, 9, 11, 10, 12, 14], respT: [9, 8, 8, 7, 7, 6, 6, 6],
+        stages: [['New', 3], ['Contacted', 4], ['Viewing', 2], ['Negotiation', 2]],
+        recent: [['3-Bed Apartment, Lekki Phase 1', '₦161M · 2d ago'], ['4-Bed Duplex, Osapa London', '₦175M · negotiating']] },
+      { nm: 'Emeka Obi', rl: 'Agent · Mainland', active: 8, closed: 3, respM: 9, win: 31,
+        weekly: [5, 4, 6, 7, 6, 8, 7, 9], respT: [12, 11, 10, 10, 9, 9, 9, 9],
+        stages: [['New', 2], ['Contacted', 3], ['Viewing', 2], ['Negotiation', 1]],
+        recent: [['2-Bed Flat, Yaba', '₦55M · 1w ago']] },
+      { nm: 'Zainab Bello', rl: 'Agent · Lekki corridor', active: 7, closed: 2, respM: 7, win: 27,
+        weekly: [3, 4, 5, 4, 6, 7, 6, 8], respT: [8, 8, 7, 8, 7, 7, 7, 7],
+        stages: [['New', 2], ['Contacted', 2], ['Viewing', 2], ['Negotiation', 1]],
+        recent: [['3-Bed Terrace, Ikate', '₦148M · viewing Sat']] },
+      { nm: 'Ada Nwosu', rl: 'Agent · Diaspora desk', active: 3, closed: 1, respM: 5, win: 25,
+        weekly: [1, 2, 2, 3, 2, 3, 3, 4], respT: [6, 6, 5, 5, 5, 5, 5, 5],
+        stages: [['New', 1], ['Contacted', 1], ['Viewing', 1], ['Negotiation', 0]],
+        recent: [['5-Bed Detached, Old Ikoyi', '₦420M · UK buyer']] },
+      { nm: 'Tomiwa Cole', rl: 'Junior agent', active: 5, closed: 1, respM: 12, win: 17,
+        weekly: [2, 2, 3, 3, 4, 3, 5, 5], respT: [16, 15, 14, 14, 13, 13, 12, 12],
+        stages: [['New', 2], ['Contacted', 2], ['Viewing', 1], ['Negotiation', 0]],
+        recent: [['2-Bed Flat, Victoria Island', '₦142M · re-listed']] },
     ];
-    document.getElementById('agrid').innerHTML = AGENTS.map(a => `
-      <div class="card acard">
-        <div class="hd"><span class="av">${initials(a.nm)}</span><div><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div></div></div>
-        <div class="mt"><div><div class="k">${a.active}</div><div class="kl">active</div></div><div><div class="k">${a.closed}</div><div class="kl">closed</div></div><div><div class="k">${a.resp}</div><div class="kl">avg reply</div></div></div>
-        <div class="pbar"><i style="width:${a.perf}%"></i></div>
+    const first = n => n.split(' ')[0];
+    document.getElementById('agstats').innerHTML =
+      statTile(AGENTS.length, 'Agents', null) +
+      statTile(Math.round(AGENTS.reduce((s, a) => s + a.respM, 0) / AGENTS.length) + 'm', 'Avg first reply', [11, 10, 9, 9, 8, 8, 8, 8]) +
+      statTile(AGENTS.reduce((s, a) => s + a.active, 0), 'Active leads', [22, 25, 27, 26, 30, 32, 33, 34]) +
+      statTile(AGENTS.reduce((s, a) => s + a.closed, 0), 'Closed (qtr)', [1, 2, 1, 2, 2, 1, 2, 1]);
+    document.getElementById('agClosed').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.closed]));
+    document.getElementById('agReply').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.respM]), 'm');
+
+    document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => `
+      <div class="card acard" data-agent="${i}" title="Open ${first(a.nm)}'s profile">
+        <div class="hd"><span class="av">${initials(a.nm)}</span><div style="flex:1;min-width:0"><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div></div>${ringSVG(a.win, { size: 46, sw: 5, fs: 10.5 })}</div>
+        <div class="sparkrow"><div><div class="sparklbl">Leads · 8 wks</div>${sparkSVG(a.weekly, { area: true })}</div></div>
+        <div class="mt"><div><div class="k">${a.active}</div><div class="kl">active</div></div><div><div class="k">${a.closed}</div><div class="kl">closed</div></div><div><div class="k">${a.respM}m</div><div class="kl">avg reply</div></div></div>
       </div>`).join('');
+
+    function openAgent(i) {
+      const a = AGENTS[i];
+      drawer.innerHTML = `
+        <button class="x" id="drawerX">×</button>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="av" style="width:52px;height:52px;font-size:16px">${initials(a.nm)}</span>
+          <div><div style="font-size:19px;font-weight:700">${a.nm}</div><div class="rl">${a.rl}</div></div>
+        </div>
+        <div class="ap-hero">
+          <div><div class="v">${a.active}</div><div class="l">Active leads</div></div>
+          <div><div class="v">${a.closed}</div><div class="l">Closed · qtr</div></div>
+          <div><div class="v">${a.respM}m</div><div class="l">Avg reply</div></div>
+        </div>
+        <div class="ap-sec"><div class="k">Leads handled · 8 weeks</div>${sparkSVG(a.weekly, { w: 356, h: 74, area: true })}</div>
+        <div class="ap-duo">
+          <div class="ap-sec"><div class="k">Win rate</div><div class="ringwrap">${ringSVG(a.win, { size: 84, sw: 9, fs: 16 })}</div><p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of closed conversations won</p></div>
+          <div class="ap-sec"><div class="k">First reply · minutes</div>${sparkSVG(a.respT, { w: 150, h: 56 })}<p class="muted" style="font-size:11px;margin-top:8px">${a.respT[0]}m → ${a.respT[7]}m over 8 weeks</p></div>
+        </div>
+        <div class="ap-sec"><div class="k">Pipeline by stage</div><div class="hbars">${hbarsHTML(a.stages)}</div></div>
+        <div class="ap-sec"><div class="k">Recent deals</div>${a.recent.map(r => `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin:7px 0"><span style="font-weight:600">${r[0]}</span><span class="muted" style="flex:none">${r[1]}</span></div>`).join('')}</div>`;
+      scrim.classList.add('on'); drawer.classList.add('on');
+      document.getElementById('drawerX').addEventListener('click', closeLead);
+      drawer.querySelectorAll('svg[data-pts]').forEach((svg, k) => {
+        wireSparkHover(svg, (idx, v) => `${v}${k === 1 ? ' min' : ' leads'}<small>${WKS[idx] || 'wk ' + (idx + 1)}</small>`);
+      });
+    }
+    document.getElementById('agrid').addEventListener('click', (e) => {
+      const c = e.target.closest('[data-agent]'); if (c) openAgent(+c.dataset.agent);
+    });
 
     // ── verification queue (7-node progress) ──
     const NODES = ['Title', 'Structure', 'Flood', 'Legal', 'Ownership', 'Media', 'Freshness'];
