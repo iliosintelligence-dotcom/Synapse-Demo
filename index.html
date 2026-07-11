@@ -56,8 +56,11 @@
   --crystal-chroma-r: rgba(255,60,40,0.06);
   --crystal-chroma-b: rgba(40,80,255,0.06);
 
-  --f-sans: 'Bromolek', 'Inter', system-ui, sans-serif;
+  /* Restaglick = headlines · Bromolek = all-caps accent labels · Inter = body.
+     Bromolek is a decorative display face — never use it for running text. */
+  --f-sans: 'Inter', system-ui, sans-serif;
   --f-serif: 'Restaglick', 'Fraunces', Georgia, serif;
+  --f-accent: 'Bromolek', 'Inter', system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -277,9 +280,10 @@ nav.solid {
 }
 
 .hero-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
+  font-family: var(--f-accent);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--brand);
   margin-bottom: 26px;
@@ -312,6 +316,19 @@ nav.solid {
   font-weight: 300;
   margin-bottom: 18px;
 }
+/* three-beat scan line: Tell Toju → He checks → You move in */
+.hero-scan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+.hero-scan b { color: var(--text); font-weight: 600; }
+.hero-scan .hs-arrow { color: var(--brand); font-weight: 700; }
+
 .hero-toju-line {
   font-size: 14px;
   font-style: italic;
@@ -479,9 +496,10 @@ section { padding: 120px 0; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-family: var(--f-accent);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--brand);
   border: 1px solid rgba(255,123,44,0.22);
@@ -1703,17 +1721,15 @@ footer {
           Your next home shouldn't be a <em>gamble.</em>
         </h1>
         <p class="hero-sub">
-          Before any home reaches you, real people confirm it on the ground for you —
-          the title, the survey, the structure, the seller. So what you see is exactly what
-          you get: real, available, and safe for you to act on. No doctored photos hiding
-          defects from you, no money leaving your hands until the home checks out. You feel
-          the quality; you can prove the safety.
+          Real people check every home on the ground — title, structure, seller — before you ever see it.
         </p>
-        <p class="hero-toju-line">
-          Just tell Toju what you want. You get the trade-offs weighed for you, options you'd
-          never have found on your own, and a clear path to your decision — not another long
-          list for you to sort through.
-        </p>
+        <div class="hero-scan">
+          <span><b>Tell Toju</b> what you want</span>
+          <span class="hs-arrow">→</span>
+          <span><b>He finds it</b> &amp; checks it</span>
+          <span class="hs-arrow">→</span>
+          <span><b>You move in</b> safely</span>
+        </div>
         <div class="hero-ctas">
           <button class="panel-btn-primary">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1773,7 +1789,7 @@ footer {
 
 .ag-section { padding: 72px 0; }
 .ag-head { text-align: center; max-width: 660px; margin: 0 auto 36px; }
-.ag-kicker { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--brand); }
+.ag-kicker { font-family: var(--f-accent); font-size: 12.5px; font-weight: 400; letter-spacing: .18em; text-transform: uppercase; color: var(--brand); }
 .ag-h2 { font-family: var(--f-serif); font-weight: 300; font-size: clamp(26px,4vw,38px); letter-spacing: -.02em; margin-top: 12px; }
 .ag-h2 em { font-style: italic; }
 .ag-sub2 { font-size: 15px; color: var(--text-muted); margin-top: 14px; line-height: 1.7; font-weight: 300; }
@@ -2058,36 +2074,36 @@ footer {
   <div class="container">
     <div class="reveal"><span class="chip">Who It's For</span></div>
     <h2 class="section-title reveal">Built around <em>you.</em></h2>
-    <p class="section-body reveal">Whatever you're here for — to buy, to rent, to invest, or to share — Toju has a verified path made for you.</p>
+    <p class="section-body reveal">Buy. Rent. Invest. Share. One verified path for each.</p>
     <div class="persona-list">
       <a class="persona-row" href="#demo">
         <div class="persona-ghost-num">01</div>
         <div class="persona-icon-tile">🏠</div>
-        <div class="persona-text"><div class="persona-name">Buyers</div><div class="persona-desc">Find your verified forever home anywhere in Nigeria — before you spend a single naira.</div></div>
+        <div class="persona-text"><div class="persona-name">Buyers</div><div class="persona-desc">Your forever home — verified before you pay.</div></div>
         <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
       <a class="persona-row" href="#demo">
         <div class="persona-ghost-num">02</div>
         <div class="persona-icon-tile">📈</div>
-        <div class="persona-text"><div class="persona-name">Investors</div><div class="persona-desc">Grow your money with high-yield Nigerian assets — each one vetted for you: clear title, zero excision issues, strong ROI.</div></div>
+        <div class="persona-text"><div class="persona-name">Investors</div><div class="persona-desc">High-yield assets. Clear title. Strong ROI.</div></div>
         <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
       <a class="persona-row" href="#coliving">
         <div class="persona-ghost-num">03</div>
         <div class="persona-icon-tile">🤝</div>
-        <div class="persona-text"><div class="persona-name">Shared Living</div><div class="persona-desc">Share a premium home with people you can trust — co-living matched to how you actually live.</div></div>
+        <div class="persona-text"><div class="persona-name">Shared Living</div><div class="persona-desc">Premium co-living, matched to how you live.</div></div>
         <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
       <a class="persona-row" href="#browse">
         <div class="persona-ghost-num">04</div>
         <div class="persona-icon-tile">🔑</div>
-        <div class="persona-text"><div class="persona-name">Rentals</div><div class="persona-desc">Short and long-term rentals, ground-truth verified before you ever sign anything.</div></div>
+        <div class="persona-text"><div class="persona-name">Rentals</div><div class="persona-desc">Verified on the ground before you sign.</div></div>
         <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
       <a class="persona-row" href="#flexpay">
         <div class="persona-ghost-num">05</div>
         <div class="persona-icon-tile">💳</div>
-        <div class="persona-text"><div class="persona-name">Flex Plans</div><div class="persona-desc">Start your property journey today — with exactly what you have right now.</div></div>
+        <div class="persona-text"><div class="persona-name">Flex Plans</div><div class="persona-desc">Start today with what you have.</div></div>
         <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </a>
     </div>
@@ -2114,7 +2130,7 @@ footer {
       <div class="reveal-r" style="padding-top:16px">
         <span class="chip">Interactive Demo</span>
         <h2 class="section-title">Toju advises <em>you.</em><br>You don't just search.</h2>
-        <p class="section-body">Other portals make you do the searching. Toju understands your goals, weighs the trade-offs for you, and connects you to verified agencies — before you take a single cold call.</p>
+        <p class="section-body">Portals make you search. Toju understands, advises, and connects — no cold calls.</p>
         <div style="margin-top:40px;background:rgba(255,123,44,0.04);border:1px solid rgba(255,123,44,0.14);border-radius:16px;padding:22px 26px;position:relative;overflow:hidden">
           <div style="position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,150,80,0.25),transparent)"></div>
           <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--brand);margin-bottom:10px">Design Philosophy</div>
@@ -2139,25 +2155,25 @@ footer {
         <div class="roadmap-dot"></div>
         <div class="roadmap-num">01</div>
         <div class="roadmap-title">Tell Toju</div>
-        <div class="roadmap-desc">No need to scroll through 100 listings to find your dream home. Describe the life you want — Toju asks the right questions and brings you the few that truly fit.</div>
+        <div class="roadmap-desc">Skip the 100-listing scroll. Describe the life you want — get the few that fit.</div>
       </div>
       <div class="roadmap-step">
         <div class="roadmap-dot"></div>
         <div class="roadmap-num">02</div>
         <div class="roadmap-title">You Browse Verified Listings</div>
-        <div class="roadmap-desc">You see homes ranked by trust score, value and fit for you — not just whatever's available. Every one is re-verified and reposted every 14 days, so you never chase a ghost listing that's already gone.</div>
+        <div class="roadmap-desc">Ranked by trust and fit. Re-verified every 14 days — no ghost listings.</div>
       </div>
       <div class="roadmap-step">
         <div class="roadmap-dot"></div>
         <div class="roadmap-num">03</div>
         <div class="roadmap-title">You Verify Before You Commit</div>
-        <div class="roadmap-desc">Scouts, surveyors, and lawyers confirm title, structure, and risk for you — before you commit a single naira. Every node must pass.</div>
+        <div class="roadmap-desc">Scouts, surveyors and lawyers confirm everything — before you commit a naira.</div>
       </div>
       <div class="roadmap-step">
         <div class="roadmap-dot"></div>
         <div class="roadmap-num">04</div>
         <div class="roadmap-title">You Pay Safely</div>
-        <div class="roadmap-desc">Your money sits protected in escrow. The seller is paid only when every milestone you were promised is met.</div>
+        <div class="roadmap-desc">Escrow holds your money until every promise is met.</div>
       </div>
     </div>
   </div>
@@ -2169,13 +2185,13 @@ footer {
     <div style="text-align:center;max-width:680px;margin:0 auto 24px">
       <div class="reveal" style="display:flex;justify-content:center"><span class="chip">For Buyers and Renters</span></div>
       <h2 class="section-title reveal">Your home search should feel like talking to someone who actually <em>knows you.</em></h2>
-      <p class="reveal" style="font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;margin-top:18px">Toju doesn't show you a list and leave you to figure it out. He asks the right questions, understands your life — your budget, your neighbourhood, your timeline — and recommends the best options available. Including ones you wouldn't have thought to look for.</p>
+      <p class="reveal" style="font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:300;margin-top:18px">He learns your life — budget, area, timeline — then recommends. Including options you'd never have found.</p>
     </div>
     <div class="why-grid" style="grid-template-columns:repeat(2,1fr)">
-      <div class="why-crystal reveal"><div class="why-num">01</div><div class="why-title">AI That Advises, Not Just Matches</div><div class="why-desc">Toju counsels you through the process. He challenges assumptions, surfaces better options, and helps you decide with confidence.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">02</div><div class="why-title">Every Listing Verified Before You See It</div><div class="why-desc">Before it ever reaches you, a 7-node trust score checks title, structure, flood risk, legal standing, and more on your behalf. No ghost listings. No surprises for you.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">03</div><div class="why-title">Walk Past It, Get Notified</div><div class="why-desc">Proximity alerts fire when you walk within range of a verified property matching your brief. Real intent, at the right moment.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">04</div><div class="why-title">Only Verified Agencies</div><div class="why-desc">Every agency on Synapse is independently checked — identity, registration, and track record. You know exactly who you're dealing with.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">01</div><div class="why-title">AI That Advises, Not Just Matches</div><div class="why-desc">Counsel, not listings. Challenge, options, confidence.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">02</div><div class="why-title">Every Listing Verified Before You See It</div><div class="why-desc">7 checks — title, structure, flood, legal — before you see it.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">03</div><div class="why-title">Walk Past It, Get Notified</div><div class="why-desc">Walk near a match, get a ping. That's it.</div></div>
+      <div class="why-crystal reveal"><div class="why-num">04</div><div class="why-title">Only Verified Agencies</div><div class="why-desc">Identity, registration, track record — all checked.</div></div>
     </div>
     <div style="text-align:center;margin-top:44px"><button class="panel-btn-primary">Start talking to Toju</button></div>
   </div>
@@ -2187,7 +2203,7 @@ footer {
   <div class="container" style="position:relative;z-index:1">
     <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Verified Platform</span></div>
     <h2 class="section-title reveal" style="text-align:center;max-width:600px;margin:0 auto">Every recommendation you get is backed by <em>verified</em> agencies.</h2>
-    <p class="reveal" style="text-align:center;font-size:16px;color:var(--text-muted);max-width:440px;margin:18px auto 0;line-height:1.7;font-weight:300">Every agency is rigorously verified before it can ever reach you. So you browse with total confidence, and your capital stays protected.</p>
+    <p class="reveal" style="text-align:center;font-size:16px;color:var(--text-muted);max-width:440px;margin:18px auto 0;line-height:1.7;font-weight:300">Rigorously verified agencies. Protected capital.</p>
 
     <div class="verification-emblem reveal">
       <div class="ve-ring-1"></div>
@@ -2222,11 +2238,11 @@ footer {
       <div class="reveal-r">
         <span class="chip">Shared Living</span>
         <h2 class="section-title">Find your right home.<br>Or your right <em>housemate.</em></h2>
-        <p class="section-body">You shouldn't have to overpay to live in Nigeria's big cities. So we made it flexible for you — you find co-living with people whose lifestyles match yours, and you get verified profiles and transparent agreements every time.</p>
+        <p class="section-body">Big-city living, split fairly — with people whose lifestyles match yours.</p>
         <div class="feature-list">
-          <div class="feature-item"><div class="fi-icon">🧠</div><div><div class="fi-title">Lifestyle Compatibility Matching</div><div class="fi-desc">Toju matches you with housemates whose schedules, habits, and preferences align with yours.</div></div></div>
-          <div class="feature-item"><div class="fi-icon">🔒</div><div><div class="fi-title">Identity-Verified Profiles</div><div class="fi-desc">Every co-living applicant is verified. Know who you're living with before you sign anything.</div></div></div>
-          <div class="feature-item"><div class="fi-icon">📋</div><div><div class="fi-title">Transparent Shared Agreements</div><div class="fi-desc">You get clear rent splits, bills, and house rules — all documented for you before your move-in day.</div></div></div>
+          <div class="feature-item"><div class="fi-icon">🧠</div><div><div class="fi-title">Lifestyle Compatibility Matching</div><div class="fi-desc">Housemates matched on schedules and habits.</div></div></div>
+          <div class="feature-item"><div class="fi-icon">🔒</div><div><div class="fi-title">Identity-Verified Profiles</div><div class="fi-desc">Every applicant verified before you sign.</div></div></div>
+          <div class="feature-item"><div class="fi-icon">📋</div><div><div class="fi-title">Transparent Shared Agreements</div><div class="fi-desc">Rent splits, bills, rules — documented upfront.</div></div></div>
         </div>
         <button class="panel-btn-primary" style="margin-top:36px">Find Shared Living Options</button>
       </div>
@@ -2243,13 +2259,13 @@ footer {
   <div class="container">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:0;position:relative;z-index:1">
       <div><div class="reveal"><span class="chip">Flexible Payments</span></div><h2 class="section-title reveal">More ways for you to pay.<br>More ways for you to <em>move.</em></h2></div>
-      <p class="reveal" style="font-size:16px;color:var(--text-muted);line-height:1.75;font-weight:300;padding-bottom:10px">Owning your home shouldn't demand a lump sum you don't have. So Synapse builds payment paths around you — meeting you exactly where you are today.</p>
+      <p class="reveal" style="font-size:16px;color:var(--text-muted);line-height:1.75;font-weight:300;padding-bottom:10px">No lump sum? No problem. Payment paths built around you.</p>
     </div>
     <div class="flexpay-grid">
-      <div class="fp-crystal reveal"><div class="fp-num">01</div><div class="fp-title">Annual Payments</div><div class="fp-desc">You lock in your home with a single annual commitment. Predictable for you, and widely accepted.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">02</div><div class="fp-title">Installment Plans</div><div class="fp-desc">You break it into structured monthly tranches — so you move in sooner and pay over time.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">03</div><div class="fp-title">Developer Schedules</div><div class="fp-desc">You buy off-plan on developer-approved milestones, with every naira you pay tracked.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">04</div><div class="fp-title">Flexible Arrangements</div><div class="fp-desc">You negotiate non-standard arrangements through Synapse — with you and every party protected.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">01</div><div class="fp-title">Annual Payments</div><div class="fp-desc">One annual payment. Predictable.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">02</div><div class="fp-title">Installment Plans</div><div class="fp-desc">Monthly tranches. Move in sooner.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">03</div><div class="fp-title">Developer Schedules</div><div class="fp-desc">Off-plan milestones. Every naira tracked.</div></div>
+      <div class="fp-crystal reveal"><div class="fp-num">04</div><div class="fp-title">Flexible Arrangements</div><div class="fp-desc">Custom deals, every party protected.</div></div>
     </div>
   </div>
 </section>
@@ -2262,7 +2278,7 @@ footer {
       <div class="reveal-l">
         <span class="chip">Property Discovery</span>
         <h2 class="section-title">Prefer to <em>browse yourself?</em></h2>
-        <p class="section-body">You can still search on your own — Toju just gets you there faster. You filter by location, price, bedrooms, and verification status, or you let Toju do it for you.</p>
+        <p class="section-body">Filter by area, price, beds, verification — or let Toju do it.</p>
         <div style="display:flex;flex-direction:column;gap:14px;margin-top:40px">
           <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">Every listing you see is verified before it goes live</span></div>
           <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">You see real pricing — no inflated agency markups</span></div>
@@ -2344,7 +2360,7 @@ footer {
   <div class="cta-content container">
     <div class="reveal"><span class="chip">Get Started</span></div>
     <h2 class="cta-headline reveal">Your safest move in Nigerian property starts <em>right here.</em></h2>
-    <p class="cta-sub reveal">Whether you're looking for your home, running your agency, or building with us — this is where you begin.</p>
+    <p class="cta-sub reveal">Your home. Your agency. Your start.</p>
     <div class="cta-btns reveal">
       <button class="btn-cta-primary">Talk to Toju — it's free</button>
       <button class="btn-cta-ghost">Partner with us</button>
