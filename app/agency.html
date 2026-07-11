@@ -340,6 +340,42 @@
     .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform .3s cubic-bezier(.22,1,.36,1); }
     .toast.on { transform: translateX(-50%) translateY(0); }
 
+    /* marketing — Omneky-style AI ad studio */
+    .insight { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border: 1px solid rgba(255,123,44,0.22); background: rgba(255,123,44,0.05); border-radius: 14px; margin-bottom: 9px; }
+    .insight .pct { font-family: var(--f-serif); font-size: 24px; color: var(--brand); flex: none; width: 74px; text-align: center; }
+    .insight .tx { flex: 1; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
+    .insight .tx b { color: var(--ink); }
+    .insight button { border: 1px solid rgba(255,123,44,0.35); background: none; color: var(--brand); font: 600 11.5px var(--f-sans); padding: 7px 13px; border-radius: 100px; cursor: pointer; flex: none; }
+    .insight button:hover { background: rgba(255,123,44,0.08); }
+    .campaign { padding: 18px 20px; margin-bottom: 16px; }
+    .campaign .chd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .campaign .chd .nm { font-weight: 700; font-size: 15px; }
+    .campaign .chd .aud { font-size: 11.5px; color: var(--ink-muted); background: rgba(0,0,0,0.04); border-radius: 100px; padding: 4px 11px; }
+    .campaign .chd .bdg { font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+    .campaign .chd .bdg.live { color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.25); }
+    .campaign .chd .bdg.paused { color: var(--ink-dim); background: rgba(0,0,0,0.04); border: 1px solid var(--border); }
+    .campaign .chd .spend { margin-left: auto; font-size: 12px; color: var(--ink-dim); }
+    .campaign .chd .spend b { color: var(--ink); font-size: 13.5px; }
+    .adgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px,1fr)); gap: 11px; margin-top: 14px; }
+    .ad { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 4/5; background: #ddd; }
+    .ad img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .ad .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.02) 30%, rgba(10,12,16,0.78)); }
+    .ad .ch2 { position: absolute; top: 8px; left: 8px; }
+    .ad .st2 { position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 700; letter-spacing: .05em; padding: 3px 8px; border-radius: 100px; text-transform: uppercase; backdrop-filter: blur(6px); }
+    .ad .st2.scaling { background: rgba(46,125,79,0.9); color: #fff; }
+    .ad .st2.learning { background: rgba(255,255,255,0.85); color: #7a5410; }
+    .ad .st2.pausedai { background: rgba(20,22,26,0.75); color: rgba(255,255,255,0.8); }
+    .ad.dim img { filter: grayscale(0.6) brightness(0.75); }
+    .ad .cap2 { position: absolute; left: 10px; right: 10px; bottom: 34px; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.35; text-shadow: 0 1px 8px rgba(0,0,0,0.4); }
+    .ad .met { position: absolute; left: 10px; right: 10px; bottom: 9px; display: flex; gap: 10px; font-size: 10px; color: rgba(255,255,255,0.85); }
+    .ad .met b { color: #fff; }
+    .ad.gen { display: flex; align-items: center; justify-content: center; background: rgba(255,123,44,0.05); border: 1px dashed rgba(255,123,44,0.4); }
+    .ad.gen .in { text-align: center; font-size: 11px; color: var(--brand); font-weight: 600; }
+    .campaign .cft { display: flex; gap: 8px; margin-top: 13px; }
+    .campaign .cft button { border: none; border-radius: 100px; padding: 8px 15px; font: 600 12px var(--f-sans); cursor: pointer; }
+    .campaign .cft .gen2 { background: var(--brand); color: #fff; }
+    .campaign .cft .tgl { background: rgba(0,0,0,0.05); color: var(--ink); }
+
     @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -524,33 +560,23 @@
 
         <!-- ══ MARKETING ══ -->
         <section class="pane" id="pane-marketing">
-          <div class="eyebrow">Campaigns</div>
-          <div class="h1">Marketing</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Boost verified listings to the buyers Toju says are looking for exactly that.</p>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="eyebrow">AI ad studio</div>
+              <div class="h1">Marketing</div>
+              <p class="muted" style="font-size:14px;margin-top:4px">Every campaign generates its own ad creatives, learns which ones win, scales them — and pauses the rest.</p>
+            </div>
+            <button class="btn btn-primary" id="newCampBtn">+ New campaign</button>
+          </div>
+          <div class="stats" style="margin-top:18px" id="mkstats"></div>
 
-          <div class="stats">
-            <div class="card stat"><div class="v">3</div><div class="l">Active campaigns</div></div>
-            <div class="card stat"><div class="v">86k</div><div class="l">Reach this month</div></div>
-            <div class="card stat"><div class="v">412</div><div class="l">Clicks to listings</div></div>
-            <div class="card stat"><div class="v">₦96</div><div class="l">Cost per lead</div></div>
-          </div>
+          <div class="h2" style="margin-top:8px">✦ Creative insights</div>
+          <p class="sub" style="margin-bottom:12px">What the AI has learned from your ad performance — and what to do about it.</p>
+          <div id="insights"></div>
 
-          <div class="card camp">
-            <div class="ic">🎯</div>
-            <div style="flex:1"><div class="nm">Lekki family buyers · ₦120–180M</div><div class="dt">Matched to 214 active Toju briefs · Instagram + in-app</div></div>
-            <div class="kpi"><b>38</b><span>leads</span></div>
-          </div>
-          <div class="card camp">
-            <div class="ic">📣</div>
-            <div style="flex:1"><div class="nm">Diaspora investors — verified title only</div><div class="dt">UK/Canada audiences · landing on trust report</div></div>
-            <div class="kpi"><b>21</b><span>leads</span></div>
-          </div>
-          <div class="card camp">
-            <div class="ic">⚡</div>
-            <div style="flex:1"><div class="nm">Open house — Osapa duplex</div><div class="dt">This weekend · WhatsApp Status + proximity alerts</div></div>
-            <div class="kpi"><b>64</b><span>RSVPs</span></div>
-          </div>
-          <button class="btn btn-primary" style="margin-top:8px">+ New campaign</button>
+          <div class="h2" style="margin-top:26px">Campaigns</div>
+          <p class="sub" style="margin-bottom:12px">Each creative is tracked on its own. Winners scale automatically; losers are paused by the AI.</p>
+          <div id="campaigns"></div>
         </section>
 
         <!-- ══ TOJU NEGOTIATOR ══ -->
@@ -963,6 +989,161 @@
     });
     document.getElementById('newListingBtn').addEventListener('click', () => listingForm({ st: 'pending' }, -1));
     renderListings();
+
+    // ── marketing — Omneky-style AI ad studio ──
+    // Campaigns own their creatives; each creative is measured on its own
+    // (CTR, leads) and the AI scales winners / pauses losers.
+    const MK_KEY = 'synapse_agency_campaigns_v1';
+    const PERSONAS = {
+      family: 'Family buyers · Lekki corridor',
+      investor: 'Yield investors · Lagos Island',
+      diaspora: 'Diaspora buyers · UK & Canada',
+      firsthome: 'First-home buyers · mainland',
+    };
+    // headline generator: persona × angle. In production this is GPT-4o with
+    // the listing's enrichment data.
+    const HEADLINES = {
+      family: ['Schools 10 min away. Verified title.', 'Room for everyone — 7 checks passed.', 'The school run just got shorter.'],
+      investor: ['8.1% gross yield. Independently verified.', 'Verified title. Real returns.', 'The Lagos yield play that survives due diligence.'],
+      diaspora: ['Buy from abroad. Escrow-protected.', 'Verified on the ground so you don’t fly blind.', 'Your naira is safe until every check passes.'],
+      firsthome: ['Your first home, verified 7 ways.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning — safely.'],
+    };
+    let CAMPAIGNS;
+    try { CAMPAIGNS = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) {}
+    if (!Array.isArray(CAMPAIGNS) || !CAMPAIGNS.length) CAMPAIGNS = [
+      { nm: 'Lekki family buyers', persona: 'family', live: true, budget: 15, spend: 118, chans: ['instagram', 'facebook'],
+        ads: [
+          { img: IMG.lekki, hl: HEADLINES.family[0], ch: 'instagram', ctr: 4.8, leads: 21, st: 'scaling' },
+          { img: IMG.osapa, hl: HEADLINES.family[1], ch: 'facebook', ctr: 2.1, leads: 9, st: 'learning' },
+          { img: IMG.ikate, hl: HEADLINES.family[2], ch: 'instagram', ctr: 0.7, leads: 1, st: 'pausedai' },
+        ] },
+      { nm: 'Diaspora investors', persona: 'diaspora', live: true, budget: 22, spend: 66, chans: ['facebook', 'tiktok'],
+        ads: [
+          { img: IMG.vi, hl: HEADLINES.diaspora[0], ch: 'facebook', ctr: 3.9, leads: 14, st: 'scaling' },
+          { img: IMG.osapa, hl: HEADLINES.diaspora[1], ch: 'tiktok', ctr: 3.1, leads: 7, st: 'learning' },
+        ] },
+    ];
+    const saveCamps = () => localStorage.setItem(MK_KEY, JSON.stringify(CAMPAIGNS));
+    const AD_ST = { scaling: 'Scaling', learning: 'Learning', pausedai: 'Paused by AI' };
+
+    function mkStats() {
+      const ads = CAMPAIGNS.flatMap(c => c.ads);
+      const live = CAMPAIGNS.filter(c => c.live).length;
+      const spend = CAMPAIGNS.reduce((s, c) => s + c.spend, 0);
+      const leads = ads.reduce((s, a) => s + a.leads, 0);
+      const best = ads.length ? Math.max(...ads.map(a => a.ctr)) : 0;
+      document.getElementById('mkstats').innerHTML = [
+        [live, 'Active campaigns'], ['₦' + spend + 'k', 'Ad spend this month'],
+        [leads ? '₦' + Math.round(spend * 1000 / leads).toLocaleString() : '—', 'Cost per lead'],
+        [best.toFixed(1) + '%', 'Best creative CTR'],
+      ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+    }
+    const INSIGHTS = [
+      { pct: '+41%', tx: 'Creatives showing the <b>✓ Verified badge</b> earn 41% higher CTR than those without it.', act: 'Add badge to all' },
+      { pct: '3.1×', tx: '<b>Video walkthroughs</b> outperform photo ads 3.1× on TikTok for listings under ₦100M.', act: 'Generate video variants' },
+      { pct: '+27%', tx: 'Headlines with a <b>monthly figure</b> (“from ₦1.2M/mo”) beat lump-sum prices with first-home buyers.', act: 'Rewrite headlines' },
+    ];
+    function renderInsights() {
+      document.getElementById('insights').innerHTML = INSIGHTS.map((i, k) => `
+        <div class="insight"><span class="pct">${i.pct}</span><span class="tx">${i.tx}</span><button data-ins="${k}">${i.act}</button></div>`).join('');
+    }
+    function adTile(a) {
+      return `<div class="ad ${a.st === 'pausedai' ? 'dim' : ''}">
+        <img src="${a.img}" alt="" loading="lazy">
+        <div class="shade"></div>
+        <span class="ch2">${chnBadge(a.ch)}</span>
+        <span class="st2 ${a.st}">${AD_ST[a.st]}</span>
+        <div class="cap2">${a.hl}</div>
+        <div class="met"><span><b>${a.ctr.toFixed(1)}%</b> CTR</span><span><b>${a.leads}</b> leads</span></div>
+      </div>`;
+    }
+    function renderCampaigns() {
+      document.getElementById('campaigns').innerHTML = CAMPAIGNS.map((c, i) => `
+        <div class="card campaign">
+          <div class="chd">
+            <span class="nm">${c.nm}</span>
+            <span class="aud">${PERSONAS[c.persona]}</span>
+            <span class="bdg ${c.live ? 'live' : 'paused'}">${c.live ? '● Live' : 'Paused'}</span>
+            <span class="spend"><b>₦${c.budget}k</b>/day · ₦${c.spend}k spent</span>
+          </div>
+          <div class="adgrid" id="ads-${i}">${c.ads.map(adTile).join('')}</div>
+          <div class="cft">
+            <button class="gen2" data-gen="${i}">✦ Generate variants</button>
+            <button class="tgl" data-tgl="${i}">${c.live ? 'Pause campaign' : 'Resume campaign'}</button>
+          </div>
+        </div>`).join('');
+      mkStats();
+    }
+    function generateVariants(i) {
+      const c = CAMPAIGNS[i];
+      const grid = document.getElementById('ads-' + i);
+      grid.insertAdjacentHTML('beforeend', '<div class="ad gen" id="genTile"><div class="in"><span class="spin" style="display:inline-block;margin-bottom:8px"></span><br>AI writing 2 new<br>creatives…</div></div>');
+      setTimeout(() => {
+        const pool = HEADLINES[c.persona];
+        const imgs = [IMG.lekki, IMG.osapa, IMG.ikate, IMG.vi];
+        for (let k = 0; k < 2; k++) {
+          c.ads.push({
+            img: imgs[(c.ads.length + k) % imgs.length],
+            hl: pool[(c.ads.length + k) % pool.length],
+            ch: c.chans[(c.ads.length + k) % c.chans.length],
+            ctr: 0, leads: 0, st: 'learning',
+          });
+        }
+        saveCamps(); renderCampaigns();
+        toast('2 new creatives launched in “' + c.nm + '” — learning phase');
+      }, 1500);
+    }
+    function campaignForm() {
+      drawer.innerHTML = `
+        <button class="x" id="drawerX">×</button>
+        <div style="font-size:19px;font-weight:700">New campaign</div>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">Pick a listing and an audience — the AI generates the first three ad creatives and starts learning.</p>
+        <div class="lf">
+          <div class="field"><label>Campaign name</label><input id="cfN" placeholder="e.g. Ikoyi penthouse push"></div>
+          <div class="field"><label>Listing</label>
+            <select id="cfL">${LISTINGS_DATA.map((l, k) => `<option value="${k}">${l.t} · ${nairaM(l.pr)}</option>`).join('')}</select></div>
+          <div class="row2">
+            <div class="field"><label>Audience</label>
+              <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${PERSONAS[p]}</option>`).join('')}</select></div>
+            <div class="field"><label>Daily budget (₦ thousands)</label><input id="cfB" type="number" min="1" value="15"></div>
+          </div>
+          <div class="field"><label>Channels</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" id="cfC">
+              ${['instagram', 'facebook', 'tiktok', 'whatsapp'].map(ch => `<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;border:1px solid var(--border);border-radius:100px;padding:7px 13px;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--ink)"><input type="checkbox" value="${ch}" ${ch === 'instagram' ? 'checked' : ''} style="accent-color:#C2552B">${CH[ch].label}</label>`).join('')}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" id="cfSave" style="margin-top:6px">✦ Generate creatives &amp; launch</button>
+        </div>`;
+      scrim.classList.add('on'); drawer.classList.add('on');
+      document.getElementById('drawerX').addEventListener('click', closeLead);
+      document.getElementById('cfSave').addEventListener('click', () => {
+        const nm = document.getElementById('cfN').value.trim();
+        if (!nm) { toast('Name the campaign first'); return; }
+        const persona = document.getElementById('cfA').value;
+        const li = LISTINGS_DATA[+document.getElementById('cfL').value];
+        const chans = [...document.querySelectorAll('#cfC input:checked')].map(x => x.value);
+        if (!chans.length) { toast('Pick at least one channel'); return; }
+        const pool = HEADLINES[persona];
+        CAMPAIGNS.unshift({
+          nm, persona, live: true, budget: parseInt(document.getElementById('cfB').value, 10) || 15, spend: 0, chans,
+          ads: pool.slice(0, 3).map((hl, k) => ({ img: li.img, hl, ch: chans[k % chans.length], ctr: 0, leads: 0, st: 'learning' })),
+        });
+        saveCamps(); renderCampaigns(); closeLead();
+        toast('“' + nm + '” is live — 3 creatives in the learning phase');
+      });
+    }
+    document.getElementById('campaigns').addEventListener('click', (e) => {
+      const g = e.target.closest('[data-gen]'); if (g) { generateVariants(+g.dataset.gen); return; }
+      const t = e.target.closest('[data-tgl]');
+      if (t) { const c = CAMPAIGNS[+t.dataset.tgl]; c.live = !c.live; saveCamps(); renderCampaigns(); toast(c.live ? 'Campaign resumed' : 'Campaign paused'); }
+    });
+    document.getElementById('insights').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-ins]'); if (!b) return;
+      b.textContent = '✓ Queued'; b.disabled = true; b.style.opacity = .6;
+      toast('Toju is applying this across your creatives');
+    });
+    document.getElementById('newCampBtn').addEventListener('click', campaignForm);
+    renderInsights(); renderCampaigns();
 
     // ── agents ──
     const AGENTS = [
