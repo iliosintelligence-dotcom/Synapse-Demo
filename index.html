@@ -14,6 +14,28 @@
 /* ─── RESET ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ─── BRAND FONTS ───
+   Restaglick (display) + Bromolek (body). These are licensed marketplace
+   fonts: drop the files into /fonts as Restaglick.woff2 (or .otf/.ttf) and
+   Bromolek.woff2 (or .otf/.ttf) and they take over automatically — until
+   then the page falls back to Fraunces/Inter. */
+@font-face {
+  font-family: 'Restaglick';
+  src: url('fonts/Restaglick.woff2') format('woff2'),
+       url('fonts/Restaglick.woff') format('woff'),
+       url('fonts/Restaglick.otf') format('opentype'),
+       url('fonts/Restaglick.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bromolek';
+  src: url('fonts/Bromolek.woff2') format('woff2'),
+       url('fonts/Bromolek.woff') format('woff'),
+       url('fonts/Bromolek.otf') format('opentype'),
+       url('fonts/Bromolek.ttf') format('truetype');
+  font-display: swap;
+}
+
 :root {
   --brand: #FF7B2C;
   --brand-dim: #E86B1A;
@@ -34,8 +56,8 @@
   --crystal-chroma-r: rgba(255,60,40,0.06);
   --crystal-chroma-b: rgba(40,80,255,0.06);
 
-  --f-sans: 'Inter', system-ui, sans-serif;
-  --f-serif: 'Fraunces', Georgia, serif;
+  --f-sans: 'Bromolek', 'Inter', system-ui, sans-serif;
+  --f-serif: 'Restaglick', 'Fraunces', Georgia, serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 

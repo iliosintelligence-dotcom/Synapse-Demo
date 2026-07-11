@@ -103,6 +103,12 @@
     .chatbox .suggest button { white-space: nowrap; font-family: var(--f-sans); font-size: 12px; font-weight: 500; color: rgba(21,23,26,0.7); cursor: pointer;
       background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); border-radius: 100px; padding: 6px 12px; transition: all .18s; }
     .chatbox .suggest button:hover { color: var(--ink); border-color: rgba(255,123,44,0.45); background: rgba(255,255,255,0.7); }
+    /* Toju silently reads the Dream Home board — this chip makes it visible */
+    .chatbox .dreamctx { display: flex; align-items: center; gap: 7px; font-family: var(--f-sans); font-size: 11.5px; color: #a8571f;
+      background: rgba(255,123,44,0.08); border: 1px solid rgba(255,123,44,0.22); border-radius: 100px; padding: 6px 12px; margin-bottom: 8px; }
+    .chatbox .dreamctx b { font-weight: 600; color: #8a4517; }
+    .chatbox .dreamctx a { margin-left: auto; color: #C2552B; font-weight: 600; white-space: nowrap; text-decoration: none; }
+    .chatbox .dreamctx a:hover { text-decoration: underline; }
     .convo-wrap { padding-bottom: 180px; }
 
     /* ── TWO-PANE CANVAS LAYOUT (chat left · listings right) ── */
@@ -194,6 +200,7 @@
         <div class="composer">
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
+            <div class="dreamctx" id="dreamCtx" style="display:none"></div>
             <div class="pillrow">
               <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
               <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
@@ -343,13 +350,35 @@
       scrollDown(); return el;
     }
 
+    // ── Dream Home board → Toju's knowledge ──
+    // Toju reads the visitor's mood board (title, vibe chips, pinned image
+    // captions) and folds it into every conversation as silent context. The
+    // message is sent to the model but never rendered in the chat.
+    function dreamContext() {
+      try {
+        const b = JSON.parse(localStorage.getItem('synapse_moodboard_v1'));
+        if (!b) return null;
+        const vibes = Array.isArray(b.vibe) ? b.vibe.filter(Boolean) : [];
+        const caps = Array.isArray(b.images) ? [...new Set(b.images.map((i) => i && i.c).filter(Boolean))] : [];
+        if (!vibes.length && !caps.length) return null;
+        let s = '[Background from my Dream Home mood board, use it to shape what you recommend without repeating it back: ';
+        s += 'board "' + (b.name || 'My dream home') + '"';
+        if (vibes.length) s += ' · the vibe I love: ' + vibes.join(', ');
+        if (caps.length) s += ' · spaces I keep pinning: ' + caps.join(', ');
+        return s + '.]';
+      } catch (e) { return null; }
+    }
+
     async function ask() {
       const t = typing();
       try {
+        const outgoing = saved.slice(-14).map((m) => ({ role: m.role, content: m.content }));
+        const dream = dreamContext();
+        if (dream) outgoing.unshift({ role: 'user', content: dream });
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: saved.slice(-14).map((m) => ({ role: m.role, content: m.content })) }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing }),
         });
         const data = await res.json().catch(() => ({}));
         t.remove();
@@ -483,6 +512,18 @@
     // deep link from a listing: ?ask=... pre-fills the composer
     const askParam = new URLSearchParams(location.search).get('ask');
     if (askParam) { input.value = askParam.slice(0, 300); input.focus(); scrollDown(); }
+
+    // the dream-board chip — makes Toju's silent context visible
+    (function () {
+      try {
+        const b = JSON.parse(localStorage.getItem('synapse_moodboard_v1'));
+        const vibes = b && Array.isArray(b.vibe) ? b.vibe.filter(Boolean) : [];
+        if (!vibes.length) return;
+        const el = document.getElementById('dreamCtx');
+        el.innerHTML = '✦&nbsp;<span>Toju knows your dream — <b>' + esc(vibes.slice(0, 3).join(', ')) + (vibes.length > 3 ? '…' : '') + '</b></span><a href="dream.html">Edit board</a>';
+        el.style.display = 'flex';
+      } catch (e) {}
+    })();
 
     // new chat — fresh visitor id, so the server thread starts clean too
     function newChat() {
