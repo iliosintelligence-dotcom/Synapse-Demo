@@ -11,12 +11,23 @@
   <link rel="stylesheet" href="motion.css" />
   <style>
     /* Agency portal — separate world from the customer app. Customer pages
-       never link here; you arrive via "For Agencies" on the landing page. */
-    .layout { display: grid; grid-template-columns: 210px 1fr; gap: 28px; }
-    .side { display: flex; flex-direction: column; gap: 4px; }
-    .side a { font-size: 13.5px; color: var(--ink-muted); padding: 10px 14px; border-radius: 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; }
+       never link here; you arrive via "For Agencies" on the landing page.
+       App shell: the nav rail is pinned to the far-left edge of the screen
+       (Gemini-canvas style) and the content pane fills the rest. */
+    body.portal { overflow: hidden; }
+    .shell { display: flex; height: calc(100vh - 61px); }
+    .side { width: 236px; flex: none; display: flex; flex-direction: column; gap: 3px; padding: 18px 14px; background: rgba(255,255,255,0.55); border-right: 1px solid var(--border); overflow-y: auto; }
+    .side .grp { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; }
+    .side .grp:first-child { padding-top: 2px; }
+    .side a { font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; }
     .side a.on { background: rgba(194,85,43,0.1); color: #C2552B; font-weight: 600; }
     .side a:hover { background: rgba(0,0,0,0.03); }
+    .side .me { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid var(--border); }
+    .side .me .av2 { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .side .me .nm2 { font-size: 12.5px; font-weight: 600; }
+    .side .me .sub2 { font-size: 10.5px; color: var(--gold); }
+    .content { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 32px 80px; }
+    .content > main { max-width: 1040px; }
     .pane { display: none; }
     .pane.on { display: block; }
     .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 22px 0; }
@@ -306,10 +317,33 @@
     .cmp-err { margin-top: 12px; font-size: 12.5px; color: #b0521f; }
     .spin2 { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin .7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
 
-    @media (max-width: 720px){ .layout{ grid-template-columns: 1fr; } .side{ flex-direction: row; flex-wrap: wrap; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
+    /* listing freshness + actions (14-day rule) */
+    .lcard { position: relative; }
+    .lcard .fresh { position: absolute; top: 10px; left: 10px; font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 100px; backdrop-filter: blur(6px); }
+    .lcard .fresh.ok { background: rgba(255,255,255,0.85); color: var(--ink-muted); }
+    .lcard .fresh.warn { background: rgba(176,125,43,0.92); color: #fff; }
+    .lcard .fresh.dead { background: rgba(20,22,26,0.82); color: #fff; }
+    .lcard.expired img { filter: grayscale(0.7) brightness(0.82); }
+    .lcard .acts { display: flex; gap: 8px; margin-top: 12px; }
+    .lcard .acts button { flex: 1; border: none; border-radius: 100px; padding: 8px; font: 600 12px var(--f-sans); cursor: pointer; }
+    .lcard .acts .edit { background: rgba(0,0,0,0.05); color: var(--ink); }
+    .lcard .acts .edit:hover { background: rgba(0,0,0,0.09); }
+    .lcard .acts .relist { background: rgba(255,123,44,0.1); color: var(--brand); border: 1px solid rgba(255,123,44,0.3); }
+    .lcard .acts .relist.hot { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    /* listing edit / new drawer form */
+    .lf .field { margin-bottom: 13px; }
+    .lf label { display: block; font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
+    .lf input, .lf select { width: 100%; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink); outline: none; }
+    .lf input:focus, .lf select:focus { border-color: rgba(194,85,43,0.5); }
+    .lf .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+    .toast.on { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
   </style>
 </head>
-<body>
+<body class="portal">
   <div class="appbar">
     <a class="brand" href="../index.html">
       <svg viewBox="0 0 64 78" fill="#15171a"><rect x="0" y="0" width="10" height="78" rx="1"/><rect x="10" y="0" width="44" height="10" rx="1"/><rect x="44" y="10" width="10" height="17" rx="1"/><rect x="10" y="17" width="44" height="10" rx="1"/><rect x="10" y="36" width="44" height="10" rx="1"/><rect x="46" y="46" width="8" height="22" rx="1"/><rect x="18" y="46" width="8" height="22" rx="1"/><rect x="10" y="68" width="44" height="10" rx="1"/></svg>
@@ -320,20 +354,28 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
-  <div class="wrap">
-    <div class="layout">
-      <aside class="side" id="tabs">
-        <a class="on" data-pane="overview">◆ Overview</a>
-        <a data-pane="crm">≣ CRM · Leads</a>
-        <a data-pane="negotiator">✦ Toju Negotiator</a>
-        <a data-pane="listings">▤ Listings</a>
-        <a data-pane="social">◫ Social studio</a>
-        <a data-pane="marketing">▲ Marketing</a>
-        <a data-pane="agents">◑ Agents</a>
-        <a data-pane="verification">✓ Verification</a>
-        <a data-pane="subscription">✦ Subscription</a>
-      </aside>
+  <div class="shell">
+    <aside class="side" id="tabs">
+      <div class="grp">Main</div>
+      <a class="on" data-pane="overview">◆ Overview</a>
+      <a data-pane="crm">≣ CRM · Leads</a>
+      <a data-pane="negotiator">✦ Toju Negotiator</a>
+      <a data-pane="listings">▤ Listings</a>
+      <div class="grp">Growth</div>
+      <a data-pane="social">◫ Social studio</a>
+      <a data-pane="marketing">▲ Marketing</a>
+      <div class="grp">Team</div>
+      <a data-pane="agents">◑ Agents</a>
+      <a data-pane="verification">✓ Verification</a>
+      <div class="grp">Account</div>
+      <a data-pane="subscription">✦ Subscription</a>
+      <div class="me">
+        <span class="av2">PR</span>
+        <div><div class="nm2">Prestige Realty Ltd.</div><div class="sub2">✦ Gold Verified</div></div>
+      </div>
+    </aside>
 
+    <div class="content">
       <main>
         <!-- ══ OVERVIEW ══ -->
         <section class="pane on" id="pane-overview">
@@ -552,16 +594,11 @@
             <div>
               <div class="eyebrow">Inventory</div>
               <div class="h1">Listings</div>
-              <p class="muted" style="font-size:14px;margin-top:4px">Your inventory and where each listing sits in verification.</p>
+              <p class="muted" style="font-size:14px;margin-top:4px">Your inventory, its verification status, and its 14-day freshness. Expired listings are hidden from buyers until you re-list.</p>
             </div>
-            <button class="btn btn-primary">+ New listing</button>
+            <button class="btn btn-primary" id="newListingBtn">+ New listing</button>
           </div>
-          <div class="stats" style="margin-top:18px">
-            <div class="card stat"><div class="v">47</div><div class="l">Total</div></div>
-            <div class="card stat"><div class="v">41</div><div class="l">Verified</div></div>
-            <div class="card stat"><div class="v">3</div><div class="l">Pending</div></div>
-            <div class="card stat"><div class="v">3</div><div class="l">Inactive</div></div>
-          </div>
+          <div class="stats" style="margin-top:18px" id="lstats"></div>
           <div class="lgrid" id="lgrid"></div>
         </section>
 
@@ -597,8 +634,10 @@
           <div id="vqueue"></div>
         </section>
       </main>
-    </div>
-  </div>
+    </div><!-- /content -->
+  </div><!-- /shell -->
+
+  <div class="toast" id="toast"></div>
 
   <!-- lead workspace drawer -->
   <div class="scrim" id="scrim"></div>
@@ -804,25 +843,126 @@
     });
     renderPipeline();
 
-    // ── listings ──
-    const LISTINGS_DATA = [
-      { t: '3-Bed Apartment, Lekki Phase 1', pr: '₦165M', st: 'verified', leads: 6, img: IMG.lekki },
-      { t: '4-Bed Duplex, Osapa London', pr: '₦178M', st: 'verified', leads: 3, img: IMG.osapa },
-      { t: '5-Bed Detached, Old Ikoyi', pr: '₦420M', st: 'verified', leads: 4, img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=70' },
-      { t: '3-Bed Terrace, Ikate', pr: '₦148M', st: 'pending', leads: 1, img: IMG.ikate },
-      { t: '2-Bed Flat, Yaba', pr: '₦58M', st: 'pending', leads: 2, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=70' },
-      { t: '2-Bed Flat, Victoria Island', pr: '₦142M', st: 'inactive', leads: 0, img: IMG.vi },
+    // ── listings — editable, with the 14-day freshness rule ──
+    // Every listing must be re-listed every 14 days or it stops showing to
+    // buyers (matches Toju's freshness filter). `days` = days since (re)listed.
+    const L_KEY = 'synapse_agency_listings_v2';
+    const L_DEFAULT = [
+      { t: '3-Bed Apartment, Lekki Phase 1', pr: 165, st: 'verified', leads: 6, days: 3, img: IMG.lekki },
+      { t: '4-Bed Duplex, Osapa London', pr: 178, st: 'verified', leads: 3, days: 8, img: IMG.osapa },
+      { t: '5-Bed Detached, Old Ikoyi', pr: 420, st: 'verified', leads: 4, days: 12, img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=70' },
+      { t: '3-Bed Terrace, Ikate', pr: 148, st: 'pending', leads: 1, days: 2, img: IMG.ikate },
+      { t: '2-Bed Flat, Yaba', pr: 58, st: 'pending', leads: 2, days: 13, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=70' },
+      { t: '2-Bed Flat, Victoria Island', pr: 142, st: 'verified', leads: 0, days: 17, img: IMG.vi },
     ];
+    let LISTINGS_DATA;
+    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)); } catch (e) {}
+    if (!Array.isArray(LISTINGS_DATA) || !LISTINGS_DATA.length) LISTINGS_DATA = L_DEFAULT;
+    const saveListings = () => localStorage.setItem(L_KEY, JSON.stringify(LISTINGS_DATA));
     const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
-    document.getElementById('lgrid').innerHTML = LISTINGS_DATA.map(l => `
-      <div class="card lcard">
-        <img src="${l.img}" alt="" loading="lazy">
-        <div class="bd">
-          <div class="tt">${l.t}</div>
-          <div class="pr">${l.pr}</div>
-          <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
-        </div>
-      </div>`).join('');
+    const nairaM = v => '₦' + v + 'M';
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('on');
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2600);
+    }
+    function freshness(l) {
+      const left = 14 - l.days;
+      if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', expired: true, warn: false };
+      if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), expired: false, warn: true };
+      return { cls: 'ok', label: left + ' days left', expired: false, warn: false };
+    }
+    function renderListings() {
+      const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
+      document.getElementById('lstats').innerHTML = [
+        [LISTINGS_DATA.length, 'Total'],
+        [LISTINGS_DATA.filter(l => l.st === 'verified').length, 'Verified'],
+        [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
+        [exp, 'Expired — re-list'],
+      ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+      document.getElementById('lgrid').innerHTML = LISTINGS_DATA.map((l, i) => {
+        const f = freshness(l);
+        return `
+        <div class="card lcard ${f.expired ? 'expired' : ''}">
+          <span class="fresh ${f.cls}">${f.expired ? '⏱ ' : ''}${f.label}</span>
+          <img src="${l.img}" alt="" loading="lazy">
+          <div class="bd">
+            <div class="tt">${l.t}</div>
+            <div class="pr">${nairaM(l.pr)}</div>
+            <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
+            <div class="acts">
+              <button class="edit" data-edit="${i}">Edit</button>
+              <button class="relist ${f.expired || f.warn ? 'hot' : ''}" data-relist="${i}">↻ Re-list</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // edit / create in the shared drawer
+    function listingForm(l, idx) {
+      const isNew = idx === -1;
+      drawer.innerHTML = `
+        <button class="x" id="drawerX">×</button>
+        <div style="font-size:19px;font-weight:700">${isNew ? 'New listing' : 'Edit listing'}</div>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">${isNew
+          ? 'New listings enter the 7-check verification queue before going live to buyers.'
+          : 'Changes apply immediately. Price or title changes re-run media validation.'}</p>
+        <div class="lf">
+          <div class="field"><label>Title</label><input id="lfT" value="${(l.t || '').replace(/"/g, '&quot;')}" placeholder="e.g. 3-Bed Apartment, Lekki Phase 1"></div>
+          <div class="row2">
+            <div class="field"><label>Price (₦ millions)</label><input id="lfP" type="number" min="1" value="${l.pr || ''}" placeholder="165"></div>
+            <div class="field"><label>Status</label>
+              <select id="lfS">
+                <option value="pending" ${l.st === 'pending' ? 'selected' : ''}>Pending review</option>
+                <option value="verified" ${l.st === 'verified' ? 'selected' : ''}>Verified</option>
+                <option value="inactive" ${l.st === 'inactive' ? 'selected' : ''}>Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Image URL</label><input id="lfI" value="${(l.img || '').replace(/"/g, '&quot;')}" placeholder="https://…"></div>
+          <button class="btn btn-primary btn-block" id="lfSave" style="margin-top:6px">${isNew ? 'Create listing' : 'Save changes'}</button>
+          ${isNew ? '' : '<button class="btn btn-ghost btn-block" id="lfDel" style="margin-top:8px">Delete listing</button>'}
+        </div>`;
+      scrim.classList.add('on'); drawer.classList.add('on');
+      document.getElementById('drawerX').addEventListener('click', closeLead);
+      document.getElementById('lfSave').addEventListener('click', () => {
+        const t = document.getElementById('lfT').value.trim();
+        const pr = parseInt(document.getElementById('lfP').value, 10);
+        if (!t || !pr) { toast('Give the listing a title and a price'); return; }
+        const st = document.getElementById('lfS').value;
+        const img = document.getElementById('lfI').value.trim() || IMG.lekki;
+        if (isNew) {
+          LISTINGS_DATA.unshift({ t, pr, st: 'pending', leads: 0, days: 0, img });
+          toast('Listing created — entering the verification queue');
+        } else {
+          Object.assign(LISTINGS_DATA[idx], { t, pr, st, img });
+          toast('Listing updated');
+        }
+        saveListings(); renderListings(); closeLead();
+      });
+      const del = document.getElementById('lfDel');
+      if (del) del.addEventListener('click', () => {
+        LISTINGS_DATA.splice(idx, 1);
+        saveListings(); renderListings(); closeLead();
+        toast('Listing deleted');
+      });
+    }
+
+    document.getElementById('lgrid').addEventListener('click', (e) => {
+      const ed = e.target.closest('[data-edit]');
+      if (ed) { const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
+      const rl = e.target.closest('[data-relist]');
+      if (rl) {
+        const l = LISTINGS_DATA[+rl.dataset.relist];
+        l.days = 0;
+        saveListings(); renderListings();
+        toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days');
+      }
+    });
+    document.getElementById('newListingBtn').addEventListener('click', () => listingForm({ st: 'pending' }, -1));
+    renderListings();
 
     // ── agents ──
     const AGENTS = [
