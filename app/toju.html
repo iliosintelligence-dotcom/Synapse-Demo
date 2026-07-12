@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     /* ── TRUE GLASSMORPHISM, WARM & LIGHT ──
        Frosted glass over a bright warm interior: translucent white gradient
@@ -103,12 +104,6 @@
     .chatbox .suggest button { white-space: nowrap; font-family: var(--f-sans); font-size: 12px; font-weight: 500; color: rgba(21,23,26,0.7); cursor: pointer;
       background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); border-radius: 100px; padding: 6px 12px; transition: all .18s; }
     .chatbox .suggest button:hover { color: var(--ink); border-color: rgba(255,123,44,0.45); background: rgba(255,255,255,0.7); }
-    /* Toju silently reads the Dream Home board — this chip makes it visible */
-    .chatbox .dreamctx { display: flex; align-items: center; gap: 7px; font-family: var(--f-sans); font-size: 11.5px; color: #a8571f;
-      background: rgba(255,123,44,0.08); border: 1px solid rgba(255,123,44,0.22); border-radius: 100px; padding: 6px 12px; margin-bottom: 8px; }
-    .chatbox .dreamctx b { font-weight: 600; color: #8a4517; }
-    .chatbox .dreamctx a { margin-left: auto; color: #C2552B; font-weight: 600; white-space: nowrap; text-decoration: none; }
-    .chatbox .dreamctx a:hover { text-decoration: underline; }
     .convo-wrap { padding-bottom: 180px; }
 
     /* ── TWO-PANE CANVAS LAYOUT (chat left · listings right) ── */
@@ -117,8 +112,11 @@
     .tj-app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100dvh; }
     .tj-app .appbar { flex: none; }
     .tj-layout { flex: 1; display: flex; min-height: 0; }
-    /* Gemini-canvas ratio — chat 25% : canvas 75% */
-    .tj-chat { display: flex; flex-direction: column; min-height: 0; width: 25%; min-width: 280px; border-right: 1px solid rgba(255,255,255,0.55); }
+    /* The chat opens centered, exactly like the original Toju page. The moment
+       Toju surfaces matches, the page morphs into the Gemini-canvas split —
+       chat 25% left, matches canvas 75% right. */
+    .tj-chat { display: flex; flex-direction: column; min-height: 0; width: 100%; max-width: 780px; margin: 0 auto; transition: max-width .35s cubic-bezier(.22,1,.36,1); }
+    body.has-canvas .tj-chat { width: 25%; min-width: 280px; max-width: none; margin: 0; border-right: 1px solid rgba(255,255,255,0.55); }
     .tj-chat .tj-head { flex: none; padding: 16px 22px 4px; }
     .convo-scroll { flex: 1; overflow-y: auto; padding: 8px 22px 12px; }
     .convo-scroll::-webkit-scrollbar { width: 7px; } .convo-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
@@ -126,8 +124,11 @@
     .tj-chat .composer { position: static; flex: none; padding: 10px 16px 16px; }
     .tj-chat .chatbox, .tj-chat .tj-hint { max-width: none; }
 
-    /* right listings canvas */
-    .tj-canvas { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    /* right matches canvas — a live preview of the Your-matches page.
+       Hidden until Toju has something to show. */
+    .tj-canvas { flex: 1; display: none; flex-direction: column; min-height: 0; }
+    body.has-canvas .tj-canvas { display: flex; animation: cvIn .4s cubic-bezier(.22,1,.36,1); }
+    @keyframes cvIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
     .cv-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.5); }
     .cv-head .cv-t { font-family: var(--f-serif); font-weight: 300; font-size: 23px; color: var(--ink); }
     .cv-head .cv-c { font-size: 12px; font-weight: 700; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.2); border-radius: 100px; padding: 2px 10px; }
@@ -137,80 +138,40 @@
     .cv-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--ink-muted); gap: 10px; padding: 40px; }
     .cv-empty .em-orb { width: 66px; height: 66px; opacity: .8; }
     .cv-empty p { font-size: 14.5px; max-width: 330px; line-height: 1.65; }
-    .cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px,1fr)); gap: 16px; }
-    .cv-card { border-radius: 18px; overflow: hidden; cursor: pointer; text-decoration: none; color: var(--ink); display: flex; flex-direction: column;
-      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
-      backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6);
-      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 14px 36px rgba(122,62,22,0.12); transition: transform .2s, border-color .2s; }
-    .cv-card:hover { transform: translateY(-3px); border-color: rgba(255,123,44,0.5); }
-    .cv-banner { height: 122px; position: relative; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg, #C2552B, #FF7B2C); }
-    .cv-banner .cv-bed { text-align: center; }
-    .cv-banner .cv-bed b { font-family: var(--f-serif); font-size: 38px; line-height: 1; }
-    .cv-banner .cv-bed span { font-size: 9.5px; letter-spacing: .1em; opacity: .9; }
-    .cv-trustchip { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 700; color: #fff; background: rgba(20,14,8,0.34); border: 1px solid rgba(255,255,255,0.4); border-radius: 100px; padding: 3px 9px; backdrop-filter: blur(6px); }
-    .cv-dealchip { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #fff; background: rgba(20,14,8,0.3); border: 1px solid rgba(255,255,255,0.35); border-radius: 100px; padding: 3px 9px; backdrop-filter: blur(6px); }
-    .cv-cbody { padding: 13px 15px 15px; }
-    .cv-price { font-family: var(--f-serif); font-size: 22px; color: var(--brand); }
-    .cv-price small { font-size: 12px; color: var(--ink-muted); font-family: var(--f-sans); }
-    .cv-ttl { font-size: 13.5px; font-weight: 500; margin-top: 2px; }
-    .cv-meta { font-size: 11.5px; color: var(--ink-muted); margin-top: 3px; }
-    .cv-why { font-size: 11.5px; color: #b0521f; margin-top: 8px; line-height: 1.5; }
-    .cv-why b { color: var(--ink); }
+    /* ── EXACT Your-matches page card + map styles (browse.html parity).
+       Class names and rules match browse.html so the canvas IS a live
+       preview of that page. Keep the two files in sync. ── */
+    #cvMap { height: 230px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
+      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13); }
+    .price-pin { background: var(--brand); color: #fff; font: 700 11px/1 var(--f-sans); padding: 5px 9px; border-radius: 100px;
+      box-shadow: 0 4px 12px rgba(150,70,20,0.4); white-space: nowrap; border: 1.5px solid #fff; }
+    .price-pin.dim { background: #8b8b8b; }
+    .chip-unv { background: rgba(0,0,0,0.05); color: var(--ink-muted); border: 1px solid rgba(0,0,0,0.12); }
+    .chip-prog { background: rgba(176,125,43,0.1); color: #a8742b; border: 1px solid rgba(176,125,43,0.28); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative;
+      transition: opacity var(--m-expanded) var(--m-ease), transform var(--m-expanded) var(--m-ease), box-shadow .25s, border-color .25s; }
+    .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(255,123,44,0.4); }
+    .listing .body { padding: 18px 18px 14px; }
+    .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
+    .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.22); padding: 3px 9px; border-radius: 100px; }
+    .listing .price { font-family: var(--f-serif); font-size: 27px; color: var(--brand); }
+    .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
+    .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+    .listing .why { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.7); }
+    .listing .why b { color: #b0521f; font-weight: 600; }
+    .listing .score { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--ink-muted); }
+    .listing .ring { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--ink); }
+    .listing .score.unv { color: var(--ink-dim); }
+    .listing .ring.unv { border-color: rgba(0,0,0,0.22); color: var(--ink-dim); font-size: 12px; }
+    .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
+    .listing .img img { width: 100%; height: 100%; object-fit: cover; }
+    .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
+    .listing .save.on { color: #C2552B; background: rgba(255,255,255,0.85); }
+    .listing .save:active { transform: scale(0.85); }
 
-    /* ── canvas toolbar: Filters · Sort · View · Compare · Expand ── */
-    .cv-tools { flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 24px; border-bottom: 1px solid rgba(255,255,255,0.5); }
-    .cv-search { flex: 1 1 150px; min-width: 130px; display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
-    .cv-search input { flex: 1; min-width: 0; border: none; background: none; outline: none; font: 12.5px var(--f-sans); color: var(--ink); }
-    .cv-deal { display: flex; gap: 5px; }
-    .cv-deal button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 12px; cursor: pointer; transition: all .15s; }
-    .cv-deal button.on { color: #C2552B; background: rgba(194,85,43,0.1); border-color: rgba(194,85,43,0.3); }
-    .cv-tools select { font: 500 11.5px var(--f-sans); color: var(--ink); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 10px; outline: none; cursor: pointer; }
-    .cv-view { display: flex; border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; overflow: hidden; }
-    .cv-view button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: none; padding: 7px 11px; cursor: pointer; }
-    .cv-view button.on { color: #fff; background: #C2552B; }
-    .cv-cmp-toggle { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 12px; cursor: pointer; }
-    .cv-cmp-toggle.on { color: #C2552B; background: rgba(194,85,43,0.1); border-color: rgba(194,85,43,0.3); }
-
-    /* compare ticks on cards */
-    .cv-tick { position: absolute; bottom: 10px; right: 10px; z-index: 2; width: 24px; height: 24px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.9); background: rgba(20,14,8,0.3); backdrop-filter: blur(6px); color: #fff; font-size: 13px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .cv-tick.on { background: #C2552B; border-color: #C2552B; }
-
-    /* list view rows */
-    .cv-rows { display: flex; flex-direction: column; gap: 10px; }
-    .cv-row { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; text-decoration: none; color: var(--ink);
-      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
-      backdrop-filter: blur(20px) saturate(1.5); border: 1px solid rgba(255,255,255,0.8); transition: transform .15s, border-color .15s; }
-    .cv-row:hover { transform: translateY(-2px); border-color: rgba(255,123,44,0.5); }
-    .cv-row .rbed { flex: none; width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg,#C2552B,#FF7B2C); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-    .cv-row .rbed b { font-family: var(--f-serif); font-size: 19px; }
-    .cv-row .rbed span { font-size: 7.5px; letter-spacing: .08em; }
-    .cv-row .rmain { flex: 1; min-width: 0; }
-    .cv-row .rttl { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cv-row .rmeta { font-size: 11.5px; color: var(--ink-muted); margin-top: 1px; }
-    .cv-row .rwhy { font-size: 11px; color: #b0521f; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cv-row .rprice { flex: none; text-align: right; font-family: var(--f-serif); font-size: 18px; color: var(--brand); }
-    .cv-row .rprice small { font-size: 11px; color: var(--ink-muted); font-family: var(--f-sans); }
-    .cv-row .rtrust { flex: none; font-size: 11px; font-weight: 700; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.22); border-radius: 100px; padding: 3px 9px; }
-    .cv-row .cv-tick { position: static; background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: var(--ink-muted); }
-    .cv-row .cv-tick.on { background: #C2552B; border-color: #C2552B; color: #fff; }
-
-    /* compare bar + verdict sheet (inside the canvas) */
-    .cv-cmpbar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(90px); transition: transform .25s cubic-bezier(.22,1,.36,1); z-index: 5;
-      display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 18px; border-radius: 100px; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 18px 44px rgba(122,62,22,0.22); font-size: 13px; }
-    .cv-cmpbar.on { transform: translateX(-50%) translateY(0); }
-    .cv-cmpbar button { background: var(--brand); color: #fff; font: 600 12.5px var(--f-sans); border: none; border-radius: 100px; padding: 9px 16px; cursor: pointer; }
-    .cv-sheetwrap { position: absolute; inset: 0; z-index: 6; display: none; align-items: flex-end; background: rgba(20,14,8,0.25); backdrop-filter: blur(3px); }
-    .cv-sheetwrap.on { display: flex; }
-    .cv-sheet { width: 100%; max-height: 86%; overflow-y: auto; background: rgba(252,248,243,0.97); border-top: 1px solid rgba(255,255,255,0.9); border-radius: 22px 22px 0 0; padding: 22px 26px 30px; }
-    .cv-sheet .sh-t { font-family: var(--f-serif); font-weight: 300; font-size: 20px; }
-    .cv-sheet .verdict { margin-top: 12px; font-size: 13.5px; line-height: 1.7; background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.22); border-radius: 14px; padding: 14px 16px; }
-    .cv-sheet .verdict b { color: var(--brand); }
-    .cv-sheet table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12.5px; }
-    .cv-sheet th, .cv-sheet td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.06); }
-    .cv-sheet th { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
-    .cv-sheet .win { color: var(--brand); font-weight: 700; }
-    .cv-sheet .sh-x { float: right; border: none; background: none; font-size: 20px; color: var(--ink-dim); cursor: pointer; }
 
     /* desktop shows the canvas (hide inline chat cards); mobile keeps inline cards, hides canvas */
     @media (min-width: 900px) { .tj-chat .matches-h, .tj-chat .pcard { display: none; } }
@@ -218,10 +179,10 @@
       body { overflow: auto; }
       .tj-app { height: auto; min-height: 100dvh; }
       .tj-layout { flex-direction: column; }
-      .tj-chat { width: 100%; max-width: none; min-width: 0; border-right: none; }
+      .tj-chat, body.has-canvas .tj-chat { width: 100%; max-width: none; min-width: 0; border-right: none; margin: 0; }
       .convo-scroll { overflow: visible; }
       .tj-chat .composer { position: sticky; bottom: 0; }
-      .tj-canvas { display: none; }
+      .tj-canvas, body.has-canvas .tj-canvas { display: none; }
     }
   </style>
 </head>
@@ -256,7 +217,6 @@
         <div class="composer">
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
-            <div class="dreamctx" id="dreamCtx" style="display:none"></div>
             <div class="pillrow">
               <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
               <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
@@ -273,47 +233,24 @@
         </div>
       </section>
 
-      <!-- RIGHT: the matches canvas — full listings power, no browse trip needed -->
-      <aside class="tj-canvas" style="position:relative">
+      <!-- RIGHT: the matches canvas — a live preview of the Your-matches page.
+           No toolbar: whatever the user wants (cheaper, bigger, another area),
+           they just tell Toju. Expand opens the full page. -->
+      <aside class="tj-canvas">
         <div class="cv-head">
           <span class="cv-t">Your matches</span>
           <span class="cv-c" id="cvCount">0</span>
           <a class="cv-all" href="browse.html" title="Expand to the full Matches page">⤢ Expand</a>
         </div>
-        <div class="cv-tools">
-          <label class="cv-search">🔍<input id="cvQ" placeholder="Search title, area…" autocomplete="off" /></label>
-          <div class="cv-deal" id="cvDeal">
-            <button data-deal="all" class="on">All</button>
-            <button data-deal="buy">Buy</button>
-            <button data-deal="rent">Rent</button>
-            <button data-deal="shared">Shared</button>
-          </div>
-          <select id="cvSort" title="Sort">
-            <option value="new">Newest first</option>
-            <option value="plow">Price · low → high</option>
-            <option value="phigh">Price · high → low</option>
-            <option value="trust">Trust score</option>
-          </select>
-          <div class="cv-view" id="cvView">
-            <button data-view="grid" class="on" title="Grid view">▦</button>
-            <button data-view="list" title="List view">☰</button>
-          </div>
-          <button class="cv-cmp-toggle" id="cvCmpToggle">⇄ Compare</button>
-        </div>
-        <div class="cv-body" id="cvBody"></div>
-
-        <!-- compare bar + Toju verdict sheet -->
-        <div class="cv-cmpbar" id="cvCmpBar">
-          <span id="cvCmpCount">0 selected</span>
-          <button id="cvCmpGo">Toju's verdict →</button>
-        </div>
-        <div class="cv-sheetwrap" id="cvSheetWrap">
-          <div class="cv-sheet" id="cvSheet"></div>
+        <div class="cv-body" id="cvBody">
+          <div id="cvMap"></div>
+          <div class="grid" id="cvGrid"></div>
         </div>
       </aside>
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="motion.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
@@ -343,169 +280,127 @@
       }
     };
 
-    /* ── right-side MATCHES CANVAS — full listings power, chat-fed ──
-       Accumulates every home Toju surfaces; the toolbar gives browse-page
-       parity (search · deal filters · sort · grid/list · compare · expand). */
-    const cvBody = document.getElementById('cvBody');
+    /* ── right-side MATCHES CANVAS — a live preview of the Your-matches page.
+       Cards, map and layout mirror browse.html EXACTLY (keep in sync with that
+       page). No toolbar: whatever the user wants changed, they tell Toju. The
+       page opens as a centered chat and morphs to 25/75 when matches land. ── */
+    const cvGrid = document.getElementById('cvGrid');
     const cvCount = document.getElementById('cvCount');
     let canvasMatches = [];
     const cvKeys = new Set();
     const keyOf = (m) => (m.title || '') + '|' + (m.price || '');
-    const cv = { q: '', deal: 'all', sort: 'new', view: 'grid', cmpMode: false, cmp: new Set() };
-
     function collect(matches) {
       if (!Array.isArray(matches)) return;
       matches.forEach((m) => { const k = keyOf(m); if (!cvKeys.has(k)) { cvKeys.add(k); canvasMatches.unshift(m); } });
     }
-    const dealOf = (m) => m.propertyType === 'shared' || (m.room != null) ? 'shared' : (m.listingType === 'rent' ? 'rent' : 'buy');
-    function cvFiltered() {
-      let list = canvasMatches.filter((m) => {
-        if (cv.deal !== 'all' && dealOf(m) !== cv.deal) return false;
-        if (cv.q) {
-          const hay = ((m.title || '') + ' ' + (m.city || '') + ' ' + ((m.neighbourhood && m.neighbourhood.name) || '')).toLowerCase();
-          if (!hay.includes(cv.q)) return false;
-        }
-        return true;
-      });
-      if (cv.sort === 'plow') list = [...list].sort((a, b) => (a.price || 0) - (b.price || 0));
-      else if (cv.sort === 'phigh') list = [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
-      else if (cv.sort === 'trust') list = [...list].sort((a, b) => (b.trustScore || 0) - (a.trustScore || 0));
-      return list;
+
+    // browse.html parity: same image pool, geo table, chips and card markup
+    const IMG_POOL = [
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70',
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70',
+      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70',
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70',
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70',
+    ];
+    const GEO = {
+      'ikate': [6.437, 3.522], 'lekki phase 1': [6.447, 3.47], 'lekki': [6.45, 3.5],
+      'victoria island': [6.428, 3.421], 'osapa': [6.443, 3.49], 'sangotedo': [6.468, 3.628],
+      'surulere': [6.5, 3.35], 'ajah': [6.468, 3.57], 'epe': [6.585, 3.983], 'yaba': [6.507, 3.371],
+      'ikoyi': [6.452, 3.435], 'ikeja': [6.601, 3.351], 'magodo': [6.617, 3.38],
+      'lagos': [6.52, 3.38], 'abuja': [9.06, 7.49], 'port harcourt': [4.82, 7.03],
+      'ibadan': [7.38, 3.94], 'calabar': [4.97, 8.34], 'enugu': [6.45, 7.54],
+    };
+    function coords(loc, i) {
+      const k = Object.keys(GEO).find((k) => String(loc).toLowerCase().includes(k));
+      const base = k ? GEO[k] : GEO['lagos'];
+      return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
     }
-    const mid = (m) => m.id || keyOf(m);
-    const tickHtml = (m) => cv.cmpMode
-      ? '<span class="cv-tick' + (cv.cmp.has(mid(m)) ? ' on' : '') + '" data-tick="' + esc(mid(m)) + '" title="Select to compare">' + (cv.cmp.has(mid(m)) ? '✓' : '+') + '</span>'
-      : '';
-    function cvCardHtml(m) {
-      const rent = m.listingType === 'rent';
-      const deal = dealOf(m) === 'shared' ? 'Shared' : rent ? 'For rent' : 'For sale';
-      const beds = Number(m.bedrooms) || 0;
-      const why = m.why ? '<div class="cv-why"><b>Why:</b> ' + esc(m.why) + '</div>' : '';
-      const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
-      const area = (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || '');
-      return '<a class="cv-card" href="property.html">'
-        + '<div class="cv-banner"><span class="cv-dealchip">' + deal + '</span><span class="cv-trustchip">✦ ' + (Number(m.trustScore) || 0) + '</span>'
-        + tickHtml(m)
-        + '<div class="cv-bed"><b>' + beds + '</b><br><span>BEDROOM' + (beds === 1 ? '' : 'S') + '</span></div></div>'
-        + '<div class="cv-cbody"><div class="cv-price">' + naira(m.price) + (rent || deal === 'Shared' ? '<small>/yr</small>' : '') + '</div>'
-        + '<div class="cv-ttl">' + esc(m.title || '') + '</div>'
-        + '<div class="cv-meta">' + esc(area) + yld + '</div>'
-        + why + '</div></a>';
+    function verifyChip(v) {
+      if (v === 'unverified') return '<span class="chip chip-unv">◌ Not verified</span>';
+      if (v === 'in_progress') return '<span class="chip chip-prog">◷ Verifying…</span>';
+      return '<span class="chip chip-pass">✓ Verified</span>';
     }
-    function cvRowHtml(m) {
-      const rent = m.listingType === 'rent';
-      const deal = dealOf(m);
-      const beds = Number(m.bedrooms) || 0;
-      const area = (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || '');
-      return '<a class="cv-row" href="property.html">'
-        + '<span class="rbed"><b>' + beds + '</b><span>BEDS</span></span>'
-        + '<span class="rmain"><span class="rttl">' + esc(m.title || '') + '</span>'
-        + '<span class="rmeta">' + esc(area) + ' · ' + (deal === 'shared' ? 'Shared room' : rent ? 'For rent' : 'For sale') + '</span>'
-        + (m.why ? '<span class="rwhy"><b>Why:</b> ' + esc(m.why) + '</span>' : '') + '</span>'
-        + '<span class="rtrust">✦ ' + (Number(m.trustScore) || 0) + '</span>'
-        + '<span class="rprice">' + naira(m.price) + (rent || deal === 'shared' ? '<small>/yr</small>' : '') + '</span>'
-        + tickHtml(m) + '</a>';
-    }
+    let cvSaves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
+    let cvLMap = null, cvMarkers = null;
+
+    // shape a Toju match into the exact item browse.html renders
+    const cvItem = (m, i) => ({
+      id: m.id || keyOf(m),
+      img: IMG_POOL[i % IMG_POOL.length],
+      priceN: Number(m.price) || 0,
+      per: m.listingType === 'rent' || m.room != null,
+      vstatus: 'verified',
+      deal: m.room != null ? 'Shared room' : m.listingType === 'rent' ? 'For rent' : 'For sale',
+      ttl: m.title || '',
+      loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || ''),
+      score: Number(m.trustScore) || 0,
+      match: Number(m.fitScore) > 0 && Number(m.fitScore) <= 100 ? Math.round(Number(m.fitScore)) : null,
+      why: m.why ? '<b>Why:</b> ' + esc(m.why) : '',
+    });
+
     function renderCanvas() {
-      const list = cvFiltered();
-      cvCount.textContent = list.length + (list.length !== canvasMatches.length ? ' of ' + canvasMatches.length : '');
-      if (canvasMatches.length === 0) {
-        cvBody.innerHTML = '<div class="cv-empty"><span class="em-orb" data-lottie="orb-pulse" data-speed="0.8"></span>'
-          + '<p>Your verified matches appear here as you chat — no need to open the browse page. Tell Toju what you\'re looking for.</p></div>';
-        if (window.synMotion) synMotion.mount(cvBody.querySelector('[data-lottie]'));
-        return;
-      }
-      if (list.length === 0) {
-        cvBody.innerHTML = '<div class="cv-empty"><p>Nothing matches those filters. Clear the search or switch the deal filter.</p></div>';
-        return;
-      }
-      cvBody.innerHTML = cv.view === 'list'
-        ? '<div class="cv-rows">' + list.map(cvRowHtml).join('') + '</div>'
-        : '<div class="cv-grid">' + list.map(cvCardHtml).join('') + '</div>';
-      syncCmpBar();
+      const items = canvasMatches.map(cvItem);
+      cvCount.textContent = items.length;
+      document.body.classList.toggle('has-canvas', items.length > 0);
+      if (items.length === 0) { cvGrid.innerHTML = ''; return; }
+      cvGrid.innerHTML = items.map((l, i) => `
+        <div class="card listing" data-id="${l.id}">
+          <div class="body">
+            <div class="tags">
+              ${verifyChip(l.vstatus)}
+              ${l.match ? `<span class="match">${l.match}% match</span>` : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`}
+            </div>
+            <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
+            <div class="ttl">${esc(l.ttl)}</div>
+            <div class="loc">${esc(l.loc)}</div>
+            ${l.why ? `<div class="why">${l.why}</div>` : ''}
+            <div class="score"><span class="ring">${l.score}</span> Trust score</div>
+          </div>
+          <div class="img">
+            <img src="${l.img}" alt="" />
+            <div class="save${cvSaves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${cvSaves.has(l.id) ? '♥' : '♡'}</div>
+          </div>
+        </div>`).join('');
+      drawCvMap(items);
+      if (window.synMotion) synMotion.refresh();
     }
+    function drawCvMap(items) {
+      if (!window.L) return;
+      if (!cvLMap) {
+        cvLMap = L.map('cvMap', { scrollWheelZoom: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
+        }).addTo(cvLMap);
+        cvMarkers = L.layerGroup().addTo(cvLMap);
+      }
+      cvMarkers.clearLayers();
+      const pts = [];
+      items.forEach((l, i) => {
+        const c = coords(l.loc, i);
+        pts.push(c);
+        L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
+          .addTo(cvMarkers)
+          .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Trust ${l.score}`);
+      });
+      // the canvas may have just morphed in from display:none — re-measure
+      setTimeout(() => { cvLMap.invalidateSize(); if (pts.length) cvLMap.fitBounds(L.latLngBounds(pts).pad(0.35)); }, 80);
+    }
+    cvGrid.addEventListener('click', (e) => {
+      const sv = e.target.closest('[data-save]');
+      if (sv) {
+        const id = sv.getAttribute('data-save');
+        cvSaves.has(id) ? cvSaves.delete(id) : cvSaves.add(id);
+        localStorage.setItem('synapse_saved', JSON.stringify([...cvSaves]));
+        renderCanvas(); return;
+      }
+      if (e.target.closest('.listing')) window.location.href = 'property.html';
+    });
     function rebuildCanvas() {
-      canvasMatches = []; cvKeys.clear(); cv.cmp.clear();
+      canvasMatches = []; cvKeys.clear();
       saved.forEach((m) => { if (m.role === 'assistant') collect(m.matches); });
       renderCanvas();
     }
 
-    /* toolbar wiring */
-    document.getElementById('cvQ').addEventListener('input', (e) => { cv.q = e.target.value.trim().toLowerCase(); renderCanvas(); });
-    document.getElementById('cvDeal').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-deal]'); if (!b) return;
-      cv.deal = b.dataset.deal;
-      document.querySelectorAll('#cvDeal button').forEach((x) => x.classList.toggle('on', x === b));
-      renderCanvas();
-    });
-    document.getElementById('cvSort').addEventListener('change', (e) => { cv.sort = e.target.value; renderCanvas(); });
-    document.getElementById('cvView').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-view]'); if (!b) return;
-      cv.view = b.dataset.view;
-      document.querySelectorAll('#cvView button').forEach((x) => x.classList.toggle('on', x === b));
-      renderCanvas();
-    });
-    const cmpToggle = document.getElementById('cvCmpToggle');
-    cmpToggle.addEventListener('click', () => {
-      cv.cmpMode = !cv.cmpMode;
-      if (!cv.cmpMode) cv.cmp.clear();
-      cmpToggle.classList.toggle('on', cv.cmpMode);
-      renderCanvas();
-    });
-
-    /* compare selection (ticks live inside card links — intercept before nav) */
-    cvBody.addEventListener('click', (e) => {
-      const t = e.target.closest('[data-tick]');
-      if (!t) return;
-      e.preventDefault(); e.stopPropagation();
-      const id = t.dataset.tick;
-      if (cv.cmp.has(id)) cv.cmp.delete(id);
-      else if (cv.cmp.size < 4) cv.cmp.add(id);
-      renderCanvas();
-    });
-    const cmpBar = document.getElementById('cvCmpBar');
-    function syncCmpBar() {
-      document.getElementById('cvCmpCount').textContent = cv.cmp.size + ' selected';
-      cmpBar.classList.toggle('on', cv.cmpMode && cv.cmp.size >= 2);
-    }
-
-    /* Toju's verdict — the same compare Toju runs on the matches page */
-    const sheetWrap = document.getElementById('cvSheetWrap');
-    const sheet = document.getElementById('cvSheet');
-    sheetWrap.addEventListener('click', (e) => { if (e.target === sheetWrap) sheetWrap.classList.remove('on'); });
-    document.getElementById('cvCmpGo').addEventListener('click', async () => {
-      const items = canvasMatches.filter((m) => cv.cmp.has(mid(m))).slice(0, 4);
-      if (items.length < 2) return;
-      sheet.innerHTML = '<button class="sh-x" onclick="this.closest(\'.cv-sheetwrap\').classList.remove(\'on\')">×</button>'
-        + '<div class="sh-t">Toju is weighing these for you…</div>';
-      sheetWrap.classList.add('on');
-      let verdict = '', winnerId = null;
-      try {
-        const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ action: 'compare', visitorId: VISITOR, items: items.map((m) => ({
-            id: mid(m), title: m.title, city: m.city, deal: dealOf(m), price: m.price, bedrooms: m.bedrooms,
-            trustScore: m.trustScore, yieldPct: m.yieldPct, whatToWatch: m.whatToWatch, neighbourhood: m.neighbourhood,
-          })) }),
-        });
-        const d = await res.json().catch(() => ({}));
-        verdict = d.verdict || ''; winnerId = d.winnerId || null;
-      } catch (e) {}
-      const rows = items.map((m) => {
-        const win = winnerId && mid(m) === winnerId;
-        const rent = m.listingType === 'rent' || dealOf(m) === 'shared';
-        return '<tr' + (win ? ' class="win"' : '') + '><td>' + (win ? '🏆 ' : '') + esc(m.title || '') + '</td>'
-          + '<td>' + naira(m.price) + (rent ? '/yr' : '') + '</td><td>✦ ' + (m.trustScore || 0) + '</td>'
-          + '<td>' + (m.yieldPct != null ? m.yieldPct + '%' : '—') + '</td>'
-          + '<td>' + esc((m.neighbourhood && m.neighbourhood.name) || m.city || '') + '</td></tr>';
-      }).join('');
-      sheet.innerHTML = '<button class="sh-x" onclick="this.closest(\'.cv-sheetwrap\').classList.remove(\'on\')">×</button>'
-        + '<div class="sh-t">Which one is better for you?</div>'
-        + (verdict ? '<div class="verdict"><b>Toju:</b> ' + esc(verdict) + '</div>'
-                   : '<div class="verdict">I couldn\'t reach Toju just now — the side-by-side is below; try the verdict again in a moment.</div>')
-        + '<table><tr><th>Home</th><th>Price</th><th>Trust</th><th>Yield</th><th>Area</th></tr>' + rows + '</table>';
-    });
 
     const naira = (n) => {
       n = Number(n) || 0;
@@ -735,17 +630,6 @@
     const askParam = new URLSearchParams(location.search).get('ask');
     if (askParam) { input.value = askParam.slice(0, 300); input.focus(); scrollDown(); }
 
-    // the dream-board chip — makes Toju's silent context visible
-    (function () {
-      try {
-        const b = JSON.parse(localStorage.getItem('synapse_moodboard_v1'));
-        const vibes = b && Array.isArray(b.vibe) ? b.vibe.filter(Boolean) : [];
-        if (!vibes.length) return;
-        const el = document.getElementById('dreamCtx');
-        el.innerHTML = '✦&nbsp;<span>Toju knows your dream — <b>' + esc(vibes.slice(0, 3).join(', ')) + (vibes.length > 3 ? '…' : '') + '</b></span><a href="dream.html">Edit board</a>';
-        el.style.display = 'flex';
-      } catch (e) {}
-    })();
 
     // new chat — fresh visitor id, so the server thread starts clean too
     function newChat() {
