@@ -48,17 +48,46 @@
     .wa { background: var(--brand); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 100px; }
     .time { font-size: 12px; color: var(--ink-dim); }
 
-    /* subscription tiers */
-    .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-top: 20px; }
-    .tier { padding: 24px 22px; position: relative; }
-    .tier .nm { font-weight: 700; font-size: 15px; }
-    .tier .amt { font-family: var(--f-serif); font-size: 34px; color: var(--brand); margin: 8px 0 2px; }
-    .tier .per { font-size: 12px; color: var(--ink-dim); }
-    .tier ul { list-style: none; margin: 16px 0 20px; display: flex; flex-direction: column; gap: 8px; }
-    .tier li { font-size: 13px; color: var(--ink-muted); display: flex; gap: 8px; }
-    .tier li::before { content: '✓'; color: var(--success); font-weight: 700; }
-    .tier .pop { position: absolute; top: -10px; right: 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: #fff; background: var(--brand); padding: 4px 11px; border-radius: 100px; box-shadow: 0 6px 14px rgba(255,123,44,0.35); }
-    .tier.gold { border-color: rgba(156,122,30,0.35); }
+    /* ── pricing: business-growth investment, not a feature list ── */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; align-items: start; }
+    .tier { padding: 30px 26px; position: relative; border-radius: 22px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(20,26,38,0.06); transition: transform .2s, box-shadow .2s; }
+    .tier .tname { font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); }
+    .tier .thead { font-family: var(--f-serif); font-weight: 300; font-size: 21px; line-height: 1.25; margin-top: 10px; min-height: 52px; }
+    .tier .amt { font-family: var(--f-serif); font-size: 44px; color: var(--ink); margin: 14px 0 0; line-height: 1; }
+    .tier .amt small { font-size: 15px; color: var(--ink-dim); font-family: var(--f-sans); }
+    .tier .best { font-size: 12px; color: var(--ink-dim); margin-top: 8px; }
+    .tier ul { list-style: none; margin: 20px 0 22px; display: flex; flex-direction: column; gap: 13px; flex: 1; }
+    .tier li { font-size: 13px; color: var(--ink); display: flex; gap: 10px; line-height: 1.45; align-items: flex-start; }
+    .tier li::before { content: '✓'; color: var(--success); font-weight: 800; flex: none; margin-top: 1px; }
+    .tier li small { display: block; color: var(--ink-dim); font-size: 11.5px; margin-top: 1px; }
+    .tier li.trade { color: var(--ink-dim); }
+    .tier li.trade::before { content: '—'; color: var(--ink-dim); font-weight: 600; }
+    .tier .pop { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: #fff; background: var(--brand); padding: 5px 14px; border-radius: 100px; box-shadow: 0 8px 18px rgba(255,123,44,0.4); }
+    .tier.feature { transform: scale(1.04); border: 2px solid var(--brand); box-shadow: 0 26px 60px rgba(255,123,44,0.2); }
+    .tier.feature:hover { transform: scale(1.05) translateY(-2px); }
+    .tier:not(.feature):hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(20,26,38,0.10); }
+    .tier.gold-plan { border-color: rgba(156,122,30,0.4); }
+
+    /* add-ons */
+    .addons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-top: 16px; }
+    .addon { padding: 18px 18px 16px; border-radius: 16px; }
+    .addon .aico { font-size: 20px; }
+    .addon .aname { font-weight: 600; font-size: 13.5px; margin-top: 8px; }
+    .addon .adesc { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; line-height: 1.5; }
+    .addon .aprice { font-family: var(--f-serif); font-size: 17px; color: var(--brand); margin-top: 10px; }
+    .addon .aprice small { font-size: 11px; color: var(--ink-dim); font-family: var(--f-sans); }
+    .addon .abtn { margin-top: 11px; width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.6); color: var(--ink); font: 600 12px var(--f-sans); border-radius: 100px; padding: 8px; cursor: pointer; }
+    .addon .abtn:hover { border-color: rgba(255,123,44,0.45); color: var(--brand); }
+
+    /* ROI band */
+    .roi { padding: 30px 32px; margin-top: 28px; background: linear-gradient(135deg, rgba(255,123,44,0.07), rgba(194,85,43,0.03)); border: 1px solid rgba(255,123,44,0.2); }
+    .roi h3 { font-family: var(--f-serif); font-weight: 300; font-size: 24px; max-width: 620px; line-height: 1.3; }
+    .roi .rgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap: 10px 26px; margin-top: 18px; }
+    .roi .rgrid div { font-size: 13.5px; color: var(--ink); display: flex; gap: 10px; }
+    .roi .rgrid div::before { content: '✓'; color: var(--success); font-weight: 800; }
+    .roi .rclose { margin-top: 20px; font-size: 15px; }
+    .roi .rclose b { color: var(--brand); }
+    @media (max-width: 900px){ .pricing-grid { grid-template-columns: 1fr; } .tier.feature { transform: none; } }
 
     /* social studio */
     .channels { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0 6px; }
@@ -506,49 +535,17 @@
 
         <!-- ══ SUBSCRIPTION ══ -->
         <section class="pane" id="pane-subscription">
-          <div class="eyebrow">Plans</div>
-          <div class="h1">Subscription</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Verification is the product. Pick how fast and how far your listings travel.</p>
+          <div class="eyebrow">Invest in growth</div>
+          <div class="h1">Plans that pay for themselves</div>
+          <p class="muted" style="font-size:14px;margin-top:4px;max-width:560px">Synapse isn&#39;t software you pay for — it&#39;s the platform that brings you qualified buyers, closes deals faster, and shows you exactly which marketing earns its keep.</p>
 
-          <div class="tiers">
-            <div class="card tier">
-              <div class="nm">Starter</div>
-              <div class="amt">₦0</div><div class="per">forever</div>
-              <ul>
-                <li>5 live listings</li>
-                <li>Standard verification queue</li>
-                <li>CRM with WhatsApp handoff</li>
-                <li>Toju referrals when you match</li>
-              </ul>
-              <button class="btn btn-ghost btn-block">Current plan</button>
-            </div>
-            <div class="card tier">
-              <span class="pop">MOST POPULAR</span>
-              <div class="nm">Growth</div>
-              <div class="amt">₦75k</div><div class="per">per month</div>
-              <ul>
-                <li>40 live listings · 5 agent seats</li>
-                <li>Priority verification (48h)</li>
-                <li>Social syndication — 2 channels</li>
-                <li>AI captions &amp; auto-posting</li>
-                <li>Lead analytics</li>
-              </ul>
-              <button class="btn btn-primary btn-block">Upgrade to Growth</button>
-            </div>
-            <div class="card tier gold">
-              <div class="nm">Gold <span class="chip chip-gold" style="margin-left:4px">✦</span></div>
-              <div class="amt">₦250k</div><div class="per">per month</div>
-              <ul>
-                <li>Unlimited listings &amp; seats</li>
-                <li>Gold Verified badge on every listing</li>
-                <li>All channels + marketing campaigns</li>
-                <li><b>Proximity marketing</b> — geofenced alerts to matched buyers walking near your listings</li>
-                <li>Top placement in Toju matches</li>
-                <li>Dedicated verification desk</li>
-              </ul>
-              <button class="btn btn-ghost btn-block">Talk to sales</button>
-            </div>
-          </div>
+          <div class="pricing-grid" id="pricingGrid"></div>
+
+          <div class="h2" style="margin-top:40px">Grow as you need</div>
+          <p class="sub">Top up a plan without upgrading — one-off or monthly.</p>
+          <div class="addons-grid" id="addonsGrid"></div>
+
+          <div class="card roi" id="roiSection"></div>
         </section>
 
         <!-- ══ SOCIAL STUDIO ══ -->
@@ -1539,6 +1536,89 @@
       if (e.target.closest('#cmpGen')) { generateCaptions(); return; }
       if (e.target.closest('#cmpSchedule')) { scheduleFromComposer(); return; }
     });
+
+    // ── Pricing (config-driven; edit PRICING to change plans) ──
+    // Mirrors a PricingCard / FeatureRow / AddOnCard / ROISection component
+    // set: PLANS + ADDONS + ROI feed the render functions below.
+    const PRICING = {
+      plans: [
+        { id: 'foundation', name: 'Foundation', headline: 'Everything you need to start winning buyers.',
+          price: 0, unit: 'forever', best: 'New or small agencies getting started.',
+          cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
+            ['Up to 20 active listings', 'Room to grow your catalogue'],
+            ['2 team members', 'Bring on a partner'],
+            ['CRM with WhatsApp handoff', 'Never lose a lead — buyers land on your phone'],
+            ['Toju AI referrals', 'Get matched to buyers already looking for what you list'],
+            ['Standard verification', 'Your listings become trusted — at the normal queue speed'],
+            ['Basic analytics', 'See your leads and listings at a glance'],
+          ], tradeoffs: ['Slower verification queue', 'No marketing automation or social syndication', 'Limited AI'] },
+        { id: 'accelerator', name: 'Accelerator', headline: 'Grow faster with AI-powered marketing and verification.',
+          price: 75000, unit: 'per month', best: 'The plan almost every serious agency wants.',
+          cta: 'Upgrade to Accelerator', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
+            ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
+            ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
+            ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
+            ['AI writes and posts for you', 'Captions and scheduling handled — no marketing hire'],
+            ['Know which channels make buyers', 'Lead analytics + buyer-engagement metrics'],
+            ['Marketing performance dashboard', 'See exactly what your spend returns'],
+          ] },
+        { id: 'market-leader', name: 'Market Leader', headline: 'Dominate your local market.',
+          price: 250000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
+          cta: 'Talk to sales', ctaStyle: 'ghost', features: [
+            ['Unlimited listings & seats', 'No ceiling on your growth'],
+            ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
+            ['Every marketing channel + AI campaigns', 'Toju generates whole campaigns for you'],
+            ['Proximity marketing', 'Reach buyers the moment they walk past your listing'],
+            ['Featured placement inside Toju', 'Your homes surface first to matched buyers'],
+            ['Dedicated verification desk + priority support', 'A team on standby for your deals'],
+            ['Premium analytics', 'Attribution from first touch to closed ₦'],
+          ] },
+      ],
+      addons: [
+        { ico: '🏘️', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
+        { ico: '✨', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
+        { ico: '🚀', name: 'Featured Listing Boost', desc: 'Push one listing to the top of Toju matches for 7 days.', price: '₦10k', unit: 'each' },
+        { ico: '🛡️', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
+        { ico: '📣', name: 'Campaign Boost', desc: 'Extra reach behind a marketing campaign that\'s working.', price: '₦20k', unit: 'each' },
+      ],
+      roi: {
+        title: 'One sale can pay for your subscription many times over.',
+        points: ['Generate more qualified buyers', 'Reduce wasted advertising spend', 'Automate repetitive marketing',
+          'Build trust through verification', 'Understand which campaigns actually close deals'],
+        close: 'The goal isn\'t to save money. <b>The goal is to help you earn more.</b>',
+      },
+    };
+    const nairaPlan = (n) => n === 0 ? '₦0' : '₦' + (n / 1000) + 'k';
+    // PricingCard + FeatureRow
+    function pricingCardHTML(p) {
+      const rows = p.features.map((f) => `<li>${f[0]}${f[1] ? `<small>${f[1]}</small>` : ''}</li>`).join('')
+        + (p.tradeoffs ? p.tradeoffs.map((t) => `<li class="trade">${t}</li>`).join('') : '');
+      return `<div class="card tier ${p.feature ? 'feature' : ''} ${p.gold ? 'gold-plan' : ''}">
+        ${p.badge ? `<span class="pop">${p.badge}</span>` : ''}
+        <div class="tname">${p.name}</div>
+        <div class="thead">${p.headline}</div>
+        <div class="amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
+        <div class="best">${p.best}</div>
+        <ul>${rows}</ul>
+        <button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'} btn-block" ${p.current ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button>
+      </div>`;
+    }
+    // AddOnCard
+    function addonHTML(a) {
+      return `<div class="card addon"><div class="aico">${a.ico}</div>
+        <div class="aname">${a.name}</div><div class="adesc">${a.desc}</div>
+        <div class="aprice">${a.price}<small> ${a.unit}</small></div>
+        <button class="abtn">Add</button></div>`;
+    }
+    // ROISection
+    function roiHTML(r) {
+      return `<h3>${r.title}</h3>
+        <div class="rgrid">${r.points.map((p) => `<div>${p}</div>`).join('')}</div>
+        <p class="rclose">${r.close}</p>`;
+    }
+    document.getElementById('pricingGrid').innerHTML = PRICING.plans.map(pricingCardHTML).join('');
+    document.getElementById('addonsGrid').innerHTML = PRICING.addons.map(addonHTML).join('');
+    document.getElementById('roiSection').innerHTML = roiHTML(PRICING.roi);
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
