@@ -431,6 +431,34 @@
     .campaign .cft .gen2 { background: var(--brand); color: #fff; }
     .campaign .cft .tgl { background: rgba(0,0,0,0.05); color: var(--ink); }
 
+    /* ── persistent Ask-Toju button + context panel ── */
+    .toju-fab { position: fixed; right: 26px; bottom: 26px; z-index: 78; display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 14px; border-radius: 100px; border: none; cursor: pointer;
+      background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; font: 600 13.5px var(--f-sans); box-shadow: 0 16px 38px rgba(194,85,43,0.42); transition: transform .16s, box-shadow .16s; }
+    .toju-fab:hover { transform: translateY(-2px); box-shadow: 0 22px 46px rgba(194,85,43,0.5); }
+    .toju-fab .o { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+    body.tpanel-open .toju-fab { opacity: 0; pointer-events: none; }
+
+    .tpanel-scrim { position: fixed; inset: 0; z-index: 95; background: rgba(20,22,26,0.18); opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .tpanel-scrim.on { opacity: 1; pointer-events: auto; }
+    .tpanel { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 424px; z-index: 96; background: var(--surface); border-left: 1px solid var(--border);
+      box-shadow: -24px 0 64px rgba(20,26,38,0.22); transform: translateX(102%); transition: transform .32s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; }
+    .tpanel.on { transform: translateX(0); }
+    .tpanel .thd { flex: none; display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(255,123,44,0.1), rgba(194,85,43,0.04)); }
+    .tpanel .thd .o { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex: none; }
+    .tpanel .thd .tt { font-weight: 700; font-size: 14.5px; }
+    .tpanel .thd .sb { font-size: 11.5px; color: var(--ink-dim); margin-top: 1px; }
+    .tpanel .thd .x { margin-left: auto; border: none; background: none; font-size: 22px; line-height: 1; color: var(--ink-dim); cursor: pointer; }
+    .tpanel .thd .x:hover { color: var(--ink); }
+    .tpanel .tbody { flex: 1; overflow-y: auto; padding: 20px; }
+    .tp-sec { margin-bottom: 22px; }
+    .tp-sec:last-child { margin-bottom: 0; }
+    .tp-k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .tp-line { display: flex; gap: 9px; font-size: 13px; line-height: 1.5; margin: 9px 0; }
+    .tp-line .d { color: var(--brand); flex: none; }
+    .tp-reco { margin-top: 12px; font-size: 13px; line-height: 1.6; background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.2); border-radius: 12px; padding: 12px 14px; }
+    .tp-reco b { color: var(--brand); }
+    @media (max-width: 560px){ .tpanel { max-width: 100%; } }
+
     @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -476,13 +504,7 @@
 
           <div class="stats" id="ovstats"></div>
 
-          <div class="card advisor" id="advisor">
-            <div class="top"><span class="orb">T</span><div><div class="h2" style="margin:0">Ask Toju about your business</div><div class="sub">Prescriptive answers — what's happening, and what to do about it.</div></div></div>
-            <div class="qs" id="advQs"></div>
-            <div id="advAns"></div>
-          </div>
-
-          <div class="two">
+          <div class="two" style="margin-top:16px">
             <div class="card" style="padding:18px 20px">
               <div class="h2" style="margin:0 0 12px">Pipeline funnel</div>
               <div class="funnel">
@@ -583,11 +605,7 @@
           </div>
           <div class="stats" style="margin-top:18px" id="mkstats"></div>
 
-          <div class="h2" style="margin-top:8px">✦ Creative insights</div>
-          <p class="sub" style="margin-bottom:12px">What the AI has learned from your ad performance — and what to do about it.</p>
-          <div id="insights"></div>
-
-          <div class="h2" style="margin-top:26px">Campaigns</div>
+          <div class="h2" style="margin-top:22px">Campaigns</div>
           <p class="sub" style="margin-bottom:12px">Each creative is tracked on its own. Winners scale automatically; losers are paused by the AI.</p>
           <div id="campaigns"></div>
         </section>
@@ -598,27 +616,7 @@
           <div class="h1">Toju Negotiator</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Every lead — from any channel — is qualified, pitched and pre-negotiated by Toju before it reaches a human. You inherit warm, ready buyers.</p>
 
-          <div class="rule">
-            <span class="ic">⚖️</span>
-            <div class="t"><b>Toju advises within the range you authorise — it never makes a binding commitment.</b> Toju can discuss price flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div>
-          </div>
-
-          <div class="h2">The omnichannel funnel</div>
-          <p class="sub">No lead ever arrives cold.</p>
-          <div class="flow">
-            <div class="src">
-              <span class="schip">Instagram post</span><span class="schip">Instagram DM</span><span class="schip">TikTok</span><span class="schip">Facebook</span><span class="schip">WhatsApp</span><span class="schip">In-app</span><span class="schip">Proximity</span>
-            </div>
-            <span class="arw2">→</span>
-            <div class="toju"><span class="o">T</span> Toju qualifies · presents · negotiates</div>
-            <span class="arw2">→</span>
-            <span class="end">Warm handoff to you</span>
-          </div>
-          <div class="stepper">
-            <span class="step5"><b>1</b> Qualify</span><span class="step5"><b>2</b> Present</span><span class="step5"><b>3</b> Handle objections</span><span class="step5"><b>4</b> Negotiate · your range</span><span class="step5"><b>5</b> Handoff</span>
-          </div>
-
-          <div class="h2">Your negotiation authority</div>
+          <div class="h2" style="margin-top:22px">Your negotiation authority</div>
           <p class="sub">Set the floor Toju may negotiate down to. Only Toju&#39;s engine ever sees it.</p>
           <div class="auth-grid" id="authGrid"></div>
 
@@ -682,6 +680,18 @@
   </div><!-- /shell -->
 
   <div class="toast" id="toast"></div>
+
+  <!-- persistent Ask-Toju button + context-aware panel -->
+  <button class="toju-fab" id="tojuFab"><span class="o">T</span> Ask Toju</button>
+  <div class="tpanel-scrim" id="tpScrim"></div>
+  <aside class="tpanel" id="tpanel" aria-label="Ask Toju">
+    <div class="thd">
+      <span class="o">T</span>
+      <div><div class="tt" id="tpTitle">Ask Toju</div><div class="sb" id="tpSub"></div></div>
+      <button class="x" id="tpClose" aria-label="Close">×</button>
+    </div>
+    <div class="tbody" id="tpBody"></div>
+  </aside>
 
   <!-- lead workspace drawer -->
   <div class="scrim" id="scrim"></div>
@@ -1155,13 +1165,9 @@
       const t = e.target.closest('[data-tgl]');
       if (t) { const c = CAMPAIGNS[+t.dataset.tgl]; c.live = !c.live; saveCamps(); renderCampaigns(); toast(c.live ? 'Campaign resumed' : 'Campaign paused'); }
     });
-    document.getElementById('insights').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-ins]'); if (!b) return;
-      b.textContent = '✓ Queued'; b.disabled = true; b.style.opacity = .6;
-      toast('Toju is applying this across your creatives');
-    });
+    // creative insights now live in the Ask-Toju panel (marketing context).
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
-    renderInsights(); renderCampaigns();
+    renderCampaigns();
 
     // ── chart primitives — one brand hue on a muted track; labels wear ink ──
     const C_BRAND = '#C2552B', C_TRACK = 'rgba(0,0,0,0.06)';
@@ -1342,8 +1348,7 @@
         `<div class="ans">${a.points.map(p => `<div class="r"><span class="d">→</span><span>${p}</span></div>`).join('')}</div>` +
         `<div class="reco"><b>Toju’s fix:</b> ${a.reco}</div>`;
     }
-    document.getElementById('advQs').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) renderAdvisor(+b.dataset.i); });
-    renderAdvisor(0);
+    // advisor now lives in the Ask-Toju panel; it renders when the panel opens.
 
     // ── Toju Negotiator (Phase C) ──
     // Negotiation authority: the floor is an encrypted, engine-only field.
@@ -1620,12 +1625,92 @@
     document.getElementById('addonsGrid').innerHTML = PRICING.addons.map(addonHTML).join('');
     document.getElementById('roiSection').innerHTML = roiHTML(PRICING.roi);
 
+    // ── persistent Ask-Toju panel (context-aware per pane) ──
+    // The AI commentary/summaries live here, not on the main panes. What the
+    // panel shows depends on which pane the agency owner is looking at.
+    const tpBody = document.getElementById('tpBody');
+    const tpanel = document.getElementById('tpanel');
+    const tpScrim = document.getElementById('tpScrim');
+    const currentPane = () => (document.querySelector('#tabs a.on') || {}).dataset?.pane || 'overview';
+
+    const tpSummary = (k, lines, reco) =>
+      `<div class="tp-sec"><div class="tp-k">${k}</div>${lines.map(l => `<div class="tp-line"><span class="d">→</span><span>${l}</span></div>`).join('')}${reco ? `<div class="tp-reco"><b>Toju’s fix:</b> ${reco}</div>` : ''}</div>`;
+
+    const PANEL = {
+      overview: { title: 'Business advisor', sub: 'What’s happening — and what to do',
+        html: () => `<div class="advisor"><div class="qs" id="advQs"></div><div id="advAns"></div></div>`,
+        after: () => { renderAdvisor(0); document.getElementById('advQs').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) renderAdvisor(+b.dataset.i); }); } },
+      negotiator: { title: 'How Toju negotiates', sub: 'The funnel, the rules, the 5 stages',
+        html: () => `
+          <div class="tp-sec"><div class="tp-k">The rule</div>
+            <div class="rule" style="margin:0"><span class="ic">⚖️</span><div class="t"><b>Toju advises within the range you authorise — it never makes a binding commitment.</b> It can discuss flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div></div>
+          </div>
+          <div class="tp-sec"><div class="tp-k">The omnichannel funnel — no lead arrives cold</div>
+            <div class="flow" style="margin:0"><div class="src"><span class="schip">Instagram post</span><span class="schip">Instagram DM</span><span class="schip">TikTok</span><span class="schip">Facebook</span><span class="schip">WhatsApp</span><span class="schip">In-app</span><span class="schip">Proximity</span></div><span class="arw2">↓</span><div class="toju"><span class="o">T</span> Toju qualifies · presents · negotiates</div><span class="arw2">↓</span><span class="end">Warm handoff to you</span></div>
+          </div>
+          <div class="tp-sec"><div class="tp-k">The five stages</div>
+            <div class="stepper" style="margin:0"><span class="step5"><b>1</b> Qualify</span><span class="step5"><b>2</b> Present</span><span class="step5"><b>3</b> Handle objections</span><span class="step5"><b>4</b> Negotiate · your range</span><span class="step5"><b>5</b> Handoff</span></div>
+          </div>` },
+      marketing: { title: 'Creative insights', sub: 'What the AI learned from your ads',
+        html: () => `<div class="tp-sec"><div class="tp-k">✦ What’s working</div><div id="insights"></div></div>`,
+        after: () => { renderInsights(); document.getElementById('insights').addEventListener('click', (e) => { const b = e.target.closest('[data-ins]'); if (!b) return; b.textContent = '✓ Queued'; b.disabled = true; b.style.opacity = .6; toast('Toju is applying this across your creatives'); }); } },
+      crm: { title: 'Pipeline read', sub: 'Toju’s take on your leads',
+        html: () => tpSummary('Where your attention pays off', [
+          'Bola Adeyemi (Hot · 92) — first-response SLA expires in 13 minutes.',
+          'Ngozi Eze at ₦175M — deal score 96, waiting on her counter.',
+          'Instagram is your best-converting channel; Facebook CPL is 2.4× higher.',
+        ], 'Call Bola now, push Ngozi’s contract, and shift budget from Facebook to Instagram.') },
+      listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
+        html: () => tpSummary('Keep your listings live', [
+          '1 listing has expired and is hidden from buyers — re-list to restore it.',
+          '2 listings expire within 3 days; re-list before they drop off.',
+          'Your Lekki band is under-supplied vs demand — add inventory there.',
+        ], 'Re-list the expired VI 2-Bed and refresh your two expiring Lekki homes today.') },
+      social: { title: 'Content coach', sub: 'What to post next',
+        html: () => tpSummary('Move the needle', [
+          '2 posts are awaiting your approval in the pipeline.',
+          'Video walkthroughs are outperforming photos 3× — prioritise them.',
+          'Your VI listings have had no social activity in 12 days.',
+        ], 'Approve the two queued posts and generate a TikTok video for the VI 2-Bed.') },
+      agents: { title: 'Team read', sub: 'Coaching for your agents',
+        html: () => tpSummary('Coach the floor', [
+          'Funke closes the most but her first-reply time is creeping up.',
+          'Tomiwa loses most buyers after the second viewing.',
+          'Reassign 2 stalled Lekki leads to your fastest responder.',
+        ], 'Move financing talks earlier for Tomiwa’s buyers, and rebalance Lekki leads to Funke.') },
+      verification: { title: 'Trust desk read', sub: 'What’s blocking listings',
+        html: () => tpSummary('Clear the queue', [
+          '3-Bed Ikate is 5/7 — media validation + freshness still pending.',
+          '2-Bed Yaba is 3/7 — flood and ownership checks outstanding.',
+          'Verified listings convert far better — clearing these lifts sales.',
+        ], 'Chase the trust desk on Ikate’s last two checks first — it’s closest to going live.') },
+      subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
+        html: () => tpSummary('Your growth math', [
+          'You’re on Foundation, but marketing automation is off — you’re posting manually.',
+          'One extra closed sale a month more than covers Accelerator.',
+          'Accelerator unlocks 48h verification + auto-syndication.',
+        ], 'Upgrade to Accelerator — the marketing automation alone should return the fee in one sale.') },
+    };
+    function openToju() {
+      const cfg = PANEL[currentPane()] || PANEL.overview;
+      document.getElementById('tpTitle').textContent = cfg.title;
+      document.getElementById('tpSub').textContent = cfg.sub;
+      tpBody.innerHTML = cfg.html();
+      if (cfg.after) cfg.after();
+      tpScrim.classList.add('on'); tpanel.classList.add('on'); document.body.classList.add('tpanel-open');
+    }
+    function closeToju() { tpScrim.classList.remove('on'); tpanel.classList.remove('on'); document.body.classList.remove('tpanel-open'); }
+    document.getElementById('tojuFab').addEventListener('click', openToju);
+    document.getElementById('tpClose').addEventListener('click', closeToju);
+    tpScrim.addEventListener('click', closeToju);
+
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
       const tab = e.target.closest('[data-pane]');
       if (!tab) return;
       document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
       document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + tab.dataset.pane));
+      if (tpanel.classList.contains('on')) openToju(); // keep the panel in sync with the pane
       if (window.synMotion) synMotion.refresh();
     });
 
