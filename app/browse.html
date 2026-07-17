@@ -186,27 +186,14 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="matches-shared.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
     const VISITOR = localStorage.getItem('toju_visitor_v1');
-    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + Math.round(n/1e6) + 'M' : '₦' + n.toLocaleString(); };
-    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-    // area → coords (prototype geocoder; real app uses listing lat/lon)
-    const GEO = {
-      'ikate': [6.437, 3.522], 'lekki phase 1': [6.447, 3.47], 'lekki': [6.45, 3.5],
-      'victoria island': [6.428, 3.421], 'osapa': [6.443, 3.49], 'sangotedo': [6.468, 3.628],
-      'surulere': [6.5, 3.35], 'ajah': [6.468, 3.57], 'epe': [6.585, 3.983], 'yaba': [6.507, 3.371],
-      'ikoyi': [6.452, 3.435], 'ikeja': [6.601, 3.351], 'magodo': [6.617, 3.38],
-      'lagos': [6.52, 3.38], 'abuja': [9.06, 7.49], 'port harcourt': [4.82, 7.03],
-      'ibadan': [7.38, 3.94], 'calabar': [4.97, 8.34], 'enugu': [6.45, 7.54],
-    };
-    function coords(loc, i) {
-      const k = Object.keys(GEO).find((k) => String(loc).toLowerCase().includes(k));
-      const base = k ? GEO[k] : GEO['lagos'];
-      return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
-    }
+    // card markup, shaper, map and helpers shared with the Toju canvas —
+    // matches-shared.js + docs/STATE_CONTRACT.md
+    const { naira, esc } = window.SynMatches;
 
     const demoMatches = [
       { id: 'd1', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', priceN: 148e6, ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, flood: 22, power: 68, yield: 7.1, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
@@ -215,11 +202,9 @@
       { id: 'd4', img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', priceN: 150e6, ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, flood: 33, power: 66, yield: 6.8, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
       { id: 'd5', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', priceN: 139e6, ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, flood: 58, power: 55, yield: 7.7, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
     ];
-    const IMG_POOL = demoMatches.map((d) => d.img);
     let items = demoMatches.slice();
     let saves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
     let picked = new Set();
-    let map, markerLayer;
     let searchQ = '';
     let dealFilter = 'all'; // all | sale | rent | shared
     let verifiedOnly = false;
@@ -232,13 +217,6 @@
     function matchesVerify(l) {
       return !verifiedOnly || (l.vstatus || 'verified') === 'verified';
     }
-    // clear verification badge on every card so buyers know exactly what's checked
-    function verifyChip(v) {
-      if (v === 'unverified') return '<span class="chip chip-unv">◌ Not verified</span>';
-      if (v === 'in_progress') return '<span class="chip chip-prog">◷ Verifying…</span>';
-      return '<span class="chip chip-pass">✓ Verified</span>';
-    }
-
     function sortItems() {
       const s = document.getElementById('sortSel').value;
       items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? b.score - a.score : b.match - a.match);
@@ -263,52 +241,16 @@
       sortItems();
       shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
       const grid = document.getElementById('grid');
-      grid.innerHTML = shownItems.map((l, i) => `
-        <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
-          <div class="body">
-            <div class="tags">
-              ${verifyChip(l.vstatus)}
-              ${l.match ? `<span class="match">${l.match}% match</span>` : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`}
-              <label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>
-            </div>
-            <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
-            <div class="ttl">${esc(l.ttl)}</div>
-            <div class="loc">${esc(l.loc)}</div>
-            <div class="why">${l.why}</div>
-            ${l.vstatus === 'verified'
-              ? `<div class="score"><span class="ring">${l.score}</span> Trust score</div>`
-              : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Verification in progress' : 'Not yet verified — ask Toju to check'}</div>`}
-          </div>
-          <div class="img">
-            <img src="${l.img || IMG_POOL[i % IMG_POOL.length]}" alt="" />
-            <div class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${saves.has(l.id) ? '♥' : '♡'}</div>
-          </div>
-        </div>
-      `).join('');
+      grid.innerHTML = shownItems.map((l, i) =>
+        SynMatches.listingCardHtml(l, i, { saves, picked, compare: true })).join('');
       if (window.synMotion) synMotion.refresh();
       drawMap();
       updateBar();
     }
 
+    const mapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
     function drawMap() {
-      if (!window.L) return;
-      if (!map) {
-        map = L.map('map', { scrollWheelZoom: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
-        }).addTo(map);
-        markerLayer = L.layerGroup().addTo(map);
-      }
-      markerLayer.clearLayers();
-      const pts = [];
-      (shownItems.length || searchQ ? shownItems : items).forEach((l, i) => {
-        const c = coords(l.loc, i);
-        pts.push(c);
-        L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
-          .addTo(markerLayer)
-          .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match}% match · Trust ${l.score}`);
-      });
-      if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.35));
+      SynMatches.drawMatchMap(mapState, 'map', shownItems.length || searchQ ? shownItems : items);
     }
 
     function updateBar() {
@@ -477,23 +419,8 @@
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
         hasSessionView = true;
         setMatchedHeadings();
-        items = d.matches.map((m, i) => ({
-          id: m.id || 'r' + i,
-          img: null,
-          kind: m.room ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
-          per: m.listingType === 'rent',
-          vstatus: 'verified', // Toju only ever recommends verified homes
-          priceN: Number(m.price) || 0,
-          ttl: m.title,
-          loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : m.city,
-          score: m.trustScore,
-          match: m.fitScore || 80,
-          flood: m.neighbourhood ? m.neighbourhood.flood : null,
-          power: m.neighbourhood ? m.neighbourhood.power : null,
-          yield: m.yieldPct,
-          why: m.why ? '<b>Why:</b> ' + esc(m.why)
-             : (m.whatToWatch && m.whatToWatch !== 'No major synthetic flags' ? '<b>Watch:</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
-        }));
+        // SAME shaper the Toju canvas uses — the canvas is an exact preview of this page
+        items = d.matches.map(SynMatches.shapeTojuMatch);
         picked = new Set();
         if (d.criteria && d.criteria.brief) {
           document.querySelector('.brief .txt').innerHTML =

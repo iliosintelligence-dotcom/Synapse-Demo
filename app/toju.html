@@ -251,6 +251,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="matches-shared.js"></script>
   <script src="motion.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
@@ -269,7 +270,8 @@
     const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} };
     let saved = loadSaved();
 
-    const esc = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    // shared with browse.html — see matches-shared.js + docs/STATE_CONTRACT.md
+    const { esc, naira } = window.SynMatches;
     const convoScroll = document.querySelector('.convo-scroll');
     const scrollDown = () => {
       // scroll the chat pane on desktop; the window on mobile (canvas hidden)
@@ -294,96 +296,20 @@
       matches.forEach((m) => { const k = keyOf(m); if (!cvKeys.has(k)) { cvKeys.add(k); canvasMatches.unshift(m); } });
     }
 
-    // browse.html parity: same image pool, geo table, chips and card markup
-    const IMG_POOL = [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70',
-      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70',
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70',
-    ];
-    const GEO = {
-      'ikate': [6.437, 3.522], 'lekki phase 1': [6.447, 3.47], 'lekki': [6.45, 3.5],
-      'victoria island': [6.428, 3.421], 'osapa': [6.443, 3.49], 'sangotedo': [6.468, 3.628],
-      'surulere': [6.5, 3.35], 'ajah': [6.468, 3.57], 'epe': [6.585, 3.983], 'yaba': [6.507, 3.371],
-      'ikoyi': [6.452, 3.435], 'ikeja': [6.601, 3.351], 'magodo': [6.617, 3.38],
-      'lagos': [6.52, 3.38], 'abuja': [9.06, 7.49], 'port harcourt': [4.82, 7.03],
-      'ibadan': [7.38, 3.94], 'calabar': [4.97, 8.34], 'enugu': [6.45, 7.54],
-    };
-    function coords(loc, i) {
-      const k = Object.keys(GEO).find((k) => String(loc).toLowerCase().includes(k));
-      const base = k ? GEO[k] : GEO['lagos'];
-      return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
-    }
-    function verifyChip(v) {
-      if (v === 'unverified') return '<span class="chip chip-unv">◌ Not verified</span>';
-      if (v === 'in_progress') return '<span class="chip chip-prog">◷ Verifying…</span>';
-      return '<span class="chip chip-pass">✓ Verified</span>';
-    }
+    // browse.html parity: shaper, card markup and map all come from
+    // matches-shared.js — the canvas renders the SAME card browse.html does
+    // (compare checkboxes are a browse-only tool; here you just tell Toju).
     let cvSaves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
-    let cvLMap = null, cvMarkers = null;
-
-    // shape a Toju match into the exact item browse.html renders
-    const cvItem = (m, i) => ({
-      id: m.id || keyOf(m),
-      img: IMG_POOL[i % IMG_POOL.length],
-      priceN: Number(m.price) || 0,
-      per: m.listingType === 'rent' || m.room != null,
-      vstatus: 'verified',
-      deal: m.room != null ? 'Shared room' : m.listingType === 'rent' ? 'For rent' : 'For sale',
-      ttl: m.title || '',
-      loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || ''),
-      score: Number(m.trustScore) || 0,
-      match: Number(m.fitScore) > 0 && Number(m.fitScore) <= 100 ? Math.round(Number(m.fitScore)) : null,
-      why: m.why ? '<b>Why:</b> ' + esc(m.why) : '',
-    });
+    const cvMapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
 
     function renderCanvas() {
-      const items = canvasMatches.map(cvItem);
+      const items = canvasMatches.map(SynMatches.shapeTojuMatch);
       cvCount.textContent = items.length;
       document.body.classList.toggle('has-canvas', items.length > 0);
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
-      cvGrid.innerHTML = items.map((l, i) => `
-        <div class="card listing" data-id="${l.id}">
-          <div class="body">
-            <div class="tags">
-              ${verifyChip(l.vstatus)}
-              ${l.match ? `<span class="match">${l.match}% match</span>` : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`}
-            </div>
-            <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
-            <div class="ttl">${esc(l.ttl)}</div>
-            <div class="loc">${esc(l.loc)}</div>
-            ${l.why ? `<div class="why">${l.why}</div>` : ''}
-            <div class="score"><span class="ring">${l.score}</span> Trust score</div>
-          </div>
-          <div class="img">
-            <img src="${l.img}" alt="" />
-            <div class="save${cvSaves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${cvSaves.has(l.id) ? '♥' : '♡'}</div>
-          </div>
-        </div>`).join('');
-      drawCvMap(items);
+      cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');
+      SynMatches.drawMatchMap(cvMapState, 'cvMap', items);
       if (window.synMotion) synMotion.refresh();
-    }
-    function drawCvMap(items) {
-      if (!window.L) return;
-      if (!cvLMap) {
-        cvLMap = L.map('cvMap', { scrollWheelZoom: false });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
-        }).addTo(cvLMap);
-        cvMarkers = L.layerGroup().addTo(cvLMap);
-      }
-      cvMarkers.clearLayers();
-      const pts = [];
-      items.forEach((l, i) => {
-        const c = coords(l.loc, i);
-        pts.push(c);
-        L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
-          .addTo(cvMarkers)
-          .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Trust ${l.score}`);
-      });
-      // the canvas may have just morphed in from display:none — re-measure
-      setTimeout(() => { cvLMap.invalidateSize(); if (pts.length) cvLMap.fitBounds(L.latLngBounds(pts).pad(0.35)); }, 80);
     }
     cvGrid.addEventListener('click', (e) => {
       const sv = e.target.closest('[data-save]');
@@ -402,12 +328,6 @@
     }
 
 
-    const naira = (n) => {
-      n = Number(n) || 0;
-      if (n >= 1e9) return '₦' + (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 1) + 'B';
-      if (n >= 1e6) return '₦' + Math.round(n / 1e6) + 'M';
-      return '₦' + n.toLocaleString();
-    };
     function matchesHtml(matches) {
       if (!Array.isArray(matches) || matches.length === 0) return '';
       const cards = matches.map((m) => {

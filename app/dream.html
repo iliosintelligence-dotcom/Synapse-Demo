@@ -216,9 +216,9 @@
     document.getElementById('newBoardBtn').addEventListener('click', createBoard);
 
     function createBoard() {
-      const name = (prompt('Name your new board', 'New board') || '').trim();
-      if (name === null) return;
-      const b = { id: uid(), name: name || 'New board', vibe: [], images: [] };
+      const raw = prompt('Name your new board', 'New board');
+      if (raw === null) return; // cancelled — don't create an empty board
+      const b = { id: uid(), name: raw.trim() || 'New board', vibe: [], images: [] };
       state.boards.push(b); saveState();
       openBoard(b.id);
     }
@@ -245,6 +245,9 @@
       if (!confirm('Delete this board? Its pins will be removed.')) return;
       state.boards = state.boards.filter((b) => b.id !== state.activeId);
       if (state.boards.length === 0) state.boards.push({ id: uid(), name: 'My dream home', vibe: [], images: [] });
+      // the deleted board must stop informing Toju — clear the mirror until
+      // the visitor opens another board (which re-mirrors it)
+      try { localStorage.removeItem(MIRROR); } catch (e) {}
       saveState(); toHome();
     });
 
@@ -312,8 +315,12 @@
     document.getElementById('addUrlBtn').addEventListener('click', addUrl);
     document.getElementById('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUrl(); });
 
-    // boot — deep link ?board=<id> opens it, else the boards home
+    // boot — deep link ?board=<id> opens it, else the boards home.
+    // Re-mirror the last-active board so synapse_moodboard_v1 (what Toju
+    // reads) is always in step with the boards store, even after edits made
+    // in another tab or an interrupted session.
     saveState();
+    if (activeBoard()) mirror();
     const deep = new URLSearchParams(location.search).get('board');
     if (deep && state.boards.some((b) => b.id === deep)) openBoard(deep);
     else renderHome();
