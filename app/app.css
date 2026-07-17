@@ -1,6 +1,7 @@
 /* Synapse app — shared styles for the clickable browser prototype.
-   White VisionOS surfaces, brand orange accent, Inter + Fraunces. These
-   mirror the real @synapse/ui screens so the flow can be clicked through. */
+   White VisionOS surfaces, brand orange accent, EB Garamond + Lato (Google
+   Fonts, loaded per-page <link>). These mirror the real @synapse/ui screens
+   so the flow can be clicked through. */
 :root {
   --brand: #FF7B2C;
   --brand-dim: #E86B1A;
@@ -15,12 +16,17 @@
   --gold: #9c7a1e;
   --radius: 22px;
   --radius-sm: 14px;
-  --f-sans: 'Inter', system-ui, sans-serif;
-  --f-serif: 'Fraunces', Georgia, serif;
+  --f-sans: 'Lato', system-ui, sans-serif;
+  --f-serif: 'EB Garamond', Georgia, serif;
+  --f-accent: 'Lato', system-ui, sans-serif; /* all-caps eyebrows/kickers/chips:
+                                                Lato 700, uppercase, +0.14em — a recipe, not a face */
+  --brand-text: #A64420; /* terracotta for small text on --bg — 5.3:1, AA */
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--f-sans);
+  font-size: 15px;
+  line-height: 1.6;
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -59,8 +65,8 @@ a { color: inherit; text-decoration: none; }
 .phone { max-width: 440px; }
 
 /* Headings */
-.h1 { font-family: var(--f-serif); font-weight: 300; font-size: 34px; letter-spacing: -0.02em; }
-.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brand); }
+.h1 { font-family: var(--f-serif); font-weight: 500; font-size: 37px; line-height: 1.12; letter-spacing: -0.01em; }
+.eyebrow { font-family: var(--f-accent); font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; line-height: 1.2; text-transform: uppercase; color: var(--brand-text); }
 .muted { color: var(--ink-muted); }
 .dim { color: var(--ink-dim); }
 
@@ -78,7 +84,7 @@ a { color: inherit; text-decoration: none; }
 /* Buttons */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--f-sans); font-weight: 600; font-size: 14px;
+  font-family: var(--f-sans); font-weight: 700; font-size: 14px;
   padding: 13px 22px; border-radius: 100px; border: none; cursor: pointer;
   transition: all .25s;
 }
@@ -91,7 +97,7 @@ a { color: inherit; text-decoration: none; }
 /* Trust chip */
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 100px;
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;
 }
 .chip-pass { background: rgba(46,125,79,0.1); color: var(--success); border: 1px solid rgba(46,125,79,0.2); }
 .chip-pending { background: rgba(176,125,43,0.1); color: #a8742b; border: 1px solid rgba(176,125,43,0.2); }
