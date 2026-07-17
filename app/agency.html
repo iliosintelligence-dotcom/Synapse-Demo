@@ -457,6 +457,10 @@
     .tp-line .d { color: var(--brand); flex: none; }
     .tp-reco { margin-top: 12px; font-size: 13px; line-height: 1.6; background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.2); border-radius: 12px; padding: 12px 14px; }
     .tp-reco b { color: var(--brand); }
+    .tp-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tp-stats .stat { padding: 13px 14px; }
+    .tp-stats .stat .v { font-size: 23px; }
+    .tp-stats .statspark { margin-top: 6px; }
     @media (max-width: 560px){ .tpanel { max-width: 100%; } }
 
     @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
@@ -502,9 +506,7 @@
           <div class="h1">Overview</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Your agency at a glance — leads, listings, and what needs you today.</p>
 
-          <div class="stats" id="ovstats"></div>
-
-          <div class="two" style="margin-top:16px">
+          <div class="two">
             <div class="card" style="padding:18px 20px">
               <div class="h2" style="margin:0 0 12px">Pipeline funnel</div>
               <div class="funnel">
@@ -542,7 +544,6 @@
           <div class="h1">CRM</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Every inquiry that touches Synapse — newest first, in real time.</p>
 
-          <div class="stats" id="crmstats"></div>
 
           <div class="card lead-banner">
             <span data-lottie="lead-arrived" data-loop="false" style="width:50px;height:40px"></span>
@@ -603,9 +604,7 @@
             </div>
             <button class="btn btn-primary" id="newCampBtn">+ New campaign</button>
           </div>
-          <div class="stats" style="margin-top:18px" id="mkstats"></div>
-
-          <div class="h2" style="margin-top:22px">Campaigns</div>
+          <div class="h2">Campaigns</div>
           <p class="sub" style="margin-bottom:12px">Each creative is tracked on its own. Winners scale automatically; losers are paused by the AI.</p>
           <div id="campaigns"></div>
         </section>
@@ -635,8 +634,7 @@
             </div>
             <button class="btn btn-primary" id="newListingBtn">+ New listing</button>
           </div>
-          <div class="stats" style="margin-top:18px" id="lstats"></div>
-          <div class="lgrid" id="lgrid"></div>
+          <div class="lgrid" id="lgrid" style="margin-top:20px"></div>
         </section>
 
         <!-- ══ AGENTS ══ -->
@@ -649,8 +647,7 @@
             </div>
             <button class="btn btn-primary">+ Invite agent</button>
           </div>
-          <div class="stats" style="margin-top:18px" id="agstats"></div>
-          <div class="two" style="margin-top:16px">
+          <div class="two" style="margin-top:20px">
             <div class="card" style="padding:18px 20px">
               <div class="h2" style="margin:0 0 12px">Closed deals · this quarter</div>
               <div class="hbars" id="agClosed"></div>
@@ -916,6 +913,9 @@
     const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
     const nairaM = v => '₦' + v + 'M';
 
+    // Per-pane snapshot stats now live in the Ask-Toju panel, not on the pages.
+    const STATS = {};
+
     function toast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg; t.classList.add('on');
@@ -929,12 +929,13 @@
     }
     function renderListings() {
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
-      document.getElementById('lstats').innerHTML = [
+      STATS.listings = [
         [LISTINGS_DATA.length, 'Total'],
         [LISTINGS_DATA.filter(l => l.st === 'verified').length, 'Verified'],
         [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
         [exp, 'Expired — re-list'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+      if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
       document.getElementById('lgrid').innerHTML = LISTINGS_DATA.map((l, i) => {
         const f = freshness(l);
         return `
@@ -1060,11 +1061,12 @@
       const spend = CAMPAIGNS.reduce((s, c) => s + c.spend, 0);
       const leads = ads.reduce((s, a) => s + a.leads, 0);
       const best = ads.length ? Math.max(...ads.map(a => a.ctr)) : 0;
-      document.getElementById('mkstats').innerHTML = [
+      STATS.marketing = [
         [live, 'Active campaigns'], ['₦' + spend + 'k', 'Ad spend this month'],
         [leads ? '₦' + Math.round(spend * 1000 / leads).toLocaleString() : '—', 'Cost per lead'],
         [best.toFixed(1) + '%', 'Best creative CTR'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+      if (typeof refreshTojuPanel === 'function') refreshTojuPanel('marketing');
     }
     const INSIGHTS = [
       { pct: '+41%', tx: 'Creatives showing the <b>✓ Verified badge</b> earn 41% higher CTR than those without it.', act: 'Add badge to all' },
@@ -1228,12 +1230,12 @@
     const WKS = ['7 wks ago', '6 wks ago', '5 wks ago', '4 wks ago', '3 wks ago', '2 wks ago', 'Last week', 'This week'];
 
     // ── overview + CRM stat tiles (hero number + 8-week trend) ──
-    document.getElementById('ovstats').innerHTML =
+    STATS.overview =
       statTile(5, 'Active leads', [3, 4, 4, 6, 5, 7, 6, 5]) +
       statTile(34, 'Viewings booked', [2, 3, 4, 5, 4, 6, 5, 5]) +
       statTile(9, 'Won this quarter', [0, 1, 1, 2, 1, 2, 1, 1]) +
       statTile('₦2.4B', 'Sales value', [1.1, 1.3, 1.4, 1.7, 1.8, 2.0, 2.2, 2.4]);
-    document.getElementById('crmstats').innerHTML =
+    STATS.crm =
       statTile(128, 'Leads', [9, 11, 14, 12, 16, 18, 17, 19]) +
       statTile(34, 'Viewings', [2, 3, 4, 5, 4, 6, 5, 5]) +
       `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(7, { label: '7%' })}</div></div>` +
@@ -1263,7 +1265,7 @@
         recent: [['2-Bed Flat, Victoria Island', '₦142M · re-listed']] },
     ];
     const first = n => n.split(' ')[0];
-    document.getElementById('agstats').innerHTML =
+    STATS.agents =
       statTile(AGENTS.length, 'Agents', null) +
       statTile(Math.round(AGENTS.reduce((s, a) => s + a.respM, 0) / AGENTS.length) + 'm', 'Avg first reply', [11, 10, 9, 9, 8, 8, 8, 8]) +
       statTile(AGENTS.reduce((s, a) => s + a.active, 0), 'Active leads', [22, 25, 27, 26, 30, 32, 33, 34]) +
@@ -1691,13 +1693,23 @@
           'Accelerator unlocks 48h verification + auto-syndication.',
         ], 'Upgrade to Accelerator — the marketing automation alone should return the fee in one sale.') },
     };
+    const snapshotHTML = (pane) => STATS[pane]
+      ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
     function openToju() {
-      const cfg = PANEL[currentPane()] || PANEL.overview;
+      const pane = currentPane();
+      const cfg = PANEL[pane] || PANEL.overview;
       document.getElementById('tpTitle').textContent = cfg.title;
       document.getElementById('tpSub').textContent = cfg.sub;
-      tpBody.innerHTML = cfg.html();
+      tpBody.innerHTML = snapshotHTML(pane) + cfg.html();
       if (cfg.after) cfg.after();
       tpScrim.classList.add('on'); tpanel.classList.add('on'); document.body.classList.add('tpanel-open');
+    }
+    // keep the open panel's snapshot fresh when listings/marketing stats change
+    function refreshTojuPanel(pane) {
+      const p = document.getElementById('tpanel');
+      if (!p || !p.classList.contains('on')) return;
+      const a = document.querySelector('#tabs a.on');
+      if (a && a.dataset.pane === pane) openToju();
     }
     function closeToju() { tpScrim.classList.remove('on'); tpanel.classList.remove('on'); document.body.classList.remove('tpanel-open'); }
     document.getElementById('tojuFab').addEventListener('click', openToju);
