@@ -7,7 +7,7 @@ Synapse is an **AI-powered real-estate platform for Nigeria**, built around two 
 - **Buyers / renters (consumer):** talk to **Toju**, an AI property advisor, who understands their life and surfaces **verified** homes. Trust/verification is the core product promise ("no ghost listings").
 - **Agencies / developers (business):** an **Agency Operating System** — CRM, AI social syndication, an AI ad studio, Toju-as-negotiator, listings with a 14-day freshness/re-list rule, verification desk, agents, subscription. Positioned as a **revenue platform**, not "a CRM."
 
-Brand: warm off-white (#f7efe7), terracotta accent (#FF7B2C / #C2552B), glassmorphism. Display font **Restaglick** (licensed — demo/personal-use file only, needs commercial license), accent all-caps **Bromolek**, body **Inter**. Files in `Synapse/fonts/`.
+Brand (CANONICAL — decided by Dr. David 2026-07-17, do not re-litigate): **warm off-white `#f7efe7`, terracotta accent `#FF7B2C` / `#C2552B`, glassmorphism**. This supersedes the earlier "white/calm-premium" and "dark charcoal/emerald" directions — anywhere a page still uses those, it should migrate to this. Display font **Restaglick** (licensed — demo/personal-use file only, needs commercial license), accent all-caps **Bromolek**, body **Inter**. Files in `Synapse/fonts/`.
 
 ## Repos & architecture (IMPORTANT)
 Two sibling git repos under `…/Synapses/`:
