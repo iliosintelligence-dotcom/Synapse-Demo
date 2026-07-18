@@ -145,6 +145,79 @@
     .pcard .m b { color: var(--ink); }
     .pcard .rsn { font-size: 10.5px; color: var(--gold); line-height: 1.4; margin-top: 8px; }
 
+    /* ══════ Social studio: bento overview · view switcher · kanban + calendar ══════ */
+    .chan .st { font-size: 12px; }
+    .chan .tog { width: 42px; height: 24px; transition: background .2s; }
+    .chan .tog::after { top: 2px; left: 20px; right: auto; width: 20px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left .24s cubic-bezier(0.34,1.56,0.64,1); }
+    .chan .tog.off::after { left: 2px; right: auto; }
+    .s-bento { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 18px 0 6px; }
+    .s-tile { padding: 15px 18px; border-radius: 16px; background: linear-gradient(135deg,rgba(255,255,255,0.86),rgba(255,251,246,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.08); text-align: left; }
+    button.s-tile { cursor: pointer; transition: transform .16s, box-shadow .16s; display: block; width: 100%; }
+    button.s-tile:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(122,62,22,0.13); }
+    .s-tile .k { font: 700 12px var(--f-sans); color: var(--ink-muted); }
+    .s-tile .v { font: 600 32px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; line-height: 1.05; margin-top: 5px; }
+    .s-tile .cap { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
+    .s-tile .cbar { height: 3px; border-radius: 3px; background: rgba(0,0,0,0.06); margin-top: 9px; overflow: hidden; }
+    .s-tile .cbar i { display: block; height: 100%; background: linear-gradient(90deg,#C2552B,#FF7B2C); border-radius: 3px; transition: width .7s ease; }
+    .s-tile .chdots { display: flex; gap: 5px; margin-top: 9px; }
+    .s-tile .cd { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 8px var(--f-sans); color: #fff; }
+    .s-tile .cd.off { opacity: .26; }
+    .s-tile .rvw { font: 700 10.5px var(--f-sans); letter-spacing: .04em; text-transform: uppercase; color: #7a5410; background: var(--warn-tint); border-radius: 100px; padding: 3px 9px; display: inline-block; margin-top: 8px; }
+    .s-mini { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 10px; }
+    .s-mini .d { text-align: center; }
+    .s-mini .d .lbl { font: 700 9px var(--f-sans); color: var(--ink-dim); }
+    .s-mini .d .cell { height: 20px; border-radius: 5px; background: rgba(0,0,0,0.04); margin-top: 3px; display: flex; align-items: center; justify-content: center; gap: 2px; }
+    .s-mini .d.today .cell { background: rgba(255,123,44,0.16); }
+    .s-mini .pd { width: 5px; height: 5px; border-radius: 50%; background: var(--brand-deep); }
+    .s-work-hd { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 26px 0 10px; flex-wrap: wrap; }
+    .s-work-hd .h2 { margin: 0; }
+    .chavs { display: flex; align-items: center; margin-top: 9px; }
+    .chavs .cav { width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 9px var(--f-sans); color: #fff; border: 2px solid var(--surface); margin-left: -6px; flex: none; }
+    .chavs .cav:first-child { margin-left: 0; }
+    .chavs .reach { font-size: 12px; color: var(--ink-muted); margin-left: 9px; }
+    .col { min-width: 214px; transition: background .16s, box-shadow .16s; }
+    .col.drop { background: rgba(255,123,44,0.06); box-shadow: inset 0 0 0 2px var(--brand-deep); }
+    .col .ch .w { font-size: 11px; }
+    .pcard { padding: 11px; cursor: grab; transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .pcard:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(20,26,38,0.1); border-color: rgba(255,123,44,0.3); }
+    .pcard.dragging { opacity: .5; cursor: grabbing; }
+    .pcard.justpub { animation: pubPulse .6s ease-out; }
+    @keyframes pubPulse { 0% { box-shadow: 0 0 0 0 rgba(255,123,44,0.5); } 100% { box-shadow: 0 0 0 22px rgba(255,123,44,0); } }
+    .pcard .ptop { align-items: center; }
+    .pcard .ptop img { width: 40px; height: 40px; }
+    .pcard .ptop .t { font-size: 12.5px; font-weight: 700; }
+    .pcard .ptop .p { font: 600 13px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; margin-top: 1px; }
+    .pcard .cap { font-size: 12px; -webkit-line-clamp: 3; }
+    .pcard .w { font-size: 12px; color: var(--ink); font-weight: 600; }
+    .pcard .tick { color: var(--success); font-weight: 800; }
+    .pcard .act { padding: 8px; font: 700 12px var(--f-sans); margin-top: 10px; }
+    .pcard .act.pri { background: var(--brand-deep); }
+    .pcard .gen { font-size: 12px; }
+    .pcard .skel { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .pcard .skel span { height: 9px; border-radius: 5px; background: linear-gradient(90deg,rgba(0,0,0,0.05) 25%,rgba(0,0,0,0.09) 37%,rgba(0,0,0,0.05) 63%); background-size: 400% 100%; animation: shimmer 1.3s ease infinite; }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+    .pcard .m { font-size: 12px; margin-top: 9px; }
+    .pcard .m b { font-size: 13px; }
+    .pcard .rsn { font-size: 12px; color: #7a5410; }
+    .s-cal { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; margin-top: 4px; }
+    .s-cal .cday { background: rgba(0,0,0,0.015); border: 1px solid var(--border); border-radius: 14px; padding: 10px; min-height: 150px; }
+    .s-cal .cday.today { border-color: rgba(255,123,44,0.4); background: rgba(255,123,44,0.04); }
+    .s-cal .dh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+    .s-cal .dh .dn { font: 700 12px var(--f-sans); color: var(--ink-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .s-cal .dh .dd { font: 600 15px var(--f-serif); color: var(--ink); }
+    .s-cal .cev { border-radius: 9px; padding: 8px; margin-bottom: 7px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(20,26,38,0.05); cursor: pointer; transition: transform .14s; }
+    .s-cal .cev:hover { transform: translateY(-2px); border-color: rgba(255,123,44,0.3); }
+    .s-cal .cet { font: 600 11.5px var(--f-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .s-cal .cem { display: flex; align-items: center; gap: 4px; margin-top: 5px; }
+    .s-cal .cew { font-size: 10.5px; color: var(--ink-dim); }
+    .s-cal .cempty { font-size: 11px; color: var(--ink-dim); text-align: center; padding-top: 8px; }
+    @media (max-width: 900px){ .s-bento { grid-template-columns: repeat(2,1fr); } .s-cal { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 560px){ .s-bento { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce){
+      .chan .tog::after, button.s-tile, .s-tile .cbar i, .pcard, .s-cal .cev { transition: none; }
+      .pcard.justpub, .pcard .skel span, .spin { animation: none; }
+    }
+
     /* marketing */
     .camp { display: flex; align-items: center; gap: 16px; padding: 16px 18px; margin-bottom: 12px; }
     .camp .ic { width: 42px; height: 42px; border-radius: 13px; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; }
@@ -913,6 +986,8 @@
             <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px">✨ New post</button>
           </div>
 
+          <div class="s-bento" id="socialBento"></div>
+
           <div class="channels">
             <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">@prestigerealty · connected</div></div><div class="tog"></div></div>
             <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">@prestige.lagos · connected</div></div><div class="tog"></div></div>
@@ -920,9 +995,18 @@
             <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
           </div>
 
-          <div class="h2">Content pipeline</div>
-          <p class="sub" style="margin-bottom:4px">Every verified listing flows left → right. Upload triggers GPT-4o captioning, you approve once, and Synapse auto-publishes to the connected platforms.</p>
+          <div class="s-work-hd">
+            <div>
+              <div class="h2">Content pipeline</div>
+              <p class="sub" style="margin:0">Every verified listing flows through — upload triggers AI captioning, you approve once, Synapse publishes everywhere.</p>
+            </div>
+            <div class="seg" id="socialView">
+              <button class="seg-b on" data-sv="pipeline">▤ Pipeline</button>
+              <button class="seg-b" data-sv="calendar">▦ Calendar</button>
+            </div>
+          </div>
           <div class="pipeline" id="pipeline"></div>
+          <div class="s-cal" id="calendar" style="display:none"></div>
         </section>
 
         <!-- ══ MARKETING ══ -->
@@ -1329,25 +1413,70 @@
     const CHR = { instagram: 3200, tiktok: 8600, facebook: 1500, whatsapp: 900 };
     const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
 
+    const sReduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sHash = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
+    function countUp(el, to, dur) {
+      dur = dur || 700;
+      if (sReduce()) { el.textContent = fmt(to); return; }
+      const start = performance.now();
+      const tick = t => { const k = Math.min(1, (t - start) / dur); const e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(Math.round(to * e)); if (k < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+      setTimeout(() => { el.textContent = fmt(to); }, dur + 140); // guarantee the final value even if rAF is throttled
+    }
+    const chavRow = p => p.channels.length
+      ? `<div class="chavs">${p.channels.map(c => `<span class="cav" style="background:${CH[c].color}">${CH[c].short}</span>`).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>`
+      : '';
     function pcard(p, stage){
-      const chans = p.channels.length ? `<div class="pmeta">${p.channels.map(chnBadge).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>` : '';
       let body = '';
       if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
-      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> GPT-4o writing…</div>`;
+      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> GPT-4o writing…</div><div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>`;
       else if (stage === 'approval') body = `<div class="cap">${p.caption || ''}</div><button class="act pri" data-act="approve" data-id="${p.id}">Approve &amp; schedule</button>`;
-      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:6px">${p.when || ''}</div><button class="act ok" data-act="publish" data-id="${p.id}">Publish now</button>`;
-      else if (stage === 'published' && p.metrics) body = `<div class="m"><span><b>${fmt(p.metrics.views)}</b> views</span><span><b>${p.metrics.dms}</b> DMs</span><span><b>${p.metrics.leads}</b> leads</span></div>`;
+      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:8px">🕑 ${p.when || ''}</div><button class="act ok" data-act="publish" data-id="${p.id}">Publish now</button>`;
+      else if (stage === 'published') body = `<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">✓</span> Live</div>${p.metrics ? `<div class="m"><span><b>${fmt(p.metrics.views)}</b> views</span><span><b>${p.metrics.dms}</b> DMs</span><span><b>${p.metrics.leads}</b> leads</span></div>` : ''}`;
       else if (stage === 'underperforming') body = `<div class="rsn">${p.rsn || ''}</div><button class="act gh" data-act="approve" data-id="${p.id}">Regenerate variation</button>`;
-      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}"><div class="ptop"><img src="${p.img}" alt=""><div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chans}${body}</div>`;
+      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop"><img src="${p.img}" alt=""><div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
     }
     function renderPipeline(){
       const el = document.getElementById('pipeline'); if (!el) return;
       el.innerHTML = PSTAGES.map(s => {
         const col = posts.filter(p => p.stage === s.id);
-        return `<div class="col"><div class="ch"><div><div class="t">${s.label}</div><div class="w">${s.who}</div></div><span class="ct">${col.length}</span></div>
-          ${col.map(p => pcard(p, s.id)).join('') || '<div class="w" style="text-align:center;padding:14px 0">—</div>'}</div>`;
+        return `<div class="col" data-stage="${s.id}"><div class="ch"><div><div class="t">${s.label}</div><div class="w">${s.who}</div></div><span class="ct">${col.length}</span></div>
+          ${col.map(p => pcard(p, s.id)).join('') || '<div class="w" style="text-align:center;padding:14px 0;color:var(--ink-dim)">—</div>'}</div>`;
       }).join('');
     }
+    // ── bento overview strip ──
+    function renderBento(){
+      const el = document.getElementById('socialBento'); if (!el) return;
+      const reach = posts.filter(p => p.stage === 'published').reduce((s, p) => s + (p.reach || 0), 0);
+      const approvals = posts.filter(p => p.stage === 'approval').length;
+      const chOrder = ['instagram','tiktok','facebook','whatsapp'];
+      const togs = [...document.querySelectorAll('.channels .tog')];
+      const chState = chOrder.map((c, i) => ({ c, on: togs[i] ? !togs[i].classList.contains('off') : true }));
+      const conn = chState.filter(s => s.on).length;
+      const ti = (new Date().getDay() + 6) % 7, days = ['M','T','W','T','F','S','S'];
+      const perDay = [0,0,0,0,0,0,0];
+      posts.forEach(p => { if (p.stage === 'scheduled' || p.stage === 'published') { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; perDay[di]++; } });
+      el.innerHTML =
+        `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
+         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/4</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${CH[s.c].short}</span>`).join('')}</div></div>
+         <div class="s-tile"><div class="k">This week</div><div class="s-mini">${days.map((d, i) => `<div class="d ${i === ti ? 'today' : ''}"><div class="lbl">${d}</div><div class="cell">${'<span class="pd"></span>'.repeat(Math.min(3, perDay[i]))}</div></div>`).join('')}</div></div>
+         <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} posts awaiting approval"><div class="k">Needs approval</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
+      const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
+    }
+    // ── calendar view ──
+    function renderCalendar(){
+      const el = document.getElementById('calendar'); if (!el) return;
+      const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], base = new Date(), ti = (base.getDay() + 6) % 7;
+      const nums = [], buckets = [[],[],[],[],[],[],[]];
+      for (let i = 0; i < 7; i++) { const dt = new Date(base); dt.setDate(base.getDate() - ti + i); nums.push(dt.getDate()); }
+      posts.forEach(p => { if (['scheduled','published','underperforming'].includes(p.stage)) { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; buckets[di].push(p); } });
+      el.innerHTML = names.map((dn, i) => `
+        <div class="cday ${i === ti ? 'today' : ''}">
+          <div class="dh"><span class="dn">${dn}</span><span class="dd">${nums[i]}</span></div>
+          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${CH[c].short}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : '<div class="cempty">—</div>'}
+        </div>`).join('');
+    }
+    // pipeline actions
     document.getElementById('pipeline').addEventListener('click', (e) => {
       const b = e.target.closest('[data-act]'); if (!b) return;
       const p = posts.find(x => x.id === b.dataset.id); if (!p) return;
@@ -1357,13 +1486,51 @@
           p.stage = 'approval';
           if (!p.channels.length) p.channels = ['instagram','tiktok','facebook'];
           p.caption = 'Verified ' + p.listing.split(',')[0] + ' · ' + p.price + '. Seven checks, zero surprises — DM ‘REPORT’ for the full verification ✦';
-          p.reach = estReach(p.channels); renderPipeline();
+          p.reach = estReach(p.channels); renderPipeline(); renderBento();
         }, 1400);
-      } else if (b.dataset.act === 'approve') { p.stage = 'scheduled'; p.when = p.when || 'Today 5:00 PM'; renderPipeline(); }
-      else if (b.dataset.act === 'publish') { p.stage = 'published'; const r = p.reach || estReach(p.channels); p.metrics = p.metrics || { views: r, dms: Math.round(r*0.0022), leads: Math.round(r*0.0007) }; p.when = 'Just now'; renderPipeline(); }
+      } else if (b.dataset.act === 'approve') { p.stage = 'scheduled'; p.when = p.when || 'Today 5:00 PM'; renderPipeline(); renderBento(); }
+      else if (b.dataset.act === 'publish') {
+        p.stage = 'published'; const r = p.reach || estReach(p.channels);
+        p.metrics = p.metrics || { views: r, dms: Math.round(r * 0.0022), leads: Math.round(r * 0.0007) };
+        p.when = 'Just now'; p._justpub = true; renderPipeline(); renderBento();
+        setTimeout(() => { delete p._justpub; }, 700);
+      }
       if (window.synMotion) synMotion.refresh();
     });
+    // view switcher: pipeline ⇄ calendar
+    document.getElementById('socialView').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sv]'); if (!b) return;
+      document.querySelectorAll('#socialView .seg-b').forEach(x => x.classList.toggle('on', x === b));
+      const cal = b.dataset.sv === 'calendar';
+      document.getElementById('pipeline').style.display = cal ? 'none' : 'flex';
+      document.getElementById('calendar').style.display = cal ? 'grid' : 'none';
+      if (cal) renderCalendar();
+    });
+    // bento "needs approval" jumps to the approval column
+    document.getElementById('socialBento').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sv-jump]'); if (!b) return;
+      document.querySelector('#socialView [data-sv="pipeline"]').click();
+      document.getElementById('pipeline').scrollIntoView({ behavior: sReduce() ? 'auto' : 'smooth', block: 'nearest' });
+    });
+    // drag a post card between stages
+    (function(){
+      const pipe = document.getElementById('pipeline'); let dragId = null;
+      pipe.addEventListener('dragstart', e => { const c = e.target.closest('.pcard'); if (!c) return; dragId = c.dataset.pid; c.classList.add('dragging'); if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'; });
+      pipe.addEventListener('dragend', () => { pipe.querySelectorAll('.pcard.dragging').forEach(x => x.classList.remove('dragging')); pipe.querySelectorAll('.col.drop').forEach(x => x.classList.remove('drop')); dragId = null; });
+      pipe.addEventListener('dragover', e => { const col = e.target.closest('.col'); if (!col || !dragId) return; e.preventDefault(); pipe.querySelectorAll('.col.drop').forEach(x => { if (x !== col) x.classList.remove('drop'); }); col.classList.add('drop'); });
+      pipe.addEventListener('drop', e => {
+        const col = e.target.closest('.col'); if (!col || !dragId) return; e.preventDefault();
+        const stage = col.dataset.stage, p = posts.find(x => x.id === dragId);
+        if (p && stage && p.stage !== stage) {
+          p.stage = stage;
+          if (stage === 'published' && !p.metrics) { const r = p.reach || estReach(p.channels); p.metrics = { views: r, dms: Math.round(r * 0.0022), leads: Math.round(r * 0.0007) }; }
+          renderPipeline(); renderBento();
+        }
+        col.classList.remove('drop');
+      });
+    })();
     renderPipeline();
+    renderBento();
 
     // ── listings — editable, with the 14-day freshness rule ──
     // Every listing must be re-listed every 14 days or it stops showing to
@@ -2606,7 +2773,7 @@
     });
 
     // simple toggles in social studio
-    document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => t.classList.toggle('off')));
+    document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
   </script>
   <script src="motion.js"></script>
 </body>
