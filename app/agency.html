@@ -587,8 +587,45 @@
     .ad.gen .in { text-align: center; font-size: 11px; color: var(--brand); font-weight: 600; }
     .campaign .cft { display: flex; gap: 8px; margin-top: 13px; }
     .campaign .cft button { border: none; border-radius: 100px; padding: 8px 15px; font: 600 12px var(--f-sans); cursor: pointer; }
-    .campaign .cft .gen2 { background: var(--brand); color: #fff; }
+    .campaign .cft .gen2 { background: var(--brand-deep); color: #fff; }
     .campaign .cft .tgl { background: rgba(0,0,0,0.05); color: var(--ink); }
+    /* AA + legibility fixes on the existing creative tiles */
+    .campaign .chd .bdg { font-size: 11.5px; }
+    .ad .st2 { font-size: 11px; }
+    .ad .met { font-size: 12px; }
+    .ad.gen .in { color: var(--brand-text); }
+
+    /* ── creative leaderboard (Marketing) ── */
+    .lbrow { position: relative; display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px 12px 12px; margin-bottom: 10px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .lbrow:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(20,26,38,0.1); border-color: rgba(255,123,44,0.3); }
+    .lbrow.win { border-color: rgba(201,162,39,0.5); box-shadow: 0 12px 30px rgba(201,162,39,0.16); }
+    .lbrow.dim { opacity: .62; }
+    .lbribbon { position: absolute; top: -9px; left: 44px; font: 700 10px var(--f-sans); letter-spacing: .04em; text-transform: uppercase; color: #fff; background: linear-gradient(135deg,#e0b64a,#c9a227); padding: 3px 10px; border-radius: 100px; overflow: hidden; }
+    .lbribbon::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.65) 50%, transparent 70%); background-size: 220% 100%; animation: ribbonShine 2.6s ease infinite; }
+    @keyframes ribbonShine { 0% { background-position: 130% 0; } 100% { background-position: -130% 0; } }
+    .lbrank { width: 26px; text-align: center; font: 600 22px var(--f-serif); font-variant-numeric: lining-nums; flex: none; }
+    .lbthumb { width: 54px; height: 54px; border-radius: 12px; overflow: hidden; flex: none; }
+    .lbthumb img { width: 100%; height: 100%; object-fit: cover; }
+    .lbmid { flex: 1; min-width: 0; }
+    .lbhl { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lbsub { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    .lbcamp { font-size: 12px; color: var(--ink-muted); }
+    .lbst { font: 700 11px var(--f-sans); padding: 2px 9px; border-radius: 100px; }
+    .lbst.scaling { color: var(--success); background: var(--success-tint); }
+    .lbst.learning { color: #7a5410; background: var(--warn-tint); }
+    .lbst.pausedai { color: var(--ink-dim); background: rgba(0,0,0,0.05); }
+    .lbperf { text-align: right; flex: none; }
+    .lbspark { height: 26px; }
+    .lbctr { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+    .lbctr b { font: 600 15px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; }
+    .lbleads { text-align: center; flex: none; min-width: 46px; }
+    .lbleads b { font: 600 17px var(--f-serif); color: var(--ink); display: block; font-variant-numeric: lining-nums; }
+    .lbleads span { font-size: 11px; color: var(--ink-dim); }
+    .lbscale { flex: none; border: 1px solid var(--border-strong); background: rgba(255,255,255,0.7); color: var(--brand-deep); font: 700 12px var(--f-sans); border-radius: 100px; padding: 8px 14px; cursor: pointer; opacity: 0; transform: translateX(6px); transition: opacity .16s, transform .16s, background .16s, color .16s; }
+    .lbrow:hover .lbscale, .lbrow:focus-within .lbscale { opacity: 1; transform: none; }
+    .lbscale:hover { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
+    @media (max-width: 760px){ .lbspark, .lbleads span { display: none; } .lbscale { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce){ .lbrow, .lbscale { transition: none; } .lbribbon::after { animation: none; } }
 
     /* ── persistent Ask-Toju button + context panel ── */
     .toju-fab { position: fixed; right: 26px; bottom: 26px; z-index: 78; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; cursor: pointer;
@@ -1038,9 +1075,18 @@
             </div>
             <button class="btn btn-primary" id="newCampBtn">+ New campaign</button>
           </div>
-          <div class="h2">Campaigns</div>
-          <p class="sub" style="margin-bottom:12px">Each creative is tracked on its own. Winners scale automatically; losers are paused by the AI.</p>
-          <div id="campaigns"></div>
+          <div class="crm-tools" style="margin-top:18px">
+            <div class="crm-tools-l">
+              <div class="seg" id="mkView">
+                <button class="seg-b on" data-mv="board">🏆 Leaderboard</button>
+                <button class="seg-b" data-mv="campaigns">▤ Campaigns</button>
+              </div>
+              <button class="tbtn" id="mkSort">↕ Sort: CTR</button>
+            </div>
+          </div>
+          <p class="sub" id="mkBoardSub" style="margin:0 0 12px">Every creative across your campaigns, ranked by performance. Winners scale; the AI pauses the losers.</p>
+          <div id="mkBoard"></div>
+          <div id="campaigns" style="display:none"></div>
         </section>
 
         <!-- ══ TOJU NEGOTIATOR ══ -->
@@ -2008,6 +2054,9 @@
           </div>
         </div>`).join('');
       mkStats();
+      // refresh the leaderboard on any campaign change; guarded because the first
+      // renderCampaigns() runs before the leaderboard's own consts initialize (TDZ).
+      try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
     }
     function generateVariants(i) {
       const c = CAMPAIGNS[i];
@@ -2075,6 +2124,60 @@
     // creative insights now live in the Ask-Toju panel (marketing context).
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
+
+    // ── creative leaderboard: every ad across campaigns, ranked by performance ──
+    const MK = { sort: 'ctr' };
+    const allAds = () => CAMPAIGNS.flatMap((c, ci) => c.ads.map((a, ai) => Object.assign({}, a, { camp: c.nm, clive: c.live, ci, ai })));
+    function adSpark(a){
+      const h = sHash(a.hl || ''), base = Math.max(0.4, a.ctr);
+      const trend = a.st === 'scaling' ? 0.12 : a.st === 'pausedai' ? -0.1 : 0.03;
+      return [0,1,2,3,4,5].map(i => +Math.max(0.2, base * (0.7 + trend * i) + ((h >> (i * 2)) & 3) * 0.08).toFixed(2));
+    }
+    const rankColor = i => i === 0 ? '#C9A227' : i === 1 ? '#9AA0A6' : i === 2 ? '#B08D57' : 'var(--ink-dim)';
+    function renderBoard(){
+      const el = document.getElementById('mkBoard'); if (!el) return;
+      const ads = allAds().sort((x, y) => MK.sort === 'leads' ? y.leads - x.leads : y.ctr - x.ctr);
+      el.innerHTML = ads.map((a, i) => {
+        const win = i === 0 && a.ctr > 0 && a.clive && a.st !== 'pausedai';
+        return `<div class="lbrow ${a.st === 'pausedai' ? 'dim' : ''} ${win ? 'win' : ''}">
+          ${win ? '<span class="lbribbon">✦ Winner</span>' : ''}
+          <span class="lbrank" style="color:${rankColor(i)}">${i + 1}</span>
+          <div class="lbthumb"><img src="${a.img}" alt="" loading="lazy"></div>
+          <div class="lbmid"><div class="lbhl">${a.hl}</div><div class="lbsub"><span class="lbcamp">${a.camp}</span>${chnBadge(a.ch)}<span class="lbst ${a.st}">${AD_ST[a.st]}</span></div></div>
+          <div class="lbperf"><div class="lbspark">${sparkSVG(adSpark(a), { w: 72, h: 26 })}</div><div class="lbctr"><b>${a.ctr.toFixed(1)}%</b> CTR</div></div>
+          <div class="lbleads"><b>${a.leads}</b><span>leads</span></div>
+          <button class="lbscale" data-scale="${a.ci}-${a.ai}" aria-label="Scale ${a.hl}">${a.st === 'scaling' ? 'Scaling ▴' : 'Scale ↑'}</button>
+        </div>`;
+      }).join('');
+      if (!sReduce()) el.querySelectorAll('.lbspark path[stroke]').forEach(p => {
+        const len = p.getTotalLength(); p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+        p.getBoundingClientRect(); p.style.transition = 'stroke-dashoffset .6s ease'; p.style.strokeDashoffset = '0';
+      });
+    }
+    document.getElementById('mkView').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-mv]'); if (!b) return;
+      document.querySelectorAll('#mkView .seg-b').forEach(x => x.classList.toggle('on', x === b));
+      const board = b.dataset.mv === 'board';
+      document.getElementById('mkBoard').style.display = board ? 'block' : 'none';
+      document.getElementById('mkBoardSub').style.display = board ? 'block' : 'none';
+      document.getElementById('mkSort').style.display = board ? '' : 'none';
+      document.getElementById('campaigns').style.display = board ? 'none' : 'block';
+    });
+    document.getElementById('mkSort').addEventListener('click', function(){
+      MK.sort = MK.sort === 'ctr' ? 'leads' : 'ctr';
+      this.textContent = '↕ Sort: ' + (MK.sort === 'ctr' ? 'CTR' : 'Leads');
+      renderBoard();
+    });
+    document.getElementById('mkBoard').addEventListener('click', (e) => {
+      const s = e.target.closest('[data-scale]'); if (!s) return;
+      const [ci, ai] = s.dataset.scale.split('-').map(Number);
+      const a = CAMPAIGNS[ci] && CAMPAIGNS[ci].ads[ai]; if (!a) return;
+      if (a.st === 'pausedai') { a.st = 'learning'; toast('Creative re-activated — back into learning'); }
+      else { a.st = 'scaling'; toast('Scaling this creative — budget shifting to the winner'); }
+      saveCamps(); renderCampaigns();
+    });
+    // defer the first render so it runs after the chart primitives (C_BRAND) initialize
+    setTimeout(renderBoard, 0);
 
     // ── chart primitives — one brand hue on a muted track; labels wear ink ──
     const C_BRAND = '#C2552B', C_TRACK = 'rgba(0,0,0,0.06)';
