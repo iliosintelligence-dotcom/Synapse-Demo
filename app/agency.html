@@ -20,8 +20,14 @@
     body.portal { overflow: hidden; }
     .shell { display: flex; height: calc(100vh - 61px); }
     .side { width: 236px; flex: none; display: flex; flex-direction: column; gap: 3px; padding: 18px 14px; background: rgba(255,255,255,0.55); border-right: 1px solid var(--border); overflow-y: auto; }
-    .side .grp { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; }
-    .side .grp:first-child { padding-top: 2px; }
+    .side .grp-sec { display: flex; flex-direction: column; }
+    .side .grp { width: 100%; background: none; border: none; cursor: pointer; text-align: left; font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; display: flex; align-items: center; justify-content: space-between; }
+    .side .grp-sec:first-child .grp { padding-top: 2px; }
+    .side .grp:hover { color: var(--ink-muted); }
+    .side .grp-chv { font-size: 13px; line-height: 1; transition: transform .22s ease; transform: rotate(90deg); opacity: .55; }
+    .side .grp-sec:not(.open) .grp-chv { transform: rotate(0deg); }
+    .side .grp-items { display: flex; flex-direction: column; gap: 3px; overflow: hidden; max-height: 400px; opacity: 1; transition: max-height .26s ease, opacity .2s ease; }
+    .side .grp-sec:not(.open) .grp-items { max-height: 0; opacity: 0; }
     .side a { font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; }
     .side a.on { background: rgba(194,85,43,0.1); color: #C2552B; font-weight: 600; }
     .side a:hover { background: rgba(0,0,0,0.03); }
@@ -194,10 +200,18 @@
     .feed .it .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
     .feed .it .tx { font-size: 13px; }
     .feed .it .tm { font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
-    .attn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; }
-    .attn:last-child { margin-bottom: 0; }
-    .attn.warn { background: rgba(156,122,30,0.09); border: 1px solid rgba(156,122,30,0.25); color: #8a6a18; }
-    .attn.info { background: rgba(255,123,44,0.07); border: 1px solid rgba(255,123,44,0.2); color: var(--brand); }
+    .attn { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 14px; margin-bottom: 4px; transition: background .14s; }
+    .attn:hover { background: rgba(0,0,0,0.025); }
+    .attn .ico { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
+    .attn .body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+    .attn .ttl { font: 700 13px var(--f-sans); color: var(--ink); line-height: 1.35; }
+    .attn .sub { font: 400 12px var(--f-sans); color: var(--ink-muted); line-height: 1.5; margin-top: 2px; }
+    .attn .tag { font: 700 10px var(--f-sans); letter-spacing: .09em; text-transform: uppercase; margin-top: 6px; }
+    .attn.lead .ico { background: var(--brand-tint); color: var(--brand-deep); } .attn.lead .tag { color: var(--brand-text); }
+    .attn.verification .ico, .attn.reminder .ico { background: var(--warn-tint); color: #7a5410; } .attn.verification .tag, .attn.reminder .tag { color: #7a5410; }
+    .attn.social .ico { background: var(--info-tint); color: var(--info); } .attn.social .tag { color: var(--info); }
+    .noti-group { font: 700 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); padding: 12px 6px 5px; }
+    .noti-group:first-child { padding-top: 2px; }
 
     /* listings */
     .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-top: 18px; }
@@ -466,7 +480,7 @@
     .tp-stats .statspark { margin-top: 6px; }
     @media (max-width: 560px){ .tpanel { max-width: 100%; } }
 
-    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
+    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .side .grp-sec, .side .grp-items{ display: contents; } .side .grp-items{ max-height: none; opacity: 1; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
     /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
@@ -697,7 +711,7 @@
   <div class="noti-scrim" id="notiScrim"></div>
   <div class="noti" id="noti" role="dialog" aria-label="Notifications">
     <div class="noti-h">
-      <span class="t">Needs your attention</span>
+      <span class="t">Notifications &amp; reminders</span>
       <button class="clr" id="notiClear">Mark all read</button>
     </div>
     <div id="notiList"></div>
@@ -705,19 +719,35 @@
 
   <div class="shell">
     <aside class="side" id="tabs">
-      <div class="grp">Main</div>
-      <a class="on" data-pane="overview">◆ Overview</a>
-      <a data-pane="crm">≣ CRM · Leads</a>
-      <a data-pane="negotiator">✦ Toju Negotiator</a>
-      <a data-pane="listings">▤ Listings</a>
-      <div class="grp">Growth</div>
-      <a data-pane="social">◫ Social studio</a>
-      <a data-pane="marketing">▲ Marketing</a>
-      <div class="grp">Team</div>
-      <a data-pane="agents">◑ Agents</a>
-      <a data-pane="verification">✓ Verification</a>
-      <div class="grp">Account</div>
-      <a data-pane="subscription">✦ Subscription</a>
+      <div class="grp-sec open" data-sec="main">
+        <button class="grp" aria-expanded="true" aria-controls="grp-main"><span>Main</span><span class="grp-chv" aria-hidden="true">›</span></button>
+        <div class="grp-items" id="grp-main">
+          <a class="on" data-pane="overview">◆ Overview</a>
+          <a data-pane="crm">≣ CRM · Leads</a>
+          <a data-pane="negotiator">✦ Toju Negotiator</a>
+          <a data-pane="listings">▤ Listings</a>
+        </div>
+      </div>
+      <div class="grp-sec open" data-sec="growth">
+        <button class="grp" aria-expanded="true" aria-controls="grp-growth"><span>Growth</span><span class="grp-chv" aria-hidden="true">›</span></button>
+        <div class="grp-items" id="grp-growth">
+          <a data-pane="social">◫ Social studio</a>
+          <a data-pane="marketing">▲ Marketing</a>
+        </div>
+      </div>
+      <div class="grp-sec open" data-sec="team">
+        <button class="grp" aria-expanded="true" aria-controls="grp-team"><span>Team</span><span class="grp-chv" aria-hidden="true">›</span></button>
+        <div class="grp-items" id="grp-team">
+          <a data-pane="agents">◑ Agents</a>
+          <a data-pane="verification">✓ Verification</a>
+        </div>
+      </div>
+      <div class="grp-sec open" data-sec="account">
+        <button class="grp" aria-expanded="true" aria-controls="grp-account"><span>Account</span><span class="grp-chv" aria-hidden="true">›</span></button>
+        <div class="grp-items" id="grp-account">
+          <a data-pane="subscription">✦ Subscription</a>
+        </div>
+      </div>
       <div class="me">
         <span class="av2">PR</span>
         <div><div class="nm2">Prestige Realty Ltd.</div><div class="sub2">✦ Gold Verified</div></div>
@@ -760,11 +790,6 @@
           <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
           <div class="h1">CRM</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Your whole pipeline at a glance — every lead, its stage, and the next move.</p>
-
-          <div class="card lead-banner">
-            <span data-lottie="lead-arrived" data-loop="false" style="width:50px;height:40px"></span>
-            New lead just arrived — Bola Adeyemi via Toju
-          </div>
 
           <!-- toolbar -->
           <div class="crm-tools">
@@ -2225,17 +2250,29 @@
     });
     document.getElementById('ovFilter').addEventListener('click', () => document.getElementById('ovSearch').focus());
 
-    /* ═══ Notification bell — the old "Needs your attention" card lives here now ═══ */
+    /* ═══ Notification bell — the single home for every alert AND reminder ═══ */
     const NOTI = [
-      { c: 'warn', x: '⏳', t: 'Lead SLA expiring — Bola Adeyemi, respond within 13 min' },
-      { c: 'warn', x: '🛡', t: '1 listing pending verification — 3-Bed Terrace, Ikate (5/7)' },
-      { c: 'info', x: '✦', t: '2 posts awaiting approval in Social studio' },
-      { c: 'info', x: '📣', t: 'Osapa open house this weekend — 64 RSVPs' },
+      { type: 'lead', tag: 'Lead', icon: '👤', title: 'New lead — Bola Adeyemi', sub: 'via Toju · 3-Bed Lekki Phase 1 · just now', group: 'Today' },
+      { type: 'reminder', tag: 'Reminder', icon: '⏳', title: 'Lead SLA expiring', sub: 'Bola Adeyemi — respond within 13 min', group: 'Today' },
+      { type: 'verification', tag: 'Verification', icon: '🛡', title: '1 listing pending verification', sub: '3-Bed Terrace, Ikate — 5 of 7 checks', group: 'Today' },
+      { type: 'social', tag: 'Social', icon: '✦', title: '2 posts awaiting approval', sub: 'In Social studio', group: 'Earlier' },
+      { type: 'reminder', tag: 'Reminder', icon: '📣', title: 'Osapa open house this weekend', sub: '64 RSVPs confirmed', group: 'Earlier' },
     ];
     function renderNoti() {
-      document.getElementById('notiList').innerHTML = NOTI.length
-        ? NOTI.map(n => `<div class="attn ${n.c}">${n.x} ${n.t}</div>`).join('')
-        : '<div class="noti-empty">You’re all caught up ✦</div>';
+      const list = document.getElementById('notiList');
+      if (!NOTI.length) {
+        list.innerHTML = '<div class="noti-empty">You’re all caught up ✦</div>';
+      } else {
+        const groups = [];
+        NOTI.forEach(n => { let g = groups.find(x => x.g === (n.group || '')); if (!g) { g = { g: n.group || '', items: [] }; groups.push(g); } g.items.push(n); });
+        list.innerHTML = groups.map(g =>
+          (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
+          g.items.map(n => `<div class="attn ${n.type}">
+            <span class="ico">${n.icon}</span>
+            <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
+          </div>`).join('')
+        ).join('');
+      }
       const badge = document.getElementById('bellBadge');
       badge.textContent = NOTI.length; badge.classList.toggle('hide', !NOTI.length);
     }
@@ -2251,6 +2288,14 @@
     renderNoti();
     renderOverview();
 
+    // Overview is the main page: force it active on every load, ignoring stale hash/state
+    (function forceOverview() {
+      if (location.hash) history.replaceState(null, '', location.pathname);
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-overview'));
+      document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.pane === 'overview'));
+      const main = document.querySelector('.grp-sec[data-sec="main"]'); if (main) main.classList.add('open');
+    })();
+
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
       const tab = e.target.closest('[data-pane]');
@@ -2260,6 +2305,14 @@
       if (tpanel.classList.contains('on')) openToju(); // keep the panel in sync with the pane
       if (tab.dataset.pane === 'overview' && OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 60);
       if (window.synMotion) synMotion.refresh();
+    });
+
+    // sidebar group expand/collapse (Supabase-style) — headers have no data-pane, so
+    // they fall through the tab handler above; this handles the toggle separately.
+    document.getElementById('tabs').addEventListener('click', (e) => {
+      const g = e.target.closest('.grp'); if (!g) return;
+      const sec = g.closest('.grp-sec'); const open = sec.classList.toggle('open');
+      g.setAttribute('aria-expanded', String(open));
     });
 
     // simple toggles in social studio
