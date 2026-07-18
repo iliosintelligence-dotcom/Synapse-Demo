@@ -217,6 +217,25 @@
       .chan .tog::after, button.s-tile, .s-tile .cbar i, .pcard, .s-cal .cev { transition: none; }
       .pcard.justpub, .pcard .skel span, .spin { animation: none; }
     }
+    /* property preview ("zoom to confirm") — from a pipeline card or a calendar event */
+    .pprev-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(20,18,16,0.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .pprev-scrim.on { display: flex; }
+    .pprev { width: 384px; max-width: 100%; background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: 0 40px 90px rgba(20,26,38,0.42); transform: translateY(10px) scale(.98); opacity: 0; transition: transform .2s, opacity .2s; }
+    .pprev-scrim.on .pprev { transform: none; opacity: 1; }
+    .pprev .pimg { position: relative; height: 210px; }
+    .pprev .pimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pprev .px { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,0.92); color: var(--ink); font-size: 19px; line-height: 1; cursor: pointer; }
+    .pprev .pvb { position: absolute; top: 12px; left: 12px; font: 700 11px var(--f-sans); padding: 5px 11px; border-radius: 100px; color: #fff; }
+    .pprev .pbody { padding: 18px 20px 20px; }
+    .pprev .pprice { font: 600 30px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; line-height: 1; }
+    .pprev .ptt { font-size: 16px; font-weight: 600; margin-top: 6px; }
+    .pprev .ploc { font-size: 13px; color: var(--ink-muted); margin-top: 3px; }
+    .pprev .pmeta2 { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .pprev .pchip { font-size: 12px; font-weight: 600; color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; }
+    .pprev .psec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .pprev .psec .k { font: 700 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 9px; }
+    .pprev .psec .row { display: flex; align-items: center; gap: 8px; }
+    .pprev .psec .stg { margin-left: auto; font-size: 12.5px; color: var(--ink-muted); }
 
     /* marketing */
     .camp { display: flex; align-items: center; gap: 16px; padding: 16px 18px; margin-bottom: 12px; }
@@ -1110,6 +1129,8 @@
   <div class="toast" id="toast"></div>
 
   <!-- persistent Ask-Toju button + context-aware panel -->
+  <div class="pprev-scrim" id="pprevScrim"><div class="pprev" id="pprevModal" role="dialog" aria-label="Property preview"></div></div>
+
   <button class="toju-fab" id="tojuFab" aria-label="Ask Toju"><span class="sparkle" aria-hidden="true">✦</span></button>
   <div class="tpanel-scrim" id="tpScrim"></div>
   <aside class="tpanel" id="tpanel" aria-label="Ask Toju">
@@ -1477,8 +1498,51 @@
         </div>`).join('');
     }
     // pipeline actions
+    // ── property preview ("zoom to confirm the right property") ──
+    function openPropPreview(post){
+      if (!post) return;
+      const L = (typeof LISTINGS_DATA !== 'undefined') ? LISTINGS_DATA.find(l => (l.title || l.t) === post.listing) : null;
+      const img = post.img || (L && L.img) || '';
+      const price = post.price || (L && nairaM(L.pr)) || '';
+      const vs = L ? L.verification_status : null;
+      const vb = vs === 'verified' ? '<span class="pvb" style="background:var(--success)">✓ Verified</span>'
+        : vs === 'in_progress' ? '<span class="pvb" style="background:#7a5410">Verifying</span>'
+        : vs ? '<span class="pvb" style="background:rgba(20,22,26,0.72)">Unverified</span>' : '';
+      const loc = L ? [L.neighbourhood, L.city].filter(Boolean).join(', ') : post.listing.split(',').slice(1).join(',').trim();
+      const meta = [];
+      if (L) {
+        if (L.bedrooms != null) meta.push(L.bedrooms + ' bed' + (L.bedrooms == 1 ? '' : 's'));
+        if (L.bathrooms != null) meta.push(L.bathrooms + ' bath' + (L.bathrooms == 1 ? '' : 's'));
+        if (L.area_sqm) meta.push(L.area_sqm + ' sqm');
+        if (L.property_type) meta.push((typeof TYPE_LABEL !== 'undefined' && TYPE_LABEL[L.property_type]) || L.property_type);
+      }
+      const chans = (post.channels && post.channels.length)
+        ? post.channels.map(c => `<span class="cav" style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 9px var(--f-sans);color:#fff;background:${CH[c].color}">${CH[c].short}</span>`).join('')
+        : '<span style="font-size:12.5px;color:var(--ink-dim)">Not yet on any channel</span>';
+      const stg = (PSTAGES.find(s => s.id === post.stage) || {}).label || post.stage;
+      document.getElementById('pprevModal').innerHTML = `
+        <div class="pimg"><img src="${img}" alt="">${vb}<button class="px" id="pprevX" aria-label="Close">×</button></div>
+        <div class="pbody">
+          <div class="pprice">${price}</div>
+          <div class="ptt">${post.listing}</div>
+          ${loc ? `<div class="ploc">◍ ${loc}</div>` : ''}
+          ${meta.length ? `<div class="pmeta2">${meta.map(m => `<span class="pchip">${m}</span>`).join('')}</div>` : ''}
+          <div class="psec"><div class="k">In this post</div><div class="row"><span style="display:flex;gap:4px">${chans}</span><span class="stg">${stg}</span></div></div>
+          ${L ? '<button class="btn btn-ghost btn-block" id="pprevOpen" style="margin-top:14px">Open in Listings →</button>' : ''}
+        </div>`;
+      document.getElementById('pprevScrim').classList.add('on');
+      document.getElementById('pprevX').addEventListener('click', closePropPreview);
+      const ol = document.getElementById('pprevOpen');
+      if (ol) ol.addEventListener('click', () => { closePropPreview(); document.querySelector('#tabs a[data-pane="listings"]').click(); });
+    }
+    function closePropPreview(){ document.getElementById('pprevScrim').classList.remove('on'); }
+    document.getElementById('pprevScrim').addEventListener('click', e => { if (e.target.id === 'pprevScrim') closePropPreview(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropPreview(); });
+    document.getElementById('calendar').addEventListener('click', e => { const c = e.target.closest('.cev'); if (c) openPropPreview(posts.find(x => x.id === c.dataset.pid)); });
+
     document.getElementById('pipeline').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-act]'); if (!b) return;
+      const b = e.target.closest('[data-act]');
+      if (!b) { const card = e.target.closest('.pcard'); if (card) openPropPreview(posts.find(x => x.id === card.dataset.pid)); return; }
       const p = posts.find(x => x.id === b.dataset.id); if (!p) return;
       if (b.dataset.act === 'gen') {
         p.stage = 'generating'; renderPipeline();
@@ -1535,7 +1599,7 @@
     // ── listings — editable, with the 14-day freshness rule ──
     // Every listing must be re-listed every 14 days or it stops showing to
     // buyers (matches Toju's freshness filter). `days` = days since (re)listed.
-    const L_KEY = 'synapse_agency_listings_v3';
+    const L_KEY = 'synapse_agency_listings_v4';
     const L_DEFAULT = [
       { t: '3-Bed Apartment, Lekki Phase 1', pr: 165, st: 'verified', leads: 6, days: 3, img: IMG.lekki },
       { t: '4-Bed Duplex, Osapa London', pr: 178, st: 'verified', leads: 3, days: 8, img: IMG.osapa },
@@ -1561,8 +1625,9 @@
       const t = l.t || '', tl = t.toLowerCase(), parts = t.split(',').map(s => s.trim());
       const bedM = t.match(/(\d+)\s*-?\s*bed/i);
       const ptype = tl.includes('duplex') ? 'duplex' : tl.includes('terrace') ? 'terrace' : tl.includes('penthouse') ? 'penthouse'
-        : tl.includes('bungalow') ? 'bungalow' : (tl.includes('detached') || tl.includes('house')) ? 'house'
-        : tl.includes('land') ? 'land' : (tl.includes('shop') || tl.includes('office')) ? 'commercial' : 'apartment';
+        : tl.includes('bungalow') ? 'bungalow' : (tl.includes('flat') || tl.includes('apartment')) ? 'apartment'
+        : (tl.includes('detached') || tl.includes('house')) ? 'house'
+        : /\bland\b/.test(tl) ? 'land' : (tl.includes('shop') || tl.includes('office')) ? 'commercial' : 'apartment';
       const hood = parts.length > 1 ? parts[parts.length - 1] : '';
       return Object.assign({
         title: t, description: t ? ('Verified ' + t + '.') : '',
