@@ -334,18 +334,40 @@
 
     /* agents */
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px,1fr)); gap: 14px; margin-top: 18px; }
+    .acard { position: relative; cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .acard:hover { transform: translateY(-3px); box-shadow: 0 18px 38px rgba(122,62,22,0.14); border-color: rgba(255,123,44,0.35); }
+    .acard.enter { animation: acardIn .34s ease both; }
+    @keyframes acardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     .acard .hd { display: flex; align-items: center; gap: 12px; }
-    .acard .av, .drawer .av { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,123,44,0.12); border: 1px solid rgba(255,123,44,0.28); color: var(--brand); font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
-    .drawer .rl { font-size: 11.5px; color: var(--ink-dim); }
+    .acard .av, .drawer .av { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,123,44,0.12); border: 1px solid rgba(255,123,44,0.28); color: var(--brand-deep); font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+    .drawer .rl { font-size: 12px; color: var(--ink-muted); }
     .acard .nm { font-weight: 600; font-size: 14px; }
-    .acard .rl { font-size: 11.5px; color: var(--ink-dim); }
+    .acard .rl { font-size: 12px; color: var(--ink-muted); }
     .acard .mt { display: flex; gap: 16px; margin-top: 12px; }
-    .acard .mt .k { font-family: var(--f-serif); font-size: 19px; color: var(--brand); }
-    .acard .mt .kl { font-size: 10.5px; color: var(--ink-dim); }
-    .acard { cursor: pointer; transition: transform .15s; }
-    .acard:hover { transform: translateY(-2px); }
+    .acard .mt .k { font-family: var(--f-serif); font-size: 19px; color: var(--brand-deep); font-variant-numeric: lining-nums; }
+    .acard .mt .kl { font-size: 12px; color: var(--ink-muted); }
     .acard .sparkrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 14px; }
-    .acard .sparklbl { font-size: 10px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .07em; }
+    .acard .sparklbl { font-size: 12px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+    .acard .topbadge, .acard .pendbadge { position: absolute; top: -9px; left: 16px; font: 700 11px var(--f-sans); letter-spacing: .02em; border-radius: 100px; padding: 3px 10px; }
+    .acard .topbadge { color: #fff; background: linear-gradient(135deg,#e0b64a,#c9a227); }
+    .acard .pendbadge { color: #7a5410; background: var(--warn-tint); border: 1px solid rgba(156,122,30,0.3); }
+    .acard.pending { opacity: .85; }
+    /* team KPI strip */
+    .ag-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 18px; }
+    .ag-kpi { padding: 16px 20px; border-radius: 16px; background: linear-gradient(135deg,rgba(255,255,255,0.86),rgba(255,251,246,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.09); }
+    .ag-kpi .l { font: 700 12px var(--f-sans); color: var(--ink-muted); }
+    .ag-kpi .v { font: 600 30px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; line-height: 1.05; margin-top: 5px; }
+    /* invite-a-teammate form (in the side drawer) */
+    .inv .field { margin-bottom: 14px; }
+    .inv label { display: block; font: 700 12px var(--f-sans); color: var(--ink-muted); margin-bottom: 6px; }
+    .inv input, .inv select { width: 100%; padding: 11px 13px; border-radius: 11px; border: 1px solid var(--border-strong); background: rgba(255,255,255,0.8); font: 13.5px var(--f-sans); color: var(--ink); outline: none; }
+    .inv input:focus-visible, .inv select:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 1px; border-color: var(--brand-deep); }
+    .inv .err { display: none; font: 500 12px var(--f-sans); color: var(--danger); margin-top: 5px; }
+    .inv .send { width: 100%; margin-top: 4px; background: var(--brand-deep); color: #fff; border: none; border-radius: 100px; padding: 12px; font: 700 13px var(--f-sans); cursor: pointer; }
+    .inv .send:disabled { opacity: .5; cursor: not-allowed; }
+    @media (max-width: 980px){ .ag-kpis { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 560px){ .ag-kpis { grid-template-columns: 1fr; } }
+    @media (prefers-reduced-motion: reduce){ .acard, .acard.enter { animation: none; transition: none; } }
 
     /* ── chart primitives — single hue on a muted track, labels in ink ── */
     .hbars { display: flex; flex-direction: column; gap: 9px; }
@@ -362,10 +384,10 @@
     /* agent profile drawer */
     .ap-hero { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-top: 16px; }
     .ap-hero div { border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; text-align: center; }
-    .ap-hero .v { font-family: var(--f-serif); font-size: 21px; color: var(--brand); }
-    .ap-hero .l { font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
+    .ap-hero .v { font-family: var(--f-serif); font-size: 21px; color: var(--brand-deep); font-variant-numeric: lining-nums; }
+    .ap-hero .l { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
     .ap-sec { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-top: 13px; }
-    .ap-sec .k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .ap-sec .k { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
     .ap-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 13px; }
     .ap-duo .ap-sec { margin-top: 0; }
 
@@ -978,7 +1000,7 @@
               <div class="seg"><button class="seg-b on">▤ Table</button><button class="seg-b" id="crmBoardBtn">▦ Board</button></div>
               <button class="tbtn" id="crmFilterBtn">▽ Filter</button>
               <button class="tbtn" id="crmSortBtn">↕ Sort</button>
-              <label class="swx"><span>Show statistics</span><span class="sw on" id="crmStatSw" role="switch" aria-checked="true" tabindex="0"></span></label>
+              <label class="swx"><span>Show statistics</span><span class="sw" id="crmStatSw" role="switch" aria-checked="false" tabindex="0"></span></label>
             </div>
             <div class="crm-tools-r">
               <button class="tbtn" id="crmExport">⇪ Export</button>
@@ -987,7 +1009,7 @@
           </div>
 
           <!-- statistics (toggled): 4 cards + attribution mix -->
-          <div class="crm-stats-wrap" id="crmStats">
+          <div class="crm-stats-wrap hide" id="crmStats">
             <div class="crm-statcards" id="crmStatCards"></div>
             <!-- attribution breakdown: which marketing actually made leads -->
             <div class="card brk" id="brk"></div>
@@ -1121,14 +1143,14 @@
               </div>
               <input class="lsearch" id="listSearch" type="search" placeholder="Search listings…" aria-label="Search listings" autocomplete="off">
               <button class="tbtn" id="listSort">↕ Sort: Freshness</button>
-              <label class="swx"><span>Show statistics</span><span class="sw on" id="listStatSw" role="switch" aria-checked="true" tabindex="0"></span></label>
+              <label class="swx"><span>Show statistics</span><span class="sw" id="listStatSw" role="switch" aria-checked="false" tabindex="0"></span></label>
             </div>
             <div class="crm-tools-r">
               <button class="tbtn primary" id="newListingBtn">+ New listing</button>
             </div>
           </div>
 
-          <div class="crm-stats-wrap" id="listStats"><div class="crm-statcards" id="listStatCards"></div></div>
+          <div class="crm-stats-wrap hide" id="listStats"><div class="crm-statcards" id="listStatCards"></div></div>
 
           <div class="lgrid" id="lgrid"></div>
         </section>
@@ -1141,8 +1163,9 @@
               <div class="h1">Agents</div>
               <p class="muted" style="font-size:14px;margin-top:4px">Who&#39;s on the floor, and how they&#39;re performing.</p>
             </div>
-            <button class="btn btn-primary">+ Invite agent</button>
+            <button class="btn btn-primary" id="inviteAgentBtn">+ Invite agent</button>
           </div>
+          <div class="ag-kpis" id="agKpis"></div>
           <div class="two" style="margin-top:20px">
             <div class="card" style="padding:18px 20px">
               <div class="h2" style="margin:0 0 12px">Closed deals · this quarter</div>
@@ -2281,12 +2304,33 @@
     document.getElementById('agClosed').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.closed]));
     document.getElementById('agReply').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.respM]), 'm');
 
-    document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => `
-      <div class="card acard" data-agent="${i}" title="Open ${first(a.nm)}'s profile">
-        <div class="hd"><span class="av">${initials(a.nm)}</span><div style="flex:1;min-width:0"><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div></div>${ringSVG(a.win, { size: 46, sw: 5, fs: 10.5 })}</div>
-        <div class="sparkrow"><div><div class="sparklbl">Leads · 8 wks</div>${sparkSVG(a.weekly, { area: true })}</div></div>
-        <div class="mt"><div><div class="k">${a.active}</div><div class="kl">active</div></div><div><div class="k">${a.closed}</div><div class="kl">closed</div></div><div><div class="k">${a.respM}m</div><div class="kl">avg reply</div></div></div>
-      </div>`).join('');
+    function renderAgents(){
+      const real = AGENTS.filter(a => !a.pending);
+      const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
+      const topIdx = top ? AGENTS.indexOf(top) : -1;
+      document.getElementById('agKpis').innerHTML = [
+        ['Headcount', real.length],
+        ['Avg first reply', (real.length ? Math.round(real.reduce((s, a) => s + a.respM, 0) / real.length) : 0) + 'm'],
+        ['Active leads', real.reduce((s, a) => s + a.active, 0)],
+        ['Closed · qtr', real.reduce((s, a) => s + a.closed, 0)],
+      ].map(k => `<div class="ag-kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
+      document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
+        if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms"><span class="pendbadge">Pending</span>
+          <div class="hd"><span class="av">${initials(a.nm)}</span><div style="flex:1;min-width:0"><div class="nm">${a.nm}</div><div class="rl">${a.rl} · invite sent</div></div></div>
+          <div class="mt"><div><div class="k">—</div><div class="kl">active</div></div><div><div class="k">—</div><div class="kl">closed</div></div><div><div class="k">—</div><div class="kl">avg reply</div></div></div></div>`;
+        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${a.nm}'s profile — ${a.rl}" style="animation-delay:${i * 45}ms">
+          ${i === topIdx ? '<span class="topbadge">★ Top performer</span>' : ''}
+          <div class="hd"><span class="av">${initials(a.nm)}</span><div style="flex:1;min-width:0"><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div></div>${ringSVG(a.win, { size: 46, sw: 5, fs: 10.5 })}</div>
+          <div class="sparkrow"><div><div class="sparklbl">Leads · 8 wks</div>${sparkSVG(a.weekly, { area: true })}</div></div>
+          <div class="mt"><div><div class="k">${a.active}</div><div class="kl">active</div></div><div><div class="k">${a.closed}</div><div class="kl">closed</div></div><div><div class="k">${a.respM}m</div><div class="kl">avg reply</div></div></div>
+        </div>`;
+      }).join('');
+      if (!sReduce()) document.querySelectorAll('#agrid .statspark path[stroke]').forEach(p => {
+        const len = p.getTotalLength(); p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+        p.getBoundingClientRect(); p.style.transition = 'stroke-dashoffset .7s ease'; p.style.strokeDashoffset = '0';
+      });
+    }
+    renderAgents();
 
     function openAgent(i) {
       const a = AGENTS[i];
@@ -2317,6 +2361,38 @@
     document.getElementById('agrid').addEventListener('click', (e) => {
       const c = e.target.closest('[data-agent]'); if (c) openAgent(+c.dataset.agent);
     });
+    document.getElementById('agrid').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const c = e.target.closest('[data-agent]'); if (c) { e.preventDefault(); openAgent(+c.dataset.agent); }
+    });
+    // ── Invite a teammate: a real form in the side pane ──
+    function openInvite(){
+      drawer.innerHTML = `
+        <button class="x" id="drawerX">×</button>
+        <div style="font-size:19px;font-weight:700">Invite a teammate</div>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">They&#39;ll get a link to join this workspace. Set their role now.</p>
+        <div class="inv">
+          <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr">⚠ Enter a valid email address</span></div>
+          <div class="field"><label for="invRole">Role</label><select id="invRole"><option>Agent</option><option>Senior agent</option><option>Junior agent</option><option>Verification desk</option></select></div>
+          <button class="send" id="invSend" disabled aria-disabled="true">Send invite</button>
+        </div>`;
+      scrim.classList.add('on'); drawer.classList.add('on');
+      document.getElementById('drawerX').addEventListener('click', closeLead);
+      const email = document.getElementById('invEmail'), err = document.getElementById('invErr'), send = document.getElementById('invSend');
+      const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      email.addEventListener('input', () => {
+        const v = email.value.trim(), ok = valid(v);
+        err.style.display = (v && !ok) ? 'block' : 'none';
+        send.disabled = !ok; send.setAttribute('aria-disabled', String(!ok));
+      });
+      email.focus();
+      send.addEventListener('click', () => {
+        const v = email.value.trim(); if (!valid(v)) return;
+        AGENTS.push({ nm: v.split('@')[0], rl: document.getElementById('invRole').value, pending: true, active: 0, closed: 0, respM: 0, win: 0, weekly: [], respT: [], stages: [], recent: [] });
+        renderAgents(); closeLead(); toast('Invite sent — ' + v + ' gets a link to join this workspace.');
+      });
+    }
+    document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
 
     // ── verification queue (7-node progress) ──
     const NODES = ['Title', 'Structure', 'Flood', 'Legal', 'Ownership', 'Media', 'Freshness'];
@@ -2551,7 +2627,6 @@
     const CTA_TOASTS = {
       '+ New listing': 'Listing upload — add photos and the 7-node verification kicks off automatically.',
       '+ New campaign': 'Campaign builder — target Toju briefs by area, budget and intent.',
-      '+ Invite agent': 'Invite sent — your teammate gets a link to join this workspace.',
       'Upgrade to Growth': 'Growth plan: 40 listings · 5 seats · social syndication. Checkout opens in your live workspace.',
       'Talk to sales': 'Thanks — our team will reach out about the Gold plan and proximity marketing.',
       'Current plan': 'You’re on Starter — free forever. Upgrade any time.',
