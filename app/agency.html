@@ -475,10 +475,12 @@
     .campaign .cft .tgl { background: rgba(0,0,0,0.05); color: var(--ink); }
 
     /* ── persistent Ask-Toju button + context panel ── */
-    .toju-fab { position: fixed; right: 26px; bottom: 26px; z-index: 78; display: flex; align-items: center; gap: 10px; padding: 12px 20px 12px 14px; border-radius: 100px; border: none; cursor: pointer;
-      background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; font: 600 13.5px var(--f-sans); box-shadow: 0 16px 38px rgba(194,85,43,0.42); transition: transform .16s, box-shadow .16s; }
-    .toju-fab:hover { transform: translateY(-2px); box-shadow: 0 22px 46px rgba(194,85,43,0.5); }
-    .toju-fab .o { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+    .toju-fab { position: fixed; right: 26px; bottom: 26px; z-index: 78; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; cursor: pointer;
+      background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; font-size: 25px; line-height: 1; box-shadow: 0 16px 38px rgba(194,85,43,0.42); transition: transform .16s, box-shadow .16s; animation: fabGlow 2.8s ease-in-out infinite; }
+    .toju-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 22px 46px rgba(194,85,43,0.55); animation: none; }
+    .toju-fab .sparkle { display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+    @keyframes fabGlow { 0%, 100% { box-shadow: 0 16px 38px rgba(194,85,43,0.42), 0 0 0 0 rgba(255,123,44,0.5); } 50% { box-shadow: 0 16px 38px rgba(194,85,43,0.42), 0 0 0 13px rgba(255,123,44,0); } }
+    @media (prefers-reduced-motion: reduce) { .toju-fab { animation: none; } }
     body.tpanel-open .toju-fab { opacity: 0; pointer-events: none; }
 
     .tpanel-scrim { position: fixed; inset: 0; z-index: 95; background: rgba(20,22,26,0.18); opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -984,7 +986,7 @@
   <div class="toast" id="toast"></div>
 
   <!-- persistent Ask-Toju button + context-aware panel -->
-  <button class="toju-fab" id="tojuFab"><span class="o">T</span> Ask Toju</button>
+  <button class="toju-fab" id="tojuFab" aria-label="Ask Toju"><span class="sparkle" aria-hidden="true">✦</span></button>
   <div class="tpanel-scrim" id="tpScrim"></div>
   <aside class="tpanel" id="tpanel" aria-label="Ask Toju">
     <div class="thd">
