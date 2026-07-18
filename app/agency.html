@@ -328,29 +328,58 @@
     .stepper { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
     .step5 { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; }
     .step5 b { color: var(--brand); }
-    .auth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 14px; margin-top: 12px; }
-    .auth .tt { font-weight: 600; font-size: 13.5px; }
-    .auth .lp { font-size: 12px; color: var(--ink-muted); }
-    .auth .rangebar { position: relative; height: 8px; border-radius: 100px; background: rgba(0,0,0,0.06); margin: 16px 0 6px; }
+    /* ── Negotiation authority: property-card language, price-setting content ── */
+    .auth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 14px; }
+    .auth { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .auth:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16); border-color: rgba(255,123,44,0.4); }
+    .auth .media { position: relative; height: 150px; margin: 10px 10px 0; border-radius: 15px; overflow: hidden; }
+    .auth .media img { width: 100%; height: 100%; object-fit: cover; }
+    .auth .media .pill { position: absolute; top: 10px; font: 700 11px var(--f-sans); letter-spacing: .02em; padding: 4px 11px; border-radius: 100px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .auth .media .pv { left: 10px; background: rgba(255,255,255,0.88); color: var(--success); }
+    .auth .media .pl { right: 10px; background: rgba(21,23,26,0.62); color: #fff; }
+    .auth .body { padding: 14px 18px 18px; }
+    .auth .tt { font: 600 20px var(--f-serif); color: var(--ink); line-height: 1.25; }
+    .auth .lp { font: 400 12px var(--f-sans); color: var(--ink-muted); margin-top: 12px; }
+    .auth .price { font: 600 28px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; line-height: 1; margin-top: 2px; }
+    .auth .rangebar { position: relative; height: 8px; border-radius: 100px; background: rgba(0,0,0,0.07); margin: 18px 0 8px; }
     .auth .rangebar .fill { position: absolute; height: 100%; border-radius: 100px; background: linear-gradient(90deg,#C2552B,#FF7B2C); }
-    .auth .rr { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-dim); }
-    .auth .floorset { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 11.5px; color: var(--ink-muted); }
-    .auth .floorset input { width: 92px; padding: 8px 11px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); font: 13px var(--f-sans); outline: none; }
-    .auth .lock { font-size: 10.5px; color: var(--ink-dim); margin-top: 10px; display: flex; align-items: center; gap: 5px; line-height: 1.4; }
-    .handoff { padding: 0; overflow: hidden; margin-bottom: 14px; }
-    .handoff .hh { display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: linear-gradient(135deg,rgba(255,123,44,0.1),rgba(194,85,43,0.05)); border-bottom: 1px solid var(--border); }
-    .handoff .hh .ti { font-weight: 700; font-size: 13.5px; }
-    .handoff .hh .rt { margin-left: auto; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 3px 10px; border-radius: 100px; background: rgba(46,125,79,0.12); color: var(--success); border: 1px solid rgba(46,125,79,0.3); }
-    .handoff .bd2 { padding: 14px 18px; }
-    .handoff .kv { display: flex; gap: 8px; font-size: 12.5px; margin: 5px 0; }
-    .handoff .kv .kk { color: var(--ink-dim); width: 96px; flex: none; }
-    .handoff .neg { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; }
-    .handoff .neg .k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
-    .handoff .neg .step { font-size: 12.5px; margin: 6px 0; padding-left: 14px; position: relative; }
-    .handoff .neg .step::before { content: ''; position: absolute; left: 0; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
-    .handoff .rec { margin-top: 12px; font-size: 12.5px; background: rgba(46,125,79,0.07); border: 1px solid rgba(46,125,79,0.2); border-radius: 10px; padding: 10px 13px; }
+    .auth .rangebar .knob { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--brand-deep); transform: translate(-50%,-50%); box-shadow: 0 2px 6px rgba(0,0,0,0.22); }
+    .auth .rr { display: flex; justify-content: space-between; font: 700 12px var(--f-sans); }
+    .auth .rr .floor { color: var(--brand-text); }
+    .auth .rr .list { color: var(--ink-muted); }
+    .auth .expl { font: 400 12px var(--f-sans); color: var(--ink-muted); line-height: 1.5; margin-top: 11px; }
+    .auth .floorset { display: flex; align-items: center; gap: 8px; margin-top: 14px; font: 600 12px var(--f-sans); color: var(--ink-muted); }
+    .auth .floorset input { width: 92px; padding: 8px 11px; border-radius: 10px; border: 1px solid var(--border-strong); background: rgba(255,255,255,0.8); font: 600 13px var(--f-sans); color: var(--ink); outline: none; }
+    .auth .floorset input:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 1px; border-color: var(--brand-deep); }
+    .auth .lock { font: 400 12px var(--f-sans); color: var(--ink-dim); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; align-items: flex-start; gap: 6px; line-height: 1.45; }
+
+    /* ── Ready-for-handoff: rich deal card with property imagery ── */
+    .handoff { padding: 0; overflow: hidden; margin-bottom: 16px; }
+    .handoff .banner { position: relative; height: 132px; overflow: hidden; }
+    .handoff .banner img { width: 100%; height: 100%; object-fit: cover; }
+    .handoff .banner .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(21,23,26,0.12) 0%, rgba(21,23,26,0.74) 100%); }
+    .handoff .banner .rt { position: absolute; top: 12px; right: 14px; font: 700 11px var(--f-sans); letter-spacing: .03em; padding: 4px 11px; border-radius: 100px; background: rgba(255,255,255,0.92); color: var(--brand-text); }
+    .handoff .banner .over { position: absolute; left: 18px; right: 18px; bottom: 13px; display: flex; align-items: flex-end; gap: 12px; }
+    .handoff .banner .who { min-width: 0; flex: 1; }
+    .handoff .banner .lbl { display: flex; align-items: center; gap: 7px; font: 700 11px var(--f-sans); letter-spacing: .04em; color: rgba(255,255,255,0.9); }
+    .handoff .banner .o { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg,#FF7B2C,#C2552B); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 700 10px var(--f-sans); flex: none; }
+    .handoff .banner .nm { font: 600 22px var(--f-serif); color: #fff; line-height: 1.1; margin-top: 3px; }
+    .handoff .banner .pricepill { flex: none; font: 700 14px var(--f-sans); font-variant-numeric: lining-nums; color: var(--ink); background: rgba(255,255,255,0.94); padding: 6px 13px; border-radius: 100px; }
+    .handoff .bd2 { padding: 16px 18px 18px; }
+    .handoff .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 16px; }
+    .handoff .facts .k { font: 700 11px var(--f-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-muted); }
+    .handoff .facts .v { font: 500 13px var(--f-sans); color: var(--ink); margin-top: 2px; line-height: 1.4; }
+    .handoff .neg { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+    .handoff .neg .k { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .handoff .neg .tl { position: relative; padding-left: 18px; }
+    .handoff .neg .tl::before { content: ''; position: absolute; left: 4px; top: 5px; bottom: 6px; width: 1px; background: var(--border-strong); }
+    .handoff .neg .step { font: 400 12.5px var(--f-sans); color: var(--ink-muted); line-height: 1.45; margin: 9px 0; position: relative; }
+    .handoff .neg .step::before { content: ''; position: absolute; left: -18px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 2px solid var(--brand-deep); }
+    .handoff .neg .step:last-child { color: var(--ink); font-weight: 600; }
+    .handoff .rec { margin-top: 14px; font: 400 12.5px var(--f-sans); line-height: 1.5; color: var(--ink); background: var(--success-tint); border: 1px solid rgba(46,125,79,0.24); border-radius: 12px; padding: 11px 14px; }
     .handoff .rec b { color: var(--success); }
-    .handoff .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .handoff .actions { display: flex; gap: 10px; margin-top: 14px; }
+    .handoff .actions .btn-primary { background: var(--brand-deep); border-color: var(--brand-deep); }
     .tr .stg { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin: 16px 0 8px; }
     .msg { max-width: 86%; padding: 9px 13px; border-radius: 14px; font-size: 12.5px; line-height: 1.5; margin-bottom: 8px; }
     .msg.toju { background: rgba(255,123,44,0.08); border: 1px solid rgba(255,123,44,0.18); border-bottom-left-radius: 4px; }
@@ -1762,17 +1791,25 @@
       { t: '4-Bed Duplex, Osapa London', list: 178, floor: 170 },
       { t: '3-Bed Terrace, Ikate', list: 148, floor: 140 },
     ];
+    // pick a property photo by keyword, sharpened for hero use
+    function propImg(s){ s = (s || '').toLowerCase();
+      const base = s.includes('osapa') ? IMG.osapa : s.includes('ikate') ? IMG.ikate : s.includes('lekki') ? IMG.lekki : IMG.vi;
+      return base.replace('?w=200&q=60', '?w=640&q=70'); }
     function renderAuth(){
       document.getElementById('authGrid').innerHTML = AUTH.map((a, i) => {
         const pct = (a.floor / a.list) * 100;
-        return `<div class="card auth">
-          <div class="tt">${a.t}</div>
-          <div class="lp">List price ₦${a.list}M</div>
-          <div class="rangebar"><span class="fill" style="left:${pct}%;right:0"></span></div>
-          <div class="rr"><span>Floor ₦${a.floor}M</span><span>List ₦${a.list}M</span></div>
-          <p class="muted" style="font-size:11.5px;margin-top:8px">Toju may discuss <b style="color:var(--ink)">₦${a.floor}M–₦${a.list}M</b> and never reveals the floor as a number.</p>
-          <div class="floorset">Set floor ₦<input type="number" value="${a.floor}" data-i="${i}" min="1" max="${a.list}"> M</div>
-          <div class="lock">🔒 Encrypted — visible only to Toju&#39;s negotiation engine. Never shown to buyers, never exported.</div>
+        return `<div class="card auth" role="group" aria-label="Negotiation authority — ${a.t}, list ₦${a.list}M, floor ₦${a.floor}M, encrypted">
+          <div class="media"><img src="${propImg(a.t)}" alt="" loading="lazy"><span class="pill pv">✓ Verified</span><span class="pill pl">🔒 Floor encrypted</span></div>
+          <div class="body">
+            <div class="tt">${a.t}</div>
+            <div class="lp">List price</div>
+            <div class="price">₦${a.list}M</div>
+            <div class="rangebar"><span class="fill" style="left:${pct}%;right:0"></span><span class="knob" style="left:${pct}%"></span></div>
+            <div class="rr"><span class="floor">Floor ₦${a.floor}M</span><span class="list">List ₦${a.list}M</span></div>
+            <p class="expl">Toju negotiates within this band and never reveals the floor as a number.</p>
+            <div class="floorset"><label>Set floor ₦<input type="number" value="${a.floor}" data-i="${i}" min="1" max="${a.list}" aria-label="Set floor for ${a.t}"> M</label></div>
+            <div class="lock"><span>🔒</span><span>Encrypted — visible only to Toju&#39;s negotiation engine. Never shown to buyers, never exported.</span></div>
+          </div>
         </div>`;
       }).join('');
     }
@@ -1829,18 +1866,24 @@
         ] },
     ];
     function renderHandoffs(){
-      document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
+      document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => {
+        const facts = [['Source', h.source], ['Property', `${h.prop} · ${h.price}`], ...h.profile];
+        return `
         <div class="card handoff">
-          <div class="hh"><span class="o">T</span><span class="ti">Toju Deal Summary — ${h.buyer}</span><span class="rt">${h.rating}</span></div>
-          <div class="bd2">
-            <div class="kv"><span class="kk">Source</span><span>${h.source}</span></div>
-            <div class="kv"><span class="kk">Property</span><span>${h.prop} · ${h.price}</span></div>
-            ${h.profile.map(p => `<div class="kv"><span class="kk">${p[0]}</span><span>${p[1]}</span></div>`).join('')}
-            <div class="neg"><div class="k">Negotiation summary</div>${h.neg.map(s => `<div class="step">${s}</div>`).join('')}</div>
-            <div class="rec"><b>Recommended:</b> ${h.rec}</div>
-            <div class="actions"><button class="btn btn-primary" style="padding:9px 16px;font-size:12.5px" data-tr="${i}">View full transcript</button><button class="btn btn-ghost" style="padding:9px 16px;font-size:12.5px" onclick="this.textContent='✓ You&#39;re on it'; this.disabled=true">Take over →</button></div>
+          <div class="banner"><img src="${propImg(h.prop)}" alt="" loading="lazy"><div class="scrim"></div>
+            <span class="rt">${h.rating}</span>
+            <div class="over">
+              <div class="who"><span class="lbl"><span class="o">T</span> Toju Deal Summary</span><div class="nm">${h.buyer}</div></div>
+              <span class="pricepill">${h.price}</span>
+            </div>
           </div>
-        </div>`).join('');
+          <div class="bd2">
+            <div class="facts">${facts.map(f => `<div class="f"><div class="k">${f[0]}</div><div class="v">${f[1]}</div></div>`).join('')}</div>
+            <div class="neg"><div class="k">Negotiation summary</div><div class="tl">${h.neg.map(s => `<div class="step">${s}</div>`).join('')}</div></div>
+            <div class="rec"><b>Recommended:</b> ${h.rec}</div>
+            <div class="actions"><button class="btn btn-primary" style="padding:10px 18px;font-size:13px" onclick="this.textContent='✓ Taken over'; this.disabled=true; this.style.opacity=.75">Take over →</button><button class="btn btn-ghost" style="padding:10px 18px;font-size:13px" data-tr="${i}">View transcript</button></div>
+          </div>
+        </div>`; }).join('');
     }
     function openTranscript(i){
       const h = HANDOFFS[i];
