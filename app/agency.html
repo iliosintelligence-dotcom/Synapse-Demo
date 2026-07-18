@@ -37,7 +37,7 @@
     .stat { padding: 16px; text-align: center; }
     .stat .v { font-family: var(--f-serif); font-weight: 600; font-size: 26px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .stat .l { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
-    .lead-banner { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; color: var(--brand); font-weight: 600; }
+    .lead-banner { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin-bottom: 14px; font-size: 13px; color: var(--brand-text); font-weight: 600; }
     .lead { display: flex; align-items: center; gap: 18px; padding: 16px 18px; margin-bottom: 12px; }
     .lead .av { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,123,44,0.1); border: 1px solid rgba(255,123,44,0.25); display: flex; align-items: center; justify-content: center; color: var(--brand); font-weight: 600; font-size: 14px; }
     .lead .nm { font-weight: 600; font-size: 14px; }
@@ -470,7 +470,10 @@
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
     /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
-    :root { --brand-deep: #C2552B; --brand-text: #A64420; }
+    :root { --brand-deep: #C2552B; --brand-text: #A64420;
+      --brand-tint: rgba(255,123,44,0.09); --success-tint: rgba(46,125,79,0.12);
+      --warn-tint: rgba(156,122,30,0.14); --info: #2f6dbd; --info-tint: rgba(47,109,189,0.12);
+      --danger: #b23b3b; --border-strong: rgba(15,18,24,0.16); --border-glass: rgba(255,255,255,0.7); }
     /* visible focus everywhere — the audit flagged outline:none across the app */
     a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
       outline: 2px solid var(--brand-deep); outline-offset: 2px; border-radius: 8px;
@@ -570,6 +573,105 @@
     .ovd-lead .nm { font-size: 13.5px; font-weight: 600; }
     .ovd-lead .wa { flex: none; }
     @media (max-width: 1040px){ .ov-grid { grid-template-columns: 1fr; } .ov-list { max-height: none; } .ov-detail { position: static; } .topsearch { display: none; } }
+
+    /* ══════ CRM pipeline table (Apple-airy, in the warm brand) ══════ */
+    .crm-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 18px 0 14px; padding: 8px 10px; background: var(--glass); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border: 1px solid var(--border); border-radius: 14px; }
+    .crm-tools-l { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .crm-tools-r { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .seg { display: flex; gap: 2px; padding: 3px; background: var(--brand-tint); border-radius: 100px; }
+    .seg-b { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: none; border: none; padding: 6px 13px; border-radius: 100px; cursor: pointer; }
+    .seg-b.on { background: var(--surface); color: var(--brand-text); box-shadow: 0 2px 8px rgba(20,26,38,0.1); }
+    .tbtn { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: .15s; }
+    .tbtn:hover { color: var(--brand-deep); border-color: rgba(194,85,43,0.4); }
+    .tbtn.primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
+    .tbtn.primary:hover { background: #a8481f; color: #fff; }
+    .swx { display: flex; align-items: center; gap: 9px; font: 700 12.5px var(--f-sans); color: var(--ink-muted); cursor: pointer; margin-left: 4px; user-select: none; }
+    .sw { width: 38px; height: 21px; border-radius: 100px; background: rgba(0,0,0,0.16); position: relative; transition: .18s; flex: none; }
+    .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: .18s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .sw.on { background: var(--brand-deep); }
+    .sw.on::after { left: 19px; }
+    .crm-stats-wrap { overflow: hidden; transition: max-height .3s ease, opacity .25s, margin .25s; max-height: 700px; opacity: 1; margin-bottom: 16px; }
+    .crm-stats-wrap.hide { max-height: 0; opacity: 0; margin-bottom: 0; }
+    .crm-statcards { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
+    .crm-stat { padding: 16px 18px; border-radius: 14px; background: linear-gradient(160deg,rgba(255,255,255,0.9),rgba(255,255,255,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.09); }
+    .cs-l { font: 700 12px var(--f-sans); color: var(--ink-muted); }
+    .cs-v { font: 600 34px var(--f-serif); color: var(--ink); line-height: 1.05; margin: 6px 0 4px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    .cs-d { font-size: 12px; color: var(--ink-muted); display: flex; align-items: center; gap: 7px; }
+    .cs-chip { font: 700 11px var(--f-sans); color: var(--success); background: var(--success-tint); border-radius: 100px; padding: 2px 8px; }
+    .crm-funnel { display: flex; align-items: stretch; gap: 4px; margin: 0 0 14px; flex-wrap: wrap; }
+    .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 7px; }
+    .fn-card:hover { border-color: rgba(194,85,43,0.3); transform: translateY(-1px); }
+    .fn-card.on { border-color: var(--brand-deep); box-shadow: 0 8px 20px rgba(194,85,43,0.14); }
+    .fn-l { font: 700 10.5px var(--f-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-muted); }
+    .fn-n { font: 500 22px var(--f-serif); color: var(--ink); line-height: 1; }
+    .fn-bar { height: 3px; border-radius: 3px; background: rgba(0,0,0,0.06); overflow: hidden; }
+    .fn-bar i { display: block; height: 100%; border-radius: 3px; }
+    .fn-card.st-new .fn-bar i { background: var(--ink-dim); } .fn-card.st-cont .fn-bar i { background: var(--info); } .fn-card.st-view .fn-bar i { background: var(--gold); } .fn-card.st-nego .fn-bar i { background: var(--brand-deep); } .fn-card.st-won .fn-bar i { background: var(--success); }
+    .fn-sep { align-self: center; color: var(--ink-dim); font-size: 15px; }
+    .crm-tablecard { padding: 0; overflow: hidden; }
+    .crm-table { width: 100%; border-collapse: collapse; }
+    .crm-table thead th { text-align: left; font: 700 12px var(--f-sans); color: var(--ink-muted); padding: 14px 14px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; background: rgba(255,255,255,0.5); }
+    .crm-table th.sortable { cursor: pointer; user-select: none; }
+    .crm-table th.sortable .crt { opacity: .35; margin-left: 4px; font-size: 10px; }
+    .crm-table th.sortable.on { color: var(--brand-text); } .crm-table th.sortable.on .crt { opacity: 1; }
+    .col-add { width: 22px; height: 22px; border-radius: 7px; border: 1px dashed var(--border-strong); background: none; color: var(--ink-dim); cursor: pointer; }
+    .crm-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .crm-row:last-child { border-bottom: none; }
+    .crm-row:hover { background: var(--brand-tint); }
+    .crm-row.sel { background: var(--brand-tint); box-shadow: inset 3px 0 0 var(--brand-deep); }
+    .crm-table td { padding: 12px 14px; font-size: 13px; vertical-align: middle; }
+    .c-chk { width: 44px; }
+    .crm-chk { width: 16px; height: 16px; accent-color: var(--brand-deep); cursor: pointer; }
+    .c-lead > .cell { display: flex; align-items: center; gap: 10px; }
+    .crm-av { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-tint); color: var(--brand-deep); font: 700 11px var(--f-sans); display: flex; align-items: center; justify-content: center; flex: none; }
+    .crm-lead-tx { display: flex; flex-direction: column; min-width: 0; }
+    .crm-lead-tx .nmx { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+    .crm-lead-tx .phx { font-size: 12px; color: var(--ink-dim); }
+    .crm-srcchip { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink-muted); background: rgba(0,0,0,0.03); border: 1px solid var(--border); border-radius: 100px; padding: 4px 10px; }
+    .crm-srcchip i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .c-budget { font: 700 13.5px var(--f-sans); font-variant-numeric: lining-nums; text-align: right; white-space: nowrap; }
+    .c-stage { white-space: nowrap; }
+    .stpill { display: inline-block; font: 700 11px var(--f-sans); padding: 4px 11px; border-radius: 100px; }
+    .stpill.st-new { background: var(--surface); border: 1px solid var(--border-strong); color: var(--ink-muted); }
+    .stpill.st-cont { background: var(--info-tint); color: var(--info); }
+    .stpill.st-view { background: var(--warn-tint); color: #7a5410; }
+    .stpill.st-nego { background: var(--brand-tint); color: var(--brand-text); }
+    .stpill.st-won { background: var(--success-tint); color: var(--success); }
+    .nbax { display: block; font-size: 11.5px; color: var(--ink-dim); margin-top: 4px; }
+    .c-time { color: var(--ink-muted); font-size: 12.5px; white-space: nowrap; }
+    .stars { display: inline-flex; gap: 1px; font-size: 14px; line-height: 1; }
+    .star { color: var(--border-strong); }
+    .star.full { color: var(--brand-deep); }
+    .star.half { background: linear-gradient(90deg,var(--brand-deep) 50%,var(--border-strong) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .c-status { white-space: nowrap; }
+    .stat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+    .stat-dot.hot { background: var(--brand-deep); } .stat-dot.warm { background: var(--gold); } .stat-dot.cold { background: var(--ink-dim); } .stat-dot.won { background: var(--success); }
+    .stat-w { font-size: 12.5px; color: var(--ink-muted); }
+    .failx { font-size: 10.5px; color: var(--danger); margin-left: 7px; font-weight: 700; }
+    .c-act { white-space: nowrap; text-align: right; }
+    .crm-wa, .crm-more { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink-muted); cursor: pointer; font-size: 14px; margin-left: 4px; }
+    .crm-wa:hover { color: #1a9e4b; border-color: rgba(37,211,102,0.5); } .crm-more:hover { color: var(--brand-deep); }
+    .crm-pg { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--border); }
+    .pg-l, .pg-go { font-size: 12.5px; color: var(--ink-muted); }
+    .crm-pg select, .crm-pg input { font: 600 12.5px var(--f-sans); border: 1px solid var(--border-strong); border-radius: 9px; padding: 5px 8px; background: var(--surface); color: var(--ink); }
+    .crm-pg #crmGo { width: 52px; }
+    .pg-nav { display: flex; gap: 4px; }
+    .pg-n { min-width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font: 700 12.5px var(--f-sans); color: var(--ink-muted); cursor: pointer; }
+    .pg-n.on { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
+    .crm-bulk { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%,14px); z-index: 55; display: flex; align-items: center; gap: 6px; padding: 9px 10px 9px 18px; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 100px; box-shadow: 0 24px 60px rgba(20,26,38,0.24); opacity: 0; pointer-events: none; transition: transform .3s cubic-bezier(.2,.9,.3,1.3), opacity .2s; }
+    .crm-bulk.on { transform: translate(-50%,0); opacity: 1; pointer-events: auto; }
+    .crm-bulk .bk-n { font: 700 13px var(--f-sans); color: var(--ink); margin-right: 6px; }
+    .crm-bulk button { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 7px 14px; cursor: pointer; }
+    .crm-bulk button:hover { color: var(--brand-deep); border-color: rgba(194,85,43,0.4); }
+    .crm-bulk button.dgr:hover { color: var(--danger); border-color: rgba(178,59,59,0.4); }
+    .crm-bulk .bk-x { width: 30px; height: 30px; padding: 0; border-radius: 50%; }
+    .crm-menu { position: fixed; z-index: 70; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 56px rgba(20,26,38,0.22); padding: 6px; min-width: 176px; }
+    .cm-i { display: block; width: 100%; text-align: left; font: 600 13px var(--f-sans); color: var(--ink); background: none; border: none; padding: 9px 12px; border-radius: 9px; cursor: pointer; }
+    .cm-i:hover { background: var(--brand-tint); color: var(--brand-text); }
+    .cm-i.on { color: var(--brand-text); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+    @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity .2s; } }
+    @media (max-width: 900px){ .crm-statcards { grid-template-columns: repeat(2,1fr); } .crm-tablecard { overflow-x: auto; } }
   </style>
 </head>
 <body class="portal">
@@ -657,18 +759,55 @@
         <section class="pane" id="pane-crm">
           <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
           <div class="h1">CRM</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Every inquiry that touches Synapse — newest first, in real time.</p>
-
+          <p class="muted" style="font-size:14px;margin-top:4px">Your whole pipeline at a glance — every lead, its stage, and the next move.</p>
 
           <div class="card lead-banner">
             <span data-lottie="lead-arrived" data-loop="false" style="width:50px;height:40px"></span>
             New lead just arrived — Bola Adeyemi via Toju
           </div>
 
-          <!-- attribution breakdown: which marketing actually made leads -->
-          <div class="card brk" id="brk"></div>
+          <!-- toolbar -->
+          <div class="crm-tools">
+            <div class="crm-tools-l">
+              <div class="seg"><button class="seg-b on">▤ Table</button><button class="seg-b" id="crmBoardBtn">▦ Board</button></div>
+              <button class="tbtn" id="crmFilterBtn">▽ Filter</button>
+              <button class="tbtn" id="crmSortBtn">↕ Sort</button>
+              <label class="swx"><span>Show statistics</span><span class="sw on" id="crmStatSw" role="switch" aria-checked="true" tabindex="0"></span></label>
+            </div>
+            <div class="crm-tools-r">
+              <button class="tbtn" id="crmExport">⇪ Export</button>
+              <button class="tbtn primary" id="crmAdd">+ Add lead</button>
+            </div>
+          </div>
 
-          <div id="leads"></div>
+          <!-- statistics (toggled): 4 cards + attribution mix -->
+          <div class="crm-stats-wrap" id="crmStats">
+            <div class="crm-statcards" id="crmStatCards"></div>
+            <!-- attribution breakdown: which marketing actually made leads -->
+            <div class="card brk" id="brk"></div>
+          </div>
+
+          <!-- pipeline funnel (always visible — it's the process) -->
+          <div class="crm-funnel" id="crmFunnel"></div>
+
+          <!-- pipeline table -->
+          <div class="card crm-tablecard">
+            <table class="crm-table" id="crmTable">
+              <caption class="sr-only">Leads pipeline</caption>
+              <thead id="crmHead"></thead>
+              <tbody id="leads"></tbody>
+            </table>
+            <div class="crm-pg" id="crmPager"></div>
+          </div>
+
+          <!-- floating bulk-action bar -->
+          <div class="crm-bulk" id="crmBulk" role="toolbar" aria-label="Bulk actions">
+            <span class="bk-n" id="crmBulkN">0 selected</span>
+            <button data-bulk="assign">Assign</button>
+            <button data-bulk="message">Message</button>
+            <button data-bulk="delete" class="dgr">Delete</button>
+            <button class="bk-x" data-bulk="clear" aria-label="Clear selection">×</button>
+          </div>
         </section>
 
         <!-- ══ SUBSCRIPTION ══ -->
@@ -867,8 +1006,28 @@
     const scoreTone = s => s >= 80 ? 'color:var(--success);border-color:var(--success)' : s >= 60 ? 'color:var(--brand);border-color:var(--brand)' : 'color:var(--ink-dim);border-color:var(--ink-dim)';
     const chnBadge = c => `<span class="chn" style="background:${CH[c].color}" title="Attributed to ${CH[c].label}">${CH[c].short}</span>`;
 
-    // ── attribution breakdown bar ──
-    (function renderBrk(){
+    // ══════════ CRM — pipeline table ══════════
+    const STAGE_ORDER = ['New','Contacted','Viewing','Negotiation','Won'];
+    const STAGE_CLS = { New:'st-new', Contacted:'st-cont', Viewing:'st-view', Negotiation:'st-nego', Won:'st-won' };
+    const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set() };
+    const tmin = t => { const m=/(\d+)\s*([mhd])/.exec(t||''); if(!m) return 1e9; const n=+m[1]; return m[2]==='m'?n:m[2]==='h'?n*60:n*1440; };
+    const budgetN = l => { const m=/₦?(\d+(?:\.\d+)?)\s*([MB])/.exec(l.price||''); return m ? +m[1]*(m[2]==='B'?1000:1) : 0; };
+    function crmStars(score){
+      const v=Math.round(score/10)/2; let h='';
+      for(let i=1;i<=5;i++){ h += v>=i ? '<span class="star full">★</span>' : (v>=i-0.5 ? '<span class="star half">★</span>' : '<span class="star">★</span>'); }
+      return `<span class="stars" role="img" aria-label="${v} of 5 (${score} of 100)">${h}</span>`;
+    }
+    function crmFiltered(){
+      let a = leads.map((l,i)=>({l, oi:i}));
+      if(CRM.fStage) a = a.filter(x=>x.l.stage===CRM.fStage);
+      if(CRM.fSrc) a = a.filter(x=>x.l.attr.channel===CRM.fSrc);
+      const key = { recent:x=>-tmin(x.l.t), score:x=>x.l.score, budget:x=>budgetN(x.l), stage:x=>STAGE_ORDER.indexOf(x.l.stage), lead:x=>x.l.nm.toLowerCase() }[CRM.sortK] || (x=>-tmin(x.l.t));
+      const dir = CRM.sortDir;
+      a.sort((p,q)=>{ const pv=key(p), qv=key(q); return pv<qv?-dir : pv>qv?dir : 0; });
+      return a;
+    }
+    // ── attribution breakdown bar (now inside the toggled stats region) ──
+    function renderBrk(){
       const counts = {};
       leads.forEach(l => { const c = l.attr.channel; counts[c] = (counts[c]||0)+1; });
       const order = Object.keys(CH).filter(c => counts[c]).sort((a,b)=>counts[b]-counts[a]);
@@ -876,28 +1035,133 @@
         `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
          <div class="chips">${order.map(c => `<span class="c2">${chnBadge(c)} ${CH[c].label} <b>${counts[c]}</b></span>`).join('')}</div>
          <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`;
-    })();
+    }
+    function renderCrmStats(){
+      const cards = [
+        ['Total leads','128','▲ 12%'],
+        ['Pipeline value','₦2.4B','▲ 9%'],
+        ['Conversion rate','7%','▲ 1.2 pts'],
+        ['Avg first response','8m','▲ 18% faster'],
+      ];
+      document.getElementById('crmStatCards').innerHTML = cards.map(c =>
+        `<div class="crm-stat"><div class="cs-l">${c[0]}</div><div class="cs-v">${c[1]}</div><div class="cs-d"><span class="cs-chip">${c[2]}</span> vs last month</div></div>`).join('');
+    }
+    function renderCrmFunnel(){
+      const counts = STAGE_ORDER.map(s => leads.filter(l => l.stage===s).length);
+      const max = Math.max(...counts, 1);
+      document.getElementById('crmFunnel').innerHTML = STAGE_ORDER.map((s,i) =>
+        `<button class="fn-card ${STAGE_CLS[s]} ${CRM.fStage===s?'on':''}" data-stage="${s}" aria-pressed="${CRM.fStage===s}">
+          <span class="fn-l">${s}</span><span class="fn-n">${counts[i]}</span><span class="fn-bar"><i style="width:${counts[i]/max*100}%"></i></span>
+         </button>${i<STAGE_ORDER.length-1?'<span class="fn-sep">›</span>':''}`).join('');
+    }
+    function renderCrmTable(){
+      const cols = [['',''],['Lead','lead'],['Source','src'],['Budget','budget'],['Stage','stage'],['Last activity','recent'],['Score','score'],['Status',''],['add','']];
+      document.getElementById('crmHead').innerHTML = '<tr>' + cols.map(c => {
+        if(c[0]==='add') return '<th><button class="col-add" aria-label="Add column">+</button></th>';
+        if(!c[1]) return `<th>${c[0]?`<span>${c[0]}</span>`:''}</th>`;
+        const active = CRM.sortK===c[1];
+        return `<th class="sortable ${active?'on':''}" data-sort="${c[1]}" aria-sort="${active?(CRM.sortDir<0?'descending':'ascending'):'none'}"><span>${c[0]}</span><span class="crt">${active&&CRM.sortDir>0?'▴':'▾'}</span></th>`;
+      }).join('') + '</tr>';
+      const all = crmFiltered();
+      const pages = Math.max(1, Math.ceil(all.length/CRM.per));
+      if(CRM.page>pages) CRM.page = pages;
+      const start = (CRM.page-1)*CRM.per;
+      document.getElementById('leads').innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
+        const sel = CRM.sel.has(oi);
+        return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
+          <td class="c-chk"><input type="checkbox" class="crm-chk" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
+          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph}</span></span></span></td>
+          <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
+          <td class="c-budget">${l.price}</td>
+          <td class="c-stage"><span class="stpill ${STAGE_CLS[l.stage]}">${l.stage}</span><span class="nbax">→ ${l.nba.do}</span></td>
+          <td class="c-time">${l.t}</td>
+          <td class="c-score">${crmStars(l.score)}</td>
+          <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
+          <td class="c-act"><a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a><button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
+        </tr>`;
+      }).join('');
+      let nums = '';
+      for(let p=1;p<=pages;p++) nums += `<button class="pg-n ${p===CRM.page?'on':''}" data-pg="${p}" ${p===CRM.page?'aria-current="page"':''}>${p}</button>`;
+      document.getElementById('crmPager').innerHTML =
+        `<div class="pg-l">Showing <select id="crmPer" aria-label="Rows per page"><option ${CRM.per===10?'selected':''}>10</option><option ${CRM.per===25?'selected':''}>25</option><option ${CRM.per===50?'selected':''}>50</option></select> per page · ${all.length} lead${all.length!==1?'s':''}</div>
+         <nav class="pg-nav" aria-label="Pagination">${nums}</nav>
+         <div class="pg-go">Go to page <input type="number" min="1" max="${pages}" id="crmGo" aria-label="Go to page"><button class="tbtn" id="crmGoBtn">Go</button></div>`;
+      renderBulk();
+    }
+    function renderBulk(){
+      const n = CRM.sel.size;
+      document.getElementById('crmBulk').classList.toggle('on', n>0);
+      document.getElementById('crmBulkN').textContent = n + ' selected';
+    }
+    function renderCrm(){ renderCrmStats(); renderBrk(); renderCrmFunnel(); renderCrmTable(); }
+    renderCrm();
 
-    document.getElementById('leads').innerHTML = leads.map((l, i) => `
-      <div class="card lead click" data-i="${i}">
-        <span class="score" style="${scoreTone(l.score)}">${l.score}</span>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span class="nm">${l.nm}</span>
-            <span class="src ${l.src === 'toju' ? 'toju' : l.src === 'contact' ? 'contact' : 'browse'}">${l.src === 'toju' ? 'Toju' : l.src === 'contact' ? 'Contact' : l.src === 'instagram' ? 'Instagram' : 'Browse'}</span>
-            ${chnBadge(l.attr.channel)}
-            <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
-            <span class="src browse">${l.stage}</span>
-            ${l.failed ? '<span class="failed">⚠ Delivery failed</span>' : ''}
-          </div>
-          <div class="pr">${l.pr}</div>
-          <div class="ph">${l.ph}</div>
-          <div class="nba-line">▶ Next: ${l.nba.text}</div>
-        </div>
-        <span class="time">${l.t}</span>
-        <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()">WhatsApp</a>
-      </div>
-    `).join('');
+    // ── CRM interactions ──
+    (function(){
+      const sw = document.getElementById('crmStatSw');
+      const toggleStats = () => { const on = sw.classList.toggle('on'); sw.setAttribute('aria-checked', String(on)); document.getElementById('crmStats').classList.toggle('hide', !on); };
+      sw.addEventListener('click', toggleStats);
+      sw.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); toggleStats(); } });
+      document.getElementById('crmFunnel').addEventListener('click', e => {
+        const b = e.target.closest('[data-stage]'); if(!b) return;
+        CRM.fStage = CRM.fStage===b.dataset.stage ? null : b.dataset.stage; CRM.page=1; renderCrmFunnel(); renderCrmTable();
+      });
+      document.getElementById('crmHead').addEventListener('click', e => {
+        const th = e.target.closest('[data-sort]'); if(!th) return;
+        const k = th.dataset.sort;
+        if(CRM.sortK===k) CRM.sortDir *= -1; else { CRM.sortK=k; CRM.sortDir = (k==='lead'||k==='stage')?1:-1; }
+        CRM.page=1; renderCrmTable();
+      });
+      const body = document.getElementById('leads');
+      body.addEventListener('click', e => {
+        if(e.target.closest('.crm-chk') || e.target.closest('[data-stop]')) return;
+        const row = e.target.closest('[data-i]'); if(row) openLead(+row.dataset.i);
+      });
+      body.addEventListener('change', e => {
+        const c = e.target.closest('.crm-chk'); if(!c) return;
+        const oi = +c.dataset.sel; c.checked ? CRM.sel.add(oi) : CRM.sel.delete(oi);
+        c.closest('tr').classList.toggle('sel', c.checked); renderBulk();
+      });
+      const pager = document.getElementById('crmPager');
+      pager.addEventListener('click', e => {
+        const pg = e.target.closest('[data-pg]'); if(pg){ CRM.page = +pg.dataset.pg; renderCrmTable(); return; }
+        if(e.target.id==='crmGoBtn'){ const v = +document.getElementById('crmGo').value; if(v){ CRM.page=v; renderCrmTable(); } }
+      });
+      pager.addEventListener('change', e => { if(e.target.id==='crmPer'){ CRM.per = +e.target.value; CRM.page=1; renderCrmTable(); } });
+      document.getElementById('crmBulk').addEventListener('click', e => {
+        const b = e.target.closest('[data-bulk]'); if(!b) return;
+        const act = b.dataset.bulk;
+        if(act==='clear'){ CRM.sel.clear(); renderCrmTable(); return; }
+        const n = CRM.sel.size;
+        toast(act.charAt(0).toUpperCase()+act.slice(1)+' · '+n+' lead'+(n!==1?'s':'')+' — Toju queued it');
+        if(act==='delete'){ CRM.sel.clear(); renderCrmTable(); }
+      });
+      document.getElementById('crmExport').addEventListener('click', () => toast('Exporting your pipeline to CSV…'));
+      document.getElementById('crmAdd').addEventListener('click', () => toast('New-lead intake — Toju captures the next one automatically'));
+      document.getElementById('crmBoardBtn').addEventListener('click', () => toast('Board view is coming next'));
+      function crmMenu(anchor, opts, pick){
+        document.querySelectorAll('.crm-menu').forEach(m => m.remove());
+        const r = anchor.getBoundingClientRect();
+        const menu = document.createElement('div'); menu.className = 'crm-menu';
+        menu.style.top = (r.bottom+6)+'px'; menu.style.left = r.left+'px';
+        menu.innerHTML = opts.map(o => `<button class="cm-i ${o.on?'on':''}" data-k="${o.k}">${o.on?'✓ ':''}${o.label}</button>`).join('');
+        document.body.appendChild(menu);
+        const close = () => { menu.remove(); document.removeEventListener('click', out, true); };
+        const out = ev => { if(!menu.contains(ev.target) && ev.target!==anchor) close(); };
+        menu.addEventListener('click', ev => { const b = ev.target.closest('[data-k]'); if(b){ pick(b.dataset.k); close(); } });
+        setTimeout(() => document.addEventListener('click', out, true), 0);
+      }
+      document.getElementById('crmSortBtn').addEventListener('click', () => {
+        const opts = [['recent','Most recent'],['score','Lead score'],['budget','Budget'],['stage','Pipeline stage'],['lead','Name']]
+          .map(o => ({ k:o[0], label:o[1], on:CRM.sortK===o[0] }));
+        crmMenu(document.getElementById('crmSortBtn'), opts, k => { CRM.sortK=k; CRM.sortDir=(k==='lead'||k==='stage')?1:-1; CRM.page=1; renderCrmTable(); });
+      });
+      document.getElementById('crmFilterBtn').addEventListener('click', () => {
+        const srcs = Object.keys(CH).filter(c => leads.some(l => l.attr.channel===c));
+        const opts = [{ k:'', label:'All sources', on:!CRM.fSrc }].concat(srcs.map(c => ({ k:c, label:CH[c].label, on:CRM.fSrc===c })));
+        crmMenu(document.getElementById('crmFilterBtn'), opts, k => { CRM.fSrc = k||null; CRM.page=1; renderCrmTable(); });
+      });
+    })();
 
     // ── lead drawer with the full attribution chain ──
     const scrim = document.getElementById('scrim'), drawer = document.getElementById('drawer');
@@ -941,7 +1205,6 @@
       if (window.synMotion) synMotion.refresh();
     }
     function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
-    document.getElementById('leads').addEventListener('click', (e) => { const c = e.target.closest('[data-i]'); if (c) openLead(+c.dataset.i); });
     scrim.addEventListener('click', closeLead);
 
     // ── content pipeline (Phase A) ──
