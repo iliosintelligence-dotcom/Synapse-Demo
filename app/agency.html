@@ -445,8 +445,20 @@
     .lf .field { margin-bottom: 13px; }
     .lf label { display: block; font-size: 11px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
     .lf input, .lf select { width: 100%; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink); outline: none; }
-    .lf input:focus, .lf select:focus { border-color: rgba(194,85,43,0.5); }
+    .lf textarea { width: 100%; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink); outline: none; resize: vertical; min-height: 66px; }
+    .lf input:focus, .lf select:focus, .lf textarea:focus { border-color: rgba(194,85,43,0.5); }
+    .lf input:focus-visible, .lf select:focus-visible, .lf textarea:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 1px; border-color: var(--brand-deep); }
     .lf .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .lf-sec { border: none; border-top: 1px solid var(--border); padding: 15px 0 2px; margin: 0; }
+    .lf-sec:first-of-type { border-top: none; padding-top: 4px; }
+    .lf-sec legend { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--brand-text); padding: 0; margin-bottom: 11px; }
+    .lf .ferr { display: none; font: 500 12px var(--f-sans); color: var(--danger); margin-top: 4px; }
+    .lf-hint { font: 400 12px var(--f-sans); color: var(--ink-dim); margin: 2px 0 4px; }
+    .lf-echo { display: block; font: 600 12px var(--f-sans); color: var(--brand-text); margin-top: 4px; }
+    .lf-ro { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 12.5px; margin: 4px 0 12px; padding: 10px 12px; background: rgba(0,0,0,0.03); border-radius: 11px; }
+    .lf-ro .k { color: var(--ink-dim); font-weight: 600; }
+    .lf-ro .v { color: var(--ink); text-align: right; }
+    .lf-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 600 13px var(--f-sans); color: var(--ink); margin-bottom: 4px; cursor: pointer; text-transform: none; letter-spacing: 0; }
     .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform .3s cubic-bezier(.22,1,.36,1); }
     .toast.on { transform: translateX(-50%) translateY(0); }
 
@@ -1356,7 +1368,7 @@
     // ── listings — editable, with the 14-day freshness rule ──
     // Every listing must be re-listed every 14 days or it stops showing to
     // buyers (matches Toju's freshness filter). `days` = days since (re)listed.
-    const L_KEY = 'synapse_agency_listings_v2';
+    const L_KEY = 'synapse_agency_listings_v3';
     const L_DEFAULT = [
       { t: '3-Bed Apartment, Lekki Phase 1', pr: 165, st: 'verified', leads: 6, days: 3, img: IMG.lekki },
       { t: '4-Bed Duplex, Osapa London', pr: 178, st: 'verified', leads: 3, days: 8, img: IMG.osapa },
@@ -1365,12 +1377,78 @@
       { t: '2-Bed Flat, Yaba', pr: 58, st: 'pending', leads: 2, days: 13, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=70' },
       { t: '2-Bed Flat, Victoria Island', pr: 142, st: 'verified', leads: 0, days: 17, img: IMG.vi },
     ];
+    // enum option sets mirror the `properties` schema (supabase/migrations/0002_schema.sql)
+    const PROP_TYPES = ['apartment','house','duplex','terrace','penthouse','bungalow','land','commercial'];
+    const LISTING_TYPES = ['sale','rent','shortlet'];
+    const PRICE_PERIODS = ['total','per_year','per_month','per_night'];
+    const TITLE_TYPES = ['c_of_o','governors_consent','registered_deed','excision','gazette','allocation'];
+    const TYPE_LABEL = { apartment:'Apartment', house:'House', duplex:'Duplex', terrace:'Terrace', penthouse:'Penthouse', bungalow:'Bungalow', land:'Land', commercial:'Commercial' };
+    const DEAL_LABEL = { sale:'For sale', rent:'For rent', shortlet:'Short-let' };
+    const PERIOD_LABEL = { total:'Total price', per_year:'Per year', per_month:'Per month', per_night:'Per night' };
+    const PERIOD_SUFFIX = { total:'', per_year:'/yr', per_month:'/mo', per_night:'/night' };
+    const TITLE_LABEL = { c_of_o:'Certificate of Occupancy (C of O)', governors_consent:'Governor’s Consent', registered_deed:'Registered Deed', excision:'Excision', gazette:'Gazette', allocation:'Allocation' };
+
+    // migrate a legacy {t,pr,st,leads,days,img} item to the full property schema shape (idempotent)
+    function migrateListing(l) {
+      if (l && l.title) return l; // already migrated
+      const t = l.t || '', tl = t.toLowerCase(), parts = t.split(',').map(s => s.trim());
+      const bedM = t.match(/(\d+)\s*-?\s*bed/i);
+      const ptype = tl.includes('duplex') ? 'duplex' : tl.includes('terrace') ? 'terrace' : tl.includes('penthouse') ? 'penthouse'
+        : tl.includes('bungalow') ? 'bungalow' : (tl.includes('detached') || tl.includes('house')) ? 'house'
+        : tl.includes('land') ? 'land' : (tl.includes('shop') || tl.includes('office')) ? 'commercial' : 'apartment';
+      const hood = parts.length > 1 ? parts[parts.length - 1] : '';
+      return Object.assign({
+        title: t, description: t ? ('Verified ' + t + '.') : '',
+        property_type: ptype, listing_type: 'sale',
+        price: (l.pr || 0) * 1e6, price_period: 'total', move_in_cost: null, service_charge: null,
+        address: hood || 'Lagos', city: 'Lagos', state: 'Lagos', country: 'Nigeria',
+        neighbourhood: hood, latitude: null, longitude: null,
+        bedrooms: bedM ? +bedM[1] : null, bathrooms: null, area_sqm: null, amenities: [],
+        title_type: null, yield_pct: null,
+        verification_status: l.st === 'verified' ? 'verified' : 'unverified',
+        is_active: l.st !== 'inactive',
+        media: [{ url: l.img || IMG.lekki, is_primary: true, display_order: 0 }],
+      }, l);
+    }
+    // keep the legacy/display keys the cards + Overview + Marketing read in sync with schema fields
+    function deriveLegacy(l) {
+      l.t = l.title;
+      l.pr = Math.round((l.price || 0) / 1e6);
+      l.img = (l.media && l.media[0] && l.media[0].url) || l.img || IMG.lekki;
+      l.st = !l.is_active ? 'inactive' : (l.verification_status === 'verified' ? 'verified' : 'pending');
+      return l;
+    }
+    // a blank listing template (all required fields empty for the create form)
+    function blankListing() {
+      return { title:'', description:'', property_type:'apartment', listing_type:'sale', price:'', price_period:'total',
+        move_in_cost:'', service_charge:'', address:'', city:'', state:'Lagos', country:'Nigeria', neighbourhood:'',
+        latitude:'', longitude:'', bedrooms:'', bathrooms:'', area_sqm:'', amenities:[], title_type:'', yield_pct:'',
+        verification_status:'unverified', is_active:true, media:[{ url:'', is_primary:true, display_order:0 }], leads:0, days:0 };
+    }
+    // map a listing item → a `properties` insert row + property_media[] (backend contract; see docs/LISTING_SCHEMA.md)
+    function toPropertyRow(l) {
+      return {
+        row: {
+          agency_id: null, // set server-side from the auth context (JWT)
+          title: l.title, description: l.description, property_type: l.property_type, listing_type: l.listing_type,
+          price: l.price, price_period: l.price_period, move_in_cost: l.move_in_cost, service_charge: l.service_charge,
+          bedrooms: l.bedrooms, bathrooms: l.bathrooms, area_sqm: l.area_sqm,
+          address: l.address, city: l.city, state: l.state, country: l.country, latitude: l.latitude, longitude: l.longitude,
+          amenities: l.amenities || [], title_type: l.title_type, yield_pct: l.yield_pct,
+          verification_status: l.verification_status, is_active: l.is_active, // verification is system-owned, not agency-writable
+        },
+        media: (l.media || []).map((m, i) => ({ url: m.url, is_primary: i === 0, display_order: i })),
+      };
+    }
     let LISTINGS_DATA;
-    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)); } catch (e) {}
-    if (!Array.isArray(LISTINGS_DATA) || !LISTINGS_DATA.length) LISTINGS_DATA = L_DEFAULT;
+    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)) || JSON.parse(localStorage.getItem('synapse_agency_listings_v2')); } catch (e) {}
+    if (!Array.isArray(LISTINGS_DATA) || !LISTINGS_DATA.length) LISTINGS_DATA = L_DEFAULT.map(x => ({ ...x }));
+    LISTINGS_DATA = LISTINGS_DATA.map(l => deriveLegacy(migrateListing(l)));
     const saveListings = () => localStorage.setItem(L_KEY, JSON.stringify(LISTINGS_DATA));
     const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
     const nairaM = v => '₦' + v + 'M';
+    const nairaFull = v => '₦' + (Number(v) || 0).toLocaleString('en-NG');
+    const priceLabel = l => nairaM(l.pr) + (PERIOD_SUFFIX[l.price_period] || '');
 
     // Per-pane snapshot stats now live in the Ask-Toju panel, not on the pages.
     const STATS = {};
@@ -1426,7 +1504,7 @@
             <div class="fprog ${f.cls}"><i style="width:${leftPct}%"></i></div>
           </div>
           <div class="bd">
-            <div class="pr">${nairaM(l.pr)}</div>
+            <div class="pr">${priceLabel(l)}</div>
             <div class="tt">${l.t}</div>
             <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
             <div class="acts">
@@ -1441,51 +1519,143 @@
     // edit / create in the shared drawer
     function listingForm(l, idx) {
       const isNew = idx === -1;
+      const d = isNew ? blankListing() : l;
+      const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      const opt = (arr, cur, lbl) => arr.map(v => `<option value="${v}" ${v === cur ? 'selected' : ''}>${lbl[v] || v}</option>`).join('');
+      const primary = (d.media && d.media[0] && d.media[0].url) || '';
+      const vLabel = d.verification_status === 'verified' ? '✓ Verified'
+        : d.verification_status === 'in_progress' ? '◷ In progress' : 'Unverified · enters the 7-check queue';
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
         <div style="font-size:19px;font-weight:700">${isNew ? 'New listing' : 'Edit listing'}</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 18px">${isNew
-          ? 'New listings enter the 7-check verification queue before going live to buyers.'
-          : 'Changes apply immediately. Price or title changes re-run media validation.'}</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 12px">Complete every required field (<b style="color:var(--brand-text)">*</b>) so Toju can match this property accurately. ${isNew ? 'New listings enter the 7-check verification queue.' : 'Edits must keep the listing complete.'}</p>
         <div class="lf">
-          <div class="field"><label>Title</label><input id="lfT" value="${(l.t || '').replace(/"/g, '&quot;')}" placeholder="e.g. 3-Bed Apartment, Lekki Phase 1"></div>
-          <div class="row2">
-            <div class="field"><label>Price (₦ millions)</label><input id="lfP" type="number" min="1" value="${l.pr || ''}" placeholder="165"></div>
-            <div class="field"><label>Status</label>
-              <select id="lfS">
-                <option value="pending" ${l.st === 'pending' ? 'selected' : ''}>Pending review</option>
-                <option value="verified" ${l.st === 'verified' ? 'selected' : ''}>Verified</option>
-                <option value="inactive" ${l.st === 'inactive' ? 'selected' : ''}>Inactive</option>
-              </select>
+          <fieldset class="lf-sec"><legend>Basics</legend>
+            <div class="field"><label>Title *</label><input id="lfTitle" value="${esc(d.title)}" placeholder="3-Bed Apartment, Lekki Phase 1"><span class="ferr" id="e_title"></span></div>
+            <div class="row2">
+              <div class="field"><label>Property type *</label><select id="lfType">${opt(PROP_TYPES, d.property_type, TYPE_LABEL)}</select></div>
+              <div class="field"><label>Listing type *</label><select id="lfListing">${opt(LISTING_TYPES, d.listing_type, DEAL_LABEL)}</select></div>
             </div>
-          </div>
-          <div class="field"><label>Image URL</label><input id="lfI" value="${(l.img || '').replace(/"/g, '&quot;')}" placeholder="https://…"></div>
+            <div class="field"><label>Description *</label><textarea id="lfDesc" rows="3" placeholder="Condition, layout, neighbourhood, what's included…">${esc(d.description)}</textarea><span class="ferr" id="e_desc"></span></div>
+          </fieldset>
+          <fieldset class="lf-sec"><legend>Location</legend>
+            <div class="field"><label>Address *</label><input id="lfAddr" value="${esc(d.address)}" placeholder="Street / estate"><span class="ferr" id="e_addr"></span></div>
+            <div class="row2">
+              <div class="field"><label>City *</label><input id="lfCity" value="${esc(d.city)}" placeholder="Lagos"><span class="ferr" id="e_city"></span></div>
+              <div class="field"><label>State *</label><input id="lfState" value="${esc(d.state)}" placeholder="Lagos"><span class="ferr" id="e_state"></span></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Neighbourhood</label><input id="lfHood" value="${esc(d.neighbourhood)}" placeholder="Lekki Phase 1"></div>
+              <div class="field"><label>Country *</label><select id="lfCountry"><option ${d.country === 'Nigeria' ? 'selected' : ''}>Nigeria</option></select></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Latitude</label><input id="lfLat" type="number" step="any" value="${esc(d.latitude)}" placeholder="6.45"><span class="ferr" id="e_lat"></span></div>
+              <div class="field"><label>Longitude</label><input id="lfLng" type="number" step="any" value="${esc(d.longitude)}" placeholder="3.47"></div>
+            </div>
+            <p class="lf-hint">Coordinates enable the map pin and proximity matching — recommended.</p>
+          </fieldset>
+          <fieldset class="lf-sec"><legend>Specifications</legend>
+            <div class="row2">
+              <div class="field"><label id="lbBeds">Bedrooms *</label><input id="lfBeds" type="number" min="0" max="20" value="${esc(d.bedrooms)}" placeholder="3"><span class="ferr" id="e_beds"></span></div>
+              <div class="field"><label>Bathrooms</label><input id="lfBaths" type="number" min="0" max="20" value="${esc(d.bathrooms)}" placeholder="3"></div>
+            </div>
+            <div class="field"><label>Area (sqm)</label><input id="lfArea" type="number" min="0" step="any" value="${esc(d.area_sqm)}" placeholder="220"></div>
+            <div class="field"><label>Amenities</label><input id="lfAmen" value="${esc((d.amenities || []).join(', '))}" placeholder="Parking, 24h power, Security, Pool (comma-separated)"></div>
+          </fieldset>
+          <fieldset class="lf-sec"><legend>Pricing</legend>
+            <div class="row2">
+              <div class="field"><label>Price (₦) *</label><input id="lfPrice" type="number" min="1" value="${esc(d.price)}" placeholder="165000000"><span class="ferr" id="e_price"></span><span class="lf-echo" id="priceEcho"></span></div>
+              <div class="field"><label>Price period *</label><select id="lfPeriod">${opt(PRICE_PERIODS, d.price_period, PERIOD_LABEL)}</select></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Move-in cost (₦)</label><input id="lfMoveIn" type="number" min="0" value="${esc(d.move_in_cost)}" placeholder="optional"></div>
+              <div class="field"><label>Service charge (₦/yr)</label><input id="lfService" type="number" min="0" value="${esc(d.service_charge)}" placeholder="optional"></div>
+            </div>
+          </fieldset>
+          <fieldset class="lf-sec"><legend>Trust &amp; documents</legend>
+            <div class="row2">
+              <div class="field"><label>Title document</label><select id="lfTitleType"><option value="">— Select —</option>${opt(TITLE_TYPES, d.title_type || '', TITLE_LABEL)}</select></div>
+              <div class="field"><label>Gross yield (%)</label><input id="lfYield" type="number" min="0" max="100" step="any" value="${esc(d.yield_pct)}" placeholder="optional"></div>
+            </div>
+            <div class="lf-ro"><span class="k">Verification</span><span class="v">${vLabel}</span></div>
+            <label class="lf-toggle"><span>Listing active (visible to buyers)</span><span class="sw ${d.is_active ? 'on' : ''}" id="lfActive" role="switch" aria-checked="${d.is_active}" tabindex="0"></span></label>
+          </fieldset>
+          <fieldset class="lf-sec"><legend>Media</legend>
+            <div class="field"><label>Primary image URL *</label><input id="lfImg" value="${esc(primary)}" placeholder="https://…"><span class="ferr" id="e_img"></span></div>
+          </fieldset>
           <button class="btn btn-primary btn-block" id="lfSave" style="margin-top:6px">${isNew ? 'Create listing' : 'Save changes'}</button>
           ${isNew ? '' : '<button class="btn btn-ghost btn-block" id="lfDel" style="margin-top:8px">Delete listing</button>'}
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
-      document.getElementById('lfSave').addEventListener('click', () => {
-        const t = document.getElementById('lfT').value.trim();
-        const pr = parseInt(document.getElementById('lfP').value, 10);
-        if (!t || !pr) { toast('Give the listing a title and a price'); return; }
-        const st = document.getElementById('lfS').value;
-        const img = document.getElementById('lfI').value.trim() || IMG.lekki;
+      const g = id => document.getElementById(id);
+      g('drawerX').addEventListener('click', closeLead);
+      // active toggle
+      const actSw = g('lfActive');
+      const toggleAct = () => { const on = actSw.classList.toggle('on'); actSw.setAttribute('aria-checked', String(on)); };
+      actSw.addEventListener('click', toggleAct);
+      actSw.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleAct(); } });
+      // property type → bedrooms optional for land/commercial
+      const syncBeds = () => { const isLand = ['land', 'commercial'].includes(g('lfType').value); g('lbBeds').textContent = isLand ? 'Bedrooms' : 'Bedrooms *'; };
+      g('lfType').addEventListener('change', () => { syncBeds(); validate(); });
+      syncBeds();
+      // listing type → default price period
+      g('lfListing').addEventListener('change', function () { g('lfPeriod').value = { sale: 'total', rent: 'per_year', shortlet: 'per_night' }[this.value] || 'total'; });
+      // price echo
+      const priceEcho = () => { const v = parseFloat(g('lfPrice').value); g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaM(Math.round(v / 1e6)) + ')' : ''; };
+      // validation
+      const setErr = (id, msg) => { const el = g(id); if (el) { el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none'; } };
+      function validate() {
+        const isLand = ['land', 'commercial'].includes(g('lfType').value);
+        const la = g('lfLat').value.trim(), lo = g('lfLng').value.trim();
+        const checks = {
+          e_title: g('lfTitle').value.trim().length >= 6 ? '' : 'At least 6 characters',
+          e_desc: g('lfDesc').value.trim().length >= 30 ? '' : 'Describe the property (30+ characters)',
+          e_addr: g('lfAddr').value.trim() ? '' : 'Required',
+          e_city: g('lfCity').value.trim() ? '' : 'Required',
+          e_state: g('lfState').value.trim() ? '' : 'Required',
+          e_price: parseFloat(g('lfPrice').value) > 0 ? '' : 'Enter a price in naira',
+          e_beds: (isLand || (g('lfBeds').value !== '' && +g('lfBeds').value >= 0)) ? '' : 'Required',
+          e_img: /^https?:\/\//.test(g('lfImg').value.trim()) ? '' : 'A valid image URL (http…)',
+          e_lat: ((la && lo) || (!la && !lo)) ? '' : 'Enter both latitude and longitude, or neither',
+        };
+        let ok = true;
+        Object.keys(checks).forEach(k => { setErr(k, checks[k]); if (checks[k]) ok = false; });
+        const save = g('lfSave'); save.disabled = !ok; save.style.opacity = ok ? '1' : '.55'; save.setAttribute('aria-disabled', String(!ok));
+        return ok;
+      }
+      ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg', 'lfLat', 'lfLng'].forEach(id =>
+        g(id).addEventListener('input', () => { validate(); if (id === 'lfPrice') priceEcho(); }));
+      priceEcho(); validate();
+      // save
+      g('lfSave').addEventListener('click', () => {
+        if (!validate()) { toast('Fill in the required fields (*) first'); return; }
+        const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+        const data = {
+          title: g('lfTitle').value.trim(), description: g('lfDesc').value.trim(),
+          property_type: g('lfType').value, listing_type: g('lfListing').value,
+          price: num(g('lfPrice').value), price_period: g('lfPeriod').value,
+          move_in_cost: num(g('lfMoveIn').value), service_charge: num(g('lfService').value),
+          address: g('lfAddr').value.trim(), city: g('lfCity').value.trim(), state: g('lfState').value.trim(), country: g('lfCountry').value,
+          neighbourhood: g('lfHood').value.trim(), latitude: num(g('lfLat').value), longitude: num(g('lfLng').value),
+          bedrooms: g('lfBeds').value === '' ? null : parseInt(g('lfBeds').value, 10),
+          bathrooms: g('lfBaths').value === '' ? null : parseInt(g('lfBaths').value, 10),
+          area_sqm: num(g('lfArea').value), amenities: g('lfAmen').value.split(',').map(s => s.trim()).filter(Boolean),
+          title_type: g('lfTitleType').value || null, yield_pct: num(g('lfYield').value),
+          is_active: actSw.classList.contains('on'),
+          media: [{ url: g('lfImg').value.trim(), is_primary: true, display_order: 0 }],
+        };
         if (isNew) {
-          LISTINGS_DATA.unshift({ t, pr, st: 'pending', leads: 0, days: 0, img });
+          LISTINGS_DATA.unshift(deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 })));
           toast('Listing created — entering the verification queue');
         } else {
-          Object.assign(LISTINGS_DATA[idx], { t, pr, st, img });
+          Object.assign(LISTINGS_DATA[idx], data); // verification_status left untouched (system-owned)
+          deriveLegacy(LISTINGS_DATA[idx]);
           toast('Listing updated');
         }
         saveListings(); renderListings(); closeLead();
       });
-      const del = document.getElementById('lfDel');
-      if (del) del.addEventListener('click', () => {
-        LISTINGS_DATA.splice(idx, 1);
-        saveListings(); renderListings(); closeLead();
-        toast('Listing deleted');
-      });
+      const del = g('lfDel');
+      if (del) del.addEventListener('click', () => { LISTINGS_DATA.splice(idx, 1); saveListings(); renderListings(); closeLead(); toast('Listing deleted'); });
     }
 
     document.getElementById('lgrid').addEventListener('click', (e) => {
