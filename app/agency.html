@@ -214,18 +214,30 @@
     .noti-group:first-child { padding-top: 2px; }
 
     /* listings */
-    .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-top: 18px; }
-    .lcard { padding: 0; overflow: hidden; }
-    .lcard img { width: 100%; height: 150px; object-fit: cover; display: block; }
-    .lcard .bd { padding: 14px 16px; }
-    .lcard .tt { font-size: 13.5px; font-weight: 600; }
-    .lcard .pr { font-family: var(--f-serif); font-weight: 600; font-size: 20px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); margin-top: 2px; }
-    .lcard .ft { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-    .st-chip { font-size: 10.5px; font-weight: 600; padding: 3px 10px; border-radius: 100px; border: 1px solid; }
+    .lsearch { height: 36px; background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 0 15px; font: 400 13px var(--f-sans); color: var(--ink); min-width: 170px; }
+    .lsearch::placeholder { color: var(--ink-dim); }
+    .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-top: 2px; }
+    .lcard { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .lcard:hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.14); border-color: rgba(255,123,44,0.35); }
+    .lcard .media { position: relative; }
+    .lcard .media img { width: 100%; height: 168px; object-fit: cover; display: block; }
+    .lcard .vbadge { position: absolute; top: 10px; right: 10px; z-index: 1; font: 700 12px var(--f-sans); padding: 4px 11px; border-radius: 100px; color: #fff; }
+    .lcard .vbadge.verified { background: var(--success); }
+    .lcard .vbadge.pending { background: #7a5410; }
+    .lcard .fprog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.35); }
+    .lcard .fprog i { display: block; height: 100%; }
+    .lcard .fprog.ok i { background: var(--success); }
+    .lcard .fprog.warn i { background: #7a5410; }
+    .lcard .fprog.dead i { background: var(--danger); }
+    .lcard .bd { padding: 16px 18px 18px; }
+    .lcard .pr { font-family: var(--f-serif); font-weight: 600; font-size: 23px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand-deep); line-height: 1; }
+    .lcard .tt { font: 700 14px var(--f-sans); color: var(--ink); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lcard .ft { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+    .st-chip { font-size: 12px; font-weight: 700; padding: 3px 11px; border-radius: 100px; border: 1px solid; }
     .st-chip.verified { color: var(--success); background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.25); }
-    .st-chip.pending { color: #a8742b; background: rgba(176,125,43,0.1); border-color: rgba(176,125,43,0.3); }
+    .st-chip.pending { color: #7a5410; background: var(--warn-tint); border-color: rgba(156,122,30,0.3); }
     .st-chip.inactive { color: var(--ink-dim); background: rgba(0,0,0,0.03); border-color: var(--border); }
-    .lcard .ld { font-size: 12px; color: var(--ink-muted); }
+    .lcard .ld { font-size: 12.5px; color: var(--ink-muted); }
     .lcard .ld b { color: var(--ink); font-size: 14px; }
 
     /* agents */
@@ -417,17 +429,17 @@
 
     /* listing freshness + actions (14-day rule) */
     .lcard { position: relative; }
-    .lcard .fresh { position: absolute; top: 10px; left: 10px; font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 100px; backdrop-filter: blur(6px); }
-    .lcard .fresh.ok { background: rgba(255,255,255,0.85); color: var(--ink-muted); }
-    .lcard .fresh.warn { background: rgba(176,125,43,0.92); color: #fff; }
-    .lcard .fresh.dead { background: rgba(20,22,26,0.82); color: #fff; }
-    .lcard.expired img { filter: grayscale(0.7) brightness(0.82); }
-    .lcard .acts { display: flex; gap: 8px; margin-top: 12px; }
-    .lcard .acts button { flex: 1; border: none; border-radius: 100px; padding: 8px; font: 600 12px var(--f-sans); cursor: pointer; }
+    .lcard .fresh { position: absolute; top: 10px; left: 10px; z-index: 1; font: 700 12px var(--f-sans); padding: 4px 11px; border-radius: 100px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .lcard .fresh.ok { background: rgba(255,255,255,0.88); color: var(--ink-muted); }
+    .lcard .fresh.warn { background: rgba(176,125,43,0.94); color: #fff; }
+    .lcard .fresh.dead { background: rgba(20,22,26,0.85); color: #fff; }
+    .lcard.expired .media img { filter: grayscale(0.7) brightness(0.82); }
+    .lcard .acts { display: flex; gap: 8px; margin-top: 14px; }
+    .lcard .acts button { flex: 1; border: none; border-radius: 100px; padding: 9px; font: 600 12.5px var(--f-sans); cursor: pointer; }
     .lcard .acts .edit { background: rgba(0,0,0,0.05); color: var(--ink); }
     .lcard .acts .edit:hover { background: rgba(0,0,0,0.09); }
-    .lcard .acts .relist { background: rgba(255,123,44,0.1); color: var(--brand); border: 1px solid rgba(255,123,44,0.3); }
-    .lcard .acts .relist.hot { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .lcard .acts .relist { background: rgba(255,123,44,0.1); color: var(--brand-text); border: 1px solid rgba(255,123,44,0.3); }
+    .lcard .acts .relist.hot { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
 
     /* listing edit / new drawer form */
     .lf .field { margin-bottom: 13px; }
@@ -933,15 +945,31 @@
 
         <!-- ══ LISTINGS ══ -->
         <section class="pane" id="pane-listings">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <div>
-              <div class="eyebrow">Inventory</div>
-              <div class="h1">Listings</div>
-              <p class="muted" style="font-size:14px;margin-top:4px">Your inventory, its verification status, and its 14-day freshness. Expired listings are hidden from buyers until you re-list.</p>
+          <div class="eyebrow">Inventory</div>
+          <div class="h1">Listings</div>
+          <p class="muted" style="font-size:14px;margin-top:4px">Your inventory, its verification status, and its 14-day freshness. Expired listings are hidden from buyers until you re-list.</p>
+
+          <div class="crm-tools" style="margin-top:18px">
+            <div class="crm-tools-l">
+              <div class="seg" id="listSeg">
+                <button class="seg-b on" data-lf="all">All</button>
+                <button class="seg-b" data-lf="verified">Verified</button>
+                <button class="seg-b" data-lf="pending">Pending</button>
+                <button class="seg-b" data-lf="expiring">Expiring</button>
+                <button class="seg-b" data-lf="expired">Expired</button>
+              </div>
+              <input class="lsearch" id="listSearch" type="search" placeholder="Search listings…" aria-label="Search listings" autocomplete="off">
+              <button class="tbtn" id="listSort">↕ Sort: Freshness</button>
+              <label class="swx"><span>Show statistics</span><span class="sw on" id="listStatSw" role="switch" aria-checked="true" tabindex="0"></span></label>
             </div>
-            <button class="btn btn-primary" id="newListingBtn">+ New listing</button>
+            <div class="crm-tools-r">
+              <button class="tbtn primary" id="newListingBtn">+ New listing</button>
+            </div>
           </div>
-          <div class="lgrid" id="lgrid" style="margin-top:20px"></div>
+
+          <div class="crm-stats-wrap" id="listStats"><div class="crm-statcards" id="listStatCards"></div></div>
+
+          <div class="lgrid" id="lgrid"></div>
         </section>
 
         <!-- ══ AGENTS ══ -->
@@ -1358,6 +1386,20 @@
       if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), expired: false, warn: true };
       return { cls: 'ok', label: left + ' days left', expired: false, warn: false };
     }
+    // listings toolbar state (filter / search / sort) — operates on LISTINGS_DATA
+    const LIST = { f: 'all', q: '', sort: 'fresh' };
+    function listFiltered() {
+      let a = LISTINGS_DATA.map((l, i) => ({ l, oi: i }));
+      if (LIST.q) { const q = LIST.q.toLowerCase(); a = a.filter(x => x.l.t.toLowerCase().includes(q)); }
+      if (LIST.f === 'verified') a = a.filter(x => x.l.st === 'verified');
+      else if (LIST.f === 'pending') a = a.filter(x => x.l.st === 'pending');
+      else if (LIST.f === 'expiring') a = a.filter(x => freshness(x.l).warn);
+      else if (LIST.f === 'expired') a = a.filter(x => freshness(x.l).expired);
+      if (LIST.sort === 'fresh') a.sort((p, q) => (14 - p.l.days) - (14 - q.l.days)); // fewest days left first (action queue)
+      else if (LIST.sort === 'price') a.sort((p, q) => q.l.pr - p.l.pr);
+      else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
+      return a;
+    }
     function renderListings() {
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
       STATS.listings = [
@@ -1366,20 +1408,30 @@
         [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
         [exp, 'Expired — re-list'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
+      const sc = document.getElementById('listStatCards'); if (sc) sc.innerHTML = STATS.listings;
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
-      document.getElementById('lgrid').innerHTML = LISTINGS_DATA.map((l, i) => {
+      const rows = listFiltered(), grid = document.getElementById('lgrid');
+      if (!rows.length) { grid.innerHTML = '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>'; return; }
+      grid.innerHTML = rows.map(({ l, oi }) => {
         const f = freshness(l);
+        const leftPct = Math.max(0, Math.min(100, (14 - l.days) / 14 * 100));
+        const vb = l.st === 'verified' ? '<span class="vbadge verified">✓ Verified</span>'
+          : l.st === 'pending' ? '<span class="vbadge pending">Pending</span>' : '';
         return `
         <div class="card lcard ${f.expired ? 'expired' : ''}">
-          <span class="fresh ${f.cls}">${f.expired ? '⏱ ' : ''}${f.label}</span>
-          <img src="${l.img}" alt="" loading="lazy">
+          <div class="media">
+            <span class="fresh ${f.cls}">${f.expired ? '⏱ ' : ''}${f.label}</span>
+            ${vb}
+            <img src="${l.img}" alt="" loading="lazy">
+            <div class="fprog ${f.cls}"><i style="width:${leftPct}%"></i></div>
+          </div>
           <div class="bd">
-            <div class="tt">${l.t}</div>
             <div class="pr">${nairaM(l.pr)}</div>
+            <div class="tt">${l.t}</div>
             <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
             <div class="acts">
-              <button class="edit" data-edit="${i}">Edit</button>
-              <button class="relist ${f.expired || f.warn ? 'hot' : ''}" data-relist="${i}">↻ Re-list</button>
+              <button class="edit" data-edit="${oi}">Edit</button>
+              <button class="relist ${f.expired || f.warn ? 'hot' : ''}" data-relist="${oi}">↻ Re-list</button>
             </div>
           </div>
         </div>`;
@@ -1448,6 +1500,26 @@
       }
     });
     document.getElementById('newListingBtn').addEventListener('click', () => listingForm({ st: 'pending' }, -1));
+    // listings toolbar
+    document.getElementById('listSeg').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-lf]'); if (!b) return;
+      LIST.f = b.dataset.lf;
+      document.querySelectorAll('#listSeg .seg-b').forEach(x => x.classList.toggle('on', x === b));
+      renderListings();
+    });
+    document.getElementById('listSearch').addEventListener('input', (e) => { LIST.q = e.target.value; renderListings(); });
+    document.getElementById('listSort').addEventListener('click', () => {
+      const order = ['fresh', 'price', 'leads'], lbl = { fresh: 'Freshness', price: 'Price', leads: 'Leads' };
+      LIST.sort = order[(order.indexOf(LIST.sort) + 1) % order.length];
+      document.getElementById('listSort').textContent = '↕ Sort: ' + lbl[LIST.sort];
+      renderListings();
+    });
+    (function () {
+      const sw = document.getElementById('listStatSw');
+      const toggle = () => { const on = sw.classList.toggle('on'); sw.setAttribute('aria-checked', String(on)); document.getElementById('listStats').classList.toggle('hide', !on); };
+      sw.addEventListener('click', toggle);
+      sw.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+    })();
     renderListings();
 
     // ── marketing — Omneky-style AI ad studio ──
