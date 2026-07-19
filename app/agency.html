@@ -961,7 +961,6 @@
         <button class="grp" aria-expanded="true" aria-controls="grp-team"><span>Team</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-team">
           <a data-pane="agents">◑ Agents</a>
-          <a data-pane="verification">✓ Verification</a>
         </div>
       </div>
       <div class="grp-sec open" data-sec="account">
@@ -1199,17 +1198,6 @@
         </section>
 
         <!-- ══ VERIFICATION ══ -->
-        <section class="pane" id="pane-verification">
-          <div class="eyebrow">Trust desk</div>
-          <div class="h1">Verification</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">The 7 checks every listing clears before a buyer ever sees it. This is the product.</p>
-          <div class="vnodes">
-            <span class="vnode">① Title</span><span class="vnode">② Structure</span><span class="vnode">③ Flood risk</span><span class="vnode">④ Legal standing</span><span class="vnode">⑤ Ownership chain</span><span class="vnode">⑥ Media validation</span><span class="vnode">⑦ Freshness</span>
-          </div>
-          <div class="h2">In the queue</div>
-          <p class="sub" style="margin-bottom:10px">Listings being verified right now. Every node must pass before the listing goes live.</p>
-          <div id="vqueue"></div>
-        </section>
       </main>
     </div><!-- /content -->
   </div><!-- /shell -->
@@ -2423,17 +2411,8 @@
     document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
 
     // ── verification queue (7-node progress) ──
-    const NODES = ['Title', 'Structure', 'Flood', 'Legal', 'Ownership', 'Media', 'Freshness'];
-    const VQ = [
-      { nm: '3-Bed Terrace, Ikate', pr: '₦148M', img: IMG.ikate, checks: [1,1,1,1,1,0,0] },
-      { nm: 'Serviced Studio, Ikeja GRA', pr: '₦42M', img: IMG.osapa, checks: [1,1,1,1,1,1,0] },
-      { nm: '2-Bed Flat, Yaba', pr: '₦58M', img: IMG.vi, checks: [1,1,0,1,0,0,0] },
-    ];
-    document.getElementById('vqueue').innerHTML = VQ.map(v => {
-      const passed = v.checks.filter(Boolean).length;
-      const chks = v.checks.map((c, i) => `<span class="chk ${c ? 'pass' : 'wait'}">${c ? '✓' : '⏳'} ${NODES[i]}</span>`).join('');
-      return `<div class="card vq"><div class="hd"><img src="${v.img}" alt="" loading="lazy"><div style="flex:1;min-width:0"><div class="nm">${v.nm}</div><div class="pr2">${v.pr}</div></div><div class="prog"><b>${passed}/7</b><span>checks passed</span></div></div><div class="checks">${chks}</div></div>`;
-    }).join('');
+    // Verification lives on the listing cards (verified/pending badge + freshness),
+    // so there is no standalone Verification pane.
 
     // ── AI business advisor (overview) — prescriptive, not just dashboards ──
     const ADVISOR = [
@@ -2680,7 +2659,7 @@
     // set: PLANS + ADDONS + ROI feed the render functions below.
     const PRICING = {
       plans: [
-        { id: 'foundation', name: 'Foundation', headline: 'Everything you need to start winning buyers.',
+        { id: 'foundation', name: 'Free', headline: 'Everything you need to start winning buyers.',
           price: 0, unit: 'forever', best: 'New or small agencies getting started.',
           cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
             ['Up to 20 active listings', 'Room to grow your catalogue'],
@@ -2690,9 +2669,9 @@
             ['Standard verification', 'Your listings become trusted — at the normal queue speed'],
             ['Basic analytics', 'See your leads and listings at a glance'],
           ], tradeoffs: ['Slower verification queue', 'No marketing automation or social syndication', 'Limited AI'] },
-        { id: 'accelerator', name: 'Accelerator', headline: 'Grow faster with AI-powered marketing and verification.',
+        { id: 'accelerator', name: 'Growth', headline: 'Grow faster with AI-powered marketing and verification.',
           price: 75000, unit: 'per month', best: 'The plan almost every serious agency wants.',
-          cta: 'Upgrade to Accelerator', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
+          cta: 'Upgrade to Growth', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
             ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
             ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
             ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
@@ -2700,7 +2679,7 @@
             ['Know which channels make buyers', 'Lead analytics + buyer-engagement metrics'],
             ['Marketing performance dashboard', 'See exactly what your spend returns'],
           ] },
-        { id: 'market-leader', name: 'Market Leader', headline: 'Dominate your local market.',
+        { id: 'market-leader', name: 'Leader', headline: 'Dominate your local market.',
           price: 250000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
           cta: 'Talk to sales', ctaStyle: 'ghost', features: [
             ['Unlimited listings & seats', 'No ceiling on your growth'],
@@ -2811,18 +2790,12 @@
           'Tomiwa loses most buyers after the second viewing.',
           'Reassign 2 stalled Lekki leads to your fastest responder.',
         ], 'Move financing talks earlier for Tomiwa’s buyers, and rebalance Lekki leads to Funke.') },
-      verification: { title: 'Trust desk read', sub: 'What’s blocking listings',
-        html: () => tpSummary('Clear the queue', [
-          '3-Bed Ikate is 5/7 — media validation + freshness still pending.',
-          '2-Bed Yaba is 3/7 — flood and ownership checks outstanding.',
-          'Verified listings convert far better — clearing these lifts sales.',
-        ], 'Chase the trust desk on Ikate’s last two checks first — it’s closest to going live.') },
       subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
         html: () => tpSummary('Your growth math', [
-          'You’re on Foundation, but marketing automation is off — you’re posting manually.',
-          'One extra closed sale a month more than covers Accelerator.',
-          'Accelerator unlocks 48h verification + auto-syndication.',
-        ], 'Upgrade to Accelerator — the marketing automation alone should return the fee in one sale.') },
+          'You’re on Free, but marketing automation is off — you’re posting manually.',
+          'One extra closed sale a month more than covers Growth.',
+          'Growth unlocks 48h verification + auto-syndication.',
+        ], 'Upgrade to Growth — the marketing automation alone should return the fee in one sale.') },
     };
     const snapshotHTML = (pane) => STATS[pane]
       ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
