@@ -101,3 +101,16 @@
     initRoot(document);
   }
 })();
+
+/* crypt.ee-style wordmark: the appbar brand expands at the top of the page and
+   contracts once you scroll. Works for window scroll (consumer pages) and the
+   agency portal's inner .content scroll container. */
+(function () {
+  var bar = document.querySelector('.appbar');
+  if (!bar) return;
+  var upd = function (y) { bar.classList.toggle('scrolled', y > 16); };
+  window.addEventListener('scroll', function () { upd(window.scrollY); }, { passive: true });
+  var content = document.querySelector('.content');
+  if (content) content.addEventListener('scroll', function () { upd(content.scrollTop); }, { passive: true });
+  upd(window.scrollY || 0);
+})();

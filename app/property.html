@@ -6,7 +6,7 @@
   <title>3-Bed Apartment, Lekki — Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <style>
@@ -17,7 +17,7 @@
     .hero .counter { position: absolute; top: 16px; right: 16px; background: rgba(21,23,26,0.5); color: #fff; font-size: 12px; padding: 5px 11px; border-radius: 100px; }
     .hero .actions { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; }
     .hero .act { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; }
-    .hero .act.on { color: #C2552B; background: rgba(255,255,255,0.9); }
+    .hero .act.on { color: #121212; background: rgba(255,255,255,0.9); }
     .thumbs { display: flex; gap: 8px; margin-top: 10px; }
     .thumbs img { width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: all var(--m-micro) var(--m-ease); }
     .thumbs img.on { opacity: 1; border-color: var(--brand); }
@@ -37,7 +37,7 @@
     .nodes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
     .ringbig { width: 56px; height: 56px; border-radius: 50%; border: 3.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 20px; color: var(--ink); }
     .agency { display: flex; align-items: center; gap: 14px; }
-    .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,123,44,0.1); border: 1px solid rgba(255,123,44,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
+    .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
     /* true cost */
     .cost-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
@@ -51,7 +51,7 @@
     .nb { display: flex; flex-direction: column; gap: 10px; }
     .nb .row { display: grid; grid-template-columns: 120px 1fr 34px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-muted); }
     .nb .bar { height: 7px; border-radius: 100px; background: rgba(0,0,0,0.06); overflow: hidden; }
-    .nb .bar i { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, #C2552B, #FF7B2C); width: 0; transition: width .8s var(--m-ease); }
+    .nb .bar i { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, #121212, #121212); width: 0; transition: width .8s var(--m-ease); }
     .nb .bar i.good { background: linear-gradient(90deg, #2e7d4f, #4fb87e); }
     .nb .v { font-weight: 700; color: var(--ink); font-size: 12px; text-align: right; }
     .nb-note { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06); }
@@ -73,30 +73,30 @@
     .sim .m { font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
 
     .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); display: flex; gap: 10px; }
-    .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #C2552B; border: 1px solid rgba(194,85,43,0.3); }
+    .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #121212; border: 1px solid rgba(54,54,54,0.3); }
 
     /* instant AI summary */
     .glance { margin-top: 16px; padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6;
-      background: rgba(194,85,43,0.07); border: 1px solid rgba(194,85,43,0.18); color: var(--ink); }
-    .glance b { color: #C2552B; }
+      background: rgba(54,54,54,0.07); border: 1px solid rgba(54,54,54,0.18); color: var(--ink); }
+    .glance b { color: #121212; }
 
     /* negotiation assistant */
     .neg-offer { font-family: var(--f-serif); font-weight: 600; font-size: 30px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); margin: 8px 0 2px; }
     .neg-draft { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.65);
       border: 1px solid rgba(255,255,255,0.85); font-size: 13px; line-height: 1.6; color: var(--ink-muted); white-space: pre-wrap; }
-    .copybtn { margin-top: 8px; font: 600 12px var(--f-sans); color: #C2552B; background: none; border: 1px solid rgba(194,85,43,0.3); border-radius: 100px; padding: 6px 14px; cursor: pointer; }
+    .copybtn { margin-top: 8px; font: 600 12px var(--f-sans); color: #121212; background: none; border: 1px solid rgba(54,54,54,0.3); border-radius: 100px; padding: 6px 14px; cursor: pointer; }
 
     /* commute time-of-day */
     .tod { display: flex; gap: 5px; margin-bottom: 12px; }
     .tod button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; cursor: pointer; }
-    .tod button.on { color: #C2552B; background: rgba(194,85,43,0.1); border-color: rgba(194,85,43,0.3); }
+    .tod button.on { color: #121212; background: rgba(54,54,54,0.1); border-color: rgba(54,54,54,0.3); }
     .addplace { font: 600 12px var(--f-sans); color: var(--ink-dim); background: none; border: 1px dashed rgba(0,0,0,0.2); border-radius: 100px; padding: 7px 13px; cursor: pointer; }
-    .addplace:hover { color: #C2552B; border-color: rgba(194,85,43,0.4); }
+    .addplace:hover { color: #121212; border-color: rgba(54,54,54,0.4); }
 
     /* viewing assistant */
     .vcheck { display: flex; flex-direction: column; gap: 7px; }
     .vcheck label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
-    .vcheck input { accent-color: #C2552B; }
+    .vcheck input { accent-color: #121212; }
     .vcheck label.done { text-decoration: line-through; opacity: .65; }
     .vnotes { width: 100%; margin-top: 12px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font: 13.5px var(--f-sans); color: var(--ink); outline: none; resize: vertical; min-height: 64px; }
     .vphotos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }

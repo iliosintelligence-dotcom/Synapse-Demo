@@ -6,14 +6,14 @@
   <title>Your matches — Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     /* Not a catalogue — only the homes Toju picked for this brief.
        Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
-    body { background: #f7efe7; }
+    body { background: #f5f5f5; }
     .bg-scene { position: fixed; inset: 0; z-index: 0;
       background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
     .bg-wash { position: fixed; inset: 0; z-index: 0;
@@ -21,7 +21,7 @@
         radial-gradient(120% 80% at 78% 0%, rgba(212,110,60,0.14), transparent 58%),
         linear-gradient(180deg, rgba(250,242,234,0.3) 0%, rgba(248,238,228,0.4) 55%, rgba(244,230,216,0.55) 100%); }
     .wrap { position: relative; z-index: 1; }
-    .appbar { background: rgba(250,245,239,0.55); backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
+    .appbar { background: rgba(245,245,245,0.55); backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
     .card { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
       backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
 
@@ -29,7 +29,7 @@
     .brief .orb { width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
     .brief .txt { flex: 1; font-size: 13.5px; color: var(--ink-muted); }
     .brief .txt b { color: var(--ink); font-weight: 600; }
-    .brief .refine { white-space: nowrap; font-size: 13px; font-weight: 600; color: #C2552B; }
+    .brief .refine { white-space: nowrap; font-size: 13px; font-weight: 600; color: #121212; }
     .brief .refine:hover { text-decoration: underline; }
 
     /* map — the Zillow-parity view, but only YOUR pins */
@@ -42,7 +42,7 @@
     .searchbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 16px; border-radius: 100px;
       background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46)); backdrop-filter: blur(24px) saturate(1.5);
       border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 14px 34px rgba(122,62,22,0.1); color: var(--ink-muted); }
-    .searchbar svg { flex: none; color: #C2552B; }
+    .searchbar svg { flex: none; color: #121212; }
     .searchbar input { flex: 1; border: none; outline: none; background: transparent; font: 14.5px var(--f-sans); color: var(--ink); }
     .searchbar input::placeholder { color: var(--ink-dim); }
     .searchbar button { flex: none; border: none; background: rgba(0,0,0,0.05); color: var(--ink-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; }
@@ -51,7 +51,7 @@
     .dealfilter { display: flex; gap: 6px; }
     .dealfilter button { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: all var(--m-micro, .12s) ease; }
     .dealfilter button:hover { color: var(--ink); }
-    .dealfilter button.on { color: #fff; background: var(--brand); border-color: transparent; box-shadow: 0 6px 16px rgba(255,123,44,0.3); }
+    .dealfilter button.on { color: #fff; background: var(--brand); border-color: transparent; box-shadow: 0 6px 16px rgba(54,54,54,0.3); }
     .vtoggle { display: inline-flex; align-items: center; gap: 7px; font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; cursor: pointer; transition: all var(--m-micro, .12s) ease; }
     .vtoggle .box { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--ink-dim); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
     .vtoggle.on { color: var(--success); border-color: rgba(46,125,79,0.4); background: rgba(46,125,79,0.08); }
@@ -65,13 +65,13 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
     .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative;
       transition: opacity var(--m-expanded) var(--m-ease), transform var(--m-expanded) var(--m-ease), box-shadow .25s, border-color .25s; }
-    .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(255,123,44,0.4); }
-    .listing.cmp { border-color: rgba(194,85,43,0.55); box-shadow: 0 0 0 2px rgba(194,85,43,0.25), 0 26px 56px rgba(122,62,22,0.12); }
+    .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(54,54,54,0.4); }
+    .listing.cmp { border-color: rgba(54,54,54,0.55); box-shadow: 0 0 0 2px rgba(54,54,54,0.25), 0 26px 56px rgba(122,62,22,0.12); }
     .listing .body { padding: 18px 18px 14px; }
     .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
-    .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #C2552B; background: rgba(194,85,43,0.1); border: 1px solid rgba(194,85,43,0.22); padding: 3px 9px; border-radius: 100px; }
+    .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.22); padding: 3px 9px; border-radius: 100px; }
     .listing .cmpbox { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-dim); cursor: pointer; }
-    .listing .cmpbox input { accent-color: #C2552B; }
+    .listing .cmpbox input { accent-color: #121212; }
     .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
     .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
@@ -84,7 +84,7 @@
     .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
       display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
-    .listing .save.on { color: #C2552B; background: rgba(255,255,255,0.85); }
+    .listing .save.on { color: #121212; background: rgba(255,255,255,0.85); }
     .listing .save:active { transform: scale(0.85); }
 
     /* compare bar + overlay */

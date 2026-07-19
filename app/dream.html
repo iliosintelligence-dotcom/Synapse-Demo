@@ -6,7 +6,7 @@
   <title>Dream Boards — Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <style>
@@ -30,29 +30,29 @@
     .bcover .bempty { grid-column: 1 / 3; grid-row: 1 / 3; display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 26px; background: rgba(255,255,255,0.5); }
     .bcard .bname { font-weight: 600; font-size: 15px; margin-top: 11px; }
     .bcard .bmeta { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
-    .bcard.new .bcover { border: 2px dashed rgba(194,85,43,0.35); background: rgba(255,123,44,0.05); display: flex; align-items: center; justify-content: center; }
-    .bcard.new .plus { font-size: 30px; color: #C2552B; font-weight: 300; }
-    .bcard.watch .bcover { background: linear-gradient(135deg, #C2552B, #FF7B2C); display: flex; align-items: center; justify-content: center; color: #fff; }
+    .bcard.new .bcover { border: 2px dashed rgba(54,54,54,0.35); background: rgba(54,54,54,0.05); display: flex; align-items: center; justify-content: center; }
+    .bcard.new .plus { font-size: 30px; color: #121212; font-weight: 300; }
+    .bcard.watch .bcover { background: linear-gradient(135deg, #121212, #121212); display: flex; align-items: center; justify-content: center; color: #fff; }
     .bcard.watch .wc { text-align: center; }
     .bcard.watch .wc b { font-family: var(--f-serif); font-size: 42px; line-height: 1; }
     .bcard.watch .wc span { font-size: 11px; letter-spacing: .1em; opacity: .9; }
 
     /* ── inside a board ── */
-    .db-back { font-size: 13px; color: #C2552B; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .db-back { font-size: 13px; color: #121212; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
     .db-back:hover { text-decoration: underline; }
     .board-title { font-family: var(--f-serif); font-weight: 500; font-size: 32px; color: var(--ink); border: none; background: none; outline: none; letter-spacing: -0.02em; min-width: 200px; }
-    .board-title:focus { border-bottom: 1px dashed rgba(194,85,43,0.5); }
+    .board-title:focus { border-bottom: 1px dashed rgba(54,54,54,0.5); }
     .db-tools { display: flex; gap: 8px; }
     .db-tools button { font: 600 12.5px var(--f-sans); border-radius: 100px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.6); color: var(--ink-muted); }
     .db-tools button:hover { color: var(--ink); }
-    .db-tools .del:hover { color: #C2552B; border-color: rgba(194,85,43,0.4); }
+    .db-tools .del:hover { color: #121212; border-color: rgba(54,54,54,0.4); }
 
     .vibe { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px; align-items: center; }
     .vibe .v { font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 100px; padding: 7px 12px 7px 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(20,26,38,0.05); }
     .vibe .v button { background: none; border: none; color: var(--ink-dim); cursor: pointer; font-size: 14px; line-height: 1; }
-    .vibe .v button:hover { color: #C2552B; }
+    .vibe .v button:hover { color: #121212; }
     .vibe input { font: 13px var(--f-sans); border: 1px dashed var(--border); background: rgba(255,255,255,0.5); border-radius: 100px; padding: 7px 14px; outline: none; color: var(--ink); width: 150px; }
-    .vibe input:focus { border-color: rgba(194,85,43,0.5); }
+    .vibe input:focus { border-color: rgba(54,54,54,0.5); }
 
     .masonry { columns: 4 200px; column-gap: 14px; margin-top: 18px; }
     .tile { break-inside: avoid; margin-bottom: 14px; border-radius: 18px; overflow: hidden; position: relative; box-shadow: 0 12px 30px rgba(20,26,38,0.10); background: #eee; cursor: default; }
@@ -68,7 +68,7 @@
     .pal { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; border: none; padding: 0; box-shadow: 0 6px 16px rgba(20,26,38,0.08); }
     .pal img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
     .pal:hover img { transform: scale(1.06); }
-    .pal.added::after { content: '✓ pinned'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(194,85,43,0.75); color: #fff; font: 700 11px var(--f-sans); }
+    .pal.added::after { content: '✓ pinned'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(54,54,54,0.75); color: #fff; font: 700 11px var(--f-sans); }
 
     .toju-cta { display: flex; align-items: center; gap: 14px; padding: 18px 22px; margin-top: 20px; }
     .toju-cta .t { flex: 1; font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
