@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
        monthly cost, neighbourhood intelligence, commute, similar homes. */
@@ -125,6 +127,37 @@
     .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.16); transition: all .2s ease; cursor: pointer; }
     .dots i.on { background: var(--brand); width: 18px; border-radius: 100px; }
     .pdp .cta-dock { position: static; flex: none; padding: 10px 0 14px; background: none; }
+    /* ── split: swipe deck left, reactive map canvas right (Toju-chat style) ── */
+    .pv-split { display: flex; flex: 1; min-height: 0; }
+    .pv-split > .pdp { flex: 0 0 clamp(360px, 34%, 460px); max-width: 460px; margin: 0; border-right: 1px solid var(--border); }
+    .pv-canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #ededed; position: relative; }
+    .pvc-head { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
+    .pvc-title { font: 600 15px var(--f-serif); color: var(--ink); }
+    .pvc-tabs { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+    .pvc-tabs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; cursor: pointer; transition: .15s; }
+    .pvc-tabs button:hover { color: var(--ink); }
+    .pvc-tabs button.on { background: #121212; color: #fff; border-color: #121212; }
+    .pvc-map-wrap { position: relative; flex: 1; min-height: 0; }
+    #pvMap { position: absolute; inset: 0; z-index: 0; }
+    .pvc-overlay { position: absolute; left: 16px; bottom: 16px; z-index: 500; width: min(340px, 62%); background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(20,26,38,0.2); padding: 14px 16px; max-height: calc(100% - 32px); overflow-y: auto; }
+    .pvc-overlay.wide { width: min(420px, 74%); }
+    .pvo-k { font: 700 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .pvo-leg { display: flex; flex-direction: column; gap: 8px; }
+    .pvo-leg .r { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); }
+    .pvo-leg .r .dot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
+    .pvo-leg .r .n { margin-left: auto; color: var(--ink-muted); font-weight: 700; }
+    .pvo-list { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+    .pvo-list .li { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--ink); }
+    .pvo-list .li b { font-weight: 600; }
+    .pvo-list .li span { color: var(--ink-muted); flex: none; }
+    .pv-time { display: flex; gap: 6px; margin: 4px 0 10px; }
+    .pv-time button { flex: 1; font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 7px 4px; cursor: pointer; }
+    .pv-time button.on { background: #121212; color: #fff; border-color: #121212; }
+    .pvo-eta { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink); margin: 6px 0; }
+    .pvo-eta b { font-weight: 700; }
+    .pv-home-pin { background: #121212; color: #fff; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+    .pv-poi-pin { border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.28); border: 2px solid #fff; }
+    @media (max-width: 900px){ .pv-canvas { display: none; } .pv-split > .pdp { flex: 1; max-width: 460px; margin: 0 auto; border-right: none; } }
   </style>
 </head>
 <body>
@@ -142,6 +175,7 @@
     <a class="home" href="browse.html">← Back to matches</a>
   </div>
 
+  <div class="pv-split">
   <div class="pdp">
     <div class="hero">
       <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
@@ -289,6 +323,25 @@
     </div>
   </div><!-- /pdp -->
 
+    <!-- RIGHT: reactive map canvas — visualises whatever the active card is about -->
+    <div class="pv-canvas">
+      <div class="pvc-head">
+        <div class="pvc-title" id="pvcTitle">Nearby</div>
+        <div class="pvc-tabs" id="pvcTabs">
+          <button data-view="poi" class="on">Nearby</button>
+          <button data-view="commute">Commute</button>
+          <button data-view="agency">Agency</button>
+          <button data-view="cost">Costs</button>
+          <button data-view="legal">Legal</button>
+        </div>
+      </div>
+      <div class="pvc-map-wrap">
+        <div id="pvMap"></div>
+        <div class="pvc-overlay" id="pvcOverlay"></div>
+      </div>
+    </div>
+  </div><!-- /pv-split -->
+
   <script>
     // gallery
     const PHOTOS = [
@@ -337,6 +390,8 @@
       deckNext.disabled = deckIdx === deckCards.length - 1;
       // fill any neighbourhood bars on the active card
       deckCards[deckIdx].querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; });
+      // sync the right-hand map canvas to whatever this card is about
+      if (window.__pvView) window.__pvView(deckIdx);
     }
     let deckRaf;
     deck.addEventListener('scroll', () => { cancelAnimationFrame(deckRaf); deckRaf = requestAnimationFrame(syncDeck); });
@@ -464,5 +519,92 @@
     renderChecks(); renderPhotos();
   </script>
   <script src="motion.js"></script>
+  <script>
+  /* Reactive map canvas — mirrors the swipe deck. Each card maps to a view:
+     what's nearby (schools/gyms/restaurants/churches/mosques), commute/traffic by
+     time of day, route to the listing agency, cost breakdown, legal & documents. */
+  (function () {
+    if (!window.L || !document.getElementById('pvMap')) return;
+    var PROP = [6.447, 3.470];
+    var POI = [
+      { t: 'school', n: 'Lekki British School', c: [6.4515, 3.4762], d: '6 min' },
+      { t: 'school', n: 'Greensprings School', c: [6.4402, 3.4625], d: '9 min' },
+      { t: 'gym', n: 'i-Fitness Lekki', c: [6.4492, 3.4665], d: '4 min' },
+      { t: 'restaurant', n: 'RSVP Lekki', c: [6.4432, 3.4785], d: '7 min' },
+      { t: 'restaurant', n: 'The Yellow Chilli', c: [6.4525, 3.4622], d: '8 min' },
+      { t: 'church', n: 'This Present House', c: [6.4451, 3.4822], d: '6 min' },
+      { t: 'mosque', n: 'Lekki Central Mosque', c: [6.4382, 3.4681], d: '7 min' }
+    ];
+    var META = { school: { e: '🎓', col: '#2f6dbd', lbl: 'Schools' }, gym: { e: '🏋️', col: '#8a5cd6', lbl: 'Gyms' }, restaurant: { e: '🍽️', col: '#c98b3a', lbl: 'Restaurants' }, church: { e: '⛪', col: '#3f9c6d', lbl: 'Churches' }, mosque: { e: '🕌', col: '#2e7d4f', lbl: 'Mosques' } };
+    var DEST = [{ n: 'Lagos Island CBD', c: [6.4531, 3.3958] }, { n: 'Victoria Island', c: [6.4281, 3.4215] }];
+    var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: ['48 min', '32 min'] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: ['26 min', '18 min'] }, evening: { lbl: 'Evening', color: '#d9534f', etas: ['55 min', '38 min'] } };
+    var AGENCY = { n: 'Prestige Realty Ltd.', c: [6.4352, 3.4552], sub: 'Gold Verified · 4.6★ · 60 deals', eta: '9 min drive' };
+    var CARD_VIEWS = ['poi', 'poi', 'agency', 'cost', 'poi', 'commute', 'poi', 'legal', 'agency', 'poi'];
+
+    var map = L.map('pvMap', { scrollWheelZoom: false }).setView(PROP, 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
+    var layer = L.layerGroup().addTo(map);
+    var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">⌂</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
+    function poiIcon(t) { var m = META[t]; return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + m.e + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
+    var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
+    var state = { view: 'poi', time: 'midday' };
+    function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3)); }, 60); }
+
+    function renderPOI() {
+      overlay.className = 'pvc-overlay'; var pts = [PROP];
+      POI.forEach(function (p) { L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer).bindPopup('<b>' + p.n + '</b><br>' + META[p.t].lbl.replace(/s$/, '') + ' · ' + p.d); pts.push(p.c); });
+      var counts = {}; POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
+      var leg = Object.keys(META).map(function (t) { return counts[t] ? ('<div class="r"><span class="dot" style="background:' + META[t].col + '">' + META[t].e + '</span>' + META[t].lbl + '<span class="n">' + counts[t] + '</span></div>') : ''; }).join('');
+      var near = POI.slice().sort(function (a, b) { return parseInt(a.d) - parseInt(b.d); }).slice(0, 4).map(function (p) { return '<div class="li"><b>' + p.n + '</b><span>' + p.d + '</span></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div><div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
+      fit(pts);
+    }
+    function renderCommute() {
+      overlay.className = 'pvc-overlay'; var cg = CONGEST[state.time], pts = [PROP];
+      DEST.forEach(function (d, i) { L.marker(d.c).addTo(layer).bindPopup('<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i]); L.polyline([PROP, d.c], { color: cg.color, weight: 5, opacity: 0.75 }).addTo(layer); pts.push(d.c); });
+      var toggle = ['morning', 'midday', 'evening'].map(function (k) { return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>'; }).join('');
+      var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + d.n + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas + '<p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
+      overlay.querySelectorAll('[data-time]').forEach(function (b) { b.addEventListener('click', function () { state.time = b.dataset.time; setView('commute'); }); });
+      fit(pts);
+    }
+    function renderAgency() {
+      overlay.className = 'pvc-overlay';
+      L.marker(AGENCY.c).addTo(layer).bindPopup('<b>' + AGENCY.n + '</b><br>' + AGENCY.sub);
+      L.polyline([PROP, AGENCY.c], { color: '#121212', weight: 5, opacity: 0.7, dashArray: '6 6' }).addTo(layer);
+      overlay.innerHTML = '<div class="pvo-k">Listing agency</div><div class="pvo-list"><div class="li"><b>' + AGENCY.n + '</b></div></div><p style="font-size:12.5px;color:var(--ink-muted);margin-top:4px">' + AGENCY.sub + '</p><div class="pvo-eta" style="margin-top:8px">From this home <b>' + AGENCY.eta + '</b></div>';
+      fit([PROP, AGENCY.c]);
+    }
+    function renderCost() {
+      overlay.className = 'pvc-overlay wide';
+      overlay.innerHTML = '<div class="pvo-k">What it really costs / month</div><div class="pvo-list">'
+        + '<div class="li"><b>Mortgage · 20% down, 20y @22%</b><span>₦2.44M</span></div>'
+        + '<div class="li"><b>Service charge</b><span>₦83k</span></div>'
+        + '<div class="li"><b>Power &amp; utilities</b><span>₦120k</span></div>'
+        + '<div class="li"><b>School-run fuel</b><span>₦45k</span></div>'
+        + '<div class="li" style="border-top:1px solid var(--border);padding-top:8px"><b>True monthly cost</b><span style="color:#121212;font-weight:700">≈ ₦2.69M</span></div>'
+        + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Estimates from verified listing + area data. Refine with Toju.</p>';
+      fit([PROP]);
+    }
+    function renderLegal() {
+      overlay.className = 'pvc-overlay';
+      var docs = [['Certificate of Occupancy', 1], ['Registered survey plan', 1], ['Deed of assignment', 1], ['Governor\'s consent', 1], ['Building approval', 1], ['Financial / encumbrance check', 0]];
+      var rows = docs.map(function (d) { var ok = d[1]; return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + d[0] + '</b><span style="color:' + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'verified' : 'pending') + '</span></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">6 of 7 checks cleared. Toju holds the full report.</p>';
+      fit([PROP]);
+    }
+    function setView(v) {
+      v = v || 'poi'; state.view = v;
+      document.querySelectorAll('#pvcTabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === v); });
+      layer.clearLayers();
+      L.marker(PROP, { icon: homeIcon }).addTo(layer).bindPopup('<b>This home</b><br>3-Bed Apartment, Lekki Phase 1');
+      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'True cost', legal: 'Legal & documents' }[v] || 'Nearby';
+      if (v === 'commute') renderCommute(); else if (v === 'agency') renderAgency(); else if (v === 'cost') renderCost(); else if (v === 'legal') renderLegal(); else renderPOI();
+    }
+    document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
+    window.__pvView = function (i) { setView(CARD_VIEWS[i] || 'poi'); };
+    setView('poi');
+  })();
+  </script>
 </body>
 </html>
