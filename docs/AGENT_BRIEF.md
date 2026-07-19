@@ -7,9 +7,13 @@ Synapse is an **AI-powered real-estate platform for Nigeria**, built around two 
 - **Buyers / renters (consumer):** talk to **Toju**, an AI property advisor, who understands their life and surfaces **verified** homes. Trust/verification is the core product promise ("no ghost listings").
 - **Agencies / developers (business):** an **Agency Operating System** — CRM, AI social syndication, an AI ad studio, Toju-as-negotiator, listings with a 14-day freshness/re-list rule, verification desk, agents, subscription. Positioned as a **revenue platform**, not "a CRM."
 
-Brand (CANONICAL — decided by Dr. David 2026-07-17, do not re-litigate): **warm off-white `#f7efe7`, terracotta accent `#FF7B2C` / `#C2552B`, glassmorphism**. This supersedes the earlier "white/calm-premium" and "dark charcoal/emerald" directions — anywhere a page still uses those, it should migrate to this.
+Brand (CANONICAL — pivoted by Dr. David 2026-07-19 to the **crypt.ee** aesthetic; supersedes the earlier warm off-white + terracotta direction, which is now retired): **full monochrome, crypt.ee-style** — background `#f5f5f5` (light grey), ink `#363636` (dark grey), near-black `#121212` accents/buttons with light text, flat surfaces, generous whitespace, ~8–10px radius. **No terracotta anywhere** (all `#FF7B2C`/`#C2552B`/`rgba(255,123,44,…)` were swept to neutral grey). Semantic colors that carry meaning (success green, gold) may remain.
 
-**Typography (CANONICAL — updated by Dr. David 2026-07-17, supersedes all earlier font direction):** primary **EB Garamond** (the Garamond, headings/display/prices) + secondary **Lato** (body, UI, labels, all-caps eyebrows/chips via letter-spacing). **All other fonts are removed** — Restaglick, Bromolek, Fraunces, Inter must no longer appear in any page or `app.css`. Both new fonts load from Google Fonts (no local files, no license gate). The `Synapse/fonts/` local files and their commercial-license concern are now moot.
+**Typography (CANONICAL — pivoted 2026-07-19, supersedes EB Garamond + Lato):** single family **Josefin Sans** (Google Fonts) app-wide — headings/wordmark 600–700 with wide tracking, body 400. `--f-serif` / `--f-sans` / `--f-accent` all point at Josefin Sans. EB Garamond, Lato, and every earlier face are gone.
+
+**Signature micro-interaction (crypt.ee):** the SYNAPSE wordmark in the top bars **expands** (wide letter-spacing) at the top of the page and **contracts** as you scroll — landing uses `#navbar.solid`, the app pages use `.appbar.scrolled` (toggled in `motion.js`: window scroll for consumer pages, `.content` scroll for the agency portal). Always `prefers-reduced-motion` safe.
+
+**Integrity rule (product):** you **cannot pay for placement in Toju's results** — Toju surfaces the *best* option on buyer fit, never a paid one. Pricing/marketing copy must never imply "featured/priority/top placement in Toju"; sell faster verification, wider syndication, more seats, or off-Toju social reach instead.
 
 ## Repos & architecture (IMPORTANT)
 Two sibling git repos under `…/Synapses/`:
