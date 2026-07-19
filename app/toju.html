@@ -22,8 +22,8 @@
     /* whisper of a warm wash — the photo stays CLEAR; glass does the frosting */
     .tj-wash { position: fixed; inset: 0; z-index: 0;
       background:
-        radial-gradient(120% 80% at 78% 0%, rgba(212,110,60,0.14), transparent 58%),
-        linear-gradient(180deg, rgba(250,242,234,0.18) 0%, rgba(248,238,228,0.22) 55%, rgba(244,230,216,0.38) 100%); }
+        radial-gradient(120% 80% at 78% 0%, rgba(54,54,54,0.05), transparent 58%),
+        linear-gradient(180deg, rgba(245,245,245,0.2) 0%, rgba(240,240,240,0.28) 55%, rgba(235,235,235,0.42) 100%); }
 
     /* glass recipe, shared — light frost with a luminous rim */
     .toju .bubble, .chatbox, .pcard, .tj-hint {
@@ -52,10 +52,14 @@
 
     .bubble { padding: 13px 16px; border-radius: 20px; font-size: 14.5px; line-height: 1.55; }
     .toju .bubble { color: var(--ink); border-bottom-left-radius: 6px; }
-    .user .bubble { background: linear-gradient(135deg, rgba(54,54,54,0.82), rgba(235,100,30,0.62));
-      backdrop-filter: blur(22px) saturate(1.7); -webkit-backdrop-filter: blur(22px) saturate(1.7); color: #fff;
-      border: 1px solid rgba(255,255,255,0.5); border-bottom-right-radius: 6px;
-      box-shadow: 0 14px 32px rgba(200,95,30,0.28), inset 0 1px 0 rgba(255,255,255,0.4); }
+    .user .bubble { background: #363636; color: #fff;
+      border: 1px solid rgba(255,255,255,0.12); border-bottom-right-radius: 6px;
+      box-shadow: 0 10px 26px rgba(20,20,20,0.22); }
+    /* markdown inside a Toju bubble renders as real HTML, not raw text */
+    .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { margin: 6px 0 8px; padding-left: 20px; } .bubble li { margin: 3px 0; }
+    .bubble strong { font-weight: 700; } .bubble em { font-style: italic; }
+    .bubble code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 5px; font-size: 0.9em; }
 
     .matches-h { display: flex; align-items: center; gap: 7px; margin: 12px 0 8px; }
     .matches-h .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #121212; }
@@ -353,10 +357,28 @@
         + '<a class="viewall" href="browse.html">View all →</a></div>' + cards;
     }
 
+    // tiny, safe markdown → HTML (escape first, then bold/italic/code/lists/paras)
+    function md(t) {
+      let s = esc(String(t == null ? '' : t));
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>');
+      s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+      const lines = s.split(/\n/);
+      let html = '', inUl = false, inOl = false;
+      const close = () => { if (inUl) { html += '</ul>'; inUl = false; } if (inOl) { html += '</ol>'; inOl = false; } };
+      lines.forEach((line) => {
+        const ul = line.match(/^\s*[-*•]\s+(.*)/), ol = line.match(/^\s*\d+[.)]\s+(.*)/);
+        if (ul) { if (!inUl) { close(); html += '<ul>'; inUl = true; } html += '<li>' + ul[1] + '</li>'; }
+        else if (ol) { if (!inOl) { close(); html += '<ol>'; inOl = true; } html += '<li>' + ol[1] + '</li>'; }
+        else { close(); if (line.trim()) html += '<p>' + line + '</p>'; }
+      });
+      close();
+      return html || '<p>' + s + '</p>';
+    }
     function tojuMsg(text, matches) {
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + esc(text) + '</div>' + matchesHtml(matches) + '</div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -413,7 +435,9 @@
         if (!res.ok || data.error || !data.reply) {
           tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
         } else {
-          const matches = (data.showMatches === true && Array.isArray(data.matches)) ? data.matches : [];
+          // show the canvas whenever the function returns matches (not only when it
+          // sets showMatches) so asking "show me what you found" always renders them.
+          const matches = Array.isArray(data.matches) ? data.matches : [];
           saved.push({ role: 'assistant', content: data.reply, matches });
           persist();
           tojuMsg(data.reply, matches);
