@@ -327,12 +327,12 @@
     <div class="pv-canvas">
       <div class="pvc-head">
         <div class="pvc-title" id="pvcTitle">Nearby</div>
-        <div class="pvc-tabs" id="pvcTabs">
-          <button data-view="poi" class="on">Nearby</button>
-          <button data-view="commute">Commute</button>
-          <button data-view="agency">Agency</button>
-          <button data-view="cost">Costs</button>
-          <button data-view="legal">Legal</button>
+        <div class="pvc-tabs" id="pvcTabs" role="tablist" aria-label="Map view">
+          <button data-view="poi" class="on" role="tab" aria-selected="true">Nearby</button>
+          <button data-view="commute" role="tab" aria-selected="false">Commute</button>
+          <button data-view="agency" role="tab" aria-selected="false">Agency</button>
+          <button data-view="cost" role="tab" aria-selected="false">Costs</button>
+          <button data-view="legal" role="tab" aria-selected="false">Legal</button>
         </div>
       </div>
       <div class="pvc-map-wrap">
@@ -548,7 +548,8 @@
     function poiIcon(t) { var m = META[t]; return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + m.e + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
     var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
     var state = { view: 'poi', time: 'midday' };
-    function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3)); }, 60); }
+    var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE }); }, 60); }
 
     function renderPOI() {
       overlay.className = 'pvc-overlay'; var pts = [PROP];
@@ -595,7 +596,7 @@
     }
     function setView(v) {
       v = v || 'poi'; state.view = v;
-      document.querySelectorAll('#pvcTabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === v); });
+      document.querySelectorAll('#pvcTabs button').forEach(function (b) { var on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
       layer.clearLayers();
       L.marker(PROP, { icon: homeIcon }).addTo(layer).bindPopup('<b>This home</b><br>3-Bed Apartment, Lekki Phase 1');
       titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'True cost', legal: 'Legal & documents' }[v] || 'Nearby';
