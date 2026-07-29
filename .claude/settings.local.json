@@ -236,7 +236,10 @@
       "Bash(cp index.html /tmp/index.bak)",
       "Bash(sed -i '2160,2192d' index.html)",
       "Bash(sed -i '2148,2158d' index.html)",
-      "Bash(sed -i '2045,2057d' index.html)"
+      "Bash(sed -i '2045,2057d' index.html)",
+      "Bash(awk 'NR>=2385 && NR<=2440 && /^<\\\\/section>/ {print NR\": \"$0}' index.html)",
+      "Bash(awk 'NR>=2419 && NR<=2470 && /^<\\\\/section>/ {print NR; exit}' index.html)",
+      "Bash(perl -0777 -i -pe \"s/\\\\.coliving-photo \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.agency-photo-layer \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.browse-photo-hint \\\\{[^}]*\\\\}\\\\n//s;\" index.html)"
     ]
   }
 }

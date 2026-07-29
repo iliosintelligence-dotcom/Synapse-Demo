@@ -26,9 +26,13 @@
   --brand-glow: rgba(54,54,54,0.10);
   --bg: #f5f5f5;
   --bg-1: #ededed;
-  --text: #1e1e1e;
-  --text-muted: rgba(54,54,54,0.62);
-  --text-dim: rgba(54,54,54,0.42);
+  --text: #1a1a1a;
+  /* Body copy was rgba(54,54,54,0.62) — which flattens to #7F7F7F on our
+     #f5f5f5 page: 3.65:1, below the 4.5:1 AA floor. Josefin Sans also has a
+     small x-height, so it read even worse than the number suggests. These are
+     solid colours (no alpha guesswork) at 6.8:1 and 4.5:1. */
+  --text-muted: #545454;   /* 6.84:1 on --bg — body copy */
+  --text-dim:   #6e6e6e;   /* 4.51:1 on --bg — genuinely secondary only */
 
   /* surface tokens — neutral, flat, monochrome */
   --crystal-bg: rgba(20,20,20,0.025);
@@ -344,10 +348,10 @@ nav.solid {
 .hero-headline em { font-style: italic; }
 
 .hero-sub {
-  font-size: 16.5px;
+  font-size: 18px;              /* Josefin's small x-height needs the extra */
   color: var(--text-muted);
-  line-height: 1.75;
-  max-width: 480px;
+  line-height: 1.72;
+  max-width: 520px;
   font-weight: 500;
   margin-bottom: 18px;
 }
@@ -1172,12 +1176,6 @@ section { padding: 120px 0; }
   border-radius: 24px;
   overflow: hidden;
 }
-.coliving-photo {
-  position: absolute;
-  inset: 0;
-  background: url('images/shared-living.jpg') center/cover no-repeat;
-  filter: brightness(0.75) saturate(0.85);
-}
 /* Crystal overlay on photo — light transmission through architectural glass */
 .coliving-glass-overlay {
   position: absolute;
@@ -1338,13 +1336,6 @@ section { padding: 120px 0; }
   padding: 88px 0;
   overflow: hidden;
 }
-.agency-photo-layer {
-  position: absolute;
-  inset: 0;
-  background: url('images/estate.jpg') center/cover no-repeat;
-  opacity: 0.06;
-  filter: saturate(0.3) brightness(0.7);
-}
 .agency-dark {
   position: absolute;
   inset: 0;
@@ -1428,13 +1419,6 @@ section { padding: 120px 0; }
   background: var(--bg-1);
   border-top: 1px solid rgba(15,18,24,0.04);
   position: relative;
-}
-.browse-photo-hint {
-  position: absolute;
-  inset: 0;
-  background: url('images/balcony.jpg') center/cover no-repeat;
-  opacity: 0.03;
-  filter: saturate(0.2);
 }
 .browse-layout {
   display: grid;
@@ -1607,12 +1591,16 @@ section { padding: 120px 0; }
   position: relative;
   overflow: hidden;
 }
+/* drawn, not photographed — a faint architectural grid instead of a stock
+   photo, so the landing pages carry no image files at all */
 .cta-ambient {
   position: absolute;
   inset: 0;
-  background: url('images/balcony.jpg') center/cover;
-  opacity: 0.05;
-  filter: saturate(0.2) brightness(0.6);
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 84px),
+    repeating-linear-gradient(0deg,  rgba(255,255,255,0.05) 0 1px, transparent 1px 84px),
+    radial-gradient(70% 60% at 50% 0%, rgba(var(--tint), 0.10), transparent 70%);
+  opacity: .9;
 }
 .cta-dark {
   position: absolute;
@@ -1913,6 +1901,30 @@ footer {
    ══════════════════════════════════════════════════════════════════════ */
 .s-band { padding: 92px 0; position: relative; }
 .s-band.tinted { background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
+
+/* ── Inverted bands ────────────────────────────────────────────────────────
+   Black sections give the page rhythm and let a single idea land hard. Text
+   tokens are re-pointed rather than overridden per-element, so anything
+   dropped inside is legible by default. Contrast on #0e0e0e: body copy
+   #d4d4d4 = 11.6:1, secondary #a8a8a8 = 7.1:1 — both far past AA. */
+.s-band.dark, .s-close.dark {
+  background: #0e0e0e;
+  --text: #f5f5f5;
+  --text-muted: #d4d4d4;
+  --text-dim: #a8a8a8;
+  --brand: #ffffff;
+  --brand-text: #c9c9c9;
+  --crystal-border: rgba(255,255,255,0.14);
+  --crystal-bg: rgba(255,255,255,0.05);
+  --tint-edge: rgba(var(--tint), 0.30);
+  color: var(--text);
+  border: none;
+}
+.s-band.dark .s-h2, .s-close.dark .s-h2 { color: #f5f5f5; }
+.s-band.dark .s-h2 em { color: #fff; }
+.s-band.dark .s-step { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
+.s-band.dark .s-step:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5); }
+.s-band.dark .pip i { box-shadow: 0 0 0 4px rgba(var(--tint), 0.24); }
 .s-lede { max-width: 680px; }
 .s-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
   color: var(--brand-text); display: inline-flex; align-items: center; gap: 8px; }
@@ -1922,7 +1934,7 @@ footer {
 /* headline emphasis stays crypt.ee monochrome — colour on display type turns
    a lining into a colour scheme. Emphasis comes from weight, not hue. */
 .s-h2 em { font-style: normal; color: var(--brand); }
-.s-sub { font-size: clamp(15px, 1.5vw, 17.5px); color: var(--text-muted); line-height: 1.65; margin-top: 16px; font-weight: 500; max-width: 560px; }
+.s-sub { font-size: clamp(16.5px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.72; margin-top: 16px; font-weight: 500; max-width: 580px; }
 
 /* split: statement one side, photograph the other */
 .s-split { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
@@ -1939,7 +1951,7 @@ footer {
 .s-step:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(20,26,38,0.10); }
 .s-step .n { font-family: var(--f-serif); font-size: 13px; font-weight: 700; color: var(--text-dim); letter-spacing: .1em; }
 .s-step .t { font-size: 19px; font-weight: 600; margin-top: 10px; letter-spacing: -0.01em; }
-.s-step .d { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; margin-top: 7px; font-weight: 500; }
+.s-step .d { font-size: 15.5px; color: var(--text-muted); line-height: 1.68; margin-top: 8px; font-weight: 500; }
 @media (max-width: 800px) { .s-steps { grid-template-columns: 1fr; } }
 
 /* the freshness pip — the one element allowed the accent at full strength */
@@ -2048,6 +2060,157 @@ footer {
   .pk-dots i { animation: none; }
 }
 
+/* ── Generated demos (no photography anywhere on the landing) ──────────────
+   Every "image" on this page is the product drawn in CSS. It stays sharp at
+   any size, weighs nothing, is readable by a screen reader, and — unlike a
+   stock photo — actually shows what Synapse does. */
+.demo { position: relative; border-radius: 18px; overflow: hidden; background: #fbfbfb;
+  border: 1px solid rgba(20,20,20,0.12); box-shadow: 0 30px 66px rgba(20,20,20,0.18); }
+.s-band.dark .demo { background: #171717; border-color: rgba(255,255,255,0.14); box-shadow: 0 30px 66px rgba(0,0,0,0.55); }
+.demo-head { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 16px; border-bottom: 1px solid rgba(20,20,20,0.08); background: #f2f2f2; }
+.s-band.dark .demo-head { background: #202020; border-bottom-color: rgba(255,255,255,0.10); }
+.demo-ttl { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+.demo-live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.demo-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--tint-ink); }
+.demo-body { padding: 18px 16px; display: flex; flex-direction: column; gap: 11px; }
+
+/* a listing row, drawn — used across several demos */
+.d-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 13px;
+  background: #fff; border: 1px solid rgba(20,20,20,0.10); }
+.s-band.dark .d-row { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+.d-thumb { width: 46px; height: 46px; border-radius: 10px; flex: none;
+  background: linear-gradient(135deg, #e2e2e2, #cfcfcf); position: relative; overflow: hidden; }
+.s-band.dark .d-thumb { background: linear-gradient(135deg, #3a3a3a, #2a2a2a); }
+/* a tiny roofline drawn into the thumb so it reads as "a home" without a photo */
+.d-thumb::before { content: ''; position: absolute; left: 50%; top: 54%; width: 22px; height: 15px;
+  transform: translateX(-50%); background: rgba(20,20,20,0.22); border-radius: 2px; }
+.d-thumb::after { content: ''; position: absolute; left: 50%; top: 32%; width: 0; height: 0;
+  transform: translateX(-50%); border-left: 15px solid transparent; border-right: 15px solid transparent;
+  border-bottom: 12px solid rgba(20,20,20,0.28); }
+.s-band.dark .d-thumb::before { background: rgba(255,255,255,0.28); }
+.s-band.dark .d-thumb::after { border-bottom-color: rgba(255,255,255,0.34); }
+.d-main { flex: 1; min-width: 0; }
+.d-p { font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; color: var(--text); }
+.d-t { font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+.d-tag { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 100px; background: var(--brand); color: var(--bg); flex: none; }
+.s-band.dark .d-tag { background: #f5f5f5; color: #0e0e0e; }
+.d-tag.ok { background: rgba(46,125,79,0.12); color: #2e7d4f; }
+.d-tag.dead { background: rgba(20,20,20,0.07); color: var(--text-dim); }
+.d-row.expired { opacity: .45; }
+.d-row.expired .d-p { text-decoration: line-through; }
+
+/* freshness demo — a listing ageing out in front of you */
+.d-age { display: flex; gap: 4px; margin-top: 9px; }
+.d-age span { flex: 1; height: 6px; border-radius: 3px; background: rgba(var(--tint), 0.20); transition: background .3s var(--ease); }
+.d-age span.gone { background: rgba(20,20,20,0.08); }
+.s-band.dark .d-age span.gone { background: rgba(255,255,255,0.10); }
+.d-cap { font-size: 12.5px; color: var(--text-dim); font-weight: 600; }
+
+/* verification demo — seven checks landing one by one */
+.d-check { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text-muted);
+  opacity: 0; transform: translateX(-6px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+.d-check.in { opacity: 1; transform: none; }
+.d-check .b { width: 20px; height: 20px; border-radius: 50%; flex: none; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; background: rgba(46,125,79,0.14); color: #2e7d4f; }
+.d-check .b.wait { background: rgba(20,20,20,0.08); color: var(--text-dim); }
+.s-band.dark .d-check .b.wait { background: rgba(255,255,255,0.10); color: var(--text-dim); }
+
+/* map demo — a neighbourhood drawn, not photographed */
+.d-map { position: relative; height: 300px; background: #efefef; overflow: hidden; }
+.s-band.dark .d-map { background: #1c1c1c; }
+.d-map .road { position: absolute; background: #fff; }
+.s-band.dark .d-map .road { background: rgba(255,255,255,0.13); }
+.d-map .blk { position: absolute; border-radius: 4px; background: rgba(20,20,20,0.07); }
+.s-band.dark .d-map .blk { background: rgba(255,255,255,0.06); }
+.d-you { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #1e1e1e;
+  border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+.s-band.dark .d-you { background: #f5f5f5; border-color: #0e0e0e; }
+.d-hit { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: var(--tint-ink); }
+.d-hit::after { content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 2px solid var(--tint-ink); opacity: .6; animation: ping 2.4s ease-out infinite; }
+.d-note { position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 12px 14px; border-radius: 13px;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 12px 30px rgba(20,20,20,0.20); display: flex; align-items: center; gap: 11px; }
+.s-band.dark .d-note { background: rgba(28,28,28,0.95); border-color: rgba(255,255,255,0.16); }
+
+/* syndication demo — one upload, every channel */
+.d-fan { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.d-chan { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 12px;
+  background: #fff; border: 1px solid rgba(20,20,20,0.10); font-size: 13px; font-weight: 600;
+  opacity: 0; transform: translateY(6px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+.s-band.dark .d-chan { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+.d-chan.in { opacity: 1; transform: none; }
+.d-chan .k { width: 24px; height: 24px; border-radius: 7px; flex: none; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 700; background: rgba(20,20,20,0.08); color: var(--text-muted); }
+.s-band.dark .d-chan .k { background: rgba(255,255,255,0.10); color: var(--text-muted); }
+.d-chan .ok { margin-left: auto; font-size: 11px; color: #2e7d4f; font-weight: 700; }
+
+/* phone demo — a proximity alert arriving */
+.d-phone { width: 232px; margin: 0 auto; border-radius: 30px; padding: 12px 10px 16px;
+  background: #0e0e0e; border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 26px 60px rgba(0,0,0,0.5); }
+.d-phone .notch { width: 62px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.22); margin: 2px auto 14px; }
+.d-push { padding: 12px; border-radius: 15px; background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14); opacity: 0; transform: translateY(-8px) scale(.97);
+  transition: opacity .36s var(--ease), transform .36s var(--ease); }
+.d-push.in { opacity: 1; transform: none; }
+.d-push .ph { display: flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,0.62); }
+.d-push .ph i { width: 6px; height: 6px; border-radius: 50%; background: var(--tint-ink); }
+.d-push .pb { font-size: 13.5px; font-weight: 700; color: #fff; margin-top: 7px; }
+.d-push .ps { font-size: 12px; color: rgba(255,255,255,0.68); margin-top: 3px; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) {
+  .d-check, .d-chan, .d-push { opacity: 1; transform: none; transition: none; }
+  .d-hit::after { animation: none; }
+}
+
+/* ── Benefit carousel ──────────────────────────────────────────────────────
+   One section, several promises. Horizontal scroll-snap so it swipes natively
+   on touch, with buttons and dots for pointer and keyboard. This is how the
+   page carries shared living, flex plans and investing without spending four
+   more screens on them — the choice is there when wanted, invisible when not. */
+.car { position: relative; margin-top: 40px; }
+.car-track { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; padding: 4px 4px 20px; margin: -4px -4px 0;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.car-track::-webkit-scrollbar { display: none; }
+.car-slide { flex: 0 0 100%; scroll-snap-align: center; }
+@media (prefers-reduced-motion: reduce) { .car-track { scroll-behavior: auto; } }
+
+.car-foot { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.car-dots { display: flex; gap: 7px; flex: 1; }
+.car-dot { width: 30px; height: 4px; border-radius: 3px; border: none; padding: 0; cursor: pointer;
+  background: rgba(20,20,20,0.14); transition: background .25s var(--ease); }
+.car-dot.on { background: var(--brand); }
+.s-band.dark .car-dot { background: rgba(255,255,255,0.22); }
+.s-band.dark .car-dot.on { background: #fff; }
+.car-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--crystal-border);
+  background: rgba(255,255,255,0.7); color: var(--text); cursor: pointer; flex: none;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+  transition: background .2s, transform .18s var(--ease); }
+.car-btn:hover { background: #fff; transform: translateY(-1px); }
+.car-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+.car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); letter-spacing: .04em; }
+
+/* demos used inside the carousel */
+.d-people { display: flex; gap: -8px; }
+.d-face { width: 34px; height: 34px; border-radius: 50%; background: #e2e2e2; margin-right: -9px;
+  border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 11.5px; font-weight: 700; color: var(--text-muted); }
+.d-bar { height: 8px; border-radius: 4px; background: rgba(20,20,20,0.08); overflow: hidden; }
+.d-bar i { display: block; height: 100%; border-radius: 4px; background: var(--brand); width: 0;
+  transition: width .9s var(--ease); }
+.d-plan { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 13px; border-radius: 12px; background: #fff; border: 1px solid rgba(20,20,20,0.10); }
+.d-plan .pm { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.d-plan .pv { font-size: 14.5px; font-weight: 700; }
+.d-plan.paid { background: rgba(46,125,79,0.07); border-color: rgba(46,125,79,0.22); }
+.d-plan.paid .pv { color: #2e7d4f; }
+.d-yield { display: flex; align-items: flex-end; gap: 7px; height: 92px; padding-top: 6px; }
+.d-yield span { flex: 1; border-radius: 5px 5px 0 0; background: rgba(20,20,20,0.12); }
+.d-yield span.hi { background: var(--brand); }
+
 /* closing block */
 .s-close { text-align: center; padding: 104px 0; background: var(--tint-wash); border-top: 1px solid var(--tint-edge); }
 .s-close .s-h2 { max-width: 780px; margin-left: auto; margin-right: auto; }
@@ -2118,98 +2281,104 @@ footer {
   </div>
 </section>
 
-<!-- ══ AGENCY · GROWTH BAR ══ -->
-<section class="ag-growthbar" data-aud="agency">
+<!-- ══ AGENCY 01 · THE PROMISE · black band ═══════════════════════════════
+     One line, inverted, full stop. Gives the page its first hard beat. -->
+<section class="s-band dark" data-aud="agency" style="padding:76px 0">
   <div class="container">
-    <p class="ag-tagline">Reach more people. Build more trust. <em>Close more deals.</em></p>
+    <p class="s-h2" style="text-align:center;max-width:900px;margin:0 auto">Reach more people. Build more trust. <em>Close more deals.</em></p>
   </div>
 </section>
 
-<!-- ══ AGENCY · VALUE CHAIN ══ -->
-<section class="ag-section" data-aud="agency" style="padding-top:0">
+<!-- ══ AGENCY 02 · UPLOAD ONCE ════════════════════════════════════════════ -->
+<section class="s-band" data-aud="agency">
   <div class="container">
-    <div class="ag-head">
-      <div class="ag-kicker">One listing, end to end</div>
-      <h2 class="ag-h2">From upload to <em>closed deal.</em></h2>
-    </div>
-    <div class="ag-chain">
-      <div class="ag-node"><span class="num">01</span><div class="t">Upload once</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">02</span><div class="t">Social syndication</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">03</span><div class="t">AI qualification</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">04</span><div class="t">Proximity discovery</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">05</span><div class="t">Verified trust</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">06</span><div class="t">Viewings</div></div>
-      <div class="ag-arrow">→</div>
-      <div class="ag-node"><span class="num">07</span><div class="t">Closed deals</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ AGENCY · ACROSS NIGERIA ══ -->
-<section class="ag-section" data-aud="agency" style="padding-top:0">
-  <div class="container">
-    <div class="ag-head">
-      <div class="ag-kicker">Across Nigeria</div>
-      <h2 class="ag-h2">Every market. One trusted <em>standard.</em></h2>
-      <p class="ag-sub2">From Lagos estates to Abuja and the communities beyond the big cities — your listings reach verified buyers wherever they're looking.</p>
-    </div>
-    <div class="ng-grid">
-      <div class="ng-card" style="background-image:url('images/estate.jpg')"><div class="lbl"><div class="t">Verified estates</div><div class="s">Lagos</div></div></div>
-      <div class="ng-card" style="background-image:url('images/hero.jpg')"><div class="lbl"><div class="t">Prime corridors</div><div class="s">Lekki–Ikoyi</div></div></div>
-      <div class="ng-card" style="background-image:url('images/abuja-gate.jpg')"><div class="lbl"><div class="t">The capital</div><div class="s">Abuja</div></div></div>
-      <div class="ng-card" style="background-image:url('images/shared-living.jpg')"><div class="lbl"><div class="t">Move-in ready</div><div class="s">Every market</div></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ AGENCY · PORTAL VISUAL (moved) ══ -->
-<section id="agency-strip" data-aud="agency">
-  <div class="agency-photo-layer"></div>
-  <div class="agency-dark"></div>
-  <div class="container">
-    <div class="agency-strip-layout">
-      <div>
-        <div class="reveal"><span class="chip">See the engine</span></div>
-        <h2 class="agency-title reveal">One portal your whole team <em>runs on.</em></h2>
-        <p class="reveal" style="font-size:14px;color:var(--text-muted);margin-top:16px;max-width:480px;line-height:1.75;font-weight:300">Marketing, intelligence, trust and transactions in one place. The CRM is simply the engine underneath — growth is the point.</p>
+    <div class="s-split">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Upload once</div>
+        <h2 class="s-h2">One listing. <em>Every channel.</em></h2>
+        <p class="s-sub">Post a property once and Synapse writes the copy, cuts the creative and publishes it everywhere your buyers already are — while your team gets on with viewings.</p>
+        <p class="s-sub" style="margin-top:16px">No agency retainer. No social media manager. No waiting on a designer.</p>
       </div>
-      <div class="agency-btns reveal-r">
-        <button class="btn-large-brand">Open agency portal</button>
-        <button class="btn-large-ghost">See how it works</button>
-      </div>
-    </div>
-
-    <div class="agency-cards" style="margin-top:44px">
-      <div class="agency-card">
-        <span class="ac-badge builtin">Live now</span>
-        <div class="ac-icon">📊</div>
-        <div class="ac-title">Your agency portal</div>
-        <div class="ac-desc">Every listing, lead and verification node in one view — with AI next-best-actions telling your team exactly what to do next.</div>
-        <div class="ac-stats">
-          <div class="ac-stat"><div class="ac-stat-val">47</div><div class="ac-stat-label">Listings</div></div>
-          <div class="ac-stat"><div class="ac-stat-val">41</div><div class="ac-stat-label">Verified</div></div>
-          <div class="ac-stat"><div class="ac-stat-val">₦2.4B</div><div class="ac-stat-label">Sales</div></div>
-        </div>
-      </div>
-      <div class="agency-card">
-        <span class="ac-badge new">New</span>
-        <div class="ac-icon">📍</div>
-        <div class="ac-title">Proximity Marketing</div>
-        <div class="ac-desc">Push your listing as a notification to anyone walking past the property. Catch real, local intent the moment it happens.</div>
-        <div class="proximity-notif">
-          <div class="pn-bell">🔔</div>
-          <div>
-            <div class="pn-title">Synapse · Nearby</div>
-            <div class="pn-main">4-Bed Duplex, Lekki · ₦185M</div>
-            <div class="pn-sub">You're 200m away. Tap to view this verified listing.</div>
+      <div class="demo reveal" id="demoSyndicate">
+        <div class="demo-head"><span class="demo-ttl">Publishing · 3-Bed, Lekki</span><span class="demo-live"><i></i> Auto</span></div>
+        <div class="demo-body">
+          <div class="d-row" style="margin-bottom:4px">
+            <div class="d-thumb"></div>
+            <div class="d-main"><div class="d-p">₦165M</div><div class="d-t">Uploaded 12 seconds ago</div></div>
           </div>
-          <div class="pn-time">now</div>
+          <div class="d-fan" id="fanList"></div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ AGENCY 03 · TOJU QUALIFIES · black band ════════════════════════════ -->
+<section class="s-band dark" data-aud="agency">
+  <div class="container">
+    <div class="s-split flip">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Every enquiry, answered</div>
+        <h2 class="s-h2">Toju talks to them <em>first.</em></h2>
+        <p class="s-sub">Every enquiry gets a reply in seconds, day or night. Toju establishes budget, timeline and seriousness, answers the obvious questions, and books the viewing.</p>
+        <p class="s-sub" style="margin-top:16px">Your agents stop chasing tyre-kickers and start their day with people who are ready.</p>
+        <div style="margin-top:26px" class="pip"><i></i> Handed over with a full transcript and summary.</div>
+      </div>
+      <div class="demo reveal">
+        <div class="demo-head"><span class="demo-ttl">Enquiry · 2:14 am</span><span class="demo-live"><i></i> Toju</span></div>
+        <div class="demo-body" id="agencyChat"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ AGENCY 04 · PROXIMITY ══════════════════════════════════════════════ -->
+<section class="s-band" data-aud="agency">
+  <div class="container">
+    <div class="s-split">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Proximity marketing</div>
+        <h2 class="s-h2">Reach the buyer <em>standing outside.</em></h2>
+        <p class="s-sub">Someone walking your street is already interested in your street. Synapse puts your verified listing on their phone while they are still on it — the highest-intent moment there is.</p>
+        <p class="s-sub" style="margin-top:16px">Local intent, caught live, and delivered straight into your pipeline as a qualified lead.</p>
+      </div>
+      <div class="demo reveal" style="background:none;border:none;box-shadow:none;padding:14px 0" id="demoPush">
+        <div class="d-phone">
+          <div class="notch"></div>
+          <div class="d-push" id="pushCard">
+            <div class="ph"><i></i> Synapse · Nearby</div>
+            <div class="pb">4-Bed Duplex, Lekki · ₦185M</div>
+            <div class="ps">You're 200m away. Verified 3 days ago — tap to view.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ AGENCY 05 · THE PORTAL ═════════════════════════════════════════════ -->
+<section class="s-band tinted" data-aud="agency">
+  <div class="container">
+    <div class="s-lede reveal">
+      <div class="s-kicker">One place</div>
+      <h2 class="s-h2">Your whole team, <em>one portal.</em></h2>
+      <p class="s-sub">Every listing, lead and verification in a single view — with the next action already decided for each one.</p>
+    </div>
+    <div class="s-steps">
+      <div class="s-step reveal">
+        <div class="n">CRM</div>
+        <div class="t">Nothing gets dropped</div>
+        <div class="d">Every lead ranked hot to cold, with the next best action written for whoever picks it up.</div>
+      </div>
+      <div class="s-step reveal">
+        <div class="n">TRUST</div>
+        <div class="t">Verification, tracked</div>
+        <div class="d">See which of the seven checks each property has passed, and what is still outstanding.</div>
+      </div>
+      <div class="s-step reveal">
+        <div class="n">GROWTH</div>
+        <div class="t">Know what worked</div>
+        <div class="d">Every closed deal traced back to the post that started it — so you spend on what actually sells.</div>
       </div>
     </div>
   </div>
@@ -2231,22 +2400,149 @@ footer {
 <!-- ══ 01 · FRESH ONLY (the 14-day rule) ══════════════════════════════════
      The differentiator, and the first thing a nervous first-time buyer needs
      to hear: nothing you see here is a ghost. One idea, one image. -->
+<!-- ══ 01 · WHAT YOU GET · swipeable ══════════════════════════════════════
+     Four promises in the footprint of one section. Freshness leads because it
+     is the reason to trust anything else here; shared living, flex plans and
+     investing follow for whoever they apply to. Native scroll-snap, so it
+     swipes on touch and drives from buttons, dots or arrow keys. -->
 <section id="fresh" class="s-band tinted" data-aud="customer">
   <div class="container">
-    <div class="s-split">
-      <div class="s-lede reveal">
-        <div class="s-kicker">Nothing stale</div>
-        <h2 class="s-h2">Every home here was confirmed real in the <em>last 14 days.</em></h2>
-        <p class="s-sub">You have called about a house that was sold months ago. Everyone here has. So we built the opposite: an agent's listing disappears from Synapse 14 days after they post it, unless they prove it is still available.</p>
-        <div class="fresh-days" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span class="gone"></span><span class="gone"></span><span class="gone"></span>
-        </div>
-        <p class="fresh-note">Day 14 — it is gone until the agency re-confirms it.</p>
-        <p class="s-sub" style="margin-top:22px"><b style="color:var(--text)">So what you see is what is actually for sale.</b> No wasted calls. No wasted Saturdays.</p>
+    <div class="s-lede reveal">
+      <div class="s-kicker">What you get</div>
+      <h2 class="s-h2">Built for how people <em>actually</em> buy here.</h2>
+      <p class="s-sub">Swipe through — every one of these is live today.</p>
+    </div>
+
+    <div class="car">
+      <div class="car-track" id="carTrack" tabindex="0" role="region" aria-label="Platform benefits, swipe or use arrow keys">
+
+        <!-- 1 · freshness -->
+        <article class="car-slide" aria-roledescription="slide" aria-label="1 of 4: Nothing stale">
+          <div class="s-split">
+            <div class="s-lede">
+              <div class="s-kicker">Nothing stale</div>
+              <h2 class="s-h2">Confirmed real in the <em>last 14 days.</em></h2>
+              <p class="s-sub">You have called about a house that sold months ago. Everyone here has. So a listing disappears from Synapse 14 days after it is posted, unless the agency proves it is still available.</p>
+              <p class="s-sub" style="margin-top:16px"><b style="color:var(--text)">What you see is what is actually for sale.</b> No wasted calls. No wasted Saturdays.</p>
+            </div>
+            <div class="demo" role="img" aria-label="Two listings: one verified two days ago and visible, one past fourteen days and removed.">
+              <div class="demo-head"><span class="demo-ttl">Your feed</span><span class="demo-live"><i></i> Live</span></div>
+              <div class="demo-body">
+                <div class="d-row">
+                  <div class="d-thumb"></div>
+                  <div class="d-main">
+                    <div class="d-p">₦165M</div>
+                    <div class="d-t">3-Bed Apartment · Lekki Phase 1</div>
+                    <div class="d-age" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span class="gone"></span><span class="gone"></span><span class="gone"></span></div>
+                  </div>
+                  <span class="d-tag ok">Day 2</span>
+                </div>
+                <div class="d-row expired">
+                  <div class="d-thumb"></div>
+                  <div class="d-main">
+                    <div class="d-p">₦142M</div>
+                    <div class="d-t">Removed — not re-confirmed</div>
+                    <div class="d-age" aria-hidden="true"><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span><span class="gone"></span></div>
+                  </div>
+                  <span class="d-tag dead">Day 15</span>
+                </div>
+                <p class="d-cap">You never see the second one.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 2 · shared living -->
+        <article class="car-slide" aria-roledescription="slide" aria-label="2 of 4: Shared living">
+          <div class="s-split">
+            <div class="s-lede">
+              <div class="s-kicker">Shared living</div>
+              <h2 class="s-h2">A good room, with people you can <em>actually live with.</em></h2>
+              <p class="s-sub">Lagos rent is brutal alone. Toju matches you on the things that decide whether sharing works — schedules, guests, noise, cleanliness — not just on price and postcode.</p>
+              <p class="s-sub" style="margin-top:16px">Every house is verified the same way as any other listing, and you see who is already living there before you commit.</p>
+            </div>
+            <div class="demo" role="img" aria-label="A shared house listing showing two of four rooms free and a housemate match score.">
+              <div class="demo-head"><span class="demo-ttl">Shared house · Yaba</span><span class="demo-live"><i></i> 2 rooms free</span></div>
+              <div class="demo-body">
+                <div class="d-row">
+                  <div class="d-thumb"></div>
+                  <div class="d-main">
+                    <div class="d-p">₦2.4M<span style="font-size:12px;color:var(--text-muted);font-weight:500">/yr</span></div>
+                    <div class="d-t">Ensuite room · bills included</div>
+                  </div>
+                  <span class="d-tag ok">Verified</span>
+                </div>
+                <div class="d-row" style="align-items:flex-start;flex-direction:column;gap:10px">
+                  <div style="display:flex;align-items:center;gap:12px;width:100%">
+                    <div class="d-people"><span class="d-face">A</span><span class="d-face">K</span><span class="d-face">T</span></div>
+                    <div style="flex:1;font-size:12.5px;color:var(--text-muted);font-weight:500">3 housemates · quiet, early risers</div>
+                  </div>
+                  <div style="width:100%">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px">
+                      <span style="color:var(--text-muted)">Lifestyle match</span><span>91%</span>
+                    </div>
+                    <div class="d-bar"><i data-fill="91"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 3 · flex plans -->
+        <article class="car-slide" aria-roledescription="slide" aria-label="3 of 4: Flex plans">
+          <div class="s-split">
+            <div class="s-lede">
+              <div class="s-kicker">Flex plans</div>
+              <h2 class="s-h2">Start with what you <em>have now.</em></h2>
+              <p class="s-sub">Most people here are asked for a year up front. Where a landlord or developer accepts instalments, Synapse shows you that option on the listing — with the full schedule written out before you agree to anything.</p>
+              <p class="s-sub" style="margin-top:16px">Every naira laid out in advance. No balloon payment hiding at the end.</p>
+            </div>
+            <div class="demo" role="img" aria-label="A payment schedule showing a deposit paid and three remaining quarterly instalments.">
+              <div class="demo-head"><span class="demo-ttl">Payment plan · ₦2.4M/yr</span><span class="demo-live"><i></i> Quarterly</span></div>
+              <div class="demo-body">
+                <div class="d-plan paid"><span class="pm">Deposit · paid</span><span class="pv">₦600,000</span></div>
+                <div class="d-plan"><span class="pm">April</span><span class="pv">₦600,000</span></div>
+                <div class="d-plan"><span class="pm">July</span><span class="pv">₦600,000</span></div>
+                <div class="d-plan"><span class="pm">October</span><span class="pv">₦600,000</span></div>
+                <p class="d-cap">Total ₦2.4M — the same as paying once.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 4 · investing -->
+        <article class="car-slide" aria-roledescription="slide" aria-label="4 of 4: Investing">
+          <div class="s-split">
+            <div class="s-lede">
+              <div class="s-kicker">Investing</div>
+              <h2 class="s-h2">Buy the yield, not the <em>sales pitch.</em></h2>
+              <p class="s-sub">Toju shows you what a property actually returns in its corridor — rental yield, how it compares to the area, and what the title looks like — before an agent tells you it is a great opportunity.</p>
+              <p class="s-sub" style="margin-top:16px">Same seven checks. Same 14-day rule. Applied to the numbers as well as the building.</p>
+            </div>
+            <div class="demo" role="img" aria-label="A yield comparison chart showing this property above the Lagos average.">
+              <div class="demo-head"><span class="demo-ttl">Rental yield · Lekki corridor</span><span class="demo-live"><i></i> This home</span></div>
+              <div class="demo-body">
+                <div class="d-yield" aria-hidden="true">
+                  <span style="height:44%"></span><span style="height:52%"></span><span style="height:48%"></span>
+                  <span style="height:61%"></span><span class="hi" style="height:88%"></span><span style="height:57%"></span><span style="height:50%"></span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <div><div class="d-p">8.4%</div><div class="d-t">This property</div></div>
+                  <div style="text-align:right"><div class="d-p" style="color:var(--text-muted)">6.1%</div><div class="d-t">Lagos average</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
       </div>
-      <div class="s-media reveal">
-        <img src="images/balcony.jpg" alt="A balcony of a recently listed Lagos apartment" loading="lazy" />
+
+      <div class="car-foot">
+        <div class="car-dots" id="carDots" role="tablist" aria-label="Choose a benefit"></div>
+        <span class="car-count" id="carCount">1 / 4</span>
+        <button class="car-btn" id="carPrev" type="button" aria-label="Previous benefit">←</button>
+        <button class="car-btn" id="carNext" type="button" aria-label="Next benefit">→</button>
       </div>
     </div>
   </div>
@@ -2283,7 +2579,7 @@ footer {
 <!-- ══ 03 · PROXIMITY ══════════════════════════════════════════════════════
      Replaces the old "Who it's for" persona list. Marked "Coming soon" is
      NOT applied here per the product owner's decision — see commit notes. -->
-<section id="proximity" class="s-band tinted" data-aud="customer">
+<section id="proximity" class="s-band dark" data-aud="customer">
   <div class="container">
     <div class="s-split flip">
       <div class="s-lede reveal">
@@ -2293,13 +2589,28 @@ footer {
         <p class="s-sub" style="margin-top:18px">No endless scrolling. No alerts for cities you will never live in. Just the street you already love, the moment something opens up on it.</p>
         <div style="margin-top:26px" class="pip"><i></i> You choose the areas. You can turn it off any time.</div>
       </div>
-      <div class="prox-stage reveal">
-        <img src="images/estate.jpg" alt="A Lagos neighbourhood street of homes" loading="lazy" />
-        <span class="prox-ping" style="left:26%;top:34%"></span>
-        <span class="prox-ping" style="left:63%;top:52%;opacity:.55"></span>
-        <div class="prox-card">
-          <div class="pt"><b>3-Bed Terrace · 8 minutes away</b><span>Verified 2 days ago · Ikate</span></div>
-          <span class="soon">Near you</span>
+      <!-- the neighbourhood, drawn -->
+      <div class="demo reveal" role="img" aria-label="A map of nearby streets showing your position and a verified home eight minutes away.">
+        <div class="d-map">
+          <span class="road" style="left:0;right:0;top:34%;height:12px"></span>
+          <span class="road" style="left:0;right:0;top:68%;height:9px"></span>
+          <span class="road" style="top:0;bottom:0;left:30%;width:11px"></span>
+          <span class="road" style="top:0;bottom:0;left:72%;width:8px"></span>
+          <span class="blk" style="left:6%;top:6%;width:20%;height:22%"></span>
+          <span class="blk" style="left:36%;top:6%;width:30%;height:22%"></span>
+          <span class="blk" style="left:78%;top:6%;width:16%;height:22%"></span>
+          <span class="blk" style="left:6%;top:42%;width:20%;height:20%"></span>
+          <span class="blk" style="left:36%;top:42%;width:30%;height:20%"></span>
+          <span class="blk" style="left:78%;top:42%;width:16%;height:20%"></span>
+          <span class="d-you" style="left:31%;top:70%" title="You"></span>
+          <span class="d-hit" style="left:56%;top:36%"></span>
+          <div class="d-note">
+            <div class="pt" style="flex:1;min-width:0">
+              <b style="display:block;font-size:14px">3-Bed Terrace · 8 minutes away</b>
+              <span style="font-size:12.5px;color:var(--text-muted)">Verified 2 days ago · Ikate</span>
+            </div>
+            <span class="soon">Near you</span>
+          </div>
         </div>
       </div>
     </div>
@@ -2310,8 +2621,10 @@ footer {
 <section id="trust" class="s-band" data-aud="customer">
   <div class="container">
     <div class="s-split">
-      <div class="s-media reveal">
-        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80" alt="A verified home interior, photographed during an inspection" loading="lazy" />
+      <!-- the seven checks, landing one at a time -->
+      <div class="demo reveal" id="demoVerify">
+        <div class="demo-head"><span class="demo-ttl">Verification · 3-Bed, Lekki Phase 1</span><span class="demo-live"><i></i> Running</span></div>
+        <div class="demo-body" id="verifyList"></div>
       </div>
       <div class="s-lede reveal">
         <div class="s-kicker">Seven checks</div>
@@ -2497,7 +2810,7 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     at(2350, function () {
       var c = document.createElement('div');
       c.className = 'pk-card';
-      c.innerHTML = '<img src="images/interior.jpg" alt="" />'
+      c.innerHTML = '<span class="d-thumb" style="width:54px;height:54px"></span>'
         + '<div class="c1"><div class="c-p">₦165M</div>'
         + '<div class="c-t">3-Bed Apartment · Lekki Phase 1</div>'
         + '<div class="c-v">✓ Verified 2 days ago</div></div>';
@@ -2534,12 +2847,144 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     });
   }
 
+  /* the seven checks, landing one at a time (customer · trust section) */
+  function playVerify() {
+    var box = document.getElementById('verifyList');
+    if (!box) return;
+    box.innerHTML = '';
+    var checks = ['Title documents', 'Ground survey', 'Structure', 'Flood risk',
+                  'Legal status', 'Ownership confirmed', 'Photos match the house'];
+    checks.forEach(function (c, i) {
+      var d = document.createElement('div');
+      d.className = 'd-check';
+      d.innerHTML = '<span class="b">✓</span>' + c;
+      box.appendChild(d);
+      at(160 + i * 190, function () { d.classList.add('in'); });
+    });
+    at(160 + checks.length * 190 + 120, function () {
+      var d = document.createElement('div');
+      d.className = 'd-check';
+      d.innerHTML = '<span class="b wait">·</span>Still available — re-checked every 14 days';
+      box.appendChild(d);
+      requestAnimationFrame(function () { d.classList.add('in'); });
+    });
+  }
+
+  /* one upload fanning out to every channel (agency) */
+  function playSyndicate() {
+    var box = document.getElementById('fanList');
+    if (!box) return;
+    box.innerHTML = '';
+    var chans = [['IG','Instagram'],['FB','Facebook'],['WA','WhatsApp'],['X','X'],['TT','TikTok'],['SY','Synapse']];
+    chans.forEach(function (c, i) {
+      var d = document.createElement('div');
+      d.className = 'd-chan';
+      d.innerHTML = '<span class="k">' + c[0] + '</span>' + c[1] + '<span class="ok">✓</span>';
+      box.appendChild(d);
+      at(200 + i * 210, function () { d.classList.add('in'); });
+    });
+  }
+
+  /* a 2am enquiry Toju handles alone (agency) */
+  function playAgencyChat() {
+    var box = document.getElementById('agencyChat');
+    if (!box) return;
+    box.innerHTML = '';
+    at(150,  function () { bubble(box, 'me', 'Is the Lekki duplex still available?'); });
+    at(700,  function () { box.__t = dots(box); });
+    at(1700, function () {
+      if (box.__t) box.__t.remove();
+      bubble(box, 'you', 'It is — verified 3 days ago. What is your budget range?');
+    });
+    at(2500, function () { bubble(box, 'me', 'Up to ₦190M, buying outright.'); });
+    at(3300, function () {
+      var c = document.createElement('div');
+      c.className = 'pk-card';
+      c.innerHTML = '<div class="c1"><div class="c-p">Qualified lead → your CRM</div>'
+        + '<div class="c-t">Cash buyer · ₦190M · viewing booked Sat 11am</div></div>'
+        + '<span class="d-tag">Hot</span>';
+      box.appendChild(c); show(c);
+    });
+  }
+
+  /* a proximity alert arriving on a phone (agency) */
+  function playPush() {
+    var card = document.getElementById('pushCard');
+    if (!card) return;
+    card.classList.remove('in');
+    at(400, function () { card.classList.add('in'); });
+  }
+
   window.synPeek = function (aud) {
     clear();
-    if (aud === 'agency') playAgency(); else playCustomer();
+    if (aud === 'agency') { playAgency(); playSyndicate(); playAgencyChat(); playPush(); }
+    else { playCustomer(); playVerify(); }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek('customer'); });
   else window.synPeek('customer');
+})();
+
+/* ─── Benefit carousel ──────────────────────────────────────────────────────
+   Scroll position is the single source of truth — the buttons, dots and keys
+   all just scroll, and the UI reads back from the scroll. That way a native
+   swipe and a button press can never disagree about which slide is showing. */
+(function () {
+  var track = document.getElementById('carTrack');
+  if (!track) return;
+  var slides = [].slice.call(track.querySelectorAll('.car-slide'));
+  var dotsBox = document.getElementById('carDots');
+  var count = document.getElementById('carCount');
+  var prev = document.getElementById('carPrev');
+  var next = document.getElementById('carNext');
+  var idx = 0;
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'car-dot' + (i === 0 ? ' on' : '');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
+    b.addEventListener('click', function () { go(i); });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  // measure from the first slide, not the track: offsetLeft is relative to
+  // each element's own offsetParent, which is not necessarily the track
+  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+
+  function go(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.scrollTo({ left: offset(idx), behavior: 'smooth' });
+  }
+  function sync() {
+    // nearest slide to the current scroll position wins
+    var best = 0, bestD = Infinity;
+    slides.forEach(function (s, i) {
+      var d = Math.abs(offset(i) - track.scrollLeft);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    idx = best;
+    dots.forEach(function (d, i) { d.classList.toggle('on', i === idx); d.setAttribute('aria-selected', i === idx); });
+    count.textContent = (idx + 1) + ' / ' + slides.length;
+    prev.disabled = idx === 0;
+    next.disabled = idx === slides.length - 1;
+    // fill any progress bars on the slide that just became visible
+    slides[idx].querySelectorAll('.d-bar i[data-fill]').forEach(function (el) {
+      el.style.width = el.getAttribute('data-fill') + '%';
+    });
+  }
+
+  prev.addEventListener('click', function () { go(idx - 1); });
+  next.addEventListener('click', function () { go(idx + 1); });
+  track.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
+  });
+  var t;
+  track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
+  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
+  sync();
 })();
 
 // ─── FAQ accordion — one open at a time ───
