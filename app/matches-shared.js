@@ -47,10 +47,14 @@
   }
 
   // clear verification badge on every card so buyers know exactly what's checked
+  // (unified line icons via SynIcons when loaded; text-glyph fallback otherwise)
+  function icon(name, fallback) {
+    return (window.SynIcons && SynIcons.has(name)) ? SynIcons.svg(name) : fallback;
+  }
   function verifyChip(v) {
-    if (v === 'unverified') return '<span class="chip chip-unv">◌ Not verified</span>';
-    if (v === 'in_progress') return '<span class="chip chip-prog">◷ Verifying…</span>';
-    return '<span class="chip chip-pass">✓ Verified</span>';
+    if (v === 'unverified') return '<span class="chip chip-unv">' + icon('unverified', '◌') + ' Not verified</span>';
+    if (v === 'in_progress') return '<span class="chip chip-prog">' + icon('pending', '◷') + ' Still checking</span>';
+    return '<span class="chip chip-pass">' + icon('verified', '✓') + ' Verified</span>';
   }
 
   // Toju API match (toju-demo `chat` / `matches` actions) → the card item both
