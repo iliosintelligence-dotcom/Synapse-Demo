@@ -214,7 +214,7 @@
       <!-- LEFT: the chat (smaller window) -->
       <section class="tj-chat">
         <div class="tj-head">
-          <div class="tj-eyebrow">AI Property Consultant</div>
+          <div class="tj-eyebrow">Your property advisor</div>
           <div class="tj-title">Toju <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
         </div>
         <div class="convo-scroll"><div class="convo" id="convo"></div></div>
@@ -335,24 +335,24 @@
     function matchesHtml(matches) {
       if (!Array.isArray(matches) || matches.length === 0) return '';
       const cards = matches.map((m) => {
-        const why = m.why ? '<div class="watch"><b>Why:</b> ' + esc(m.why) + '</div>' : '';
+        const why = m.why ? '<div class="watch reason"><b>Recommended —</b> ' + esc(m.why) + '</div>' : '';
         const room = m.room ? '<div class="watch">' +
           (m.room.totalRooms - m.room.housematesIn) + ' of ' + m.room.totalRooms + ' rooms free · ' +
           (m.room.genderPreference === 'any' ? 'any gender' : m.room.genderPreference + '-only') +
           (m.room.ensuite ? ' · ensuite' : '') + (m.room.billsIncluded ? ' · bills incl.' : '') +
           (m.room.vibe ? ' · ' + esc(m.room.vibe) : '') + '</div>' : '';
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
-          ? '<div class="watch"><b>Watch:</b> ' + esc(m.whatToWatch) + '</div>' : '';
+          ? '<div class="watch"><b>Worth checking —</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
         return '<a class="pcard" href="property.html">'
           + '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>'
           + '<div><div class="price">' + naira(m.price) + (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '') + '</div>'
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
-          + '<div class="meta"><span class="trust">✦ Trust ' + (Number(m.trustScore) || 0) + '</span> · '
+          + '<div class="meta"><span class="trust" title="Property Confidence — how much of our verification this home has passed">✦ Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
           + esc(m.city || '') + yld + '</div>'
           + room + why + watch + '</div></a>';
       }).join('');
-      return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">VERIFIED MATCHES</span>'
+      return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">HOMES WORTH A LOOK</span>'
         + '<span class="cnt">' + matches.length + '</span>'
         + '<a class="viewall" href="browse.html">View all →</a></div>' + cards;
     }

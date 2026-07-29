@@ -109,8 +109,12 @@
     .cmptable .warn { color: #b0521f; font-weight: 600; }
     .cmpclose { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 17px; color: var(--ink-dim); cursor: pointer; }
 
-    .empty { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; color: var(--ink-muted); font-size: 14px; }
+    .empty { display: none; flex-direction: column; align-items: center; gap: 6px; padding: 56px 20px; color: var(--ink-muted); font-size: 14px; text-align: center; }
     .grid:empty + .empty { display: flex; }
+    .empty-ttl { font-family: var(--f-serif); font-weight: 500; font-size: 20px; color: var(--ink); margin-top: 4px; }
+    .empty-sub { max-width: 380px; line-height: 1.6; margin-bottom: 8px; }
+    .empty-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .empty-acts .btn { font-size: 13px; padding: 10px 16px; }
   </style>
 </head>
 <body>
@@ -152,7 +156,7 @@
       <select id="sortSel">
         <option value="match">Sort: Best match</option>
         <option value="price">Sort: Price (low → high)</option>
-        <option value="trust">Sort: Trust score</option>
+        <option value="trust">Sort: Property confidence</option>
       </select>
       <div class="dealfilter" id="dealFilter">
         <button data-deal="sale">Buy</button>
@@ -166,7 +170,13 @@
     <div class="grid" id="grid"></div>
     <div class="empty">
       <span data-lottie="empty-search" style="width:150px;height:120px"></span>
-      Nothing fits this brief yet — tell Toju what to change.
+      <div class="empty-ttl">No homes fit this exact brief yet</div>
+      <p class="empty-sub">That usually just means the brief is a little tight. Try one of these:</p>
+      <div class="empty-acts">
+        <a class="btn btn-ghost" href="toju.html?ask=Widen my budget a little and show me what opens up">Widen the budget</a>
+        <a class="btn btn-ghost" href="toju.html?ask=Show me good homes in nearby areas too">Try a nearby area</a>
+        <a class="btn btn-primary" href="toju.html?ask=Help me find homes similar to what I asked for">Ask Toju to help</a>
+      </div>
     </div>
   </div>
 
@@ -313,7 +323,7 @@
       const rows = [
         ['Price', sel.map((l) => l.priceN), (v, b) => `<span class="${v === b ? 'best' : ''}">${naira(v)}</span>`, 'min'],
         ['Match', sel.map((l) => l.match), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
-        ['Trust score', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
+        ['Property confidence', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
         ['Flood risk', sel.map((l) => l.flood ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : v >= 50 ? 'warn' : ''}">${v}/100${v >= 50 ? ' ⚠' : ''}</span>`, 'min'],
         ['Power reliability', sel.map((l) => l.power ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}/100</span>`, 'max'],
         ['Gross yield', sel.map((l) => l.yield ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
@@ -411,7 +421,7 @@
           items = []; picked = new Set();
           setMatchedHeadings();
           if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
-            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Nothing verified fits yet — refine with Toju.';
+            '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Toju for similar homes.';
           document.getElementById('map').style.display = 'none';
           render();
           return;

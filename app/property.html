@@ -206,7 +206,7 @@
         <div>
           <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
             <span data-lottie="verified-badge" data-loop="false" style="width:22px;height:22px"></span>
-            Verified · Trust 94
+            Verified · Property Confidence 94
           </div>
           <div class="dim" style="font-size:12.5px">6 of 7 checks passed · independently verified</div>
         </div>
@@ -310,16 +310,16 @@
     <div class="card section">
       <div class="lbl">More like this — verified</div>
       <div class="sim">
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=340&q=60" alt=""><div class="b"><div class="p">₦148M</div><div class="t">3-Bed Terrace, Ikate</div><div class="m">Trust 91 · 94% match</div></div></a>
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=340&q=60" alt=""><div class="b"><div class="p">₦150M</div><div class="t">3-Bed Duplex, Osapa</div><div class="m">Trust 88 · 80% match</div></div></a>
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Trust 84 · 76% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=340&q=60" alt=""><div class="b"><div class="p">₦148M</div><div class="t">3-Bed Terrace, Ikate</div><div class="m">Confidence 91 · 94% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=340&q=60" alt=""><div class="b"><div class="p">₦150M</div><div class="t">3-Bed Duplex, Osapa</div><div class="m">Confidence 88 · 80% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Confidence 84 · 76% match</div></div></a>
       </div>
     </div>
     </div><!-- /deck -->
 
     <div class="cta-dock">
       <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?">✦ Ask Toju</a>
-      <button class="btn btn-primary" style="flex:1" onclick="alert('In the live app this opens a WhatsApp lead to the agency within seconds.')">Contact Agency</button>
+      <button class="btn btn-primary" style="flex:1" id="contactBtn">Contact agent</button>
     </div>
   </div><!-- /pdp -->
 
@@ -418,9 +418,29 @@
     });
     paintSave();
     document.getElementById('shareBtn').addEventListener('click', async () => {
-      const data = { title: '3-Bed Apartment, Lekki Phase 1 — Synapse', text: 'Verified · Trust 94 · ₦165M', url: location.href };
+      const data = { title: '3-Bed Apartment, Lekki Phase 1 — Synapse', text: 'Verified · Property Confidence 94 · ₦165M', url: location.href };
       if (navigator.share) { try { await navigator.share(data); } catch (e) {} }
-      else { await navigator.clipboard.writeText(location.href); alert('Link copied'); }
+      else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
+    });
+
+    // lightweight feedback toast — speaks to the user, not the system
+    function toast(msg, kind) {
+      let t = document.getElementById('synToast');
+      if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
+      t.className = kind === 'error' ? 'err' : '';
+      t.textContent = msg;
+      requestAnimationFrame(() => t.classList.add('show'));
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
+    }
+
+    // Contact agent — user-voiced confirmation, not "Qualified Lead Created"
+    document.getElementById('contactBtn').addEventListener('click', function () {
+      this.disabled = true;
+      const label = this.textContent; this.textContent = 'Sending…';
+      setTimeout(() => {
+        toast("Your request has been sent to the agent — they'll reach out on WhatsApp shortly.");
+        this.textContent = '✓ Request sent';
+      }, 650);
     });
 
     // animate neighbourhood bars on view

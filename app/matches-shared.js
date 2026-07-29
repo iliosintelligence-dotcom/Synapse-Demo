@@ -71,9 +71,9 @@
       flood: m.neighbourhood ? m.neighbourhood.flood : null,
       power: m.neighbourhood ? m.neighbourhood.power : null,
       yield: m.yieldPct,
-      why: m.why ? '<b>Why:</b> ' + esc(m.why)
+      why: m.why ? '<b>Recommended —</b> ' + esc(m.why)
         : (m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
-          ? '<b>Watch:</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
+          ? '<b>Worth checking —</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
     };
   }
 
@@ -94,8 +94,8 @@
       ? `<label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
       : '';
     const score = (l.vstatus || 'verified') === 'verified'
-      ? `<div class="score"><span class="ring">${l.score}</span> Trust score</div>`
-      : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Verification in progress' : 'Not yet verified — ask Toju to check'}</div>`;
+      ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
+      : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Still checking this home' : 'Not yet verified — ask Toju to check'}</div>`;
     return `
       <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
         <div class="body">
@@ -136,7 +136,7 @@
       pts.push(c);
       L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
         .addTo(st.layer)
-        .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Trust ${l.score}`);
+        .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Confidence ${l.score}`);
     });
     setTimeout(() => {
       st.map.invalidateSize();

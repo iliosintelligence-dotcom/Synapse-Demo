@@ -114,3 +114,42 @@
   if (content) content.addEventListener('scroll', function () { upd(content.scrollTop); }, { passive: true });
   upd(window.scrollY || 0);
 })();
+
+/* ── Start-at-top + resize auto-fit ──────────────────────────────────────────
+   UX principles: clarity (every reload starts at the top of the page, never a
+   restored mid-scroll position) and feedback (when any panel changes size, maps
+   and flex canvases re-fit instead of clipping). Page-agnostic — no per-page
+   wiring needed; reduced-motion has no bearing here. */
+(function () {
+  // 1) always land at the top on load/reload, unless the URL deep-links an anchor
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+  function toTop() {
+    if (location.hash && document.getElementById(location.hash.slice(1))) return;
+    window.scrollTo(0, 0);
+    var c = document.querySelector('.content'); if (c) c.scrollTop = 0;
+  }
+  if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', toTop);
+  else toTop();
+  window.addEventListener('load', toTop);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) toTop(); }); // bfcache restore
+
+  // 2) when any tracked panel resizes, nudge a relayout so Leaflet maps + flex
+  //    canvases re-fit. Covers item-level resizes that don't move the window.
+  //    Leaflet already re-fits on the native 'resize' event; we also emit a
+  //    'syn:relayout' hook pages can listen to. Coalesced to one rAF; the
+  //    dispatched relayout never changes the observed boxes, so no loop.
+  if (!('ResizeObserver' in window)) return;
+  var raf = 0;
+  function relayout() {
+    raf = 0;
+    try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+    document.dispatchEvent(new CustomEvent('syn:relayout'));
+  }
+  var ro = new ResizeObserver(function () { if (!raf) raf = requestAnimationFrame(relayout); });
+  function watch() {
+    document.querySelectorAll('.leaflet-container, .pv-canvas, .tj-canvas, .content, .pv-split')
+      .forEach(function (el) { try { ro.observe(el); } catch (e) {} });
+  }
+  if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', watch);
+  else watch();
+})();
