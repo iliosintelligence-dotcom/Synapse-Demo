@@ -245,6 +245,7 @@
       <span class="spacer"></span>
       <button id="tjHist" class="home" style="background:none;border:none;cursor:pointer;font:inherit;margin-right:14px"><span data-icon="history"></span> History</button>
       <button id="tjNew" class="home" style="background:none;border:none;cursor:pointer;font:inherit;margin-right:18px">↺ New chat</button>
+      <span data-auth-slot style="margin-right:16px"></span>
       <a class="home" href="../index.html">← Back to site</a>
     </div>
 
@@ -304,6 +305,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="matches-shared.js"></script>
   <script src="icons.js"></script>
+  <script src="auth.js"></script>
   <script src="motion.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
@@ -351,7 +353,8 @@
     // browse.html parity: shaper, card markup and map all come from
     // matches-shared.js — the canvas renders the SAME card browse.html does
     // (compare checkboxes are a browse-only tool; here you just tell Toju).
-    let cvSaves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
+    let cvSaves = SynMatches.readSaves();
+    SynMatches.onSavesChanged(function (s) { cvSaves = s; renderCanvas(); });
     const cvMapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
 
     function renderCanvas() {
@@ -367,8 +370,7 @@
       const sv = e.target.closest('[data-save]');
       if (sv) {
         const id = sv.getAttribute('data-save');
-        cvSaves.has(id) ? cvSaves.delete(id) : cvSaves.add(id);
-        localStorage.setItem('synapse_saved', JSON.stringify([...cvSaves]));
+        cvSaves = SynMatches.toggleSave(id);   // re-reads storage; no lost updates
         renderCanvas(); return;
       }
       if (e.target.closest('.listing')) window.location.href = 'property.html';

@@ -138,6 +138,7 @@
       <a href="dream.html">Dream Home</a>
     </nav>
     <span class="spacer"></span>
+    <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
@@ -209,7 +210,9 @@
     // listings that actually came back from the server.
     let items = [];
     let loadState = 'loading';   // loading | ready | failed
-    let saves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
+    let saves = SynMatches.readSaves();
+    // another tab hearted something — repaint from storage, do not drift
+    SynMatches.onSavesChanged(function (s) { saves = s; render(); });
     let picked = new Set();
     let searchQ = '';
     let dealFilter = 'all'; // all | sale | rent | shared
@@ -308,8 +311,7 @@
       const sv = e.target.closest('[data-save]');
       if (sv) {
         const id = sv.getAttribute('data-save');
-        saves.has(id) ? saves.delete(id) : saves.add(id);
-        localStorage.setItem('synapse_saved', JSON.stringify([...saves]));
+        saves = SynMatches.toggleSave(id);   // re-reads storage; no lost updates
         render(); return;
       }
       const cb = e.target.closest('[data-cmp]');
@@ -484,6 +486,7 @@
     }
   </script>
   <script src="icons.js"></script>
+  <script src="auth.js"></script>
   <script src="motion.js"></script>
 </body>
 </html>

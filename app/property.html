@@ -180,6 +180,7 @@
       <a href="dream.html">Dream Home</a>
     </nav>
     <span class="spacer"></span>
+    <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="browse.html">← Back to matches</a>
   </div>
 
@@ -447,14 +448,31 @@
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
     }
 
-    // Contact agent — user-voiced confirmation, not "Qualified Lead Created"
+    // Contact agent — this is the moment we ask for an account, because it is
+    // the moment the visitor's details would reach a third party. Browsing and
+    // talking to Toju stay free and anonymous; handing your number to an agency
+    // is the thing worth an account.
+    let contactBusy = false;   // single-flight: a double tap must not double-send
     document.getElementById('contactBtn').addEventListener('click', function () {
-      this.disabled = true;
-      const label = this.textContent; this.textContent = 'Sending…';
-      setTimeout(() => {
-        toast("Your request has been sent to the agent — they'll reach out on WhatsApp shortly.");
-        this.textContent = '✓ Request sent';
-      }, 650);
+      if (contactBusy) return;
+      const btn = this;
+      contactBusy = true; btn.disabled = true; btn.textContent = 'Checking…';
+
+      const proceed = () => {
+        btn.textContent = 'Sending…';
+        setTimeout(() => {
+          toast("Your request has been sent to the agent — they'll reach out on WhatsApp shortly.");
+          btn.textContent = '✓ Request sent';
+          // stays disabled: the request is sent, re-sending helps nobody
+        }, 650);
+      };
+
+      if (!window.SynAuth) { proceed(); return; }   // auth unavailable — don't trap the user
+      SynAuth.ready().then((u) => {
+        if (u) { proceed(); return; }
+        const here = window.location.pathname + window.location.search;
+        window.location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
+      }).catch(() => { proceed(); });
     });
 
     // animate neighbourhood bars on view
@@ -588,6 +606,7 @@
     renderChecks(); renderPhotos();
   </script>
   <script src="icons.js"></script>
+  <script src="auth.js"></script>
   <script src="motion.js"></script>
   <script>
   /* Reactive map canvas — mirrors the swipe deck. Each card maps to a view:

@@ -3015,8 +3015,10 @@ document.querySelectorAll('.faq-item').forEach(item => {
 (function () {
   // Every customer CTA funnels to Toju. Only agency-audience actions and the
   // explicit "Browse verified homes" button route elsewhere.
+  // Agency CTAs land on sign-in first — the portal has no anonymous mode.
+  var AGENCY_GATE = 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html');
   var routes = [
-    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: 'app/agency.html' },
+    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: AGENCY_GATE },
     { match: /browse verified homes/i, target: 'app/browse.html' },
   ];
   var ctas = document.querySelectorAll(
@@ -3043,9 +3045,19 @@ document.querySelectorAll('.faq-item').forEach(item => {
 // secondary buttons adapt to the active audience.
 (function () {
   var REVEAL_SEL = '.reveal, .reveal-l, .reveal-r, .persona-row, .roadmap-step, .agency-card, .why-crystal, .fp-crystal';
+  // Agencies sign in at the CTA — the portal is their workspace, so there is
+  // no anonymous version of it. Customers go straight to Toju: browsing and
+  // advice stay free and anonymous, and the account is asked for later, at the
+  // point their details would actually reach an agency.
   var nav = {
-    primary: { customer: { label: 'Talk to Toju', href: 'app/toju.html', icon: 'chat' }, agency: { label: 'Agency portal', href: 'app/agency.html', icon: 'agency' } },
-    secondary: { customer: { label: 'Browse', href: 'app/browse.html', icon: 'grid' }, agency: { label: 'Book a demo', href: 'app/agency.html', icon: 'chat' } },
+    primary: {
+      customer: { label: 'Talk to Toju', href: 'app/toju.html', icon: 'chat' },
+      agency:   { label: 'Agency portal', href: 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html'), icon: 'agency' },
+    },
+    secondary: {
+      customer: { label: 'Browse', href: 'app/browse.html', icon: 'grid' },
+      agency:   { label: 'Book a demo', href: 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html'), icon: 'chat' },
+    },
   };
   // unified function icon in front of the label (icons.js loads after this
   // file, so the first paint is plain text and re-renders once icons exist)

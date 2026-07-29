@@ -157,5 +157,35 @@
     return st;
   }
 
-  window.SynMatches = { esc, naira, IMG_POOL, GEO, coords, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap };
+  /* ── Saved homes — race-safe across tabs ────────────────────────────────
+     Every page used to read `synapse_saved` into a Set at load and then write
+     the whole Set back on each toggle. With two tabs open that is a lost-update
+     race: tab B saves a home, tab A (holding a stale Set) saves a different one
+     and wipes B's. Both users see hearts silently un-heart themselves.
+
+     Fix: never write from a stale snapshot. Re-read at the moment of the
+     change, apply the single delta, write back — and listen to `storage` so
+     other tabs repaint instead of drifting. */
+  const SAVES_KEY = 'synapse_saved';
+  function readSaves() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SAVES_KEY) || '[]');
+      return new Set(Array.isArray(raw) ? raw : []);
+    } catch (e) { return new Set(); }
+  }
+  function toggleSave(id) {
+    const now = readSaves();               // re-read: the source of truth is storage
+    if (now.has(id)) now.delete(id); else now.add(id);
+    try { localStorage.setItem(SAVES_KEY, JSON.stringify([...now])); } catch (e) {}
+    return now;
+  }
+  // Fires when ANOTHER tab changes saves, so this tab can repaint from truth.
+  function onSavesChanged(fn) {
+    window.addEventListener('storage', (e) => {
+      if (e.key === SAVES_KEY) fn(readSaves());
+    });
+  }
+
+  window.SynMatches = { esc, naira, IMG_POOL, GEO, coords, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
+    readSaves, toggleSave, onSavesChanged, SAVES_KEY };
 })();

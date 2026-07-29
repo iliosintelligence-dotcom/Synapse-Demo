@@ -49,7 +49,11 @@ The DB is seeded with a full ecosystem (hundreds of live properties across many 
 - CRM is "AI-native" (next-best-action, Hot/Warm/Cold, AI summary, relationship graph). Marketing is an Omneky-style AI ad studio. Agents/Overview/CRM are data-first (sparklines/rings/bars, agent profile drawer).
 
 ## Hard constraints (do not violate)
-- **Auth is on hold** — the user explicitly deferred login/authorization. Do not add auth gating. The portal runs as a no-sign-in demo.
+- **Auth is LIVE** (supersedes the earlier "auth is on hold" rule, 2026-07-29).
+  Supabase Auth via `app/auth.js` + `app/signin.html`. Customers sign up at the
+  moment they contact an agent — browsing and talking to Toju stay anonymous;
+  agencies sign in at the landing CTA and `agency.html` is gated on role.
+  Client gates are UX only; RLS is the real boundary.
 - **The port-3000 static app is the product.** One agency dashboard (agency.html). The Next dashboard is retired.
 - **Demo data** is the norm right now (localStorage + demo arrays) except Toju, which is genuinely live against Supabase.
 - Never handle/enter secret keys. Never fabricate stats presented as fact (the user has flagged this).

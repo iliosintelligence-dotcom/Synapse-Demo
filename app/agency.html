@@ -982,6 +982,7 @@
       <span class="bell-badge" id="bellBadge">4</span>
     </button>
     <span class="topav" title="Prestige Realty Ltd.">PR</span>
+    <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="../index.html">← Site</a>
   </div>
 
@@ -3107,6 +3108,17 @@
     document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
   </script>
   <script src="icons.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    /* The portal is an agency workspace — there is no anonymous view of it.
+       This is a UX gate: it stops the screen rendering for a signed-out
+       visitor. The actual protection for agency data is RLS in Postgres, which
+       is what stops a signed-in customer reading another tenant's rows. */
+    (function () {
+      if (!window.SynAuth) return;
+      SynAuth.requireAuth({ role: 'agency', reason: 'agency' });
+    })();
+  </script>
   <script src="motion.js"></script>
 </body>
 </html>
