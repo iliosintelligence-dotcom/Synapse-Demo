@@ -46,6 +46,17 @@
   --f-accent: 'Josefin Sans', system-ui, sans-serif;
   --brand-text: #363636;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── The silver lining ──────────────────────────────────────────────────
+     One warm accent, sampled from the Synapse mark, carried at ~3% so it is
+     felt rather than seen: it warms greys, edges and washes without turning
+     the page orange. Only ONE element per screen is allowed to show it at
+     full strength (the freshness pip) — that is what makes it read as a
+     lining rather than a colour scheme. */
+  --tint: 199, 106, 26;                          /* burnt orange, from the logo */
+  --tint-wash: rgba(var(--tint), 0.030);         /* section backgrounds */
+  --tint-edge: rgba(var(--tint), 0.14);          /* hairlines + card borders */
+  --tint-ink: rgba(var(--tint), 0.90);           /* the one full-strength accent */
 }
 
 html { scroll-behavior: smooth; overflow-x: hidden; }
@@ -141,6 +152,11 @@ nav.solid {
   backdrop-filter: blur(24px) saturate(1.4);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
+
+/* nav CTAs carry a function icon — keep them on one line (they default to
+   display:block, which turns an icon + label into a two-line circle) */
+#nav-primary, #nav-secondary { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+#nav-primary .syn-i, #nav-secondary .syn-i { width: 15px; height: 15px; flex: none; }
 
 /* Interaction layer — keyboard focus is always visible, press feedback is
    consistent, inert states look inert. Mirrors app/app.css. */
@@ -1761,29 +1777,20 @@ footer {
       <div class="hero-copy">
         <div class="hero-eyebrow">For buyers &amp; renters</div>
         <h1 class="hero-headline">
-          Your next home shouldn't be a <em>gamble.</em>
+          Find a home that is <em>actually there.</em>
         </h1>
         <p class="hero-sub">
-          Real people check every home on the ground — title, structure, seller — before you ever see it.
+          Tell Toju what you are looking for, in your own words. You will only ever be shown homes someone has checked in person — and confirmed still available in the last 14 days.
         </p>
-        <div class="hero-scan">
-          <span><b>Tell Toju</b> what you want</span>
-          <span class="hs-arrow">→</span>
-          <span><b>He finds it</b> &amp; checks it</span>
-          <span class="hs-arrow">→</span>
-          <span><b>You move in</b> safely</span>
-        </div>
+        <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
         <div class="hero-ctas">
           <button class="panel-btn-primary">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Talk to Toju — it's free
           </button>
-          <button class="panel-btn-secondary">Browse verified homes</button>
         </div>
         <div class="hero-trust">
-          <span><b>✓</b> No registration to start</span>
-          <span><b>✓</b> Every listing independently verified</span>
-          <span><b>✓</b> Free for buyers &amp; renters</span>
+          <span class="pip"><i></i> Free. No sign-up to start.</span>
         </div>
         <div class="hero-foot">
           <p class="hero-tagline">The infrastructure layer for Nigerian real estate — every recommendation backed by verified data, verified agencies, and Toju.</p>
@@ -1806,17 +1813,19 @@ footer {
 
     <!-- Stats — what trust means to a buyer -->
     <div class="hero-statline">
+      <!-- Three figures that are true by definition — the rules we run, not
+           measurements we would have to invent. -->
       <div class="hero-stat">
         <div class="hero-stat-val">7</div>
-        <div class="hero-stat-label">Independent checks before a listing reaches you</div>
+        <div class="hero-stat-label">Checks before a home ever reaches you</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-val">94.2</div>
-        <div class="hero-stat-label">Average Property Confidence on verified listings</div>
+        <div class="hero-stat-val">14</div>
+        <div class="hero-stat-label">Days before a listing must be re-confirmed, or it disappears</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-val">0</div>
-        <div class="hero-stat-label">Fake or unverified listings you'll ever see</div>
+        <div class="hero-stat-val">Free</div>
+        <div class="hero-stat-label">For buyers and renters. Always.</div>
       </div>
     </div>
   </div>
@@ -1889,6 +1898,83 @@ footer {
 .ng-card .lbl { position: absolute; left: 18px; bottom: 16px; z-index: 1; color: #fff; }
 .ng-card .lbl .t { font-size: 16.5px; font-weight: 600; }
 .ng-card .lbl .s { font-size: 12px; opacity: .85; margin-top: 1px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REBUILT LANDING — Hick's Law layout
+   Every screen carries ONE idea, ONE image and at most ONE decision. Sections
+   alternate image-led / text-led so the eye always has somewhere to rest, and
+   the warm tint appears only as a wash or a hairline. Motion stays under
+   ~300ms end-to-end (Doherty) so the page never feels like it is thinking.
+   ══════════════════════════════════════════════════════════════════════ */
+.s-band { padding: 92px 0; position: relative; }
+.s-band.tinted { background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
+.s-lede { max-width: 680px; }
+.s-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--tint-ink); display: inline-flex; align-items: center; gap: 8px; }
+.s-kicker::before { content: ''; width: 22px; height: 1.5px; background: currentColor; opacity: .55; }
+.s-h2 { font-family: var(--f-serif); font-weight: 600; font-size: clamp(30px, 4.6vw, 52px);
+  line-height: 1.08; letter-spacing: -0.02em; margin-top: 14px; }
+/* headline emphasis is a DEEP burnt tone, not the bright accent — at display
+   sizes the bright orange stops being a lining and becomes the colour scheme */
+.s-h2 em { font-style: normal; color: #8f4d12; }
+.s-sub { font-size: clamp(15px, 1.5vw, 17.5px); color: var(--text-muted); line-height: 1.65; margin-top: 16px; font-weight: 500; max-width: 560px; }
+
+/* split: statement one side, photograph the other */
+.s-split { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+.s-split.flip > .s-media { order: -1; }
+.s-media { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4/3;
+  box-shadow: 0 26px 60px rgba(20,26,38,0.16); background: var(--bg-1); }
+.s-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 900px) { .s-split { grid-template-columns: 1fr; gap: 30px; } .s-split.flip > .s-media { order: 0; } }
+
+/* three steps — the only place the page asks you to hold a sequence */
+.s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 46px; }
+.s-step { padding: 26px 24px 28px; border-radius: 18px; background: rgba(255,255,255,0.6);
+  border: 1px solid var(--tint-edge); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.s-step:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(20,26,38,0.10); }
+.s-step .n { font-family: var(--f-serif); font-size: 13px; font-weight: 700; color: var(--tint-ink); letter-spacing: .1em; }
+.s-step .t { font-size: 19px; font-weight: 600; margin-top: 10px; letter-spacing: -0.01em; }
+.s-step .d { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; margin-top: 7px; font-weight: 500; }
+@media (max-width: 800px) { .s-steps { grid-template-columns: 1fr; } }
+
+/* the freshness pip — the one element allowed the accent at full strength */
+.pip { display: inline-flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.pip i { width: 9px; height: 9px; border-radius: 50%; background: var(--tint-ink); flex: none;
+  box-shadow: 0 0 0 4px rgba(var(--tint), 0.16); animation: pipPulse 2.6s ease-in-out infinite; }
+@keyframes pipPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(var(--tint),0.16); } 50% { box-shadow: 0 0 0 7px rgba(var(--tint),0.05); } }
+@media (prefers-reduced-motion: reduce) { .pip i { animation: none; } }
+
+/* countdown strip — makes "14 days" concrete instead of abstract */
+.fresh-days { display: flex; gap: 5px; margin-top: 26px; }
+.fresh-days span { flex: 1; height: 7px; border-radius: 4px; background: rgba(var(--tint), 0.16); }
+.fresh-days span.gone { background: rgba(20,20,20,0.06); }
+.fresh-note { font-size: 13px; color: var(--text-muted); margin-top: 12px; font-weight: 500; }
+
+/* proximity — a map-ish stage */
+.prox-stage { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4/3;
+  box-shadow: 0 26px 60px rgba(20,26,38,0.16); }
+.prox-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prox-ping { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: var(--tint-ink);
+  box-shadow: 0 0 0 5px rgba(var(--tint),0.28), 0 4px 14px rgba(0,0,0,0.3); }
+.prox-ping::after { content: ''; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid var(--tint-ink); opacity: .55; animation: ping 2.4s ease-out infinite; }
+@keyframes ping { 0% { transform: scale(.7); opacity: .6; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .prox-ping::after { animation: none; } }
+.prox-card { position: absolute; left: 18px; bottom: 18px; right: 18px; padding: 14px 16px; border-radius: 15px;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 14px 34px rgba(20,26,38,0.18); display: flex; align-items: center; gap: 12px; }
+.prox-card .pt { flex: 1; min-width: 0; }
+.prox-card .pt b { display: block; font-size: 14px; font-weight: 700; }
+.prox-card .pt span { font-size: 12.5px; color: var(--text-muted); }
+.soon { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--tint-ink); background: rgba(var(--tint), 0.10); border: 1px solid var(--tint-edge);
+  border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
+
+/* closing block */
+.s-close { text-align: center; padding: 104px 0; background: var(--tint-wash); border-top: 1px solid var(--tint-edge); }
+.s-close .s-h2 { max-width: 780px; margin-left: auto; margin-right: auto; }
+.s-close .s-sub { margin-left: auto; margin-right: auto; }
+.s-close .cta-wrap { margin-top: 32px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 </style>
 <section id="hero-agency" class="hero-section" data-aud="agency">
   <div class="container">
@@ -1905,17 +1991,15 @@ footer {
         <p class="hero-pull">
           <b>Toju does the reaching, qualifying and pre-negotiating.</b> Your team does what it does best — closing.
         </p>
+        <!-- ONE decision here too (Hick's Law) -->
         <div class="hero-ctas">
           <button class="panel-btn-primary">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Open agency portal
           </button>
-          <button class="panel-btn-secondary">Book a demo</button>
         </div>
         <div class="hero-trust">
-          <span><b>✓</b> Warm leads on your WhatsApp</span>
-          <span><b>✓</b> No marketing team needed</span>
-          <span><b>✓</b> Live in minutes, not months</span>
+          <span class="pip"><i></i> Warm leads on WhatsApp · live in minutes</span>
         </div>
       </div>
 
@@ -1954,19 +2038,6 @@ footer {
 <section class="ag-growthbar" data-aud="agency">
   <div class="container">
     <p class="ag-tagline">Reach more people. Build more trust. <em>Close more deals.</em></p>
-  </div>
-</section>
-
-<!-- ══ AGENCY · THE PROBLEM (1–3%) ══ -->
-<section class="ag-section" data-aud="agency">
-  <div class="container">
-    <div class="ag-statbig">
-      <div class="ag-kicker">Most listings never reach their potential</div>
-      <div class="n" style="margin-top:18px">1–3%</div>
-      <p class="cap">The typical enquiry rate for a property listed online.</p>
-      <div class="down">↓</div>
-      <p class="resolve">Synapse is built to lift it — turning every listing into a growth engine that finds the right buyers, qualifies them, and moves them to a close.</p>
-    </div>
   </div>
 </section>
 
@@ -2060,50 +2131,6 @@ footer {
   </div>
 </section>
 
-<!-- ══ AGENCY · TEAM SYNC ══ -->
-<section class="ag-section" data-aud="agency" style="padding-top:0">
-  <div class="container">
-    <div class="ag-head">
-      <div class="ag-kicker">Your team, in sync</div>
-      <h2 class="ag-h2">No spreadsheets. No scattered chats.<br>Nothing <em>lost.</em></h2>
-      <p class="ag-sub2">One shared workspace where every agent knows exactly what needs to happen next — every lead, every viewing, every deal stage in one place.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══ AGENCY · FAQ ══ -->
-<section id="faq-agency" data-aud="agency">
-  <div class="container">
-    <div style="text-align:center"><h2 class="section-title reveal">Agency questions, <em>answered.</em></h2></div>
-    <div class="faq-list">
-      <div class="faq-item">
-        <button class="faq-q">How does Synapse market my listings?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Upload a property once. Synapse writes the captions and posts it to Instagram, TikTok, Facebook and WhatsApp automatically — no marketing team, no manual posting. You approve, and it goes out at the best time.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">How are leads qualified before they reach my team?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Toju speaks to every enquiry first — checking budget, intent and timeline — and only hands your agents warm, ready buyers with the full conversation and context attached. No cold leads, no time wasted.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Can Toju negotiate on my behalf?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Within a floor you set. Toju discusses price only inside your pre-authorised range and never makes a binding commitment — then delivers a pre-negotiated buyer with a full transcript. You always close the deal yourself.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">What does getting verified involve?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Your agency is checked for identity and CAC registration, and every property runs the 7-node check — title, structure, flood risk, legal standing, ownership, media and freshness. Buyers see you as legitimate before they ever reach out.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">Do I have to change how my team works?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">No spreadsheets, no scattered WhatsApp chats. Your whole team runs from one shared portal with AI next-best-actions on every lead. Import your listings and you're live in minutes.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">What does it cost?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Tiered plans: Starter is free to get going, Growth adds social syndication and analytics, and Gold unlocks every channel plus proximity marketing and top placement in Toju's recommendations.</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ══ AGENCY · FINAL CTA ══ -->
 <section class="ag-final" data-aud="agency">
   <div class="container">
@@ -2117,283 +2144,96 @@ footer {
 </section>
 
 <!-- ══ FOR EVERYONE ══ -->
-<section id="for-everyone" data-aud="customer">
+<!-- ══ 01 · FRESH ONLY (the 14-day rule) ══════════════════════════════════
+     The differentiator, and the first thing a nervous first-time buyer needs
+     to hear: nothing you see here is a ghost. One idea, one image. -->
+<section id="fresh" class="s-band tinted" data-aud="customer">
   <div class="container">
-    <div class="reveal"><span class="chip">Who It's For</span></div>
-    <h2 class="section-title reveal">Built around <em>you.</em></h2>
-    <p class="section-body reveal">Buy. Rent. Invest. Share. One verified path for each.</p>
-    <div class="persona-list">
-      <a class="persona-row" href="#demo">
-        <div class="persona-ghost-num">01</div>
-        <div class="persona-icon-tile">🏠</div>
-        <div class="persona-text"><div class="persona-name">Buyers</div><div class="persona-desc">Your forever home — verified before you pay.</div></div>
-        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </a>
-      <a class="persona-row" href="#browse">
-        <div class="persona-ghost-num">02</div>
-        <div class="persona-icon-tile">🔑</div>
-        <div class="persona-text"><div class="persona-name">Rentals</div><div class="persona-desc">Verified on the ground before you sign.</div></div>
-        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </a>
-      <a class="persona-row" href="#coliving">
-        <div class="persona-ghost-num">03</div>
-        <div class="persona-icon-tile">🤝</div>
-        <div class="persona-text"><div class="persona-name">Shared Living</div><div class="persona-desc">Premium co-living, matched to how you live.</div></div>
-        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </a>
-      <a class="persona-row" href="#demo">
-        <div class="persona-ghost-num">04</div>
-        <div class="persona-icon-tile">📈</div>
-        <div class="persona-text"><div class="persona-name">Investors</div><div class="persona-desc">High-yield assets. Clear title. Strong ROI.</div></div>
-        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </a>
-      <a class="persona-row" href="#flexpay">
-        <div class="persona-ghost-num">05</div>
-        <div class="persona-icon-tile">💳</div>
-        <div class="persona-text"><div class="persona-name">Flex Plans</div><div class="persona-desc">Start today with what you have.</div></div>
-        <div class="persona-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- ══ DEMO ══ -->
-<section id="demo" data-aud="customer">
-  <div class="container">
-    <div class="demo-grid">
-      <!-- Crystal chat window -->
-      <div class="demo-crystal-window reveal-l" id="demo-window">
-        <div class="demo-header">
-          <div class="toju-orb">T</div>
-          <div class="demo-header-text">
-            <div class="name">Toju</div>
-            <div class="status">Online · AI Real Estate Advisor</div>
-          </div>
+    <div class="s-split">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Nothing stale</div>
+        <h2 class="s-h2">Every home here was confirmed real in the <em>last 14 days.</em></h2>
+        <p class="s-sub">You have called about a house that was sold months ago. Everyone here has. So we built the opposite: an agent's listing disappears from Synapse 14 days after they post it, unless they prove it is still available.</p>
+        <div class="fresh-days" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span class="gone"></span><span class="gone"></span><span class="gone"></span>
         </div>
-        <div class="demo-messages" id="demo-msgs"></div>
+        <p class="fresh-note">Day 14 — it is gone until the agency re-confirms it.</p>
+        <p class="s-sub" style="margin-top:22px"><b style="color:var(--text)">So what you see is what is actually for sale.</b> No wasted calls. No wasted Saturdays.</p>
       </div>
-
-      <!-- Right copy -->
-      <div class="reveal-r" style="padding-top:16px">
-        <span class="chip">Interactive Demo</span>
-        <h2 class="section-title">Toju advises <em>you.</em><br>You don't just search.</h2>
-        <p class="section-body">Portals make you search. Toju understands, advises, and connects — no cold calls.</p>
-        <div style="margin-top:40px;background:rgba(54,54,54,0.04);border:1px solid rgba(54,54,54,0.14);border-radius:16px;padding:22px 26px;position:relative;overflow:hidden">
-          <div style="position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,150,80,0.25),transparent)"></div>
-          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--brand);margin-bottom:10px">Design Philosophy</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.65;font-style:italic">"Notice how Toju sounds like an advisor, not a database. Every question has a purpose. Every answer moves you closer to a decision."</div>
-        </div>
-        <button class="panel-btn-primary" style="margin-top:36px">Start Your Conversation</button>
+      <div class="s-media reveal">
+        <img src="images/balcony.jpg" alt="A balcony of a recently listed Lagos apartment" loading="lazy" />
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ ROADMAP ══ -->
-<section id="roadmap" data-aud="customer">
+<!-- ══ 02 · HOW IT WORKS · three steps, no more ═══════════════════════════ -->
+<section id="how" class="s-band" data-aud="customer">
   <div class="container">
-    <div style="text-align:center;max-width:560px;margin:0 auto">
-      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">How Synapse Works</span></div>
-      <h2 class="section-title reveal">Tell Toju. Find. Verify. Pay <em>safely.</em></h2>
+    <div class="s-lede reveal">
+      <div class="s-kicker">How it works</div>
+      <h2 class="s-h2">Talk like a person. Get <em>real homes.</em></h2>
+      <p class="s-sub">No filters to configure. No forms. You describe your life, and Toju does the searching.</p>
     </div>
-    <div class="roadmap-track">
-      <div class="roadmap-line"></div>
-      <div class="roadmap-step">
-        <div class="roadmap-dot"></div>
-        <div class="roadmap-num">01</div>
-        <div class="roadmap-title">Tell Toju</div>
-        <div class="roadmap-desc">Skip the 100-listing scroll. Describe the life you want — get the few that fit.</div>
+    <div class="s-steps">
+      <div class="s-step reveal">
+        <div class="n">01</div>
+        <div class="t">Tell Toju</div>
+        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school." In your own words.</div>
       </div>
-      <div class="roadmap-step">
-        <div class="roadmap-dot"></div>
-        <div class="roadmap-num">02</div>
-        <div class="roadmap-title">You Browse Verified Listings</div>
-        <div class="roadmap-desc">Ranked by trust and fit. Re-verified every 14 days — no ghost listings.</div>
+      <div class="s-step reveal">
+        <div class="n">02</div>
+        <div class="t">See only verified homes</div>
+        <div class="d">Toju returns homes that passed our seven checks — and tells you why each one fits you.</div>
       </div>
-      <div class="roadmap-step">
-        <div class="roadmap-dot"></div>
-        <div class="roadmap-num">03</div>
-        <div class="roadmap-title">You Verify Before You Commit</div>
-        <div class="roadmap-desc">Scouts, surveyors and lawyers confirm everything — before you commit a naira.</div>
-      </div>
-      <div class="roadmap-step">
-        <div class="roadmap-dot"></div>
-        <div class="roadmap-num">04</div>
-        <div class="roadmap-title">You Pay Safely</div>
-        <div class="roadmap-desc">Escrow holds your money until every promise is met.</div>
+      <div class="s-step reveal">
+        <div class="n">03</div>
+        <div class="t">Talk to the agent</div>
+        <div class="d">When you are ready, we connect you. Buying, renting, shared living or flex plans.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ WHY ══ -->
-<section id="why" data-aud="customer">
+<!-- ══ 03 · PROXIMITY ══════════════════════════════════════════════════════
+     Replaces the old "Who it's for" persona list. Marked "Coming soon" is
+     NOT applied here per the product owner's decision — see commit notes. -->
+<section id="proximity" class="s-band tinted" data-aud="customer">
   <div class="container">
-    <div style="text-align:center;max-width:680px;margin:0 auto 24px">
-      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">For Buyers and Renters</span></div>
-      <h2 class="section-title reveal">Your home search should feel like talking to someone who actually <em>knows you.</em></h2>
-      <p class="reveal" style="font-size:15px;color:var(--text-muted);line-height:1.75;font-weight:500;margin-top:18px">He learns your life — budget, area, timeline — then recommends. Including options you'd never have found.</p>
-    </div>
-    <div class="why-grid" style="grid-template-columns:repeat(2,1fr)">
-      <div class="why-crystal reveal"><div class="why-num">01</div><div class="why-title">AI That Advises, Not Just Matches</div><div class="why-desc">Counsel, not listings. Challenge, options, confidence.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">02</div><div class="why-title">Every Listing Verified Before You See It</div><div class="why-desc">7 checks — title, structure, flood, legal — before you see it.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">03</div><div class="why-title">Walk Past It, Get Notified</div><div class="why-desc">Walk near a match, get a ping. That's it.</div></div>
-      <div class="why-crystal reveal"><div class="why-num">04</div><div class="why-title">Only Verified Agencies</div><div class="why-desc">Identity, registration, track record — all checked.</div></div>
-    </div>
-    <div style="text-align:center;margin-top:44px"><button class="panel-btn-primary">Start talking to Toju</button></div>
-  </div>
-</section>
-
-<!-- ══ TRUST ══ -->
-<section id="trust" data-aud="customer">
-  <div class="trust-void"></div>
-  <div class="container" style="position:relative;z-index:1">
-    <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Verified Platform</span></div>
-    <h2 class="section-title reveal" style="text-align:center;max-width:600px;margin:0 auto">Every recommendation you get is backed by <em>verified</em> agencies.</h2>
-    <p class="reveal" style="text-align:center;font-size:16px;color:var(--text-muted);max-width:440px;margin:18px auto 0;line-height:1.7;font-weight:300">Rigorously verified agencies. Protected capital.</p>
-
-    <div class="verification-emblem reveal">
-      <div class="ve-ring-1"></div>
-      <div class="ve-ring-2"></div>
-      <div class="ve-ring-3"></div>
-      <div class="ve-core">✓</div>
-    </div>
-
-    <div class="trust-stats">
-      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>100</span>%</div><div class="trust-stat-label">Agency verification before listing</div></div>
-      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>7</span></div><div class="trust-stat-label">Verification nodes per property</div></div>
-      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>2</span></div><div class="trust-stat-label">Phase review cycle</div></div>
-      <div class="reveal" style="text-align:center"><div class="trust-stat-val"><span>0</span></div><div class="trust-stat-label">Fake listings on platform</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ CO-LIVING ══ -->
-<section id="coliving" data-aud="customer">
-  <div class="container">
-    <div class="coliving-layout">
-      <div class="coliving-visual reveal-l">
-        <div class="coliving-photo"></div>
-        <div class="coliving-glass-overlay"></div>
-        <div class="coliving-light-leak"></div>
-        <div class="coliving-feat-row">
-          <div class="cf-chip"><div class="cf-chip-icon">🧠</div><div class="cf-chip-name">Smart Match</div><div class="cf-chip-sub">Compatible lifestyles</div></div>
-          <div class="cf-chip"><div class="cf-chip-icon">✅</div><div class="cf-chip-name">Verified</div><div class="cf-chip-sub">Identity-checked</div></div>
-          <div class="cf-chip"><div class="cf-chip-icon">💰</div><div class="cf-chip-name">Shared Rent</div><div class="cf-chip-sub">Split fairly</div></div>
-        </div>
+    <div class="s-split flip">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Homes near you</div>
+        <h2 class="s-h2">The right home often finds you <em>on the way home.</em></h2>
+        <p class="s-sub">You drive past your future street every week without knowing it. Synapse notices when a verified home comes up in the areas you actually move through — and tells you while you are still nearby.</p>
+        <p class="s-sub" style="margin-top:18px">No endless scrolling. No alerts for cities you will never live in. Just the street you already love, the moment something opens up on it.</p>
+        <div style="margin-top:26px" class="pip"><i></i> You choose the areas. You can turn it off any time.</div>
       </div>
-      <div class="reveal-r">
-        <span class="chip">Shared Living</span>
-        <h2 class="section-title">Find your right home.<br>Or your right <em>housemate.</em></h2>
-        <p class="section-body">Big-city living, split fairly — with people whose lifestyles match yours.</p>
-        <div class="feature-list">
-          <div class="feature-item"><div class="fi-icon">🧠</div><div><div class="fi-title">Lifestyle Compatibility Matching</div><div class="fi-desc">Housemates matched on schedules and habits.</div></div></div>
-          <div class="feature-item"><div class="fi-icon">🔒</div><div><div class="fi-title">Identity-Verified Profiles</div><div class="fi-desc">Every applicant verified before you sign.</div></div></div>
-          <div class="feature-item"><div class="fi-icon">📋</div><div><div class="fi-title">Transparent Shared Agreements</div><div class="fi-desc">Rent splits, bills, rules — documented upfront.</div></div></div>
-        </div>
-        <button class="panel-btn-primary" style="margin-top:36px">Find Shared Living Options</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ FLEX PAY ══ -->
-<section id="flexpay" data-aud="customer">
-  <div class="flexpay-abstract">
-    <div class="fp-plane"></div><div class="fp-plane"></div>
-    <div class="fp-plane"></div><div class="fp-plane"></div>
-  </div>
-  <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:0;position:relative;z-index:1">
-      <div><div class="reveal"><span class="chip">Flexible Payments</span></div><h2 class="section-title reveal">More ways for you to pay.<br>More ways for you to <em>move.</em></h2></div>
-      <p class="reveal" style="font-size:16px;color:var(--text-muted);line-height:1.75;font-weight:500;padding-bottom:10px">No lump sum? No problem. Payment paths built around you.</p>
-    </div>
-    <div class="flexpay-grid">
-      <div class="fp-crystal reveal"><div class="fp-num">01</div><div class="fp-title">Annual Payments</div><div class="fp-desc">One annual payment. Predictable.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">02</div><div class="fp-title">Installment Plans</div><div class="fp-desc">Monthly tranches. Move in sooner.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">03</div><div class="fp-title">Developer Schedules</div><div class="fp-desc">Off-plan milestones. Every naira tracked.</div></div>
-      <div class="fp-crystal reveal"><div class="fp-num">04</div><div class="fp-title">Flexible Arrangements</div><div class="fp-desc">Custom deals, every party protected.</div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ BROWSE ══ -->
-<section id="browse" data-aud="customer">
-  <div class="browse-photo-hint"></div>
-  <div class="container">
-    <div class="browse-layout">
-      <div class="reveal-l">
-        <span class="chip">Property Discovery</span>
-        <h2 class="section-title">Prefer to <em>browse yourself?</em></h2>
-        <p class="section-body">Filter by area, price, beds, verification — or let Toju do it.</p>
-        <div style="display:flex;flex-direction:column;gap:14px;margin-top:40px">
-          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">Every listing you see is verified before it goes live</span></div>
-          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">You see real pricing — no inflated agency markups</span></div>
-          <div style="display:flex;align-items:center;gap:12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);flex-shrink:0"></div><span style="font-size:14px;color:var(--text-muted);font-weight:300">You schedule your viewings directly through Toju</span></div>
-        </div>
-      </div>
-      <div class="browse-window reveal-r">
-        <div class="browse-titlebar">
-          <div class="tb-dot tb-r"></div><div class="tb-dot tb-y"></div><div class="tb-dot tb-g"></div>
-          <div class="tb-search">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            Lekki, Lagos · 3 bed · ₦80–₦150m
-          </div>
-        </div>
-        <div class="browse-listings">
-          <div class="b-listing"><div class="b-thumb">🏢</div><div class="b-info"><div class="b-name">Eko Atlantic Apartment</div><div class="b-sub">3 bed · Eko Atlantic City</div><div class="b-tags"><span class="b-tag">New Build</span><span class="b-tag">Sea View</span></div></div><div class="b-price"><div class="b-price-val">₦145m</div><div class="b-verified">✓ Verified</div></div></div>
-          <div class="b-listing"><div class="b-thumb">🏠</div><div class="b-info"><div class="b-name">Lekki Phase 1 Terrace</div><div class="b-sub">3 bed · Lekki Phase 1</div><div class="b-tags"><span class="b-tag">BQ</span><span class="b-tag">Generator</span></div></div><div class="b-price"><div class="b-price-val">₦95m</div><div class="b-verified">✓ Verified</div></div></div>
-          <div class="b-listing"><div class="b-thumb">🌆</div><div class="b-info"><div class="b-name">Ikoyi Penthouse</div><div class="b-sub">3 bed · Old Ikoyi</div><div class="b-tags"><span class="b-tag">Penthouse</span><span class="b-tag">24hr Security</span></div></div><div class="b-price"><div class="b-price-val">₦130m</div><div class="b-verified">✓ Verified</div></div></div>
+      <div class="prox-stage reveal">
+        <img src="images/estate.jpg" alt="A Lagos neighbourhood street of homes" loading="lazy" />
+        <span class="prox-ping" style="left:26%;top:34%"></span>
+        <span class="prox-ping" style="left:63%;top:52%;opacity:.55"></span>
+        <div class="prox-card">
+          <div class="pt"><b>3-Bed Terrace · 8 minutes away</b><span>Verified 2 days ago · Ikate</span></div>
+          <span class="soon">Near you</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ TESTIMONIALS ══ -->
-<section id="testimonials" data-aud="customer">
+<!-- ══ 04 · WHY YOU CAN TRUST IT ══════════════════════════════════════════ -->
+<section id="trust" class="s-band" data-aud="customer">
   <div class="container">
-    <div style="text-align:center;max-width:620px;margin:0 auto">
-      <div class="reveal" style="display:flex;justify-content:center"><span class="chip">Real Stories</span></div>
-      <h2 class="section-title reveal">Trusted by Nigerians just like <em>you.</em></h2>
-    </div>
-    <div class="testi-grid">
-      <div class="testi-card">
-        <div class="testi-quote">Toju flagged a government committed route through my plot before I paid. Saved me ₦45M.</div>
-        <div class="testi-person"><div class="testi-avatar">KA</div><div><div class="testi-name">Kemi A.</div><div class="testi-role">First-time buyer, Ibeju-Lekki</div></div></div>
+    <div class="s-split">
+      <div class="s-media reveal">
+        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80" alt="A verified home interior, photographed during an inspection" loading="lazy" />
       </div>
-      <div class="testi-card">
-        <div class="testi-quote">The 7-node score gave me more confidence than two lawyers combined. My diaspora clients love it.</div>
-        <div class="testi-person"><div class="testi-avatar">DO</div><div><div class="testi-name">Dare O.</div><div class="testi-role">Property investor, UK</div></div></div>
-      </div>
-      <div class="testi-card">
-        <div class="testi-quote">I listed on a Monday. By Wednesday I had three qualified leads on WhatsApp. I didn't do anything.</div>
-        <div class="testi-person"><div class="testi-avatar">AT</div><div><div class="testi-name">Amaka T.</div><div class="testi-role">Agency principal, Victoria Island</div></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ FAQ ══ -->
-<section id="faq" data-aud="customer">
-  <div class="container">
-    <div style="text-align:center"><h2 class="section-title reveal">Your questions, <em>answered.</em></h2></div>
-    <div class="faq-list">
-      <div class="faq-item">
-        <button class="faq-q">Is Synapse free for buyers and renters?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Yes. Talking to Toju, browsing verified listings, and getting your first Property Confidence score are completely free. You only pay when you choose to move forward — and even then, fees are flat and disclosed upfront.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">How does the 7-node verification work?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Every listing goes through seven independent checks: title verification, ground survey, structural assessment, flood risk analysis, neighbourhood intelligence, legal review, and financial analysis. Every node must pass before the listing appears on the platform.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">What stops me from being scammed by a fake listing?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Every property on Synapse is physically verified by a scout before it appears. Every agency is independently verified for identity and registration. And every listing has a timestamped Property Confidence score that tells you exactly what was checked and what passed.</div></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">I live abroad — can I still buy through Synapse?<span class="faq-icon">+</span></button>
-        <div class="faq-a"><div class="faq-a-inner">Yes. Synapse was built with diaspora buyers in mind. Toju advises you remotely, scouts verify properties on the ground, and escrow protects your funds until every condition is met.</div></div>
+      <div class="s-lede reveal">
+        <div class="s-kicker">Seven checks</div>
+        <h2 class="s-h2">Someone goes and <em>looks</em> before you do.</h2>
+        <p class="s-sub">Title documents. Structure. Flood risk. Legal status. Ownership. Photos that match the actual house. And whether it is still available.</p>
+        <p class="s-sub" style="margin-top:18px"><b style="color:var(--text)">That is what "verified" means here</b> — those seven checks passed, on a date we show you. It is a process we run, not a promise about the building. We will always tell you what we could not check.</p>
       </div>
     </div>
   </div>
@@ -2534,79 +2374,6 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
   });
 });
-// ─── DEMO CHAT SEQUENCE ───
-(function() {
-  const msgs = [
-    { t: 'user', s: 'Bola', text: 'I want to buy a house.' },
-    { t: 'toju', s: 'Toju', text: 'Congratulations. Before we look at properties, I\'d like to understand your goal.', list: ['A home to live in', 'An investment property', 'A mix of both'] },
-    { t: 'user', s: 'Bola', text: 'A mix of both.' },
-    { t: 'toju', s: 'Toju', text: 'That\'s helpful — those goals often lead to different decisions. What\'s your target budget?' },
-    { t: 'user', s: 'Bola', text: '₦120 million.' },
-    { t: 'toju', s: 'Toju', text: 'At that budget you could afford properties across several Nigerian cities. But the best option depends on what matters most to you.', list: ['Rental income', 'Capital appreciation', 'Lifestyle and convenience'] },
-    { t: 'user', s: 'Bola', text: 'Capital appreciation.' },
-    { t: 'toju', s: 'Toju', text: 'In that case I\'d focus less on finished luxury and more on areas where demand is growing. I\'ve found two opportunities listed below market for their locations.', cards: [
-      { icon: '🏢', name: 'Lekki Phase 2 Apartment', meta: '3 bed · New Build · Lekki Ph2', badge: '↓ 8% Below Market', price: '₦98m' },
-      { icon: '🌆', name: 'Ojodu Berger Duplex', meta: '4 bed · Corner Piece · Ojodu', badge: 'High Appreciation Zone', price: '₦105m' }
-    ]}
-  ];
-
-  const container = document.getElementById('demo-msgs');
-  let idx = 0, started = false;
-
-  function buildMsg(m) {
-    const el = document.createElement('div');
-    el.className = `msg msg-${m.t}`;
-    let inner = `<div class="msg-sender">${m.s}</div><div class="bubble">${m.text}`;
-    if (m.list) { inner += `<ul>`; m.list.forEach(i => inner += `<li>${i}</li>`); inner += `</ul>`; }
-    if (m.cards) {
-      inner += `<div class="prop-cards">`;
-      m.cards.forEach(c => {
-        inner += `<div class="prop-card"><div class="prop-thumb">${c.icon}</div><div class="prop-info"><div class="prop-name">${c.name}</div><div class="prop-meta">${c.meta}</div><span class="prop-badge">${c.badge}</span></div><div class="prop-price">${c.price}</div></div>`;
-      });
-      inner += `</div>`;
-    }
-    inner += `</div>`;
-    el.innerHTML = inner;
-    return el;
-  }
-
-  function next() {
-    if (idx >= msgs.length) return;
-    const m = msgs[idx++];
-    if (m.t === 'toju') {
-      const typing = document.createElement('div');
-      typing.className = 'msg msg-toju';
-      const dots = document.createElement('div');
-      dots.className = 'typing-dots show';
-      dots.innerHTML = '<span></span><span></span><span></span>';
-      typing.appendChild(dots);
-      container.appendChild(typing);
-      container.scrollTop = container.scrollHeight;
-      setTimeout(() => {
-        typing.remove();
-        const el = buildMsg(m);
-        container.appendChild(el);
-        requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-        container.scrollTop = container.scrollHeight;
-        setTimeout(next, m.cards ? 2400 : 1800);
-      }, 1100);
-    } else {
-      const el = buildMsg(m);
-      container.appendChild(el);
-      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-      container.scrollTop = container.scrollHeight;
-      setTimeout(next, 900);
-    }
-  }
-
-  ScrollTrigger.create({
-    trigger: '#demo',
-    start: 'top 72%',
-    once: true,
-    onEnter: () => { if (!started) { started = true; setTimeout(next, 500); } }
-  });
-})();
-
 // ─── FAQ accordion — one open at a time ───
 document.querySelectorAll('.faq-item').forEach(item => {
   const btn = item.querySelector('.faq-q');
