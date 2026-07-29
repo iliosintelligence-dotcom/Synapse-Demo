@@ -43,6 +43,12 @@
     'trash':      '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
     'plus':       '<path d="M12 5v14M5 12h14"/>',
     'history':    '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/>',
+    // agency portal
+    'user':       '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
+    'users':      '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M17.5 14.2c2 .8 3.5 2.9 3.5 5.8"/>',
+    'share':      '<circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="5.5" r="2.5"/><circle cx="17" cy="18.5" r="2.5"/><path d="M8.3 10.8l6.4-4M8.3 13.2l6.4 4"/>',
+    'chart':      '<path d="M4 20v-6M9 20V8M14 20v-9M19 20V5"/><path d="M3 20h18"/>',
+    'card':       '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
     'arrow-right':'<path d="M4 12h16M14 6l6 6-6 6"/>',
     'check':      '<path d="M4 12l5 5L20 6"/>',
     'close':      '<path d="M6 6l12 12M18 6L6 18"/>',
