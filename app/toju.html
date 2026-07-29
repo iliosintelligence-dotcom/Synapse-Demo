@@ -82,6 +82,21 @@
     .pcard .watch b { color: #b0521f; font-weight: 600; }
     .pcard .trust { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: var(--brand); }
 
+    /* error notice — deliberately NOT a chat bubble: Toju didn't say this */
+    .tj-error { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 2px;
+      padding: 14px 16px; border-radius: 16px;
+      background: rgba(122,39,26,0.05); border: 1px solid rgba(122,39,26,0.18); }
+    .tj-error .ei { flex: none; width: 30px; height: 30px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; color: #7a271a; background: rgba(122,39,26,0.1); }
+    .tj-error .ei .syn-i { width: 16px; height: 16px; }
+    .tj-error .eh { font-size: 13.5px; font-weight: 700; color: #7a271a; }
+    .tj-error .em { font-size: 13px; line-height: 1.55; color: var(--ink-muted); margin-top: 2px; }
+    .tj-error .ew { font-size: 12px; color: var(--ink-dim); margin-top: 8px; font-style: italic; }
+    .tj-error .er { margin-top: 10px; font: 600 12.5px var(--f-sans); color: #f5f5f5; background: #7a271a;
+      border: none; border-radius: 100px; padding: 8px 16px; cursor: pointer; transition: opacity .2s, transform .15s; }
+    .tj-error .er:hover { opacity: .88; transform: translateY(-1px); }
+    .tj-error .er:active { transform: none; }
+
     .typing .bubble { display: flex; align-items: center; gap: 9px; }
     .typing-dots { display: flex; gap: 4px; }
     .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); display: inline-block; animation: tjpulse 1.1s infinite; }
@@ -467,8 +482,12 @@
     }
 
     async function ask() {
+      clearError();
       const t = typing();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort('timeout'), 25000);
       try {
+        if (!navigator.onLine) throw Object.assign(new Error('offline'), { kind: 'offline' });
         const outgoing = saved.slice(-14).map((m) => ({ role: m.role, content: m.content }));
         const dream = dreamContext();
         if (dream) outgoing.unshift({ role: 'user', content: dream });
@@ -476,27 +495,77 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
           body: JSON.stringify({ visitorId: VISITOR, messages: outgoing }),
+          signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
-        t.remove();
-        if (!res.ok || data.error || !data.reply) {
-          tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
-        } else {
-          // show the canvas whenever the function returns matches (not only when it
-          // sets showMatches) so asking "show me what you found" always renders them.
-          const matches = Array.isArray(data.matches) ? data.matches : [];
-          saved.push({ role: 'assistant', content: data.reply, matches });
-          persist();
-          tojuMsg(data.reply, matches);
-          collect(matches); renderCanvas();
-          renderSuggest(data.suggestions);
-        }
+        clearTimeout(timer); t.remove();
+        if (!res.ok) throw Object.assign(new Error('http ' + res.status), { kind: res.status === 429 ? 'busy' : 'server' });
+        if (data.error || !data.reply) throw Object.assign(new Error('empty reply'), { kind: 'server' });
+        // show the canvas whenever the function returns matches (not only when it
+        // sets showMatches) so asking "show me what you found" always renders them.
+        const matches = Array.isArray(data.matches) ? data.matches : [];
+        saved.push({ role: 'assistant', content: data.reply, matches });
+        persist();
+        tojuMsg(data.reply, matches);
+        collect(matches); renderCanvas();
+        renderSuggest(data.suggestions);
       } catch (e) {
-        t.remove();
-        tojuMsg("I'm having a moment connecting — mind trying that again in a second?");
+        clearTimeout(timer); t.remove();
+        const kind = e && e.kind ? e.kind
+          : (e && e.name === 'AbortError') ? 'timeout'
+          : !navigator.onLine ? 'offline' : 'network';
+        showError(kind);
       }
       busy = false; scrollDown();
     }
+
+    /* ── error states ──────────────────────────────────────────────────────
+       An error is NOT a Toju message: it never enters the saved thread and
+       never speaks in Toju's voice (he didn't say it — the connection failed).
+       It's a system notice that names the real cause, says what happens to the
+       user's question, and offers the one action that fixes it. */
+    const ERRORS = {
+      offline:  { icon: 'unverified', ttl: "You're offline",
+                  msg: 'Your question is saved. I’ll answer as soon as you’re back online.', auto: true },
+      timeout:  { icon: 'pending', ttl: 'That took too long',
+                  msg: 'The connection is slow right now. Your question is still here — try again?' },
+      busy:     { icon: 'pending', ttl: 'A lot of people are asking at once',
+                  msg: 'Give it a few seconds and try again — your question is saved.' },
+      server:   { icon: 'unverified', ttl: 'I couldn’t reach my advisor service',
+                  msg: 'This is on our side, not yours. Your question is saved — try again in a moment.' },
+      network:  { icon: 'unverified', ttl: 'Couldn’t connect',
+                  msg: 'Check your connection and try again — your question is saved.' },
+    };
+    let errEl = null;
+    function clearError() { if (errEl) { errEl.remove(); errEl = null; } }
+    function showError(kind) {
+      const e = ERRORS[kind] || ERRORS.network;
+      const ic = (window.SynIcons && SynIcons.has(e.icon)) ? SynIcons.svg(e.icon) : '!';
+      errEl = document.createElement('div');
+      errEl.className = 'tj-error m-enter';
+      errEl.setAttribute('role', 'alert');
+      errEl.innerHTML = '<div class="ei">' + ic + '</div><div class="et">'
+        + '<div class="eh">' + esc(e.ttl) + '</div><div class="em">' + esc(e.msg) + '</div>'
+        + (e.auto ? '<div class="ew">Waiting for your connection…</div>'
+                  : '<button class="er" type="button">Try again</button>')
+        + '</div>';
+      const btn = errEl.querySelector('.er');
+      if (btn) btn.addEventListener('click', retry);
+      convo.appendChild(errEl); scrollDown();
+    }
+    function retry() {
+      if (busy) return;
+      clearError();
+      busy = true;
+      ask();   // the user's message is already in `saved` — just re-ask
+    }
+    // came back online with a question still unanswered → answer it, no tap needed
+    window.addEventListener('online', () => {
+      const last = saved[saved.length - 1];
+      if (errEl && last && last.role === 'user') retry();
+      else clearError();
+    });
+    window.addEventListener('offline', () => { if (!busy) { clearError(); showError('offline'); } });
 
     function send(text) {
       const v = (text != null ? text : input.value).trim();

@@ -474,21 +474,56 @@
     const negBtn = document.getElementById('negBtn');
     negBtn.addEventListener('click', async () => {
       negBtn.disabled = true; negBtn.textContent = 'Toju is working the numbers…';
+      clearNegError();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 25000);
       try {
+        if (!navigator.onLine) throw Object.assign(new Error('offline'), { kind: 'offline' });
         const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
           body: JSON.stringify({ action: 'negotiate', visitorId: VISITOR, property: PROP }),
+          signal: ctrl.signal,
         });
-        const d = await r.json();
+        clearTimeout(timer);
+        const d = await r.json().catch(() => ({}));
+        // never reveal an empty panel: a 200 with no offer is still a failure
+        if (!r.ok || d.error || (!d.openingOffer && !d.advice && !d.draft)) throw new Error('bad payload');
         document.getElementById('negOut').hidden = false;
         document.getElementById('negOffer').textContent = d.openingOffer ? 'Opening offer: ' + naira(d.openingOffer) : '';
         document.getElementById('negAdvice').textContent = d.advice || '';
         document.getElementById('negDraft').textContent = d.draft || '';
         negBtn.hidden = true;
-      } catch (e) { negBtn.textContent = 'Try again'; negBtn.disabled = false; }
+      } catch (e) {
+        clearTimeout(timer);
+        showNegError(!navigator.onLine ? 'offline' : (e && e.name === 'AbortError') ? 'timeout' : 'server');
+        negBtn.textContent = 'Get my opening offer'; negBtn.disabled = false;
+      }
     });
+    function clearNegError() { const p = document.getElementById('negErr'); if (p) p.remove(); }
+    function showNegError(kind) {
+      const msg = kind === 'offline'
+        ? 'You’re offline — reconnect and I’ll run the numbers.'
+        : kind === 'timeout'
+          ? 'That took longer than expected. The connection is slow right now.'
+          : 'I couldn’t work the numbers just now — this is on our side, not yours.';
+      const p = document.createElement('p');
+      p.id = 'negErr'; p.className = 'inline-err'; p.setAttribute('role', 'alert');
+      p.textContent = msg + ' Nothing was sent to the agency.';
+      negBtn.insertAdjacentElement('afterend', p);
+    }
     document.getElementById('negCopy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(document.getElementById('negDraft').textContent); document.getElementById('negCopy').textContent = 'Copied ✓'; } catch (e) {}
+      const btn = document.getElementById('negCopy');
+      try {
+        await navigator.clipboard.writeText(document.getElementById('negDraft').textContent);
+        btn.textContent = 'Copied ✓';
+      } catch (e) {
+        // clipboard blocked (insecure context / denied) — tell them, don't go silent
+        btn.textContent = 'Press Ctrl+C to copy';
+        try {
+          const r = document.createRange(); r.selectNodeContents(document.getElementById('negDraft'));
+          const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        } catch (e2) {}
+      }
     });
 
     /* ── 10 · Commute intelligence (time-of-day multiplier + custom places) ── */

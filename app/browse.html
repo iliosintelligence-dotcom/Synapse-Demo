@@ -406,7 +406,31 @@
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
       render();
-    }).catch(() => {});
+    }).catch(showLoadError);
+
+    /* Load failure ≠ "nothing matched". The page falls back to sample homes,
+       so silence would present samples as live inventory. Say what happened
+       in a banner (never destroy what's on screen) and offer the one action
+       that helps. Auto-reloads when the connection comes back. */
+    function showLoadError() {
+      if (document.getElementById('loadErr')) return;
+      const bar = document.createElement('div');
+      bar.id = 'loadErr';
+      bar.className = 'load-err';
+      bar.setAttribute('role', 'alert');
+      const ic = (window.SynIcons && SynIcons.has('unverified')) ? SynIcons.svg('unverified') : '!';
+      bar.innerHTML = '<span class="li">' + ic + '</span>'
+        + '<span class="lt"><b>' + (navigator.onLine
+            ? 'We couldn’t load live listings just now.'
+            : 'You’re offline.')
+        + '</b> These are sample homes — not live inventory. Your saved homes are safe.</span>'
+        + '<button class="lr" type="button">Try again</button>';
+      bar.querySelector('.lr').addEventListener('click', () => location.reload());
+      const anchor = document.querySelector('.brief');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor.nextSibling);
+      else document.querySelector('.wrap').prepend(bar);
+    }
+    window.addEventListener('online', () => { if (document.getElementById('loadErr')) location.reload(); });
 
     // ── real matches from this visitor's Toju session ──
     if (VISITOR) {
