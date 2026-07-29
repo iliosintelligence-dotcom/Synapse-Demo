@@ -127,6 +127,32 @@ a { color: inherit; text-decoration: none; }
 @keyframes synLoadOut { to { opacity: 0; visibility: hidden; } }
 @media (prefers-reduced-motion: reduce){ #syn-load { display: none; } }
 
+/* ── Proximity opt-in ─────────────────────────────────────────────────────
+   Location is the most sensitive permission we ask for, so the control says
+   plainly what it does, what it will not do, and how to stop it. */
+.prox-card { display: flex; align-items: flex-start; gap: 13px; padding: 15px 17px; margin-bottom: 16px;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.55));
+  backdrop-filter: blur(20px) saturate(1.4); }
+.prox-card.on { border-color: rgba(46,125,79,0.35); background: rgba(46,125,79,0.05); }
+.prox-pin { flex: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; background: rgba(20,20,20,0.06); }
+.prox-pin i { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-dim); }
+.prox-card.on .prox-pin { background: rgba(46,125,79,0.14); }
+.prox-card.on .prox-pin i { background: var(--success); animation: proxPulse 2.4s ease-in-out infinite; }
+@keyframes proxPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46,125,79,0.45); } 50% { box-shadow: 0 0 0 6px rgba(46,125,79,0); } }
+@media (prefers-reduced-motion: reduce) { .prox-card.on .prox-pin i { animation: none; } }
+.prox-txt { flex: 1; min-width: 0; }
+.prox-txt b { display: block; font-size: 14px; font-weight: 700; }
+.prox-txt span { display: block; font-size: 13px; line-height: 1.6; color: var(--ink-muted); margin-top: 3px; }
+.prox-txt .prox-note { font-size: 12px; color: var(--ink-dim); margin-top: 7px; font-style: italic; }
+.prox-btn { flex: none; align-self: center; font: 600 12.5px var(--f-sans); border-radius: 100px;
+  padding: 9px 16px; cursor: pointer; border: 1px solid var(--border);
+  background: #121212; color: #f5f5f5; transition: opacity .2s, transform .15s; }
+.prox-card.on .prox-btn { background: none; color: var(--ink-muted); }
+.prox-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.prox-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
 /* ── Auth chip (appbar) ───────────────────────────────────────────────────
    Painted by auth.js into any <span data-auth-slot>. Signed out shows a quiet
    link; signed in shows initials + sign out. No email is ever rendered in the
