@@ -138,6 +138,45 @@ a { color: inherit; text-decoration: none; }
 .appbar nav .nav-i { width: 15px; height: 15px; opacity: .75; }
 .appbar nav a.active .nav-i, .appbar nav a:hover .nav-i { opacity: 1; }
 
+/* ── Interaction layer (21st.dev-grade polish) ───────────────────────────────
+   One consistent set of interactive states across every control, so the app
+   feels crafted rather than assembled. Three rules:
+     1. Keyboard focus is ALWAYS visible (:focus-visible only — never punishes
+        mouse users with a ring, never leaves keyboard users lost). Drawn with
+        box-shadow so it hugs rounded corners and is never clipped by overflow.
+     2. Hover lifts, press settles — same easing everywhere.
+     3. Disabled and busy states look unmistakably inert.
+   This intentionally overrides the scattered `outline: none` rules. */
+:root { --ring: rgba(18,18,18,0.62); --ring-offset: var(--bg); }
+
+/* `!important` is deliberate: components set their own box-shadow (buttons,
+   cards, chips), and `:where()` carries zero specificity — without it the ring
+   silently loses and keyboard users get nothing. Focus visibility is a
+   guarantee, not a suggestion. */
+:where(a, button, input, select, textarea, summary, [tabindex], .listing, .pcard, .hist-row, .pal, .tile):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring) !important;
+  position: relative; z-index: 2;
+}
+/* press feedback — hover lifts, active settles */
+:where(.btn, .btn-primary, .btn-ghost):not(:disabled) { transition: transform .16s cubic-bezier(.22,1,.36,1), background .2s, box-shadow .2s, opacity .2s; }
+:where(.btn, .btn-primary, .btn-ghost):not(:disabled):active { transform: translateY(0) scale(.985); }
+
+/* inert states read as inert */
+:where(button, .btn, input, select, textarea):disabled,
+:where(button, .btn)[aria-disabled="true"] {
+  opacity: .55; cursor: not-allowed; transform: none !important; box-shadow: none;
+}
+:where(button, .btn):disabled:hover { transform: none; }
+
+/* a control mid-flight says so */
+[data-busy="true"] { cursor: progress; opacity: .75; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.btn, .btn-primary, .btn-ghost) { transition: background .2s, box-shadow .2s; }
+  :where(.btn, .btn-primary, .btn-ghost):not(:disabled):active { transform: none; }
+}
+
 /* Error surfaces — shared vocabulary across pages.
    .load-err  a non-destructive banner: something failed to load, content stays
    .inline-err a sentence under the control that failed
