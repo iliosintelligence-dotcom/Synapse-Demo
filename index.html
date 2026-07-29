@@ -48,15 +48,14 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ── The silver lining ──────────────────────────────────────────────────
-     One warm accent, sampled from the Synapse mark, carried at ~3% so it is
-     felt rather than seen: it warms greys, edges and washes without turning
-     the page orange. Only ONE element per screen is allowed to show it at
-     full strength (the freshness pip) — that is what makes it read as a
-     lining rather than a colour scheme. */
+     crypt.ee monochrome stays the palette. One warm accent, sampled from the
+     Synapse mark, never touches type or large areas — it survives only on
+     small non-text elements (a pip, a countdown bar, a map ping). That is the
+     whole lining: you feel the warmth, you never see orange. */
   --tint: 199, 106, 26;                          /* burnt orange, from the logo */
-  --tint-wash: rgba(var(--tint), 0.030);         /* section backgrounds */
-  --tint-edge: rgba(var(--tint), 0.14);          /* hairlines + card borders */
-  --tint-ink: rgba(var(--tint), 0.90);           /* the one full-strength accent */
+  --tint-wash: rgba(var(--tint), 0.022);         /* barely-there section wash */
+  --tint-edge: rgba(var(--tint), 0.10);          /* hairlines only */
+  --tint-ink: rgba(var(--tint), 0.85);           /* pips + pings ONLY, never text */
 }
 
 html { scroll-behavior: smooth; overflow-x: hidden; }
@@ -1692,11 +1691,15 @@ footer {
 .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
 .footer-links a:hover { color: var(--brand); }
 .footer-bottom {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap;
   margin-top: 56px; padding-top: 28px;
   border-top: 1px solid rgba(15,18,24,0.05);
   font-size: 12px; color: var(--text-dim);
 }
+/* the positioning line and legal details live here — not in the hero */
+.footer-tagline { font-size: 13px; line-height: 1.65; color: var(--text-muted); max-width: 560px; font-weight: 500; }
+.footer-legal { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-dim); }
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1060px) {
@@ -1792,22 +1795,24 @@ footer {
         <div class="hero-trust">
           <span class="pip"><i></i> Free. No sign-up to start.</span>
         </div>
-        <div class="hero-foot">
-          <p class="hero-tagline">The infrastructure layer for Nigerian real estate — every recommendation backed by verified data, verified agencies, and Toju.</p>
-          <div class="hero-legal"><span>© 2026 Synapse · Lagos, Nigeria</span><span>partnerships@synapse.ng</span></div>
-        </div>
       </div>
 
-      <!-- Right — an intimate, lived-in home; one Toju chip -->
-      <div class="hero-media">
-        <img src="images/interior.jpg" alt="A warm, light-filled Lagos home interior" />
-        <div class="hero-toju-chip">
-          <div class="hero-chip-orb m-orb"><span class="m-orb-halo" data-lottie="orb-pulse" data-speed="0.8"></span>T</div>
-          <div>
-            <div class="hero-chip-name"><span class="toju-dot"></span> Toju · Active now</div>
-            <div class="hero-chip-msg">Two verified homes in Lekki match your brief — and both cleared all 7 checks. Want my take?</div>
+      <!-- Right — the product itself, working. A real conversation types out
+           so a first-time visitor sees exactly what using Synapse looks like
+           before deciding anything. -->
+      <div class="hero-media hero-peek">
+        <div class="peek" data-peek="customer">
+          <div class="peek-bar">
+            <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+          </div>
+          <div class="peek-body" id="peekCustomer"></div>
+          <div class="peek-composer">
+            <span class="peek-field">Tell Toju what you're looking for…</span>
+            <span class="peek-send" aria-hidden="true">↑</span>
           </div>
         </div>
+        <div class="peek-shadow" aria-hidden="true"></div>
       </div>
     </div>
 
@@ -1910,13 +1915,13 @@ footer {
 .s-band.tinted { background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
 .s-lede { max-width: 680px; }
 .s-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--tint-ink); display: inline-flex; align-items: center; gap: 8px; }
+  color: var(--brand-text); display: inline-flex; align-items: center; gap: 8px; }
 .s-kicker::before { content: ''; width: 22px; height: 1.5px; background: currentColor; opacity: .55; }
 .s-h2 { font-family: var(--f-serif); font-weight: 600; font-size: clamp(30px, 4.6vw, 52px);
   line-height: 1.08; letter-spacing: -0.02em; margin-top: 14px; }
-/* headline emphasis is a DEEP burnt tone, not the bright accent — at display
-   sizes the bright orange stops being a lining and becomes the colour scheme */
-.s-h2 em { font-style: normal; color: #8f4d12; }
+/* headline emphasis stays crypt.ee monochrome — colour on display type turns
+   a lining into a colour scheme. Emphasis comes from weight, not hue. */
+.s-h2 em { font-style: normal; color: var(--brand); }
 .s-sub { font-size: clamp(15px, 1.5vw, 17.5px); color: var(--text-muted); line-height: 1.65; margin-top: 16px; font-weight: 500; max-width: 560px; }
 
 /* split: statement one side, photograph the other */
@@ -1932,7 +1937,7 @@ footer {
 .s-step { padding: 26px 24px 28px; border-radius: 18px; background: rgba(255,255,255,0.6);
   border: 1px solid var(--tint-edge); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
 .s-step:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(20,26,38,0.10); }
-.s-step .n { font-family: var(--f-serif); font-size: 13px; font-weight: 700; color: var(--tint-ink); letter-spacing: .1em; }
+.s-step .n { font-family: var(--f-serif); font-size: 13px; font-weight: 700; color: var(--text-dim); letter-spacing: .1em; }
 .s-step .t { font-size: 19px; font-weight: 600; margin-top: 10px; letter-spacing: -0.01em; }
 .s-step .d { font-size: 14.5px; color: var(--text-muted); line-height: 1.6; margin-top: 7px; font-weight: 500; }
 @media (max-width: 800px) { .s-steps { grid-template-columns: 1fr; } }
@@ -1967,8 +1972,81 @@ footer {
 .prox-card .pt b { display: block; font-size: 14px; font-weight: 700; }
 .prox-card .pt span { font-size: 12.5px; color: var(--text-muted); }
 .soon { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--tint-ink); background: rgba(var(--tint), 0.10); border: 1px solid var(--tint-edge);
-  border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
+  color: #f5f5f5; background: var(--brand); border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
+
+/* the glimpse is its own object — drop the photo frame's box, height and
+   shadow so the app window floats rather than sitting in a grey panel */
+.hero-media.hero-peek { height: auto; border-radius: 0; overflow: visible; box-shadow: none; background: none; }
+
+/* ── App glimpse ───────────────────────────────────────────────────────────
+   The product, working, on the landing page. A visitor should understand what
+   using Synapse feels like before they click anything. Strictly crypt.ee
+   monochrome — the only warmth is the single live pip. */
+.hero-peek { position: relative; display: flex; align-items: center; justify-content: center; }
+.peek { position: relative; z-index: 1; width: 100%; max-width: 520px; border-radius: 18px; overflow: hidden;
+  background: #fbfbfb; border: 1px solid rgba(20,20,20,0.12);
+  box-shadow: 0 32px 70px rgba(20,20,20,0.20), 0 2px 0 rgba(255,255,255,0.9) inset; }
+.peek-shadow { position: absolute; inset: auto 8% -18px 8%; height: 40px; border-radius: 50%;
+  background: rgba(20,20,20,0.16); filter: blur(26px); }
+.peek-bar { display: flex; align-items: center; gap: 6px; padding: 11px 14px;
+  background: #f2f2f2; border-bottom: 1px solid rgba(20,20,20,0.08); }
+.peek-bar .pd { width: 8px; height: 8px; border-radius: 50%; background: rgba(20,20,20,0.16); }
+.peek-url { margin-left: 10px; font-size: 11px; letter-spacing: .04em; color: var(--text-dim); font-weight: 600; }
+.peek-body { padding: 18px 16px; min-height: 236px; display: flex; flex-direction: column; gap: 11px; }
+
+/* chat bubbles — same language as the real Toju screen */
+.pk-msg { display: flex; max-width: 88%; opacity: 0; transform: translateY(8px);
+  transition: opacity .3s var(--ease), transform .3s var(--ease); }
+.pk-msg.in { opacity: 1; transform: none; }
+.pk-msg.me { align-self: flex-end; }
+.pk-bub { font-size: 13.5px; line-height: 1.5; padding: 10px 13px; border-radius: 15px; font-weight: 500; }
+.pk-msg.you .pk-bub { background: #efefef; color: var(--text); border-bottom-left-radius: 5px; }
+.pk-msg.me .pk-bub { background: #1e1e1e; color: #f5f5f5; border-bottom-right-radius: 5px; }
+.pk-dots { display: inline-flex; gap: 4px; padding: 13px; }
+.pk-dots i { width: 5px; height: 5px; border-radius: 50%; background: rgba(20,20,20,0.3); animation: pkD 1.1s infinite; }
+.pk-dots i:nth-child(2){ animation-delay:.16s } .pk-dots i:nth-child(3){ animation-delay:.32s }
+@keyframes pkD { 0%,60%,100%{opacity:.25} 30%{opacity:1} }
+
+/* the result card — the payoff of the demo */
+.pk-card { display: flex; gap: 11px; align-items: center; padding: 10px; border-radius: 13px;
+  background: #fff; border: 1px solid rgba(20,20,20,0.10); box-shadow: 0 8px 20px rgba(20,20,20,0.07);
+  opacity: 0; transform: translateY(8px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+.pk-card.in { opacity: 1; transform: none; }
+.pk-card img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; flex: none; }
+.pk-card .c1 { flex: 1; min-width: 0; }
+.pk-card .c-p { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.pk-card .c-t { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.pk-card .c-v { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700;
+  color: #2e7d4f; margin-top: 3px; }
+
+.peek-composer { display: flex; align-items: center; gap: 9px; padding: 11px 13px;
+  border-top: 1px solid rgba(20,20,20,0.08); background: #fff; }
+.peek-field { flex: 1; font-size: 12.5px; color: var(--text-dim); font-weight: 500; }
+.peek-send { width: 26px; height: 26px; border-radius: 50%; background: #1e1e1e; color: #f5f5f5;
+  display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
+
+/* agency variant — leads landing in the portal */
+.pp-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px 0; }
+.pp-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+.pp-live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.pp-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--tint-ink); }
+.pp-leads { gap: 9px; }
+.pk-lead { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 13px;
+  background: #fff; border: 1px solid rgba(20,20,20,0.10);
+  opacity: 0; transform: translateY(8px); transition: opacity .32s var(--ease), transform .32s var(--ease); }
+.pk-lead.in { opacity: 1; transform: none; }
+.pk-lead .av { width: 34px; height: 34px; border-radius: 50%; background: #ececec; flex: none;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--text); }
+.pk-lead .l1 { flex: 1; min-width: 0; }
+.pk-lead .l-n { font-size: 13px; font-weight: 700; }
+.pk-lead .l-m { font-size: 11.5px; color: var(--text-muted); font-weight: 500; }
+.pk-lead .l-s { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 100px; background: #1e1e1e; color: #f5f5f5; flex: none; }
+.pk-lead .l-s.warm { background: #efefef; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .pk-msg, .pk-card, .pk-lead { transition: none; opacity: 1; transform: none; }
+  .pk-dots i { animation: none; }
+}
 
 /* closing block */
 .s-close { text-align: center; padding: 104px 0; background: var(--tint-wash); border-top: 1px solid var(--tint-edge); }
@@ -2003,16 +2081,22 @@ footer {
         </div>
       </div>
 
-      <!-- Right — Lagos at scale, the infrastructure story -->
-      <div class="hero-media">
-        <img src="images/hero.jpg" alt="Lekki–Ikoyi Link Bridge, Lagos" />
-        <div class="hero-toju-chip">
-          <div class="hero-chip-orb">S</div>
-          <div>
-            <div class="hero-chip-name"><span class="toju-dot"></span> Synapse · Live</div>
-            <div class="hero-chip-msg">New qualified lead — Bola A., budget ₦150–180M, matched to your Lekki listing.</div>
+      <!-- Right — the portal itself: leads arriving, already qualified. -->
+      <div class="hero-media hero-peek">
+        <div class="peek" data-peek="agency">
+          <div class="peek-bar">
+            <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Agency portal</span>
+          </div>
+          <div class="peek-portal">
+            <div class="pp-head">
+              <span class="pp-title">Leads · today</span>
+              <span class="pp-live"><i></i> Live</span>
+            </div>
+            <div class="peek-body pp-leads" id="peekAgency"></div>
           </div>
         </div>
+        <div class="peek-shadow" aria-hidden="true"></div>
       </div>
     </div>
 
@@ -2275,7 +2359,8 @@ footer {
       <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="#">About Synapse</a></li><li><a href="#">Verification</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms</a></li></ul></div>
     </div>
     <div class="footer-bottom">
-      <span>Verified data · verified agencies · Toju.</span>
+      <p class="footer-tagline">The infrastructure layer for Nigerian real estate — every recommendation backed by verified data, verified agencies, and Toju.</p>
+      <div class="footer-legal"><span>© 2026 Synapse · Lagos, Nigeria</span><span>partnerships@synapse.ng</span></div>
     </div>
   </div>
 </footer>
@@ -2374,6 +2459,89 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
   });
 });
+/* ─── App glimpse — the product working, in the hero ────────────────────────
+   Plays a real interaction so a first-time visitor learns the interaction
+   model before committing to anything. Replays whenever the audience toggle
+   switches, so both landing pages demo themselves. Respects reduced-motion by
+   rendering the finished state immediately. */
+(function () {
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timers = [];
+  function clear() { timers.forEach(clearTimeout); timers = []; }
+  function at(ms, fn) { timers.push(setTimeout(fn, REDUCED ? 0 : ms)); }
+  function show(el) { requestAnimationFrame(function () { el.classList.add('in'); }); }
+
+  function bubble(box, who, text) {
+    var d = document.createElement('div');
+    d.className = 'pk-msg ' + who;
+    d.innerHTML = '<div class="pk-bub">' + text + '</div>';
+    box.appendChild(d); show(d); return d;
+  }
+  function dots(box) {
+    var d = document.createElement('div');
+    d.className = 'pk-msg you';
+    d.innerHTML = '<div class="pk-bub pk-dots"><i></i><i></i><i></i></div>';
+    box.appendChild(d); show(d); return d;
+  }
+
+  function playCustomer() {
+    var box = document.getElementById('peekCustomer');
+    if (!box) return;
+    box.innerHTML = '';
+    at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
+    at(750,  function () { box.__t = dots(box); });
+    at(1900, function () {
+      if (box.__t) box.__t.remove();
+      bubble(box, 'you', 'Two fit. Both verified this week — here is the stronger one:');
+    });
+    at(2350, function () {
+      var c = document.createElement('div');
+      c.className = 'pk-card';
+      c.innerHTML = '<img src="images/interior.jpg" alt="" />'
+        + '<div class="c1"><div class="c-p">₦165M</div>'
+        + '<div class="c-t">3-Bed Apartment · Lekki Phase 1</div>'
+        + '<div class="c-v">✓ Verified 2 days ago</div></div>';
+      box.appendChild(c); show(c);
+    });
+    at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
+  }
+
+  function playAgency() {
+    var box = document.getElementById('peekAgency');
+    if (!box) return;
+    box.innerHTML = '';
+    var leads = [
+      { i: 'BA', n: 'Bola A.', m: '₦150–180M · Lekki · ready to view', s: 'Hot', c: '' },
+      { i: 'CO', n: 'Chidi O.', m: 'Rent · ₦8M/yr · Ikeja', s: 'Qualified', c: 'warm' },
+      { i: 'FM', n: 'Funke M.', m: 'Investment · 8%+ yield', s: 'Qualified', c: 'warm' },
+    ];
+    leads.forEach(function (l, i) {
+      at(250 + i * 620, function () {
+        var d = document.createElement('div');
+        d.className = 'pk-lead';
+        d.innerHTML = '<div class="av">' + l.i + '</div>'
+          + '<div class="l1"><div class="l-n">' + l.n + '</div><div class="l-m">' + l.m + '</div></div>'
+          + '<span class="l-s ' + l.c + '">' + l.s + '</span>';
+        box.appendChild(d); show(d);
+      });
+    });
+    at(2350, function () {
+      var d = document.createElement('div');
+      d.className = 'pk-lead';
+      d.style.borderStyle = 'dashed';
+      d.innerHTML = '<div class="l1"><div class="l-m">Toju qualified all three before your team opened the app.</div></div>';
+      box.appendChild(d); show(d);
+    });
+  }
+
+  window.synPeek = function (aud) {
+    clear();
+    if (aud === 'agency') playAgency(); else playCustomer();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek('customer'); });
+  else window.synPeek('customer');
+})();
+
 // ─── FAQ accordion — one open at a time ───
 document.querySelectorAll('.faq-item').forEach(item => {
   const btn = item.querySelector('.faq-q');
@@ -2462,6 +2630,9 @@ document.querySelectorAll('.faq-item').forEach(item => {
     var pe = document.getElementById('nav-primary'), se = document.getElementById('nav-secondary');
     if (pe) { navLabel(pe, p); pe.onclick = function () { window.location.href = p.href; }; pe.style.cursor = 'pointer'; }
     if (se) { navLabel(se, s); se.onclick = function () { window.location.href = s.href; }; se.style.cursor = 'pointer'; }
+
+    // replay the app glimpse for whichever audience is now showing
+    if (window.synPeek) window.synPeek(aud);
 
     if (!isInit) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
