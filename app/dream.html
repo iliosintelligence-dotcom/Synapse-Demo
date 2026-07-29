@@ -60,15 +60,37 @@
     .tile .rm { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(20,20,22,0.55); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s; backdrop-filter: blur(4px); }
     .tile:hover .rm { opacity: 1; }
     .tile .cap { position: absolute; left: 10px; bottom: 10px; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+    .tile .catdot { position: absolute; top: 9px; left: 9px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); }
+    @keyframes pinPop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .masonry .tile { animation: pinPop .28s cubic-bezier(.22,1,.36,1) both; }
+
+    /* mode switch — Dream / Mood / Vision */
+    .mode-switch { display: inline-flex; gap: 3px; margin: 14px 0 4px; padding: 4px; background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 100px; }
+    .mode-switch .ms { border: none; background: none; cursor: pointer; font: 600 13px var(--f-sans); color: var(--ink-muted); padding: 7px 16px; border-radius: 100px; transition: all .2s; }
+    .mode-switch .ms.on { background: #121212; color: #f5f5f5; box-shadow: 0 4px 14px rgba(20,20,20,0.25); }
+    .mode-switch .ms:not(.on):hover { color: var(--ink); background: rgba(0,0,0,0.04); }
+    .mode-hint { font-size: 13px; margin: 2px 0 4px; }
+
+    /* category tabs */
+    .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 2px; }
+    .cat-tabs .ct { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); cursor: pointer; font: 600 12.5px var(--f-sans); color: var(--ink-muted); padding: 6px 12px; border-radius: 100px; transition: all .2s; }
+    .cat-tabs .ct i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .cat-tabs .ct b { font-weight: 700; font-size: 11px; opacity: .55; }
+    .cat-tabs .ct.on { background: #121212; color: #f5f5f5; border-color: #121212; }
+    .cat-tabs .ct.on b { opacity: .7; }
+    .cat-tabs .ct:not(.on):hover { color: var(--ink); background: rgba(0,0,0,0.04); }
+    @media (prefers-reduced-motion: reduce){ .masonry .tile { animation: none; } .mode-switch .ms, .cat-tabs .ct { transition: none; } }
 
     .add-card { padding: 20px 22px; margin-top: 6px; }
     .add-row { display: flex; gap: 10px; margin-bottom: 16px; }
     .add-row input { flex: 1; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.65); font: 14px var(--f-sans); color: var(--ink); outline: none; }
+    .add-row select { padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink); outline: none; cursor: pointer; }
     .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
     .pal { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; border: none; padding: 0; box-shadow: 0 6px 16px rgba(20,26,38,0.08); }
     .pal img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
     .pal:hover img { transform: scale(1.06); }
     .pal.added::after { content: '✓ pinned'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(54,54,54,0.75); color: #fff; font: 700 11px var(--f-sans); }
+    .pal .catdot { position: absolute; top: 6px; left: 6px; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); z-index: 1; }
 
     .toju-cta { display: flex; align-items: center; gap: 14px; padding: 18px 22px; margin-top: 20px; }
     .toju-cta .t { flex: 1; font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
@@ -115,12 +137,20 @@
         </div>
       </div>
 
+      <!-- mode switch: the same board, reframed — Dream / Mood / Vision -->
+      <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Board mode"></div>
+      <p class="mode-hint muted" id="modeHint"></p>
+
       <div class="vibe" id="vibe"></div>
+
+      <!-- category tabs: filter the masonry by what a pin is about -->
+      <div class="cat-tabs" id="catTabs" role="tablist" aria-label="Filter pins by category"></div>
       <div id="board"></div>
 
       <div class="card add-card">
         <div class="add-row">
           <input id="urlInput" type="url" placeholder="Paste an image URL to pin it to this board…" />
+          <select id="urlCat" aria-label="Category for the pinned image"></select>
           <button class="btn btn-primary" id="addUrlBtn" style="padding:11px 18px;font-size:13.5px">Pin it</button>
         </div>
         <p class="muted" style="font-size:12.5px;margin-bottom:10px">Or pin from a little inspiration —</p>
@@ -141,21 +171,54 @@
     const SAVES = 'synapse_saved';            // ♥'d homes → watchlist count
 
     const PALETTE = [
-      { u: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', c: 'Open plan' },
-      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal' },
-      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft light' },
-      { u: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=70', c: 'Modern facade' },
-      { u: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&q=70', c: 'Quiet bedroom' },
-      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Kitchen' },
-      { u: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', c: 'Curb appeal' },
-      { u: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=70', c: 'Living room' },
-      { u: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=70', c: 'Lounge' },
-      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright & airy' },
-      { u: 'https://images.unsplash.com/photo-1585128792020-803d29415281?w=500&q=70', c: 'Terrace view' },
-      { u: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500&q=70', c: 'Poolside' },
+      // housing — the building itself
+      { u: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=70', c: 'Modern facade', cat: 'housing' },
+      { u: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', c: 'Detached duplex', cat: 'housing' },
+      { u: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', c: 'Terrace houses', cat: 'housing' },
+      // areas — neighbourhood & setting
+      { u: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&q=70', c: 'Leafy estate street', cat: 'area' },
+      { u: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=70', c: 'Waterfront view', cat: 'area' },
+      { u: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&q=70', c: 'City skyline', cat: 'area' },
+      // décor — interiors
+      { u: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', c: 'Open plan', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&q=70', c: 'Quiet bedroom', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Kitchen', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=70', c: 'Living room', cat: 'decor' },
+      // lifestyle — how you'll live there
+      { u: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=70', c: 'Lounge', cat: 'lifestyle' },
+      { u: 'https://images.unsplash.com/photo-1585128792020-803d29415281?w=500&q=70', c: 'Terrace view', cat: 'lifestyle' },
+      { u: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500&q=70', c: 'Poolside', cat: 'lifestyle' },
+      // palette — colour, light & material
+      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft light', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright & airy', cat: 'palette' },
     ];
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     const uid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    // ── curation categories (a pin is tagged so Toju reads it as the right signal) ──
+    const CATS = [
+      { id: 'housing',   lbl: 'Housing',   dot: '#121212' },
+      { id: 'area',      lbl: 'Areas',     dot: '#3f9c6d' },
+      { id: 'decor',     lbl: 'Décor',     dot: '#c98b3a' },
+      { id: 'lifestyle', lbl: 'Lifestyle', dot: '#8a5cd6' },
+      { id: 'palette',   lbl: 'Palette',   dot: '#2f6dbd' },
+    ];
+    const CAT = Object.fromEntries(CATS.map((c) => [c.id, c]));
+    function inferCat(c) {
+      c = String(c || '').toLowerCase();
+      if (/facade|duplex|penthouse|curb|exterior|villa|bungalow|maisonette|block|storey|building/.test(c)) return 'housing';
+      if (/lekki|ikoyi|island|ikeja|yaba|estate|street|waterfront|neighbourhood|\barea\b|gated|skyline|corridor|district/.test(c)) return 'area';
+      if (/palette|colou?r|texture|material|tone|marble|wood|light|airy|minimal/.test(c)) return 'palette';
+      if (/pool|gym|garden|terrace|lounge|workspace|balcony|patio|rooftop|bar|spa/.test(c)) return 'lifestyle';
+      return 'decor';
+    }
+    // the three board modes — one board, a mode switch that reframes it
+    const MODES = [
+      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Toju matches you to.' },
+      { id: 'mood',   lbl: 'Mood',   hint: 'The feeling — palettes, textures and interior vibe.' },
+      { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
+    ];
 
     // ── state: { boards:[{id,name,vibe[],images:[{u,c}]}], activeId } ──
     let state;
@@ -171,12 +234,29 @@
             images: [PALETTE[7], PALETTE[1], PALETTE[10], PALETTE[0], PALETTE[4]] };
       state = { boards: [first], activeId: null };
     }
+    // migrate older boards forward: every board gets a mode, every pin a category
+    state.boards.forEach((b) => {
+      if (!b.mode) b.mode = 'dream';
+      (b.images || []).forEach((im) => { if (!im.cat) im.cat = inferCat(im.c); });
+    });
     const saveState = () => localStorage.setItem(BKEY, JSON.stringify(state));
     const activeBoard = () => state.boards.find((b) => b.id === state.activeId) || null;
-    // mirror the active board into the shape Toju already reads
+    let boardCat = 'all'; // active category filter inside a board
+
+    // mirror the active board into the shape Toju reads — now split by category
+    // so Toju treats Area pins as a location signal, Housing as a type signal,
+    // and Décor/Palette as aesthetic. Keeps name/vibe/images for backward-compat.
     function mirror() {
       const b = activeBoard();
-      if (b) localStorage.setItem(MIRROR, JSON.stringify({ name: b.name, vibe: b.vibe, images: b.images }));
+      if (!b) return;
+      const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
+      localStorage.setItem(MIRROR, JSON.stringify({
+        name: b.name, mode: b.mode || 'dream', vibe: b.vibe, images: b.images,
+        areas: capsOf('area'),
+        housing: capsOf('housing'),
+        lifestyle: capsOf('lifestyle'),
+        aesthetic: capsOf('decor').concat(capsOf('palette')),
+      }));
     }
     function savesCount() { try { return (JSON.parse(localStorage.getItem(SAVES)) || []).length; } catch (e) { return 0; } }
 
@@ -225,11 +305,48 @@
 
     // ═══ INSIDE A BOARD ═══
     function openBoard(id) {
-      state.activeId = id; saveState(); mirror();
+      state.activeId = id; boardCat = 'all'; saveState(); mirror();
       homeView.classList.add('hidden'); boardView.classList.remove('hidden');
       window.scrollTo(0, 0);
+      renderMode(); renderCatTabs(); renderCatPicker();
       renderBoard(); renderVibe(); renderPalette(); updateToju();
       document.getElementById('boardTitle').value = activeBoard().name || '';
+    }
+
+    // ── mode switch (Dream / Mood / Vision) ──
+    function renderMode() {
+      const b = activeBoard(); const cur = b.mode || 'dream';
+      document.getElementById('modeSwitch').innerHTML = MODES.map((m) =>
+        `<button role="tab" class="ms ${m.id === cur ? 'on' : ''}" data-mode="${m.id}" aria-selected="${m.id === cur}">${m.lbl}</button>`).join('');
+      document.getElementById('modeHint').textContent = (MODES.find((m) => m.id === cur) || MODES[0]).hint;
+    }
+    document.getElementById('modeSwitch').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-mode]'); if (!btn) return;
+      const b = activeBoard(); if (!b) return;
+      b.mode = btn.dataset.mode; saveState(); mirror(); renderMode(); updateToju();
+    });
+
+    // ── category tabs (filter the masonry) ──
+    function catCount(id) { return (activeBoard().images || []).filter((im) => (im.cat || 'decor') === id).length; }
+    function renderCatTabs() {
+      const total = (activeBoard().images || []).length;
+      const tab = (id, lbl, dot, n) =>
+        `<button role="tab" class="ct ${boardCat === id ? 'on' : ''}" data-cat="${id}" aria-selected="${boardCat === id}">
+           ${dot ? `<i style="background:${dot}"></i>` : ''}${lbl}<b>${n}</b></button>`;
+      let html = tab('all', 'All', '', total);
+      CATS.forEach((c) => { const n = catCount(c.id); if (n) html += tab(c.id, c.lbl, c.dot, n); });
+      document.getElementById('catTabs').innerHTML = html;
+    }
+    document.getElementById('catTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cat]'); if (!btn) return;
+      boardCat = btn.dataset.cat; renderCatTabs(); renderBoard();
+    });
+
+    // ── category picker for freshly-pasted URLs ──
+    function renderCatPicker() {
+      const sel = document.getElementById('urlCat');
+      const start = boardCat === 'all' ? 'decor' : boardCat;
+      sel.innerHTML = CATS.map((c) => `<option value="${c.id}" ${c.id === start ? 'selected' : ''}>${c.lbl}</option>`).join('');
     }
     function toHome() {
       state.activeId = null; saveState();
@@ -262,12 +379,22 @@
         boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape — Toju does the rest.</p></div></div>';
         return;
       }
-      boardEl.innerHTML = '<div class="masonry">' + b.images.map((im, i) => `
-        <div class="tile">
+      // keep original indices so remove/lookup stays correct under a filter
+      const shown = b.images.map((im, i) => ({ im, i })).filter(({ im }) => boardCat === 'all' || (im.cat || 'decor') === boardCat);
+      if (!shown.length) {
+        boardEl.innerHTML = `<div class="card add-card"><div style="text-align:center;padding:34px 0;color:var(--ink-muted)"><p style="font-size:14px">No <b>${esc((CAT[boardCat] || {}).lbl || '')}</b> pins yet. Pin one below, or switch back to <button class="lnk-all">All</button>.</p></div></div>`;
+        const back = boardEl.querySelector('.lnk-all'); if (back) back.onclick = () => { boardCat = 'all'; renderCatTabs(); renderBoard(); };
+        return;
+      }
+      boardEl.innerHTML = '<div class="masonry">' + shown.map(({ im, i }) => {
+        const c = CAT[im.cat || 'decor'] || CAT.decor;
+        return `<div class="tile">
           <img src="${esc(im.u)}" alt="${esc(im.c || 'pinned image')}" loading="lazy" onerror="this.closest('.tile').remove()" />
+          <span class="catdot" style="background:${c.dot}" title="${c.lbl}"></span>
           ${im.c ? `<span class="cap">${esc(im.c)}</span>` : ''}
           <button class="rm" data-i="${i}" title="Remove">×</button>
-        </div>`).join('') + '</div>';
+        </div>`;
+      }).join('') + '</div>';
     }
     function renderVibe() {
       const b = activeBoard();
@@ -281,20 +408,33 @@
       });
     }
     function renderPalette() {
-      paletteEl.innerHTML = PALETTE.map((p) => `
-        <button class="pal ${hasImg(p.u) ? 'added' : ''}" data-u="${esc(p.u)}" data-c="${esc(p.c)}" title="${esc(p.c)}">
+      // show inspiration for the active category first (or all when on "All")
+      const pool = PALETTE.filter((p) => boardCat === 'all' || (p.cat || 'decor') === boardCat);
+      const list = pool.length ? pool : PALETTE;
+      paletteEl.innerHTML = list.map((p) => {
+        const c = CAT[p.cat || 'decor'] || CAT.decor;
+        return `<button class="pal ${hasImg(p.u) ? 'added' : ''}" data-u="${esc(p.u)}" data-c="${esc(p.c)}" data-cat="${p.cat || 'decor'}" title="${esc(p.c)} · ${c.lbl}">
           <img src="${esc(p.u)}" alt="${esc(p.c)}" loading="lazy" />
-        </button>`).join('');
+          <span class="catdot" style="background:${c.dot}"></span>
+        </button>`;
+      }).join('');
     }
     function updateToju() {
       const b = activeBoard();
-      const q = 'Find me verified homes that match my "' + (b.name || 'dream') + '" board: ' + b.vibe.join(', ') + '.';
+      const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
+      const areas = capsOf('area'), housing = capsOf('housing');
+      const parts = [];
+      if (b.vibe.length) parts.push('vibe: ' + b.vibe.join(', '));
+      if (housing.length) parts.push('home type: ' + housing.join(', '));
+      if (areas.length) parts.push('areas that feel right: ' + areas.join(', '));
+      const q = 'Find me verified homes that match my "' + (b.name || 'dream') + '" board'
+        + (parts.length ? ' — ' + parts.join('; ') : '') + '.';
       document.getElementById('tojuBtn').href = 'toju.html?ask=' + encodeURIComponent(q);
     }
 
     boardEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.rm'); if (!btn) return;
-      activeBoard().images.splice(+btn.dataset.i, 1); saveState(); mirror(); renderBoard(); renderPalette();
+      activeBoard().images.splice(+btn.dataset.i, 1); saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette();
     });
     vibeEl.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-i]'); if (!btn) return;
@@ -304,13 +444,15 @@
       const p = e.target.closest('.pal'); if (!p) return;
       const b = activeBoard(), u = p.dataset.u;
       if (hasImg(u)) b.images = b.images.filter((i) => i.u !== u);
-      else b.images.push({ u, c: p.dataset.c });
-      saveState(); mirror(); renderBoard(); renderPalette();
+      else b.images.push({ u, c: p.dataset.c, cat: p.dataset.cat || 'decor' });
+      saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette();
     });
     function addUrl() {
       const inp = document.getElementById('urlInput');
       const u = inp.value.trim(); if (!u) return;
-      activeBoard().images.push({ u, c: '' }); saveState(); mirror(); inp.value = ''; renderBoard();
+      const cat = (document.getElementById('urlCat') || {}).value || 'decor';
+      activeBoard().images.push({ u, c: '', cat }); saveState(); mirror();
+      inp.value = ''; renderBoard(); renderCatTabs(); renderPalette();
     }
     document.getElementById('addUrlBtn').addEventListener('click', addUrl);
     document.getElementById('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUrl(); });

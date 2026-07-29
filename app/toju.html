@@ -408,14 +408,25 @@
       try {
         const b = JSON.parse(localStorage.getItem('synapse_moodboard_v1'));
         if (!b) return null;
-        const vibes = Array.isArray(b.vibe) ? b.vibe.filter(Boolean) : [];
-        const caps = Array.isArray(b.images) ? [...new Set(b.images.map((i) => i && i.c).filter(Boolean))] : [];
-        if (!vibes.length && !caps.length) return null;
-        let s = '[Background from my Dream Home mood board, use it to shape what you recommend without repeating it back: ';
+        const clean = (a) => Array.isArray(a) ? [...new Set(a.filter(Boolean))] : [];
+        const vibes = clean(b.vibe);
+        // categorised signals (new boards). Fall back to raw captions for older boards.
+        const areas = clean(b.areas);
+        const housing = clean(b.housing);
+        const lifestyle = clean(b.lifestyle);
+        const aesthetic = clean(b.aesthetic);
+        const caps = clean(Array.isArray(b.images) ? b.images.map((i) => i && i.c) : []);
+        const hasCat = areas.length || housing.length || lifestyle.length || aesthetic.length;
+        if (!vibes.length && !caps.length && !hasCat) return null;
+        let s = '[Background from my Dream Home ' + (b.mode || 'dream') + ' board, use it to shape what you recommend without repeating it back: ';
         s += 'board "' + (b.name || 'My dream home') + '"';
         if (vibes.length) s += ' · the vibe I love: ' + vibes.join(', ');
-        if (caps.length) s += ' · spaces I keep pinning: ' + caps.join(', ');
-        return s + '.]';
+        if (housing.length) s += ' · home types I want: ' + housing.join(', ');
+        if (areas.length) s += ' · neighbourhoods/settings that feel right: ' + areas.join(', ');
+        if (lifestyle.length) s += ' · lifestyle I want: ' + lifestyle.join(', ');
+        if (aesthetic.length) s += ' · interior aesthetic: ' + aesthetic.join(', ');
+        if (!hasCat && caps.length) s += ' · spaces I keep pinning: ' + caps.join(', ');
+        return s + '. Weight neighbourhood and home-type signals for what you surface; treat aesthetic/vibe as tone, not a hard filter.]';
       } catch (e) { return null; }
     }
 
