@@ -37,6 +37,13 @@
     .section .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
     .reason { font-size: 14.5px; line-height: 1.7; }
     .nodes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .more-checks { margin-top: 10px; }
+    .more-checks summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--brand); padding: 4px 2px; user-select: none; }
+    .more-checks summary::-webkit-details-marker { display: none; }
+    .more-checks summary::after { content: ''; width: 7px; height: 7px; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); transition: transform .25s cubic-bezier(.22,1,.36,1); margin-left: 2px; margin-top: -3px; }
+    .more-checks[open] summary::after { transform: rotate(-135deg); margin-top: 1px; }
+    .more-checks[open] summary { color: var(--ink-muted); }
+    @media (prefers-reduced-motion: reduce){ .more-checks summary::after { transition: none; } }
     .ringbig { width: 56px; height: 56px; border-radius: 50%; border: 3.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 20px; color: var(--ink); }
     .agency { display: flex; align-items: center; gap: 14px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
@@ -282,17 +289,23 @@
     </div>
 
     <div class="card section">
-      <div class="lbl">🛡 Verification — 7 nodes</div>
+      <div class="lbl">🛡 What we checked <span class="dim" style="font-weight:400;font-size:12.5px">· 6 of 7 passed</span></div>
       <div style="margin:2px 0 10px"><span data-lottie="property-verified" data-loop="false" style="width:190px;height:84px"></span></div>
+      <!-- progressive disclosure: the checks buyers ask about first, rest on tap -->
       <div class="nodes">
-        <span class="chip chip-pass">✓ Title</span>
-        <span class="chip chip-pass">✓ Survey</span>
-        <span class="chip chip-pass">✓ Structure</span>
+        <span class="chip chip-pass">✓ Title verified</span>
+        <span class="chip chip-pass">✓ Legal review</span>
         <span class="chip chip-pass">✓ Flood risk</span>
-        <span class="chip chip-pass">✓ Legal</span>
-        <span class="chip chip-pass">✓ Neighbourhood</span>
-        <span class="chip chip-pending">◷ Financial</span>
+        <span class="chip chip-pending">◷ Financial — still checking</span>
       </div>
+      <details class="more-checks">
+        <summary>See all 7 checks</summary>
+        <div class="nodes" style="margin-top:9px">
+          <span class="chip chip-pass">✓ Ground survey</span>
+          <span class="chip chip-pass">✓ Structure</span>
+          <span class="chip chip-pass">✓ Neighbourhood</span>
+        </div>
+      </details>
     </div>
 
     <div class="card section">
