@@ -493,24 +493,37 @@
     function stopMicUI() { listening = false; micBtn.classList.remove('listening'); input.placeholder = "Tell Toju what you're looking for…"; }
     function startMic() {
       recog = new SR();
-      recog.lang = 'en-NG'; recog.interimResults = true; recog.continuous = true;
+      // en-NG is rejected by many Chrome builds ("language-not-supported"); en-US
+      // is universally supported and handles Nigerian-accented English fine.
+      try { recog.lang = (navigator.language && /^en/i.test(navigator.language)) ? navigator.language : 'en-US'; } catch (e) { recog.lang = 'en-US'; }
+      recog.interimResults = true; recog.continuous = true;
       const base = input.value.trim() ? input.value.trim() + ' ' : '';
       recog.onresult = (e) => {
         let txt = '';
         for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
         input.value = base + txt;
       };
+      // exhaustive: no error path is silent (the old code dropped every case but 3)
       recog.onerror = (e) => {
         stopMicUI();
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          hint(inIframe
-            ? 'Open this page in its own browser tab to use voice — it’s blocked inside the embedded preview.'
-            : 'Microphone is blocked. Click the mic/🔒 icon in the address bar → Allow, then tap the mic again.');
-        } else if (e.error === 'no-speech') { hint("Didn’t catch that — tap the mic and speak."); }
+        switch (e.error) {
+          case 'not-allowed': case 'service-not-allowed':
+            hint(inIframe
+              ? 'Open this page in its own browser tab to use voice — it’s blocked inside the embedded preview.'
+              : 'Microphone is blocked. Click the 🔒 icon in the address bar → Allow, then tap the mic again.'); break;
+          case 'no-speech': hint('Didn’t catch that — tap the mic and speak.'); break;
+          case 'audio-capture': hint('No microphone found — check it’s connected, then try again.'); break;
+          case 'network': hint('Voice needs a connection — check your network and try again.'); break;
+          case 'aborted': break; // user stopped it — no message needed
+          case 'language-not-supported':
+            if (recog.lang !== 'en-US') { recog.lang = 'en-US'; try { recog.start(); listening = true; micBtn.classList.add('listening'); return; } catch (e2) {} }
+            hint('Voice isn’t available in your browser here — try Chrome or Edge.'); break;
+          default: hint('Voice hit a snag — tap the mic to try again.');
+        }
       };
       recog.onend = () => stopMicUI();
       try { recog.start(); listening = true; micBtn.classList.add('listening'); input.placeholder = 'Listening… speak now'; input.focus(); }
-      catch (err) { stopMicUI(); }
+      catch (err) { stopMicUI(); hint('Couldn’t start voice — tap the mic to try again.'); }
     }
     async function toggleMic() {
       if (!SR) { hint('Voice typing needs Chrome or Edge on this device.'); return; }
