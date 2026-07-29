@@ -138,7 +138,15 @@
     items.forEach((l, i) => {
       const c = coords(l.loc, i);
       pts.push(c);
-      L.marker(c, { icon: L.divIcon({ className: '', html: `<div class="price-pin">${naira(l.priceN)}</div>`, iconAnchor: [26, 12] }) })
+      // A real map pin: price pill + pointer tail, with a verification dot so
+      // the map carries the same trust signal the cards do. iconAnchor sits at
+      // the tail tip so the pin points AT the location, not beside it.
+      const vcls = (l.vstatus || 'verified') === 'verified' ? ' ok' : '';
+      L.marker(c, { icon: L.divIcon({
+        className: 'pin-wrap',
+        html: `<div class="price-pin${vcls}"><span class="pv">${naira(l.priceN)}</span></div><span class="pin-tail"></span>`,
+        iconSize: [0, 0], iconAnchor: [0, 0],
+      }) })
         .addTo(st.layer)
         .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Confidence ${l.score}`);
     });

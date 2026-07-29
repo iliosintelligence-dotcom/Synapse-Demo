@@ -18,8 +18,39 @@
        App shell: the nav rail is pinned to the far-left edge of the screen
        (Gemini-canvas style) and the content pane fills the rest. */
     body.portal { overflow: hidden; }
-    .shell { display: flex; height: calc(100vh - 61px); }
-    .side { width: 236px; flex: none; display: flex; flex-direction: column; gap: 3px; padding: 18px 14px; background: rgba(255,255,255,0.55); border-right: 1px solid var(--border); overflow-y: auto; }
+    /* ── Collapsing rail ──────────────────────────────────────────────────
+       Rests at icon width and expands on hover. The rail keeps its 66px slot
+       in the flex row while the panel itself overlays on expand, so the
+       content never reflows — no layout thrash, and the page behind stays
+       exactly where the eye left it. Keyboard users get the same expansion
+       via :focus-within, and touch devices (no hover) keep it open. */
+    /* the rail is taken OUT of the flex flow and the shell reserves its 66px,
+       so expanding overlays the content instead of pushing it */
+    .shell { display: flex; height: calc(100vh - 61px); position: relative; padding-left: 66px; }
+    .side {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 66px; display: flex; flex-direction: column; gap: 3px;
+      padding: 18px 13px; background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+      border-right: 1px solid var(--border); overflow: hidden;
+      z-index: 40;
+      transition: width .26s cubic-bezier(.22,1,.36,1);
+    }
+    .side:hover, .side:focus-within {
+      width: 236px; overflow-y: auto;
+      box-shadow: 26px 0 60px rgba(20,20,20,0.10);
+    }
+    /* labels fade out when collapsed; icons stay put so nothing jumps */
+    .side .lbl-x { white-space: nowrap; opacity: 0; transition: opacity .18s ease; }
+    .side:hover .lbl-x, .side:focus-within .lbl-x { opacity: 1; }
+    .side .grp, .side .me .who { opacity: 0; transition: opacity .18s ease; pointer-events: none; }
+    .side:hover .grp, .side:focus-within .grp,
+    .side:hover .me .who, .side:focus-within .me .who { opacity: 1; pointer-events: auto; }
+    /* collapsed, every group is open — there is no room for headers */
+    .side:not(:hover):not(:focus-within) .grp-sec .grp-items { max-height: 400px !important; opacity: 1 !important; }
+    .side:not(:hover):not(:focus-within) .grp { height: 0; padding: 0; overflow: hidden; }
+    @media (hover: none) { .shell { padding-left: 236px; } .side { width: 236px; } .side .lbl-x, .side .grp, .side .me .who { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .side, .side .lbl-x, .side .grp { transition: none; } }
     .side .grp-sec { display: flex; flex-direction: column; }
     .side .grp { width: 100%; background: none; border: none; cursor: pointer; text-align: left; font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; display: flex; align-items: center; justify-content: space-between; }
     .side .grp-sec:first-child .grp { padding-top: 2px; }
@@ -776,10 +807,31 @@
     .ovs.verified { color: var(--success); background: rgba(46,125,79,0.1); }
     .ovs.pending { color: var(--gold); background: rgba(156,122,30,0.12); }
 
+    /* ── Page rail ────────────────────────────────────────────────────────
+       Hick's Law applied to a dense portal: the main column carries the ONE
+       thing you came to do; supporting numbers, channel toggles and minor
+       controls move into a rail you consult rather than parse. Collapses
+       under the main column on narrow screens. */
+    .pane-split { display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 26px; align-items: start; }
+    .pane-main { min-width: 0; }
+    .pane-rail { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 8px; }
+    .rail-sec { border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,0.6); padding: 15px 15px 16px; }
+    .rail-h { font: 700 10.5px var(--f-sans); letter-spacing: .13em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 11px; }
+    .rail-stats { display: flex; flex-direction: column; gap: 11px; }
+    .rail-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .rail-stat .rv { font: 700 19px var(--f-serif); font-variant-numeric: lining-nums; color: var(--ink); }
+    .rail-stat .rl { font-size: 12px; color: var(--ink-muted); font-weight: 500; text-align: right; }
+    .rail-stat .rd { font-size: 11px; font-weight: 700; }
+    .rail-stat .rd.up { color: var(--success); } .rail-stat .rd.dn { color: #a8402b; }
+    .pane-rail .channels { display: flex; flex-direction: column; gap: 8px; }
+    .pane-rail .chan { padding: 9px 10px; gap: 9px; }
+    .pane-rail .chan .ic { width: 28px; height: 28px; font-size: 10.5px; }
+    .pane-rail .chan .nm { font-size: 12.5px; }
+    .pane-rail .chan .st { font-size: 10.5px; }
+    @media (max-width: 1100px) { .pane-split { grid-template-columns: 1fr; } .pane-rail { position: static; } }
+
     .ov-detail { position: sticky; top: 0; }
     .ov-map { height: 300px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 0; background: rgba(0,0,0,0.03); }
-    .price-pin { background: var(--brand-deep); color: #fff; font: 700 11px var(--f-sans); padding: 3px 9px;
-      border-radius: 100px; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.28); transform: translateX(-50%); }
     .ov-card { margin-top: 14px; padding: 8px; }
     .ov-dtabs { display: flex; gap: 4px; padding: 5px; background: rgba(0,0,0,0.035); border-radius: 100px; }
     .ov-dtab { flex: 1; font: 600 12px var(--f-sans); color: var(--ink-muted); background: none; border: none; padding: 9px 6px; border-radius: 100px; cursor: pointer; transition: .14s; }
@@ -947,34 +999,34 @@
       <div class="grp-sec open" data-sec="main">
         <button class="grp" aria-expanded="true" aria-controls="grp-main"><span>Main</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-main">
-          <a class="on" data-pane="overview"><span data-icon="grid"></span> Overview</a>
-          <a data-pane="crm"><span data-icon="users"></span> CRM · Leads</a>
-          <a data-pane="negotiator"><span data-icon="negotiate"></span> Toju Negotiator</a>
-          <a data-pane="listings"><span data-icon="agency"></span> Listings</a>
+          <a class="on" data-pane="overview" title="Overview"><span data-icon="grid"></span><span class="lbl-x">Overview</span></a>
+          <a data-pane="crm" title="CRM · Leads"><span data-icon="users"></span><span class="lbl-x">CRM · Leads</span></a>
+          <a data-pane="negotiator" title="Toju Negotiator"><span data-icon="negotiate"></span><span class="lbl-x">Toju Negotiator</span></a>
+          <a data-pane="listings" title="Listings"><span data-icon="agency"></span><span class="lbl-x">Listings</span></a>
         </div>
       </div>
       <div class="grp-sec open" data-sec="growth">
         <button class="grp" aria-expanded="true" aria-controls="grp-growth"><span>Growth</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-growth">
-          <a data-pane="social"><span data-icon="share"></span> Social studio</a>
-          <a data-pane="marketing"><span data-icon="chart"></span> Marketing</a>
+          <a data-pane="social" title="Social studio"><span data-icon="share"></span><span class="lbl-x">Social studio</span></a>
+          <a data-pane="marketing" title="Marketing"><span data-icon="chart"></span><span class="lbl-x">Marketing</span></a>
         </div>
       </div>
       <div class="grp-sec open" data-sec="team">
         <button class="grp" aria-expanded="true" aria-controls="grp-team"><span>Team</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-team">
-          <a data-pane="agents"><span data-icon="user"></span> Agents</a>
+          <a data-pane="agents" title="Agents"><span data-icon="user"></span><span class="lbl-x">Agents</span></a>
         </div>
       </div>
       <div class="grp-sec open" data-sec="account">
         <button class="grp" aria-expanded="true" aria-controls="grp-account"><span>Account</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-account">
-          <a data-pane="subscription"><span data-icon="card"></span> Subscription</a>
+          <a data-pane="subscription" title="Subscription"><span data-icon="card"></span><span class="lbl-x">Subscription</span></a>
         </div>
       </div>
       <div class="me">
         <span class="av2">PR</span>
-        <div><div class="nm2">Prestige Realty Ltd.</div><div class="sub2">✦ Gold Verified</div></div>
+        <div class="who"><div class="nm2">Prestige Realty Ltd.</div><div class="sub2">✦ Gold Verified</div></div>
       </div>
     </aside>
 
@@ -1085,13 +1137,28 @@
             <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px">✨ New post</button>
           </div>
 
-          <div class="s-bento" id="socialBento"></div>
+          <!-- main column keeps the work; channels + stats live in the rail -->
+          <div class="pane-split">
+            <div class="pane-main">
+              <div class="s-bento" id="socialBento"></div>
+            </div>
 
-          <div class="channels">
-            <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">@prestigerealty · connected</div></div><div class="tog"></div></div>
-            <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">@prestige.lagos · connected</div></div><div class="tog"></div></div>
-            <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Prestige Realty · connected</div></div><div class="tog off"></div></div>
-            <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
+            <aside class="pane-rail" aria-label="Channels and performance">
+              <div class="rail-sec">
+                <div class="rail-h">Where it posts</div>
+                <div class="channels">
+                  <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">@prestigerealty</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">@prestige.lagos</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Prestige Realty · Shorts</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Prestige Realty</div></div><div class="tog off"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
+                </div>
+              </div>
+              <div class="rail-sec">
+                <div class="rail-h">This week</div>
+                <div class="rail-stats" id="socialRailStats"></div>
+              </div>
+            </aside>
           </div>
 
           <div class="s-work-hd">
@@ -1235,6 +1302,7 @@
       instagram: { label: 'Instagram', color: '#DD2A7B', short: 'IG' },
       tiktok:    { label: 'TikTok',    color: '#161616', short: 'TT' },
       facebook:  { label: 'Facebook',  color: '#1877F2', short: 'f' },
+      youtube:   { label: 'YouTube',   color: '#FF0000', short: 'YT' },
       whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
@@ -1549,7 +1617,7 @@
       const el = document.getElementById('socialBento'); if (!el) return;
       const reach = posts.filter(p => p.stage === 'published').reduce((s, p) => s + (p.reach || 0), 0);
       const approvals = posts.filter(p => p.stage === 'approval').length;
-      const chOrder = ['instagram','tiktok','facebook','whatsapp'];
+      const chOrder = ['instagram','tiktok','youtube','facebook','whatsapp'];
       const togs = [...document.querySelectorAll('.channels .tog')];
       const chState = chOrder.map((c, i) => ({ c, on: togs[i] ? !togs[i].classList.contains('off') : true }));
       const conn = chState.filter(s => s.on).length;
@@ -1558,7 +1626,7 @@
       posts.forEach(p => { if (p.stage === 'scheduled' || p.stage === 'published') { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; perDay[di]++; } });
       el.innerHTML =
         `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
-         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/4</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${CH[s.c].short}</span>`).join('')}</div></div>
+         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${CH[s.c].short}</span>`).join('')}</div></div>
          <div class="s-tile"><div class="k">This week</div><div class="s-mini">${days.map((d, i) => `<div class="d ${i === ti ? 'today' : ''}"><div class="lbl">${d}</div><div class="cell">${'<span class="pd"></span>'.repeat(Math.min(3, perDay[i]))}</div></div>`).join('')}</div></div>
          <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} posts awaiting approval"><div class="k">Needs approval</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
       const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
@@ -2574,7 +2642,23 @@
       { title: '3-Bed Terrace, Ikate', price: 148000000, city: 'Lagos', area: 'Ikate', bedrooms: 3, listingType: 'sale', trustScore: 88, img: IMG.ikate },
       { title: '2-Bed Flat, Victoria Island', price: 142000000, city: 'Lagos', area: 'Victoria Island', bedrooms: 2, listingType: 'sale', trustScore: 90, img: IMG.vi },
     ];
-    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', whatsapp: 'WhatsApp' };
+    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp' };
+
+    /* Rail figures — moved out of the main column so the page shows the work,
+       not the dashboard. Consulted, not parsed. */
+    (function () {
+      const el = document.getElementById('socialRailStats');
+      if (!el) return;
+      const rows = [
+        { v: '18', l: 'posts published', d: '+5', up: true },
+        { v: '41.2k', l: 'total reach', d: '+12%', up: true },
+        { v: '96', l: 'DMs from posts', d: '+9', up: true },
+        { v: '7', l: 'leads attributed', d: '−2', up: false },
+      ];
+      el.innerHTML = rows.map((r) =>
+        `<div class="rail-stat"><span class="rv">${r.v}</span>`
+        + `<span class="rl">${r.l}<br><span class="rd ${r.up ? 'up' : 'dn'}">${r.d} vs last week</span></span></div>`).join('');
+    })();
     const escT = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const cmpScrim = document.getElementById('cmpScrim'), cmpModal = document.getElementById('cmpModal');
     let cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };

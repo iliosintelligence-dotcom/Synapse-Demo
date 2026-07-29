@@ -239,7 +239,13 @@
       "Bash(sed -i '2045,2057d' index.html)",
       "Bash(awk 'NR>=2385 && NR<=2440 && /^<\\\\/section>/ {print NR\": \"$0}' index.html)",
       "Bash(awk 'NR>=2419 && NR<=2470 && /^<\\\\/section>/ {print NR; exit}' index.html)",
-      "Bash(perl -0777 -i -pe \"s/\\\\.coliving-photo \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.agency-photo-layer \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.browse-photo-hint \\\\{[^}]*\\\\}\\\\n//s;\" index.html)"
+      "Bash(perl -0777 -i -pe \"s/\\\\.coliving-photo \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.agency-photo-layer \\\\{[^}]*\\\\}\\\\n//s; s/\\\\.browse-photo-hint \\\\{[^}]*\\\\}\\\\n//s;\" index.html)",
+      "Bash(perl -0777 -i -pe 's{\\(<a[^>]*data-pane=\"\\([a-z]+\\)\"[^>]*>\\)<span data-icon=\"\\([a-z]+\\)\"></span> \\([^<]+\\)</a>}{$1<span data-icon=\"$3\"></span><span class=\"lbl-x\">$4</span></a>}g' app/agency.html)",
+      "Bash(perl -0777 -i -pe 's{\\(<a\\(?: class=\"on\"\\)? data-pane=\"[a-z]+\"\\)\\(><span data-icon=\"[a-z]+\"></span><span class=\"lbl-x\">\\([^<]+\\)</span>\\)}{$1 title=\"$3\"$2}g' app/agency.html)",
+      "Bash(perl -0777 -i -pe 's/    \\\\.price-pin \\\\{ background: var\\\\\\(--brand-deep\\\\\\).*?\\\\n.*?transform: translateX\\\\\\(-50%\\\\\\); \\\\}\\\\n//s' app/agency.html)",
+      "Bash(perl -0777 -i -pe 's/    \\\\.price-pin \\\\{ background: var\\\\\\(--brand\\\\\\); color: #fff.*?\\\\n.*?\\\\n//s; s/    \\\\.price-pin\\\\.dim \\\\{ background: #8b8b8b; \\\\}\\\\n//s' app/browse.html app/toju.html)",
+      "Bash(perl -0777 -i -pe \"s/\\(      facebook:  \\\\{ label: 'Facebook',  color: '#1877F2', short: 'f' \\\\},\\)/\\\\$1\\\\n      youtube:   { label: 'YouTube',   color: '#FF0000', short: 'YT' },/\" app/agency.html)",
+      "Bash(perl -0777 -i -pe \"s/\\(const CH_LABEL = \\\\{ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook',\\)\\( whatsapp: 'WhatsApp' \\\\};\\)/\\\\$1 youtube: 'YouTube',\\\\$2/\" app/agency.html)"
     ]
   }
 }

@@ -1899,7 +1899,11 @@ footer {
    the warm tint appears only as a wash or a hairline. Motion stays under
    ~300ms end-to-end (Doherty) so the page never feels like it is thinking.
    ══════════════════════════════════════════════════════════════════════ */
-.s-band { padding: 92px 0; position: relative; }
+/* Negative space is the design. Sections breathe at ~1/6 of the viewport top
+   and bottom, and nothing sits closer to the edge than it has to — the eye
+   needs somewhere to rest between ideas, and crowding is what made the page
+   feel busy even after the content was cut. */
+.s-band { padding: clamp(96px, 13vh, 168px) 0; position: relative; }
 .s-band.tinted { background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
 
 /* ── Inverted bands ────────────────────────────────────────────────────────
@@ -1937,7 +1941,7 @@ footer {
 .s-sub { font-size: clamp(16.5px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.72; margin-top: 16px; font-weight: 500; max-width: 580px; }
 
 /* split: statement one side, photograph the other */
-.s-split { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+.s-split { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(56px, 7vw, 104px); align-items: center; }
 .s-split.flip > .s-media { order: -1; }
 .s-media { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4/3;
   box-shadow: 0 26px 60px rgba(20,26,38,0.16); background: var(--bg-1); }
@@ -1945,8 +1949,8 @@ footer {
 @media (max-width: 900px) { .s-split { grid-template-columns: 1fr; gap: 30px; } .s-split.flip > .s-media { order: 0; } }
 
 /* three steps — the only place the page asks you to hold a sequence */
-.s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 46px; }
-.s-step { padding: 26px 24px 28px; border-radius: 18px; background: rgba(255,255,255,0.6);
+.s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 68px; }
+.s-step { padding: 34px 30px 36px; border-radius: 18px; background: rgba(255,255,255,0.6);
   border: 1px solid var(--tint-edge); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
 .s-step:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(20,26,38,0.10); }
 .s-step .n { font-family: var(--f-serif); font-size: 13px; font-weight: 700; color: var(--text-dim); letter-spacing: .1em; }
@@ -2170,7 +2174,7 @@ footer {
    on touch, with buttons and dots for pointer and keyboard. This is how the
    page carries shared living, flex plans and investing without spending four
    more screens on them — the choice is there when wanted, invisible when not. */
-.car { position: relative; margin-top: 40px; }
+.car { position: relative; margin-top: 64px; }
 .car-track { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory;
   scroll-behavior: smooth; padding: 4px 4px 20px; margin: -4px -4px 0;
   scrollbar-width: none; -ms-overflow-style: none; }
