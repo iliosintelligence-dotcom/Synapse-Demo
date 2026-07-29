@@ -109,8 +109,17 @@
     .cmptable .warn { color: #b0521f; font-weight: 600; }
     .cmpclose { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 17px; color: var(--ink-dim); cursor: pointer; }
 
-    .empty { display: none; flex-direction: column; align-items: center; gap: 6px; padding: 56px 20px; color: var(--ink-muted); font-size: 14px; text-align: center; }
-    .grid:empty + .empty { display: flex; }
+    /* visibility is owned by JS (the [hidden] attribute), not by :empty —
+       the copy differs for loading vs load-failed vs nothing-matched */
+    /* sits on its own frosted surface — this page has a photographic
+       background, and body copy must never be read against it directly */
+    .empty { display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 48px 28px; color: var(--ink-muted); font-size: 14px; text-align: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,251,246,0.72));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: var(--radius);
+      box-shadow: 0 18px 44px rgba(122,62,22,0.12); }
+    .empty[hidden] { display: none; }
     .empty-ttl { font-family: var(--f-serif); font-weight: 500; font-size: 20px; color: var(--ink); margin-top: 4px; }
     .empty-sub { max-width: 380px; line-height: 1.6; margin-bottom: 8px; }
     .empty-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
@@ -169,16 +178,8 @@
     </div>
 
     <div class="grid" id="grid"></div>
-    <div class="empty">
-      <span data-lottie="empty-search" style="width:150px;height:120px"></span>
-      <div class="empty-ttl">No homes fit this exact brief yet</div>
-      <p class="empty-sub">That usually just means the brief is a little tight. Try one of these:</p>
-      <div class="empty-acts">
-        <a class="btn btn-ghost" href="toju.html?ask=Widen my budget a little and show me what opens up">Widen the budget</a>
-        <a class="btn btn-ghost" href="toju.html?ask=Show me good homes in nearby areas too">Try a nearby area</a>
-        <a class="btn btn-primary" href="toju.html?ask=Help me find homes similar to what I asked for">Ask Toju to help</a>
-      </div>
-    </div>
+    <!-- filled by renderEmptyState(): loading · load-failed · nothing matched -->
+    <div class="empty" role="status" aria-live="polite" hidden></div>
   </div>
 
   <div class="cmpbar" id="cmpbar">
@@ -206,14 +207,11 @@
     // matches-shared.js + docs/STATE_CONTRACT.md
     const { naira, esc } = window.SynMatches;
 
-    const demoMatches = [
-      { id: 'd1', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', priceN: 148e6, ttl: '3-Bed Terrace, Ikate', loc: 'Ikate, Lekki', score: 91, match: 94, flood: 22, power: 68, yield: 7.1, why: '<b>Why:</b> ₦2M under budget, 12 min from your preferred school run, high-growth corridor.' },
-      { id: 'd2', img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', priceN: 165e6, ttl: '3-Bed Apartment, Lekki Phase 1', loc: 'Lekki Phase 1, Lagos', score: 94, match: 87, flood: 28, power: 74, yield: 8.4, why: '<b>Why:</b> slightly over budget, but ₦12M below area median with an 8.4% yield.' },
-      { id: 'd3', img: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', priceN: 142e6, ttl: '2-Bed Flat + Study, Victoria Island', loc: 'Victoria Island, Lagos', score: 89, match: 82, flood: 51, power: 79, yield: 6.2, why: '<b>Why:</b> shortest commute of the five; the study converts to a third bedroom.' },
-      { id: 'd4', img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', priceN: 150e6, ttl: '3-Bed Duplex, Osapa London', loc: 'Osapa, Lekki', score: 88, match: 80, flood: 33, power: 66, yield: 6.8, why: '<b>Why:</b> right at budget with the most space per naira in this set.' },
-      { id: 'd5', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', priceN: 139e6, ttl: '3-Bed Terrace, Sangotedo', loc: 'Sangotedo, Ajah', score: 84, match: 76, flood: 58, power: 55, yield: 7.7, why: '<b>Why:</b> best price of the five — budget for the longer commute and flood check.' },
-    ];
-    let items = demoMatches.slice();
+    // Start empty on purpose: we never show sample homes as if they were real
+    // inventory. The page opens in a loading state and only ever renders
+    // listings that actually came back from the server.
+    let items = [];
+    let loadState = 'loading';   // loading | ready | failed
     let saves = new Set(JSON.parse(localStorage.getItem('synapse_saved') || '[]'));
     let picked = new Set();
     let searchQ = '';
@@ -254,9 +252,48 @@
       const grid = document.getElementById('grid');
       grid.innerHTML = shownItems.map((l, i) =>
         SynMatches.listingCardHtml(l, i, { saves, picked, compare: true })).join('');
+      renderEmptyState();
       if (window.synMotion) synMotion.refresh();
       drawMap();
       updateBar();
+    }
+
+    /* The empty area speaks for whichever of three situations is true. It is
+       never filled with sample homes — an empty result is shown as empty. */
+    function renderEmptyState() {
+      const box = document.querySelector('.empty');
+      if (!box) return;
+      if (shownItems.length) { box.hidden = true; return; }
+      box.hidden = false;
+
+      if (loadState === 'loading') {
+        box.innerHTML = '<div class="empty-ttl">Finding homes…</div>'
+          + '<p class="empty-sub">Checking every verified listing across Nigeria.</p>';
+        return;
+      }
+      if (loadState === 'failed') {
+        // an empty map of Nigeria is just noise when there's nothing to plot
+        const m = document.getElementById('map'); if (m) m.style.display = 'none';
+        const bt = document.getElementById('briefTxt');
+        if (bt) bt.textContent = 'We couldn’t load any homes just now.';
+        box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
+          + '<p class="empty-sub">' + (navigator.onLine
+              ? 'We couldn’t reach our listings — nothing was found. This is on our side, not yours.'
+              : 'You’re offline, so nothing could be found. Reconnect and try again.') + '</p>'
+          + '<div class="empty-acts">'
+          + '<button class="btn btn-primary" type="button" id="retryLoad">Try again</button>'
+          + '<a class="btn btn-ghost" href="toju.html">Ask Toju instead</a></div>';
+        const r = document.getElementById('retryLoad');
+        if (r) r.addEventListener('click', () => location.reload());
+        return;
+      }
+      // loaded fine — genuinely nothing matched this brief/filters
+      box.innerHTML = '<div class="empty-ttl">No homes fit this exact brief yet</div>'
+        + '<p class="empty-sub">That usually just means the brief is a little tight. Try one of these:</p>'
+        + '<div class="empty-acts">'
+        + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Widen my budget a little and show me what opens up') + '">Widen the budget</a>'
+        + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Show me good homes in nearby areas too') + '">Try a nearby area</a>'
+        + '<a class="btn btn-primary" href="toju.html?ask=' + encodeURIComponent('Help me find homes similar to what I asked for') + '">Ask Toju to help</a></div>';
     }
 
     const mapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
@@ -387,7 +424,9 @@
       fetch(BROWSE_BASE + '&property_type=eq.shared&order=listed_at.desc&limit=200', { headers: BROWSE_HDR }).then((r) => r.json()),
     ]).then(([verifiedRows, unvRows, sharedRows]) => {
       const rows = [...(Array.isArray(verifiedRows) ? verifiedRows : []), ...(Array.isArray(unvRows) ? unvRows : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
-      if (hasSessionView || rows.length === 0) return;
+      loadState = 'ready';
+      if (hasSessionView) return;
+      if (rows.length === 0) { render(); return; }   // truly nothing live — say so
       items = rows.map((p, i) => ({
         id: p.id, img: null,
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
@@ -406,31 +445,13 @@
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
       render();
-    }).catch(showLoadError);
-
-    /* Load failure ≠ "nothing matched". The page falls back to sample homes,
-       so silence would present samples as live inventory. Say what happened
-       in a banner (never destroy what's on screen) and offer the one action
-       that helps. Auto-reloads when the connection comes back. */
-    function showLoadError() {
-      if (document.getElementById('loadErr')) return;
-      const bar = document.createElement('div');
-      bar.id = 'loadErr';
-      bar.className = 'load-err';
-      bar.setAttribute('role', 'alert');
-      const ic = (window.SynIcons && SynIcons.has('unverified')) ? SynIcons.svg('unverified') : '!';
-      bar.innerHTML = '<span class="li">' + ic + '</span>'
-        + '<span class="lt"><b>' + (navigator.onLine
-            ? 'We couldn’t load live listings just now.'
-            : 'You’re offline.')
-        + '</b> These are sample homes — not live inventory. Your saved homes are safe.</span>'
-        + '<button class="lr" type="button">Try again</button>';
-      bar.querySelector('.lr').addEventListener('click', () => location.reload());
-      const anchor = document.querySelector('.brief');
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(bar, anchor.nextSibling);
-      else document.querySelector('.wrap').prepend(bar);
-    }
-    window.addEventListener('online', () => { if (document.getElementById('loadErr')) location.reload(); });
+    }).catch(() => {
+      // Nothing came back: show nothing. The empty state explains why, and
+      // no sample homes are ever passed off as live inventory.
+      if (hasSessionView) return;
+      loadState = 'failed'; items = []; render();
+    });
+    window.addEventListener('online', () => { if (loadState === 'failed') location.reload(); });
 
     // ── real matches from this visitor's Toju session ──
     if (VISITOR) {
