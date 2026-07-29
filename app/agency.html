@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="matches-shared.js"></script>
+  <script src="syndication.js"></script>
   <style>
     /* Agency portal — separate world from the customer app. Customer pages
        never link here; you arrive via "For Agencies" on the landing page.
@@ -807,6 +808,38 @@
     .ovs.verified { color: var(--success); background: rgba(46,125,79,0.1); }
     .ovs.pending { color: var(--gold); background: rgba(156,122,30,0.12); }
 
+    /* ── Campaign generator ───────────────────────────────────────────── */
+    .cmp-gen { padding: 20px 22px 22px; margin-top: 18px; }
+    .cmp-head { margin-bottom: 14px; }
+    .cmp-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    .cmp-controls select { flex: 1; min-width: 220px; padding: 11px 13px; border-radius: 12px;
+      border: 1px solid var(--border); background: #fff; font: 13.5px var(--f-sans); color: var(--ink); }
+    .cmp-out { margin-top: 18px; }
+    .cmp-out[hidden] { display: none; }
+    .cmp-sum { display: flex; gap: 18px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px;
+      background: rgba(0,0,0,0.03); font-size: 13px; margin-bottom: 14px; }
+    .cmp-sum b { font-family: var(--f-serif); font-size: 17px; }
+    .cmp-plat { margin-top: 16px; }
+    .cmp-plat-h { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 9px; }
+    .cmp-plat-h .k { width: 21px; height: 21px; border-radius: 6px; color: #fff; font-size: 9px;
+      display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .cmp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap: 11px; }
+    .cmp-card { border: 1px solid var(--border); border-radius: 13px; padding: 12px; background: #fff;
+      display: flex; flex-direction: column; gap: 8px; }
+    .cmp-card.bad { border-color: rgba(122,39,26,0.35); background: rgba(122,39,26,0.03); }
+    .cmp-angle { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-dim); }
+    .cmp-hook { font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+    .cmp-body { font-size: 12px; color: var(--ink-muted); line-height: 1.55; white-space: pre-wrap;
+      max-height: 74px; overflow: hidden; }
+    .cmp-meta { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--ink-dim); margin-top: auto; }
+    .cmp-meta .ok { color: var(--success); font-weight: 700; }
+    .cmp-meta .no { color: #a8402b; font-weight: 700; }
+    .cmp-run { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    .cmp-bar { flex: 1; min-width: 160px; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.07); overflow: hidden; }
+    .cmp-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .3s ease; }
+    .cmp-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.55; }
+
     /* ── Page rail ────────────────────────────────────────────────────────
        Hick's Law applied to a dense portal: the main column carries the ONE
        thing you came to do; supporting numbers, channel toggles and minor
@@ -1142,6 +1175,24 @@
           <div class="pane-split">
             <div class="pane-main">
               <div class="s-bento" id="socialBento"></div>
+
+              <!-- ══ Campaign generator ══════════════════════════════════
+                   One verified listing → every angle × every platform, each
+                   validated against that platform's real limits before it can
+                   be queued. -->
+              <div class="card cmp-gen" id="cmpGen">
+                <div class="cmp-head">
+                  <div>
+                    <div class="h2">Generate a campaign</div>
+                    <p class="sub" style="margin:0">Pick a verified listing. Synapse writes every angle for every channel, then checks each one against that platform's limits.</p>
+                  </div>
+                </div>
+                <div class="cmp-controls">
+                  <select id="cmpProp" aria-label="Listing"></select>
+                  <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px">✨ Generate</button>
+                </div>
+                <div class="cmp-out" id="cmpOut" hidden></div>
+              </div>
             </div>
 
             <aside class="pane-rail" aria-label="Channels and performance">
@@ -2644,6 +2695,130 @@
       { title: '2-Bed Flat, Victoria Island', price: 142000000, city: 'Lagos', area: 'Victoria Island', bedrooms: 2, listingType: 'sale', trustScore: 90, img: IMG.vi },
     ];
     const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp' };
+
+    /* ── Campaign generator ────────────────────────────────────────────────
+       Pulls real verified listings from the database, fans each into every
+       angle × platform, and shows what passed validation before anything can
+       be queued. Publishing runs in rehearsal mode — see syndication.js for
+       why tokens never live in the client. */
+    (function () {
+      var sel = document.getElementById('cmpProp');
+      var go  = document.getElementById('cmpGo');
+      var out = document.getElementById('cmpOut');
+      if (!sel || !go || !window.SynSyndicate) return;
+      var S = window.SynSyndicate, rows = [], campaign = null, running = false;
+
+      // declared locally: the page's other constants live in a different IIFE
+      // scope, and reaching for them here throws before anything renders.
+      var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+      var ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+
+      var BROWSE = SUPABASE_URL + '/rest/v1/properties'
+        + '?select=id,title,city,listing_type,property_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
+        + '&status=eq.live&is_active=is.true&verification_status=eq.verified'
+        + '&order=trust_score.desc&limit=12';
+
+      sel.innerHTML = '<option>Loading verified listings…</option>';
+      fetch(BROWSE, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!Array.isArray(d) || !d.length) throw new Error('none');
+          rows = d.map(function (p) {
+            return { id: p.id, title: p.title, city: p.city, listing_type: p.listing_type,
+              property_type: p.property_type, price: p.price, bedrooms: p.bedrooms,
+              trust_score: p.trust_score,
+              neighbourhood: p.neighbourhoods && p.neighbourhoods.name,
+              flood_risk: p.neighbourhoods && p.neighbourhoods.flood_risk,
+              power_reliability: p.neighbourhoods && p.neighbourhoods.power_reliability };
+          });
+          sel.innerHTML = rows.map(function (r, i) {
+            return '<option value="' + i + '">' + esc(r.title) + ' · ' + S.naira(r.price)
+              + (r.listing_type === 'rent' ? '/yr' : '') + '</option>';
+          }).join('');
+        })
+        .catch(function () {
+          sel.innerHTML = '<option value="">Could not load listings — try again</option>';
+        });
+
+      go.addEventListener('click', function () {
+        if (running || !rows.length) return;
+        var row = rows[+sel.value || 0];
+        if (!row) return;
+        campaign = S.generate(row);
+        render();
+      });
+
+      function render() {
+        var ok = campaign.variants.filter(function (v) { return !v.issues.length; });
+        var bad = campaign.variants.length - ok.length;
+        var html = '<div class="cmp-sum">'
+          + '<span><b>' + campaign.variants.length + '</b> variants</span>'
+          + '<span><b>' + S.ANGLES.length + '</b> angles</span>'
+          + '<span><b>' + Object.keys(S.PLATFORMS).length + '</b> channels</span>'
+          + '<span style="color:var(--success)"><b>' + ok.length + '</b> ready</span>'
+          + (bad ? '<span style="color:#a8402b"><b>' + bad + '</b> need attention</span>' : '')
+          + '</div>';
+
+        Object.keys(S.PLATFORMS).forEach(function (pl) {
+          var spec = S.PLATFORMS[pl];
+          var vs = campaign.variants.filter(function (v) { return v.platform === pl; });
+          if (!vs.length) return;
+          html += '<div class="cmp-plat"><div class="cmp-plat-h">'
+            + '<span class="k" style="background:' + spec.colour + '">' + esc(spec.short) + '</span>'
+            + esc(spec.label) + '</div><div class="cmp-grid">'
+            + vs.map(function (v) {
+                var bodyOnly = v.caption.split('\n\n').slice(1).join('\n\n');
+                return '<div class="cmp-card' + (v.issues.length ? ' bad' : '') + '" title="' + esc(v.angleWhy) + '">'
+                  + '<div class="cmp-angle">' + esc(v.angleName) + '</div>'
+                  + '<div class="cmp-hook">' + esc(v.hook) + '</div>'
+                  + '<div class="cmp-body">' + esc(bodyOnly) + '</div>'
+                  + '<div class="cmp-meta">'
+                  + (v.media ? esc(v.media.label) + ' · ' + esc(v.ratio || '') : 'no creative')
+                  + ' · ' + (v.issues.length
+                      ? '<span class="no">' + esc(v.issues[0]) + '</span>'
+                      : '<span class="ok">passes</span>')
+                  + '</div></div>';
+              }).join('')
+            + '</div></div>';
+        });
+
+        html += '<div class="cmp-run">'
+          + '<button class="btn btn-primary" id="cmpRun" style="padding:11px 18px;font-size:13.5px">Run syndication (' + ok.length + ')</button>'
+          + '<div class="cmp-bar"><i id="cmpBar"></i></div>'
+          + '<span id="cmpStat" style="font-size:12.5px;color:var(--ink-muted);min-width:120px"></span>'
+          + '</div>'
+          + '<p class="cmp-note"><b>Rehearsal mode.</b> This runs the full pipeline — validation, idempotency keys, bounded concurrency — and shows exactly what would be sent, without touching a real account. Connecting live accounts needs the <code>social-publish</code> endpoint and platform tokens in Supabase secrets, never in this page.</p>';
+
+        out.hidden = false;
+        out.innerHTML = html;
+        document.getElementById('cmpRun').addEventListener('click', run);
+      }
+
+      function run() {
+        if (running || !campaign) return;
+        running = true;
+        var btn = document.getElementById('cmpRun');
+        var bar = document.getElementById('cmpBar');
+        var stat = document.getElementById('cmpStat');
+        btn.disabled = true; btn.textContent = 'Publishing…';
+
+        var q = S.createQueue({ mode: 'dry', concurrency: 3 });
+        q.add(campaign.variants);
+        q.onChange(function (items, sum) {
+          var done = sum.published + sum.failed + sum.skipped;
+          bar.style.width = Math.round((done / Math.max(1, sum.total)) * 100) + '%';
+          stat.textContent = sum.published + ' sent · ' + sum.skipped + ' skipped'
+            + (sum.failed ? ' · ' + sum.failed + ' failed' : '');
+        });
+        q.run().then(function (sum) {
+          running = false;
+          btn.disabled = false;
+          btn.textContent = 'Run again';
+          stat.textContent = sum.published + ' would publish · ' + sum.skipped + ' skipped'
+            + (sum.failed ? ' · ' + sum.failed + ' failed' : '');
+        });
+      }
+    })();
 
     /* Rail figures — moved out of the main column so the page shows the work,
        not the dashboard. Consulted, not parsed. */
