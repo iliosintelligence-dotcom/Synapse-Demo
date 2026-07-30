@@ -123,7 +123,7 @@
   <div class="container">
     <div class="s-lede reveal">
       <div class="s-kicker">What you get</div>
-      <h2 class="s-h2">Built for how people <em>actually</em> buy here.</h2>
+      <h2 class="s-h2">Built for what you <em>actually</em> need.</h2>
       <p class="s-sub">Swipe through — every one of these is live today.</p>
     </div>
 
@@ -131,7 +131,7 @@
       <div class="car-track" id="carTrack" tabindex="0" role="region" aria-label="Platform benefits, swipe or use arrow keys">
 
         <!-- 1 · freshness -->
-        <article class="car-slide" aria-roledescription="slide" aria-label="1 of 4: Nothing stale">
+        <article class="car-slide" aria-roledescription="slide" aria-label="1 of 5: Nothing stale">
           <div class="s-split">
             <div class="s-lede">
               <div class="s-kicker">Nothing stale</div>
@@ -167,7 +167,7 @@
         </article>
 
         <!-- 2 · shared living -->
-        <article class="car-slide" aria-roledescription="slide" aria-label="2 of 4: Shared living">
+        <article class="car-slide" aria-roledescription="slide" aria-label="2 of 5: Shared living">
           <div class="s-split">
             <div class="s-lede">
               <div class="s-kicker">Shared living</div>
@@ -204,7 +204,7 @@
         </article>
 
         <!-- 3 · flex plans -->
-        <article class="car-slide" aria-roledescription="slide" aria-label="3 of 4: Flex plans">
+        <article class="car-slide" aria-roledescription="slide" aria-label="3 of 5: Flex plans">
           <div class="s-split">
             <div class="s-lede">
               <div class="s-kicker">Flex plans</div>
@@ -226,7 +226,7 @@
         </article>
 
         <!-- 4 · investing -->
-        <article class="car-slide" aria-roledescription="slide" aria-label="4 of 4: Investing">
+        <article class="car-slide" aria-roledescription="slide" aria-label="4 of 5: Investing">
           <div class="s-split">
             <div class="s-lede">
               <div class="s-kicker">Investing</div>
@@ -250,11 +250,33 @@
           </div>
         </article>
 
+        <!-- 5 · diaspora -->
+        <article class="car-slide" aria-roledescription="slide" aria-label="5 of 5: Buying from abroad">
+          <div class="s-split">
+            <div class="s-lede">
+              <div class="s-kicker">Buying from abroad</div>
+              <h2 class="s-h2">You do not have to be here to <em>get it right.</em></h2>
+              <p class="s-sub">You cannot walk the compound yourself from London or Houston, so someone verified walks it for you — the same seven checks, on camera, with a video walkthrough you actually watch before you commit to anything.</p>
+              <p class="s-sub" style="margin-top:16px">Toju works in your time zone as much as anyone's, and where a developer accepts structured payments, you see the full schedule in naira before you send a kobo.</p>
+            </div>
+            <div class="demo" role="img" aria-label="A remote verification checklist showing a video walkthrough scheduled and documents cross-checked for a buyer abroad.">
+              <div class="demo-head"><span class="demo-ttl">Remote verification · Lekki Phase 1</span><span class="demo-live"><i></i> For a buyer in London</span></div>
+              <div class="demo-body">
+                <div class="d-check in"><span class="b">✓</span>Video walkthrough recorded and sent</div>
+                <div class="d-check in"><span class="b">✓</span>Title documents cross-checked</div>
+                <div class="d-check in"><span class="b">✓</span>Local rep confirmed it in person</div>
+                <div class="d-check in"><span class="b wait">·</span>Awaiting your questions before you commit</div>
+                <p class="d-cap">You watch the walkthrough before you decide anything.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
       </div>
 
       <div class="car-foot">
         <div class="car-dots" id="carDots" role="tablist" aria-label="Choose a benefit"></div>
-        <span class="car-count" id="carCount">1 / 4</span>
+        <span class="car-count" id="carCount">1 / 5</span>
         <button class="car-btn" id="carPrev" type="button" aria-label="Previous benefit">←</button>
         <button class="car-btn" id="carNext" type="button" aria-label="Next benefit">→</button>
       </div>
@@ -437,11 +459,9 @@ gsap.timeline({ delay: 0.1 })
   .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
   .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
   .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
-  .from('.hero-toju-line', { opacity: 0, y: 18, duration: 0.6, ease: 'power3.out' }, '-=0.45')
   .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
   .from('.hero-trust', { opacity: 0, duration: 0.5 }, '-=0.3')
   .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
-  .from('.hero-toju-chip', { opacity: 0, y: 24, duration: 0.7, ease: 'power3.out' }, '-=0.5')
   .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
 // ─── GSAP scroll reveals ───
 document.querySelectorAll('.reveal').forEach(el => {
@@ -463,28 +483,6 @@ document.querySelectorAll('.reveal-r').forEach(el => {
   });
 });
 
-// Stagger persona list rows
-gsap.fromTo('.persona-row', { opacity: 0, x: -36 }, {
-  opacity: 1, x: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
-  scrollTrigger: { trigger: '.persona-list', start: 'top 85%' }
-});
-gsap.fromTo('.roadmap-step', { opacity: 0, x: 40 }, {
-  opacity: 1, x: 0, duration: 0.8, stagger: 0.16, ease: 'power3.out',
-  scrollTrigger: { trigger: '.roadmap-track', start: 'top 82%' }
-});
-gsap.fromTo('.agency-card', { opacity: 0, y: 40 }, {
-  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
-  scrollTrigger: { trigger: '.agency-cards', start: 'top 85%' }
-});
-gsap.fromTo('.why-crystal', { opacity: 0, y: 44 }, {
-  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
-  scrollTrigger: { trigger: '.why-grid', start: 'top 85%' }
-});
-gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
-  opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
-  scrollTrigger: { trigger: '.flexpay-grid', start: 'top 85%' }
-});
-
 // ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
 // Guarantees content is never left invisible if ScrollTrigger cannot detect
 // the scroller (e.g. embedded preview/iframe contexts) — which would leave
@@ -492,7 +490,7 @@ gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
 // which work everywhere, to reveal each element once it enters the viewport.
 // No-op when ScrollTrigger already revealed an element (opacity already 1).
 (function () {
-  var sel = '.reveal, .reveal-l, .reveal-r, .persona-row, .roadmap-step, .agency-card, .why-crystal, .fp-crystal';
+  var sel = '.reveal, .reveal-l, .reveal-r';
   function revealInView() {
     var vh = window.innerHeight || document.documentElement.clientHeight;
     document.querySelectorAll(sel).forEach(function (el) {

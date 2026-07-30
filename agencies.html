@@ -360,11 +360,9 @@ gsap.timeline({ delay: 0.1 })
   .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
   .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
   .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
-  .from('.hero-toju-line', { opacity: 0, y: 18, duration: 0.6, ease: 'power3.out' }, '-=0.45')
   .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
   .from('.hero-trust', { opacity: 0, duration: 0.5 }, '-=0.3')
   .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
-  .from('.hero-toju-chip', { opacity: 0, y: 24, duration: 0.7, ease: 'power3.out' }, '-=0.5')
   .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
 // ─── GSAP scroll reveals ───
 document.querySelectorAll('.reveal').forEach(el => {
@@ -386,28 +384,6 @@ document.querySelectorAll('.reveal-r').forEach(el => {
   });
 });
 
-// Stagger persona list rows
-gsap.fromTo('.persona-row', { opacity: 0, x: -36 }, {
-  opacity: 1, x: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
-  scrollTrigger: { trigger: '.persona-list', start: 'top 85%' }
-});
-gsap.fromTo('.roadmap-step', { opacity: 0, x: 40 }, {
-  opacity: 1, x: 0, duration: 0.8, stagger: 0.16, ease: 'power3.out',
-  scrollTrigger: { trigger: '.roadmap-track', start: 'top 82%' }
-});
-gsap.fromTo('.agency-card', { opacity: 0, y: 40 }, {
-  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
-  scrollTrigger: { trigger: '.agency-cards', start: 'top 85%' }
-});
-gsap.fromTo('.why-crystal', { opacity: 0, y: 44 }, {
-  opacity: 1, y: 0, duration: 0.8, stagger: 0.14, ease: 'power3.out',
-  scrollTrigger: { trigger: '.why-grid', start: 'top 85%' }
-});
-gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
-  opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
-  scrollTrigger: { trigger: '.flexpay-grid', start: 'top 85%' }
-});
-
 // ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
 // Guarantees content is never left invisible if ScrollTrigger cannot detect
 // the scroller (e.g. embedded preview/iframe contexts) — which would leave
@@ -415,7 +391,7 @@ gsap.fromTo('.fp-crystal', { opacity: 0, y: 40 }, {
 // which work everywhere, to reveal each element once it enters the viewport.
 // No-op when ScrollTrigger already revealed an element (opacity already 1).
 (function () {
-  var sel = '.reveal, .reveal-l, .reveal-r, .persona-row, .roadmap-step, .agency-card, .why-crystal, .fp-crystal';
+  var sel = '.reveal, .reveal-l, .reveal-r';
   function revealInView() {
     var vh = window.innerHeight || document.documentElement.clientHeight;
     document.querySelectorAll(sel).forEach(function (el) {
