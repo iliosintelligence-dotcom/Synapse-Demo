@@ -143,6 +143,10 @@
     .tj-hist { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
       background: rgba(245,245,245,0.92); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
       animation: histIn .25s cubic-bezier(.22,1,.36,1); }
+    /* a class with display:flex outranks the [hidden] attribute — say it again.
+       Without this the panel rendered open on every load regardless of the
+       hidden attribute in the markup, hiding the actual chat behind it. */
+    .tj-hist[hidden] { display: none; }
     @keyframes histIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce){ .tj-hist { animation: none; } }
     .tj-hist-head { flex: none; display: flex; align-items: center; justify-content: space-between;
