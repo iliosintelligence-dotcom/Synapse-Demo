@@ -150,6 +150,28 @@
           <div id="auNote"></div>
         </form>
 
+        <!-- Shown ONLY when the visitor arrives via a password-recovery link.
+             This step used to be missing entirely: clicking the reset link
+             signed people in (Supabase issues a real session for it) and the
+             page just redirected them into the app — they were never actually
+             asked for a new password, so the thing they came here to fix never
+             got fixed. See the recovery handling below. -->
+        <form id="recoverForm" novalidate hidden>
+          <div class="au-field">
+            <label class="au-label" for="rpPass1">New password</label>
+            <input class="au-input" id="rpPass1" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="au-hint">At least 8 characters. Longer is better than complicated.</div>
+            <div class="au-err" id="errRp1" hidden></div>
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="rpPass2">Confirm new password</label>
+            <input class="au-input" id="rpPass2" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="au-err" id="errRp2" hidden></div>
+          </div>
+          <button class="au-submit" id="rpGo" type="submit">Set new password</button>
+          <div id="rpNote"></div>
+        </form>
+
         <p class="au-alt" id="auAlt">
           <button type="button" id="forgotBtn">Forgot your password?</button>
         </p>
@@ -172,6 +194,28 @@
 
       var el = function (id) { return document.getElementById(id); };
       var form = el('auForm'), go = el('auGo'), note = el('auNote');
+
+      /* When a recovery/magic link's one-time token is already spent, Supabase
+         redirects back here with the failure in the hash fragment rather than
+         establishing a session — so no PASSWORD_RECOVERY event ever fires and
+         this would otherwise look like an ordinary, unexplained sign-in page.
+         The common real-world cause: mail providers and corporate security
+         scanners "pre-visit" links in emails to check for phishing, which
+         silently consumes the single-use token before the person ever clicks
+         it themselves. Name that, rather than leaving them guessing. */
+      // Captured now, shown after setMode() runs at the bottom of this script —
+      // setMode() calls clearErrors(), which wipes #auNote, so showing this
+      // immediately just gets erased a few lines later.
+      var expiredLinkMsg = null;
+      (function () {
+        var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+        var code = hash.get('error_code');
+        if (!code) return;
+        expiredLinkMsg = (code === 'otp_expired')
+          ? 'That reset link has already been used or opened — some mail apps open links automatically to scan them, which can use it up before you click it yourself. Request a fresh one below.'
+          : 'That link did not work — request a fresh one below.';
+        history.replaceState(null, '', location.pathname + location.search);
+      })();
 
       /* ── framing: why am I here? ─────────────────────────────────────── */
       var WHY = {
@@ -249,7 +293,11 @@
           return 'That password has appeared in a known breach. Please choose a different one.';
         if (m.indexOf('fetch') > -1 || m.indexOf('network') > -1 || m.indexOf('unreachable') > -1)
           return 'We could not reach the sign-in service. Check your connection and try again.';
-        return 'Something went wrong signing you in. Please try again.';
+        if (m.indexOf('same') > -1 && m.indexOf('password') > -1)
+          return 'That is your current password — choose a different one.';
+        if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
+          return 'This reset link has expired — request a new one and use it within a few minutes.';
+        return 'Something went wrong. Please try again.';
       }
 
       /* ── submit ──────────────────────────────────────────────────────── */
@@ -312,12 +360,93 @@
         }).then(function () { busy = false; });
       });
 
-      // already signed in? don't show a login wall — go where they were headed
-      SynAuth.ready().then(function (u) {
-        if (u) window.location.href = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+      /* ── password recovery ───────────────────────────────────────────────
+         THE BUG THIS FIXES: clicking a "reset password" email link makes
+         Supabase issue a real session for that visitor (that is how the link
+         proves who they are) — but a session is not a new password. The page
+         used to treat "there is a session" and "they are done" as the same
+         thing and just redirected into the app, so nobody who used the reset
+         link ever actually got to change their password. They landed in the
+         app still not knowing a password that works, which is exactly what
+         "login doesn't work" and "reset doesn't work" both trace back to.
+
+         Supabase's SDK fires a dedicated 'PASSWORD_RECOVERY' auth event when
+         the link is a recovery link (as opposed to a normal sign-in). That is
+         the only reliable signal — the URL itself does not visibly say so. */
+      var recovering = false;
+
+      function enterRecoverMode() {
+        recovering = true;
+        el('auWhy').hidden = true;
+        document.querySelector('.au-tabs').hidden = true;
+        form.hidden = true;
+        el('auAlt').hidden = true;
+        el('auH').textContent = 'Choose a new password';
+        el('auP').textContent = 'You are signed in for this one step only — set a password and you are done.';
+        el('recoverForm').hidden = false;
+      }
+
+      function rpFieldError(inputId, errId, msg) {
+        el(errId).textContent = msg; el(errId).hidden = false;
+        el(inputId).setAttribute('aria-invalid', 'true');
+      }
+      function rpClearErrors() {
+        ['errRp1', 'errRp2'].forEach(function (id) { el(id).hidden = true; el(id).textContent = ''; });
+        ['rpPass1', 'rpPass2'].forEach(function (id) { el(id).removeAttribute('aria-invalid'); });
+        el('rpNote').innerHTML = '';
+      }
+
+      var rpBusy = false;
+      el('recoverForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (rpBusy) return;
+        rpClearErrors();
+        var p1 = el('rpPass1').value, p2 = el('rpPass2').value;
+        var ok = true;
+        if (!p1 || p1.length < 8) { rpFieldError('rpPass1', 'errRp1', 'Use at least 8 characters.'); ok = false; }
+        else if (p1 !== p2) { rpFieldError('rpPass2', 'errRp2', 'These two do not match.'); ok = false; }
+        if (!ok) return;
+
+        rpBusy = true;
+        var rpGo = el('rpGo');
+        rpGo.disabled = true; rpGo.textContent = 'Saving…';
+
+        SynAuth.client().then(function (c) { return c.auth.updateUser({ password: p1 }); })
+          .then(function (res) {
+            if (res && res.error) throw res.error;
+            el('rpNote').innerHTML = '<div class="au-note ok" role="status">Password updated. Taking you in…</div>';
+            var fallback = role === 'agency' ? 'agency.html' : 'toju.html';
+            setTimeout(function () { window.location.href = SynAuth.safeNext(next, fallback); }, 900);
+          })
+          .catch(function (err) {
+            rpBusy = false; rpGo.disabled = false; rpGo.textContent = 'Set new password';
+            el('rpNote').innerHTML = '<div class="au-note bad" role="status">' + friendly(err) + '</div>';
+          });
+      });
+
+      // Event-driven, not timer-based: a setTimeout heuristic here would be
+      // guessing at a race between two async operations. Instead, act only on
+      // the FIRST relevant signal the SDK itself sends — verified empirically
+      // (see commit note) that INITIAL_SESSION fires exactly once on a normal
+      // load, and PASSWORD_RECOVERY fires instead of it when the visitor
+      // arrived via a recovery link. Whichever one arrives is authoritative;
+      // `decided` stops any late/duplicate event from acting twice.
+      var decided = false;
+      SynAuth.client().then(function (c) {
+        c.auth.onAuthStateChange(function (event, session) {
+          if (decided) return;
+          if (event === 'PASSWORD_RECOVERY') {
+            decided = true; recovering = true;
+            enterRecoverMode();
+          } else if (event === 'INITIAL_SESSION') {
+            decided = true;
+            if (session) window.location.href = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+          }
+        });
       });
 
       setMode(mode);
+      if (expiredLinkMsg) showNote('bad', expiredLinkMsg);
     })();
   </script>
 </body>
