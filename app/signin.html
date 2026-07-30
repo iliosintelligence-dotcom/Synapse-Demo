@@ -331,8 +331,29 @@
           // Sign-up with email confirmation returns a user but no session.
           var session = res && res.data && res.data.session;
           if (mode === 'up' && !session) {
-            showNote('ok', 'Check your email to confirm your account, then sign in.');
+            // Supabase intentionally returns 200 with no error when the email
+            // is already registered — that's how it avoids leaking which
+            // emails have accounts via an error message. But it means "check
+            // your email to confirm" is a LIE for someone who already has an
+            // account: nothing about their password changed, and re-showing
+            // that message is exactly what left a real person stuck for
+            // weeks, retrying "sign up" and never getting anywhere. The
+            // documented signal for this case: an already-registered email
+            // comes back with an empty `identities` array; a genuinely new
+            // signup has at least one.
+            var u = res && res.data && res.data.user;
+            var alreadyExists = u && Array.isArray(u.identities) && u.identities.length === 0;
+            if (alreadyExists) {
+              // setMode() calls clearErrors(), which wipes #auNote — call it
+              // BEFORE showNote(), not after (this exact ordering mistake
+              // already bit the expired-link message earlier in this file).
+              setMode('in');
+              el('auEmail').value = email;
+              showNote('bad', 'You already have an account with that email. Sign in below, or reset your password if you have forgotten it.');
+              return;
+            }
             setMode('in');
+            showNote('ok', 'Check your email to confirm your account, then sign in.');
             return;
           }
           var fallback = role === 'agency' ? 'agency.html' : 'toju.html';
