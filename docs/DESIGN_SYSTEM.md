@@ -1,8 +1,21 @@
 # Synapse Design System — Canonical Tokens, Divergence Audit, A11y Fixes
 
-_Author: ui-designer · 2026-07-17 · Direction decided by Dr. David 2026-07-17 (see AGENT_BRIEF.md): warm off-white + terracotta + glassmorphism. Supersedes both the "white/calm-premium" and "dark charcoal/emerald" directions._
+> ⚠️ **SUPERSEDED 2026-07-19 — do not build off this document.**
+> Everything below describes the retired **warm off-white + terracotta +
+> EB Garamond/Lato + glassmorphism** direction. Dr. David pivoted the entire
+> app to **full monochrome, crypt.ee-style** — `#f5f5f5` background, `#363636`
+> ink, `#121212` near-black accents, **no terracotta anywhere**, single
+> typeface **Josefin Sans** app-wide. The canonical spec now lives in
+> [`AGENT_BRIEF.md`](./AGENT_BRIEF.md) under "Brand" and "Typography".
+>
+> This file is kept for history only (the a11y *methodology* in §5–§6 is
+> still sound and worth skimming if you're auditing contrast on the current
+> palette — just re-run the ratios against the new tokens, don't reuse the
+> numbers). Everything terracotta/EB-Garamond-specific below is dead.
 
-**Status:** Direction spec, ready for frontend-developer. Do not implement by copy-pasting page-local styles — implement by extending `app/app.css` `:root` with the tokens below, then replacing hardcoded values per the inventory in §2.
+_Author: ui-designer · 2026-07-17 · Direction decided by Dr. David 2026-07-17 (see AGENT_BRIEF.md): warm off-white + terracotta + glassmorphism. Supersedes both the "white/calm-premium" and "dark charcoal/emerald" directions. **Itself superseded 2026-07-19 — see banner above.**_
+
+**Status:** Retired. Do not implement anything from this document — see AGENT_BRIEF.md for the current canonical tokens.
 
 ---
 
