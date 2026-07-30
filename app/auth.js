@@ -78,10 +78,21 @@
       return u;
     });
   }
+  // The app only cares about two sides (customer / agency), but the database
+  // trigger that provisions public.profiles on signup (handle_new_user) casts
+  // raw_user_meta_data->>'role' to a real Postgres enum: consumer, agent,
+  // agency_admin, agency_owner, platform_admin — NOT the literal strings
+  // 'customer'/'agency' this file used to send. Sending an invalid value
+  // aborts the trigger's transaction and 500s the whole signup (confirmed via
+  // Supabase's own auth logs: every signup was failing this way). Fixed by
+  // sending real enum values and classifying the full vocabulary here, so the
+  // rest of the app keeps its simple two-sided model without knowing this
+  // enum exists.
+  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'platform_admin'];
   function roleOf(u) {
     if (!u) return null;
     var m = u.user_metadata || {};
-    return m.role === 'agency' ? 'agency' : 'customer';
+    return AGENCY_DB_ROLES.indexOf(m.role) > -1 ? 'agency' : 'customer';
   }
 
   /* ── redirect safety ──────────────────────────────────────────────────── */
@@ -107,7 +118,10 @@
         email: email,
         password: password,
         options: {
-          data: { role: opts.role === 'agency' ? 'agency' : 'customer', full_name: opts.name || null },
+          // 'consumer' / 'agency_owner': real handle_new_user enum values —
+          // see the note above roleOf(). A self-serve agency signup is
+          // treated as that agency's owner.
+          data: { role: opts.role === 'agency' ? 'agency_owner' : 'consumer', full_name: opts.name || null },
           emailRedirectTo: window.location.origin + window.location.pathname,
         },
       });

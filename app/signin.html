@@ -177,6 +177,7 @@
         </p>
 
         <p class="au-legal">Synapse never shares your details with an agency until you choose to contact them.</p>
+        <p class="au-legal" id="demoNote" style="margin-top:6px"></p>
       </div>
     </div>
   </div>
@@ -300,6 +301,21 @@
         return 'Something went wrong. Please try again.';
       }
 
+      /* ── DEMO MODE ────────────────────────────────────────────────────────
+         Explicit product decision for this prototype: sign-in succeeds no
+         matter what's typed. Rather than faking the UI, this authenticates a
+         real fixed demo account behind the scenes — one per side — so every
+         real dependent (RLS, the agency-portal role gate, notify.js reading
+         SynAuth.user().id, and so on) keeps working exactly as it would for a
+         genuine account. Nothing downstream had to change. Set DEMO_MODE to
+         false to fall back to real credential checking. */
+      var DEMO_MODE = true;
+      var DEMO_ACCOUNTS = {
+        customer: { email: 'demo-customer@synapse.ng', password: 'SynDemo-Cust-9f42x' },
+        agency:   { email: 'demo-agency@synapse.ng',   password: 'SynDemo-Agcy-7k18q' },
+      };
+      if (DEMO_MODE) el('demoNote').textContent = 'Prototype mode — any email and password gets you in.';
+
       /* ── submit ──────────────────────────────────────────────────────── */
       form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -309,22 +325,28 @@
         var email = el('auEmail').value.trim();
         var pass  = el('auPass').value;
         var name  = el('auName').value.trim();
-        var ok = true;
 
-        if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
-          fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
+        if (!DEMO_MODE) {
+          var ok = true;
+          if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
+            fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
+          }
+          if (!pass || pass.length < 8) {
+            fieldError('auPass', 'errPass', 'Use at least 8 characters.'); ok = false;
+          }
+          if (!ok) return;
         }
-        if (!pass || pass.length < 8) {
-          fieldError('auPass', 'errPass', 'Use at least 8 characters.'); ok = false;
-        }
-        if (!ok) return;
 
         busy = true; go.disabled = true;
         go.textContent = mode === 'up' ? 'Creating your account…' : 'Signing you in…';
 
-        var work = mode === 'up'
-          ? SynAuth.signUp(email, pass, { role: role, name: name })
-          : SynAuth.signIn(email, pass);
+        // Demo mode: whatever was typed (or left blank) is ignored — always
+        // authenticate the fixed account for the current side.
+        var work = DEMO_MODE
+          ? SynAuth.signIn(DEMO_ACCOUNTS[role].email, DEMO_ACCOUNTS[role].password)
+          : (mode === 'up'
+              ? SynAuth.signUp(email, pass, { role: role, name: name })
+              : SynAuth.signIn(email, pass));
 
         work.then(function (res) {
           if (res && res.error) throw res.error;
