@@ -39,6 +39,7 @@
     .tj-head { padding-top: 8px; }
     .tj-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #121212; }
     .tj-title { font-family: var(--f-serif); font-weight: 500; font-size: 40px; letter-spacing: -0.01em; color: var(--ink); display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+    .tj-trust { font-size: 12.5px; font-weight: 500; color: var(--ink-muted); margin-top: 6px; }
     .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(46,125,79,0.14); }
 
     .convo { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
@@ -77,6 +78,7 @@
     .pcard .pthumb span { font-size: 9px; letter-spacing: .08em; opacity: .9; margin-top: 3px; }
     .pcard .price { font-family: var(--f-serif); font-weight: 600; font-size: 21px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .pcard .ttl { font-size: 13px; font-weight: 500; color: var(--ink); }
+    .pcard .vrow { margin: 5px 0 3px; }
     .pcard .meta { font-size: 11.5px; color: var(--ink-muted); }
     .pcard .watch { font-size: 11px; color: var(--ink-muted); margin-top: 3px; }
     .pcard .watch b { color: #b0521f; font-weight: 600; }
@@ -96,6 +98,18 @@
       border: none; border-radius: 100px; padding: 8px 16px; cursor: pointer; transition: opacity .2s, transform .15s; }
     .tj-error .er:hover { opacity: .88; transform: translateY(-1px); }
     .tj-error .er:active { transform: none; }
+
+    /* "Toju remembers your search" — quiet, dismissible, only on return */
+    .tj-memory { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin: 6px 0 2px; padding: 9px 13px; border-radius: 12px;
+      background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.8);
+      backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+    .tj-memory .tj-mem-k { font-size: 11px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: #121212; }
+    .tj-memory .tj-mem-b { font-size: 12.5px; color: var(--ink-muted); min-width: 0; }
+    .tj-memory .tj-mem-x { margin-left: auto; background: none; border: none; cursor: pointer;
+      font-size: 17px; line-height: 1; color: var(--ink-dim); padding: 0 2px; }
+    .tj-memory .tj-mem-x:hover { color: var(--ink); }
 
     .typing .bubble { display: flex; align-items: center; gap: 9px; }
     .typing-dots { display: flex; gap: 4px; }
@@ -199,6 +213,9 @@
     .listing .body { padding: 18px 18px 14px; }
     .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
     .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.22); padding: 3px 9px; border-radius: 100px; }
+    .listing .expiry { font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+      color: #8a4a12; background: rgba(199,106,26,0.10); border: 1px solid rgba(199,106,26,0.28);
+      padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
     .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
     .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
@@ -259,6 +276,7 @@
         <div class="tj-head">
           <div class="tj-eyebrow">Your property advisor</div>
           <div class="tj-title">Toju <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
+          <div class="tj-trust">Verified homes only. No need to sign up.</div>
         </div>
         <!-- past conversations — every chat is kept; open one to pick it back up
              with the homes Toju recommended still on its cards -->
@@ -269,7 +287,7 @@
           </div>
           <div class="tj-hist-list" id="tjHistList"></div>
         </div>
-        <div class="convo-scroll"><div class="convo" id="convo"></div></div>
+        <div class="convo-scroll" aria-live="polite"><div class="convo" id="convo"></div></div>
         <div class="composer">
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
@@ -282,8 +300,8 @@
             </div>
             <div class="suggest" id="tjSuggest">
               <button data-send="3-bed in Lekki under ₦180M">3-bed in Lekki under ₦180M</button>
-              <button data-send="What can I afford on ₦2M a month?">What can I afford monthly?</button>
-              <button data-send="Best value areas for a first home">Good areas for a first home</button>
+              <button data-send="What can I afford on ₦250,000 a month?">What can I afford monthly?</button>
+              <button data-send="Best areas for raising kids">Best areas for raising kids</button>
             </div>
           </div>
         </div>
@@ -378,7 +396,8 @@
         cvSaves = SynMatches.toggleSave(id);   // re-reads storage; no lost updates
         renderCanvas(); return;
       }
-      if (e.target.closest('.listing')) window.location.href = 'property.html';
+      const card = e.target.closest('.listing');
+      if (card) window.location.href = SynMatches.propertyHref(card.getAttribute('data-id'));
     });
     function rebuildCanvas() {
       canvasMatches = []; cvKeys.clear();
@@ -399,10 +418,13 @@
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
           ? '<div class="watch"><b>Worth checking —</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
-        return '<a class="pcard" href="property.html">'
+        return '<a class="pcard" href="' + SynMatches.propertyHref(m.id) + '">'
           + '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>'
           + '<div><div class="price">' + naira(m.price) + (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '') + '</div>'
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
+          // Verification state sits on every card. Toju shows checked and
+          // unchecked homes alike, so the label is what keeps that honest.
+          + '<div class="vrow">' + SynMatches.verifyChip(m.verificationStatus || (m.verified ? 'verified' : 'unverified')) + '</div>'
           + '<div class="meta"><span class="trust" title="Property Confidence — how much of our verification this home has passed">✦ Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
           + esc(m.city || '') + yld + '</div>'
           + room + why + watch + '</div></a>';
@@ -442,12 +464,43 @@
       el.innerHTML = '<div class="col"><div class="bubble">' + esc(text) + '</div></div><div class="av av-user">A</div>';
       convo.appendChild(el); scrollDown();
     }
+    /* Staged waiting narration. A two-pass grounded answer takes real seconds,
+       and an undifferentiated "thinking…" makes every one of them feel like a
+       hang. These say what is actually happening, in Toju's voice, at the two
+       moments a person starts to doubt the page.
+
+       The wording is the doctrine's, not invented here, and it is deliberately
+       non-specific about counts — Toju never claims to be "checking 214
+       listings" unless it is. Cleared by remove(), so a fast reply never shows
+       a stage at all. */
+    const TYPING_STAGES = [
+      { at: 2500, text: 'Checking this against our verified listings…' },
+      { at: 6000, text: 'Still with you — I’d rather get this right than fast.' },
+    ];
+
     function typing() {
       const el = document.createElement('div');
       el.className = 'msg toju typing m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span><span style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div>'
+        + '<div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span>'
+        + '<span class="tj-stage" style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el);
       if (window.synMotion) synMotion.mount(el.querySelector('[data-lottie]'));
+
+      // aria-live so a screen-reader user hears the wait explained too, rather
+      // than silence followed by a wall of text.
+      const stage = el.querySelector('.tj-stage');
+      stage.setAttribute('aria-live', 'polite');
+      const timers = TYPING_STAGES.map((s) => setTimeout(() => {
+        stage.textContent = s.text;
+        scrollDown();
+      }, s.at));
+
+      // Callers do `t.remove()`; override it so the timers cannot fire into a
+      // detached node after the answer has already arrived.
+      const nativeRemove = el.remove.bind(el);
+      el.remove = () => { timers.forEach(clearTimeout); nativeRemove(); };
+
       scrollDown(); return el;
     }
 
@@ -676,7 +729,27 @@
 
     // restore the saved conversation so people continue where they left off:
     // local copy renders instantly, then the server copy (visitor id) wins.
-    const GREETING = "Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're looking for and I'll find verified homes that fit. No forms, no endless scrolling.";
+    /* First-visit greeting. Mirrors FIRST_VISIT_GREETING in the toju-demo edge
+       function — see the placeholder contract documented above that constant.
+       `{{LISTING_COUNT}}` sits immediately before "the homes" so the substituted
+       value carries its own trailing text; an unknown count degrades to "the
+       homes agencies have listed with us", which still reads correctly.
+
+       Never hardcode a number here: a stale count is a trust bug. The count
+       arrives with the restore response and the greeting is rewritten in place.
+
+       It deliberately does not promise everything is verified — Toju shows both
+       and says which is which. The old copy ("verified homes that fit", with a
+       hardcoded "Good afternoon" that was wrong most of the day) promised the
+       opposite of what Toju now does. */
+    const GREETING_TEMPLATE =
+      "I'm Toju — your consultant at Synapse. I work from {{LISTING_COUNT}}the homes agencies have listed with us: "
+      + "I can narrow them to what genuinely fits you, tell you what an area is really like to live in, and connect you to the agency when you're ready.\n\n"
+      + "Some of those homes have passed our seven checks and some haven't yet — I'll tell you which is which every time, and you decide what you're comfortable with. "
+      + "I can't look outside Synapse, and I won't pass your details to anyone until you choose to. So, tell me what's prompting the move.";
+    const greetingWith = (n) =>
+      GREETING_TEMPLATE.replace('{{LISTING_COUNT}}', Number.isFinite(n) && n > 0 ? n.toLocaleString() + ' of ' : '');
+    const GREETING = greetingWith(null);
     function render() {
       convo.innerHTML = '';
       saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])); });
@@ -701,11 +774,55 @@
       if (msgs.length > saved.length) {
         saved = msgs; persist(); render(); rebuildCanvas();
       }
+
+      // Live inventory count → the greeting's placeholder. Only rewrites the
+      // greeting while it is still the ONLY thing said; once a conversation has
+      // started, editing Toju's first line under the user would be dishonest.
+      if (Number.isFinite(d.listingCount) && saved.length === 1 && saved[0].role === 'assistant') {
+        saved[0].content = greetingWith(d.listingCount);
+        persist(); render();
+      }
+
+      // Item 3 — make the memory visible. Toju already remembered; nothing said
+      // so, which is the whole point of the feature: the reason to come back
+      // here instead of scrolling Instagram again is that it kept your thread.
+      showMemoryNote(d.criteria, msgs);
     }).catch(() => {});
 
+    /* A quiet line above the conversation on return, stating what Toju actually
+       still holds. Rendered ONLY from real restored state — the brief the user
+       themselves gave — never a generic "welcome back". If there is no brief and
+       no prior exchange, nothing appears. */
+    function showMemoryNote(criteria, msgs) {
+      const hasThread = Array.isArray(msgs) && msgs.some((m) => m.role === 'user');
+      const brief = criteria && typeof criteria.brief === 'string' ? criteria.brief.trim() : '';
+      if (!hasThread && !brief) return;
+      if (document.getElementById('tjMemory')) return;
+
+      const el = document.createElement('div');
+      el.id = 'tjMemory';
+      el.className = 'tj-memory';
+      el.innerHTML = '<span class="tj-mem-k">Toju remembers your search</span>'
+        + (brief ? '<span class="tj-mem-b">' + esc(brief) + '</span>' : '')
+        + '<button type="button" class="tj-mem-x" aria-label="Dismiss">×</button>';
+      convo.parentNode.insertBefore(el, convo);
+      el.querySelector('.tj-mem-x').addEventListener('click', () => el.remove());
+    }
+
     // deep link from a listing: ?ask=... pre-fills the composer
+    /* Deep link from a listing or the landing hero: ?ask=…
+       It used to only pre-fill the composer, leaving the visitor to press send
+       on their own words — a pointless second step. It now sends, so someone who
+       typed their brief on the landing page lands mid-conversation rather than
+       staring at their own sentence. The URL is cleaned afterwards so a reload
+       doesn't re-ask the same thing. */
     const askParam = new URLSearchParams(location.search).get('ask');
-    if (askParam) { input.value = askParam.slice(0, 300); input.focus(); scrollDown(); }
+    if (askParam) {
+      const q = askParam.slice(0, 300).trim();
+      input.value = q;
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      if (q) { setTimeout(() => send(), 60); } else { input.focus(); scrollDown(); }
+    }
 
 
     /* ── chat history: every conversation is kept, with the homes it surfaced.

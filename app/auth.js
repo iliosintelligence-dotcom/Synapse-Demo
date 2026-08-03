@@ -114,14 +114,24 @@
   function signUp(email, password, opts) {
     opts = opts || {};
     return client().then(function (c) {
+      // 'consumer' / 'agency_owner': real handle_new_user enum values — see
+      // the note above roleOf(). A self-serve agency signup is treated as
+      // that agency's owner, and the DB trigger provisions the agencies row
+      // + owner membership atomically with the profile (migration 0039) —
+      // the client deliberately does NOT sequence any of that, so closing
+      // the tab can never leave an account half-provisioned.
+      var meta = {
+        role: opts.role === 'agency' ? 'agency_owner' : 'consumer',
+        full_name: opts.name || null,
+      };
+      // The agency's display name, typed by the person signing up. Only the
+      // trigger reads this; it is never invented on their behalf.
+      if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
       return c.auth.signUp({
         email: email,
         password: password,
         options: {
-          // 'consumer' / 'agency_owner': real handle_new_user enum values —
-          // see the note above roleOf(). A self-serve agency signup is
-          // treated as that agency's owner.
-          data: { role: opts.role === 'agency' ? 'agency_owner' : 'consumer', full_name: opts.name || null },
+          data: meta,
           emailRedirectTo: window.location.origin + window.location.pathname,
         },
       });

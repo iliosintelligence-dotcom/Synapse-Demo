@@ -1927,9 +1927,21 @@ footer {
 
 .peek-composer { display: flex; align-items: center; gap: 9px; padding: 11px 13px;
   border-top: 1px solid rgba(20,20,20,0.08); background: #fff; }
-.peek-field { flex: 1; font-size: 12.5px; color: var(--text-dim); font-weight: 500; }
+/* Real controls now, not spans dressed as them — reset the browser chrome so
+   the live composer looks exactly like the mock it replaced. */
+.peek-field { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500;
+  font-family: var(--f-sans); border: none; outline: none; background: transparent;
+  padding: 0; min-width: 0; }
+.peek-field::placeholder { color: var(--text-dim); font-weight: 500; }
+.peek-field:focus-visible { outline: none; }
+.peek-composer:focus-within { box-shadow: inset 0 0 0 1px rgba(20,20,20,0.18); }
 .peek-send { width: 26px; height: 26px; border-radius: 50%; background: #1e1e1e; color: #f5f5f5;
-  display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
+  display: flex; align-items: center; justify-content: center; font-size: 13px; flex: none;
+  border: none; cursor: pointer; padding: 0; font-family: var(--f-sans);
+  transition: transform .16s var(--ease), opacity .2s; }
+.peek-send:hover { transform: translateY(-1px); }
+.peek-send:active { transform: none; }
+@media (prefers-reduced-motion: reduce) { .peek-send { transition: none; } .peek-send:hover { transform: none; } }
 
 /* agency variant — leads landing in the portal */
 .pp-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px 0; }
@@ -1992,6 +2004,34 @@ footer {
 .s-band.dark .d-tag { background: #f5f5f5; color: #0e0e0e; }
 .d-tag.ok { background: rgba(46,125,79,0.12); color: #2e7d4f; }
 .d-tag.dead { background: rgba(20,20,20,0.07); color: var(--text-dim); }
+/* ── Freshness demo, played out (item 35) ────────────────────────────────
+   The whole pitch in two seconds: a listing ages, passes 14 days, and goes.
+   JS adds .demo-play when the panel is actually on screen; until then the
+   markup renders exactly as it always did, so nothing depends on the script. */
+.demo-play .d-age span { opacity: 0; transform: scale(.4);
+  animation: dPip .26s var(--ease) forwards; }
+@keyframes dPip { to { opacity: 1; transform: none; } }
+/* the second listing ages out, then the row visibly leaves */
+.demo-play .d-row.expired { animation: dExpire .7s var(--ease) 1.9s both; }
+@keyframes dExpire {
+  0%   { opacity: 1; filter: none; }
+  60%  { opacity: 1; }
+  100% { opacity: .45; filter: grayscale(1); }
+}
+.demo-play .d-row.expired .d-tag.dead { animation: dTagFlip .4s var(--ease) 2.2s both; }
+@keyframes dTagFlip { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.demo-play .d-cap { opacity: 0; animation: dCap .45s var(--ease) 2.7s forwards; }
+@keyframes dCap { to { opacity: 1; } }
+
+/* Motion is decoration here; the claim is in the copy. Stand it all down. */
+@media (prefers-reduced-motion: reduce) {
+  .demo-play .d-age span,
+  .demo-play .d-row.expired,
+  .demo-play .d-row.expired .d-tag.dead,
+  .demo-play .d-cap { animation: none; opacity: 1; transform: none; filter: none; }
+  .demo-play .d-row.expired { opacity: .45; }
+}
+
 .d-row.expired { opacity: .45; }
 .d-row.expired .d-p { text-decoration: line-through; }
 
@@ -2124,6 +2164,43 @@ footer {
 /* ── Agency pricing ────────────────────────────────────────────────────────
    Three columns, real numbers, no "contact us for pricing". Mirrors PRICING
    in app/agency.html — keep them in step. */
+/* ── Billing period toggle (item 43) ─────────────────────────────────── */
+.pr-toggle { display: inline-flex; gap: 2px; margin: 30px auto 0; padding: 4px;
+  border-radius: 100px; border: 1px solid var(--crystal-border); background: rgba(20,20,20,0.03); }
+.pr-toggle[hidden] { display: none; }
+.pr-per { font-family: var(--f-sans); font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; background: none; color: var(--text-muted); padding: 8px 18px;
+  border-radius: 100px; display: inline-flex; align-items: center; gap: 7px;
+  transition: background .2s var(--ease), color .2s var(--ease); }
+.pr-per.on { background: var(--brand); color: #f5f5f5; }
+.pr-save { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px;
+  border-radius: 100px; background: rgba(var(--tint), 0.14); color: #8a4a12; }
+.pr-per.on .pr-save { background: rgba(255,255,255,0.18); color: #fff; }
+@media (prefers-reduced-motion: reduce) { .pr-per { transition: none; } }
+/* the toggle is centred above the grid */
+#pricing .container > .pr-toggle { display: flex; width: max-content; }
+
+/* ── Plan comparison table ────────────────────────────────────────────── */
+.pr-compare { margin-top: 34px; border-top: 1px solid var(--crystal-border); padding-top: 22px; }
+.pr-compare > summary { cursor: pointer; font-family: var(--f-accent); font-size: 12px;
+  font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brand-text); list-style: none; }
+.pr-compare > summary::-webkit-details-marker { display: none; }
+.pr-compare > summary::after { content: ' ↓'; }
+.pr-compare[open] > summary::after { content: ' ↑'; }
+/* wide tables scroll inside their own box — the page never scrolls sideways */
+.pr-tablewrap { overflow-x: auto; margin-top: 18px; }
+.pr-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+.pr-table th, .pr-table td { padding: 11px 14px; text-align: center;
+  border-bottom: 1px solid rgba(20,20,20,0.07); }
+.pr-table thead th { font-family: var(--f-accent); font-size: 11.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-muted); border-bottom-color: rgba(20,20,20,0.16); }
+.pr-table tbody th[scope="row"] { text-align: left; font-weight: 500; color: var(--text); }
+.pr-table .hi { background: rgba(20,20,20,0.035); }
+.pr-table thead .hi { color: var(--text); font-weight: 700; }
+.pr-table .no { color: var(--text-dim); }
+.pr-table .pr-neutral { text-align: left; color: var(--text-muted); font-style: italic; }
+
 .pr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: 18px; margin-top: 44px; align-items: start; }
 .pr-card { position: relative; padding: 28px 26px 26px; border-radius: 20px;
   border: 1px solid var(--crystal-border); background: rgba(255,255,255,0.6);
@@ -2164,3 +2241,48 @@ footer {
   text-decoration: none; line-height: 1;
 }
 .aud-seg:hover { text-decoration: none; }
+
+/* ── Sticky CTA bar ────────────────────────────────────────────────────────
+   A floating pill above the fold's edge. Monochrome ink like every other
+   button; no tint, no glow. Enters and leaves on transform/opacity only —
+   visibility flips discretely (not animated) so the off-screen bar can never
+   be tabbed into. Bottom offset respects notched phones. */
+.sticky-cta {
+  position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 900;
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--crystal-border-bright);
+  border-radius: 100px;
+  box-shadow: 0 16px 44px rgba(20,26,38,0.20), 0 2px 8px rgba(20,26,38,0.08);
+  transform: translate(-50%, calc(100% + 40px));
+  opacity: 0; visibility: hidden;
+  transition: transform .45s var(--ease), opacity .35s ease, visibility 0s .45s;
+}
+.sticky-cta.show {
+  transform: translate(-50%, 0);
+  opacity: 1; visibility: visible;
+  transition: transform .45s var(--ease), opacity .35s ease;
+}
+.sticky-cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 100px;
+  font-family: var(--f-sans); font-size: 13.5px; font-weight: 600; letter-spacing: .01em;
+  color: #f5f5f5; background: var(--brand);
+  text-decoration: none; white-space: nowrap;
+  transition: background .2s;
+}
+.sticky-cta-btn:hover { background: var(--brand-dim); }
+.sticky-cta-x {
+  width: 38px; height: 38px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--text-muted);
+  font-size: 13px; cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.sticky-cta-x:hover { color: var(--text); background: rgba(20,20,20,0.06); }
+@media (prefers-reduced-motion: reduce) {
+  .sticky-cta, .sticky-cta.show { transition: none; }
+}

@@ -15,12 +15,40 @@
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  const naira = (n) => {
+  /* ── Money, in whatever the listing is priced in ────────────────────────
+     This was naira(): it hardcoded ₦ and the ₦-scale shorthand, so a London or
+     Nairobi listing would have rendered as naira. Prices now format from the
+     listing's own ISO 4217 currency (properties.currency).
+
+     Abbreviation is deliberately currency-aware. "₦165M" reads naturally where
+     a home costs hundreds of millions; "£0.4M" does not. So we only abbreviate
+     once the number is genuinely long, and otherwise let Intl produce the
+     conventional form for that currency — including where the symbol goes,
+     which differs by locale and is the sort of thing that quietly marks a
+     product as foreign. */
+  const CURRENCY_FALLBACK = 'NGN';
+
+  function money(n, currency) {
     n = Number(n) || 0;
-    if (n >= 1e9) return '₦' + (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 1) + 'B';
-    if (n >= 1e6) return '₦' + Math.round(n / 1e6) + 'M';
-    return '₦' + n.toLocaleString();
-  };
+    const code = /^[A-Za-z]{3}$/.test(currency || '') ? String(currency).toUpperCase() : CURRENCY_FALLBACK;
+    const fmt = (value, opts) => {
+      try {
+        return new Intl.NumberFormat(undefined, Object.assign({
+          style: 'currency', currency: code, maximumFractionDigits: 0,
+        }, opts)).format(value);
+      } catch (e) {
+        return code + ' ' + Math.round(value).toLocaleString();   // unknown code: never crash a price
+      }
+    };
+    // Abbreviate only when the plain form gets unwieldy (7+ digits).
+    if (Math.abs(n) >= 1e9) return fmt(n / 1e9, { maximumFractionDigits: 1 }) + 'B';
+    if (Math.abs(n) >= 1e6) return fmt(n / 1e6, { maximumFractionDigits: n % 1e6 === 0 ? 0 : 1 }) + 'M';
+    return fmt(n);
+  }
+
+  /* Kept so existing call sites keep working while the app is converted market
+     by market. New code should call money(amount, listing.currency). */
+  const naira = (n) => money(n, CURRENCY_FALLBACK);
 
   // deterministic photo pool — cards without a real image cycle through these
   const IMG_POOL = [
@@ -46,6 +74,13 @@
     return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
   }
 
+  // Deep link to the property page. Every card tap must carry the listing id —
+  // a bare property.html opens the wrong (demo) property. encodeURIComponent
+  // output is also safe inside a double-quoted HTML attribute.
+  function propertyHref(id) {
+    return id ? 'property.html?id=' + encodeURIComponent(id) : 'property.html';
+  }
+
   // clear verification badge on every card so buyers know exactly what's checked
   // (unified line icons via SynIcons when loaded; text-glyph fallback otherwise)
   function icon(name, fallback) {
@@ -65,7 +100,10 @@
       img: null, // renderer falls back to IMG_POOL[i % IMG_POOL.length]
       kind: m.room != null ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
       per: m.listingType === 'rent',
-      vstatus: 'verified', // Toju only ever recommends verified homes
+      // Toju shows every matching home and labels each one. This MUST come from
+      // the row — hardcoding 'verified' here would stamp the badge on listings
+      // nobody has checked, which is the single worst thing this UI could do.
+      vstatus: m.verificationStatus || (m.verified ? 'verified' : 'unverified'),
       deal: m.room != null ? 'Shared room' : m.listingType === 'rent' ? 'For rent' : 'For sale',
       priceN: Number(m.price) || 0,
       ttl: m.title || '',
@@ -86,6 +124,24 @@
   //   compare — include the compare checkbox (browse-only tool; the canvas
   //             deliberately omits it — on the canvas you just tell Toju)
   //   picked  — Set of ids ticked for compare
+  /* Expiry chip — real scarcity, not manufactured.
+     It says "expires", never "re-confirmation due": `expires_at` is the
+     listing's own visibility window, and a re-confirmation claim would assert a
+     verification re-check that nothing performs. The date is enforced, not
+     decorative — properties_select_public hides the row past it and Toju's
+     matcher uses the same clock — so a buyer acting on this chip is acting on
+     something true. Shown only inside the last 3 days; a fortnight-long
+     countdown is just pressure. */
+  function expiryChip(l) {
+    if (!l || !l.expiresAt) return '';
+    const ms = new Date(l.expiresAt).getTime() - Date.now();
+    if (!Number.isFinite(ms) || ms <= 0) return '';
+    const days = Math.ceil(ms / 864e5);
+    if (days > 3) return '';
+    const label = days === 1 ? 'Expires tomorrow' : 'Expires in ' + days + ' days';
+    return `<span class="expiry" title="Listings come down after 14 days unless the agency re-lists them">${label}</span>`;
+  }
+
   function listingCardHtml(l, i, opts) {
     const o = opts || {};
     const saves = o.saves || new Set();
@@ -94,8 +150,11 @@
     const matchChip = l.match
       ? `<span class="match">${l.match}% match</span>`
       : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`;
+    // No stopPropagation here: it used to swallow the click before the page's
+    // delegated grid handler ever saw it, so ticking compare never registered.
+    // The browse handler now guards navigation on .cmpbox instead.
     const cmpBox = o.compare
-      ? `<label class="cmpbox" onclick="event.stopPropagation()"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
+      ? `<label class="cmpbox"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
       : '';
     const score = (l.vstatus || 'verified') === 'verified'
       ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
@@ -106,9 +165,10 @@
           <div class="tags">
             ${verifyChip(l.vstatus)}
             ${matchChip}
+            ${expiryChip(l)}
             ${cmpBox}
           </div>
-          <div class="price">${naira(l.priceN)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
+          <div class="price">${money(l.priceN, l.currency)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
           <div class="ttl">${esc(l.ttl)}</div>
           <div class="loc">${esc(l.loc)}</div>
           ${l.why ? `<div class="why">${l.why}</div>` : ''}
@@ -144,7 +204,7 @@
       const vcls = (l.vstatus || 'verified') === 'verified' ? ' ok' : '';
       L.marker(c, { icon: L.divIcon({
         className: 'pin-wrap',
-        html: `<div class="price-pin${vcls}"><span class="pv">${naira(l.priceN)}</span></div><span class="pin-tail"></span>`,
+        html: `<div class="price-pin${vcls}"><span class="pv">${money(l.priceN, l.currency)}</span></div><span class="pin-tail"></span>`,
         iconSize: [0, 0], iconAnchor: [0, 0],
       }) })
         .addTo(st.layer)
@@ -186,6 +246,28 @@
     });
   }
 
-  window.SynMatches = { esc, naira, IMG_POOL, GEO, coords, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
-    readSaves, toggleSave, onSavesChanged, SAVES_KEY };
+  /* ── Recently viewed — device-local history ─────────────────────────────
+     A small snapshot of each listing the user actually opened, newest first,
+     capped. Only ever written at the moment of a real card tap, so the rail
+     can never show a home the user hasn't seen. Same race-safe discipline as
+     saves: re-read at the moment of the write, apply one delta, write back. */
+  const VIEWS_KEY = 'synapse_recent_views';
+  const VIEWS_CAP = 8;
+  function readViews() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(VIEWS_KEY) || '[]');
+      return Array.isArray(raw) ? raw.filter((v) => v && v.id) : [];
+    } catch (e) { return []; }
+  }
+  function recordView(l) {
+    if (!l || !l.id) return readViews();
+    const now = readViews().filter((v) => v.id !== l.id);
+    now.unshift({ id: l.id, ttl: l.ttl || '', loc: l.loc || '', priceN: Number(l.priceN) || 0, per: !!l.per, at: Date.now() });
+    const capped = now.slice(0, VIEWS_CAP);
+    try { localStorage.setItem(VIEWS_KEY, JSON.stringify(capped)); } catch (e) {}
+    return capped;
+  }
+
+  window.SynMatches = { esc, money, naira, IMG_POOL, GEO, coords, propertyHref, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
+    readSaves, toggleSave, onSavesChanged, SAVES_KEY, readViews, recordView, VIEWS_KEY };
 })();

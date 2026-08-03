@@ -45,6 +45,14 @@
     .more-checks[open] summary { color: var(--ink-muted); }
     @media (prefers-reduced-motion: reduce){ .more-checks summary::after { transition: none; } }
     .ringbig { width: 56px; height: 56px; border-radius: 50%; border: 3.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 20px; color: var(--ink); }
+    /* Property confidence: shown inline here only on mobile, where there is no
+       side canvas to hold it. On desktop it moves to .pvc-head instead — see
+       the min-width:901px rule below — so it stops competing with price,
+       facts and the description for attention in the same card (Hick's Law:
+       the fewer things asking for a decision at once, the faster the read). */
+    .pvtrust-row { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+    .pvtrust-row[hidden] { display: none; }
+    @media (min-width: 901px) { .pvtrust-row { display: none; } }
     .agency { display: flex; align-items: center; gap: 14px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
@@ -140,6 +148,12 @@
     .pv-canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #ededed; position: relative; }
     .pvc-head { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
     .pvc-title { font: 600 15px var(--f-serif); color: var(--ink); }
+    .pvc-trust { display: flex; align-items: center; gap: 9px; }
+    .pvc-trust[hidden] { display: none; }
+    .pvc-ring { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 12.5px; color: var(--ink); flex: none; }
+    .pvc-trust-txt { display: flex; flex-direction: column; line-height: 1.3; }
+    .pvc-trust-txt b { font-size: 12px; font-weight: 600; color: var(--ink); }
+    .pvc-trust-txt small { font-size: 10.5px; color: var(--ink-dim); }
     .pvc-tabs { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
     .pvc-tabs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; cursor: pointer; transition: .15s; }
     .pvc-tabs button:hover { color: var(--ink); }
@@ -204,28 +218,32 @@
     <div class="dots" id="deckDots"></div>
 
     <div class="deck" id="deck">
+    <!-- Every value below is painted from the database by hydrate(). The page
+         ships with placeholders, never with a specimen property: a hardcoded
+         home here meant every listing opened as the same invented flat. -->
     <div class="card summary" data-title="Overview">
-      <div class="price">₦165M</div>
-      <div class="ctx">₦1.02M/m² · <b>₦12M below</b> the Lekki Phase 1 median</div>
-      <div class="ttl">3-Bed Apartment, Lekki Phase 1</div>
-      <div class="loc">Lekki Phase 1, Lagos</div>
-      <div class="facts"><span><b>3</b> beds</span><span><b>3</b> baths</span><span><b>2</b> parking</span><span><b>162</b> m²</span><span>built <b>2019</b></span></div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:16px">
-        <div class="ringbig">94</div>
+      <div class="price" id="pvPrice">—</div>
+      <div class="ctx" id="pvCtx" hidden></div>
+      <div class="ttl" id="pvTitle">Loading listing…</div>
+      <div class="loc" id="pvLoc"></div>
+      <div class="facts" id="pvFacts"></div>
+      <div class="pvtrust-row" id="pvTrust" hidden>
+        <div class="ringbig" id="pvRing">—</div>
         <div>
-          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
-            <span data-lottie="verified-badge" data-loop="false" style="width:22px;height:22px"></span>
-            Verified · Property Confidence 94
-          </div>
-          <div class="dim" style="font-size:12.5px">6 of 7 checks passed · independently verified</div>
+          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px" id="pvVerifyLine"></div>
+          <div class="dim" style="font-size:12.5px" id="pvVerifyNote"></div>
         </div>
       </div>
-      <div class="glance">✦ <b>At a glance:</b> Great for a young family or a live-and-invest buyer. Strong location, schools and security; watch the pending financial check and plan for backup power at peak hours.</div>
+      <div class="glance" id="pvGlance" hidden></div>
     </div>
 
-    <div class="card section">
+    <!-- Hidden until there is real enrichment behind it. The previous copy
+         asserted a match percentage, a commute delta, a median comparison and a
+         yield benchmark — none of which the database holds for a new listing.
+         hydrate() reveals this only when property_enrichment supplies it. -->
+    <div class="card section" id="pvTakeCard" hidden>
       <div class="lbl"><span data-icon="spark"></span> Toju's take</div>
-      <p class="reason">87% match. Your commute from here to Lagos Island is 14 minutes shorter than comparable listings in this band, it's ₦12M below the area median, and the 8.4% rental yield in this corridor beats the Lagos average of 6.1%. For a mix of home and investment, this is the strongest of the two I found.</p>
+      <p class="reason" id="pvTake"></p>
     </div>
 
     <!-- AI negotiation assistant -->
@@ -342,6 +360,10 @@
     <div class="pv-canvas">
       <div class="pvc-head">
         <div class="pvc-title" id="pvcTitle">Nearby</div>
+        <div class="pvc-trust" id="pvcTrust" hidden>
+          <div class="pvc-ring" id="pvcRing">—</div>
+          <div class="pvc-trust-txt"><b id="pvcVerifyLine"></b><small id="pvcVerifyNote"></small></div>
+        </div>
         <div class="pvc-tabs" id="pvcTabs" role="tablist" aria-label="Map view">
           <button data-view="poi" class="on" role="tab" aria-selected="true"><span data-icon="pin"></span> Nearby</button>
           <button data-view="commute" role="tab" aria-selected="false"><span data-icon="commute"></span> Commute</button>
@@ -358,14 +380,27 @@
   </div><!-- /pv-split -->
 
   <script>
-    // gallery
-    const PHOTOS = [
-      'photo-1600596542815-ffad4c1539a9', 'photo-1600607687939-ce8a6c25118c', 'photo-1600566753086-00f18fb6b3ea',
-      'photo-1600585154340-be6161a56a0c', 'photo-1512917774080-9991f1c4c750',
-    ].map((p) => `https://images.unsplash.com/${p}?w=900&q=80`);
+    /* Gallery. PHOTOS starts EMPTY and is filled from property_media by
+       hydrate() — the page used to ship five stock interiors, so every listing
+       showed the same apartment regardless of which home you opened. */
+    let PHOTOS = [];
     const hero = document.getElementById('heroImg');
     const thumbs = document.getElementById('thumbs');
-    thumbs.innerHTML = PHOTOS.map((p, i) => `<img src="${p.replace('w=900', 'w=200')}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`).join('');
+    function renderGallery() {
+      const counter = document.getElementById('counter');
+      if (!PHOTOS.length) {
+        thumbs.innerHTML = '';
+        if (counter) counter.textContent = '';
+        hero.removeAttribute('src');
+        hero.alt = 'No photos supplied for this listing';
+        return;
+      }
+      hero.src = PHOTOS[0];
+      hero.alt = 'Photo of this property';
+      if (counter) counter.textContent = '1 / ' + PHOTOS.length;
+      thumbs.innerHTML = PHOTOS.map((p, i) =>
+        `<img src="${p}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`).join('');
+    }
     thumbs.addEventListener('click', (e) => {
       const t = e.target.closest('img[data-i]');
       if (!t) return;
@@ -375,6 +410,7 @@
       document.getElementById('counter').textContent = (i + 1) + ' / ' + PHOTOS.length;
       thumbs.querySelectorAll('img').forEach((im) => im.classList.toggle('on', im === t));
     });
+    renderGallery();
 
     /* ── swipe deck: cards move left/right, image stays put ── */
     const deck = document.getElementById('deck');
@@ -397,8 +433,14 @@
       deck.scrollTo({ left: i * deck.clientWidth, behavior: 'smooth' });
     }
     function syncDeck() {
-      const i = Math.round(deck.scrollLeft / deck.clientWidth);
-      deckIdx = Math.max(0, Math.min(deckCards.length - 1, i));
+      if (!deckCards.length) return;
+      // clientWidth is 0 while the deck is unlaid-out (hidden tab, zero-size
+      // container). Dividing by it yields NaN, which indexes to `undefined` and
+      // threw here — taking the rest of this script block with it, including
+      // the code that loads the listing. Fall back to the current card.
+      const w = deck.clientWidth || 0;
+      const i = w ? Math.round(deck.scrollLeft / w) : deckIdx;
+      deckIdx = Math.max(0, Math.min(deckCards.length - 1, Number.isFinite(i) ? i : 0));
       deckLabel.innerHTML = cardTitle(deckCards[deckIdx]) + ' <small>' + (deckIdx + 1) + ' OF ' + deckCards.length + '</small>';
       deckDots.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === deckIdx));
       deckPrev.disabled = deckIdx === 0;
@@ -424,7 +466,11 @@
     // save + share
     const saveBtn = document.getElementById('saveBtn');
     const SAVED_KEY = 'synapse_saved';
-    const PROP_ID = 'lekki-ph1-3bed';
+    // Same id the page is keyed on below — saving must follow the listing you
+    // actually opened, not the demo default.
+    // The listing id from the URL. No demo fallback: if there is no id there is
+    // no property, and the page says so rather than substituting a specimen one.
+    const PROP_ID = new URLSearchParams(window.location.search).get('id') || '';
     let savedSet = new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'));
     function paintSave() { saveBtn.textContent = savedSet.has(PROP_ID) ? '♥' : '♡'; saveBtn.classList.toggle('on', savedSet.has(PROP_ID)); }
     saveBtn.addEventListener('click', () => {
@@ -484,13 +530,124 @@
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
     const VISITOR = localStorage.getItem('toju_visitor_v1');
-    // This demo page represents one listing; a real app passes the id in the URL.
-    const PROP = { id: 'lekki-ph1-3bed', title: '3-Bed Apartment, Lekki Phase 1', price: 165000000, deal: 'sale', trustScore: 94, yieldPct: 8.4, area: 'Lekki Phase 1', flood: 28, power: 74, whatToWatch: 'Financial check pending' };
+    // Match cards deep-link here as property.html?id=<listing id>. That id keys
+    // everything id-scoped on this page (negotiation payload, saved places,
+    // viewing state) AND now selects the listing itself.
+    const URL_ID = new URLSearchParams(window.location.search).get('id');
     const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
+
+    /* ── the listing itself ───────────────────────────────────────────────
+       PROP is null until the database answers. It used to be a hardcoded
+       3-bed in Lekki Phase 1, which meant every match card — whichever home
+       it described — opened this same invented flat. Nothing on this page may
+       assert a property fact that did not come from the row below. */
+    let PROP = null;
+
+    const PERIOD_SUFFIX = { total: '', per_year: '/yr', per_month: '/mo', per_night: '/night' };
+    const TITLE_LABEL = { c_of_o: 'Certificate of Occupancy', governors_consent: 'Governor’s Consent',
+      registered_deed: 'Registered Deed', excision: 'Excision', gazette: 'Gazette', allocation: 'Allocation' };
+
+    function fatal(msg, detail) {
+      const t = document.getElementById('pvTitle');
+      if (t) t.textContent = msg;
+      const p = document.getElementById('pvPrice'); if (p) p.textContent = '';
+      const l = document.getElementById('pvLoc'); if (l) l.textContent = detail || '';
+      ['negBtn', 'contactBtn', 'saveBtn'].forEach((id) => {
+        const b = document.getElementById(id); if (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); }
+      });
+    }
+
+    function paintProperty(p) {
+      const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+
+      document.title = p.title + ' — Synapse';
+      set('pvPrice', naira(p.price) + (PERIOD_SUFFIX[p.price_period] || ''));
+      set('pvTitle', p.title);
+      // De-duplicate: agencies routinely type the city into the address line,
+      // which rendered as "Ikolaba GRA, Ibadan, Ibadan, Oyo state".
+      const seen = new Set();
+      set('pvLoc', [p.address, p.city, p.state].filter(Boolean).filter((part) => {
+        const k = String(part).trim().toLowerCase();
+        if (seen.has(k)) return false;
+        // also drop a city/state already contained in the address text
+        for (const prev of seen) if (prev.includes(k)) return false;
+        seen.add(k); return true;
+      }).join(', '));
+
+      // ₦/m² only when area is actually recorded; no invented median comparison.
+      if (p.area_sqm && p.price) {
+        set('pvCtx', naira(Math.round(p.price / p.area_sqm)) + '/m²');
+        show('pvCtx', true);
+      }
+
+      const facts = [];
+      if (p.bedrooms != null) facts.push(`<span><b>${p.bedrooms}</b> bed${p.bedrooms === 1 ? '' : 's'}</span>`);
+      if (p.bathrooms != null) facts.push(`<span><b>${p.bathrooms}</b> bath${p.bathrooms === 1 ? '' : 's'}</span>`);
+      if (p.parking_spaces != null) facts.push(`<span><b>${p.parking_spaces}</b> parking</span>`);
+      if (p.area_sqm != null) facts.push(`<span><b>${p.area_sqm}</b> m²</span>`);
+      if (p.year_built != null) facts.push(`<span>built <b>${p.year_built}</b></span>`);
+      if (p.title_type) facts.push(`<span>${TITLE_LABEL[p.title_type] || p.title_type}</span>`);
+      const fEl = document.getElementById('pvFacts');
+      if (fEl) fEl.innerHTML = facts.join('');
+
+      /* Verification, stated plainly either way. Unverified is not an
+         accusation and not a warning — it is a fact the buyer is entitled to
+         weigh, so it is shown with the same prominence as a pass. */
+      const verified = p.verification_status === 'verified';
+      const passed = Array.isArray(p.verification_nodes)
+        ? p.verification_nodes.filter((n) => n && n.status === 'pass').length : 0;
+      const total = Array.isArray(p.verification_nodes) ? p.verification_nodes.length : 0;
+      const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
+      const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
+      const noteTxt = verified
+        ? (total ? `${passed} of ${total} checks passed` : 'Checks passed')
+        : 'Listed by the agency; Synapse has not run its checks on this home yet.';
+      // Painted twice — .pvtrust-row (mobile, inline in the card) and
+      // .pvc-trust (desktop, in the map canvas header) — CSS shows only one
+      // per breakpoint, see the min-width:901px rule above .pvtrust-row.
+      ['pvTrust', 'pvcTrust'].forEach((id) => show(id, true));
+      set('pvRing', ringVal); set('pvcRing', ringVal);
+      const vLine = document.getElementById('pvVerifyLine'); if (vLine) vLine.textContent = lineTxt;
+      const vcLine = document.getElementById('pvcVerifyLine'); if (vcLine) vcLine.textContent = lineTxt;
+      set('pvVerifyNote', noteTxt); set('pvcVerifyNote', noteTxt);
+
+      if (p.description) { set('pvGlance', p.description); show('pvGlance', true); }
+
+      const e = p.property_enrichment && (Array.isArray(p.property_enrichment) ? p.property_enrichment[0] : p.property_enrichment);
+      if (e && e.toju_summary) { set('pvTake', e.toju_summary); show('pvTakeCard', true); }
+
+      PHOTOS = (p.property_media || [])
+        .slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        .map((m) => m.url).filter(Boolean);
+      renderGallery();
+    }
+
+    (function hydrate() {
+      if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
+      const q = SUPABASE_URL + '/rest/v1/properties'
+        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier)'
+        + '&id=eq.' + encodeURIComponent(URL_ID) + '&limit=1';
+      fetch(q, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+        .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then((rows) => {
+          if (!Array.isArray(rows) || !rows.length) {
+            fatal('This listing is no longer available', 'It may have expired, been removed, or never existed.');
+            return;
+          }
+          PROP = rows[0];
+          paintProperty(PROP);
+          document.dispatchEvent(new CustomEvent('syn:property', { detail: PROP }));
+        })
+        .catch(() => fatal('Could not load this listing', 'Check your connection and try again.'));
+    })();
 
     /* ── 13 · AI negotiation assistant ── */
     const negBtn = document.getElementById('negBtn');
     negBtn.addEventListener('click', async () => {
+      // Nothing to negotiate over until the listing has loaded. Sending a null
+      // property would have Toju invent an offer for a home it cannot see.
+      if (!PROP) { toast('Still loading this listing — one moment.'); return; }
       negBtn.disabled = true; negBtn.textContent = 'Toju is working the numbers…';
       clearNegError();
       const ctrl = new AbortController();
@@ -551,7 +708,7 @@
       { place: 'Nearest school', min: 12 },
     ];
     let commuteMult = 1;
-    let customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP.id) || '[]');
+    let customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
     function fmtMin(m) { return m >= 60 ? Math.floor(m/60) + 'h ' + (m%60 ? (m%60)+'m' : '').trim() : Math.round(m) + ' min'; }
     function renderCommute() {
       const all = BASE_COMMUTE.concat(customPlaces);
@@ -563,7 +720,7 @@
         const mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
         if (!place.trim() || isNaN(mins)) return;
         customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
-        localStorage.setItem('synapse_places_' + PROP.id, JSON.stringify(customPlaces));
+        localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
         renderCommute();
       });
     }
@@ -577,7 +734,7 @@
 
     /* ── 9 · Viewing assistant (checklist + notes + photos, saved to this home) ── */
     const CHECKS = ['Check water pressure', 'Test electrical outlets & sockets', 'Ask about service charges', 'Inspect ceilings & walls for leaks/damp', 'Confirm legal documentation (C of O / deed)', 'Test the backup power / generator', 'Check mobile signal & internet', 'Walk the compound security & parking'];
-    const vKey = 'synapse_viewing_' + PROP.id;
+    const vKey = 'synapse_viewing_' + PROP_ID;
     let vState = JSON.parse(localStorage.getItem(vKey) || '{"done":[],"notes":"","photos":[]}');
     function saveV() { localStorage.setItem(vKey, JSON.stringify(vState)); }
     function renderChecks() {
@@ -615,23 +772,31 @@
      time of day, route to the listing agency, cost breakdown, legal & documents. */
   (function () {
     if (!window.L || !document.getElementById('pvMap')) return;
-    var PROP = [6.447, 3.470];
-    var POI = [
-      { t: 'school', n: 'Lekki British School', c: [6.4515, 3.4762], d: '6 min' },
-      { t: 'school', n: 'Greensprings School', c: [6.4402, 3.4625], d: '9 min' },
-      { t: 'gym', n: 'i-Fitness Lekki', c: [6.4492, 3.4665], d: '4 min' },
-      { t: 'restaurant', n: 'RSVP Lekki', c: [6.4432, 3.4785], d: '7 min' },
-      { t: 'restaurant', n: 'The Yellow Chilli', c: [6.4525, 3.4622], d: '8 min' },
-      { t: 'church', n: 'This Present House', c: [6.4451, 3.4822], d: '6 min' },
-      { t: 'mosque', n: 'Lekki Central Mosque', c: [6.4382, 3.4681], d: '7 min' }
-    ];
+
+    /* This module used to hardcode one Lekki flat's surroundings: seven named
+       schools/gyms/restaurants with invented walking times, two commute
+       destinations with invented ETAs, and a named agency with a rating and a
+       deal count. Rendered against any other listing — an Ibadan flat, say —
+       every one of those was a false statement about a real place.
+
+       The map now shows only what the listing itself provides: its own
+       coordinates. Neighbourhood intelligence returns when there is real
+       amenity data joined to the listing, and until then the panels say so
+       rather than borrowing another property's neighbourhood. */
+    var PROP = null;                 // [lat, lng] from the listing
+    var POI = [];                    // no invented places
     var META = { school: { e: '🎓', col: '#2f6dbd', lbl: 'Schools' }, gym: { e: '🏋️', col: '#8a5cd6', lbl: 'Gyms' }, restaurant: { e: '🍽️', col: '#c98b3a', lbl: 'Restaurants' }, church: { e: '⛪', col: '#3f9c6d', lbl: 'Churches' }, mosque: { e: '🕌', col: '#2e7d4f', lbl: 'Mosques' } };
-    var DEST = [{ n: 'Lagos Island CBD', c: [6.4531, 3.3958] }, { n: 'Victoria Island', c: [6.4281, 3.4215] }];
-    var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: ['48 min', '32 min'] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: ['26 min', '18 min'] }, evening: { lbl: 'Evening', color: '#d9534f', etas: ['55 min', '38 min'] } };
-    var AGENCY = { n: 'Prestige Realty Ltd.', c: [6.4352, 3.4552], sub: 'Gold Verified · 4.6★ · 60 deals', eta: '9 min drive' };
+    var DEST = [];                   // no invented commutes
+    var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: [] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: [] }, evening: { lbl: 'Evening', color: '#d9534f', etas: [] } };
+    var AGENCY = null;               // filled from the listing's agency
     var CARD_VIEWS = ['poi', 'poi', 'agency', 'cost', 'poi', 'commute', 'poi', 'legal', 'agency', 'poi'];
 
-    var map = L.map('pvMap', { scrollWheelZoom: false }).setView(PROP, 14);
+    var NO_DATA = '<div class="pvo-k">Neighbourhood detail</div>'
+      + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
+      + 'We don’t have verified amenity or commute data for this listing yet, so there is nothing to show here. '
+      + 'We would rather show you nothing than another property’s neighbourhood.</p>';
+
+    var map = L.map('pvMap', { scrollWheelZoom: false }).setView([9.0820, 8.6753], 6);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
     var layer = L.layerGroup().addTo(map);
     var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">⌂</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
@@ -642,7 +807,9 @@
     function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE }); }, 60); }
 
     function renderPOI() {
-      overlay.className = 'pvc-overlay'; var pts = [PROP];
+      overlay.className = 'pvc-overlay';
+      if (!PROP || !POI.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      var pts = [PROP];
       POI.forEach(function (p) { L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer).bindPopup('<b>' + p.n + '</b><br>' + META[p.t].lbl.replace(/s$/, '') + ' · ' + p.d); pts.push(p.c); });
       var counts = {}; POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
       var leg = Object.keys(META).map(function (t) { return counts[t] ? ('<div class="r"><span class="dot" style="background:' + META[t].col + '">' + META[t].e + '</span>' + META[t].lbl + '<span class="n">' + counts[t] + '</span></div>') : ''; }).join('');
@@ -651,7 +818,9 @@
       fit(pts);
     }
     function renderCommute() {
-      overlay.className = 'pvc-overlay'; var cg = CONGEST[state.time], pts = [PROP];
+      overlay.className = 'pvc-overlay';
+      if (!PROP || !DEST.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      var cg = CONGEST[state.time], pts = [PROP];
       DEST.forEach(function (d, i) { L.marker(d.c).addTo(layer).bindPopup('<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i]); L.polyline([PROP, d.c], { color: cg.color, weight: 5, opacity: 0.75 }).addTo(layer); pts.push(d.c); });
       var toggle = ['morning', 'midday', 'evening'].map(function (k) { return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>'; }).join('');
       var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + d.n + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
@@ -661,39 +830,87 @@
     }
     function renderAgency() {
       overlay.className = 'pvc-overlay';
-      L.marker(AGENCY.c).addTo(layer).bindPopup('<b>' + AGENCY.n + '</b><br>' + AGENCY.sub);
-      L.polyline([PROP, AGENCY.c], { color: '#121212', weight: 5, opacity: 0.7, dashArray: '6 6' }).addTo(layer);
-      overlay.innerHTML = '<div class="pvo-k">Listing agency</div><div class="pvo-list"><div class="li"><b>' + AGENCY.n + '</b></div></div><p style="font-size:12.5px;color:var(--ink-muted);margin-top:4px">' + AGENCY.sub + '</p><div class="pvo-eta" style="margin-top:8px">From this home <b>' + AGENCY.eta + '</b></div>';
-      fit([PROP, AGENCY.c]);
+      if (!AGENCY || !AGENCY.n) {
+        overlay.innerHTML = '<div class="pvo-k">Listing agency</div>'
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Agency details are not available for this listing yet.</p>';
+        if (PROP) fit([PROP]);
+        return;
+      }
+      overlay.innerHTML = '<div class="pvo-k">Listing agency</div><div class="pvo-list"><div class="li"><b>'
+        + AGENCY.n + '</b></div></div>'
+        + (AGENCY.sub ? '<p style="font-size:12.5px;color:var(--ink-muted);margin-top:4px">' + AGENCY.sub + '</p>' : '');
+      if (PROP) fit([PROP]);
     }
+    /* Only costs the listing actually records. The previous version invented a
+       mortgage repayment, a utilities bill and a school-run fuel figure, then
+       summed them into a "true monthly cost" — a confident number built from
+       nothing. Anything absent is simply not shown. */
     function renderCost() {
       overlay.className = 'pvc-overlay wide';
-      overlay.innerHTML = '<div class="pvo-k">What it really costs / month</div><div class="pvo-list">'
-        + '<div class="li"><b>Mortgage · 20% down, 20y @22%</b><span>₦2.44M</span></div>'
-        + '<div class="li"><b>Service charge</b><span>₦83k</span></div>'
-        + '<div class="li"><b>Power &amp; utilities</b><span>₦120k</span></div>'
-        + '<div class="li"><b>School-run fuel</b><span>₦45k</span></div>'
-        + '<div class="li" style="border-top:1px solid var(--border);padding-top:8px"><b>True monthly cost</b><span style="color:#121212;font-weight:700">≈ ₦2.69M</span></div>'
-        + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Estimates from verified listing + area data. Refine with Toju.</p>';
-      fit([PROP]);
+      var L2 = window.__pvListing || {}, rows = [];
+      var money = function (n) { return '₦' + Number(n).toLocaleString('en-NG'); };
+      if (L2.price != null) rows.push('<div class="li"><b>' + (L2.listing_type === 'rent' ? 'Rent' : 'Price') + '</b><span>' + money(L2.price) + (L2.price_period === 'per_year' ? ' / year' : L2.price_period === 'per_month' ? ' / month' : '') + '</span></div>');
+      if (L2.service_charge != null) rows.push('<div class="li"><b>Service charge</b><span>' + money(L2.service_charge) + '</span></div>');
+      if (L2.move_in_cost != null) rows.push('<div class="li"><b>Move-in cost</b><span>' + money(L2.move_in_cost) + '</span></div>');
+      overlay.innerHTML = '<div class="pvo-k">Costs on this listing</div>'
+        + (rows.length
+          ? '<div class="pvo-list">' + rows.join('') + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Only what the agency recorded. Utilities, power and financing are not included.</p>'
+          : '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">No cost breakdown recorded for this listing.</p>');
+      if (PROP) fit([PROP]);
     }
+    /* Reads the listing's real verification_nodes. It previously showed a fixed
+       six-of-seven document list for every property — asserting, on any listing,
+       that a C of O and a governor's consent had been sighted. */
     function renderLegal() {
       overlay.className = 'pvc-overlay';
-      var docs = [['Certificate of Occupancy', 1], ['Registered survey plan', 1], ['Deed of assignment', 1], ['Governor\'s consent', 1], ['Building approval', 1], ['Financial / encumbrance check', 0]];
-      var rows = docs.map(function (d) { var ok = d[1]; return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + d[0] + '</b><span style="color:' + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'verified' : 'pending') + '</span></div>'; }).join('');
-      overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">6 of 7 checks cleared. Toju holds the full report.</p>';
-      fit([PROP]);
+      var L2 = window.__pvListing || {};
+      var nodes = Array.isArray(L2.verification_nodes) ? L2.verification_nodes : [];
+      if (!nodes.length) {
+        overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div>'
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
+          + 'Synapse has not run its checks on this listing yet, so there is no document report to show. '
+          + 'Ask the agency for the title documents and have your own lawyer confirm them before you pay anything.</p>';
+        if (PROP) fit([PROP]);
+        return;
+      }
+      var rows = nodes.map(function (n) {
+        var ok = n.status === 'pass';
+        return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + (n.name || 'Check') + '</b><span style="color:'
+          + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'passed' : (n.status || 'pending')) + '</span></div>';
+      }).join('');
+      var passed = nodes.filter(function (n) { return n.status === 'pass'; }).length;
+      overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div>'
+        + '<p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">' + passed + ' of ' + nodes.length + ' checks passed. These record what Synapse checked, not a guarantee.</p>';
+      if (PROP) fit([PROP]);
     }
     function setView(v) {
       v = v || 'poi'; state.view = v;
       document.querySelectorAll('#pvcTabs button').forEach(function (b) { var on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
       layer.clearLayers();
-      L.marker(PROP, { icon: homeIcon }).addTo(layer).bindPopup('<b>This home</b><br>3-Bed Apartment, Lekki Phase 1');
-      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'True cost', legal: 'Legal & documents' }[v] || 'Nearby';
+      var L2 = window.__pvListing || {};
+      if (PROP) {
+        L.marker(PROP, { icon: homeIcon }).addTo(layer)
+          .bindPopup('<b>This home</b>' + (L2.title ? '<br>' + L2.title : ''));
+      }
+      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'Costs', legal: 'Legal & documents' }[v] || 'Nearby';
       if (v === 'commute') renderCommute(); else if (v === 'agency') renderAgency(); else if (v === 'cost') renderCost(); else if (v === 'legal') renderLegal(); else renderPOI();
     }
     document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
     window.__pvView = function (i) { setView(CARD_VIEWS[i] || 'poi'); };
+
+    /* The map waits for the listing. Without coordinates it stays on a national
+       view with an honest panel rather than pinning a home somewhere it isn't. */
+    document.addEventListener('syn:property', function (e) {
+      var p = e.detail || {};
+      window.__pvListing = p;
+      if (p.latitude != null && p.longitude != null) {
+        PROP = [Number(p.latitude), Number(p.longitude)];
+        map.setView(PROP, 14);
+      }
+      var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
+      if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };
+      setView(state.view || 'poi');
+    });
     setView('poi');
   })();
   </script>

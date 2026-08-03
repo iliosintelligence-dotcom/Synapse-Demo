@@ -47,8 +47,11 @@
     <a class="aud-seg active" href="agencies.html" role="tab" aria-selected="true" aria-current="page">For Agencies</a>
   </div>
   <div class="nav-actions">
-    <a class="btn-ghost" id="nav-secondary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Book a demo</a>
-    <a class="btn-brand" id="nav-primary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Agency portal</a>
+    <!-- Both of these used to point at the identical sign-in URL, so "Book a
+         demo" and "Agency portal" were the same dead end. They are now the two
+         things an agency actually wants: create an account, or sign in. -->
+    <a class="btn-ghost" id="nav-secondary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+    <a class="btn-brand" id="nav-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Register your agency</a>
   </div>
 </nav>
 
@@ -226,6 +229,13 @@
       <p class="s-sub">No setup fee, no lock-in, and no commission on your deals. Move up or down a tier whenever you like.</p>
     </div>
 
+    <!-- Billing period. Prices are written into the cards as monthly; the
+         toggle rewrites them, so there is one source of truth per plan. -->
+    <div class="pr-toggle" role="group" aria-label="Billing period">
+      <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
+      <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save" id="prSave"></span></button>
+    </div>
+
     <div class="pr-grid">
       <div class="pr-card reveal">
         <div class="pr-name">Free</div>
@@ -245,7 +255,7 @@
       <div class="pr-card feature reveal">
         <span class="pr-badge">Most popular</span>
         <div class="pr-name">Accelerate</div>
-        <div class="pr-price">₦75,000<span>per month</span></div>
+        <div class="pr-price" data-monthly="75000">₦75,000<span>per month</span></div>
         <p class="pr-best">The plan almost every serious agency wants.</p>
         <ul class="pr-list">
           <li>Up to 100 listings · 5 agent seats</li>
@@ -259,7 +269,7 @@
 
       <div class="pr-card reveal">
         <div class="pr-name">Leader</div>
-        <div class="pr-price">₦250,000<span>per month</span></div>
+        <div class="pr-price" data-monthly="250000">₦250,000<span>per month</span></div>
         <p class="pr-best">Established agencies going for the top.</p>
         <ul class="pr-list">
           <li>Unlimited listings and seats</li>
@@ -272,6 +282,41 @@
         <a class="btn-ghost pr-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Talk to sales</a>
       </div>
     </div>
+
+    <!-- Side-by-side comparison. Three cards with different feature lists force
+         the reader to hold all three in their head and diff them; a table does
+         that work for them. Every row restates a claim already made on the
+         cards above — this introduces no new promise. -->
+    <details class="pr-compare">
+      <summary>Compare the three plans side by side</summary>
+      <div class="pr-tablewrap">
+        <table class="pr-table">
+          <caption class="sr-only">Feature comparison across the Free, Accelerate and Leader plans</caption>
+          <thead>
+            <tr>
+              <th scope="col">What you get</th>
+              <th scope="col">Free</th>
+              <th scope="col" class="hi">Accelerate</th>
+              <th scope="col">Leader</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Active listings</th><td>20</td><td class="hi">100</td><td>Unlimited</td></tr>
+            <tr><th scope="row">Team seats</th><td>2</td><td class="hi">5</td><td>Unlimited</td></tr>
+            <tr><th scope="row">CRM with WhatsApp handoff</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Toju AI referrals</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Verification queue</th><td>Standard</td><td class="hi">48 hours</td><td>Dedicated desk</td></tr>
+            <tr><th scope="row">Social syndication</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">AI writes &amp; schedules posts</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Channel attribution</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Gold Verified badge</th><td class="no" aria-label="Not included">—</td><td class="hi no" aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Proximity marketing</th><td class="no" aria-label="Not included">—</td><td class="hi no" aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Commission on your deals</th><td>None</td><td class="hi">None</td><td>None</td></tr>
+            <tr><th scope="row">Toju ranking</th><td colspan="3" class="pr-neutral">Always on buyer fit — never on what you pay</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -280,11 +325,67 @@
     <h2>Every listing is an opportunity.<br>Make sure yours reaches the <em>right buyer.</em></h2>
     <p>Get your agency live on Synapse and let every property start working harder today.</p>
     <div class="hero-ctas" style="justify-content:center;margin-top:26px">
-      <button class="panel-btn-primary">Open agency portal</button>
-      <button class="panel-btn-secondary">Book a demo</button>
+      <!-- These were <button>s with no handler — the page's closing call to
+           action did nothing at all when clicked. Same two destinations as the
+           nav: register, or sign in. -->
+      <a class="panel-btn-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Register your agency</a>
+      <a class="panel-btn-secondary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
     </div>
   </div>
 </section>
+<script>
+/* ── Pricing: monthly ⇄ annual (item 43) ─────────────────────────────────
+   COMMERCIAL DECISION — confirm before this goes in front of agencies.
+   ANNUAL_MONTHS_FREE is the offer: pay for (12 − n) months, get 12. It is one
+   number in one place precisely so it is Eden's to set, not a rate buried in
+   markup. Set it to 0 and the toggle disappears rather than advertising a
+   discount that does not exist.
+
+   Monthly prices live in the cards' data-monthly attributes, so there is one
+   source of truth per plan and the toggle only ever re-renders it. */
+(function () {
+  var ANNUAL_MONTHS_FREE = 2;
+
+  var wrap = document.querySelector('.pr-toggle');
+  var prices = [].slice.call(document.querySelectorAll('.pr-price[data-monthly]'));
+  if (!wrap || !prices.length) return;
+
+  if (!ANNUAL_MONTHS_FREE) { wrap.hidden = true; return; }   // no offer, no toggle
+
+  var paidMonths = 12 - ANNUAL_MONTHS_FREE;
+  var saveEl = document.getElementById('prSave');
+  if (saveEl) saveEl.textContent = ANNUAL_MONTHS_FREE + ' months free';
+
+  var naira = function (n) { return '₦' + Math.round(n).toLocaleString('en-NG'); };
+
+  function paint(period) {
+    prices.forEach(function (el) {
+      var monthly = Number(el.getAttribute('data-monthly')) || 0;
+      if (period === 'annual') {
+        // Shown as the effective monthly rate, with the real yearly total
+        // underneath — an agency budgets per month but pays per year, and
+        // hiding the total is how pricing pages mislead.
+        var perMonth = (monthly * paidMonths) / 12;
+        el.innerHTML = naira(perMonth) + '<span>per month, billed yearly ('
+          + naira(monthly * paidMonths) + ')</span>';
+      } else {
+        el.innerHTML = naira(monthly) + '<span>per month</span>';
+      }
+    });
+    wrap.querySelectorAll('.pr-per').forEach(function (b) {
+      var on = b.dataset.per === period;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  wrap.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-per]');
+    if (b) paint(b.dataset.per);
+  });
+  paint('monthly');
+})();
+</script>
 
 <!-- ══ HERO · AGENCIES ══ -->
 

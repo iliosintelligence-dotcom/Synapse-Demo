@@ -368,6 +368,41 @@
 
     /* agents */
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 18px; }
+    /* Brand page */
+    .brand-swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .brand-swatches input[type="color"] { width: 100%; height: 40px; padding: 3px; border-radius: 8px;
+      border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    .brand-preview { margin-top: 14px; border-radius: 12px; border: 1px solid var(--border);
+      padding: 16px 18px; display: flex; align-items: center; gap: 12px; min-height: 64px; }
+    .brand-preview .bp-mark { width: 38px; height: 38px; border-radius: 9px; flex: none; display: flex;
+      align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; }
+    .brand-preview img { width: 38px; height: 38px; border-radius: 9px; object-fit: contain; background: #fff; flex: none; }
+    .brand-preview .bp-nm { font-weight: 700; font-size: 15px; }
+    .brand-preview .bp-tag { font-size: 12.5px; color: var(--ink-muted); }
+    .brand-preview .bp-chip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px;
+      border-radius: 100px; color: #fff; }
+    .cmp-brandbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      border: 1px solid var(--border); border-left: 4px solid var(--brand);
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+    .cmp-brandbar img { width: 26px; height: 26px; border-radius: 6px; object-fit: contain; background: #fff; }
+    .cmp-brandbar .bb-nm { font-weight: 700; font-size: 13.5px; }
+    .cmp-brandbar .bb-tag { font-size: 12.5px; color: var(--ink-muted); }
+    .cmp-brandbar .bb-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .cmp-brandbar .bb-note { margin-left: auto; font-size: 11.5px; color: var(--ink-dim); }
+    .cmp-brandbar.plain { border-left-color: var(--border); }
+    .cmp-brandbar.plain .bb-note { margin-left: 0; }
+    .brand-onboard { margin-top: 20px; padding: 20px 22px; }
+    .bo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .bo-steps { list-style: none; margin: 16px 0 0; padding: 0; display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+    .bo-steps li { display: flex; align-items: center; gap: 9px; font-size: 13px;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; }
+    .bo-steps li .tick { width: 20px; height: 20px; border-radius: 50%; flex: none; display: flex;
+      align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
+      border: 1px solid var(--border); color: var(--ink-dim); }
+    .bo-steps li.done { border-color: rgba(46,125,79,0.35); }
+    .bo-steps li.done .tick { background: rgba(46,125,79,0.12); border-color: rgba(46,125,79,0.35); color: var(--success); }
+    .bo-steps li.done span:last-child { color: var(--ink-muted); }
     .acard { position: relative; cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; }
     .acard:hover { transform: translateY(-3px); box-shadow: 0 18px 38px rgba(122,62,22,0.14); border-color: rgba(54,54,54,0.35); }
     .acard.enter { animation: acardIn .34s ease both; }
@@ -1014,7 +1049,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       <span class="bell-badge" id="bellBadge">4</span>
     </button>
-    <span class="topav" title="Prestige Realty Ltd.">PR</span>
+    <span class="topav" data-agency-initials title="Your agency">—</span>
     <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="../index.html">← Site</a>
   </div>
@@ -1050,6 +1085,7 @@
         <button class="grp" aria-expanded="true" aria-controls="grp-team"><span>Team</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-team">
           <a data-pane="agents" title="Agents"><span data-icon="user"></span><span class="lbl-x">Agents</span></a>
+          <a data-pane="brand" title="Brand"><span data-icon="spark"></span><span class="lbl-x">Brand</span></a>
         </div>
       </div>
       <div class="grp-sec open" data-sec="account">
@@ -1060,7 +1096,7 @@
       </div>
       <div class="me">
         <span class="av2">PR</span>
-        <div class="who"><div class="nm2">Prestige Realty Ltd.</div><div class="sub2">✦ Gold Verified</div></div>
+        <div class="who"><div class="nm2" data-agency-name>Your agency</div><div class="sub2" data-agency-tier></div></div>
       </div>
     </aside>
 
@@ -1070,7 +1106,7 @@
         <section class="pane on" id="pane-overview">
           <div class="ov-head">
             <div>
-              <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
+              <div class="eyebrow" data-agency-eyebrow>Your agency</div>
               <div class="h1">Overview</div>
             </div>
             <div class="ov-actions">
@@ -1097,7 +1133,7 @@
 
         <!-- ══ CRM ══ -->
         <section class="pane" id="pane-crm">
-          <div class="eyebrow">Prestige Realty Ltd. · Gold Verified</div>
+          <div class="eyebrow" data-agency-eyebrow>Your agency</div>
           <div class="h1">CRM</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Your whole pipeline at a glance — every lead, its stage, and the next move.</p>
 
@@ -1199,10 +1235,10 @@
               <div class="rail-sec">
                 <div class="rail-h">Where it posts</div>
                 <div class="channels">
-                  <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">@prestigerealty</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">@prestige.lagos</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Prestige Realty · Shorts</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Prestige Realty</div></div><div class="tog off"></div></div>
+                  <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+                  <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Not connected</div></div><div class="tog off"></div></div>
                   <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
                 </div>
               </div>
@@ -1257,11 +1293,11 @@
           <div class="h1">Toju Negotiator</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Every lead — from any channel — is qualified, pitched and pre-negotiated by Toju before it reaches a human. You inherit warm, ready buyers.</p>
 
-          <div class="h2" style="margin-top:22px">Your negotiation authority</div>
-          <p class="sub">Set the floor Toju may negotiate down to. Only Toju&#39;s engine ever sees it.</p>
-          <div class="auth-grid" id="authGrid"></div>
+          <!-- The per-property negotiation floor lived here. Listings belong to
+               the Listings pane; this page is about how Toju negotiates and what
+               it hands you, not about browsing inventory a second time. -->
 
-          <div class="h2">Ready for handoff</div>
+          <div class="h2" style="margin-top:22px">Ready for handoff</div>
           <p class="sub">Toju has already qualified, pitched and pre-negotiated these. You just close.</p>
           <div id="handoffs"></div>
         </section>
@@ -1305,18 +1341,82 @@
             </div>
             <button class="btn btn-primary" id="inviteAgentBtn">+ Invite agent</button>
           </div>
-          <div class="ag-kpis" id="agKpis"></div>
-          <div class="two" style="margin-top:20px">
-            <div class="card" style="padding:18px 20px">
-              <div class="h2" style="margin:0 0 12px">Closed deals · this quarter</div>
-              <div class="hbars" id="agClosed"></div>
+          <!-- The KPI strip and the two performance charts moved into the
+               Ask-Toju side panel: this page is the roster, and the read on the
+               roster belongs beside it, not above it. -->
+          <div class="agrid" id="agrid"></div>
+        </section>
+
+        <!-- ── Brand ──────────────────────────────────────────────────────
+             The agency's identity, stored on its own `agencies` row and read by
+             the campaign generator so every post sounds and looks like them.
+             Nothing here is pre-filled with a specimen brand. -->
+        <section class="pane" id="pane-brand">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="eyebrow">Your identity</div>
+              <div class="h1">Brand</div>
+              <p class="muted" style="font-size:14px;margin-top:4px">Your logo, colours, voice and links. Toju uses these when it writes and designs anything on your behalf.</p>
             </div>
-            <div class="card" style="padding:18px 20px">
-              <div class="h2" style="margin:0 0 12px">Avg first reply · minutes</div>
-              <div class="hbars" id="agReply"></div>
+            <button class="btn btn-primary" id="brandSave">Save brand</button>
+          </div>
+
+          <!-- First-run onboarding. Shown when the agency arrives from signup,
+               or whenever the brand is still essentially empty — so an agency
+               that skipped it is picked up again rather than left with a blank
+               form and no reason to fill it. -->
+          <div class="card brand-onboard" id="brandOnboard" hidden>
+            <div class="bo-head">
+              <div>
+                <div class="eyebrow">Getting set up</div>
+                <div class="h2" style="margin:2px 0 0">Let’s set up your brand</div>
+                <p class="muted" style="font-size:13.5px;margin-top:4px">Toju writes captions, replies and ad creative for you. These details are what make that output sound like your agency instead of a generic listing site. It takes about two minutes, and you can change any of it later.</p>
+              </div>
+              <button class="btn btn-ghost" id="brandSkip" type="button">Skip for now</button>
+            </div>
+            <ol class="bo-steps" id="brandSteps"></ol>
+          </div>
+
+          <div id="brandGate" class="noti-empty" style="margin-top:20px" hidden></div>
+
+          <div id="brandForm" class="two" style="margin-top:20px;align-items:start">
+            <div class="card" style="padding:20px 22px">
+              <div class="h2" style="margin:0 0 4px">Identity</div>
+              <p class="sub" style="margin-bottom:14px">How you are named and described.</p>
+              <div class="field"><label for="bkName">Agency name</label><input id="bkName" placeholder="Your registered trading name"></div>
+              <div class="field"><label for="bkTagline">Tagline</label><input id="bkTagline" placeholder="One line — what you want to be known for"></div>
+              <div class="field"><label for="bkDesc">About</label><textarea id="bkDesc" rows="4" placeholder="A short description buyers will read on your listings"></textarea></div>
+              <div class="field"><label for="bkSpecialties">Specialties</label><input id="bkSpecialties" placeholder="Comma separated — e.g. Lekki resale, diaspora buyers, shortlets"></div>
+            </div>
+
+            <div class="card" style="padding:20px 22px">
+              <div class="h2" style="margin:0 0 4px">Look</div>
+              <p class="sub" style="margin-bottom:14px">Used on your creatives and your public agency page.</p>
+              <div class="field"><label for="bkLogo">Logo URL</label><input id="bkLogo" placeholder="https://…"></div>
+              <div class="field"><label for="bkLogoDark">Logo URL · dark backgrounds</label><input id="bkLogoDark" placeholder="Optional"></div>
+              <div class="brand-swatches">
+                <div class="field"><label for="bkColor">Primary colour</label><input id="bkColor" type="color" value="#121212"></div>
+                <div class="field"><label for="bkColor2">Secondary colour</label><input id="bkColor2" type="color" value="#c76a1a"></div>
+              </div>
+              <div class="field"><label for="bkFont">Typeface</label><input id="bkFont" placeholder="e.g. Josefin Sans"></div>
+              <div class="brand-preview" id="bkPreview" aria-live="polite"></div>
+            </div>
+
+            <div class="card" style="padding:20px 22px">
+              <div class="h2" style="margin:0 0 4px">Voice</div>
+              <p class="sub" style="margin-bottom:14px">Toju writes captions and replies in this tone. Be specific — “warm and plain-spoken, never salesy” beats “professional”.</p>
+              <div class="field"><label for="bkVoice">How you sound</label><textarea id="bkVoice" rows="3" placeholder="Describe the voice you want in your own words"></textarea></div>
+            </div>
+
+            <div class="card" style="padding:20px 22px">
+              <div class="h2" style="margin:0 0 4px">Reach</div>
+              <p class="sub" style="margin-bottom:14px">Where buyers find you. Handles here label your posts; connecting an account for publishing is done in Social.</p>
+              <div class="field"><label for="bkWhatsapp">WhatsApp number</label><input id="bkWhatsapp" placeholder="+234…"></div>
+              <div class="field"><label for="bkInstagram">Instagram handle</label><input id="bkInstagram" placeholder="@youragency"></div>
+              <div class="field"><label for="bkWebsite">Website</label><input id="bkWebsite" placeholder="https://…"></div>
+              <div class="field"><label for="bkCity">City</label><input id="bkCity" placeholder="Lagos"></div>
             </div>
           </div>
-          <div class="agrid" id="agrid"></div>
         </section>
 
         <!-- ══ VERIFICATION ══ -->
@@ -1359,44 +1459,9 @@
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
     };
-    const leads = [
-      { nm: 'Bola Adeyemi', ph: '+234 803 555 0142', pr: '3-Bed Apartment, Lekki Phase 1 · budget ₦150–180M', price: '₦165M', src: 'toju', t: '2m ago', score: 92, stage: 'New', temp: 'hot',
-        brief: 'Family of four relocating from Abuja. Good schools within 15 min, works on the Island, moving within 3 months.',
-        summary: 'First-time relocating buyer, budget ₦150–180M, set on Lekki with schools ≤15 min. Mortgage-inclined, high urgency (moving <3 months). Most responsive after 6 pm.',
-        nba: { text: 'Call now — first-response SLA expires in 13 min', do: 'Call Bola', act: 'call' },
-        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Bola Adeyemi'],['Mortgage','GTBank'],['Property','3-Bed Lekki Phase 1']],
-        attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: 'Today 5:00 PM', link: 'syn.ps/lk3b', campaign: 'lekki-family', toju: 9 } },
-      { nm: 'Chidi Okafor', ph: '+234 701 555 0199', pr: '4-Bed Duplex, Osapa London · budget ₦170–200M', price: '₦178M', src: 'contact', t: '24m ago', score: 78, stage: 'Contacted', temp: 'warm',
-        brief: 'Asked for the title report and service charge history before committing to a viewing.',
-        summary: 'Detail-oriented buyer, ₦170–200M. Wants documentary proof before viewing — lead with the 7-node verification. Slower to commit; nurture with evidence, not pressure.',
-        nba: { text: 'Send the title report + service-charge history he asked for', do: 'Send documents', act: 'task' },
-        graph: [['You','Prestige Realty'],['Agent','Emeka Obi'],['Buyer','Chidi Okafor'],['Lawyer','Chidi’s counsel'],['Property','4-Bed Osapa Duplex']],
-        attr: { channel: 'facebook', post: 'Photo · 4-Bed Osapa Duplex', posted: '2 days ago', link: 'syn.ps/os4d', campaign: 'osapa-luxury', toju: 0 } },
-      { nm: 'Amina Yusuf', ph: '+234 814 555 0177', pr: '3-Bed Terrace, Ikate · budget ₦140–170M', price: '₦148M', src: 'browse', t: '1h ago', score: 85, stage: 'Viewing', temp: 'hot',
-        brief: 'First-time buyer, pre-approved mortgage with Stanbic. Toju matched on school access + commute.',
-        summary: 'First-time buyer with Stanbic pre-approval in hand. Motivated by school access + commute. Viewing booked; decision-ready once drainage/flood concerns are addressed.',
-        nba: { text: 'Confirm Saturday viewing — bring the flood-risk annex she asked about', do: 'Confirm viewing', act: 'task' },
-        graph: [['You','Prestige Realty'],['Agent','Zainab Bello'],['Buyer','Amina Yusuf'],['Mortgage','Stanbic IBTC'],['Property','3-Bed Ikate Terrace']],
-        attr: { channel: 'tiktok', post: 'Video · 3-Bed Ikate Terrace', posted: 'Mon 7:30 PM', link: 'syn.ps/ik3t', campaign: 'ikate-firsthome', toju: 15 } },
-      { nm: 'Tunde Bakare', ph: '+234 802 555 0118', pr: '2-Bed Flat, Victoria Island · budget ₦130–160M', price: '₦142M', src: 'toju', t: '5h ago', score: 64, stage: 'New', temp: 'cold', failed: true,
-        brief: 'Investor — asked about short-let regulations and gross yield on VI 2-beds.',
-        summary: 'Yield-focused investor eyeing VI 2-beds and short-let. WhatsApp number unreachable — try SMS/call. Re-qualify budget and intent before investing more time.',
-        nba: { text: 'WhatsApp delivery failed — retry via SMS or a direct call', do: 'Retry by call', act: 'call' },
-        graph: [['You','Prestige Realty'],['Agent','Tomiwa Cole'],['Buyer','Tunde Bakare'],['Property','2-Bed Victoria Island']],
-        attr: { channel: 'proximity', post: 'Walked within 300m of the VI 2-Bed', posted: '', link: '', campaign: '', toju: 6 } },
-      { nm: 'Ngozi Eze', ph: '+234 809 555 0104', pr: '4-Bed Duplex, Osapa London · budget ₦175M cash', price: '₦178M', src: 'browse', t: '3d ago', score: 96, stage: 'Negotiation', temp: 'hot',
-        brief: 'Cash buyer. Offered ₦170M, countered at ₦175M. Lawyer reviewing draft contract.',
-        summary: 'Decisive cash buyer. Offered ₦170M, sitting at ₦175M. Decision-maker (husband) abroad — allow 24h turnarounds. Lawyer engaged; at contract stage.',
-        nba: { text: 'Chase the ₦175M counter — her lawyer has the survey plan', do: 'Chase the offer', act: 'call' },
-        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Ngozi Eze (cash)'],['Lawyer','Ade & Partners'],['Developer','Osapa Estates'],['Property','4-Bed Osapa Duplex']],
-        attr: { channel: 'direct', post: 'Browsed verified listings in-app', posted: '', link: '', campaign: '', toju: 22 } },
-      { nm: 'Ibrahim Musa', ph: '+234 806 555 0121', pr: '3-Bed Apartment, Lekki Phase 1 · closed ₦161M', price: '₦161M', src: 'instagram', t: '2d ago', score: 88, stage: 'Won', temp: 'won',
-        brief: 'Came from the Instagram syndicated post. Closed at ₦161M.',
-        summary: 'Closed at ₦161M via Instagram. Strong advocate and a good referral source. Move to post-sale: escrow milestones and a referral ask.',
-        nba: { text: 'Track escrow milestones + ask for a referral while he’s delighted', do: 'Request referral', act: 'task' },
-        graph: [['You','Prestige Realty'],['Agent','Funke Adebayo'],['Buyer','Ibrahim Musa'],['Escrow','Synapse Trust'],['Property','3-Bed Lekki Phase 1']],
-        attr: { channel: 'instagram', post: 'Reel · 3-Bed Lekki Phase 1', posted: '11 days ago', link: 'syn.ps/lk3b', campaign: 'lekki-luxury', toju: 11 } },
-    ];
+    // Demo leads removed: each referenced a property that does not exist.
+    // Leads arrive from real buyer activity against real listings.
+    const leads = [];
     const TEMP_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', dormant: 'Dormant', won: 'Won' };
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
@@ -1619,16 +1684,8 @@
       { id: 'published', label: 'Published', who: 'Metrics collected every 6h' },
       { id: 'underperforming', label: 'Underperforming', who: 'Toju suggests a boost' },
     ];
-    let posts = [
-      { id: 'u1', listing: '2-Bed Flat, Victoria Island', price: '₦142M', img: IMG.vi, stage: 'uploaded', channels: [] },
-      { id: 'g1', listing: '3-Bed Terrace, Ikate', price: '₦148M', img: IMG.ikate, stage: 'generating', channels: ['instagram','tiktok','facebook'] },
-      { id: 'a1', listing: '3-Bed Apartment, Lekki Phase 1', price: '₦165M', img: IMG.lekki, stage: 'approval', channels: ['instagram','tiktok','facebook'], caption: '₦165M · gross yield beats the Lagos average. DM ‘REPORT’ and Toju sends the full verification + yield breakdown 🧾', reach: 13200 },
-      { id: 'p1', listing: '3-Bed Apartment, Lekki Phase 1', price: '₦165M', img: IMG.lekki, stage: 'scheduled', channels: ['instagram','tiktok'], when: 'Today 5:00 PM', reach: 11800 },
-      { id: 'p2', listing: '4-Bed Duplex, Osapa London', price: '₦178M', img: IMG.osapa, stage: 'scheduled', channels: ['instagram','whatsapp'], when: 'Tomorrow 9:00 AM', reach: 4100 },
-      { id: 'p4', listing: '3-Bed Terrace, Ikate', price: '₦148M', img: IMG.ikate, stage: 'published', channels: ['instagram','tiktok'], reach: 12400, metrics: { views: 12400, dms: 31, leads: 9 } },
-      { id: 'p5', listing: '4-Bed Duplex, Osapa London', price: '₦178M', img: IMG.osapa, stage: 'published', channels: ['tiktok'], reach: 48200, metrics: { views: 48200, dms: 87, leads: 22 } },
-      { id: 'up1', listing: '2-Bed Flat, Victoria Island', price: '₦142M', img: IMG.vi, stage: 'underperforming', channels: ['facebook'], reach: 1900, rsn: 'Facebook photo — 61% below your average reach. Your VI listings do 3× better as TikTok video.', metrics: { views: 1900, dms: 2, leads: 0 } },
-    ];
+    // Demo social posts removed — every one advertised an invented property.
+    let posts = [];
     const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
     const CHR = { instagram: 3200, tiktok: 8600, facebook: 1500, whatsapp: 900 };
     const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
@@ -1798,15 +1855,13 @@
     // ── listings — editable, with the 14-day freshness rule ──
     // Every listing must be re-listed every 14 days or it stops showing to
     // buyers (matches Toju's freshness filter). `days` = days since (re)listed.
-    const L_KEY = 'synapse_agency_listings_v4';
-    const L_DEFAULT = [
-      { t: '3-Bed Apartment, Lekki Phase 1', pr: 165, st: 'verified', leads: 6, days: 3, img: IMG.lekki },
-      { t: '4-Bed Duplex, Osapa London', pr: 178, st: 'verified', leads: 3, days: 8, img: IMG.osapa },
-      { t: '5-Bed Detached, Old Ikoyi', pr: 420, st: 'verified', leads: 4, days: 12, img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=70' },
-      { t: '3-Bed Terrace, Ikate', pr: 148, st: 'pending', leads: 1, days: 2, img: IMG.ikate },
-      { t: '2-Bed Flat, Yaba', pr: 58, st: 'pending', leads: 2, days: 13, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=70' },
-      { t: '2-Bed Flat, Victoria Island', pr: 142, st: 'verified', leads: 0, days: 17, img: IMG.vi },
-    ];
+    /* The database is the ONLY source of listings. There is no seed set and no
+       fabricated inventory: an agency sees exactly the properties it has
+       uploaded through this page, and nothing else. The key is bumped to v5 so
+       any browser still holding the old demo listings in localStorage drops
+       them rather than resurrecting properties that were deleted. */
+    const L_KEY = 'synapse_agency_listings_v5';
+    const L_DEFAULT = [];
     // enum option sets mirror the `properties` schema (supabase/migrations/0002_schema.sql)
     const PROP_TYPES = ['apartment','house','duplex','terrace','penthouse','bungalow','land','commercial'];
     const LISTING_TYPES = ['sale','rent','shortlet'];
@@ -1871,11 +1926,22 @@
         media: (l.media || []).map((m, i) => ({ url: m.url, is_primary: i === 0, display_order: i })),
       };
     }
+    /* localStorage is a cache of what the database returned for THIS agency,
+       never a source of truth and never a seed. The old `…_v2` fallback was
+       removed deliberately: reading it back resurrected demo listings that had
+       been deleted, so a property the agency never uploaded reappeared. Empty
+       is the correct starting state — hydrateListings() fills it from the
+       database, and an agency with no uploads sees none. */
     let LISTINGS_DATA;
-    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)) || JSON.parse(localStorage.getItem('synapse_agency_listings_v2')); } catch (e) {}
-    if (!Array.isArray(LISTINGS_DATA) || !LISTINGS_DATA.length) LISTINGS_DATA = L_DEFAULT.map(x => ({ ...x }));
+    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)); } catch (e) {}
+    if (!Array.isArray(LISTINGS_DATA)) LISTINGS_DATA = [];
     LISTINGS_DATA = LISTINGS_DATA.map(l => deriveLegacy(migrateListing(l)));
-    const saveListings = () => localStorage.setItem(L_KEY, JSON.stringify(LISTINGS_DATA));
+    /* Every mutation announces itself. Other panes (syndication, marketing,
+       proximity) derive their property options from LISTINGS_DATA rather than
+       querying separately, so "the properties this agency has listed" has one
+       definition portal-wide and the panes cannot drift apart. */
+    const announceListings = () => document.dispatchEvent(new CustomEvent('syn:listings'));
+    const saveListings = () => { localStorage.setItem(L_KEY, JSON.stringify(LISTINGS_DATA)); announceListings(); };
     const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
     const nairaM = v => '₦' + v + 'M';
     const nairaFull = v => '₦' + (Number(v) || 0).toLocaleString('en-NG');
@@ -2070,23 +2136,52 @@
           neighbourhood: g('lfHood').value.trim(), latitude: num(g('lfLat').value), longitude: num(g('lfLng').value),
           bedrooms: g('lfBeds').value === '' ? null : parseInt(g('lfBeds').value, 10),
           bathrooms: g('lfBaths').value === '' ? null : parseInt(g('lfBaths').value, 10),
-          area_sqm: num(g('lfArea').value), amenities: g('lfAmen').value.split(',').map(s => s.trim()).filter(Boolean),
+          area_sqm: num(g('lfArea').value),
+          // Split on comma, pipe OR newline. People paste amenity lists straight
+          // out of a brochure and those use pipes and line breaks at least as
+          // often as commas — comma-only silently stored the whole list as ONE
+          // amenity, which looks fine in the form and breaks every filter.
+          amenities: g('lfAmen').value.split(/[|,\n;]+/).map(s => s.trim()).filter(Boolean),
           title_type: g('lfTitleType').value || null, yield_pct: num(g('lfYield').value),
           is_active: actSw.classList.contains('on'),
           media: [{ url: g('lfImg').value.trim(), is_primary: true, display_order: 0 }],
         };
         if (isNew) {
-          LISTINGS_DATA.unshift(deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 })));
-          toast('Listing created — entering the verification queue');
+          const item = deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 }));
+          LISTINGS_DATA.unshift(item);
+          if (dbBacked) {
+            toast('Saving…');
+            SynListings.create(data).then((id) => {
+              item.id = id;
+              toast('Listing created — saved, and unverified until the desk checks it');
+            }).catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
+          } else {
+            toast('Listing created here only — sign in as an agency to save it');
+          }
         } else {
           Object.assign(LISTINGS_DATA[idx], data); // verification_status left untouched (system-owned)
           deriveLegacy(LISTINGS_DATA[idx]);
-          toast('Listing updated');
+          const id = LISTINGS_DATA[idx].id;
+          if (dbBacked && id) {
+            SynListings.update(id, data)
+              .then(() => toast('Listing updated'))
+              .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
+          } else {
+            toast(dbBacked ? 'Updated here only — this listing has no server record' : 'Listing updated');
+          }
         }
         saveListings(); renderListings(); closeLead();
       });
       const del = g('lfDel');
-      if (del) del.addEventListener('click', () => { LISTINGS_DATA.splice(idx, 1); saveListings(); renderListings(); closeLead(); toast('Listing deleted'); });
+      if (del) del.addEventListener('click', () => {
+        const gone = LISTINGS_DATA[idx];
+        LISTINGS_DATA.splice(idx, 1); saveListings(); renderListings(); closeLead();
+        if (dbBacked && gone && gone.id) {
+          SynListings.remove(gone.id)
+            .then(() => toast('Listing deleted'))
+            .catch((e) => toast('Removed here, but the server still has it: ' + ((e && e.message) || e)));
+        } else { toast('Listing deleted'); }
+      });
     }
 
     document.getElementById('lgrid').addEventListener('click', (e) => {
@@ -2097,7 +2192,13 @@
         const l = LISTINGS_DATA[+rl.dataset.relist];
         l.days = 0;
         saveListings(); renderListings();
-        toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days');
+        if (dbBacked && l.id) {
+          SynListings.relist(l.id)
+            .then(() => toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days'))
+            .catch((e) => toast('Not re-listed on the server: ' + ((e && e.message) || e)));
+        } else {
+          toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days');
+        }
       }
     });
     document.getElementById('newListingBtn').addEventListener('click', () => listingForm({ st: 'pending' }, -1));
@@ -2123,6 +2224,38 @@
     })();
     renderListings();
 
+    /* ── database hydration ───────────────────────────────────────────────
+       Listings used to live in localStorage only, so nothing an agency
+       created ever reached the database — Toju and browse could not see it.
+       When the visitor is signed in as a member of an agency, the database
+       becomes the source of truth and replaces the local copy. When they are
+       not, the local demo data stands so the dashboard still demonstrates.
+
+       `dbBacked` gates every write below. It exists so the UI never claims a
+       save persisted when it only touched this browser — the failure mode
+       this whole change was made to remove. */
+    let dbBacked = false;
+    function fromDbRow(p) {
+      const l = deriveLegacy(Object.assign({}, p));
+      l.days = p.listed_at ? Math.max(0, Math.floor((Date.now() - new Date(p.listed_at).getTime()) / 864e5)) : 0;
+      l.leads = l.leads || 0;
+      return l;
+    }
+    function hydrateListings() {
+      if (!window.SynListings) return;
+      SynListings.available().then((ok) => {
+        if (!ok) return null;
+        return SynListings.list().then((rows) => {
+          dbBacked = true;
+          LISTINGS_DATA = rows.map(fromDbRow);
+          renderListings();
+          announceListings();
+        });
+      }).catch((e) => { console.warn('listings: staying on local data —', (e && e.message) || e); });
+    }
+    if (document.readyState === 'complete') hydrateListings();
+    else window.addEventListener('load', hydrateListings);
+
     // ── marketing — Omneky-style AI ad studio ──
     // Campaigns own their creatives; each creative is measured on its own
     // (CTR, leads) and the AI scales winners / pauses losers.
@@ -2138,24 +2271,15 @@
     const HEADLINES = {
       family: ['Schools 10 min away. Verified title.', 'Room for everyone — 7 checks passed.', 'The school run just got shorter.'],
       investor: ['8.1% gross yield. Independently verified.', 'Verified title. Real returns.', 'The Lagos yield play that survives due diligence.'],
-      diaspora: ['Buy from abroad. Escrow-protected.', 'Verified on the ground so you don’t fly blind.', 'Your naira is safe until every check passes.'],
+      // No escrow service exists on the platform (see terms.html) — headlines
+      // offered to agencies must not promise one.
+      diaspora: ['Buy from abroad. Independently verified.', 'Verified on the ground so you don’t fly blind.', 'Seven checks passed before you ever see it.'],
       firsthome: ['Your first home, verified 7 ways.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning — safely.'],
     };
     let CAMPAIGNS;
     try { CAMPAIGNS = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) {}
-    if (!Array.isArray(CAMPAIGNS) || !CAMPAIGNS.length) CAMPAIGNS = [
-      { nm: 'Lekki family buyers', persona: 'family', live: true, budget: 15, spend: 118, chans: ['instagram', 'facebook'],
-        ads: [
-          { img: IMG.lekki, hl: HEADLINES.family[0], ch: 'instagram', ctr: 4.8, leads: 21, st: 'scaling' },
-          { img: IMG.osapa, hl: HEADLINES.family[1], ch: 'facebook', ctr: 2.1, leads: 9, st: 'learning' },
-          { img: IMG.ikate, hl: HEADLINES.family[2], ch: 'instagram', ctr: 0.7, leads: 1, st: 'pausedai' },
-        ] },
-      { nm: 'Diaspora investors', persona: 'diaspora', live: true, budget: 22, spend: 66, chans: ['facebook', 'tiktok'],
-        ads: [
-          { img: IMG.vi, hl: HEADLINES.diaspora[0], ch: 'facebook', ctr: 3.9, leads: 14, st: 'scaling' },
-          { img: IMG.osapa, hl: HEADLINES.diaspora[1], ch: 'tiktok', ctr: 3.1, leads: 7, st: 'learning' },
-        ] },
-    ];
+    // No seeded campaigns: one must be built from a real listing.
+    if (!Array.isArray(CAMPAIGNS)) CAMPAIGNS = [];
     const saveCamps = () => localStorage.setItem(MK_KEY, JSON.stringify(CAMPAIGNS));
     const AD_ST = { scaling: 'Scaling', learning: 'Learning', pausedai: 'Paused by AI' };
 
@@ -2391,59 +2515,60 @@
     const WKS = ['7 wks ago', '6 wks ago', '5 wks ago', '4 wks ago', '3 wks ago', '2 wks ago', 'Last week', 'This week'];
 
     // ── overview + CRM stat tiles (hero number + 8-week trend) ──
+    /* Counted from real records. These were fixed numbers with invented 8-week
+       sparklines — "₦2.4B sales value" and "128 leads" on an account that has
+       neither. Sparklines are omitted entirely: a trend line needs history, and
+       inventing the shape of a trend is worse than showing none. */
+    const wonLeads = () => leads.filter(l => l.stage === 'Won');
+    const salesValue = () => wonLeads().reduce((s, l) => s + (Number(String(l.price || '').replace(/[^\d.]/g, '')) || 0), 0);
+    const fmtB = (n) => n >= 1e9 ? '₦' + (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + Math.round(n / 1e6) + 'M' : '₦' + n.toLocaleString();
+
     STATS.overview =
-      statTile(5, 'Active leads', [3, 4, 4, 6, 5, 7, 6, 5]) +
-      statTile(34, 'Viewings booked', [2, 3, 4, 5, 4, 6, 5, 5]) +
-      statTile(9, 'Won this quarter', [0, 1, 1, 2, 1, 2, 1, 1]) +
-      statTile('₦2.4B', 'Sales value', [1.1, 1.3, 1.4, 1.7, 1.8, 2.0, 2.2, 2.4]);
+      statTile(leads.filter(l => l.stage !== 'Won').length, 'Active leads', null) +
+      statTile(leads.filter(l => l.stage === 'Viewing').length, 'Viewings booked', null) +
+      statTile(wonLeads().length, 'Won this quarter', null) +
+      statTile(fmtB(salesValue()), 'Sales value', null);
     STATS.crm =
-      statTile(128, 'Leads', [9, 11, 14, 12, 16, 18, 17, 19]) +
-      statTile(34, 'Viewings', [2, 3, 4, 5, 4, 6, 5, 5]) +
-      `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(7, { label: '7%' })}</div></div>` +
-      statTile('₦2.4B', 'Sales', [1.1, 1.3, 1.4, 1.7, 1.8, 2.0, 2.2, 2.4]);
+      statTile(leads.length, 'Leads', null) +
+      statTile(leads.filter(l => l.stage === 'Viewing').length, 'Viewings', null) +
+      `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0, { label: (leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0) + '%' })}</div></div>` +
+      statTile(fmtB(salesValue()), 'Sales', null);
 
     // ── agents — data-first cards + clickable profiles ──
-    const AGENTS = [
-      { nm: 'Funke Adebayo', rl: 'Senior agent · Island', active: 11, closed: 5, respM: 6, win: 42,
-        weekly: [6, 8, 7, 9, 11, 10, 12, 14], respT: [9, 8, 8, 7, 7, 6, 6, 6],
-        stages: [['New', 3], ['Contacted', 4], ['Viewing', 2], ['Negotiation', 2]],
-        recent: [['3-Bed Apartment, Lekki Phase 1', '₦161M · 2d ago'], ['4-Bed Duplex, Osapa London', '₦175M · negotiating']] },
-      { nm: 'Emeka Obi', rl: 'Agent · Mainland', active: 8, closed: 3, respM: 9, win: 31,
-        weekly: [5, 4, 6, 7, 6, 8, 7, 9], respT: [12, 11, 10, 10, 9, 9, 9, 9],
-        stages: [['New', 2], ['Contacted', 3], ['Viewing', 2], ['Negotiation', 1]],
-        recent: [['2-Bed Flat, Yaba', '₦55M · 1w ago']] },
-      { nm: 'Zainab Bello', rl: 'Agent · Lekki corridor', active: 7, closed: 2, respM: 7, win: 27,
-        weekly: [3, 4, 5, 4, 6, 7, 6, 8], respT: [8, 8, 7, 8, 7, 7, 7, 7],
-        stages: [['New', 2], ['Contacted', 2], ['Viewing', 2], ['Negotiation', 1]],
-        recent: [['3-Bed Terrace, Ikate', '₦148M · viewing Sat']] },
-      { nm: 'Ada Nwosu', rl: 'Agent · Diaspora desk', active: 3, closed: 1, respM: 5, win: 25,
-        weekly: [1, 2, 2, 3, 2, 3, 3, 4], respT: [6, 6, 5, 5, 5, 5, 5, 5],
-        stages: [['New', 1], ['Contacted', 1], ['Viewing', 1], ['Negotiation', 0]],
-        recent: [['5-Bed Detached, Old Ikoyi', '₦420M · UK buyer']] },
-      { nm: 'Tomiwa Cole', rl: 'Junior agent', active: 5, closed: 1, respM: 12, win: 17,
-        weekly: [2, 2, 3, 3, 4, 3, 5, 5], respT: [16, 15, 14, 14, 13, 13, 12, 12],
-        stages: [['New', 2], ['Contacted', 2], ['Viewing', 1], ['Negotiation', 0]],
-        recent: [['2-Bed Flat, Victoria Island', '₦142M · re-listed']] },
-    ];
+    // Your team. Empty until you invite real agents — this held five invented
+    // colleagues with invented win rates, response times and closed deals.
+    const AGENTS = [];
     const first = n => n.split(' ')[0];
     STATS.agents =
       statTile(AGENTS.length, 'Agents', null) +
       statTile(Math.round(AGENTS.reduce((s, a) => s + a.respM, 0) / AGENTS.length) + 'm', 'Avg first reply', [11, 10, 9, 9, 8, 8, 8, 8]) +
       statTile(AGENTS.reduce((s, a) => s + a.active, 0), 'Active leads', [22, 25, 27, 26, 30, 32, 33, 34]) +
       statTile(AGENTS.reduce((s, a) => s + a.closed, 0), 'Closed (qtr)', [1, 2, 1, 2, 2, 1, 2, 1]);
-    document.getElementById('agClosed').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.closed]));
-    document.getElementById('agReply').innerHTML = hbarsHTML(AGENTS.map(a => [first(a.nm), a.respM]), 'm');
-
-    function renderAgents(){
+    /* The KPI strip and the two performance charts now live in the Ask-Toju
+       side panel, so the Agents pane is just the roster. These render into the
+       panel's markup, which only exists while that panel is open — hence the
+       null checks rather than assuming the elements are on the page. */
+    function renderAgentSummary() {
       const real = AGENTS.filter(a => !a.pending);
-      const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
-      const topIdx = top ? AGENTS.indexOf(top) : -1;
-      document.getElementById('agKpis').innerHTML = [
+      const kpis = document.getElementById('agKpis');
+      if (kpis) kpis.innerHTML = [
         ['Headcount', real.length],
         ['Avg first reply', (real.length ? Math.round(real.reduce((s, a) => s + a.respM, 0) / real.length) : 0) + 'm'],
         ['Active leads', real.reduce((s, a) => s + a.active, 0)],
         ['Closed · qtr', real.reduce((s, a) => s + a.closed, 0)],
       ].map(k => `<div class="ag-kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
+
+      const closed = document.getElementById('agClosed');
+      if (closed) closed.innerHTML = real.length ? hbarsHTML(real.map(a => [first(a.nm), a.closed])) : '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
+      const reply = document.getElementById('agReply');
+      if (reply) reply.innerHTML = real.length ? hbarsHTML(real.map(a => [first(a.nm), a.respM]), 'm') : '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
+    }
+
+    function renderAgents(){
+      const real = AGENTS.filter(a => !a.pending);
+      const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
+      const topIdx = top ? AGENTS.indexOf(top) : -1;
+      renderAgentSummary();
       document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
         if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
           <div class="ac-top"><span class="av">${initials(a.nm)}</span><div class="ac-id"><div class="ac-nm">${a.nm}</div><div class="ac-rl">${a.rl}</div></div></div>
@@ -2540,21 +2665,17 @@
     // ── AI business advisor (overview) — prescriptive, not just dashboards ──
     const ADVISOR = [
       { q: 'Why are sales down this month?', points: [
-          'Average first-response time rose from 6 to 11 minutes — hot leads cool fast.',
-          'Lekki inventory dropped by 3 listings — your highest-demand band.',
-          'Follow-ups on “Contacted” leads fell 22% this week.',
-          'Facebook cost-per-lead is 2.4× your Instagram — spend is leaking.' ],
-        reco: 'Reassign the 2 stalled Lekki leads to Funke, refresh Lekki inventory, and shift budget from Facebook into the Instagram reel that’s actually converting.' },
+          'Toju compares response times, inventory levels, follow-up rates and cost-per-lead by channel.',
+          'It needs a month of real activity before any of that means anything.' ],
+        reco: 'Once leads are flowing, this answer names the specific bottleneck rather than a general one.' },
       { q: 'Where should I focus today?', points: [
-          'Bola Adeyemi (Hot · 92) — first-response SLA expires in 13 minutes.',
-          'Ngozi Eze at ₦175M negotiation — deal score 96, waiting on her counter.',
-          '3-Bed Ikate needs 2 more verification nodes before it can go live.' ],
-        reco: 'Call Bola first, then push Ngozi’s contract. Nudge the trust desk on Ikate’s media + freshness checks.' },
+          'Toju reads your live leads, SLAs and verification queue to answer this.',
+          'There is nothing to prioritise until real leads and listings exist.' ],
+        reco: 'Add a listing and connect a channel — this answer is built from your own pipeline, not a sample one.' },
       { q: 'Which listings are underperforming?', points: [
-          'VI 2-Bed: 1.9k reach on Facebook — 61% below your average.',
-          'It is your only inactive listing, with 0 leads in 14 days.',
-          'Its content has never been posted as video.' ],
-        reco: 'Repost the VI 2-Bed as a TikTok video (your VI content does 3× better there) and trim the ask ~4% to re-enter buyers’ budget bands.' },
+          'Measured from real reach, leads and freshness per listing.',
+          'No published campaigns yet, so there is no performance to compare.' ],
+        reco: 'Publish a campaign from a live listing, then Toju can tell you which creative and channel is actually working.' },
     ];
     function renderAdvisor(idx){
       const qsEl = document.getElementById('advQs'); if (!qsEl) return;
@@ -2568,85 +2689,14 @@
 
     // ── Toju Negotiator (Phase C) ──
     // Negotiation authority: the floor is an encrypted, engine-only field.
-    const AUTH = [
-      { t: '3-Bed Apartment, Lekki Phase 1', list: 165, floor: 158 },
-      { t: '4-Bed Duplex, Osapa London', list: 178, floor: 170 },
-      { t: '3-Bed Terrace, Ikate', list: 148, floor: 140 },
-    ];
-    // pick a property photo by keyword, sharpened for hero use
-    function propImg(s){ s = (s || '').toLowerCase();
-      const base = s.includes('osapa') ? IMG.osapa : s.includes('ikate') ? IMG.ikate : s.includes('lekki') ? IMG.lekki : IMG.vi;
-      return base.replace('?w=200&q=60', '?w=640&q=70'); }
-    function renderAuth(){
-      document.getElementById('authGrid').innerHTML = AUTH.map((a, i) => {
-        const pct = (a.floor / a.list) * 100;
-        return `<div class="card auth" role="group" aria-label="Negotiation authority — ${a.t}, list ₦${a.list}M, floor ₦${a.floor}M, encrypted">
-          <div class="media"><img src="${propImg(a.t)}" alt="" loading="lazy"><span class="pill pv">✓ Verified</span><span class="pill pl">🔒 Floor encrypted</span></div>
-          <div class="body">
-            <div class="tt">${a.t}</div>
-            <div class="lp">List price</div>
-            <div class="price">₦${a.list}M</div>
-            <div class="rangebar"><span class="fill" style="left:${pct}%;right:0"></span><span class="knob" style="left:${pct}%"></span></div>
-            <div class="rr"><span class="floor">Floor ₦${a.floor}M</span><span class="list">List ₦${a.list}M</span></div>
-            <p class="expl">Toju negotiates within this band and never reveals the floor as a number.</p>
-            <div class="floorset"><label>Set floor ₦<input type="number" value="${a.floor}" data-i="${i}" min="1" max="${a.list}" aria-label="Set floor for ${a.t}"> M</label></div>
-            <div class="lock"><span>🔒</span><span>Encrypted — visible only to Toju&#39;s negotiation engine. Never shown to buyers, never exported.</span></div>
-          </div>
-        </div>`;
-      }).join('');
-    }
-    document.getElementById('authGrid').addEventListener('change', (e) => {
-      const inp = e.target.closest('input[data-i]'); if (!inp) return;
-      const a = AUTH[+inp.dataset.i], v = parseInt(inp.value, 10);
-      if (v > 0 && v <= a.list) { a.floor = v; renderAuth(); }
-    });
-    renderAuth();
+    // Negotiation authority (per-property floors) was removed with the
+    // property grid it rendered into — see #pane-negotiator.
 
     // Handoff summaries — Toju pre-negotiated, ready to close.
-    const HANDOFFS = [
-      { buyer: 'Bola Adeyemi', source: 'Instagram reel · today', prop: '3-Bed Lekki Phase 1', price: '₦165M', rating: 'HIGH INTENT · act in 24h', agreed: '₦161M', signals: ['Owner-occupier', 'Mortgage pre-qualified', 'Decision-maker confirmed'],
-        profile: [['Intent', 'Owner-occupier, moving <3 months'], ['Decision-maker', 'Yes — confirmed'], ['Financing', 'Mortgage pre-qualified'], ['Objections', 'Price + school proximity — both resolved']],
-        neg: ['Opening position: ₦150M', 'Toju defended ₦165M with Lekki Phase 1 comparables', 'Buyer revised: ₦158M', 'Toju: indicated the agency may consider ₦160–162M for a committed buyer', 'Current: ready at ₦161M subject to viewing'],
-        rec: 'Confirm ₦161M and schedule the final viewing. This buyer is ready to move.',
-        transcript: [
-          { stage: '1 · Qualification' },
-          { who: 'toju', text: 'Welcome! What&#39;s drawing you to the Lekki Phase 1 3-bed in particular?' },
-          { who: 'buyer', text: 'We&#39;re relocating from Abuja — family of four. Good schools matter and I work on the Island.' },
-          { who: 'toju', text: 'Understood. Timeline — looking to move in the next 1–3 months, or exploring longer term?' },
-          { who: 'buyer', text: 'Within 3 months. Part cash, part mortgage.' },
-          { stage: '2 · Property presentation' },
-          { who: 'toju', text: 'This is priced at ₦165M — competitive for a fully verified 3-bed here; comparable Lekki Phase 1 units traded ₦168–175M in the last 6 months. Commute to VI is ~14 min, nearest international school 7 min. It cleared all 7 verification checks.' },
-          { stage: '3 · Objection handling' },
-          { who: 'buyer', text: 'The price feels a bit high, and I want to be sure about the schools.' },
-          { who: 'toju', text: 'Relative to your budget, or to the market? On schools — three international schools within 10 minutes; I can share the map. On price, let me show you where there&#39;s room.' },
-          { stage: '4 · Negotiation · within your authorised range' },
-          { who: 'buyer', text: 'I was thinking around ₦150M.' },
-          { who: 'toju', text: 'The agency listed at ₦165M on recent comparables. ₦150M is below what they can accept for this one. For a committed buyer on your timeline, I believe ₦160–162M is a range they&#39;d consider seriously. Can I confirm you&#39;re ready to proceed?' },
-          { who: 'buyer', text: 'If it lands near ₦161M and the viewing checks out — yes.' },
-          { stage: '5 · Handoff' },
-          { who: 'toju', text: 'Wonderful. I&#39;ll pass this to your agent with everything — your brief, the ₦161M position, and a recommended viewing slot. They&#39;ll take it from here.' },
-        ] },
-      { buyer: 'Ngozi Eze', source: 'In-app browse', prop: '4-Bed Osapa Duplex', price: '₦178M', rating: 'HIGH INTENT · cash', agreed: '₦175M', signals: ['Cash buyer', 'Home + rental income', 'Joint decision · 24h'],
-        profile: [['Intent', 'Cash buyer, investment + residence'], ['Decision-maker', 'Joint — husband abroad, 24h turnaround'], ['Financing', 'Cash confirmed'], ['Objections', 'Survey plan — shared and accepted']],
-        neg: ['Opening position: ₦170M', 'Toju held ₦178M, cited Osapa scarcity + verified title', 'Buyer revised: ₦175M', 'Toju: ₦175M is within range for a cash buyer with no chain', 'Current: ready at ₦175M, lawyer reviewing contract'],
-        rec: 'Approve ₦175M and send the contract. Allow 24h for her husband to co-sign.',
-        transcript: [
-          { stage: '1 · Qualification' },
-          { who: 'toju', text: 'Are you looking at the Osapa duplex for your own use, rental income, or both?' },
-          { who: 'buyer', text: 'Both — we&#39;d live in it and let the BQ. Paying cash.' },
-          { stage: '2 · Property presentation' },
-          { who: 'toju', text: 'Cash simplifies everything. At ₦178M this is priced with the market; Osapa 4-beds are scarce and this one has a fully verified title and survey. Estimated gross yield on the BQ alone is ~6.4%.' },
-          { stage: '3 · Objection handling' },
-          { who: 'buyer', text: 'I&#39;d want my lawyer to see the survey plan first.' },
-          { who: 'toju', text: 'Absolutely — I&#39;ve shared the survey plan and the full verification report with you now. Take your time reviewing.' },
-          { stage: '4 · Negotiation · within your authorised range' },
-          { who: 'buyer', text: 'We can do ₦170M cash, close quickly.' },
-          { who: 'toju', text: 'For a clean cash close I can represent a serious number to the agency, but ₦170M is under where they&#39;ll go on this title. ₦175M cash, no chain, is realistic. Shall I put that forward?' },
-          { who: 'buyer', text: 'Yes — ₦175M works if the contract is clean.' },
-          { stage: '5 · Handoff' },
-          { who: 'toju', text: 'Done. Passing this to your agent now with the ₦175M cash position and a note that her husband co-signs within 24 hours.' },
-        ] },
-    ];
+    // Toju-negotiated handoffs. Empty until Toju actually negotiates a real
+    // lead on a real listing — this held five invented buyers with invented
+    // transcripts, offers and agreed prices for properties that never existed.
+    const HANDOFFS = [];
     function renderHandoffs(){
       document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
         <div class="card handoff" role="group" aria-label="Toju deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
@@ -2688,12 +2738,28 @@
     // ── social composer: New post → AI captions (edge fn) → schedule ──
     const SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const SB_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
-    const POST_LISTINGS = [
-      { title: '3-Bed Apartment, Lekki Phase 1', price: 165000000, city: 'Lagos', area: 'Lekki Phase 1', bedrooms: 3, listingType: 'sale', trustScore: 94, img: IMG.lekki },
-      { title: '4-Bed Duplex, Osapa London', price: 178000000, city: 'Lagos', area: 'Osapa London', bedrooms: 4, listingType: 'sale', trustScore: 91, img: IMG.osapa },
-      { title: '3-Bed Terrace, Ikate', price: 148000000, city: 'Lagos', area: 'Ikate', bedrooms: 3, listingType: 'sale', trustScore: 88, img: IMG.ikate },
-      { title: '2-Bed Flat, Victoria Island', price: 142000000, city: 'Lagos', area: 'Victoria Island', bedrooms: 2, listingType: 'sale', trustScore: 90, img: IMG.vi },
-    ];
+    /* The social composer posts about YOUR listings. This was four invented
+       Lagos properties with invented trust scores, so an agency could compose
+       and schedule a post about a home it does not have. Derived from
+       LISTINGS_DATA and rebuilt whenever listings change. */
+    let POST_LISTINGS = [];
+    function rebuildPostListings() {
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+      POST_LISTINGS = L.filter(l => l.is_active !== false).map(l => ({
+        id: l.id,
+        title: l.title || l.t || '(untitled)',
+        price: Number(l.price) || 0,
+        city: l.city || '',
+        area: l.neighbourhood || l.city || '',
+        bedrooms: l.bedrooms,
+        listingType: l.listing_type || 'sale',
+        trustScore: l.trust_score,
+        verification_status: l.verification_status,
+        img: (l.media && l.media[0] && l.media[0].url) || l.img || '',
+      }));
+    }
+    rebuildPostListings();
+    document.addEventListener('syn:listings', rebuildPostListings);
     const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp' };
 
     /* ── Campaign generator ────────────────────────────────────────────────
@@ -2708,56 +2774,119 @@
       if (!sel || !go || !window.SynSyndicate) return;
       var S = window.SynSyndicate, rows = [], campaign = null, running = false;
 
-      // declared locally: the page's other constants live in a different IIFE
-      // scope, and reaching for them here throws before anything renders.
-      var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-      var ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+      /* SINGLE SOURCE: the Listings pane.
+         This picker used to fetch /rest/v1/properties with the anon key, which
+         RLS answers with the PUBLIC policy — every live listing on the platform,
+         from every agency. An agency could therefore build and queue a campaign
+         for a property it does not represent. It now reads the same
+         LISTINGS_DATA the Listings pane owns, so "what I have listed" has one
+         definition across the whole portal and cannot drift.
 
-      var BROWSE = SUPABASE_URL + '/rest/v1/properties'
-        + '?select=id,title,city,listing_type,property_type,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
-        + '&status=eq.live&is_active=is.true&verification_status=eq.verified'
-        + '&order=trust_score.desc&limit=12';
+         Verification is still not a filter — an agency may market a listing it
+         has just put up. syndication.js decides what may honestly be CLAIMED
+         about an unverified home (it drops the verified-first angle and the
+         #VerifiedListing tag), which is the right place for that judgement. */
+      /* Local escaper. The page's other `esc` is declared INSIDE listingForm(),
+         so it is not in scope here — the previous version of this block called
+         it from inside a .then(), where the ReferenceError was swallowed by the
+         .catch() and surfaced as a misleading "could not load listings". Define
+         it here rather than reach for a helper that only looks global. */
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
 
-      sel.innerHTML = '<option>Loading verified listings…</option>';
-      fetch(BROWSE, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (!Array.isArray(d) || !d.length) throw new Error('none');
-          rows = d.map(function (p) {
-            return { id: p.id, title: p.title, city: p.city, listing_type: p.listing_type,
-              property_type: p.property_type, price: p.price, bedrooms: p.bedrooms,
-              trust_score: p.trust_score,
-              neighbourhood: p.neighbourhoods && p.neighbourhoods.name,
-              flood_risk: p.neighbourhoods && p.neighbourhoods.flood_risk,
-              power_reliability: p.neighbourhoods && p.neighbourhoods.power_reliability };
+      function ownListings() {
+        // guarded exactly like the social pane does: this block runs in a later
+        // script than the declaration, so tolerate it not existing yet.
+        return (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+      }
+
+      /* The agency's brand, loaded once and handed to every generation so the
+         copy signs itself, tags the agency's own handle, and the creatives are
+         painted in their colours. Null until it resolves; generation still
+         works unbranded rather than blocking on it. */
+      var BRAND = null;
+      if (window.SynListings && SynListings.loadBrand) {
+        SynListings.loadBrand().then(function (b) { BRAND = b || null; }).catch(function () {});
+      }
+
+      function buildPicker() {
+        rows = ownListings()
+          .filter(function (l) { return l.is_active !== false; })
+          .map(function (l) {
+            return {
+              id: l.id, title: l.title || l.t, city: l.city,
+              listing_type: l.listing_type, property_type: l.property_type,
+              price: l.price, bedrooms: l.bedrooms, trust_score: l.trust_score,
+              verification_status: l.verification_status, expires_at: l.expires_at,
+              neighbourhood: l.neighbourhood || l.city,
+              flood_risk: l.flood_risk, power_reliability: l.power_reliability,
+            };
           });
-          sel.innerHTML = rows.map(function (r, i) {
-            return '<option value="' + i + '">' + esc(r.title) + ' · ' + S.naira(r.price)
-              + (r.listing_type === 'rent' ? '/yr' : '') + '</option>';
-          }).join('');
-        })
-        .catch(function () {
-          sel.innerHTML = '<option value="">Could not load listings — try again</option>';
-        });
+        if (!rows.length) {
+          sel.innerHTML = '<option value="">No active listings yet — add one under Listings first</option>';
+          return;
+        }
+        sel.innerHTML = rows.map(function (r, i) {
+          return '<option value="' + i + '">' + esc(r.title) + ' · ' + S.naira(r.price)
+            + (r.listing_type === 'rent' ? '/yr' : '')
+            + (r.verification_status === 'verified' ? '' : ' · not yet verified') + '</option>';
+        }).join('');
+      }
+
+      buildPicker();
+      // Listings change (hydrate from the database, create, edit, delete,
+      // re-list) republishes this list so the two panes can never disagree.
+      document.addEventListener('syn:listings', buildPicker);
 
       go.addEventListener('click', function () {
         if (running || !rows.length) return;
         var row = rows[+sel.value || 0];
         if (!row) return;
-        campaign = S.generate(row);
+        campaign = S.generate(row, { brand: BRAND });
         render();
       });
 
       function render() {
         var ok = campaign.variants.filter(function (v) { return !v.issues.length; });
         var bad = campaign.variants.length - ok.length;
-        var html = '<div class="cmp-sum">'
+        // Count the angles actually used, not the catalogue — an unverified
+        // listing legitimately generates fewer, and saying "5 angles" over four
+        // of them is the small kind of untrue this product cannot afford.
+        var used = {};
+        campaign.variants.forEach(function (v) { used[v.angle || (v.angleId || '')] = 1; });
+        var angleCount = Object.keys(used).length || campaign.variants.length;
+        var skipped = campaign.skipped || [];
+        // Creatives carry the agency's identity, not Synapse's. Falls back to
+        // the app's own ink when no brand colour has been set — never a
+        // stand-in colour pretending to be theirs.
+        var B = campaign.brand || {};
+        var brandBar = B.isSet
+          ? '<div class="cmp-brandbar" style="border-left-color:' + esc(B.color || '#121212') + '">'
+            + (B.logo ? '<img src="' + esc(B.logo) + '" alt="" onerror="this.remove()">' : '')
+            + '<span class="bb-nm"' + (B.font ? ' style="font-family:' + esc(B.font) + '"' : '') + '>'
+            + esc(B.name || 'Your agency') + '</span>'
+            + (B.tagline ? '<span class="bb-tag">' + esc(B.tagline) + '</span>' : '')
+            + (B.colorAlt ? '<span class="bb-dot" style="background:' + esc(B.colorAlt) + '"></span>' : '')
+            + '<span class="bb-note">Every caption below signs off as you</span>'
+            + '</div>'
+          : '<div class="cmp-brandbar plain"><span class="bb-note">No brand set — '
+            + 'these post unsigned. Add your name, colours and voice under <b>Team → Brand</b>.</span></div>';
+        var html = brandBar + '<div class="cmp-sum">'
           + '<span><b>' + campaign.variants.length + '</b> variants</span>'
-          + '<span><b>' + S.ANGLES.length + '</b> angles</span>'
+          + '<span><b>' + angleCount + '</b> angles</span>'
           + '<span><b>' + Object.keys(S.PLATFORMS).length + '</b> channels</span>'
           + '<span style="color:var(--success)"><b>' + ok.length + '</b> ready</span>'
           + (bad ? '<span style="color:#a8402b"><b>' + bad + '</b> need attention</span>' : '')
-          + '</div>';
+          + '</div>'
+          + (skipped.length
+            ? '<div class="muted" style="font-size:12.5px;margin:-4px 0 12px">'
+              + skipped.map(function (s) { return esc(s.name); }).join(', ')
+              + (skipped.length === 1 ? ' is' : ' are') + ' unavailable until this listing is verified — '
+              + 'those angles claim the seven checks passed.</div>'
+            : '');
 
         Object.keys(S.PLATFORMS).forEach(function (pl) {
           var spec = S.PLATFORMS[pl];
@@ -2869,7 +2998,19 @@
         const l = POST_LISTINGS[cmp.li];
         const res = await fetch(SB_URL + '/functions/v1/social-generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
-          body: JSON.stringify({ property: l, channels: [...cmp.chans] }),
+          // Voice is the one brand field a fixed template cannot honour, so it
+          // goes to the model that can. Sent only when the agency actually
+          // wrote one — an absent voice must not become an invented one.
+          body: JSON.stringify({
+            property: l,
+            channels: [...cmp.chans],
+            brand: BRAND ? {
+              name: BRAND.name || null,
+              tagline: BRAND.tagline || null,
+              voice: BRAND.brand_voice || null,
+              handle: (BRAND.social && BRAND.social.instagram) || null,
+            } : null,
+          }),
         });
         const d = await res.json().catch(() => ({}));
         cmp.loading = false;
@@ -3031,28 +3172,30 @@
         after: () => { renderInsights(); document.getElementById('insights').addEventListener('click', (e) => { const b = e.target.closest('[data-ins]'); if (!b) return; b.textContent = '✓ Queued'; b.disabled = true; b.style.opacity = .6; toast('Toju is applying this across your creatives'); }); } },
       crm: { title: 'Pipeline read', sub: 'Toju’s take on your leads',
         html: () => tpSummary('Where your attention pays off', [
-          'Bola Adeyemi (Hot · 92) — first-response SLA expires in 13 minutes.',
-          'Ngozi Eze at ₦175M — deal score 96, waiting on her counter.',
-          'Instagram is your best-converting channel; Facebook CPL is 2.4× higher.',
-        ], 'Call Bola now, push Ngozi’s contract, and shift budget from Facebook to Instagram.') },
+          'Toju ranks your leads by intent, deal value and how close the SLA is.',
+          'No leads yet — this fills in the moment a buyer reaches you.',
+        ], 'Connect a channel or share a listing, and the first real lead lands here.') },
       listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
         html: () => tpSummary('Keep your listings live', [
-          '1 listing has expired and is hidden from buyers — re-list to restore it.',
-          '2 listings expire within 3 days; re-list before they drop off.',
-          'Your Lekki band is under-supplied vs demand — add inventory there.',
-        ], 'Re-list the expired VI 2-Bed and refresh your two expiring Lekki homes today.') },
+          'Every listing expires 14 days after it was last confirmed.',
+          'Toju flags what has expired and what is about to, per listing.',
+        ], 'The notification bell carries the same warnings, and takes you straight to the listing.') },
       social: { title: 'Content coach', sub: 'What to post next',
         html: () => tpSummary('Move the needle', [
-          '2 posts are awaiting your approval in the pipeline.',
-          'Video walkthroughs are outperforming photos 3× — prioritise them.',
-          'Your VI listings have had no social activity in 12 days.',
-        ], 'Approve the two queued posts and generate a TikTok video for the VI 2-Bed.') },
+          'Toju compares reach, DMs and leads per format and channel.',
+          'Nothing has been published yet, so there is no performance to read.',
+        ], 'Generate a campaign from one of your listings and publish it — the first numbers land here.') },
       agents: { title: 'Team read', sub: 'Coaching for your agents',
         html: () => tpSummary('Coach the floor', [
-          'Funke closes the most but her first-reply time is creeping up.',
-          'Tomiwa loses most buyers after the second viewing.',
-          'Reassign 2 stalled Lekki leads to your fastest responder.',
-        ], 'Move financing talks earlier for Tomiwa’s buyers, and rebalance Lekki leads to Funke.') },
+          'Toju reads first-reply times, win rates and stalled leads per agent.',
+          'Coaching notes appear once your team has real activity to read.',
+        ], 'Invite your agents and route some leads — the read below is built from their actual numbers.')
+        // The roster's summary lives here now, beside the cards rather than
+        // stacked above them.
+        + `<div class="tp-sec"><div class="tp-k">The floor</div><div class="ag-kpis" id="agKpis"></div></div>`
+        + `<div class="tp-sec"><div class="tp-k">Closed deals · this quarter</div><div class="hbars" id="agClosed"></div></div>`
+        + `<div class="tp-sec"><div class="tp-k">Avg first reply · minutes</div><div class="hbars" id="agReply"></div></div>`,
+        after: () => renderAgentSummary() },
       subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
         html: () => tpSummary('Your growth math', [
           'You’re on Free, but marketing automation is off — you’re posting manually.',
@@ -3088,16 +3231,29 @@
        shared SynMatches map helper. Overview is the default pane (see markup). */
     const OV = { f: 'all', sel: 0, dtab: 'details', q: '', map: {} };
     const OV_CHECKS = ['Title deed', 'Structural survey', 'Flood assessment', 'Legal search', 'Ownership KYC', 'Media validation', 'Freshness'];
-    const OV_LEAD_NAMES = ['Bola Adeyemi', 'Amina Yusuf', 'Chidi Okafor', 'Ngozi Eze', 'Ibrahim Musa', 'Funmi Alade', 'Tunde Bello', 'Zainab Sani'];
-    const OV_SRC = ['toju', 'contact', 'browse'];
     const ovHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
     const ovLoc = (t) => { const p = t.split(','); return p.length > 1 ? p.slice(1).join(',').trim() : t; };
     const ovBeds = (t) => { const m = t.match(/(\d+)\s*-?\s*bed/i); return m ? m[1] : '—'; };
-    const ovChecks = (l) => l.st === 'verified' ? 7 : 3 + (ovHash(l.t) % 3); // pending → 3–5 of 7
+
+    /* Reads the listing's real verification_nodes. This used to DERIVE a check
+       count from a hash of the title — "3 to 5 of 7", invented deterministically
+       so it looked stable across reloads. It reported verification progress that
+       had never happened, on the one number a buyer most needs to trust. */
+    const ovChecks = (l) => {
+      const nodes = Array.isArray(l.verification_nodes) ? l.verification_nodes : [];
+      return nodes.filter(n => n && n.status === 'pass').length;
+    };
+
+    /* Real leads attached to this listing. Previously it manufactured buyer
+       names from a fixed list keyed by a hash of the title — inventing named
+       people who had supposedly enquired about a specific home. */
     function ovLeads(l) {
-      const out = []; for (let i = 0; i < Math.min(l.leads || 0, 4); i++) {
-        const k = ovHash(l.t + i); out.push({ nm: OV_LEAD_NAMES[k % OV_LEAD_NAMES.length], src: OV_SRC[k % 3] });
-      } return out;
+      if (typeof leads === 'undefined' || !Array.isArray(leads)) return [];
+      const name = String(l.title || l.t || '').split(',')[0].toLowerCase();
+      if (!name) return [];
+      return leads.filter(x => String(x.pr || '').toLowerCase().includes(name))
+        .slice(0, 4)
+        .map(x => ({ nm: x.nm, src: x.src }));
     }
     function ovFiltered() {
       let a = LISTINGS_DATA.slice();
@@ -3215,14 +3371,64 @@
     document.getElementById('ovFilter').addEventListener('click', () => document.getElementById('ovSearch').focus());
 
     /* ═══ Notification bell — the single home for every alert AND reminder ═══ */
-    const NOTI = [
-      { type: 'lead', tag: 'Lead', icon: '👤', title: 'New lead — Bola Adeyemi', sub: 'via Toju · 3-Bed Lekki Phase 1 · just now', group: 'Today' },
-      { type: 'reminder', tag: 'Reminder', icon: '⏳', title: 'Lead SLA expiring', sub: 'Bola Adeyemi — respond within 13 min', group: 'Today' },
-      { type: 'verification', tag: 'Verification', icon: '🛡', title: '1 listing pending verification', sub: '3-Bed Terrace, Ikate — 5 of 7 checks', group: 'Today' },
-      { type: 'social', tag: 'Social', icon: '✦', title: '2 posts awaiting approval', sub: 'In Social studio', group: 'Earlier' },
-      { type: 'reminder', tag: 'Reminder', icon: '📣', title: 'Osapa open house this weekend', sub: '64 RSVPs confirmed', group: 'Earlier' },
-    ];
+    /* Notifications are DERIVED from real state, never authored. The previous
+       list named a buyer, a lead SLA and three properties that do not exist, so
+       the bell always showed four unread items about nothing. Each item now
+       carries a `pane` (and optionally a listing id) so clicking it takes you to
+       the thing it is about — which is the only reason to show it at all. */
+    let NOTI = [];
+    let notiCleared = false;
+
+    function buildNoti() {
+      if (notiCleared) { NOTI = []; return; }
+      const out = [];
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+
+      const pending = L.filter(l => l.verification_status !== 'verified');
+      if (pending.length) {
+        out.push({ type: 'verification', tag: 'Verification', icon: '🛡', pane: 'listings',
+          title: pending.length + ' listing' + (pending.length === 1 ? '' : 's') + ' awaiting verification',
+          sub: pending.length === 1 ? (pending[0].title || pending[0].t) : 'Not yet checked by Synapse',
+          group: 'Today' });
+      }
+
+      // freshness() returns { expired, left } for the 14-day rule
+      const expiring = L.filter(l => { try { const f = freshness(l); return f && !f.expired && f.left <= 3; } catch (e) { return false; } });
+      if (expiring.length) {
+        out.push({ type: 'reminder', tag: 'Reminder', icon: '⏳', pane: 'listings',
+          title: expiring.length + ' listing' + (expiring.length === 1 ? '' : 's') + ' expiring soon',
+          sub: 'Re-list to keep ' + (expiring.length === 1 ? 'it' : 'them') + ' visible to buyers',
+          group: 'Today' });
+      }
+      const expired = L.filter(l => { try { return freshness(l).expired; } catch (e) { return false; } });
+      if (expired.length) {
+        out.push({ type: 'reminder', tag: 'Reminder', icon: '⏳', pane: 'listings',
+          title: expired.length + ' listing' + (expired.length === 1 ? '' : 's') + ' expired',
+          sub: 'Hidden from buyers until re-listed', group: 'Today' });
+      }
+
+      if (typeof leads !== 'undefined' && Array.isArray(leads) && leads.length) {
+        const fresh = leads.filter(x => x.stage === 'New');
+        if (fresh.length) {
+          out.push({ type: 'lead', tag: 'Lead', icon: '👤', pane: 'leads',
+            title: fresh.length + ' new lead' + (fresh.length === 1 ? '' : 's'),
+            sub: 'Waiting on a first response', group: 'Today' });
+        }
+      }
+
+      if (typeof posts !== 'undefined' && Array.isArray(posts)) {
+        const appr = posts.filter(p => p.stage === 'approval');
+        if (appr.length) {
+          out.push({ type: 'social', tag: 'Social', icon: '✦', pane: 'social',
+            title: appr.length + ' post' + (appr.length === 1 ? '' : 's') + ' awaiting approval',
+            sub: 'In the social studio', group: 'Today' });
+        }
+      }
+      NOTI = out;
+    }
+
     function renderNoti() {
+      buildNoti();
       const list = document.getElementById('notiList');
       if (!NOTI.length) {
         list.innerHTML = '<div class="noti-empty">You’re all caught up ✦</div>';
@@ -3231,7 +3437,8 @@
         NOTI.forEach(n => { let g = groups.find(x => x.g === (n.group || '')); if (!g) { g = { g: n.group || '', items: [] }; groups.push(g); } g.items.push(n); });
         list.innerHTML = groups.map(g =>
           (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
-          g.items.map(n => `<div class="attn ${n.type}">
+          g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
+            data-noti-pane="${n.pane || ''}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}>
             <span class="ico">${n.icon}</span>
             <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
           </div>`).join('')
@@ -3240,6 +3447,24 @@
       const badge = document.getElementById('bellBadge');
       badge.textContent = NOTI.length; badge.classList.toggle('hide', !NOTI.length);
     }
+
+    /* Clicking a notification goes where it points. Keyboard too: the rows are
+       real buttons, so Enter and Space work and focus is visible. */
+    function openNoti(el) {
+      const pane = el.getAttribute('data-noti-pane');
+      if (!pane) return;
+      goToPane(pane);
+      toggleNoti(false);
+    }
+    document.getElementById('notiList').addEventListener('click', (e) => {
+      const row = e.target.closest('[data-noti-pane]'); if (row) openNoti(row);
+    });
+    document.getElementById('notiList').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const row = e.target.closest('[data-noti-pane]'); if (!row) return;
+      e.preventDefault(); openNoti(row);
+    });
+    document.addEventListener('syn:listings', () => renderNoti());
     function toggleNoti(open) {
       const p = document.getElementById('noti'), s = document.getElementById('notiScrim'), b = document.getElementById('bellBtn');
       const on = open === undefined ? !p.classList.contains('on') : open;
@@ -3247,7 +3472,11 @@
     }
     document.getElementById('bellBtn').addEventListener('click', () => toggleNoti());
     document.getElementById('notiScrim').addEventListener('click', () => toggleNoti(false));
-    document.getElementById('notiClear').addEventListener('click', () => { NOTI.length = 0; renderNoti(); toggleNoti(false); toast('Notifications cleared'); });
+    // Clearing is a dismissal, not a fix: the underlying state is unchanged, so
+    // the flag stops derived items from immediately reappearing.
+    document.getElementById('notiClear').addEventListener('click', () => {
+      notiCleared = true; renderNoti(); toggleNoti(false); toast('Notifications cleared');
+    });
 
     renderNoti();
     renderOverview();
@@ -3260,15 +3489,29 @@
       const main = document.querySelector('.grp-sec[data-sec="main"]'); if (main) main.classList.add('open');
     })();
 
+    /* One way to change pane, used by the sidebar AND by anything else that
+       needs to send you somewhere (the notification bell). Keeping this in one
+       function is what stops a notification from highlighting a tab without
+       actually switching the view, or vice versa. */
+    function goToPane(pane) {
+      if (!pane) return;
+      const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
+      document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + pane));
+      // reveal the sidebar group holding this tab, so the highlight is visible
+      const sec = tab && tab.closest('.grp-sec'); if (sec) sec.classList.add('open');
+      if (tpanel.classList.contains('on')) openToju();   // keep the panel in sync
+      if (pane === 'overview' && OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 60);
+      if (window.synMotion) synMotion.refresh();
+      const paneEl = document.getElementById('pane-' + pane);
+      if (paneEl && paneEl.scrollIntoView) paneEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
       const tab = e.target.closest('[data-pane]');
       if (!tab) return;
-      document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
-      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + tab.dataset.pane));
-      if (tpanel.classList.contains('on')) openToju(); // keep the panel in sync with the pane
-      if (tab.dataset.pane === 'overview' && OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 60);
-      if (window.synMotion) synMotion.refresh();
+      goToPane(tab.dataset.pane);
     });
 
     // sidebar group expand/collapse (Supabase-style) — headers have no data-pane, so
@@ -3279,11 +3522,161 @@
       g.setAttribute('aria-expanded', String(open));
     });
 
+    /* ═══ Brand page ═══════════════════════════════════════════════════════
+       Reads and writes the agency's own record. Nothing is pre-filled: an empty
+       brand is an honest brand, and a specimen one would end up in real posts. */
+    (function brandPage() {
+      const f = (id) => document.getElementById(id);
+      const gate = f('brandGate'), form = f('brandForm'), saveBtn = f('brandSave');
+      if (!form || !saveBtn) return;
+
+      const FIELDS = {
+        bkName: 'name', bkTagline: 'tagline', bkDesc: 'description',
+        bkLogo: 'logo_url', bkLogoDark: 'logo_dark_url',
+        bkColor: 'brand_color', bkColor2: 'brand_color_secondary', bkFont: 'brand_font',
+        bkVoice: 'brand_voice', bkWhatsapp: 'whatsapp_number', bkCity: 'city',
+      };
+
+      function preview() {
+        const c1 = f('bkColor').value || '#121212', c2 = f('bkColor2').value || '#c76a1a';
+        const nm = f('bkName').value.trim() || 'Your agency';
+        const tag = f('bkTagline').value.trim() || 'Your tagline appears here';
+        const logo = f('bkLogo').value.trim();
+        const initials = nm.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '—';
+        f('bkPreview').innerHTML =
+          (logo ? `<img src="${esc2(logo)}" alt="" onerror="this.remove()">` : '')
+          + `<div class="bp-mark" style="background:${esc2(c1)}">${esc2(initials)}</div>`
+          + `<div style="min-width:0"><div class="bp-nm" style="font-family:${esc2(f('bkFont').value.trim() || 'inherit')}">${esc2(nm)}</div>`
+          + `<div class="bp-tag">${esc2(tag)}</div></div>`
+          + `<span class="bp-chip" style="background:${esc2(c2)}">Accent</span>`;
+      }
+      function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+      /* A colour <input> always reports a value, so an untouched picker looks
+         identical to a deliberate choice — and collect() would have saved the
+         page's own default swatch as "their brand colour", then signed their
+         posts with it. Track real interaction, and treat a colour as set only
+         when the agency picked it or the database already held one. */
+      const touched = new Set();
+      Object.keys(FIELDS).forEach(id => {
+        const el = f(id);
+        if (!el) return;
+        el.addEventListener('input', () => { touched.add(id); preview(); });
+      });
+      const colourChosen = (id) => touched.has(id) || !!f(id).dataset.stored;
+      preview();
+
+      function fill(b) {
+        if (!b) return;
+        Object.keys(FIELDS).forEach(id => {
+          const el = f(id), v = b[FIELDS[id]];
+          if (!el) return;
+          if (el.type === 'color') {
+            // Remember whether a colour genuinely came from the record, so an
+            // untouched default is never written back as a choice.
+            if (v) { el.value = v; el.dataset.stored = '1'; } else { delete el.dataset.stored; }
+          } else el.value = v == null ? '' : v;
+        });
+        f('bkSpecialties').value = Array.isArray(b.specialties) ? b.specialties.join(', ') : (b.specialties || '');
+        const s = b.social || {};
+        f('bkInstagram').value = s.instagram || '';
+        f('bkWebsite').value = s.website || '';
+        preview();
+      }
+
+      function collect() {
+        const patch = {};
+        Object.keys(FIELDS).forEach(id => {
+          const el = f(id); if (!el) return;
+          // Skip colours the agency never actually chose — sending the default
+          // would record a decision they did not make.
+          if (el.type === 'color' && !colourChosen(id)) return;
+          patch[FIELDS[id]] = el.value.trim ? el.value.trim() : el.value;
+        });
+        patch.specialties = f('bkSpecialties').value.split(/[|,;\n]+/).map(x => x.trim()).filter(Boolean);
+        const ig = f('bkInstagram').value.trim(), web = f('bkWebsite').value.trim();
+        patch.social = (ig || web) ? { instagram: ig || null, website: web || null } : null;
+        return patch;
+      }
+
+      /* ── first-run onboarding ────────────────────────────────────────────
+         Three steps, each satisfied by real content rather than by clicking
+         through: an agency that skips still sees the checklist next time,
+         because "done" is derived from the saved record, not from a flag
+         saying they visited. */
+      const onboard = f('brandOnboard'), stepsEl = f('brandSteps'), skipBtn = f('brandSkip');
+      const SKIP_KEY = 'synapse_brand_onboard_skipped';
+      const STEPS = [
+        { k: 'Name yourself', done: (b) => !!(b.name || '').trim() },
+        { k: 'Add a logo or colours', done: (b) => !!((b.logo_url || '').trim() || (b.brand_color || '').trim()) },
+        { k: 'Describe your voice', done: (b) => !!(b.brand_voice || '').trim() },
+      ];
+      const isFirstRun = (b) => STEPS.some(s => !s.done(b));
+
+      function paintSteps(b) {
+        stepsEl.innerHTML = STEPS.map(s => {
+          const ok = s.done(b);
+          return `<li class="${ok ? 'done' : ''}"><span class="tick">${ok ? '✓' : '·'}</span><span>${s.k}</span></li>`;
+        }).join('');
+      }
+
+      function refreshOnboard(b) {
+        const welcomed = new URLSearchParams(location.search).get('welcome') === 'agency';
+        const skipped = localStorage.getItem(SKIP_KEY) === '1';
+        paintSteps(b);
+        // Show while anything is genuinely missing, unless they've dismissed it
+        // and did not just arrive from signup.
+        onboard.hidden = !isFirstRun(b) || (skipped && !welcomed);
+        if (welcomed) goToPane('brand');
+      }
+
+      if (skipBtn) skipBtn.addEventListener('click', () => {
+        localStorage.setItem(SKIP_KEY, '1');
+        onboard.hidden = true;
+        toast('Skipped — your brand lives under Team → Brand whenever you want it');
+      });
+
+      if (!window.SynListings) return;
+      SynListings.loadBrand().then((b) => {
+        if (!b) {
+          form.hidden = true; saveBtn.disabled = true;
+          gate.hidden = false;
+          gate.textContent = 'Sign in as an agency to set up your brand.';
+          return;
+        }
+        fill(b);
+        refreshOnboard(b);
+      }).catch(() => {
+        form.hidden = true; saveBtn.disabled = true;
+        gate.hidden = false;
+        gate.textContent = 'Could not load your brand details — check your connection and reload.';
+      });
+
+      saveBtn.addEventListener('click', () => {
+        saveBtn.disabled = true; saveBtn.setAttribute('data-busy', 'true');
+        const restore = () => { saveBtn.disabled = false; saveBtn.removeAttribute('data-busy'); saveBtn.textContent = 'Save brand'; };
+        saveBtn.textContent = 'Saving…';
+        const patch = collect();
+        SynListings.saveBrand(patch)
+          .then(() => {
+            restore();
+            // Re-derive the checklist from what was actually saved, so the last
+            // remaining step ticking off is the thing that ends onboarding.
+            refreshOnboard(patch);
+            toast(isFirstRun(patch)
+              ? 'Saved — finish the remaining steps whenever you like'
+              : 'Brand saved — Toju will use it from the next post');
+          })
+          .catch((e) => { restore(); toast('Not saved: ' + ((e && e.message) || e)); });
+      });
+    })();
+
     // simple toggles in social studio
     document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
   </script>
   <script src="icons.js"></script>
   <script src="auth.js"></script>
+  <script src="agency-listings.js"></script>
   <script src="notify.js"></script>
   <script>
     /* The portal is an agency workspace — there is no anonymous view of it.

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
     /* Dream Boards — Pinterest for the home you're dreaming of. Create as many
        boards as you like (pods/folders), pin images into each, keep a watchlist
@@ -79,7 +80,43 @@
     .cat-tabs .ct.on { background: #121212; color: #f5f5f5; border-color: #121212; }
     .cat-tabs .ct.on b { opacity: .7; }
     .cat-tabs .ct:not(.on):hover { color: var(--ink); background: rgba(0,0,0,0.04); }
-    @media (prefers-reduced-motion: reduce){ .masonry .tile { animation: none; } .mode-switch .ms, .cat-tabs .ct { transition: none; } }
+    /* ── starter board: clearly-labelled inspiration, never listings ──
+       burnt-orange (--pip) is reserved for pips and hairlines only — no text. */
+    .signals, .starter-note, .share-note { --pip: #b4551d; }
+    .bcard .btag { display: inline-block; font: 700 10px var(--f-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-muted); border: 1px solid rgba(180,85,29,0.4); border-radius: 100px; padding: 3px 9px 2px; margin-top: 8px; }
+    .starter-note { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; margin: 14px 0 2px; border: 1px solid var(--border); border-left: 2px solid rgba(180,85,29,0.55); border-radius: 12px; background: rgba(255,255,255,0.6); font-size: 13px; color: var(--ink-muted); line-height: 1.6; }
+    .starter-note b { color: var(--ink); }
+    .starter-note .t { flex: 1; min-width: 240px; }
+    .keep { font: 600 12.5px var(--f-sans); border-radius: 100px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--ink); background: rgba(255,255,255,0.8); color: var(--ink); white-space: nowrap; transition: transform var(--m-micro) var(--m-ease); }
+    .keep:hover { background: #121212; color: #f5f5f5; }
+    .keep:active { transform: scale(.97); }
+
+    /* ── board signal summary — what the board says, no scores ── */
+    .signals { padding: 15px 20px 13px; margin: 14px 0 2px; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,0.6); }
+    .sig-h { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+    .sig-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 26px; margin-top: 10px; }
+    .sig-row { display: flex; align-items: baseline; gap: 10px; font-size: 13px; color: var(--ink); }
+    .sig-row .lbl { font-weight: 600; min-width: 62px; }
+    .sig-pips { display: inline-flex; gap: 5px; align-self: center; }
+    .sig-pip { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(180,85,29,0.4); background: transparent; transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease); }
+    .sig-pip.fill { background: var(--pip); border-color: var(--pip); }
+    @keyframes pipIn { from { transform: scale(.35); opacity: .2; } to { transform: scale(1); opacity: 1; } }
+    .sig-pip.pop { animation: pipIn var(--m-standard) var(--m-ease-spring) both; }
+    .sig-state { font-size: 12.5px; color: var(--ink-muted); }
+    .sig-read { font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(180,85,29,0.22); }
+    .sig-read b { color: var(--ink); }
+
+    /* ── pin-from-share banner ── */
+    .share-note { display: flex; align-items: center; gap: 12px; padding: 13px 18px; margin: 16px 0 0; border: 1px solid var(--border); border-left: 2px solid rgba(180,85,29,0.55); border-radius: 12px; background: rgba(255,255,255,0.7); font-size: 13px; color: var(--ink-muted); line-height: 1.6; animation: mEnterLocal var(--m-expanded) var(--m-ease) both; }
+    @keyframes mEnterLocal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .share-note .t { flex: 1; }
+    .share-note b { color: var(--ink); }
+    .share-note .sn-x { border: none; background: none; cursor: pointer; color: var(--ink-dim); font-size: 16px; line-height: 1; padding: 4px 6px; }
+    .share-note .sn-x:hover { color: var(--ink); }
+
+    .keep:focus-visible, .sn-x:focus-visible, .lnk-all:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+
+    @media (prefers-reduced-motion: reduce){ .masonry .tile { animation: none; } .mode-switch .ms, .cat-tabs .ct { transition: none; } .sig-pip { transition: none; } .sig-pip.pop, .share-note { animation: none; } .keep { transition: none; } }
 
     .add-card { padding: 20px 22px; margin-top: 6px; }
     .add-row { display: flex; gap: 10px; margin-bottom: 16px; }
@@ -143,11 +180,24 @@
       <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Board mode"></div>
       <p class="mode-hint muted" id="modeHint"></p>
 
+      <!-- shown only on the starter board — inspiration content, never listings -->
+      <div class="starter-note hidden" id="starterNote"></div>
+
       <div class="vibe" id="vibe"></div>
+
+      <!-- what the board actually says — the signals Toju reads, no scores -->
+      <section class="signals hidden" id="signals" aria-label="What this board says so far">
+        <div class="sig-h">What this board says so far</div>
+        <div class="sig-rows" id="sigRows"></div>
+        <p class="sig-read" id="sigRead" aria-live="polite"></p>
+      </section>
 
       <!-- category tabs: filter the masonry by what a pin is about -->
       <div class="cat-tabs" id="catTabs" role="tablist" aria-label="Filter pins by category"></div>
       <div id="board"></div>
+
+      <!-- appears when the page was opened via the share target -->
+      <div class="share-note hidden" id="shareNote"></div>
 
       <div class="card add-card">
         <div class="add-row">
@@ -222,18 +272,35 @@
       { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
     ];
 
-    // ── state: { boards:[{id,name,vibe[],images:[{u,c}]}], activeId } ──
+    // ── starter board — INSPIRATION CONTENT, never listings ──────────────────
+    // Guardrail: nothing here may look like inventory. No prices, no addresses,
+    // no verification chips, no agency names — just interiors and light to
+    // react to. A starter board never mirrors to Toju (that would be a signal
+    // the visitor didn't send); it only becomes theirs via "Keep this board".
+    const STARTER_PINS = [
+      { u: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=500&q=70', c: 'Warm wood, stone counters', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=500&q=70', c: 'An island for slow Sunday cooking', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?w=500&q=70', c: 'Deep green cabinetry', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=500&q=70', c: 'White and timber, kept simple', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Clean lines, open shelves', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft morning light', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright and airy', cat: 'palette' },
+    ];
+    const starterBoard = () => ({ id: uid(), name: 'Lagos kitchens we love', starter: true, vibe: [],
+      images: STARTER_PINS.map((p) => ({ u: p.u, c: p.c, cat: p.cat })) });
+
+    // ── state: { boards:[{id,name,starter?,vibe[],images:[{u,c,cat}]}], activeId } ──
     let state;
     try { state = JSON.parse(localStorage.getItem(BKEY)); } catch (e) {}
     if (!state || !Array.isArray(state.boards)) {
-      // migrate a legacy single mood board, else seed a starter board
+      // migrate a legacy single mood board, else offer the labelled starter
+      // board — never a pre-filled board presented as the visitor's own.
       let legacy = null;
       try { legacy = JSON.parse(localStorage.getItem(MIRROR)); } catch (e) {}
       const first = legacy && (legacy.images || legacy.vibe)
         ? { id: uid(), name: legacy.name || 'My dream home', vibe: legacy.vibe || [], images: legacy.images || [] }
-        : { id: uid(), name: 'My dream home',
-            vibe: ['Warm minimal', 'Natural light', 'Open plan', 'Near water'],
-            images: [PALETTE[7], PALETTE[1], PALETTE[10], PALETTE[0], PALETTE[4]] };
+        : starterBoard();
       state = { boards: [first], activeId: null };
     }
     // migrate older boards forward: every board gets a mode, every pin a category
@@ -251,6 +318,10 @@
     function mirror() {
       const b = activeBoard();
       if (!b) return;
+      // A starter board is inspiration we authored, not the visitor's taste.
+      // It must never reach Toju as a signal — leave the mirror untouched
+      // (it still holds the last board the visitor actually curated).
+      if (b.starter) return;
       const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
       localStorage.setItem(MIRROR, JSON.stringify({
         name: b.name, mode: b.mode || 'dream', vibe: b.vibe, images: b.images,
@@ -273,10 +344,14 @@
         const cover = imgs.length
           ? imgs.map((im) => `<img src="${esc(im.u)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`).join('')
           : '<div class="bempty">✦</div>';
+        const meta = b.starter
+          ? 'Ideas to react to — not listings'
+          : `${(b.images || []).length} pin${(b.images || []).length === 1 ? '' : 's'}${b.vibe && b.vibe.length ? ' · ' + b.vibe.length + ' vibes' : ''}`;
         return `<button class="bcard" data-open="${b.id}">
           <div class="bcover">${cover}</div>
           <div class="bname">${esc(b.name || 'Untitled board')}</div>
-          <div class="bmeta">${(b.images || []).length} pin${(b.images || []).length === 1 ? '' : 's'}${b.vibe && b.vibe.length ? ' · ' + b.vibe.length + ' vibes' : ''}</div>
+          <div class="bmeta">${meta}</div>
+          ${b.starter ? '<span class="btag">Inspiration · not listings</span>' : ''}
         </button>`;
       }).join('');
       const n = savesCount();
@@ -310,9 +385,81 @@
       state.activeId = id; boardCat = 'all'; saveState(); mirror();
       homeView.classList.add('hidden'); boardView.classList.remove('hidden');
       window.scrollTo(0, 0);
-      renderMode(); renderCatTabs(); renderCatPicker();
-      renderBoard(); renderVibe(); renderPalette(); updateToju();
+      prevSig = null; // fresh board — no pip pop on first paint
+      renderMode(); renderCatTabs(); renderCatPicker(); renderStarterNote();
+      renderBoard(); renderVibe(); renderPalette(); renderSignals(); updateToju();
       document.getElementById('boardTitle').value = activeBoard().name || '';
+    }
+
+    // ── starter-board note — labels the inspiration, offers adoption ──
+    function renderStarterNote() {
+      const el = document.getElementById('starterNote');
+      const b = activeBoard();
+      if (!b || !b.starter) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+      el.classList.remove('hidden');
+      el.innerHTML = `<div class="t"><b>This is an inspiration board</b> — kitchens and light we love, just to react to.
+        Nothing here is a Synapse listing, and it doesn't shape your matches.
+        Remove what doesn't resonate, pin what does — then make it yours.</div>
+        <button class="keep" id="keepBtn">Keep this board</button>`;
+      document.getElementById('keepBtn').addEventListener('click', () => {
+        delete b.starter; saveState(); mirror(); // now it's theirs — Toju may read it
+        renderStarterNote(); renderSignals(); updateToju();
+      });
+    }
+
+    // ── board signal summary — what the board says, honestly. No score, no
+    //    percentage: there is no scoring model, so we only surface the signals
+    //    the board actually holds (vibe + categorised pins) and which are thin. ──
+    const SIGNALS = [
+      { id: 'style',     lbl: 'Style',     tip: 'pin an interior or a palette you love' },
+      { id: 'area',      lbl: 'areas',     tip: 'pin a street, skyline or neighbourhood that feels right' },
+      { id: 'housing',   lbl: 'housing',   tip: 'pin the kind of building you see yourself in' },
+      { id: 'lifestyle', lbl: 'lifestyle', tip: 'pin how you want to live — a pool, a terrace, a workspace' },
+    ];
+    let prevSig = null; // last rendered counts, so only newly-lit pips animate
+    function signalCounts(b) {
+      const n = { style: 0, area: 0, housing: 0, lifestyle: 0 };
+      (b.images || []).forEach((im) => {
+        const c = im.cat || 'decor';
+        if (c === 'decor' || c === 'palette') n.style++;
+        else if (n[c] !== undefined) n[c]++;
+      });
+      n.style += (b.vibe || []).length;
+      return n;
+    }
+    const sigWord = (n) => n === 0 ? 'nothing yet' : n < 3 ? 'starting to show' : 'coming through clearly';
+    function renderSignals() {
+      const el = document.getElementById('signals');
+      const b = activeBoard();
+      if (!b || b.starter) { el.classList.add('hidden'); prevSig = null; return; }
+      el.classList.remove('hidden');
+      const n = signalCounts(b);
+      document.getElementById('sigRows').innerHTML = SIGNALS.map((s) => {
+        const lit = Math.min(n[s.id], 3), was = prevSig ? Math.min(prevSig[s.id], 3) : lit;
+        const pips = [0, 1, 2].map((i) =>
+          `<i class="sig-pip ${i < lit ? 'fill' : ''} ${i < lit && i >= was ? 'pop' : ''}"></i>`).join('');
+        const cap = s.lbl.charAt(0).toUpperCase() + s.lbl.slice(1);
+        return `<div class="sig-row"><span class="lbl">${cap}</span>
+          <span class="sig-pips" aria-hidden="true">${pips}</span>
+          <span class="sig-state">${sigWord(n[s.id])}</span></div>`;
+      }).join('');
+      // one honest guidance line: strongest signal vs the thinnest one
+      const read = document.getElementById('sigRead');
+      const total = SIGNALS.reduce((t, s) => t + n[s.id], 0);
+      if (total === 0) {
+        read.innerHTML = 'Nothing pinned yet — each pin teaches this board something: style, an area, a kind of home, a way of living.';
+      } else {
+        const sorted = SIGNALS.slice().sort((a, c) => n[c.id] - n[a.id]);
+        const strong = sorted[0], weak = sorted[sorted.length - 1];
+        if (n[weak.id] === 0) {
+          read.innerHTML = `This board says ${n[strong.id] >= 3 ? 'a lot' : 'a little'} about <b>${strong.lbl.toLowerCase()}</b>, nothing yet about <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+        } else if (n[weak.id] < 3) {
+          read.innerHTML = `Every signal has something. The thinnest is <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+        } else {
+          read.innerHTML = 'Style, areas, housing and lifestyle all come through clearly. This board is ready for Toju.';
+        }
+      }
+      prevSig = n;
     }
 
     // ── mode switch (Dream / Mood / Vision) ──
@@ -404,7 +551,7 @@
         + '<input id="vibeInput" placeholder="+ add a vibe…" />';
       document.getElementById('vibeInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.value.trim()) {
-          b.vibe.push(e.target.value.trim()); saveState(); mirror(); renderVibe(); updateToju();
+          b.vibe.push(e.target.value.trim()); saveState(); mirror(); renderVibe(); renderSignals(); updateToju();
           document.getElementById('vibeInput').focus();
         }
       });
@@ -436,38 +583,77 @@
 
     boardEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.rm'); if (!btn) return;
-      activeBoard().images.splice(+btn.dataset.i, 1); saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette();
+      activeBoard().images.splice(+btn.dataset.i, 1); saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
     });
     vibeEl.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-i]'); if (!btn) return;
-      activeBoard().vibe.splice(+btn.dataset.i, 1); saveState(); mirror(); renderVibe(); updateToju();
+      activeBoard().vibe.splice(+btn.dataset.i, 1); saveState(); mirror(); renderVibe(); renderSignals(); updateToju();
     });
     paletteEl.addEventListener('click', (e) => {
       const p = e.target.closest('.pal'); if (!p) return;
       const b = activeBoard(), u = p.dataset.u;
       if (hasImg(u)) b.images = b.images.filter((i) => i.u !== u);
       else b.images.push({ u, c: p.dataset.c, cat: p.dataset.cat || 'decor' });
-      saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette();
+      saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
     });
     function addUrl() {
       const inp = document.getElementById('urlInput');
       const u = inp.value.trim(); if (!u) return;
       const cat = (document.getElementById('urlCat') || {}).value || 'decor';
       activeBoard().images.push({ u, c: '', cat }); saveState(); mirror();
-      inp.value = ''; renderBoard(); renderCatTabs(); renderPalette();
+      inp.value = ''; renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
     }
     document.getElementById('addUrlBtn').addEventListener('click', addUrl);
     document.getElementById('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUrl(); });
 
-    // boot — deep link ?board=<id> opens it, else the boards home.
+    // ── pin from anywhere (Web Share Target) ─────────────────────────────────
+    // The manifest's share_target (GET) lands shares here as ?share_title/
+    // share_text/share_url. HONEST SCOPE: the OS share sheet only offers
+    // Synapse after the PWA is INSTALLED (Chromium on Android/desktop). In a
+    // normal browser tab nothing new appears in the share sheet — this page
+    // just also understands those params if a link carries them. We never
+    // auto-pin: the shared link is previewed into the pin box for the visitor
+    // to confirm, because a share is not yet a decision.
+    function firstUrl(s) { const m = String(s || '').match(/https?:\/\/[^\s"'<>]+/); return m ? m[0] : null; }
+    function handleShare(qp) {
+      const su = firstUrl(qp.get('share_url')) || firstUrl(qp.get('share_text'));
+      if (!su) return false;
+      const label = (qp.get('share_title') || '').trim().slice(0, 80);
+      // land in a board the visitor owns — never the inspiration starter
+      let b = activeBoard();
+      if (!b || b.starter) b = state.boards.find((x) => !x.starter);
+      if (!b) { b = { id: uid(), name: 'My pins', vibe: [], images: [] }; state.boards.push(b); saveState(); }
+      openBoard(b.id);
+      const note = document.getElementById('shareNote');
+      note.classList.remove('hidden');
+      note.innerHTML = `<div class="t"><b>Shared to Synapse${label ? ' — “' + esc(label) + '”' : ''}.</b>
+          The link is ready below: pick a category and hit <b>Pin it</b> to add it to “${esc(b.name)}”.
+          If the link isn't a direct image it may not render as a tile.</div>
+        <button class="sn-x" aria-label="Dismiss shared link">×</button>`;
+      note.querySelector('.sn-x').addEventListener('click', () => { note.classList.add('hidden'); note.innerHTML = ''; });
+      const inp = document.getElementById('urlInput');
+      inp.value = su; inp.focus();
+      // strip the share params so refresh/back doesn't replay the share
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      return true;
+    }
+
+    // make this page installable / share-target capable; same registration
+    // notify.js performs lazily, so this is idempotent.
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
+
+    // boot — a share lands first, then deep link ?board=<id>, else boards home.
     // Re-mirror the last-active board so synapse_moodboard_v1 (what Toju
     // reads) is always in step with the boards store, even after edits made
     // in another tab or an interrupted session.
     saveState();
     if (activeBoard()) mirror();
-    const deep = new URLSearchParams(location.search).get('board');
-    if (deep && state.boards.some((b) => b.id === deep)) openBoard(deep);
-    else renderHome();
+    const qp = new URLSearchParams(location.search);
+    if (!handleShare(qp)) {
+      const deep = qp.get('board');
+      if (deep && state.boards.some((b) => b.id === deep)) openBoard(deep);
+      else renderHome();
+    }
   </script>
   <script src="icons.js"></script>
   <script src="auth.js"></script>

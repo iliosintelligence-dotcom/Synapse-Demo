@@ -34,7 +34,25 @@
 
     /* map — the Zillow-parity view, but only YOUR pins */
     #map { height: 250px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
-      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13); }
+      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13);
+      transition: height .28s cubic-bezier(.22,1,.36,1); }
+    @media (prefers-reduced-motion: reduce) { #map { transition: none; } }
+
+    /* View toggle (item 20) */
+    .viewseg { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px;
+      border-radius: 100px; border: 1px solid var(--border); background: rgba(0,0,0,0.03); }
+    .vseg { font: 600 12.5px var(--f-sans); cursor: pointer; border: none; background: none;
+      color: var(--ink-muted); padding: 7px 16px; border-radius: 100px; }
+    .vseg.on { background: var(--brand); color: #f5f5f5; }
+
+    /* Map view: the map becomes the page. The list, the novelty shelf and the
+       recently-viewed rail step aside rather than competing for the same
+       screen — but the toolbar stays, because filters must keep working. */
+    body.view-map #map { height: calc(100dvh - 210px); min-height: 340px; }
+    body.view-map .grid,
+    body.view-map .fresh-since,
+    body.view-map .recent,
+    body.view-map .empty { display: none; }
 
     .searchbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 16px; border-radius: 100px;
       background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46)); backdrop-filter: blur(24px) saturate(1.5);
@@ -67,6 +85,12 @@
     .listing .body { padding: 18px 18px 14px; }
     .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
     .listing .match { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.22); padding: 3px 9px; border-radius: 100px; }
+    /* Expiry chip. Uses the tint — the palette reserves it for pips, hairlines
+       and countdowns, which is exactly this — and stays quiet rather than
+       alarming: the listing is going, not the buyer's chance of a home. */
+    .listing .expiry { font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+      color: #8a4a12; background: rgba(199,106,26,0.10); border: 1px solid rgba(199,106,26,0.28);
+      padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
     .listing .cmpbox { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-dim); cursor: pointer; }
     .listing .cmpbox input { accent-color: #121212; }
     .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
@@ -121,6 +145,79 @@
     .empty-sub { max-width: 380px; line-height: 1.6; margin-bottom: 8px; }
     .empty-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     .empty-acts .btn { font-size: 13px; padding: 10px 16px; }
+
+    /* ── skeleton cards — ONLY while the listings request is in flight ──
+       render() gates these on loadState === 'loading'; the moment the request
+       settles they are replaced by real cards or the honest .empty surface.
+       They never stand in for content that does not exist. Motion composes the
+       existing tokens only (opacity/transform, --m-* durations, 60ms stagger). */
+    .sk-card { border-radius: var(--radius); overflow: hidden; padding: 18px 18px 10px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.75); box-shadow: 0 16px 40px rgba(20,26,38,0.07);
+      opacity: 0; transform: translateY(14px);
+      animation: skIn var(--m-expanded) var(--m-ease) forwards;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    .sk-b { height: 13px; border-radius: 100px; background: rgba(20,20,20,0.07); margin-bottom: 10px;
+      animation: skPulse calc(var(--m-expanded) * 5) var(--m-ease) infinite alternate;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    .sk-b.sk-big { height: 24px; }
+    .sk-img { height: 170px; border-radius: 15px; background: rgba(20,20,20,0.06); margin: 14px 0 8px;
+      animation: skPulse calc(var(--m-expanded) * 5) var(--m-ease) infinite alternate;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    @keyframes skIn { to { opacity: 1; transform: none; } }
+    @keyframes skPulse { from { opacity: 1; } to { opacity: 0.45; } }
+
+    /* ── save confirmation + saved counter (design-system pulse: 1→1.25→1) ── */
+    @keyframes savePop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    .listing .save.pop { animation: savePop var(--m-expanded) var(--m-ease-spring); }
+    .nav-saved { display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--f-sans); color: var(--ink);
+      background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; }
+    .nav-saved[hidden] { display: none; }
+    .nav-saved .nsh { font-size: 13px; line-height: 1; }
+    .nav-saved b { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    .nav-saved.pop { animation: savePop var(--m-expanded) var(--m-ease-spring); }
+
+    /* ── recently viewed rail — device-local history only; when there is no
+       history the whole section is [hidden] (no placeholder cards, ever) ── */
+    .recent { margin-bottom: 16px; }
+    .recent[hidden] { display: none; }
+    /* New since your last visit — same card grid, its own heading. Sits above
+       the full list because novelty is the reason to come back. */
+    .fresh-since { margin-bottom: 26px; }
+    .fresh-since[hidden] { display: none; }
+    .fresh-h { display: flex; align-items: baseline; gap: 9px; margin-bottom: 10px;
+      font-family: var(--f-accent); font-size: 11.5px; font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--brand-text); }
+    .fresh-h .fresh-n { font-size: 11px; letter-spacing: .06em; color: var(--ink-dim); }
+    .fresh-since + .sr-only + .grid { border-top: 1px solid var(--border); padding-top: 22px; }
+    .recent-h { font-family: var(--f-accent); font-size: 11.5px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--brand-text); margin-bottom: 8px; }
+    .recent-track { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 8px;
+      scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+    .rc { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 1px;
+      min-width: 170px; max-width: 230px; padding: 11px 15px; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.08);
+      transition: transform var(--m-standard) var(--m-ease); }  /* transform only — no shadow repaints */
+    .rc:hover { transform: translateY(-2px); }
+    .rc-price { font-weight: 600; font-size: 15.5px; color: var(--brand); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    .rc-price i { font-style: normal; font-size: 11px; color: var(--ink-muted); }
+    .rc-ttl { font-size: 12.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-loc { font-size: 11.5px; color: var(--ink-dim); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+    /* everything above stands down with the rest of the motion system */
+    @media (prefers-reduced-motion: reduce) {
+      .sk-card { animation: none; opacity: 1; transform: none; }
+      .sk-b, .sk-img { animation: none; }
+      .listing .save.pop, .nav-saved.pop { animation: none; }
+      .rc { transition: none; }
+      .rc:hover { transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -138,13 +235,15 @@
       <a href="dream.html">Dream Home</a>
     </nav>
     <span class="spacer"></span>
+    <!-- true count read from the shared save store — hidden entirely at zero -->
+    <span class="nav-saved" id="navSaved" hidden title="Your saved homes"><span class="nsh" aria-hidden="true">♥</span><b id="navSavedN">0</b><span class="sr-only" id="navSavedSr">saved homes</span></span>
     <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
   <div class="wrap">
     <div class="eyebrow" id="pageEyebrow">Verified homes</div>
-    <div class="h1" id="pageTitle">Browse</div>
+    <div class="h1" id="pageTitle">Your matches</div>
 
     <div class="card brief">
       <div class="orb">✦</div>
@@ -162,6 +261,13 @@
 
     <div data-proximity-slot></div>
 
+    <!-- List ⇄ Map. Both show the same filtered set — the toggle changes how
+         you look at it, never what you are looking at. -->
+    <div class="viewseg" role="group" aria-label="View">
+      <button type="button" class="vseg on" data-view="list" aria-pressed="true">List</button>
+      <button type="button" class="vseg" data-view="map" aria-pressed="false">Map</button>
+    </div>
+
     <div class="toolbar">
       <select id="sortSel">
         <option value="match">Sort: Best match</option>
@@ -174,9 +280,25 @@
         <button data-deal="shared">Shared living</button>
       </div>
       <button class="vtoggle" id="verifyToggle" title="Show only independently verified homes"><span class="box"></span> Verified only</button>
-      <span class="hintt">♡ save · tick up to four to compare · every card shows its verification status</span>
+      <span class="hintt" id="toolHint">♡ save · tick up to four to compare · every card shows its verification status</span>
     </div>
 
+    <!-- homes this device actually opened — [hidden] whenever there is no history -->
+    <div class="recent" id="recentRail" hidden>
+      <div class="recent-h">Recently viewed</div>
+      <div class="recent-track" id="recentTrack"></div>
+    </div>
+
+    <!-- Listings that went up since this device last opened the page.
+         [hidden] on a first visit and whenever nothing is genuinely new — there
+         is no "0 new" state, because an empty novelty section is worse than
+         none. -->
+    <section class="fresh-since" id="freshSince" hidden aria-labelledby="freshSinceH">
+      <div class="fresh-h"><span id="freshSinceH">New since your last visit</span><span class="fresh-n" id="freshSinceN"></span></div>
+      <div class="grid" id="freshGrid"></div>
+    </section>
+
+    <span class="sr-only" id="gridStatus" role="status" aria-live="polite"></span>
     <div class="grid" id="grid"></div>
     <!-- filled by renderEmptyState(): loading · load-failed · nothing matched -->
     <div class="empty" role="status" aria-live="polite" hidden></div>
@@ -220,6 +342,8 @@
     let dealFilter = 'all'; // all | sale | rent | shared
     let verifiedOnly = false;
     let shownItems = [];
+    // declared before the first render(): render() and renderEmptyState() read it
+    let hasSessionView = false;
 
     function matchesDeal(l) {
       if (dealFilter === 'all') return true;
@@ -248,16 +372,105 @@
       });
     }
 
+    /* ── "New since your last visit" (item 14) ────────────────────────────
+       The baseline is read ONCE at load and the clock is reset immediately, so
+       the comparison is always "since the previous visit" — not "since a moment
+       ago", which is what you get if you reset it on every render and the
+       section quietly empties while you are looking at it.
+
+       Honesty rules:
+       · A first visit has no baseline, so nothing is claimed. The section stays
+         hidden rather than declaring everything new.
+       · Only `listed_at` counts. A listing that existed before and was merely
+         re-listed is not new to this person, so re-listing cannot manufacture
+         novelty — which is exactly the fake-freshness the product exists to
+         replace.
+       · No "0 new" state. Nothing new means no section. */
+    const VISIT_KEY = 'synapse_last_visit';
+    const lastVisitAt = (function () {
+      let prev = null;
+      try {
+        const raw = localStorage.getItem(VISIT_KEY);
+        const t = raw ? Date.parse(raw) : NaN;
+        if (Number.isFinite(t)) prev = t;
+        localStorage.setItem(VISIT_KEY, new Date().toISOString());
+      } catch (e) { /* private mode: no baseline, so no claim */ }
+      return prev;
+    })();
+
+    function renderFreshSince(compareOn) {
+      const wrap = document.getElementById('freshSince');
+      const grid = document.getElementById('freshGrid');
+      if (!wrap || !grid) return;
+      if (!lastVisitAt) { wrap.hidden = true; return; }   // first visit — claim nothing
+
+      const fresh = shownItems.filter((l) => {
+        const t = l.listedAt ? Date.parse(l.listedAt) : NaN;
+        return Number.isFinite(t) && t > lastVisitAt;
+      });
+      if (!fresh.length) { wrap.hidden = true; grid.innerHTML = ''; return; }
+
+      document.getElementById('freshSinceN').textContent =
+        fresh.length === 1 ? '1 home' : fresh.length + ' homes';
+      grid.innerHTML = fresh.map((l, i) =>
+        SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
+      wrap.hidden = false;
+    }
+
     function render() {
-      sortItems();
-      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
       const grid = document.getElementById('grid');
+      // HARD RULE: skeletons only while the listings request is genuinely in
+      // flight. loadState flips to ready/failed the moment it settles, and the
+      // next render paints real cards or the honest empty state — a skeleton
+      // never stands in for content that does not exist.
+      if (loadState === 'loading' && !hasSessionView && items.length === 0) {
+        renderSkeletons(grid);
+        updateSavedNav();   // the counter is real data — it shouldn't wait for listings
+        return;
+      }
+      grid.removeAttribute('aria-busy');
+      setGridStatus('');
+      sortItems();
+      // Compare is a shortlist tool — it appears once a shortlist exists.
+      // Before two homes are ♥'d, the checkboxes and the bar are just noise.
+      const compareOn = saves.size >= 2;
+      if (!compareOn && picked.size) picked.clear();
+      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
       grid.innerHTML = shownItems.map((l, i) =>
-        SynMatches.listingCardHtml(l, i, { saves, picked, compare: true })).join('');
+        SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
+      document.getElementById('toolHint').textContent = compareOn
+        ? '♡ save · tick up to four to compare · every card shows its verification status'
+        : '♡ save two or more homes to unlock compare · every card shows its verification status';
+      renderFreshSince(compareOn);
       renderEmptyState();
       if (window.synMotion) synMotion.refresh();
       drawMap();
       updateBar();
+      updateSavedNav();
+    }
+
+    function setGridStatus(msg) {
+      const s = document.getElementById('gridStatus');
+      if (s && s.textContent !== msg) s.textContent = msg;
+    }
+
+    /* Staggered placeholder cards for the in-flight request. Idempotent: while
+       loading, re-renders (typing in search, toggling filters) keep the same
+       skeletons rather than restarting the stagger. */
+    function renderSkeletons(grid) {
+      const empty = document.querySelector('.empty');
+      if (empty) empty.hidden = true;
+      if (grid.getAttribute('aria-busy') === 'true') return; // already up
+      grid.setAttribute('aria-busy', 'true');
+      setGridStatus('Finding homes…');
+      grid.innerHTML = Array.from({ length: 6 }, (_, i) =>
+        '<div class="sk-card" aria-hidden="true" style="--sk-i:' + i + '">'
+        + '<div class="sk-b" style="width:42%"></div>'
+        + '<div class="sk-b sk-big" style="width:58%"></div>'
+        + '<div class="sk-b" style="width:84%"></div>'
+        + '<div class="sk-b" style="width:36%"></div>'
+        + '<div class="sk-img"></div>'
+        + '</div>').join('');
     }
 
     /* The empty area speaks for whichever of three situations is true. It is
@@ -268,7 +481,11 @@
       if (shownItems.length) { box.hidden = true; return; }
       box.hidden = false;
 
-      if (loadState === 'loading') {
+      // While the request is in flight the grid shows skeletons instead (render()
+      // returns early) — unless a real Toju session already answered with an
+      // empty match list, in which case the honest "nothing fit" copy below is
+      // the truth and must not be replaced by shimmer.
+      if (loadState === 'loading' && !hasSessionView) {
         box.innerHTML = '<div class="empty-ttl">Finding homes…</div>'
           + '<p class="empty-sub">Checking every verified listing across Nigeria.</p>';
         return;
@@ -303,18 +520,61 @@
       SynMatches.drawMatchMap(mapState, 'map', shownItems.length || searchQ ? shownItems : items);
     }
 
+    /* ── List ⇄ Map (item 20) ────────────────────────────────────────────
+       Both views render the same filtered set, so switching never changes
+       which homes you are looking at — only how. The toolbar stays in map
+       view because filtering is the point of a map.
+
+       Leaflet caches its container size, so a map whose box just changed
+       renders into the old dimensions — grey tiles, pins in the wrong place.
+       invalidateSize() after the height transition is what keeps it honest. */
+    let viewMode = 'list';
+    function setView(mode, opts) {
+      viewMode = mode === 'map' ? 'map' : 'list';
+      document.body.classList.toggle('view-map', viewMode === 'map');
+      document.querySelectorAll('.vseg').forEach((b) => {
+        const on = b.dataset.view === viewMode;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      // re-measure after the height animation, and once more on settle
+      const nudge = () => { if (mapState.map) mapState.map.invalidateSize(); };
+      requestAnimationFrame(nudge);
+      setTimeout(nudge, 320);
+      if (!opts || !opts.silent) writePrefs();
+    }
+    document.querySelector('.viewseg').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]');
+      if (b) setView(b.dataset.view);
+    });
+
     function updateBar() {
       const bar = document.getElementById('cmpbar');
       document.getElementById('cmpCount').textContent = picked.size;
       bar.classList.toggle('on', picked.size >= 2);
     }
 
-    document.getElementById('grid').addEventListener('click', (e) => {
+    /* One handler, both grids. The "new since your last visit" section renders
+       the same cards, so saving, comparing and opening a home must behave
+       identically there — a card that looks live but does nothing is worse than
+       no section at all. Fully delegated, so it works wherever it is attached. */
+    function onGridClick(e) {
       const sv = e.target.closest('[data-save]');
       if (sv) {
         const id = sv.getAttribute('data-save');
+        const wasSaved = saves.has(id);
         saves = SynMatches.toggleSave(id);   // re-reads storage; no lost updates
-        render(); return;
+        render();
+        if (!wasSaved) {
+          // design-system confirmation: one scale pulse on the freshly painted
+          // heart (render() replaced the node, so tag the new one)
+          const heart = document.querySelector('[data-save="' + id + '"]');
+          if (heart) heart.classList.add('pop');
+          toast('Saved — your ♥ homes stay on this device.');
+        } else {
+          toast('Removed from your saved homes.');
+        }
+        return;
       }
       const cb = e.target.closest('[data-cmp]');
       if (cb) {
@@ -323,9 +583,68 @@
         if (picked.size > 4) { picked.delete(id); cb.checked = false; }
         render(); return;
       }
-      if (e.target.closest('.listing')) location.href = 'property.html';
-    });
-    document.getElementById('sortSel').addEventListener('change', render);
+      // A click on the "compare" label text fires here first, then the label
+      // re-dispatches a click on its checkbox (handled above). Swallow the
+      // label click so it can't fall through and navigate the card.
+      if (e.target.closest('.cmpbox')) return;
+      const card = e.target.closest('.listing');
+      if (card) {
+        const id = card.getAttribute('data-id');
+        // record the visit locally BEFORE navigating — this is the only writer
+        // of the recently-viewed history, so the rail can only ever show homes
+        // this device really opened
+        const viewed = shownItems.find((l) => l.id === id) || items.find((l) => l.id === id);
+        if (viewed) SynMatches.recordView(viewed);
+        location.href = SynMatches.propertyHref(id);
+      }
+    }
+    document.getElementById('grid').addEventListener('click', onGridClick);
+    document.getElementById('freshGrid').addEventListener('click', onGridClick);
+
+    document.getElementById('sortSel').addEventListener('change', () => { writePrefs(); render(); });
+
+    // lightweight feedback toast — same voice + surface as property.html (#synToast in app.css)
+    function toast(msg, kind) {
+      let t = document.getElementById('synToast');
+      if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
+      t.className = kind === 'error' ? 'err' : '';
+      t.textContent = msg;
+      requestAnimationFrame(() => t.classList.add('show'));
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
+    }
+
+    // ── saved counter in the appbar — a true count of the shared save store,
+    //    hidden entirely at zero (an empty counter is noise, not information) ──
+    let lastSavedCount = null;
+    function updateSavedNav() {
+      const el = document.getElementById('navSaved');
+      if (!el) return;
+      const n = saves.size;
+      el.hidden = n === 0;
+      document.getElementById('navSavedN').textContent = n;
+      document.getElementById('navSavedSr').textContent = ' saved home' + (n === 1 ? '' : 's');
+      if (lastSavedCount !== null && n !== lastSavedCount && n > 0) {
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      }
+      lastSavedCount = n;
+    }
+
+    // ── recently viewed rail — reads only the local view history; with no
+    //    history the section stays [hidden] (never placeholder cards) ──
+    function renderRecent() {
+      const rail = document.getElementById('recentRail');
+      const views = SynMatches.readViews();
+      rail.hidden = views.length === 0;
+      if (!views.length) return;
+      document.getElementById('recentTrack').innerHTML = views.map((v) =>
+        '<a class="rc" href="' + SynMatches.propertyHref(v.id) + '">'
+        + '<span class="rc-price">' + naira(v.priceN) + (v.per ? '<i>/yr</i>' : '') + '</span>'
+        + '<span class="rc-ttl">' + esc(v.ttl) + '</span>'
+        + '<span class="rc-loc">' + esc(v.loc) + '</span></a>').join('');
+    }
+    renderRecent();
+    // back-button (bfcache) returns should include the home just viewed
+    window.addEventListener('pageshow', (e) => { if (e.persisted) renderRecent(); });
 
     // keyword search
     const searchInput = document.getElementById('searchInput');
@@ -343,6 +662,7 @@
       const d = b.getAttribute('data-deal');
       dealFilter = (dealFilter === d) ? 'all' : d;
       document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
+      writePrefs();
       render();
     });
 
@@ -352,8 +672,40 @@
       verifiedOnly = !verifiedOnly;
       verifyToggle.classList.toggle('on', verifiedOnly);
       verifyToggle.querySelector('.box').textContent = verifiedOnly ? '✓' : '';
+      writePrefs();
       render();
     });
+
+    /* ── sort + filter state persists across sessions (this device only) ──
+       Stores the user's own choices, nothing else; restored before the first
+       render so the page opens the way they left it. */
+    const PREFS_KEY = 'synapse_browse_prefs';
+    function writePrefs() {
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify({
+          sort: document.getElementById('sortSel').value,
+          deal: dealFilter,
+          verifiedOnly: verifiedOnly,
+          view: viewMode,
+        }));
+      } catch (e) {}
+    }
+    function restorePrefs() {
+      let p; try { p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { p = {}; }
+      const sel = document.getElementById('sortSel');
+      if (p.sort && [...sel.options].some((o) => o.value === p.sort)) sel.value = p.sort;
+      if (['sale', 'rent', 'shared'].includes(p.deal)) {
+        dealFilter = p.deal;
+        document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
+      }
+      if (p.verifiedOnly === true) {
+        verifiedOnly = true;
+        verifyToggle.classList.add('on');
+        verifyToggle.querySelector('.box').textContent = '✓';
+      }
+      if (p.view === 'map') setView('map', { silent: true });
+    }
+    restorePrefs();
 
     // ── compare overlay ──
     function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
@@ -410,10 +762,9 @@
     // Verified AND unverified show, each clearly labelled; Toju only recommends
     // verified. Refines into "Your matches" after a real conversation.
     render();
-    let hasSessionView = false;
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,neighbourhoods(name,flood_risk,power_reliability)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,expires_at,listed_at,currency,neighbourhoods(name,flood_risk,power_reliability)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -433,6 +784,11 @@
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
         per: p.listing_type === 'rent',
         vstatus: p.verification_status,
+        // Drives the expiry chip. Real and enforced: the row disappears from
+        // this very query once it passes (properties_select_public).
+        expiresAt: p.expires_at || null,
+        listedAt: p.listed_at || null,   // "new since your last visit"
+        currency: p.currency || null,    // price formats in the listing's own currency
         deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'rent' ? 'For rent' : 'For sale',
         priceN: Number(p.price) || 0,
         ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),

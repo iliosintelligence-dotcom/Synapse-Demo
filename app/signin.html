@@ -132,6 +132,14 @@
             <label class="au-label" for="auName">Your name</label>
             <input class="au-input" id="auName" name="name" type="text" autocomplete="name" />
           </div>
+          <!-- Agency signups only. Rides to the DB in signup metadata, where
+               the provisioning trigger names the new agency with it — the one
+               moment we can use the agency's real name instead of guessing. -->
+          <div class="au-field" id="agencyNameField" hidden>
+            <label class="au-label" for="auAgencyName">Agency name</label>
+            <input class="au-input" id="auAgencyName" name="agencyName" type="text" autocomplete="organization" />
+            <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
+          </div>
           <div class="au-field">
             <label class="au-label" for="auEmail">Email</label>
             <input class="au-input" id="auEmail" name="email" type="email" autocomplete="email"
@@ -190,7 +198,10 @@
       var reason = params.get('reason') || '';
       var next   = params.get('next') || '';
 
-      var mode = 'in';   // 'in' | 'up'
+      // 'in' | 'up'. Honours ?mode=up so a "Create account" link elsewhere
+      // actually lands on the create-account form — without this every entry
+      // point, register or login, dropped the visitor on the same sign-in tab.
+      var mode = params.get('mode') === 'up' ? 'up' : 'in';
       var busy = false;  // single-flight guard: blocks double-submit races
 
       var el = function (id) { return document.getElementById(id); };
@@ -250,6 +261,7 @@
         el('tabUp').setAttribute('aria-selected', String(up));
         el('tabIn').setAttribute('aria-selected', String(!up));
         el('nameField').hidden = !up;
+        el('agencyNameField').hidden = !(up && role === 'agency');
         el('passHint').hidden = !up;
         el('auH').textContent = up
           ? (role === 'agency' ? 'Create your agency account' : 'Create your account')
@@ -325,6 +337,7 @@
         var email = el('auEmail').value.trim();
         var pass  = el('auPass').value;
         var name  = el('auName').value.trim();
+        var agencyName = el('auAgencyName').value.trim();
 
         if (!DEMO_MODE) {
           var ok = true;
@@ -345,7 +358,7 @@
         var work = DEMO_MODE
           ? SynAuth.signIn(DEMO_ACCOUNTS[role].email, DEMO_ACCOUNTS[role].password)
           : (mode === 'up'
-              ? SynAuth.signUp(email, pass, { role: role, name: name })
+              ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName })
               : SynAuth.signIn(email, pass));
 
         work.then(function (res) {
@@ -378,7 +391,13 @@
             showNote('ok', 'Check your email to confirm your account, then sign in.');
             return;
           }
-          var fallback = role === 'agency' ? 'agency.html' : 'toju.html';
+          // A brand-new agency goes straight into setting up its brand — that
+          // is the first thing Toju needs before it can write anything on their
+          // behalf, and an empty brand is the one gap a new account always has.
+          // Existing sign-ins are untouched, and an explicit ?next= still wins.
+          var fallback = role === 'agency'
+            ? (mode === 'up' ? 'agency.html?welcome=agency' : 'agency.html')
+            : 'toju.html';
           window.location.href = SynAuth.safeNext(next, fallback);
         }).catch(function (err) {
           showNote('bad', friendly(err));

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synapse — Find a home that is actually there</title>
+  <title>Synapse — Find a home that's actually right for you</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -64,10 +64,10 @@
       <div class="hero-copy">
         <div class="hero-eyebrow">For buyers &amp; renters</div>
         <h1 class="hero-headline">
-          Find a home that is <em>actually there.</em>
+          Find the home that is <em>actually right for you.</em>
         </h1>
         <p class="hero-sub">
-          Tell Toju what you are looking for, in your own words. You will only ever be shown homes someone has checked in person — and confirmed still available in the last 14 days.
+          Tell Toju what you are looking for, in your own words. You will see every home that fits — and on each one, whether someone has checked it in person or not. You decide what you are comfortable with.
         </p>
         <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
         <div class="hero-ctas">
@@ -91,10 +91,16 @@
             <span class="peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
           </div>
           <div class="peek-body" id="peekCustomer"></div>
-          <div class="peek-composer">
-            <span class="peek-field">Tell Toju what you're looking for…</span>
-            <span class="peek-send" aria-hidden="true">↑</span>
-          </div>
+          <!-- This was a mock: a <span> that looked like an input and did
+               nothing. It is now the real front door — whatever is typed here
+               is handed to Toju already sent, so the first thing a visitor
+               does is the product working, not a sign-up. -->
+          <form class="peek-composer" id="heroAsk" action="app/toju.html" method="get">
+            <input class="peek-field" id="heroAskInput" name="ask" autocomplete="off"
+                   maxlength="300" placeholder="Tell Toju what you're looking for…"
+                   aria-label="Tell Toju what you're looking for" />
+            <button class="peek-send" type="submit" aria-label="Ask Toju">↑</button>
+          </form>
         </div>
         <div class="peek-shadow" aria-hidden="true"></div>
       </div>
@@ -106,7 +112,7 @@
            measurements we would have to invent. -->
       <div class="hero-stat">
         <div class="hero-stat-val">7</div>
-        <div class="hero-stat-label">Checks before a home ever reaches you</div>
+        <div class="hero-stat-label">Checks in Synapse's verification process</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-val">14</div>
@@ -138,6 +144,7 @@
               <h2 class="s-h2">Confirmed real in the <em>last 14 days.</em></h2>
               <p class="s-sub">You have called about a house that sold months ago. Everyone here has. So a listing disappears from Synapse 14 days after it is posted, unless the agency proves it is still available.</p>
               <p class="s-sub" style="margin-top:16px"><b style="color:var(--text)">What you see is what is actually for sale.</b> No wasted calls. No wasted Saturdays.</p>
+              <a class="s-cta" href="app/browse.html">Browse verified homes →</a>
             </div>
             <div class="demo" role="img" aria-label="Two listings: one verified two days ago and visible, one past fourteen days and removed.">
               <div class="demo-head"><span class="demo-ttl">Your feed</span><span class="demo-live"><i></i> Live</span></div>
@@ -172,8 +179,9 @@
             <div class="s-lede">
               <div class="s-kicker">Shared living</div>
               <h2 class="s-h2">A good room, with people you can <em>actually live with.</em></h2>
-              <p class="s-sub">Lagos rent is brutal alone. Toju matches you on the things that decide whether sharing works — schedules, guests, noise, cleanliness — not just on price and postcode.</p>
+              <p class="s-sub">Renting alone is brutal in any city. Toju matches you on the things that decide whether sharing works — schedules, guests, noise, cleanliness — not just on price and postcode.</p>
               <p class="s-sub" style="margin-top:16px">Every house is verified the same way as any other listing, and you see who is already living there before you commit.</p>
+              <a class="s-cta" href="app/toju.html?ask=I%27m%20looking%20for%20shared%20living">Ask Toju about shared living →</a>
             </div>
             <div class="demo" role="img" aria-label="A shared house listing showing two of four rooms free and a housemate match score.">
               <div class="demo-head"><span class="demo-ttl">Shared house · Yaba</span><span class="demo-live"><i></i> 2 rooms free</span></div>
@@ -210,7 +218,8 @@
               <div class="s-kicker">Flex plans</div>
               <h2 class="s-h2">Start with what you <em>have now.</em></h2>
               <p class="s-sub">Most people here are asked for a year up front. Where a landlord or developer accepts instalments, Synapse shows you that option on the listing — with the full schedule written out before you agree to anything.</p>
-              <p class="s-sub" style="margin-top:16px">Every naira laid out in advance. No balloon payment hiding at the end.</p>
+              <p class="s-sub" style="margin-top:16px">Every payment laid out in advance, in the currency you are buying in. No balloon payment hiding at the end.</p>
+              <a class="s-cta" href="app/toju.html?ask=Tell%20me%20about%20flexible%20payment%20plans">Ask Toju about flex plans →</a>
             </div>
             <div class="demo" role="img" aria-label="A payment schedule showing a deposit paid and three remaining quarterly instalments.">
               <div class="demo-head"><span class="demo-ttl">Payment plan · ₦2.4M/yr</span><span class="demo-live"><i></i> Quarterly</span></div>
@@ -232,7 +241,7 @@
               <div class="s-kicker">Investing</div>
               <h2 class="s-h2">Buy the yield, not the <em>sales pitch.</em></h2>
               <p class="s-sub">Toju shows you what a property actually returns in its corridor — rental yield, how it compares to the area, and what the title looks like — before an agent tells you it is a great opportunity.</p>
-              <p class="s-sub" style="margin-top:16px">Same seven checks. Same 14-day rule. Applied to the numbers as well as the building.</p>
+              <a class="s-cta" href="app/toju.html?ask=I%27m%20buying%20as%20an%20investment">Ask Toju about investing →</a>
             </div>
             <div class="demo" role="img" aria-label="A yield comparison chart showing this property above the Lagos average.">
               <div class="demo-head"><span class="demo-ttl">Rental yield · Lekki corridor</span><span class="demo-live"><i></i> This home</span></div>
@@ -255,9 +264,10 @@
           <div class="s-split">
             <div class="s-lede">
               <div class="s-kicker">Buying from abroad</div>
-              <h2 class="s-h2">You do not have to be here to <em>get it right.</em></h2>
+              <h2 class="s-h2">Get it right, from <em>anywhere in the world.</em></h2>
               <p class="s-sub">You cannot walk the compound yourself from London or Houston, so someone verified walks it for you — the same seven checks, on camera, with a video walkthrough you actually watch before you commit to anything.</p>
-              <p class="s-sub" style="margin-top:16px">Toju works in your time zone as much as anyone's, and where a developer accepts structured payments, you see the full schedule in naira before you send a kobo.</p>
+              <p class="s-sub" style="margin-top:16px">Toju works in your time zone as much as anyone's, and where a developer accepts structured payments, you see the full schedule — in the local currency and your own — before you send anything.</p>
+              <a class="s-cta" href="app/toju.html?ask=I%27m%20buying%20from%20abroad">Ask Toju about buying from abroad →</a>
             </div>
             <div class="demo" role="img" aria-label="A remote verification checklist showing a video walkthrough scheduled and documents cross-checked for a buyer abroad.">
               <div class="demo-head"><span class="demo-ttl">Remote verification · Lekki Phase 1</span><span class="demo-live"><i></i> For a buyer in London</span></div>
@@ -375,8 +385,8 @@
   <div class="cta-glow"></div>
   <div class="cta-content container">
     <div class="reveal"><span class="chip">Get Started</span></div>
-    <h2 class="cta-headline reveal">Your safest move in Nigerian property starts <em>right here.</em></h2>
-    <p class="cta-sub reveal">Your home. Your agency. Your start.</p>
+    <h2 class="cta-headline reveal">Your search ends <em>here.</em></h2>
+    <p class="cta-sub reveal">Free to talk. Free to browse. You decide when it costs anything.</p>
     <div class="cta-btns reveal">
       <button class="btn-cta-primary">Talk to Toju — it's free</button>
       <button class="btn-cta-ghost">Partner with us</button>
@@ -421,6 +431,18 @@
 
 <!-- ══ FINAL CTA ══ -->
 
+<!-- ══ STICKY CTA — one floating pill, same funnel as every other customer
+     CTA. Appears after the first meaningful scroll, hides whenever the footer
+     is on screen (so it never covers end-of-page content), dismissible for
+     the session. -->
+<div class="sticky-cta" id="stickyCta">
+  <a class="sticky-cta-btn" href="app/toju.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Talk to Toju — free
+  </a>
+  <button class="sticky-cta-x" type="button" aria-label="Dismiss">✕</button>
+</div>
+
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="container">
@@ -440,7 +462,7 @@
       <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="index.html">About Synapse</a></li><li><a href="index.html#trust">How verification works</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms</a></li></ul></div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-tagline">The infrastructure layer for Nigerian real estate — every recommendation backed by verified data, verified agencies, and Toju.</p>
+      <p class="footer-tagline">The infrastructure layer for real estate — every recommendation backed by verified data, verified agencies, and Toju.</p>
       <div class="footer-legal"><span>© 2026 Synapse · Lagos, Nigeria</span><span>partnerships@synapse.ng</span></div>
     </div>
   </div>
@@ -683,6 +705,7 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
   var prev = document.getElementById('carPrev');
   var next = document.getElementById('carNext');
   var idx = 0;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   slides.forEach(function (s, i) {
     var b = document.createElement('button');
@@ -690,7 +713,7 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     b.type = 'button';
     b.setAttribute('role', 'tab');
     b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
-    b.addEventListener('click', function () { go(i); });
+    b.addEventListener('click', function () { stopAuto(); go(i); });
     dotsBox.appendChild(b);
   });
   var dots = [].slice.call(dotsBox.children);
@@ -701,7 +724,7 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
 
   function go(i) {
     idx = Math.max(0, Math.min(slides.length - 1, i));
-    track.scrollTo({ left: offset(idx), behavior: 'smooth' });
+    track.scrollTo({ left: offset(idx), behavior: reduced.matches ? 'auto' : 'smooth' });
   }
   function sync() {
     // nearest slide to the current scroll position wins
@@ -721,16 +744,127 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     });
   }
 
-  prev.addEventListener('click', function () { go(idx - 1); });
-  next.addEventListener('click', function () { go(idx + 1); });
+  prev.addEventListener('click', function () { stopAuto(); go(idx - 1); });
+  next.addEventListener('click', function () { stopAuto(); go(idx + 1); });
   track.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); stopAuto(); go(idx + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); stopAuto(); go(idx - 1); }
   });
   var t;
   track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
   window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
   sync();
+
+  /* ── Auto-advance ─────────────────────────────────────────────────────────
+     Walks the slides once, then stops on the last one. Pauses while hovered,
+     while focus is anywhere inside the carousel, while scrolled out of view,
+     and in background tabs. Any manual control — dot, arrow, arrow key, or a
+     swipe/drag/horizontal wheel on the track — stops it permanently: once a
+     user takes over, the carousel never moves on its own again. Under
+     prefers-reduced-motion it never starts at all. While rotating the region
+     is aria-live="off"; when paused or stopped it becomes "polite", per the
+     W3C carousel pattern, so slide changes a user asked for are announced. */
+  var AUTO_MS = 8000;
+  var car = track.closest('.car') || track;
+  var autoTimer = null;
+  var autoStopped = reduced.matches;   // reduced motion: never auto-advance
+  var hovered = false, focusedIn = false, inView = false;
+
+  function setLive() { track.setAttribute('aria-live', autoTimer ? 'off' : 'polite'); }
+  function autoPause() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    setLive();
+  }
+  function autoStart() {
+    if (autoStopped || hovered || focusedIn || !inView || document.hidden || autoTimer) { setLive(); return; }
+    autoTimer = setInterval(function () {
+      if (idx >= slides.length - 1) { stopAuto(); return; }
+      go(idx + 1);
+    }, AUTO_MS);
+    setLive();
+  }
+  function stopAuto() { autoStopped = true; autoPause(); }
+
+  // manual take-over by touch, drag or horizontal trackpad scroll
+  track.addEventListener('pointerdown', stopAuto, { passive: true });
+  track.addEventListener('touchstart', stopAuto, { passive: true });
+  track.addEventListener('wheel', function (e) {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) stopAuto();
+  }, { passive: true });
+
+  /* ── Scroll drives the slides ─────────────────────────────────────────────
+     While the carousel is the thing you are looking at, one scroll gesture
+     moves one slide instead of moving the page.
+
+     This is scroll-jacking, which is normally the wrong answer — so it is
+     bounded on every side:
+       · it only engages while the carousel is genuinely centred in the viewport;
+       · it RELEASES at the ends. Scrolling down on the last slide, or up on the
+         first, is not consumed — the page carries on as normal, so you can never
+         be trapped in the section;
+       · one gesture is one slide. Trackpad momentum fires dozens of events, so
+         a cooldown means a flick advances once, not five times;
+       · touch is untouched — native horizontal swipe already does this better;
+       · it is off entirely under prefers-reduced-motion.
+     Vertical wheel is consumed only when it will actually produce a slide. */
+  var LOCK_MS = 520;
+  var lastAdvance = 0;
+
+  function carouselCentred() {
+    var r = car.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    // most of the carousel on screen, and its middle near the middle of the view
+    var visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    if (visible < Math.min(r.height, vh) * 0.7) return false;
+    var mid = r.top + r.height / 2;
+    return mid > vh * 0.2 && mid < vh * 0.8;
+  }
+
+  car.addEventListener('wheel', function (e) {
+    if (reduced.matches) return;                        // never hijack for these users
+    if (e.ctrlKey) return;                              // pinch-zoom gesture
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // horizontal: native swipe wins
+    if (!carouselCentred()) return;
+
+    var dir = e.deltaY > 0 ? 1 : -1;
+    var atEnd = (dir > 0 && idx >= slides.length - 1) || (dir < 0 && idx <= 0);
+    if (atEnd) return;                                  // RELEASE — let the page scroll
+
+    e.preventDefault();                                 // we are handling this one
+    var now = Date.now();
+    if (now - lastAdvance < LOCK_MS) return;            // swallow momentum tail
+    lastAdvance = now;
+    stopAuto();                                         // the user is driving now
+    go(idx + dir);
+  }, { passive: false });
+
+  // pause while hovered or while focus is inside the carousel
+  car.addEventListener('pointerenter', function () { hovered = true; autoPause(); });
+  car.addEventListener('pointerleave', function () { hovered = false; autoStart(); });
+  car.addEventListener('focusin', function () { focusedIn = true; autoPause(); });
+  car.addEventListener('focusout', function (e) {
+    if (!car.contains(e.relatedTarget)) { focusedIn = false; autoStart(); }
+  });
+
+  // pause while off-screen; no IntersectionObserver → fail safe, no autoplay
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      inView = entries[0].isIntersecting;
+      if (inView) autoStart(); else autoPause();
+    }, { threshold: 0.3 }).observe(car);
+  }
+
+  // pause in background tabs
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) autoPause(); else autoStart();
+  });
+
+  // if the OS setting flips to reduced motion mid-visit, stop for good
+  function onReduce() { if (reduced.matches) stopAuto(); }
+  if (reduced.addEventListener) reduced.addEventListener('change', onReduce);
+  else if (reduced.addListener) reduced.addListener(onReduce);
+
+  setLive();
 })();
 
 // ─── FAQ accordion — one open at a time ───
@@ -782,6 +916,114 @@ document.querySelectorAll('.faq-item').forEach(item => {
 })();
 
 // one audience per page now — the app glimpse just plays on load
+
+/* ─── Sticky CTA bar ────────────────────────────────────────────────────────
+   Shows once the visitor has scrolled about half a viewport, hides whenever
+   the footer is visible so it never sits on top of end-of-page content, and
+   a dismissal sticks for the whole session. All motion is transform/opacity
+   in CSS; this script only toggles a class. */
+(function () {
+  var bar = document.getElementById('stickyCta');
+  if (!bar) return;
+  var KEY = 'syn-sticky-cta-dismissed';
+  try { if (sessionStorage.getItem(KEY)) { bar.remove(); return; } } catch (e) {}
+
+  var scrolled = false, footerVisible = false, dismissed = false;
+  function update() { bar.classList.toggle('show', scrolled && !footerVisible && !dismissed); }
+
+  window.addEventListener('scroll', function () {
+    if (!scrolled && window.scrollY > window.innerHeight * 0.5) { scrolled = true; update(); }
+  }, { passive: true });
+
+  var footer = document.querySelector('footer');
+  if (footer && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      footerVisible = entries[0].isIntersecting;
+      update();
+    }).observe(footer);
+  }
+
+  bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
+    dismissed = true; update();
+    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+  });
+})();
+
+/* ── Hero stats count up on entry (item 36) ──────────────────────────────
+   These three numbers are true by definition — the rules we run, not
+   measurements. The 14 is only animated now because the rule it states is
+   finally enforced in the database; drawing the eye to an unevidenced claim
+   would have been the wrong kind of emphasis.
+
+   Non-numeric values ("Free") are left exactly as authored — counting up to a
+   word is nonsense, and it must never render a stray 0. */
+(function () {
+  var vals = [].slice.call(document.querySelectorAll('.hero-stat-val'));
+  if (!vals.length) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;   // leave the authored text
+
+  var DUR = 900;
+  function run(el) {
+    var target = parseInt(el.textContent.trim(), 10);
+    if (!Number.isFinite(target)) return;                      // "Free" — untouched
+    var from = 0, start = null;
+    // Reserve the final width so the line doesn't reflow while counting.
+    el.style.minWidth = el.getBoundingClientRect().width + 'px';
+    el.setAttribute('aria-label', String(target));             // SR reads the value, not the ticking
+    var settled = false;
+    function settle() {                                        // idempotent
+      if (settled) return;
+      settled = true;
+      el.textContent = String(target);                         // exact value, never a rounding artefact
+    }
+    function step(ts) {
+      if (settled) return;
+      if (start === null) start = ts;
+      var p = Math.min(1, (ts - start) / DUR);
+      var eased = 1 - Math.pow(1 - p, 3);                      // ease-out, settles rather than stops
+      el.textContent = String(Math.round(from + (target - from) * eased));
+      if (p < 1) requestAnimationFrame(step); else settle();
+    }
+    /* Safety net. These numbers ARE the claim — a count-up left stranded at 13
+       would state a rule we do not run. rAF pauses in a background tab and can
+       be throttled on slow devices, so a timer guarantees the true value lands
+       whatever happens to the animation. */
+    setTimeout(settle, DUR + 400);
+    requestAnimationFrame(step);
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      io.unobserve(e.target);                                  // once, not on every scroll past
+      run(e.target);
+    });
+  }, { threshold: 0.6 });
+  vals.forEach(function (el) { io.observe(el); });
+})();
+
+/* ── Freshness demo plays when it is actually on screen (item 35) ─────────
+   Adds .demo-play to the freshness panel; all the motion lives in CSS. The
+   pips stagger via an inline delay so the row visibly ages before it goes. */
+(function () {
+  var panel = document.querySelector('#fresh .demo');
+  if (!panel || !('IntersectionObserver' in window)) return;
+
+  panel.querySelectorAll('.d-age').forEach(function (age) {
+    [].slice.call(age.children).forEach(function (pip, i) {
+      pip.style.animationDelay = (i * 55) + 'ms';
+    });
+  });
+
+  new IntersectionObserver(function (entries, obs) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('demo-play');
+      obs.unobserve(e.target);      // play once — a looping demo becomes wallpaper
+    });
+  }, { threshold: 0.4 }).observe(panel);
+})();
 
 </script>
 <script src="app/icons.js"></script>

@@ -64,6 +64,7 @@
     {
       id: 'trust', name: 'Verified-first',
       why: 'Leads on the seven checks. Strongest for cold audiences who have been burned by ghost listings.',
+      requiresVerified: true,   // its entire premise is that the checks passed
       hook: function (p) { return 'Somebody stood in this ' + p.kind + ' and checked it.'; },
       body: function (p) {
         return 'Title, structure, flood risk, legal status, ownership — seven checks, all passed, re-confirmed within the last 14 days.\n\n'
@@ -77,7 +78,8 @@
       hook: function (p) { return p.priceLine + ' in ' + p.area + '. Here is what that actually gets you.'; },
       body: function (p) {
         return p.bedrooms + ' bedrooms, ' + p.kind + ', ' + p.area + '.\n\n'
-          + 'Verified this month. Power reliability in this corridor sits around ' + p.power + '%.';
+          + (p.verified ? 'Verified this month. ' : '')
+          + 'Power reliability in this corridor sits around ' + p.power + '%.';
       },
       cta: 'Ask Toju if it fits your budget →',
     },
@@ -87,14 +89,18 @@
       hook: function (p) { return 'Mornings in ' + p.area + ' hit differently.'; },
       body: function (p) {
         return 'A ' + p.bedrooms + '-bed ' + p.kind + ' with room for the life you actually live.\n\n'
-          + p.priceLine + '. Verified, and still available.';
+          + p.priceLine + (p.verified ? '. Verified, and still available.' : '. Still available.');
       },
       cta: 'Take a look →',
     },
     {
       id: 'scarcity', name: 'Freshness',
       why: 'Uses the 14-day rule as honest urgency — the listing really does expire.',
-      hook: function (p) { return 'This one disappears in 14 days if it is not re-confirmed.'; },
+      hook: function (p) {
+        return p.daysLeft == null
+          ? 'This one disappears in 14 days if it is not re-confirmed.'
+          : 'This one disappears in ' + p.daysLeft + ' day' + (p.daysLeft === 1 ? '' : 's') + ' if it is not re-confirmed.';
+      },
       body: function (p) {
         return 'That is the rule on Synapse: no listing outlives its proof.\n\n'
           + p.bedrooms + '-bed ' + p.kind + ', ' + p.area + '. ' + p.priceLine + '.';
@@ -106,7 +112,8 @@
       why: 'Opens a conversation instead of making a claim. Highest comment rate, good for reach.',
       hook: function (p) { return 'Would you take ' + p.area + ' at ' + p.priceShort + '?'; },
       body: function (p) {
-        return p.bedrooms + '-bed ' + p.kind + '. Verified, checked on the ground, live right now.\n\n'
+        return p.bedrooms + '-bed ' + p.kind + '.'
+          + (p.verified ? ' Verified, checked on the ground, live right now.' : ' Live right now.') + '\n\n'
           + 'Honest answers only.';
       },
       cta: 'Tell Toju what you think →',
@@ -136,9 +143,19 @@
   }
   function shape(row) {
     var rent = row.listing_type === 'rent';
+    // Verification is a claim about this specific listing, so copy has to read
+    // it from the row rather than assume it. An agency uploading a listing gets
+    // `unverified` and cannot change that (RLS + trigger), so any angle that
+    // asserts the seven checks would be publishing something untrue on the
+    // agency's own account.
+    var verified = row.verification_status === 'verified';
+    var expires = row.expires_at ? new Date(row.expires_at) : null;
     return {
       id: row.id,
       title: row.title,
+      verified: verified,
+      expiresAt: row.expires_at || null,
+      daysLeft: expires ? Math.max(0, Math.ceil((expires.getTime() - Date.now()) / 864e5)) : null,
       area: row.neighbourhood ? String(row.neighbourhood).replace(/\s*\(.*\)$/, '') : row.city,
       city: row.city,
       kind: row.property_type || 'home',
@@ -152,23 +169,68 @@
       flood: row.flood_risk,
     };
   }
-  function hashtagsFor(p, platform) {
+  /* ── brand kit ───────────────────────────────────────────────────────────
+     Normalises the agency's `agencies` row into the pieces this module can
+     actually use. Two honest categories:
+
+       CONCRETE (name, tagline, handle, colours, logo, typeface) — applied
+       deterministically here: sign-off, mention, and the values the UI paints
+       creatives with.
+
+       VOICE (free prose describing how they want to sound) — a template cannot
+       honour it. It is carried on the campaign so the AI composer can use it,
+       and is deliberately NOT used to fake tone in the fixed angle copy. */
+  function brandBits(brand) {
+    brand = brand || {};
+    var social = brand.social || {};
+    var handle = String(social.instagram || '').trim().replace(/^@+/, '');
+    return {
+      name: String(brand.name || '').trim(),
+      tagline: String(brand.tagline || '').trim(),
+      handle: handle,
+      website: String(social.website || '').trim(),
+      voice: String(brand.brand_voice || '').trim(),
+      color: brand.brand_color || null,
+      colorAlt: brand.brand_color_secondary || null,
+      logo: brand.logo_url || null,
+      logoDark: brand.logo_dark_url || null,
+      font: brand.brand_font || null,
+      isSet: !!(String(brand.name || '').trim() || brand.logo_url || brand.brand_color),
+    };
+  }
+
+  /* The agency signs its own posts. Nothing is invented: a field the agency
+     left blank simply does not appear. */
+  function signOff(b) {
+    if (!b || !b.name) return '';
+    return '\n\n— ' + b.name + (b.tagline ? ' · ' + b.tagline : '');
+  }
+
+  function hashtagsFor(p, platform, b) {
     var spec = PLATFORMS[platform];
     if (!spec.hashtagMax) return [];
     var base = ['#' + String(p.area).replace(/[^a-z0-9]/gi, ''), '#LagosRealEstate',
-                '#' + (p.rent ? 'LagosRent' : 'LagosProperty'), '#VerifiedListing', '#Synapse'];
+                '#' + (p.rent ? 'LagosRent' : 'LagosProperty')];
+    // The agency's own tag leads when it has one — this is their post.
+    if (b && b.handle) base.unshift('#' + b.handle.replace(/[^a-z0-9]/gi, ''));
+    if (p.verified) base.push('#VerifiedListing');   // only when it actually is
+    base.push('#Synapse');
     return base.slice(0, Math.min(spec.hashtagMax, 5));
   }
 
   /* ── generation ────────────────────────────────────────────────────────── */
   // One property + one platform + one angle → one variant.
-  function buildVariant(prop, platform, angle, media) {
+  function buildVariant(prop, platform, angle, media, b) {
     var spec = PLATFORMS[platform];
     var p = prop;
     var hook = angle.hook(p);
     var body = angle.body(p);
-    var tags = hashtagsFor(p, platform);
-    var caption = hook + '\n\n' + body + '\n\n' + angle.cta + (tags.length ? '\n\n' + tags.join(' ') : '');
+    var tags = hashtagsFor(p, platform, b);
+    // WhatsApp Status takes no hashtags, so the sign-off is the only branding
+    // that survives there — which is exactly where it matters most.
+    var caption = hook + '\n\n' + body + '\n\n' + angle.cta
+      + signOff(b)
+      + (tags.length ? '\n\n' + tags.join(' ') : '');
 
     return {
       id: platform + '_' + angle.id + '_' + (media ? media.id : 'none'),
@@ -199,11 +261,26 @@
 
   function generate(propertyRow, opts) {
     opts = opts || {};
+    var b = brandBits(opts.brand);
     var p = shape(propertyRow);
     var platforms = opts.platforms && opts.platforms.length ? opts.platforms : Object.keys(PLATFORMS);
     var angles = opts.angles && opts.angles.length
       ? ANGLES.filter(function (a) { return opts.angles.indexOf(a.id) > -1; })
       : ANGLES;
+
+    /* An angle whose premise is the verification cannot run on a listing that
+       has not been verified. Dropping it is deliberate: the alternative is
+       generating a claim the agency would publish under its own name, and the
+       agency cannot self-certify (RLS + trigger), so this is not a state it can
+       simply switch off. The skipped list is returned so the UI can say why. */
+    var skipped = [];
+    if (!p.verified) {
+      angles = angles.filter(function (a) {
+        if (!a.requiresVerified) return true;
+        skipped.push({ id: a.id, name: a.name, reason: 'needs a verified listing' });
+        return false;
+      });
+    }
 
     var variants = [];
     platforms.forEach(function (pl) {
@@ -211,7 +288,7 @@
       var pool = mediaFor(pl);
       angles.forEach(function (a, i) {
         var media = pool.length ? pool[i % pool.length] : null;
-        var v = buildVariant(p, pl, a, media);
+        var v = buildVariant(p, pl, a, media, b);
         v.issues = validate(v);
         variants.push(v);
       });
@@ -222,6 +299,10 @@
       objective: opts.objective || 'reach',
       createdAt: new Date().toISOString(),
       variants: variants,
+      skipped: skipped,
+      // Carried so the UI can paint creatives in the agency's colours and the
+      // AI composer can be told how they want to sound.
+      brand: b,
     };
   }
 
@@ -350,6 +431,7 @@
   window.SynSyndicate = {
     PLATFORMS: PLATFORMS, ANGLES: ANGLES, STOCK: STOCK,
     shape: shape, generate: generate, validate: validate,
+    brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
   };
 })();
