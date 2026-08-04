@@ -729,6 +729,19 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
     if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
   });
+  // A plain vertical mouse-wheel over the carousel should move it too, not
+  // just touch/trackpad-horizontal swipe or the arrow buttons — otherwise a
+  // regular scroll wheel just scrolls past the section as if it weren't
+  // there. Let the page keep scrolling once you're at either end and still
+  // scrolling that direction, so nobody gets stuck inside it.
+  track.addEventListener('wheel', function (e) {
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    var atStart = track.scrollLeft <= 0;
+    var atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
+    if ((atStart && e.deltaY < 0) || (atEnd && e.deltaY > 0)) return;
+    e.preventDefault();
+    track.scrollLeft += e.deltaY;
+  }, { passive: false });
   var t;
   track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
   window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });

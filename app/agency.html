@@ -91,25 +91,28 @@
     .wa { background: var(--brand); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 100px; }
     .time { font-size: 12px; color: var(--ink-dim); }
 
-    /* ── pricing: business-growth investment, not a feature list ── */
-    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; align-items: start; }
-    .tier { padding: 30px 26px; position: relative; border-radius: 22px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(20,26,38,0.06); transition: transform .2s, box-shadow .2s; }
-    .tier .tname { font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); }
-    .tier .thead { font-family: var(--f-serif); font-weight: 500; font-size: 21px; line-height: 1.25; margin-top: 10px; min-height: 52px; }
-    .tier .amt { font-family: var(--f-serif); font-weight: 500; font-size: 44px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--ink); margin: 14px 0 0; line-height: 1; }
-    .tier .amt small { font-size: 15px; color: var(--ink-dim); font-family: var(--f-sans); }
-    .tier .best { font-size: 12px; color: var(--ink-dim); margin-top: 8px; }
-    .tier ul { list-style: none; margin: 20px 0 22px; display: flex; flex-direction: column; gap: 13px; flex: 1; }
-    .tier li { font-size: 13px; color: var(--ink); display: flex; gap: 10px; line-height: 1.45; align-items: flex-start; }
-    .tier li::before { content: '✓'; color: var(--success); font-weight: 800; flex: none; margin-top: 1px; }
-    .tier li small { display: block; color: var(--ink-dim); font-size: 11.5px; margin-top: 1px; }
-    .tier li.trade { color: var(--ink-dim); }
-    .tier li.trade::before { content: '—'; color: var(--ink-dim); font-weight: 600; }
-    .tier .pop { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: #fff; background: var(--brand); padding: 5px 14px; border-radius: 100px; box-shadow: 0 8px 18px rgba(54,54,54,0.4); }
-    .tier.feature { transform: scale(1.04); border: 2px solid var(--brand); box-shadow: 0 26px 60px rgba(54,54,54,0.2); }
-    .tier.feature:hover { transform: scale(1.05) translateY(-2px); }
-    .tier:not(.feature):hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(20,26,38,0.10); }
-    .tier.gold-plan { border-color: rgba(156,122,30,0.4); }
+    /* ── pricing: a comparison table, not three separate cards — tiers as
+       columns, every benefit as its own row, so reading across a row tells
+       you exactly which plans include it. ── */
+    .pr-table-wrap { overflow-x: auto; margin-top: 28px; border-radius: 20px; border: 1px solid var(--border); }
+    .pr-compare { display: grid; grid-template-columns: minmax(190px,1.3fr) repeat(3, minmax(150px,1fr)); min-width: 680px; background: var(--surface); }
+    .pr-compare > div { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+    .pr-compare > div:nth-last-child(-n+4) { border-bottom: none; }
+    .pr-row-label { font-size: 13px; font-weight: 600; color: var(--ink); position: sticky; left: 0; background: var(--surface); z-index: 1; }
+    .pr-corner { position: sticky; left: 0; background: var(--surface); z-index: 2; }
+    .pr-cell { justify-content: center; text-align: center; flex-direction: column; gap: 2px; }
+    .pr-head { flex-direction: column; align-items: center; text-align: center; gap: 2px; padding-top: 26px; position: relative; }
+    .pr-head .tname { font-weight: 700; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-muted); }
+    .pr-head .thead { font-family: var(--f-serif); font-weight: 500; font-size: 15.5px; line-height: 1.3; margin-top: 4px; }
+    .pr-cell .amt { font-family: var(--f-serif); font-weight: 500; font-size: 30px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--ink); line-height: 1; }
+    .pr-cell .amt small { font-size: 12px; color: var(--ink-dim); font-family: var(--f-sans); }
+    .pr-cell .btn { width: 100%; padding: 9px 12px; font-size: 12.5px; }
+    .pr-check { color: var(--success); font-weight: 800; font-size: 15px; }
+    .pr-dash { color: var(--ink-dim); font-weight: 600; }
+    .pr-val { font-size: 12.5px; color: var(--ink); line-height: 1.4; }
+    .pr-head.feature, .pr-cell.feature { background: rgba(54,54,54,0.045); }
+    .pr-head.gold-plan, .pr-cell.gold-plan { background: rgba(156,122,30,0.06); }
+    .pr-pop { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; letter-spacing: .07em; color: #fff; background: var(--brand); padding: 4px 12px; border-radius: 0 0 8px 8px; white-space: nowrap; }
 
     /* add-ons */
     .addons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-top: 16px; }
@@ -130,7 +133,6 @@
     .roi .rgrid div::before { content: '✓'; color: var(--success); font-weight: 800; }
     .roi .rclose { margin-top: 20px; font-size: 15px; }
     .roi .rclose b { color: var(--brand); }
-    @media (max-width: 900px){ .pricing-grid { grid-template-columns: 1fr; } .tier.feature { transform: none; } }
 
     /* social studio */
     .channels { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0 6px; }
@@ -368,19 +370,57 @@
 
     /* agents */
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 18px; }
+
+    /* Form fields — the foundational rule every .field wrapper in this file
+       (Brand, invite-agent, new-campaign) relies on. Labels stack above
+       inputs; inputs get the same border/radius/background language as the
+       rest of the app. Without this, .field renders as bare unstyled HTML
+       controls — labels and inputs running together with no spacing. */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font: 700 12px var(--f-sans); color: var(--ink-muted); }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink);
+      outline: none; transition: border-color .15s, background .15s;
+    }
+    .field textarea { resize: vertical; min-height: 66px; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: rgba(54,54,54,0.45); background: #fff; }
+    .field input::placeholder, .field textarea::placeholder { color: var(--ink-dim); }
+
     /* Brand page */
-    .brand-swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .brand-swatches input[type="color"] { width: 100%; height: 40px; padding: 3px; border-radius: 8px;
-      border: 1px solid var(--border); background: #fff; cursor: pointer; }
-    .brand-preview { margin-top: 14px; border-radius: 12px; border: 1px solid var(--border);
-      padding: 16px 18px; display: flex; align-items: center; gap: 12px; min-height: 64px; }
-    .brand-preview .bp-mark { width: 38px; height: 38px; border-radius: 9px; flex: none; display: flex;
-      align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; }
-    .brand-preview img { width: 38px; height: 38px; border-radius: 9px; object-fit: contain; background: #fff; flex: none; }
-    .brand-preview .bp-nm { font-weight: 700; font-size: 15px; }
-    .brand-preview .bp-tag { font-size: 12.5px; color: var(--ink-muted); }
+    .brand-hero { padding: 22px 26px; background: linear-gradient(160deg,rgba(255,255,255,0.9),rgba(255,251,246,0.7)); }
+    .bh-label { font: 700 10.5px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 14px; }
+    .look-logos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .logo-tile { border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .logo-tile .lt-preview { height: 64px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; overflow: hidden; }
+    .logo-tile.light .lt-preview { background: #f4f2ee; }
+    .logo-tile.dark .lt-preview { background: #17181a; }
+    .logo-tile .lt-preview img { max-width: 70%; max-height: 70%; object-fit: contain; }
+    .logo-tile .lt-empty { font-size: 11px; color: var(--ink-dim); }
+    .logo-tile label { display: block; font: 700 11px var(--f-sans); color: var(--ink-muted); margin-bottom: 5px; }
+    .logo-tile input { width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 12.5px var(--f-sans); color: var(--ink); outline: none; }
+    .swatch-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .swatch-card { border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .swatch-card input[type="color"] { width: 100%; height: 52px; padding: 0; border: none; border-radius: 9px; cursor: pointer; background: none; }
+    .swatch-card input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .swatch-card input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 9px; }
+    .sw-info { display: flex; justify-content: space-between; align-items: baseline; }
+    .sw-name { font: 700 11.5px var(--f-sans); color: var(--ink-muted); }
+    .sw-hex { font: 600 11.5px ui-monospace, monospace; color: var(--ink-dim); text-transform: uppercase; }
+    .type-specimen { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-top: 2px; }
+    .ts-name { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+    .ts-glyphs { font-size: 40px; line-height: 1.2; margin: 6px 0 4px; }
+    .ts-sample { font-size: 14px; color: var(--ink-muted); }
+    .brand-preview { border-radius: 12px; border: 1px solid var(--border); background: #fff;
+      padding: 16px 18px; display: flex; align-items: center; gap: 14px; min-height: 64px; }
+    .brand-preview .bp-mark { width: 46px; height: 46px; border-radius: 10px; flex: none; display: flex;
+      align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; }
+    .brand-preview img { width: 46px; height: 46px; border-radius: 10px; object-fit: contain; background: #fff; flex: none; border: 1px solid var(--border); }
+    .brand-preview .bp-nm { font-weight: 700; font-size: 18px; }
+    .brand-preview .bp-tag { font-size: 12.5px; color: var(--ink-muted); margin-top: 1px; }
     .brand-preview .bp-chip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px;
       border-radius: 100px; color: #fff; }
+    @media (max-width: 560px){ .look-logos, .swatch-row { grid-template-columns: 1fr; } }
     .cmp-brandbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       border: 1px solid var(--border); border-left: 4px solid var(--brand);
       border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
@@ -875,29 +915,6 @@
     .cmp-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .3s ease; }
     .cmp-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.55; }
 
-    /* ── Page rail ────────────────────────────────────────────────────────
-       Hick's Law applied to a dense portal: the main column carries the ONE
-       thing you came to do; supporting numbers, channel toggles and minor
-       controls move into a rail you consult rather than parse. Collapses
-       under the main column on narrow screens. */
-    .pane-split { display: grid; grid-template-columns: minmax(0,1fr) 290px; gap: 26px; align-items: start; }
-    .pane-main { min-width: 0; }
-    .pane-rail { display: flex; flex-direction: column; gap: 18px; position: sticky; top: 8px; }
-    .rail-sec { border: 1px solid var(--border); border-radius: 16px; background: rgba(255,255,255,0.6); padding: 15px 15px 16px; }
-    .rail-h { font: 700 10.5px var(--f-sans); letter-spacing: .13em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 11px; }
-    .rail-stats { display: flex; flex-direction: column; gap: 11px; }
-    .rail-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-    .rail-stat .rv { font: 700 19px var(--f-serif); font-variant-numeric: lining-nums; color: var(--ink); }
-    .rail-stat .rl { font-size: 12px; color: var(--ink-muted); font-weight: 500; text-align: right; }
-    .rail-stat .rd { font-size: 11px; font-weight: 700; }
-    .rail-stat .rd.up { color: var(--success); } .rail-stat .rd.dn { color: #a8402b; }
-    .pane-rail .channels { display: flex; flex-direction: column; gap: 8px; }
-    .pane-rail .chan { padding: 9px 10px; gap: 9px; }
-    .pane-rail .chan .ic { width: 28px; height: 28px; font-size: 10.5px; }
-    .pane-rail .chan .nm { font-size: 12.5px; }
-    .pane-rail .chan .st { font-size: 10.5px; }
-    @media (max-width: 1100px) { .pane-split { grid-template-columns: 1fr; } .pane-rail { position: static; } }
-
     .ov-detail { position: sticky; top: 0; }
     .ov-map { height: 300px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 0; background: rgba(0,0,0,0.03); }
     .ov-card { margin-top: 14px; padding: 8px; }
@@ -943,19 +960,6 @@
     .tbtn:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .tbtn.primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
     .tbtn.primary:hover { background: #a8481f; color: #fff; }
-    .swx { display: flex; align-items: center; gap: 9px; font: 700 12.5px var(--f-sans); color: var(--ink-muted); cursor: pointer; margin-left: 4px; user-select: none; }
-    .sw { width: 38px; height: 21px; border-radius: 100px; background: rgba(0,0,0,0.16); position: relative; transition: .18s; flex: none; }
-    .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: .18s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-    .sw.on { background: var(--brand-deep); }
-    .sw.on::after { left: 19px; }
-    .crm-stats-wrap { overflow: hidden; transition: max-height .3s ease, opacity .25s, margin .25s; max-height: 700px; opacity: 1; margin-bottom: 16px; }
-    .crm-stats-wrap.hide { max-height: 0; opacity: 0; margin-bottom: 0; }
-    .crm-statcards { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
-    .crm-stat { padding: 16px 18px; border-radius: 14px; background: linear-gradient(160deg,rgba(255,255,255,0.9),rgba(255,255,255,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.09); }
-    .cs-l { font: 700 12px var(--f-sans); color: var(--ink-muted); }
-    .cs-v { font: 600 34px var(--f-serif); color: var(--ink); line-height: 1.05; margin: 6px 0 4px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
-    .cs-d { font-size: 12px; color: var(--ink-muted); display: flex; align-items: center; gap: 7px; }
-    .cs-chip { font: 700 11px var(--f-sans); color: var(--success); background: var(--success-tint); border-radius: 100px; padding: 2px 8px; }
     .crm-funnel { display: flex; align-items: stretch; gap: 4px; margin: 0 0 14px; flex-wrap: wrap; }
     .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 7px; }
     .fn-card:hover { border-color: rgba(54,54,54,0.3); transform: translateY(-1px); }
@@ -1029,7 +1033,7 @@
     .cm-i.on { color: var(--brand-text); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
     @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity .2s; } }
-    @media (max-width: 900px){ .crm-statcards { grid-template-columns: repeat(2,1fr); } .crm-tablecard { overflow-x: auto; } }
+    @media (max-width: 900px){ .crm-tablecard { overflow-x: auto; } }
   </style>
 </head>
 <body class="portal">
@@ -1143,19 +1147,11 @@
               <div class="seg"><button class="seg-b on">▤ Table</button><button class="seg-b" id="crmBoardBtn">▦ Board</button></div>
               <button class="tbtn" id="crmFilterBtn">▽ Filter</button>
               <button class="tbtn" id="crmSortBtn">↕ Sort</button>
-              <label class="swx"><span>Show statistics</span><span class="sw" id="crmStatSw" role="switch" aria-checked="false" tabindex="0"></span></label>
             </div>
             <div class="crm-tools-r">
               <button class="tbtn" id="crmExport">⇪ Export</button>
               <button class="tbtn primary" id="crmAdd">+ Add lead</button>
             </div>
-          </div>
-
-          <!-- statistics (toggled): 4 cards + attribution mix -->
-          <div class="crm-stats-wrap hide" id="crmStats">
-            <div class="crm-statcards" id="crmStatCards"></div>
-            <!-- attribution breakdown: which marketing actually made leads -->
-            <div class="card brk" id="brk"></div>
           </div>
 
           <!-- pipeline funnel (always visible — it's the process) -->
@@ -1187,7 +1183,7 @@
           <div class="h1">Plans that pay for themselves</div>
           <p class="muted" style="font-size:14px;margin-top:4px;max-width:560px">Synapse isn&#39;t software you pay for — it&#39;s the platform that brings you qualified buyers, closes deals faster, and shows you exactly which marketing earns its keep.</p>
 
-          <div class="pricing-grid" id="pricingGrid"></div>
+          <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
 
           <div class="h2" style="margin-top:40px">Grow as you need</div>
           <p class="sub">Top up a plan without upgrading — one-off or monthly.</p>
@@ -1207,46 +1203,23 @@
             <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px">✨ New post</button>
           </div>
 
-          <!-- main column keeps the work; channels + stats live in the rail -->
-          <div class="pane-split">
-            <div class="pane-main">
-              <div class="s-bento" id="socialBento"></div>
-
-              <!-- ══ Campaign generator ══════════════════════════════════
-                   One verified listing → every angle × every platform, each
-                   validated against that platform's real limits before it can
-                   be queued. -->
-              <div class="card cmp-gen" id="cmpGen">
-                <div class="cmp-head">
-                  <div>
-                    <div class="h2">Generate a campaign</div>
-                    <p class="sub" style="margin:0">Pick a verified listing. Synapse writes every angle for every channel, then checks each one against that platform's limits.</p>
-                  </div>
-                </div>
-                <div class="cmp-controls">
-                  <select id="cmpProp" aria-label="Listing"></select>
-                  <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px">✨ Generate</button>
-                </div>
-                <div class="cmp-out" id="cmpOut" hidden></div>
+          <!-- ══ Campaign generator ══════════════════════════════════
+               One verified listing → every angle × every platform, each
+               validated against that platform's real limits before it can
+               be queued. Channels + this-week stats now live in the
+               Ask-Toju panel, same as every other pane. -->
+          <div class="card cmp-gen" id="cmpGen">
+            <div class="cmp-head">
+              <div>
+                <div class="h2">Generate a campaign</div>
+                <p class="sub" style="margin:0">Pick a verified listing. Synapse writes every angle for every channel, then checks each one against that platform's limits.</p>
               </div>
             </div>
-
-            <aside class="pane-rail" aria-label="Channels and performance">
-              <div class="rail-sec">
-                <div class="rail-h">Where it posts</div>
-                <div class="channels">
-                  <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Not connected</div></div><div class="tog off"></div></div>
-                  <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
-                </div>
-              </div>
-              <div class="rail-sec">
-                <div class="rail-h">This week</div>
-                <div class="rail-stats" id="socialRailStats"></div>
-              </div>
-            </aside>
+            <div class="cmp-controls">
+              <select id="cmpProp" aria-label="Listing"></select>
+              <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px">✨ Generate</button>
+            </div>
+            <div class="cmp-out" id="cmpOut" hidden></div>
           </div>
 
           <div class="s-work-hd">
@@ -1319,14 +1292,11 @@
               </div>
               <input class="lsearch" id="listSearch" type="search" placeholder="Search listings…" aria-label="Search listings" autocomplete="off">
               <button class="tbtn" id="listSort">↕ Sort: Freshness</button>
-              <label class="swx"><span>Show statistics</span><span class="sw" id="listStatSw" role="switch" aria-checked="false" tabindex="0"></span></label>
             </div>
             <div class="crm-tools-r">
               <button class="tbtn primary" id="newListingBtn">+ New listing</button>
             </div>
           </div>
-
-          <div class="crm-stats-wrap hide" id="listStats"><div class="crm-statcards" id="listStatCards"></div></div>
 
           <div class="lgrid" id="lgrid"></div>
         </section>
@@ -1379,42 +1349,74 @@
 
           <div id="brandGate" class="noti-empty" style="margin-top:20px" hidden></div>
 
-          <div id="brandForm" class="two" style="margin-top:20px;align-items:start">
-            <div class="card" style="padding:20px 22px">
-              <div class="h2" style="margin:0 0 4px">Identity</div>
-              <p class="sub" style="margin-bottom:14px">How you are named and described.</p>
-              <div class="field"><label for="bkName">Agency name</label><input id="bkName" placeholder="Your registered trading name"></div>
-              <div class="field"><label for="bkTagline">Tagline</label><input id="bkTagline" placeholder="One line — what you want to be known for"></div>
-              <div class="field"><label for="bkDesc">About</label><textarea id="bkDesc" rows="4" placeholder="A short description buyers will read on your listings"></textarea></div>
-              <div class="field"><label for="bkSpecialties">Specialties</label><input id="bkSpecialties" placeholder="Comma separated — e.g. Lekki resale, diaspora buyers, shortlets"></div>
-            </div>
-
-            <div class="card" style="padding:20px 22px">
-              <div class="h2" style="margin:0 0 4px">Look</div>
-              <p class="sub" style="margin-bottom:14px">Used on your creatives and your public agency page.</p>
-              <div class="field"><label for="bkLogo">Logo URL</label><input id="bkLogo" placeholder="https://…"></div>
-              <div class="field"><label for="bkLogoDark">Logo URL · dark backgrounds</label><input id="bkLogoDark" placeholder="Optional"></div>
-              <div class="brand-swatches">
-                <div class="field"><label for="bkColor">Primary colour</label><input id="bkColor" type="color" value="#121212"></div>
-                <div class="field"><label for="bkColor2">Secondary colour</label><input id="bkColor2" type="color" value="#c76a1a"></div>
-              </div>
-              <div class="field"><label for="bkFont">Typeface</label><input id="bkFont" placeholder="e.g. Josefin Sans"></div>
+          <div id="brandForm" style="margin-top:20px">
+            <div class="card brand-hero">
+              <div class="bh-label">How Toju introduces you</div>
               <div class="brand-preview" id="bkPreview" aria-live="polite"></div>
             </div>
 
-            <div class="card" style="padding:20px 22px">
-              <div class="h2" style="margin:0 0 4px">Voice</div>
-              <p class="sub" style="margin-bottom:14px">Toju writes captions and replies in this tone. Be specific — “warm and plain-spoken, never salesy” beats “professional”.</p>
-              <div class="field"><label for="bkVoice">How you sound</label><textarea id="bkVoice" rows="3" placeholder="Describe the voice you want in your own words"></textarea></div>
+            <div class="two" style="margin-top:16px;align-items:start">
+              <div class="card" style="padding:20px 22px">
+                <div class="h2" style="margin:0 0 4px">Identity</div>
+                <p class="sub" style="margin-bottom:14px">How you are named and described.</p>
+                <div class="field"><label for="bkName">Agency name</label><input id="bkName" placeholder="Your registered trading name"></div>
+                <div class="field"><label for="bkTagline">Tagline</label><input id="bkTagline" placeholder="One line — what you want to be known for"></div>
+                <div class="field"><label for="bkDesc">About</label><textarea id="bkDesc" rows="4" placeholder="A short description buyers will read on your listings"></textarea></div>
+                <div class="field"><label for="bkSpecialties">Specialties</label><input id="bkSpecialties" placeholder="Comma separated — e.g. Lekki resale, diaspora buyers, shortlets"></div>
+              </div>
+
+              <div class="card" style="padding:20px 22px">
+                <div class="h2" style="margin:0 0 4px">Look</div>
+                <p class="sub" style="margin-bottom:14px">Used on your creatives and your public agency page.</p>
+
+                <div class="look-logos">
+                  <div class="logo-tile light">
+                    <div class="lt-preview" id="bkLogoPrevLight"><span class="lt-empty">No logo yet</span></div>
+                    <label for="bkLogo">Logo</label>
+                    <input id="bkLogo" placeholder="https://…">
+                  </div>
+                  <div class="logo-tile dark">
+                    <div class="lt-preview" id="bkLogoPrevDark"><span class="lt-empty" style="color:rgba(255,255,255,0.4)">No logo yet</span></div>
+                    <label for="bkLogoDark">Dark background</label>
+                    <input id="bkLogoDark" placeholder="Optional">
+                  </div>
+                </div>
+
+                <div class="swatch-row">
+                  <div class="swatch-card">
+                    <input id="bkColor" type="color" value="#121212">
+                    <div class="sw-info"><span class="sw-name">Primary</span><span class="sw-hex" id="bkColorHex">#121212</span></div>
+                  </div>
+                  <div class="swatch-card">
+                    <input id="bkColor2" type="color" value="#c76a1a">
+                    <div class="sw-info"><span class="sw-name">Secondary</span><span class="sw-hex" id="bkColor2Hex">#c76a1a</span></div>
+                  </div>
+                </div>
+
+                <div class="field"><label for="bkFont">Typeface</label><input id="bkFont" placeholder="e.g. Josefin Sans"></div>
+                <div class="type-specimen" id="bkSpecimen">
+                  <div class="ts-name" id="bkSpecimenName">Default</div>
+                  <div class="ts-glyphs" id="bkSpecimenGlyphs">Aa</div>
+                  <div class="ts-sample" id="bkSpecimenSample">Your agency name in this typeface</div>
+                </div>
+              </div>
             </div>
 
-            <div class="card" style="padding:20px 22px">
-              <div class="h2" style="margin:0 0 4px">Reach</div>
-              <p class="sub" style="margin-bottom:14px">Where buyers find you. Handles here label your posts; connecting an account for publishing is done in Social.</p>
-              <div class="field"><label for="bkWhatsapp">WhatsApp number</label><input id="bkWhatsapp" placeholder="+234…"></div>
-              <div class="field"><label for="bkInstagram">Instagram handle</label><input id="bkInstagram" placeholder="@youragency"></div>
-              <div class="field"><label for="bkWebsite">Website</label><input id="bkWebsite" placeholder="https://…"></div>
-              <div class="field"><label for="bkCity">City</label><input id="bkCity" placeholder="Lagos"></div>
+            <div class="two" style="margin-top:16px;align-items:start">
+              <div class="card" style="padding:20px 22px">
+                <div class="h2" style="margin:0 0 4px">Voice</div>
+                <p class="sub" style="margin-bottom:14px">Toju writes captions and replies in this tone. Be specific — “warm and plain-spoken, never salesy” beats “professional”.</p>
+                <div class="field"><label for="bkVoice">How you sound</label><textarea id="bkVoice" rows="3" placeholder="Describe the voice you want in your own words"></textarea></div>
+              </div>
+
+              <div class="card" style="padding:20px 22px">
+                <div class="h2" style="margin:0 0 4px">Reach</div>
+                <p class="sub" style="margin-bottom:14px">Where buyers find you. Handles here label your posts; connecting an account for publishing is done in Social.</p>
+                <div class="field"><label for="bkWhatsapp">WhatsApp number</label><input id="bkWhatsapp" placeholder="+234…"></div>
+                <div class="field"><label for="bkInstagram">Instagram handle</label><input id="bkInstagram" placeholder="@youragency"></div>
+                <div class="field"><label for="bkWebsite">Website</label><input id="bkWebsite" placeholder="https://…"></div>
+                <div class="field"><label for="bkCity">City</label><input id="bkCity" placeholder="Lagos"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1488,25 +1490,19 @@
       a.sort((p,q)=>{ const pv=key(p), qv=key(q); return pv<qv?-dir : pv>qv?dir : 0; });
       return a;
     }
-    // ── attribution breakdown bar (now inside the toggled stats region) ──
+    // ── attribution breakdown bar — moved into the Ask-Toju side panel
+    // (PANEL.crm below); only rendered while that panel is open, hence the
+    // null check rather than assuming the element is on the page. ──
     function renderBrk(){
+      const el = document.getElementById('brk'); if (!el) return;
       const counts = {};
       leads.forEach(l => { const c = l.attr.channel; counts[c] = (counts[c]||0)+1; });
       const order = Object.keys(CH).filter(c => counts[c]).sort((a,b)=>counts[b]-counts[a]);
-      document.getElementById('brk').innerHTML =
-        `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
+      el.innerHTML = leads.length
+        ? `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
          <div class="chips">${order.map(c => `<span class="c2">${chnBadge(c)} ${CH[c].label} <b>${counts[c]}</b></span>`).join('')}</div>
-         <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`;
-    }
-    function renderCrmStats(){
-      const cards = [
-        ['Total leads','128','▲ 12%'],
-        ['Pipeline value','₦2.4B','▲ 9%'],
-        ['Conversion rate','7%','▲ 1.2 pts'],
-        ['Avg first response','8m','▲ 18% faster'],
-      ];
-      document.getElementById('crmStatCards').innerHTML = cards.map(c =>
-        `<div class="crm-stat"><div class="cs-l">${c[0]}</div><div class="cs-v">${c[1]}</div><div class="cs-d"><span class="cs-chip">${c[2]}</span> vs last month</div></div>`).join('');
+         <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`
+        : '<p class="muted" style="font-size:13px;margin:0">No leads yet — attribution fills in once one arrives.</p>';
     }
     function renderCrmFunnel(){
       const counts = STAGE_ORDER.map(s => leads.filter(l => l.stage===s).length);
@@ -1555,15 +1551,11 @@
       document.getElementById('crmBulk').classList.toggle('on', n>0);
       document.getElementById('crmBulkN').textContent = n + ' selected';
     }
-    function renderCrm(){ renderCrmStats(); renderBrk(); renderCrmFunnel(); renderCrmTable(); }
+    function renderCrm(){ renderBrk(); renderCrmFunnel(); renderCrmTable(); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
     renderCrm();
 
     // ── CRM interactions ──
     (function(){
-      const sw = document.getElementById('crmStatSw');
-      const toggleStats = () => { const on = sw.classList.toggle('on'); sw.setAttribute('aria-checked', String(on)); document.getElementById('crmStats').classList.toggle('hide', !on); };
-      sw.addEventListener('click', toggleStats);
-      sw.addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); toggleStats(); } });
       document.getElementById('crmFunnel').addEventListener('click', e => {
         const b = e.target.closest('[data-stage]'); if(!b) return;
         CRM.fStage = CRM.fStage===b.dataset.stage ? null : b.dataset.stage; CRM.page=1; renderCrmFunnel(); renderCrmTable();
@@ -1687,7 +1679,7 @@
     // Demo social posts removed — every one advertised an invented property.
     let posts = [];
     const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
-    const CHR = { instagram: 3200, tiktok: 8600, facebook: 1500, whatsapp: 900 };
+    const CHR = { instagram: 3200, tiktok: 8600, youtube: 4200, facebook: 1500, whatsapp: 900 };
     const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
 
     const sReduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1826,12 +1818,14 @@
       document.getElementById('calendar').style.display = cal ? 'grid' : 'none';
       if (cal) renderCalendar();
     });
-    // bento "needs approval" jumps to the approval column
-    document.getElementById('socialBento').addEventListener('click', (e) => {
+    // bento "needs approval" jumps to the approval column — bento now lives
+    // in the Ask-Toju panel (PANEL.social.after, below), so it only exists
+    // in the DOM while that panel is open; this is wired there instead.
+    function jumpToApproval(e) {
       const b = e.target.closest('[data-sv-jump]'); if (!b) return;
       document.querySelector('#socialView [data-sv="pipeline"]').click();
       document.getElementById('pipeline').scrollIntoView({ behavior: sReduce() ? 'auto' : 'smooth', block: 'nearest' });
-    });
+    }
     // drag a post card between stages
     (function(){
       const pipe = document.getElementById('pipeline'); let dragId = null;
@@ -1983,7 +1977,6 @@
         [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
         [exp, 'Expired — re-list'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
-      const sc = document.getElementById('listStatCards'); if (sc) sc.innerHTML = STATS.listings;
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
       const rows = listFiltered(), grid = document.getElementById('lgrid');
       if (!rows.length) { grid.innerHTML = '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>'; return; }
@@ -2216,12 +2209,6 @@
       document.getElementById('listSort').textContent = '↕ Sort: ' + lbl[LIST.sort];
       renderListings();
     });
-    (function () {
-      const sw = document.getElementById('listStatSw');
-      const toggle = () => { const on = sw.classList.toggle('on'); sw.setAttribute('aria-checked', String(on)); document.getElementById('listStats').classList.toggle('hide', !on); };
-      sw.addEventListener('click', toggle);
-      sw.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
-    })();
     renderListings();
 
     /* ── database hydration ───────────────────────────────────────────────
@@ -2806,10 +2793,12 @@
       /* The agency's brand, loaded once and handed to every generation so the
          copy signs itself, tags the agency's own handle, and the creatives are
          painted in their colours. Null until it resolves; generation still
-         works unbranded rather than blocking on it. */
-      var BRAND = null;
+         works unbranded rather than blocking on it. Hung off window: the social
+         studio's own post composer (a separate IIFE further down) needs the
+         same brand and would otherwise have no way to reach this scope's var. */
+      window.BRAND = null;
       if (window.SynListings && SynListings.loadBrand) {
-        SynListings.loadBrand().then(function (b) { BRAND = b || null; }).catch(function () {});
+        SynListings.loadBrand().then(function (b) { window.BRAND = b || null; }).catch(function () {});
       }
 
       function buildPicker() {
@@ -2845,7 +2834,7 @@
         if (running || !rows.length) return;
         var row = rows[+sel.value || 0];
         if (!row) return;
-        campaign = S.generate(row, { brand: BRAND });
+        campaign = S.generate(row, { brand: window.BRAND });
         render();
       });
 
@@ -2949,21 +2938,6 @@
       }
     })();
 
-    /* Rail figures — moved out of the main column so the page shows the work,
-       not the dashboard. Consulted, not parsed. */
-    (function () {
-      const el = document.getElementById('socialRailStats');
-      if (!el) return;
-      const rows = [
-        { v: '18', l: 'posts published', d: '+5', up: true },
-        { v: '41.2k', l: 'total reach', d: '+12%', up: true },
-        { v: '96', l: 'DMs from posts', d: '+9', up: true },
-        { v: '7', l: 'leads attributed', d: '−2', up: false },
-      ];
-      el.innerHTML = rows.map((r) =>
-        `<div class="rail-stat"><span class="rv">${r.v}</span>`
-        + `<span class="rl">${r.l}<br><span class="rd ${r.up ? 'up' : 'dn'}">${r.d} vs last week</span></span></div>`).join('');
-    })();
     const escT = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const cmpScrim = document.getElementById('cmpScrim'), cmpModal = document.getElementById('cmpModal');
     let cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
@@ -2975,7 +2949,7 @@
         <div class="cmp-step">1 · Verified listing</div>
         <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}"><img src="${l.img}" alt=""><div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">₦${Math.round(l.price / 1e6)}M</div></div></button>`).join('')}</div>
         <div class="cmp-step">2 · Channels</div>
-        <div class="cmp-chans">${['instagram', 'tiktok', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
+        <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
         <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '✨ Generate captions with AI'}</button>`;
       if (cmp.err) html += `<div class="cmp-err">${cmp.err}</div>`;
       if (cmp.captions) {
@@ -3004,11 +2978,11 @@
           body: JSON.stringify({
             property: l,
             channels: [...cmp.chans],
-            brand: BRAND ? {
-              name: BRAND.name || null,
-              tagline: BRAND.tagline || null,
-              voice: BRAND.brand_voice || null,
-              handle: (BRAND.social && BRAND.social.instagram) || null,
+            brand: window.BRAND ? {
+              name: window.BRAND.name || null,
+              tagline: window.BRAND.tagline || null,
+              voice: window.BRAND.brand_voice || null,
+              handle: (window.BRAND.social && window.BRAND.social.instagram) || null,
             } : null,
           }),
         });
@@ -3038,7 +3012,6 @@
     const CTA_TOASTS = {
       '+ New listing': 'Listing upload — add photos and the 7-node verification kicks off automatically.',
       '+ New campaign': 'Campaign builder — target Toju briefs by area, budget and intent.',
-      'Upgrade to Accelerate': 'Accelerate plan: 100 listings · 5 seats · social syndication. Checkout opens in your live workspace.',
       'Talk to sales': 'Thanks — our team will reach out about the Gold plan and proximity marketing.',
       'Current plan': 'You’re on Free — free forever. Upgrade any time.',
       'See how it works': 'A 2-minute tour of the agency portal is on the way.',
@@ -3110,19 +3083,44 @@
       },
     };
     const nairaPlan = (n) => n === 0 ? '₦0' : '₦' + (n / 1000) + 'k';
-    // PricingCard + FeatureRow
-    function pricingCardHTML(p) {
-      const rows = p.features.map((f) => `<li>${f[0]}${f[1] ? `<small>${f[1]}</small>` : ''}</li>`).join('')
-        + (p.tradeoffs ? p.tradeoffs.map((t) => `<li class="trade">${t}</li>`).join('') : '');
-      return `<div class="card tier ${p.feature ? 'feature' : ''} ${p.gold ? 'gold-plan' : ''}">
-        ${p.badge ? `<span class="pop">${p.badge}</span>` : ''}
-        <div class="tname">${p.name}</div>
-        <div class="thead">${p.headline}</div>
-        <div class="amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
-        <div class="best">${p.best}</div>
-        <ul>${rows}</ul>
-        <button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'} btn-block" ${p.current ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button>
-      </div>`;
+    // Comparison table: tiers as columns, benefits as rows — read a row
+    // across to see which plans include it, instead of parsing three
+    // separate feature lists. Rows are a synthesis of each plan's own
+    // features/tradeoffs above into shared dimensions every plan has a
+    // value for (true/false/a specific figure).
+    const COMPARE_ROWS = [
+      { label: 'Active listings', vals: ['20', '100', 'Unlimited'] },
+      { label: 'Team seats', vals: ['2', '5', 'Unlimited'] },
+      { label: 'CRM with WhatsApp handoff', vals: [true, true, true] },
+      { label: 'Toju AI buyer referrals', vals: [true, true, true] },
+      { label: 'Verification speed', vals: ['Standard queue', '48 hours', 'Dedicated desk'] },
+      { label: 'Verification badge', vals: ['Verified', 'Verified', 'Gold Verified'] },
+      { label: 'Publish once, reach every channel', vals: [false, true, true] },
+      { label: 'AI writes captions & auto-posts', vals: [false, true, true] },
+      { label: 'AI-generated marketing campaigns', vals: [false, false, true] },
+      { label: 'Proximity marketing', vals: [false, false, true] },
+      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium — full attribution'] },
+      { label: 'Support', vals: ['Standard', 'Standard', 'Priority'] },
+    ];
+    function pricingCellCls(p) { return (p.feature ? ' feature' : '') + (p.gold ? ' gold-plan' : ''); }
+    function pricingCompareHTML(plans, rows) {
+      let html = '<div class="pr-corner"></div>'
+        + plans.map((p) => `<div class="pr-head${pricingCellCls(p)}">${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}<div class="tname">${p.name}</div><div class="thead">${p.headline}</div></div>`).join('');
+      html += '<div class="pr-row-label">Price</div>'
+        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}"><div class="amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div></div>`).join('');
+      html += '<div class="pr-row-label"></div>'
+        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}"><button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button></div>`).join('');
+      rows.forEach((r) => {
+        html += `<div class="pr-row-label">${r.label}</div>`
+          + r.vals.map((v, i) => {
+            const p = plans[i];
+            const content = v === true ? '<span class="pr-check">✓</span>'
+              : v === false ? '<span class="pr-dash">—</span>'
+              : `<span class="pr-val">${v}</span>`;
+            return `<div class="pr-cell${pricingCellCls(p)}">${content}</div>`;
+          }).join('');
+      });
+      return html;
     }
     // AddOnCard
     function addonHTML(a) {
@@ -3137,9 +3135,100 @@
         <div class="rgrid">${r.points.map((p) => `<div>${p}</div>`).join('')}</div>
         <p class="rclose">${r.close}</p>`;
     }
-    document.getElementById('pricingGrid').innerHTML = PRICING.plans.map(pricingCardHTML).join('');
+    // Re-run whenever the real plan loads (renderPricing, below) — a plain
+    // dataset.wired guard on each fresh button is enough to keep re-renders
+    // safe without double-binding.
+    function wirePricingToasts() {
+      document.querySelectorAll('#pricingGrid button').forEach((b) => {
+        const msg = CTA_TOASTS[b.textContent.trim()];
+        if (msg && !b.dataset.wired) { b.dataset.wired = '1'; b.addEventListener('click', () => toast(msg)); }
+      });
+    }
+    function renderPricing() {
+      document.getElementById('pricingGrid').innerHTML = pricingCompareHTML(PRICING.plans, COMPARE_ROWS);
+      wirePricingToasts();
+    }
+    renderPricing();
     document.getElementById('addonsGrid').innerHTML = PRICING.addons.map(addonHTML).join('');
     document.getElementById('roiSection').innerHTML = roiHTML(PRICING.roi);
+
+    // ── real checkout: Paystack, hosted redirect ──
+    // No Paystack key ever touches this page — the client only ever talks to
+    // the paystack-checkout edge function, which holds the secret key and
+    // does the real work. See synapse-platform/supabase/functions/paystack-*.
+    function authToken() {
+      return SynAuth.client().then((c) => c.auth.getSession())
+        .then((r) => (r && r.data && r.data.session && r.data.session.access_token) || null);
+    }
+    function startCheckout(plan) {
+      authToken().then((token) => {
+        if (!token) {
+          const here = window.location.pathname + window.location.search;
+          window.location.href = 'signin.html?role=agency&reason=agency&next=' + encodeURIComponent(here);
+          return;
+        }
+        return fetch(SB_URL + '/functions/v1/paystack-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'init', plan }),
+        })
+          .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+          .then(({ ok, d }) => {
+            if (!ok || !d.authorization_url) { toast(d.error || 'Could not start checkout — please try again.'); return; }
+            window.location.href = d.authorization_url;
+          })
+          .catch(() => toast('Network hiccup starting checkout — please try again.'));
+      });
+    }
+    document.getElementById('pricingGrid').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-plan="accelerator"]');
+      if (b && !b.disabled) startCheckout('accelerator');
+    });
+
+    // Paystack redirects back here as ?reference=... — that query param is
+    // an untrusted browser redirect (spoofable), used only as a lookup key.
+    // The real answer always comes from asking our own edge function, which
+    // re-verifies with Paystack directly rather than trusting anything in
+    // the URL.
+    (function checkoutReturn() {
+      const ref = new URLSearchParams(location.search).get('reference');
+      if (!ref) return;
+      history.replaceState(null, '', location.pathname);
+      authToken().then((token) => {
+        if (!token) return;
+        return fetch(SB_URL + '/functions/v1/paystack-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ action: 'verify', reference: ref }),
+        }).then((r) => r.json()).then((d) => {
+          if (d.ok) { toast('Accelerate is live on your account.'); refreshCurrentPlan(); }
+          else toast('Still processing — this updates automatically once Paystack confirms it.');
+        });
+      }).catch(() => {});
+    })();
+
+    // The plan actually on the agency's record, not a hardcoded default —
+    // Free was previously hardcoded as `current: true` regardless of what an
+    // agency had actually paid for.
+    function refreshCurrentPlan() {
+      if (!window.SynListings) return;
+      SynListings.agency().then((a) => {
+        const tier = (a && a.subscription_tier) || 'free';
+        PRICING.plans.forEach((p) => {
+          const isCurrent = (tier === 'free' && p.id === 'foundation')
+            || (tier === 'accelerator' && p.id === 'accelerator')
+            || (tier === 'market_leader' && p.id === 'market-leader');
+          p.current = isCurrent;
+          // Free has no self-serve downgrade flow — its button stays
+          // inert rather than promising an action that doesn't exist.
+          p.disabled = isCurrent || p.id === 'foundation';
+          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Free tier' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : 'Talk to sales');
+          p.ctaStyle = isCurrent ? 'ghost' : (p.id === 'accelerator' ? 'primary' : 'ghost');
+        });
+        renderPricing();
+      }).catch(() => {});
+    }
+    refreshCurrentPlan();
 
     // ── persistent Ask-Toju panel (context-aware per pane) ──
     // The AI commentary/summaries live here, not on the main panes. What the
@@ -3174,7 +3263,9 @@
         html: () => tpSummary('Where your attention pays off', [
           'Toju ranks your leads by intent, deal value and how close the SLA is.',
           'No leads yet — this fills in the moment a buyer reaches you.',
-        ], 'Connect a channel or share a listing, and the first real lead lands here.') },
+        ], 'Connect a channel or share a listing, and the first real lead lands here.')
+        + `<div class="tp-sec"><div class="tp-k">Where your leads come from</div><div class="card brk" id="brk"></div></div>`,
+        after: () => renderBrk() },
       listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
         html: () => tpSummary('Keep your listings live', [
           'Every listing expires 14 days after it was last confirmed.',
@@ -3184,7 +3275,21 @@
         html: () => tpSummary('Move the needle', [
           'Toju compares reach, DMs and leads per format and channel.',
           'Nothing has been published yet, so there is no performance to read.',
-        ], 'Generate a campaign from one of your listings and publish it — the first numbers land here.') },
+        ], 'Generate a campaign from one of your listings and publish it — the first numbers land here.')
+        + `<div class="tp-sec"><div class="tp-k">Where it posts</div><div class="channels" id="socialChannels">
+            <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+            <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+            <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Not connected</div></div><div class="tog"></div></div>
+            <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Not connected</div></div><div class="tog off"></div></div>
+            <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
+           </div></div>`
+        + `<div class="tp-sec"><div class="tp-k">This week</div><div class="s-bento" id="socialBento"></div></div>`,
+        after: () => {
+          document.querySelectorAll('#socialChannels .tog').forEach((t) => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
+          if (typeof renderBento === 'function') renderBento();
+          const bento = document.getElementById('socialBento');
+          if (bento && typeof jumpToApproval === 'function') bento.addEventListener('click', jumpToApproval);
+        } },
       agents: { title: 'Team read', sub: 'Coaching for your agents',
         html: () => tpSummary('Coach the floor', [
           'Toju reads first-reply times, win rates and stalled leads per agent.',
@@ -3542,13 +3647,33 @@
         const nm = f('bkName').value.trim() || 'Your agency';
         const tag = f('bkTagline').value.trim() || 'Your tagline appears here';
         const logo = f('bkLogo').value.trim();
+        const logoDark = f('bkLogoDark').value.trim();
+        const font = f('bkFont').value.trim();
         const initials = nm.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '—';
         f('bkPreview').innerHTML =
           (logo ? `<img src="${esc2(logo)}" alt="" onerror="this.remove()">` : '')
           + `<div class="bp-mark" style="background:${esc2(c1)}">${esc2(initials)}</div>`
-          + `<div style="min-width:0"><div class="bp-nm" style="font-family:${esc2(f('bkFont').value.trim() || 'inherit')}">${esc2(nm)}</div>`
+          + `<div style="min-width:0"><div class="bp-nm" style="font-family:${esc2(font || 'inherit')}">${esc2(nm)}</div>`
           + `<div class="bp-tag">${esc2(tag)}</div></div>`
           + `<span class="bp-chip" style="background:${esc2(c2)}">Accent</span>`;
+
+        // Logo tiles: show the actual pasted image, on the light/dark ground
+        // it will really sit on, instead of a bare URL string.
+        const lp = f('bkLogoPrevLight'), dp = f('bkLogoPrevDark');
+        if (lp) lp.innerHTML = logo ? `<img src="${esc2(logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty">No logo yet</span>';
+        if (dp) dp.innerHTML = (logoDark || logo) ? `<img src="${esc2(logoDark || logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot; style=&quot;color:rgba(255,255,255,0.4)&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty" style="color:rgba(255,255,255,0.4)">No logo yet</span>';
+
+        // Swatch hex readouts.
+        const ch1 = f('bkColorHex'), ch2 = f('bkColor2Hex');
+        if (ch1) ch1.textContent = c1.toUpperCase();
+        if (ch2) ch2.textContent = c2.toUpperCase();
+
+        // Type specimen — the typeface rendered large, at real size, rather
+        // than a name typed into a box with no visual feedback.
+        const sn = f('bkSpecimenName'), sg = f('bkSpecimenGlyphs'), ss = f('bkSpecimenSample');
+        if (sn) sn.textContent = font || 'Default';
+        if (sg) sg.style.fontFamily = font || 'inherit';
+        if (ss) { ss.style.fontFamily = font || 'inherit'; ss.textContent = nm !== 'Your agency' ? nm : 'Your agency name in this typeface'; }
       }
       function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 
@@ -3672,7 +3797,6 @@
     })();
 
     // simple toggles in social studio
-    document.querySelectorAll('.tog').forEach(t => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
   </script>
   <script src="icons.js"></script>
   <script src="auth.js"></script>

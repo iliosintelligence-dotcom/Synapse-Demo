@@ -206,7 +206,7 @@
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return null;
-      return c1.from('agencies').select('id,name,verification_tier').eq('id', aid).limit(1)
+      return c1.from('agencies').select('id,name,verification_tier,subscription_tier').eq('id', aid).limit(1)
         .then(function (r) {
           if (r.error) throw r.error;
           cachedAgency = (r.data && r.data[0]) || null;
