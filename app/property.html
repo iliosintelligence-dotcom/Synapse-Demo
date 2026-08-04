@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3-Bed Apartment, Lekki — Synapse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
+       monthly cost, neighbourhood intelligence, commute, similar homes. */
+    .hero { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; }
+    .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
+    .hero .counter { position: absolute; top: 16px; right: 16px; background: rgba(21,23,26,0.5); color: #fff; font-size: 12px; padding: 5px 11px; border-radius: 100px; }
+    .hero .actions { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; }
+    .hero .act { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; }
+    .hero .act.on { color: #121212; background: rgba(255,255,255,0.9); }
+    .thumbs { display: flex; gap: 8px; margin-top: 10px; }
+    .thumbs img { width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: all var(--m-micro) var(--m-ease); }
+    .thumbs img.on { opacity: 1; border-color: var(--brand); }
+
+    .summary { margin-top: 14px; position: relative; padding: 24px; }
+    .summary .price { font-family: var(--f-serif); font-weight: 600; font-size: 40px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
+    .summary .ctx { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
+    .summary .ctx b { color: var(--success); font-weight: 700; }
+    .summary .ttl { font-size: 18px; font-weight: 500; margin-top: 6px; }
+    .summary .loc { color: var(--ink-muted); font-size: 14px; margin-top: 2px; }
+    .facts { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--ink-muted); flex-wrap: wrap; }
+    .facts b { color: var(--ink); font-weight: 600; }
+
+    .section { padding: 22px 24px; margin-top: 16px; }
+    .section .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+    .reason { font-size: 14.5px; line-height: 1.7; }
+    .nodes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .more-checks { margin-top: 10px; }
+    .more-checks summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--brand); padding: 4px 2px; user-select: none; }
+    .more-checks summary::-webkit-details-marker { display: none; }
+    .more-checks summary::after { content: ''; width: 7px; height: 7px; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); transition: transform .25s cubic-bezier(.22,1,.36,1); margin-left: 2px; margin-top: -3px; }
+    .more-checks[open] summary::after { transform: rotate(-135deg); margin-top: 1px; }
+    .more-checks[open] summary { color: var(--ink-muted); }
+    @media (prefers-reduced-motion: reduce){ .more-checks summary::after { transition: none; } }
+    .ringbig { width: 56px; height: 56px; border-radius: 50%; border: 3.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 20px; color: var(--ink); }
+    /* Property confidence: shown inline here only on mobile, where there is no
+       side canvas to hold it. On desktop it moves to .pvc-head instead — see
+       the min-width:901px rule below — so it stops competing with price,
+       facts and the description for attention in the same card (Hick's Law:
+       the fewer things asking for a decision at once, the faster the read). */
+    .pvtrust-row { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+    .pvtrust-row[hidden] { display: none; }
+    @media (min-width: 901px) { .pvtrust-row { display: none; } }
+    .agency { display: flex; align-items: center; gap: 14px; }
+    .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
+
+    /* true cost */
+    .cost-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .cost-row { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--ink-muted); }
+    .cost-row b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cost-row.total { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 10px; margin-top: 4px; font-weight: 600; color: var(--ink); }
+    .cost-row.total b { color: var(--brand); font-family: var(--f-serif); font-size: 18px; }
+    .cost-note { font-size: 11.5px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+
+    /* neighbourhood intelligence bars */
+    .nb { display: flex; flex-direction: column; gap: 10px; }
+    .nb .row { display: grid; grid-template-columns: 120px 1fr 34px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-muted); }
+    .nb .bar { height: 7px; border-radius: 100px; background: rgba(0,0,0,0.06); overflow: hidden; }
+    .nb .bar i { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, #121212, #121212); width: 0; transition: width .8s var(--m-ease); }
+    .nb .bar i.good { background: linear-gradient(90deg, #2e7d4f, #4fb87e); }
+    .nb .v { font-weight: 700; color: var(--ink); font-size: 12px; text-align: right; }
+    .nb-note { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.06); }
+
+    /* commute */
+    .commute { display: flex; gap: 8px; flex-wrap: wrap; }
+    .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
+    .commute .c b { color: var(--ink); font-weight: 600; }
+
+    /* similar homes */
+    .sim { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .sim::-webkit-scrollbar { display: none; }
+    .sim a { flex: none; width: 168px; border-radius: 15px; overflow: hidden; background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.09); transition: transform var(--m-standard) var(--m-ease); }
+    .sim a:hover { transform: translateY(-3px); }
+    .sim img { width: 100%; height: 92px; object-fit: cover; }
+    .sim .b { padding: 9px 11px 11px; }
+    .sim .p { font-family: var(--f-serif); font-size: 16px; color: var(--brand); }
+    .sim .t { font-size: 11.5px; font-weight: 500; margin-top: 1px; }
+    .sim .m { font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
+
+    .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); display: flex; gap: 10px; }
+    .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #121212; border: 1px solid rgba(54,54,54,0.3); }
+
+    /* instant AI summary */
+    .glance { margin-top: 16px; padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6;
+      background: rgba(54,54,54,0.07); border: 1px solid rgba(54,54,54,0.18); color: var(--ink); }
+    .glance b { color: #121212; }
+
+    /* negotiation assistant */
+    .neg-offer { font-family: var(--f-serif); font-weight: 600; font-size: 30px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); margin: 8px 0 2px; }
+    .neg-draft { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(255,255,255,0.85); font-size: 13px; line-height: 1.6; color: var(--ink-muted); white-space: pre-wrap; }
+    .copybtn { margin-top: 8px; font: 600 12px var(--f-sans); color: #121212; background: none; border: 1px solid rgba(54,54,54,0.3); border-radius: 100px; padding: 6px 14px; cursor: pointer; }
+
+    /* commute time-of-day */
+    .tod { display: flex; gap: 5px; margin-bottom: 12px; }
+    .tod button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; cursor: pointer; }
+    .tod button.on { color: #121212; background: rgba(54,54,54,0.1); border-color: rgba(54,54,54,0.3); }
+    .addplace { font: 600 12px var(--f-sans); color: var(--ink-dim); background: none; border: 1px dashed rgba(0,0,0,0.2); border-radius: 100px; padding: 7px 13px; cursor: pointer; }
+    .addplace:hover { color: #121212; border-color: rgba(54,54,54,0.4); }
+
+    /* viewing assistant */
+    .vcheck { display: flex; flex-direction: column; gap: 7px; }
+    .vcheck label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
+    .vcheck input { accent-color: #121212; }
+    .vcheck label.done { text-decoration: line-through; opacity: .65; }
+    .vnotes { width: 100%; margin-top: 12px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font: 13.5px var(--f-sans); color: var(--ink); outline: none; resize: vertical; min-height: 64px; }
+    .vphotos { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .vphotos img { width: 66px; height: 66px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.9); }
+    .vphotos .add { width: 66px; height: 66px; border-radius: 10px; border: 1px dashed rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; color: var(--ink-dim); font-size: 20px; cursor: pointer; }
+
+    /* ── SWIPE DECK: the property image never scrolls away. The info cards
+       (overview, Toju's take, negotiate, cost…) swipe left/right instead of
+       stacking vertically. One screen, no vertical page scroll. ── */
+    html { height: 100%; }
+    body { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+    .pdp { flex: 1; min-height: 0; position: relative; z-index: 1; max-width: 460px; width: 100%; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; }
+    .pdp .hero { height: 230px; flex: none; }
+    .pdp .thumbs { flex: none; }
+    .deckbar { display: flex; align-items: center; gap: 10px; padding: 12px 2px 6px; flex: none; }
+    .deckbar .arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--ink); flex: none; transition: all var(--m-micro, .1s) ease; }
+    .deckbar .arrow:active { transform: scale(0.9); }
+    .deckbar .arrow:disabled { opacity: .28; cursor: default; }
+    .deckbar .dlabel { flex: 1; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--ink); }
+    .deckbar .dlabel small { display: block; font-weight: 500; font-size: 10.5px; letter-spacing: .04em; color: var(--ink-dim); margin-top: 1px; }
+    .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .deck::-webkit-scrollbar { display: none; }
+    .deck > .card { flex: 0 0 100%; scroll-snap-align: center; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
+    .deck > .card::-webkit-scrollbar { display: none; }
+    .dots { display: flex; gap: 6px; justify-content: center; padding: 9px 0 8px; flex: none; }
+    .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.16); transition: all .2s ease; cursor: pointer; }
+    .dots i.on { background: var(--brand); width: 18px; border-radius: 100px; }
+    .pdp .cta-dock { position: static; flex: none; padding: 10px 0 14px; background: none; }
+    /* ── split: swipe deck left, reactive map canvas right (Toju-chat style) ── */
+    .pv-split { display: flex; flex: 1; min-height: 0; }
+    .pv-split > .pdp { flex: 0 0 clamp(360px, 34%, 460px); max-width: 460px; margin: 0; border-right: 1px solid var(--border); }
+    .pv-canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #ededed; position: relative; }
+    .pvc-head { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
+    .pvc-title { font: 600 15px var(--f-serif); color: var(--ink); }
+    .pvc-trust { display: flex; align-items: center; gap: 9px; }
+    .pvc-trust[hidden] { display: none; }
+    .pvc-ring { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--brand); display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-size: 12.5px; color: var(--ink); flex: none; }
+    .pvc-trust-txt { display: flex; flex-direction: column; line-height: 1.3; }
+    .pvc-trust-txt b { font-size: 12px; font-weight: 600; color: var(--ink); }
+    .pvc-trust-txt small { font-size: 10.5px; color: var(--ink-dim); }
+    .pvc-tabs { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+    .pvc-tabs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; cursor: pointer; transition: .15s; }
+    .pvc-tabs button:hover { color: var(--ink); }
+    .pvc-tabs button.on { background: #121212; color: #fff; border-color: #121212; }
+    .pvc-map-wrap { position: relative; flex: 1; min-height: 0; }
+    #pvMap { position: absolute; inset: 0; z-index: 0; }
+    .pvc-overlay { position: absolute; left: 16px; bottom: 16px; z-index: 500; width: min(340px, 62%); background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(20,26,38,0.2); padding: 14px 16px; max-height: calc(100% - 32px); overflow-y: auto; }
+    .pvc-overlay.wide { width: min(420px, 74%); }
+    .pvo-k { font: 700 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .pvo-leg { display: flex; flex-direction: column; gap: 8px; }
+    .pvo-leg .r { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); }
+    .pvo-leg .r .dot { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex: none; }
+    .pvo-leg .r .n { margin-left: auto; color: var(--ink-muted); font-weight: 700; }
+    .pvo-list { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+    .pvo-list .li { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--ink); }
+    .pvo-list .li b { font-weight: 600; }
+    .pvo-list .li span { color: var(--ink-muted); flex: none; }
+    .pv-time { display: flex; gap: 6px; margin: 4px 0 10px; }
+    .pv-time button { flex: 1; font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 7px 4px; cursor: pointer; }
+    .pv-time button.on { background: #121212; color: #fff; border-color: #121212; }
+    .pvo-eta { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink); margin: 6px 0; }
+    .pvo-eta b { font-weight: 700; }
+    .pv-home-pin { background: #121212; color: #fff; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+    .pv-poi-pin { border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.28); border: 2px solid #fff; }
+    @media (max-width: 900px){ .pv-canvas { display: none; } .pv-split > .pdp { flex: 1; max-width: 460px; margin: 0 auto; border-right: none; } }
+  </style>
+</head>
+<body>
+  <div id="syn-load" aria-hidden="true"><svg class="syn-load-mark" viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg></div>
+  <div class="appbar">
+    <a class="brand" href="../index.html">
+      <svg viewBox="0 0 64 92" fill="#15171a"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg>
+      Synapse
+    </a>
+    <nav>
+      <a href="toju.html">Toju</a>
+      <a href="browse.html">Your matches</a>
+      <a href="dream.html">Dream Home</a>
+    </nav>
+    <span class="spacer"></span>
+    <span data-auth-slot style="margin-right:16px"></span>
+    <a class="home" href="browse.html">← Back to matches</a>
+  </div>
+
+  <div class="pv-split">
+  <div class="pdp">
+    <div class="hero">
+      <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
+      <span class="counter" id="counter">1 / 5</span>
+      <div class="actions">
+        <div class="act" id="saveBtn" title="Save">♡</div>
+        <div class="act" id="shareBtn" title="Share">↗</div>
+      </div>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+
+    <div class="deckbar">
+      <button class="arrow" id="deckPrev" aria-label="Previous card">‹</button>
+      <div class="dlabel" id="deckLabel">Overview</div>
+      <button class="arrow" id="deckNext" aria-label="Next card">›</button>
+    </div>
+    <div class="dots" id="deckDots"></div>
+
+    <div class="deck" id="deck">
+    <!-- Every value below is painted from the database by hydrate(). The page
+         ships with placeholders, never with a specimen property: a hardcoded
+         home here meant every listing opened as the same invented flat. -->
+    <div class="card summary" data-title="Overview">
+      <div class="price" id="pvPrice">—</div>
+      <div class="ctx" id="pvCtx" hidden></div>
+      <div class="ttl" id="pvTitle">Loading listing…</div>
+      <div class="loc" id="pvLoc"></div>
+      <div class="facts" id="pvFacts"></div>
+      <div class="pvtrust-row" id="pvTrust" hidden>
+        <div class="ringbig" id="pvRing">—</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px" id="pvVerifyLine"></div>
+          <div class="dim" style="font-size:12.5px" id="pvVerifyNote"></div>
+        </div>
+      </div>
+      <div class="glance" id="pvGlance" hidden></div>
+    </div>
+
+    <!-- Hidden until there is real enrichment behind it. The previous copy
+         asserted a match percentage, a commute delta, a median comparison and a
+         yield benchmark — none of which the database holds for a new listing.
+         hydrate() reveals this only when property_enrichment supplies it. -->
+    <div class="card section" id="pvTakeCard" hidden>
+      <div class="lbl"><span data-icon="spark"></span> Toju's take</div>
+      <p class="reason" id="pvTake"></p>
+    </div>
+
+    <!-- AI negotiation assistant -->
+    <div class="card section">
+      <div class="lbl"><span data-icon="negotiate"></span> Negotiate with Toju</div>
+      <p class="reason" style="font-size:13px;color:var(--ink-muted)">Toju reads the data — area medians, yield, verification flags — and suggests a respectful opening offer, plus a message you can send as-is.</p>
+      <button class="btn btn-primary" id="negBtn" style="margin-top:12px;padding:11px 20px;font-size:13.5px">Get my opening offer</button>
+      <div id="negOut" hidden>
+        <div class="neg-offer" id="negOffer"></div>
+        <p class="reason" id="negAdvice" style="font-size:13.5px"></p>
+        <div class="neg-draft" id="negDraft"></div>
+        <button class="copybtn" id="negCopy">Copy message</button>
+      </div>
+    </div>
+
+    <!-- true monthly cost — the Zillow calculator, Lagos reality -->
+    <div class="card section">
+      <div class="lbl"><span data-icon="costs"></span> What it really costs</div>
+      <div class="cost-rows">
+        <div class="cost-row"><span>Mortgage · 20% down, 20 yrs @ 22%</span><b>₦2.44M/mo</b></div>
+        <div class="cost-row"><span>Service charge</span><b>₦83k/mo</b></div>
+        <div class="cost-row"><span>Power backup &amp; utilities (est.)</span><b>₦120k/mo</b></div>
+        <div class="cost-row"><span>School run fuel — 12 min route (est.)</span><b>₦45k/mo</b></div>
+        <div class="cost-row total"><span>True monthly cost</span><b>≈ ₦2.69M/mo</b></div>
+      </div>
+      <p class="cost-note">Buying cash? Your ₦165M earns back ≈ ₦13.9M/yr at the corridor's 8.4% gross yield if you ever rent it out. Estimates from verified listing data + area intelligence — refine with Toju.</p>
+    </div>
+
+    <!-- neighbourhood intelligence (RentCast-style, from the twin) -->
+    <div class="card section">
+      <div class="lbl"><span data-icon="pin"></span> Neighbourhood intelligence — Lekki Phase 1</div>
+      <div class="nb">
+        <div class="row"><span>Safety</span><div class="bar"><i class="good" data-w="82"></i></div><span class="v">82</span></div>
+        <div class="row"><span>Family life</span><div class="bar"><i class="good" data-w="85"></i></div><span class="v">85</span></div>
+        <div class="row"><span>Schools access</span><div class="bar"><i class="good" data-w="88"></i></div><span class="v">88</span></div>
+        <div class="row"><span>Power reliability</span><div class="bar"><i data-w="74"></i></div><span class="v">74</span></div>
+        <div class="row"><span>Internet</span><div class="bar"><i class="good" data-w="86"></i></div><span class="v">86</span></div>
+        <div class="row"><span>Flood risk</span><div class="bar"><i data-w="28"></i></div><span class="v">28</span></div>
+      </div>
+      <p class="nb-note">Prices in this corridor are <b style="color:var(--success)">rising</b> · typical 3-bed rent ₦8.5M/yr · rental demand high. 4 schools, 2 hospitals and 3 supermarkets within 10 minutes.</p>
+    </div>
+
+    <!-- commute intelligence: times shift with time of day; add your own places -->
+    <div class="card section">
+      <div class="lbl"><span data-icon="commute"></span> Commute intelligence</div>
+      <div class="tod" id="tod">
+        <button data-mult="1.55">Morning peak</button>
+        <button data-mult="1" class="on">Midday</button>
+        <button data-mult="1.75">Evening peak</button>
+      </div>
+      <div class="commute" id="commute"></div>
+    </div>
+
+    <!-- viewing assistant: inspection checklist + notes + photos, saved to this home -->
+    <div class="card section">
+      <div class="lbl"><span data-icon="legal"></span> Viewing assistant</div>
+      <p class="reason" style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">Take this with you to the inspection — everything you tick, note or snap stays attached to this home.</p>
+      <div class="vcheck" id="vcheck"></div>
+      <textarea class="vnotes" id="vnotes" placeholder="Notes from the viewing — water pressure, smells, the agent's answers…"></textarea>
+      <div class="vphotos" id="vphotos"></div>
+      <input type="file" id="vfile" accept="image/*" hidden />
+    </div>
+
+    <div class="card section">
+      <div class="lbl"><span data-icon="shield"></span> What we checked <span class="dim" style="font-weight:400;font-size:12.5px">· 6 of 7 passed</span></div>
+      <div style="margin:2px 0 10px"><span data-lottie="property-verified" data-loop="false" style="width:190px;height:84px"></span></div>
+      <!-- progressive disclosure: the checks buyers ask about first, rest on tap -->
+      <div class="nodes">
+        <span class="chip chip-pass">✓ Title verified</span>
+        <span class="chip chip-pass">✓ Legal review</span>
+        <span class="chip chip-pass">✓ Flood risk</span>
+        <span class="chip chip-pending">◷ Financial — still checking</span>
+      </div>
+      <details class="more-checks">
+        <summary>See all 7 checks</summary>
+        <div class="nodes" style="margin-top:9px">
+          <span class="chip chip-pass">✓ Ground survey</span>
+          <span class="chip chip-pass">✓ Structure</span>
+          <span class="chip chip-pass">✓ Neighbourhood</span>
+        </div>
+      </details>
+    </div>
+
+    <div class="card section">
+      <div class="lbl">Listed by</div>
+      <div class="agency">
+        <div class="logo">P</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14.5px">Prestige Realty Ltd.</div>
+          <div class="dim" style="font-size:12.5px">Gold Verified · 4.6 ★ · 60 transactions</div>
+        </div>
+        <span class="chip chip-gold">✦ Gold</span>
+      </div>
+    </div>
+
+    <!-- similar verified homes -->
+    <div class="card section">
+      <div class="lbl">More like this — verified</div>
+      <div class="sim">
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=340&q=60" alt=""><div class="b"><div class="p">₦148M</div><div class="t">3-Bed Terrace, Ikate</div><div class="m">Confidence 91 · 94% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=340&q=60" alt=""><div class="b"><div class="p">₦150M</div><div class="t">3-Bed Duplex, Osapa</div><div class="m">Confidence 88 · 80% match</div></div></a>
+        <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Confidence 84 · 76% match</div></div></a>
+      </div>
+    </div>
+    </div><!-- /deck -->
+
+    <div class="cta-dock">
+      <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?"><span data-icon="chat"></span> Ask Toju</a>
+      <button class="btn btn-primary" style="flex:1" id="contactBtn">Contact agent</button>
+    </div>
+  </div><!-- /pdp -->
+
+    <!-- RIGHT: reactive map canvas — visualises whatever the active card is about -->
+    <div class="pv-canvas">
+      <div class="pvc-head">
+        <div class="pvc-title" id="pvcTitle">Nearby</div>
+        <div class="pvc-trust" id="pvcTrust" hidden>
+          <div class="pvc-ring" id="pvcRing">—</div>
+          <div class="pvc-trust-txt"><b id="pvcVerifyLine"></b><small id="pvcVerifyNote"></small></div>
+        </div>
+        <div class="pvc-tabs" id="pvcTabs" role="tablist" aria-label="Map view">
+          <button data-view="poi" class="on" role="tab" aria-selected="true"><span data-icon="pin"></span> Nearby</button>
+          <button data-view="commute" role="tab" aria-selected="false"><span data-icon="commute"></span> Commute</button>
+          <button data-view="agency" role="tab" aria-selected="false"><span data-icon="agency"></span> Agency</button>
+          <button data-view="cost" role="tab" aria-selected="false"><span data-icon="costs"></span> Costs</button>
+          <button data-view="legal" role="tab" aria-selected="false"><span data-icon="legal"></span> Legal</button>
+        </div>
+      </div>
+      <div class="pvc-map-wrap">
+        <div id="pvMap"></div>
+        <div class="pvc-overlay" id="pvcOverlay"></div>
+      </div>
+    </div>
+  </div><!-- /pv-split -->
+
+  <script>
+    /* Gallery. PHOTOS starts EMPTY and is filled from property_media by
+       hydrate() — the page used to ship five stock interiors, so every listing
+       showed the same apartment regardless of which home you opened. */
+    let PHOTOS = [];
+    const hero = document.getElementById('heroImg');
+    const thumbs = document.getElementById('thumbs');
+    function renderGallery() {
+      const counter = document.getElementById('counter');
+      if (!PHOTOS.length) {
+        thumbs.innerHTML = '';
+        if (counter) counter.textContent = '';
+        hero.removeAttribute('src');
+        hero.alt = 'No photos supplied for this listing';
+        return;
+      }
+      hero.src = PHOTOS[0];
+      hero.alt = 'Photo of this property';
+      if (counter) counter.textContent = '1 / ' + PHOTOS.length;
+      thumbs.innerHTML = PHOTOS.map((p, i) =>
+        `<img src="${p}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`).join('');
+    }
+    thumbs.addEventListener('click', (e) => {
+      const t = e.target.closest('img[data-i]');
+      if (!t) return;
+      const i = Number(t.dataset.i);
+      hero.style.opacity = 0;
+      setTimeout(() => { hero.src = PHOTOS[i]; hero.style.opacity = 1; }, 160);
+      document.getElementById('counter').textContent = (i + 1) + ' / ' + PHOTOS.length;
+      thumbs.querySelectorAll('img').forEach((im) => im.classList.toggle('on', im === t));
+    });
+    renderGallery();
+
+    /* ── swipe deck: cards move left/right, image stays put ── */
+    const deck = document.getElementById('deck');
+    const deckCards = [...deck.children];
+    const deckLabel = document.getElementById('deckLabel');
+    const deckDots = document.getElementById('deckDots');
+    const deckPrev = document.getElementById('deckPrev');
+    const deckNext = document.getElementById('deckNext');
+    deckDots.innerHTML = deckCards.map((_, i) => `<i data-i="${i}"></i>`).join('');
+    let deckIdx = 0;
+    function cardTitle(c) {
+      if (c.dataset.title) return c.dataset.title;
+      const l = c.querySelector('.lbl');
+      if (!l) return '';
+      // strip a leading emoji/symbol (✦ 🤝 ₦ ◎ ⌖ 📋 🛡) but keep the words
+      return l.textContent.replace(/^[^\p{L}]+/u, '').trim() || l.textContent.trim();
+    }
+    function goCard(i) {
+      i = Math.max(0, Math.min(deckCards.length - 1, i));
+      deck.scrollTo({ left: i * deck.clientWidth, behavior: 'smooth' });
+    }
+    function syncDeck() {
+      if (!deckCards.length) return;
+      // clientWidth is 0 while the deck is unlaid-out (hidden tab, zero-size
+      // container). Dividing by it yields NaN, which indexes to `undefined` and
+      // threw here — taking the rest of this script block with it, including
+      // the code that loads the listing. Fall back to the current card.
+      const w = deck.clientWidth || 0;
+      const i = w ? Math.round(deck.scrollLeft / w) : deckIdx;
+      deckIdx = Math.max(0, Math.min(deckCards.length - 1, Number.isFinite(i) ? i : 0));
+      deckLabel.innerHTML = cardTitle(deckCards[deckIdx]) + ' <small>' + (deckIdx + 1) + ' OF ' + deckCards.length + '</small>';
+      deckDots.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === deckIdx));
+      deckPrev.disabled = deckIdx === 0;
+      deckNext.disabled = deckIdx === deckCards.length - 1;
+      // fill any neighbourhood bars on the active card
+      deckCards[deckIdx].querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; });
+      // sync the right-hand map canvas to whatever this card is about
+      if (window.__pvView) window.__pvView(deckIdx);
+    }
+    let deckRaf;
+    deck.addEventListener('scroll', () => { cancelAnimationFrame(deckRaf); deckRaf = requestAnimationFrame(syncDeck); });
+    deckPrev.addEventListener('click', () => goCard(deckIdx - 1));
+    deckNext.addEventListener('click', () => goCard(deckIdx + 1));
+    deckDots.addEventListener('click', (e) => { const d = e.target.closest('[data-i]'); if (d) goCard(+d.dataset.i); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') goCard(deckIdx + 1); if (e.key === 'ArrowLeft') goCard(deckIdx - 1); });
+    let deckReady = false;
+    window.addEventListener('resize', () => { if (deckReady) deck.scrollTo({ left: deckIdx * deck.clientWidth }); });
+    // always open on the first card (ignore any browser scroll restoration)
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    requestAnimationFrame(() => { deck.scrollLeft = 0; syncDeck(); deckReady = true; });
+    syncDeck();
+
+    // save + share
+    const saveBtn = document.getElementById('saveBtn');
+    const SAVED_KEY = 'synapse_saved';
+    // Same id the page is keyed on below — saving must follow the listing you
+    // actually opened, not the demo default.
+    // The listing id from the URL. No demo fallback: if there is no id there is
+    // no property, and the page says so rather than substituting a specimen one.
+    const PROP_ID = new URLSearchParams(window.location.search).get('id') || '';
+    let savedSet = new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'));
+    function paintSave() { saveBtn.textContent = savedSet.has(PROP_ID) ? '♥' : '♡'; saveBtn.classList.toggle('on', savedSet.has(PROP_ID)); }
+    saveBtn.addEventListener('click', () => {
+      savedSet.has(PROP_ID) ? savedSet.delete(PROP_ID) : savedSet.add(PROP_ID);
+      localStorage.setItem(SAVED_KEY, JSON.stringify([...savedSet])); paintSave();
+    });
+    paintSave();
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      const data = { title: '3-Bed Apartment, Lekki Phase 1 — Synapse', text: 'Verified · Property Confidence 94 · ₦165M', url: location.href };
+      if (navigator.share) { try { await navigator.share(data); } catch (e) {} }
+      else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
+    });
+
+    // lightweight feedback toast — speaks to the user, not the system
+    function toast(msg, kind) {
+      let t = document.getElementById('synToast');
+      if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
+      t.className = kind === 'error' ? 'err' : '';
+      t.textContent = msg;
+      requestAnimationFrame(() => t.classList.add('show'));
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
+    }
+
+    // Contact agent — this is the moment we ask for an account, because it is
+    // the moment the visitor's details would reach a third party. Browsing and
+    // talking to Toju stay free and anonymous; handing your number to an agency
+    // is the thing worth an account.
+    let contactBusy = false;   // single-flight: a double tap must not double-send
+    document.getElementById('contactBtn').addEventListener('click', function () {
+      if (contactBusy) return;
+      const btn = this;
+      contactBusy = true; btn.disabled = true; btn.textContent = 'Checking…';
+
+      const proceed = () => {
+        btn.textContent = 'Sending…';
+        setTimeout(() => {
+          toast("Your request has been sent to the agent — they'll reach out on WhatsApp shortly.");
+          btn.textContent = '✓ Request sent';
+          // stays disabled: the request is sent, re-sending helps nobody
+        }, 650);
+      };
+
+      if (!window.SynAuth) { proceed(); return; }   // auth unavailable — don't trap the user
+      SynAuth.ready().then((u) => {
+        if (u) { proceed(); return; }
+        const here = window.location.pathname + window.location.search;
+        window.location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
+      }).catch(() => { proceed(); });
+    });
+
+    // animate neighbourhood bars on view
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { e.target.querySelectorAll('.bar i').forEach((i) => { i.style.width = i.dataset.w + '%'; }); io.unobserve(e.target); }
+    }), { threshold: 0.3 });
+    document.querySelectorAll('.nb').forEach((el) => io.observe(el));
+
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const VISITOR = localStorage.getItem('toju_visitor_v1');
+    // Match cards deep-link here as property.html?id=<listing id>. That id keys
+    // everything id-scoped on this page (negotiation payload, saved places,
+    // viewing state) AND now selects the listing itself.
+    const URL_ID = new URLSearchParams(window.location.search).get('id');
+    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
+
+    /* ── the listing itself ───────────────────────────────────────────────
+       PROP is null until the database answers. It used to be a hardcoded
+       3-bed in Lekki Phase 1, which meant every match card — whichever home
+       it described — opened this same invented flat. Nothing on this page may
+       assert a property fact that did not come from the row below. */
+    let PROP = null;
+
+    const PERIOD_SUFFIX = { total: '', per_year: '/yr', per_month: '/mo', per_night: '/night' };
+    const TITLE_LABEL = { c_of_o: 'Certificate of Occupancy', governors_consent: 'Governor’s Consent',
+      registered_deed: 'Registered Deed', excision: 'Excision', gazette: 'Gazette', allocation: 'Allocation' };
+
+    function fatal(msg, detail) {
+      const t = document.getElementById('pvTitle');
+      if (t) t.textContent = msg;
+      const p = document.getElementById('pvPrice'); if (p) p.textContent = '';
+      const l = document.getElementById('pvLoc'); if (l) l.textContent = detail || '';
+      ['negBtn', 'contactBtn', 'saveBtn'].forEach((id) => {
+        const b = document.getElementById(id); if (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); }
+      });
+    }
+
+    function paintProperty(p) {
+      const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+
+      document.title = p.title + ' — Synapse';
+      set('pvPrice', naira(p.price) + (PERIOD_SUFFIX[p.price_period] || ''));
+      set('pvTitle', p.title);
+      // De-duplicate: agencies routinely type the city into the address line,
+      // which rendered as "Ikolaba GRA, Ibadan, Ibadan, Oyo state".
+      const seen = new Set();
+      set('pvLoc', [p.address, p.city, p.state].filter(Boolean).filter((part) => {
+        const k = String(part).trim().toLowerCase();
+        if (seen.has(k)) return false;
+        // also drop a city/state already contained in the address text
+        for (const prev of seen) if (prev.includes(k)) return false;
+        seen.add(k); return true;
+      }).join(', '));
+
+      // ₦/m² only when area is actually recorded; no invented median comparison.
+      if (p.area_sqm && p.price) {
+        set('pvCtx', naira(Math.round(p.price / p.area_sqm)) + '/m²');
+        show('pvCtx', true);
+      }
+
+      const facts = [];
+      if (p.bedrooms != null) facts.push(`<span><b>${p.bedrooms}</b> bed${p.bedrooms === 1 ? '' : 's'}</span>`);
+      if (p.bathrooms != null) facts.push(`<span><b>${p.bathrooms}</b> bath${p.bathrooms === 1 ? '' : 's'}</span>`);
+      if (p.parking_spaces != null) facts.push(`<span><b>${p.parking_spaces}</b> parking</span>`);
+      if (p.area_sqm != null) facts.push(`<span><b>${p.area_sqm}</b> m²</span>`);
+      if (p.year_built != null) facts.push(`<span>built <b>${p.year_built}</b></span>`);
+      if (p.title_type) facts.push(`<span>${TITLE_LABEL[p.title_type] || p.title_type}</span>`);
+      const fEl = document.getElementById('pvFacts');
+      if (fEl) fEl.innerHTML = facts.join('');
+
+      /* Verification, stated plainly either way. Unverified is not an
+         accusation and not a warning — it is a fact the buyer is entitled to
+         weigh, so it is shown with the same prominence as a pass. */
+      const verified = p.verification_status === 'verified';
+      const passed = Array.isArray(p.verification_nodes)
+        ? p.verification_nodes.filter((n) => n && n.status === 'pass').length : 0;
+      const total = Array.isArray(p.verification_nodes) ? p.verification_nodes.length : 0;
+      const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
+      const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
+      const noteTxt = verified
+        ? (total ? `${passed} of ${total} checks passed` : 'Checks passed')
+        : 'Listed by the agency; Synapse has not run its checks on this home yet.';
+      // Painted twice — .pvtrust-row (mobile, inline in the card) and
+      // .pvc-trust (desktop, in the map canvas header) — CSS shows only one
+      // per breakpoint, see the min-width:901px rule above .pvtrust-row.
+      ['pvTrust', 'pvcTrust'].forEach((id) => show(id, true));
+      set('pvRing', ringVal); set('pvcRing', ringVal);
+      const vLine = document.getElementById('pvVerifyLine'); if (vLine) vLine.textContent = lineTxt;
+      const vcLine = document.getElementById('pvcVerifyLine'); if (vcLine) vcLine.textContent = lineTxt;
+      set('pvVerifyNote', noteTxt); set('pvcVerifyNote', noteTxt);
+
+      if (p.description) { set('pvGlance', p.description); show('pvGlance', true); }
+
+      const e = p.property_enrichment && (Array.isArray(p.property_enrichment) ? p.property_enrichment[0] : p.property_enrichment);
+      if (e && e.toju_summary) { set('pvTake', e.toju_summary); show('pvTakeCard', true); }
+
+      PHOTOS = (p.property_media || [])
+        .slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        .map((m) => m.url).filter(Boolean);
+      renderGallery();
+    }
+
+    (function hydrate() {
+      if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
+      const q = SUPABASE_URL + '/rest/v1/properties'
+        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier)'
+        + '&id=eq.' + encodeURIComponent(URL_ID) + '&limit=1';
+      fetch(q, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+        .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+        .then((rows) => {
+          if (!Array.isArray(rows) || !rows.length) {
+            fatal('This listing is no longer available', 'It may have expired, been removed, or never existed.');
+            return;
+          }
+          PROP = rows[0];
+          paintProperty(PROP);
+          document.dispatchEvent(new CustomEvent('syn:property', { detail: PROP }));
+        })
+        .catch(() => fatal('Could not load this listing', 'Check your connection and try again.'));
+    })();
+
+    /* ── 13 · AI negotiation assistant ── */
+    const negBtn = document.getElementById('negBtn');
+    negBtn.addEventListener('click', async () => {
+      // Nothing to negotiate over until the listing has loaded. Sending a null
+      // property would have Toju invent an offer for a home it cannot see.
+      if (!PROP) { toast('Still loading this listing — one moment.'); return; }
+      negBtn.disabled = true; negBtn.textContent = 'Toju is working the numbers…';
+      clearNegError();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 25000);
+      try {
+        if (!navigator.onLine) throw Object.assign(new Error('offline'), { kind: 'offline' });
+        const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+          body: JSON.stringify({ action: 'negotiate', visitorId: VISITOR, property: PROP }),
+          signal: ctrl.signal,
+        });
+        clearTimeout(timer);
+        const d = await r.json().catch(() => ({}));
+        // never reveal an empty panel: a 200 with no offer is still a failure
+        if (!r.ok || d.error || (!d.openingOffer && !d.advice && !d.draft)) throw new Error('bad payload');
+        document.getElementById('negOut').hidden = false;
+        document.getElementById('negOffer').textContent = d.openingOffer ? 'Opening offer: ' + naira(d.openingOffer) : '';
+        document.getElementById('negAdvice').textContent = d.advice || '';
+        document.getElementById('negDraft').textContent = d.draft || '';
+        negBtn.hidden = true;
+      } catch (e) {
+        clearTimeout(timer);
+        showNegError(!navigator.onLine ? 'offline' : (e && e.name === 'AbortError') ? 'timeout' : 'server');
+        negBtn.textContent = 'Get my opening offer'; negBtn.disabled = false;
+      }
+    });
+    function clearNegError() { const p = document.getElementById('negErr'); if (p) p.remove(); }
+    function showNegError(kind) {
+      const msg = kind === 'offline'
+        ? 'You’re offline — reconnect and I’ll run the numbers.'
+        : kind === 'timeout'
+          ? 'That took longer than expected. The connection is slow right now.'
+          : 'I couldn’t work the numbers just now — this is on our side, not yours.';
+      const p = document.createElement('p');
+      p.id = 'negErr'; p.className = 'inline-err'; p.setAttribute('role', 'alert');
+      p.textContent = msg + ' Nothing was sent to the agency.';
+      negBtn.insertAdjacentElement('afterend', p);
+    }
+    document.getElementById('negCopy').addEventListener('click', async () => {
+      const btn = document.getElementById('negCopy');
+      try {
+        await navigator.clipboard.writeText(document.getElementById('negDraft').textContent);
+        btn.textContent = 'Copied ✓';
+      } catch (e) {
+        // clipboard blocked (insecure context / denied) — tell them, don't go silent
+        btn.textContent = 'Press Ctrl+C to copy';
+        try {
+          const r = document.createRange(); r.selectNodeContents(document.getElementById('negDraft'));
+          const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        } catch (e2) {}
+      }
+    });
+
+    /* ── 10 · Commute intelligence (time-of-day multiplier + custom places) ── */
+    const BASE_COMMUTE = [
+      { place: 'Lagos Island', min: 35 }, { place: 'Victoria Island', min: 25 },
+      { place: 'Lekki Phase 1 gate', min: 6 }, { place: 'Airport (MMIA)', min: 70 },
+      { place: 'Nearest school', min: 12 },
+    ];
+    let commuteMult = 1;
+    let customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
+    function fmtMin(m) { return m >= 60 ? Math.floor(m/60) + 'h ' + (m%60 ? (m%60)+'m' : '').trim() : Math.round(m) + ' min'; }
+    function renderCommute() {
+      const all = BASE_COMMUTE.concat(customPlaces);
+      document.getElementById('commute').innerHTML = all.map((c) =>
+        '<span class="c">' + c.place + ' <b>' + fmtMin(c.min * commuteMult) + '</b></span>').join('')
+        + '<button class="addplace" id="addPlace">+ add a place</button>';
+      document.getElementById('addPlace').addEventListener('click', () => {
+        const place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
+        const mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
+        if (!place.trim() || isNaN(mins)) return;
+        customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
+        localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
+        renderCommute();
+      });
+    }
+    document.getElementById('tod').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-mult]'); if (!b) return;
+      commuteMult = parseFloat(b.dataset.mult);
+      document.querySelectorAll('#tod button').forEach((x) => x.classList.toggle('on', x === b));
+      renderCommute();
+    });
+    renderCommute();
+
+    /* ── 9 · Viewing assistant (checklist + notes + photos, saved to this home) ── */
+    const CHECKS = ['Check water pressure', 'Test electrical outlets & sockets', 'Ask about service charges', 'Inspect ceilings & walls for leaks/damp', 'Confirm legal documentation (C of O / deed)', 'Test the backup power / generator', 'Check mobile signal & internet', 'Walk the compound security & parking'];
+    const vKey = 'synapse_viewing_' + PROP_ID;
+    let vState = JSON.parse(localStorage.getItem(vKey) || '{"done":[],"notes":"","photos":[]}');
+    function saveV() { localStorage.setItem(vKey, JSON.stringify(vState)); }
+    function renderChecks() {
+      document.getElementById('vcheck').innerHTML = CHECKS.map((c, i) =>
+        '<label class="' + (vState.done.includes(i) ? 'done' : '') + '"><input type="checkbox" data-i="' + i + '" ' + (vState.done.includes(i) ? 'checked' : '') + '/>' + c + '</label>').join('');
+    }
+    document.getElementById('vcheck').addEventListener('change', (e) => {
+      const i = Number(e.target.dataset.i);
+      vState.done.includes(i) ? vState.done = vState.done.filter((x) => x !== i) : vState.done.push(i);
+      saveV(); renderChecks();
+    });
+    const vnotes = document.getElementById('vnotes');
+    vnotes.value = vState.notes || '';
+    vnotes.addEventListener('input', () => { vState.notes = vnotes.value; saveV(); });
+    function renderPhotos() {
+      document.getElementById('vphotos').innerHTML = vState.photos.map((p) => '<img src="' + p + '" alt="" />').join('')
+        + '<div class="add" id="addPhoto">＋</div>';
+      document.getElementById('addPhoto').addEventListener('click', () => document.getElementById('vfile').click());
+    }
+    document.getElementById('vfile').addEventListener('change', (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => { vState.photos.push(rd.result); saveV(); renderPhotos(); };
+      rd.readAsDataURL(f);
+    });
+    renderChecks(); renderPhotos();
+  </script>
+  <script src="icons.js"></script>
+  <script src="auth.js"></script>
+  <script src="notify.js"></script>
+  <script src="motion.js"></script>
+  <script>
+  /* Reactive map canvas — mirrors the swipe deck. Each card maps to a view:
+     what's nearby (schools/gyms/restaurants/churches/mosques), commute/traffic by
+     time of day, route to the listing agency, cost breakdown, legal & documents. */
+  (function () {
+    if (!window.L || !document.getElementById('pvMap')) return;
+
+    /* This module used to hardcode one Lekki flat's surroundings: seven named
+       schools/gyms/restaurants with invented walking times, two commute
+       destinations with invented ETAs, and a named agency with a rating and a
+       deal count. Rendered against any other listing — an Ibadan flat, say —
+       every one of those was a false statement about a real place.
+
+       The map now shows only what the listing itself provides: its own
+       coordinates. Neighbourhood intelligence returns when there is real
+       amenity data joined to the listing, and until then the panels say so
+       rather than borrowing another property's neighbourhood. */
+    var PROP = null;                 // [lat, lng] from the listing
+    var POI = [];                    // no invented places
+    // Icons by name, not emoji: emoji render inconsistently (and sometimes in
+    // full colour) across OS, clashing with the app's single stroke-icon
+    // language everywhere else. SynIcons (icons.js) draws these to match.
+    var META = { school: { i: 'school', col: '#2f6dbd', lbl: 'Schools' }, gym: { i: 'gym', col: '#8a5cd6', lbl: 'Gyms' }, restaurant: { i: 'restaurant', col: '#c98b3a', lbl: 'Restaurants' }, church: { i: 'church', col: '#3f9c6d', lbl: 'Churches' }, mosque: { i: 'mosque', col: '#2e7d4f', lbl: 'Mosques' } };
+    function poiSvg(name, size) { return window.SynIcons ? SynIcons.svg(name, { size: size }) : ''; }
+    var DEST = [];                   // no invented commutes
+    var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: [] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: [] }, evening: { lbl: 'Evening', color: '#d9534f', etas: [] } };
+    var AGENCY = null;               // filled from the listing's agency
+    var CARD_VIEWS = ['poi', 'poi', 'agency', 'cost', 'poi', 'commute', 'poi', 'legal', 'agency', 'poi'];
+
+    var NO_DATA = '<div class="pvo-k">Neighbourhood detail</div>'
+      + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
+      + 'We don’t have verified amenity or commute data for this listing yet, so there is nothing to show here. '
+      + 'We would rather show you nothing than another property’s neighbourhood.</p>';
+
+    var map = L.map('pvMap', { scrollWheelZoom: false }).setView([9.0820, 8.6753], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
+    var layer = L.layerGroup().addTo(map);
+    var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
+    function poiIcon(t) { var m = META[t]; return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
+    var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
+    var state = { view: 'poi', time: 'midday' };
+    var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE }); }, 60); }
+
+    function renderPOI() {
+      overlay.className = 'pvc-overlay';
+      if (!PROP || !POI.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      var pts = [PROP];
+      POI.forEach(function (p) { L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer).bindPopup('<b>' + p.n + '</b><br>' + META[p.t].lbl.replace(/s$/, '') + ' · ' + p.d); pts.push(p.c); });
+      var counts = {}; POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
+      var leg = Object.keys(META).map(function (t) { return counts[t] ? ('<div class="r"><span class="dot" style="background:' + META[t].col + '">' + poiSvg(META[t].i, 12) + '</span>' + META[t].lbl + '<span class="n">' + counts[t] + '</span></div>') : ''; }).join('');
+      var near = POI.slice().sort(function (a, b) { return parseInt(a.d) - parseInt(b.d); }).slice(0, 4).map(function (p) { return '<div class="li"><b>' + p.n + '</b><span>' + p.d + '</span></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div><div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
+      fit(pts);
+    }
+    function renderCommute() {
+      overlay.className = 'pvc-overlay';
+      if (!PROP || !DEST.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      var cg = CONGEST[state.time], pts = [PROP];
+      DEST.forEach(function (d, i) { L.marker(d.c).addTo(layer).bindPopup('<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i]); L.polyline([PROP, d.c], { color: cg.color, weight: 5, opacity: 0.75 }).addTo(layer); pts.push(d.c); });
+      var toggle = ['morning', 'midday', 'evening'].map(function (k) { return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>'; }).join('');
+      var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + d.n + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas + '<p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
+      overlay.querySelectorAll('[data-time]').forEach(function (b) { b.addEventListener('click', function () { state.time = b.dataset.time; setView('commute'); }); });
+      fit(pts);
+    }
+    function renderAgency() {
+      overlay.className = 'pvc-overlay';
+      if (!AGENCY || !AGENCY.n) {
+        overlay.innerHTML = '<div class="pvo-k">Listing agency</div>'
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Agency details are not available for this listing yet.</p>';
+        if (PROP) fit([PROP]);
+        return;
+      }
+      overlay.innerHTML = '<div class="pvo-k">Listing agency</div><div class="pvo-list"><div class="li"><b>'
+        + AGENCY.n + '</b></div></div>'
+        + (AGENCY.sub ? '<p style="font-size:12.5px;color:var(--ink-muted);margin-top:4px">' + AGENCY.sub + '</p>' : '');
+      if (PROP) fit([PROP]);
+    }
+    /* Only costs the listing actually records. The previous version invented a
+       mortgage repayment, a utilities bill and a school-run fuel figure, then
+       summed them into a "true monthly cost" — a confident number built from
+       nothing. Anything absent is simply not shown. */
+    function renderCost() {
+      overlay.className = 'pvc-overlay wide';
+      var L2 = window.__pvListing || {}, rows = [];
+      var money = function (n) { return '₦' + Number(n).toLocaleString('en-NG'); };
+      if (L2.price != null) rows.push('<div class="li"><b>' + (L2.listing_type === 'rent' ? 'Rent' : 'Price') + '</b><span>' + money(L2.price) + (L2.price_period === 'per_year' ? ' / year' : L2.price_period === 'per_month' ? ' / month' : '') + '</span></div>');
+      if (L2.service_charge != null) rows.push('<div class="li"><b>Service charge</b><span>' + money(L2.service_charge) + '</span></div>');
+      if (L2.move_in_cost != null) rows.push('<div class="li"><b>Move-in cost</b><span>' + money(L2.move_in_cost) + '</span></div>');
+      overlay.innerHTML = '<div class="pvo-k">Costs on this listing</div>'
+        + (rows.length
+          ? '<div class="pvo-list">' + rows.join('') + '</div><p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Only what the agency recorded. Utilities, power and financing are not included.</p>'
+          : '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">No cost breakdown recorded for this listing.</p>');
+      if (PROP) fit([PROP]);
+    }
+    /* Reads the listing's real verification_nodes. It previously showed a fixed
+       six-of-seven document list for every property — asserting, on any listing,
+       that a C of O and a governor's consent had been sighted. */
+    function renderLegal() {
+      overlay.className = 'pvc-overlay';
+      var L2 = window.__pvListing || {};
+      var nodes = Array.isArray(L2.verification_nodes) ? L2.verification_nodes : [];
+      if (!nodes.length) {
+        overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div>'
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
+          + 'Synapse has not run its checks on this listing yet, so there is no document report to show. '
+          + 'Ask the agency for the title documents and have your own lawyer confirm them before you pay anything.</p>';
+        if (PROP) fit([PROP]);
+        return;
+      }
+      var rows = nodes.map(function (n) {
+        var ok = n.status === 'pass';
+        return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + (n.name || 'Check') + '</b><span style="color:'
+          + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'passed' : (n.status || 'pending')) + '</span></div>';
+      }).join('');
+      var passed = nodes.filter(function (n) { return n.status === 'pass'; }).length;
+      overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div>'
+        + '<p style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">' + passed + ' of ' + nodes.length + ' checks passed. These record what Synapse checked, not a guarantee.</p>';
+      if (PROP) fit([PROP]);
+    }
+    function setView(v) {
+      v = v || 'poi'; state.view = v;
+      document.querySelectorAll('#pvcTabs button').forEach(function (b) { var on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+      layer.clearLayers();
+      var L2 = window.__pvListing || {};
+      if (PROP) {
+        L.marker(PROP, { icon: homeIcon }).addTo(layer)
+          .bindPopup('<b>This home</b>' + (L2.title ? '<br>' + L2.title : ''));
+      }
+      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'Costs', legal: 'Legal & documents' }[v] || 'Nearby';
+      if (v === 'commute') renderCommute(); else if (v === 'agency') renderAgency(); else if (v === 'cost') renderCost(); else if (v === 'legal') renderLegal(); else renderPOI();
+    }
+    document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
+    window.__pvView = function (i) { setView(CARD_VIEWS[i] || 'poi'); };
+
+    /* The map waits for the listing. Without coordinates it stays on a national
+       view with an honest panel rather than pinning a home somewhere it isn't. */
+    document.addEventListener('syn:property', function (e) {
+      var p = e.detail || {};
+      window.__pvListing = p;
+      if (p.latitude != null && p.longitude != null) {
+        PROP = [Number(p.latitude), Number(p.longitude)];
+        map.setView(PROP, 14);
+      }
+      var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
+      if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };
+      setView(state.view || 'poi');
+    });
+    setView('poi');
+  })();
+  </script>
+</body>
+</html>

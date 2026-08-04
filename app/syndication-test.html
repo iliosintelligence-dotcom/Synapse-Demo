@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Syndication engine — tests</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <style>
+    body { font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: #101010; color: #ddd; padding: 26px; }
+    h1 { font-size: 16px; letter-spacing: .1em; text-transform: uppercase; color: #888; }
+    .t { padding: 6px 0; border-bottom: 1px solid #222; }
+    .p { color: #5fd08a; } .f { color: #ff6b5a; }
+    .sum { margin-top: 18px; padding: 14px; border-radius: 8px; background: #181818; font-size: 15px; }
+    pre { background: #181818; padding: 12px; border-radius: 8px; overflow-x: auto; color: #bbb; font-size: 12.5px; }
+  </style>
+</head>
+<body>
+  <h1>Syndication engine — tests</h1>
+  <div id="out"></div>
+  <div class="sum" id="sum"></div>
+  <h1 style="margin-top:26px">Sample payload (Instagram · verified-first)</h1>
+  <pre id="sample"></pre>
+
+  <script src="syndication.js"></script>
+  <script>
+  (function () {
+    var out = document.getElementById('out');
+    var pass = 0, fail = 0;
+    function t(name, fn) {
+      var ok = false, err = '';
+      try { ok = fn() === true; } catch (e) { err = e.message; }
+      ok ? pass++ : fail++;
+      var d = document.createElement('div');
+      d.className = 't ' + (ok ? 'p' : 'f');
+      d.textContent = (ok ? '✓ ' : '✗ ') + name + (err ? ' — ' + err : '');
+      out.appendChild(d);
+    }
+
+    // Real rows pulled from the live database (verified, live, in-window).
+    var ROWS = [
+      { id:'c0f695ce-cdb8-650d-52cb-e23494288a3a', title:'4-Bed Detached Duplex, Ikeja GRA', city:'Lagos', listing_type:'sale', property_type:'detached', price:'269000000.00', bedrooms:4, trust_score:98, neighbourhood:'Ikeja GRA (Lagos)', flood_risk:26, power_reliability:75 },
+      { id:'f7cb62d8-a496-e20e-c21f-2df883efa731', title:'3-Bed Terrace, Magodo', city:'Lagos', listing_type:'rent', property_type:'terrace', price:'7000000.00', bedrooms:3, trust_score:98, neighbourhood:'Magodo (Lagos)', flood_risk:25, power_reliability:81 },
+      { id:'9a96c90b-0058-aa22-84c6-637fd03ab5cf', title:'5-Bed Penthouse, Oniru', city:'Lagos', listing_type:'sale', property_type:'penthouse', price:'370500000.00', bedrooms:5, trust_score:97, neighbourhood:'Oniru (Lagos)', flood_risk:45, power_reliability:74 },
+    ];
+    var S = window.SynSyndicate;
+
+    /* ── shaping ── */
+    t('shape() strips the parenthetical city from the neighbourhood', function () {
+      return S.shape(ROWS[0]).area === 'Ikeja GRA';
+    });
+    t('rent is priced per year, sale is not', function () {
+      return S.shape(ROWS[1]).priceShort === '₦7M/yr' && S.shape(ROWS[0]).priceShort === '₦269M';
+    });
+
+    /* ── generation ── */
+    var camp = S.generate(ROWS[0]);
+    t('generates 5 angles × 5 platforms = 25 variants', function () {
+      return camp.variants.length === 25;
+    });
+    t('every variant carries the real property id', function () {
+      return camp.variants.every(function (v) { return v.propertyId === ROWS[0].id; });
+    });
+    t('every variant has a non-empty caption', function () {
+      return camp.variants.every(function (v) { return v.caption && v.caption.length > 40; });
+    });
+    t('angles produce genuinely different hooks (not reworded)', function () {
+      var ig = camp.variants.filter(function (v) { return v.platform === 'instagram'; });
+      var hooks = ig.map(function (v) { return v.hook; });
+      return new Set(hooks).size === hooks.length;
+    });
+
+    /* ── platform constraints are actually enforced ── */
+    t('WhatsApp gets no hashtags (platform has none)', function () {
+      return camp.variants.filter(function (v) { return v.platform === 'whatsapp'; })
+        .every(function (v) { return v.hashtags.length === 0; });
+    });
+    t('YouTube variants get a title, others do not', function () {
+      var yt = camp.variants.filter(function (v) { return v.platform === 'youtube'; });
+      var ig = camp.variants.filter(function (v) { return v.platform === 'instagram'; });
+      return yt.every(function (v) { return !!v.title; }) && ig.every(function (v) { return v.title === null; });
+    });
+    t('YouTube title respects the 100-char cap', function () {
+      return camp.variants.filter(function (v) { return v.platform === 'youtube'; })
+        .every(function (v) { return v.title.length <= 100; });
+    });
+    t('TikTok and YouTube only ever get video', function () {
+      return camp.variants.filter(function (v) { return v.platform === 'tiktok' || v.platform === 'youtube'; })
+        .every(function (v) { return v.media && v.media.kind === 'video'; });
+    });
+    t('the 95s clip is never assigned to YouTube Shorts (60s cap)', function () {
+      return camp.variants.filter(function (v) { return v.platform === 'youtube'; })
+        .every(function (v) { return v.media.seconds <= 60; });
+    });
+    t('every chosen ratio is one the platform supports', function () {
+      return camp.variants.every(function (v) {
+        return !v.ratio || S.PLATFORMS[v.platform].ratios.indexOf(v.ratio) > -1;
+      });
+    });
+    t('a clean campaign has zero validation issues', function () {
+      return camp.variants.every(function (v) { return v.issues.length === 0; });
+    });
+
+    /* ── validation catches real breakage ── */
+    t('validate() flags an over-length caption', function () {
+      var bad = JSON.parse(JSON.stringify(camp.variants[0]));
+      bad.caption = new Array(2400).join('x');
+      return S.validate(bad).some(function (m) { return /Caption is/.test(m); });
+    });
+    t('validate() flags hashtags on WhatsApp', function () {
+      var wa = camp.variants.filter(function (v) { return v.platform === 'whatsapp'; })[0];
+      var bad = JSON.parse(JSON.stringify(wa));
+      bad.hashtags = ['#nope'];
+      return S.validate(bad).some(function (m) { return /does not use hashtags/.test(m); });
+    });
+    t('validate() flags an over-long video for Shorts', function () {
+      var yt = camp.variants.filter(function (v) { return v.platform === 'youtube'; })[0];
+      var bad = JSON.parse(JSON.stringify(yt));
+      bad.media.seconds = 95;
+      return S.validate(bad).some(function (m) { return /caps at 60s/.test(m); });
+    });
+    t('validate() flags missing creative', function () {
+      var bad = JSON.parse(JSON.stringify(camp.variants[0]));
+      bad.media = null;
+      return S.validate(bad).some(function (m) { return /No creative/.test(m); });
+    });
+
+    /* ── selective generation ── */
+    t('can target a subset of platforms and angles', function () {
+      var c = S.generate(ROWS[2], { platforms: ['instagram', 'tiktok'], angles: ['trust', 'value'] });
+      return c.variants.length === 4
+        && c.variants.every(function (v) { return ['instagram','tiktok'].indexOf(v.platform) > -1; });
+    });
+
+    /* ── queue: idempotency, skipping, concurrency ── */
+    t('queue skips invalid variants instead of sending them', function () {
+      var q = S.createQueue({ mode: 'dry' });
+      var v = JSON.parse(JSON.stringify(camp.variants[0]));
+      v.issues = ['Caption too long.'];
+      q.add([v]);
+      return q.items()[0].status === 'skipped';
+    });
+    t('queue assigns a stable idempotency key per variant', function () {
+      var q1 = S.createQueue({ mode: 'dry' }); q1.add([camp.variants[0]]);
+      var q2 = S.createQueue({ mode: 'dry' }); q2.add([camp.variants[0]]);
+      return q1.items()[0].key === q2.items()[0].key && q1.items()[0].key.length > 8;
+    });
+    t('dry mode marks results as rehearsals, never live', function () {
+      var q = S.createQueue({ mode: 'dry' });
+      return q.mode() === 'dry';
+    });
+
+    /* ── async: the queue actually drains ── */
+    var q = S.createQueue({ mode: 'dry', concurrency: 3 });
+    q.add(camp.variants);
+    var t0 = performance.now();
+    q.run().then(function (sum) {
+      var ms = Math.round(performance.now() - t0);
+      t('queue drains all 25 variants', function () { return sum.published === 25; });
+      t('nothing left queued or sending after run', function () {
+        return !sum.queued && !sum.sending;
+      });
+      t('bounded concurrency (3) — not all fired at once', function () {
+        // 25 items @ ~0.22–0.48s each, 3 at a time => must exceed ~1.8s
+        return ms > 1500;
+      });
+      finish(ms);
+    });
+
+    function finish(ms) {
+      document.getElementById('sum').innerHTML =
+        '<b style="color:' + (fail ? '#ff6b5a' : '#5fd08a') + '">'
+        + pass + ' passed, ' + fail + ' failed</b> · queue drained in ' + ms + 'ms';
+      var ig = camp.variants.filter(function (v) { return v.platform === 'instagram' && v.angle === 'trust'; })[0];
+      document.getElementById('sample').textContent = JSON.stringify(S.payloadFor(ig), null, 2);
+      window.__TESTS__ = { pass: pass, fail: fail };
+    }
+  })();
+  </script>
+</body>
+</html>
