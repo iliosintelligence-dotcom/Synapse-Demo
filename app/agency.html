@@ -50,7 +50,15 @@
     /* collapsed, every group is open — there is no room for headers */
     .side:not(:hover):not(:focus-within) .grp-sec .grp-items { max-height: 400px !important; opacity: 1 !important; }
     .side:not(:hover):not(:focus-within) .grp { height: 0; padding: 0; overflow: hidden; }
-    @media (hover: none) { .shell { padding-left: 236px; } .side { width: 236px; } .side .lbl-x, .side .grp, .side .me .who { opacity: 1; } }
+    @media (hover: none) {
+      .shell { padding-left: 236px; }
+      .side { width: 236px; overflow-y: auto; }
+      .side .lbl-x, .side .grp, .side .me .who { opacity: 1; pointer-events: auto; }
+      .side .grp,
+      .side:not(:hover):not(:focus-within) .grp { height: auto; padding: 14px 12px 6px; overflow: visible; }
+      .side .grp-sec:first-child .grp,
+      .side:not(:hover):not(:focus-within) .grp-sec:first-child .grp { padding-top: 2px; }
+    }
     @media (prefers-reduced-motion: reduce) { .side, .side .lbl-x, .side .grp { transition: none; } }
     .side .grp-sec { display: flex; flex-direction: column; }
     .side .grp { width: 100%; background: none; border: none; cursor: pointer; text-align: left; font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; display: flex; align-items: center; justify-content: space-between; }
@@ -811,7 +819,7 @@
     .tp-stats .statspark { margin-top: 6px; }
     @media (max-width: 560px){ .tpanel { max-width: 100%; } }
 
-    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .side .grp-sec, .side .grp-items{ display: contents; } .side .grp-items{ max-height: none; opacity: 1; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
+    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; padding-left: 0; } body.portal{ overflow: auto; } .side{ position: static; width: auto; height: auto; flex-direction: row; flex-wrap: wrap; align-items: flex-start; border-right: none; border-bottom: 1px solid var(--border); } .side:hover, .side:focus-within{ width: auto; overflow-y: visible; box-shadow: none; } .side .grp, .side .me{ display: none; } .side .grp-sec, .side .grp-items{ display: contents; } .side .grp-items{ max-height: none; opacity: 1; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
     /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
