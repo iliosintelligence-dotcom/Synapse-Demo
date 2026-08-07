@@ -78,8 +78,11 @@
   border-bottom-color: rgba(20,20,20,0.06);
   backdrop-filter: blur(20px) saturate(1.3);
 }
-.m-navbar .m-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
-.m-navbar .m-logo svg { width: 20px; height: 29px; }
+/* sizing lives on .m-logo itself, not scoped to the nav: an unsized inline
+   SVG falls back to its intrinsic box, which is how the footer copy of this
+   mark rendered enormous. Any future .m-logo is now safe by default. */
+.m-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+.m-logo svg { width: 20px; height: 29px; flex: none; }
 .m-navbar .m-logo-word { font-size: 10px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; }
 .m-navbar .m-agencies-link {
   font-size: 12px; font-weight: 600; color: var(--text-dim);
