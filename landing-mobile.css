@@ -21,7 +21,10 @@
 
 @media (max-width: 720px) {
   .m-page { display: block; }
-  #navbar, #hero, #fresh, #how, #proximity, #trust, #final-cta,
+  /* Structural selectors, not a list of ids: index.html and agencies.html
+     don't share section ids, and a page added later shouldn't have to
+     remember to register itself here. */
+  #navbar, .hero-section, .s-band, .ag-final, #final-cta,
   body > footer { display: none !important; }
   body { padding-top: 0; }
 }
@@ -269,8 +272,12 @@
    uses, or the section reads inconsistently against its neighbours. */
 .m-proximity {
   background: #0e0e0e; padding-top: 64px; padding-bottom: 72px;
-  --text: #f5f5f5; --text-muted: #d4d4d4; --text-dim: #a8a8a8; --brand: #ffffff;
+  --text: #f5f5f5; --text-muted: #d4d4d4; --text-dim: #a8a8a8;
   --brand-text: #c9c9c9; color: var(--text);
+  /* deliberately NOT overriding --brand here: several shared components use
+     it as a BACKGROUND with --bg as their text (.d-tag does exactly this),
+     so flipping it to white rendered white-on-white. The headings that need
+     to go light are coloured explicitly below instead. */
 }
 .m-proximity .m-h2 { color: #f5f5f5; }
 .m-proximity .m-h2 em { color: #fff; }
@@ -383,3 +390,92 @@
 .m-blk { position: absolute; background: rgba(255,255,255,0.045); border-radius: 4px; }
 
 @keyframes ping { to { transform: scale(2.2); opacity: 0; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AGENCIES PAGE (agencies.html) — reuses every primitive above; only the
+   pieces that exist solely on the B2B page are defined here.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* the one-line promise band — a hard beat between hero and the proof */
+.m-statement { background: #0e0e0e; padding-top: 56px; padding-bottom: 56px; }
+.m-statement p {
+  font-size: 25px; line-height: 1.2; font-weight: 500; letter-spacing: -0.01em;
+  color: #f5f5f5; margin: 0;
+}
+.m-statement em { font-style: normal; color: #fff; }
+
+/* portal header strip inside the hero peek */
+.m-peek-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; border-bottom: 1px solid rgba(20,20,20,0.07);
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.m-peek-live { display: inline-flex; align-items: center; gap: 6px; }
+.m-peek-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--tint-ink); }
+
+/* a standalone mock panel (the syndication fan, the 2am chat) — the same
+   card language as the carousel's .m-car-demo, freed from the carousel */
+.m-mock {
+  margin-top: 24px; padding: 18px 16px 20px; border-radius: 18px;
+  background: linear-gradient(180deg, #fdfdfd, #fafafa);
+  border: 1px solid var(--crystal-border);
+  box-shadow: 0 14px 32px rgba(20,20,20,0.08);
+}
+.m-mock-dark {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: none;
+}
+.m-mock-dark .m-demo-head { color: #a8a8a8; }
+
+/* the proximity handset needs room to read as a device, not a card */
+.m-phone-stage {
+  margin-top: 26px; padding: 26px 0 6px; border-radius: 20px;
+  background: #141414;
+  display: flex; justify-content: center;
+}
+
+/* ── pricing ──────────────────────────────────────────────────────────
+   Stacked, most-popular first: a phone has no side-by-side comparison, so
+   the plan most agencies want leads instead of sitting in a middle column
+   nobody scrolls to. */
+.m-pr-toggle {
+  display: inline-flex; gap: 4px; margin-top: 22px; padding: 4px;
+  border-radius: 100px; background: rgba(20,20,20,0.05);
+  border: 1px solid var(--crystal-border);
+}
+.m-pr-toggle .pr-per {
+  border: none; background: none; border-radius: 100px;
+  padding: 9px 16px; min-height: 40px;
+  font-family: var(--f-sans); font-size: 12.5px; font-weight: 600;
+  color: var(--text-muted); white-space: nowrap;
+}
+.m-pr-toggle .pr-per.on { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(20,20,20,0.10); }
+.m-pr-toggle .pr-save { display: block; font-size: 10px; font-weight: 700; color: var(--tint-ink); }
+
+.m-pr-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+.m-pr-card {
+  position: relative; padding: 22px 20px 24px; border-radius: 20px;
+  background: #fff; border: 1px solid var(--crystal-border);
+}
+.m-pr-card.feature { border-color: var(--text); box-shadow: 0 14px 34px rgba(20,20,20,0.12); }
+.m-pr-badge {
+  position: absolute; top: -9px; left: 20px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--brand); color: #f5f5f5; padding: 4px 10px; border-radius: 100px;
+}
+.m-pr-name { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+.m-pr-price {
+  font-size: 30px; font-weight: 500; letter-spacing: -0.01em; color: var(--text);
+  margin-top: 8px; line-height: 1.1;
+}
+.m-pr-price span { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-dim); margin-top: 4px; letter-spacing: 0; }
+.m-pr-best { font-size: 13px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+.m-pr-list { list-style: none; margin: 16px 0 20px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.m-pr-list li { position: relative; padding-left: 22px; font-size: 13.5px; color: var(--text-muted); line-height: 1.45; }
+.m-pr-list li::before {
+  content: '✓'; position: absolute; left: 0; top: 0;
+  font-size: 11px; font-weight: 700; color: var(--text);
+}
+.m-pr-note { font-size: 12px; color: var(--text-dim); margin-top: 18px; line-height: 1.5; }
