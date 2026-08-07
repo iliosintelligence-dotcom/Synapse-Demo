@@ -84,12 +84,69 @@
     .au-note.ok { background: rgba(46,125,79,0.09); border: 1px solid rgba(46,125,79,0.28); color: #1f6340; }
     .au-note.bad { background: rgba(122,39,26,0.06); border: 1px solid rgba(122,39,26,0.22); color: #7a271a; }
 
-    @media (max-width: 900px) {
+    /* tablet: just unstack the split — the desktop proportions still work */
+    @media (min-width: 721px) and (max-width: 900px) {
       .au { grid-template-columns: 1fr; }
       .au-art { min-height: 240px; }
       .au-art-in { padding: 26px 28px; }
       .au-brand { top: 22px; left: 28px; }
       .au-form { padding: 36px 26px 56px; }
+    }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       Designed for the phone rather than inherited from the split screen.
+
+       The form itself is NOT duplicated into a separate mobile block the way
+       the marketing pages are: 25 element ids drive sign-in, sign-up and
+       password recovery, and a second copy would mean duplicate ids —
+       getElementById returns the first, so one of the two forms would be
+       silently inert. One form, a mobile-native shell around it.
+
+       Shape: the photograph is a short establishing image, and the form
+       rides up over it on a rounded sheet — the standard mobile auth
+       gesture, and it puts the first field near the top of the screen
+       instead of below a full-height picture. */
+    @media (max-width: 720px) {
+      body { background: #121212; }          /* matches the art behind the sheet */
+      .au { grid-template-columns: 1fr; min-height: 100dvh; }
+
+      .au-art { min-height: 208px; }
+      .au-art::after {
+        background: linear-gradient(180deg, rgba(12,12,12,0.34) 0%, rgba(12,12,12,0.55) 70%, rgba(12,12,12,0.72) 100%);
+      }
+      .au-brand { top: 20px; left: 22px; }
+      .au-art-in { padding: 0 22px 34px; }
+      .au-quote { font-size: 25px; max-width: 18ch; }
+      .au-sub, .au-marks { display: none; }  /* the form is the job here, not the pitch */
+
+      /* the sheet */
+      .au-form {
+        padding: 26px 22px calc(40px + env(safe-area-inset-bottom));
+        background: var(--bg);
+        border-radius: 26px 26px 0 0;
+        margin-top: -22px;
+        position: relative; z-index: 1;
+        align-items: flex-start;
+      }
+      .au-box { max-width: none; }
+      .au-back { display: none; }            /* the brand mark on the photo goes home */
+
+      .au-h { font-size: 27px; }
+      .au-p { font-size: 14.5px; margin-top: 8px; }
+      .au-why { margin-top: 16px; }
+
+      .au-tabs { margin: 20px 0 18px; }
+      .au-tab { min-height: 44px; font-size: 14px; }
+
+      .au-field { margin-bottom: 16px; }
+      .au-label { font-size: 13px; margin-bottom: 7px; }
+      /* 16px is the floor: below it iOS Safari zooms the whole page in on
+         focus, which on an auth form reads as the page breaking. */
+      .au-input { font-size: 16px; padding: 14px 15px; border-radius: 14px; }
+      .au-submit { padding: 16px; font-size: 15px; margin-top: 10px; }
+      .au-alt { margin-top: 20px; }
+      .au-alt button { font-size: 14px; min-height: 44px; padding: 0 12px; }
+      .au-legal { margin-top: 20px; }
     }
   </style>
 </head>
