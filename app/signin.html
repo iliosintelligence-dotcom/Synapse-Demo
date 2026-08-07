@@ -502,7 +502,22 @@
             enterRecoverMode();
           } else if (event === 'INITIAL_SESSION') {
             decided = true;
-            if (session) window.location.href = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+            if (!session) return;
+            // THE LOOP THIS FIXES: this used to redirect on session EXISTENCE
+            // alone. Someone signed in on the customer side, then sent to
+            // signin.html?role=agency by agency.html's own requireAuth() (it
+            // correctly saw the wrong role and sent them here to fix it) —
+            // this handler saw "a session exists" and bounced them straight
+            // back to agency.html before they ever saw the form, which
+            // bounced them right back here. Neither page could ever win,
+            // and nobody could ever actually sign in as the other role.
+            // Redirect only when the existing session IS the role that was
+            // asked for; otherwise stay put and let them use the form.
+            if (SynAuth.roleOf(session.user) === role) {
+              window.location.href = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+            } else {
+              showNote('bad', 'You’re currently signed in on the ' + (role === 'agency' ? 'customer' : 'agency') + ' side. Sign in below with ' + (role === 'agency' ? 'an agency' : 'a customer') + ' account to switch.');
+            }
           }
         });
       });
