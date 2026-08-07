@@ -255,6 +255,18 @@
 </div>
 <!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
 
+<!-- ══ STICKY CTA — the agency equivalent of the customer page's floating
+     "Talk to Toju" pill. Appears after the first meaningful scroll, yields
+     to the whole end zone so it never covers the pricing CTAs or the footer,
+     and a dismissal sticks for the session. -->
+<div class="sticky-cta" id="stickyCta">
+  <a class="sticky-cta-btn" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Sign in
+  </a>
+  <button class="sticky-cta-x" type="button" aria-label="Dismiss">✕</button>
+</div>
+
 <nav id="navbar">
   <a href="index.html" class="nav-logo">
     <div class="nav-logo-mark">
@@ -682,6 +694,46 @@
 
 <script>
 gsap.registerPlugin(ScrollTrigger);
+
+/* ─── Sticky CTA bar ────────────────────────────────────────────────────
+   Same behaviour as the customer landing: appears after about half a
+   viewport of scroll, yields to the end zone (pricing CTAs, final CTA and
+   footer) so it never sits on top of the very buttons it duplicates, and a
+   dismissal sticks for the session. Motion lives in CSS. */
+(function () {
+  var bar = document.getElementById('stickyCta');
+  if (!bar) return;
+  var KEY = 'syn-sticky-cta-agency-dismissed';
+  try { if (sessionStorage.getItem(KEY)) { bar.remove(); return; } } catch (e) {}
+
+  var scrolled = false, endVisible = false, dismissed = false;
+  function update() { bar.classList.toggle('show', scrolled && !endVisible && !dismissed); }
+
+  window.addEventListener('scroll', function () {
+    if (!scrolled && window.scrollY > window.innerHeight * 0.5) { scrolled = true; update(); }
+  }, { passive: true });
+
+  var visible = function (el) { return el && el.offsetParent !== null; };
+  var endZone = [].slice.call(
+    document.querySelectorAll('footer, .ag-final, #pricing, #m-pricing, .m-final-cta')
+  ).filter(visible);
+  if (endZone.length && 'IntersectionObserver' in window) {
+    var seen = new Set();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target);
+      });
+      endVisible = seen.size > 0;
+      update();
+    });
+    endZone.forEach(function (el) { io.observe(el); });
+  }
+
+  bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
+    dismissed = true; update();
+    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+  });
+})();
 
 // ─── NAV solid on scroll ───
 // Both bars are toggled: whichever is live needs its own backdrop, or page

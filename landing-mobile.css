@@ -25,7 +25,7 @@
      don't share section ids, and a page added later shouldn't have to
      remember to register itself here. */
   #navbar, .hero-section, .s-band, .ag-final, #final-cta,
-  body > footer { display: none !important; }
+  .legal, body > footer { display: none !important; }
   body { padding-top: 0; }
 }
 
@@ -479,3 +479,74 @@
   font-size: 11px; font-weight: 700; color: var(--text);
 }
 .m-pr-note { font-size: 12px; color: var(--text-dim); margin-top: 18px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LEGAL PAGES (privacy.html, terms.html)
+
+   ⚠  The policy wording below lives in TWO places — this mobile block and
+   the desktop .legal block in the same file. They must be edited together.
+   Any change to one must be mirrored in the other, or the two audiences are
+   shown different terms.
+   ═══════════════════════════════════════════════════════════════════════ */
+.m-legal-hero { padding-top: 84px; padding-bottom: 8px; }
+.m-legal-title {
+  font-family: var(--f-sans); font-weight: 500; font-size: 34px; line-height: 1.1;
+  letter-spacing: -0.01em; color: var(--text);
+}
+.m-legal-updated { font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+
+.m-legal-note {
+  margin-top: 22px; padding: 16px 16px 18px; border-radius: 16px;
+  background: rgba(var(--tint), 0.06); border: 1px solid rgba(var(--tint), 0.2);
+  font-size: 13.5px; line-height: 1.65; color: var(--text-muted);
+}
+.m-legal-note strong { color: var(--text); font-weight: 700; display: block; margin-bottom: 6px; }
+.m-legal-note code {
+  font-size: 12px; background: rgba(20,20,20,0.06);
+  padding: 1px 5px; border-radius: 4px;
+}
+
+/* Contents collapses by default: nine links ahead of the actual policy is a
+   full screen of navigation before a single word of the document. */
+.m-legal-toc {
+  margin-top: 24px; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--crystal-border); background: #fff;
+}
+.m-legal-toc > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px; min-height: 52px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.m-legal-toc > summary::-webkit-details-marker { display: none; }
+.m-legal-toc > summary::after {
+  content: '＋'; font-size: 15px; color: var(--text-dim); font-weight: 400;
+}
+.m-legal-toc[open] > summary::after { content: '−'; }
+.m-legal-toc-links { padding: 0 18px 10px; display: flex; flex-direction: column; }
+.m-legal-toc-links a {
+  font-size: 14px; color: var(--text-muted); text-decoration: none;
+  padding: 11px 0; min-height: 44px; display: flex; align-items: center;
+  border-top: 1px solid rgba(20,20,20,0.06);
+}
+
+/* the document itself — set for reading on a phone, not for a wide column */
+.m-legal-doc { padding-bottom: 96px; }
+.m-legal-doc h2 {
+  font-family: var(--f-sans); font-weight: 500; font-size: 23px; line-height: 1.2;
+  letter-spacing: -0.01em; color: var(--text);
+  margin-top: 48px; padding-top: 26px; border-top: 1px solid rgba(20,20,20,0.09);
+  scroll-margin-top: 72px;                 /* clears the fixed bar on anchor jumps */
+}
+.m-legal-doc p, .m-legal-doc li {
+  font-size: 15.5px; line-height: 1.7; color: var(--text-muted); margin-top: 13px;
+}
+.m-legal-doc ul { padding-left: 20px; margin-top: 4px; }
+.m-legal-doc li { margin-top: 9px; }
+.m-legal-doc strong { color: var(--text); font-weight: 700; }
+.m-legal-doc a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.m-legal-flag {
+  display: inline; background: rgba(var(--tint), 0.14);
+  padding: 2px 5px; border-radius: 5px; color: var(--text-muted);
+}
