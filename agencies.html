@@ -729,18 +729,41 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
     if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
   });
-  // A plain vertical mouse-wheel over the carousel should move it too, not
-  // just touch/trackpad-horizontal swipe or the arrow buttons — otherwise a
-  // regular scroll wheel just scrolls past the section as if it weren't
-  // there. Let the page keep scrolling once you're at either end and still
-  // scrolling that direction, so nobody gets stuck inside it.
-  track.addEventListener('wheel', function (e) {
-    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    var atStart = track.scrollLeft <= 0;
-    var atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 1;
-    if ((atStart && e.deltaY < 0) || (atEnd && e.deltaY > 0)) return;
+  /* ── Scroll drives the slides ──────────────────────────────────────────
+     Bounded scroll-jacking, same design as the customer landing page's
+     carousel: engages only while the carousel is genuinely centred in the
+     viewport, RELEASES at both ends so the page can never get stuck inside
+     it, ignores horizontal gestures (native two-finger swipe already does
+     that better), and a cooldown means one flick of trackpad momentum
+     advances one slide, not five. An earlier, simpler version of this
+     (raw scrollLeft += deltaY, boundary check only on the "away" side)
+     could swallow a normal downward page-scroll the moment the section
+     scrolled into view — page appeared frozen. This one only ever
+     preventDefault()s a wheel tick that will actually move a slide. */
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var LOCK_MS = 520, lastAdvance = 0;
+  var car = track.closest('.car') || track;
+  function carouselCentred() {
+    var r = car.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    if (visible < Math.min(r.height, vh) * 0.7) return false;
+    var mid = r.top + r.height / 2;
+    return mid > vh * 0.2 && mid < vh * 0.8;
+  }
+  car.addEventListener('wheel', function (e) {
+    if (reduced.matches) return;
+    if (e.ctrlKey) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if (!carouselCentred()) return;
+    var dir = e.deltaY > 0 ? 1 : -1;
+    var atEnd = (dir > 0 && idx >= slides.length - 1) || (dir < 0 && idx <= 0);
+    if (atEnd) return;
     e.preventDefault();
-    track.scrollLeft += e.deltaY;
+    var now = Date.now();
+    if (now - lastAdvance < LOCK_MS) return;
+    lastAdvance = now;
+    go(idx + dir);
   }, { passive: false });
   var t;
   track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });

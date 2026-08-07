@@ -37,6 +37,23 @@
     .section .lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
     .reason { font-size: 14.5px; line-height: 1.7; }
     .nodes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    /* verification summary — a real progress ring + an itemised list read
+       top to bottom, replacing a same-size pill cloud where "6 of 7" was
+       buried as small dim text next to the card title. */
+    .verify-summary { display: flex; align-items: center; gap: 14px; margin: 4px 0 14px; }
+    .verify-ring { position: relative; width: 52px; height: 52px; border-radius: 50%; flex: none; }
+    .verify-ring::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--surface); }
+    .verify-ring span { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; font-family: var(--f-serif); font-weight: 600; font-size: 14px; color: var(--ink); }
+    .verify-summary-txt b { display: block; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+    .verify-summary-txt p { font-size: 12px; color: var(--ink-muted); margin-top: 2px; line-height: 1.4; }
+    .verify-list { display: flex; flex-direction: column; }
+    .verify-row { display: flex; align-items: center; gap: 10px; padding: 8px 1px; font-size: 13.5px; color: var(--ink); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .verify-row:last-child { border-bottom: none; }
+    .verify-row .vi-ic { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; }
+    .verify-row .vi-ic .syn-i { width: 12px; height: 12px; }
+    .verify-row.pass .vi-ic { background: rgba(46,125,79,0.12); color: var(--success); }
+    .verify-row.pending .vi-ic { background: rgba(176,125,43,0.14); color: #a8742b; }
+    .verify-row.pending .vi-lbl { color: var(--ink-muted); }
     .more-checks { margin-top: 10px; }
     .more-checks summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--brand); padding: 4px 2px; user-select: none; }
     .more-checks summary::-webkit-details-marker { display: none; }
@@ -171,6 +188,8 @@
     .pvo-list .li { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--ink); }
     .pvo-list .li b { font-weight: 600; }
     .pvo-list .li span { color: var(--ink-muted); flex: none; }
+    .pvo-list .li[data-poi] { padding: 4px 6px; margin: 0 -6px; border-radius: 8px; transition: background .12s; }
+    .pvo-list .li[data-poi]:hover { background: rgba(0,0,0,0.04); }
     .pv-time { display: flex; gap: 6px; margin: 4px 0 10px; }
     .pv-time button { flex: 1; font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 7px 4px; cursor: pointer; }
     .pv-time button.on { background: #121212; color: #fff; border-color: #121212; }
@@ -263,11 +282,10 @@
     <div class="card section">
       <div class="lbl"><span data-icon="costs"></span> What it really costs</div>
       <div class="cost-rows">
-        <div class="cost-row"><span>Mortgage · 20% down, 20 yrs @ 22%</span><b>₦2.44M/mo</b></div>
         <div class="cost-row"><span>Service charge</span><b>₦83k/mo</b></div>
         <div class="cost-row"><span>Power backup &amp; utilities (est.)</span><b>₦120k/mo</b></div>
         <div class="cost-row"><span>School run fuel — 12 min route (est.)</span><b>₦45k/mo</b></div>
-        <div class="cost-row total"><span>True monthly cost</span><b>≈ ₦2.69M/mo</b></div>
+        <div class="cost-row total"><span>True monthly cost</span><b>≈ ₦248k/mo</b></div>
       </div>
       <p class="cost-note">Buying cash? Your ₦165M earns back ≈ ₦13.9M/yr at the corridor's 8.4% gross yield if you ever rent it out. Estimates from verified listing data + area intelligence — refine with Toju.</p>
     </div>
@@ -308,21 +326,27 @@
     </div>
 
     <div class="card section">
-      <div class="lbl"><span data-icon="shield"></span> What we checked <span class="dim" style="font-weight:400;font-size:12.5px">· 6 of 7 passed</span></div>
-      <div style="margin:2px 0 10px"><span data-lottie="property-verified" data-loop="false" style="width:190px;height:84px"></span></div>
+      <div class="lbl"><span data-icon="shield"></span> What we checked</div>
+      <div class="verify-summary">
+        <div class="verify-ring" style="background:conic-gradient(var(--success) 0% 86%, rgba(0,0,0,0.08) 86% 100%)"><span>6/7</span></div>
+        <div class="verify-summary-txt">
+          <b>6 of 7 checks passed</b>
+          <p>What Synapse verified in person before this listing went live — not a guarantee.</p>
+        </div>
+      </div>
       <!-- progressive disclosure: the checks buyers ask about first, rest on tap -->
-      <div class="nodes">
-        <span class="chip chip-pass">✓ Title verified</span>
-        <span class="chip chip-pass">✓ Legal review</span>
-        <span class="chip chip-pass">✓ Flood risk</span>
-        <span class="chip chip-pending">◷ Financial — still checking</span>
+      <div class="verify-list">
+        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Title verified</span></div>
+        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Legal review</span></div>
+        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Flood risk</span></div>
+        <div class="verify-row pending"><span class="vi-ic" data-icon="pending"></span><span class="vi-lbl">Financial — still checking</span></div>
       </div>
       <details class="more-checks">
         <summary>See all 7 checks</summary>
-        <div class="nodes" style="margin-top:9px">
-          <span class="chip chip-pass">✓ Ground survey</span>
-          <span class="chip chip-pass">✓ Structure</span>
-          <span class="chip chip-pass">✓ Neighbourhood</span>
+        <div class="verify-list" style="margin-top:2px">
+          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Ground survey</span></div>
+          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Structure</span></div>
+          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Neighbourhood</span></div>
         </div>
       </details>
     </div>
@@ -779,17 +803,144 @@
        deal count. Rendered against any other listing — an Ibadan flat, say —
        every one of those was a false statement about a real place.
 
-       The map now shows only what the listing itself provides: its own
-       coordinates. Neighbourhood intelligence returns when there is real
-       amenity data joined to the listing, and until then the panels say so
-       rather than borrowing another property's neighbourhood. */
+       "Nearby" now queries OpenStreetMap's live Overpass API for whatever is
+       actually around the listing's real coordinates — real amenities, real
+       names, real distances. Clicking one asks OSRM's public routing API for
+       a real walking route and a real duration, not a guessed one. Both are
+       free, keyless, public APIs; both can be slow or briefly unavailable,
+       so every call has a timeout and an honest failure message — we would
+       rather say "couldn't reach it, try again" than show a stale or
+       invented answer. */
     var PROP = null;                 // [lat, lng] from the listing
-    var POI = [];                    // no invented places
+    var POI = [];                    // filled by fetchAmenities() once PROP is known
+    var poiState = 'idle';           // idle | loading | loaded | error
+    var poiFetchedFor = null;        // property id already fetched, so tab-switching doesn't refetch
+    var routeLine = null;            // the one active "connect to this amenity" route, if any
+    var poiMarkers = [];             // tracked so renderPOI() can clear its own markers without wiping the home pin
     // Icons by name, not emoji: emoji render inconsistently (and sometimes in
     // full colour) across OS, clashing with the app's single stroke-icon
     // language everywhere else. SynIcons (icons.js) draws these to match.
-    var META = { school: { i: 'school', col: '#2f6dbd', lbl: 'Schools' }, gym: { i: 'gym', col: '#8a5cd6', lbl: 'Gyms' }, restaurant: { i: 'restaurant', col: '#c98b3a', lbl: 'Restaurants' }, church: { i: 'church', col: '#3f9c6d', lbl: 'Churches' }, mosque: { i: 'mosque', col: '#2e7d4f', lbl: 'Mosques' } };
+    var META = {
+      school: { i: 'school', col: '#2f6dbd', lbl: 'Schools' },
+      gym: { i: 'gym', col: '#8a5cd6', lbl: 'Gyms' },
+      restaurant: { i: 'restaurant', col: '#c98b3a', lbl: 'Restaurants' },
+      church: { i: 'church', col: '#3f9c6d', lbl: 'Churches' },
+      mosque: { i: 'mosque', col: '#2e7d4f', lbl: 'Mosques' },
+      bus_stop: { i: 'bus', col: '#1d7a8c', lbl: 'Bus stops' },
+      hospital: { i: 'hospital', col: '#c94040', lbl: 'Hospitals' },
+      supermarket: { i: 'cart', col: '#a8742b', lbl: 'Supermarkets' },
+    };
     function poiSvg(name, size) { return window.SynIcons ? SynIcons.svg(name, { size: size }) : ''; }
+
+    /* ── real amenities: OpenStreetMap Overpass API ──────────────────────── */
+    var OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+    var OVERPASS_QUERY_TPL = '[out:json][timeout:15];('
+      + 'node["amenity"="school"](around:1200,{lat},{lng});'
+      + 'node["leisure"="fitness_centre"](around:1200,{lat},{lng});'
+      + 'node["amenity"="gym"](around:1200,{lat},{lng});'
+      + 'node["amenity"="restaurant"](around:1000,{lat},{lng});'
+      + 'node["amenity"="cafe"](around:1000,{lat},{lng});'
+      + 'node["amenity"="place_of_worship"]["religion"="christian"](around:1200,{lat},{lng});'
+      + 'node["amenity"="place_of_worship"]["religion"="muslim"](around:1200,{lat},{lng});'
+      + 'node["highway"="bus_stop"](around:600,{lat},{lng});'
+      + 'node["amenity"="hospital"](around:2000,{lat},{lng});'
+      + 'node["shop"="supermarket"](around:1200,{lat},{lng});'
+      + ');out body 80;';
+    var AMENITY_LABEL = { school: 'School', gym: 'Gym', restaurant: 'Restaurant', cafe: 'Cafe',
+      bus_stop: 'Bus stop', hospital: 'Hospital', supermarket: 'Supermarket', church: 'Church', mosque: 'Mosque' };
+
+    function haversineM(a, b) {
+      var R = 6371000, toRad = function (d) { return d * Math.PI / 180; };
+      var dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1]);
+      var s = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+        + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+    }
+    function formatDist(m) { return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
+
+    function elementToType(tags) {
+      if (tags.amenity === 'school') return 'school';
+      if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym') return 'gym';
+      if (tags.amenity === 'restaurant' || tags.amenity === 'cafe') return 'restaurant';
+      if (tags.amenity === 'place_of_worship' && tags.religion === 'christian') return 'church';
+      if (tags.amenity === 'place_of_worship' && tags.religion === 'muslim') return 'mosque';
+      if (tags.highway === 'bus_stop') return 'bus_stop';
+      if (tags.amenity === 'hospital') return 'hospital';
+      if (tags.shop === 'supermarket') return 'supermarket';
+      return null;
+    }
+    function fetchWithTimeout(url, opts, ms) {
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, ms);
+      opts = opts || {};
+      opts.signal = ctrl.signal;
+      return fetch(url, opts).finally(function () { clearTimeout(timer); });
+    }
+    function fetchAmenities(propId, lat, lng) {
+      if (poiFetchedFor === propId) return; // already have it (or are getting it)
+      poiFetchedFor = propId;
+      poiState = 'loading';
+      if (state.view === 'poi') renderPOI();
+      var q = OVERPASS_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
+      fetchWithTimeout(OVERPASS_URL, { method: 'POST', body: 'data=' + encodeURIComponent(q) }, 12000)
+        .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
+        .then(function (data) {
+          var seen = {};
+          POI = (data.elements || []).reduce(function (out, el) {
+            var t = elementToType(el.tags || {});
+            if (!t || el.lat == null || el.lon == null) return out;
+            var key = t + ':' + el.lat.toFixed(5) + ':' + el.lon.toFixed(5);
+            if (seen[key]) return out; seen[key] = true;
+            var c = [el.lat, el.lon];
+            out.push({ c: c, t: t, n: (el.tags && el.tags.name) || AMENITY_LABEL[t] || 'Place', dm: haversineM(PROP, c) });
+            return out;
+          }, []);
+          POI.sort(function (a, b) { return a.dm - b.dm; });
+          POI = POI.slice(0, 60);
+          POI.forEach(function (p) { p.d = formatDist(p.dm); });
+          poiState = 'loaded';
+          if (state.view === 'poi') renderPOI();
+        })
+        .catch(function () {
+          poiState = 'error';
+          if (state.view === 'poi') renderPOI();
+        });
+    }
+
+    /* ── "connect to this amenity": a real walking route via OSRM ────────── */
+    var OSRM_URL = 'https://router.project-osrm.org/route/v1/foot/';
+    function showRoute(poi) {
+      if (routeLine) { layer.removeLayer(routeLine); routeLine = null; }
+      overlay.className = 'pvc-overlay';
+      overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
+        + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Working out the walking route…</p>';
+      var coords = PROP[1] + ',' + PROP[0] + ';' + poi.c[1] + ',' + poi.c[0];
+      fetchWithTimeout(OSRM_URL + coords + '?overview=full&geometries=geojson', {}, 9000)
+        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
+        .then(function (data) {
+          var route = data.routes && data.routes[0];
+          if (!route) throw new Error('no route');
+          var latlngs = route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+          routeLine = L.polyline(latlngs, { color: META[poi.t].col, weight: 4, opacity: 0.85 }).addTo(layer);
+          var mins = Math.round(route.duration / 60);
+          overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
+            + '<div class="pvo-eta"><span>' + (AMENITY_LABEL[poi.t] || '') + ' · ' + poi.d + ' away</span></div>'
+            + '<div class="pvo-eta">Walking <b>' + mins + ' min</b> · ' + (route.distance / 1000).toFixed(1) + ' km on foot</div>'
+            + '<button class="pv-back" id="pvPoiBack" style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">← All nearby places</button>';
+          fit([PROP, poi.c]);
+          var back = document.getElementById('pvPoiBack');
+          if (back) back.addEventListener('click', function () { if (routeLine) { layer.removeLayer(routeLine); routeLine = null; } renderPOI(); });
+        })
+        .catch(function () {
+          overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
+            + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Couldn’t reach the routing service just now — straight-line distance is <b>' + poi.d + '</b>. Try again in a moment.</p>'
+            + '<button class="pv-back" id="pvPoiBack" style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">← All nearby places</button>';
+          var back = document.getElementById('pvPoiBack');
+          if (back) back.addEventListener('click', function () { renderPOI(); });
+        });
+    }
+    function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+
     var DEST = [];                   // no invented commutes
     var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: [] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: [] }, evening: { lbl: 'Evening', color: '#d9534f', etas: [] } };
     var AGENCY = null;               // filled from the listing's agency
@@ -812,13 +963,43 @@
 
     function renderPOI() {
       overlay.className = 'pvc-overlay';
-      if (!PROP || !POI.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      if (!PROP) { overlay.innerHTML = NO_DATA; return; }
+      if (poiState === 'loading') {
+        overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
+          + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Looking up real nearby places on OpenStreetMap…</p>';
+        fit([PROP]);
+        return;
+      }
+      if (poiState === 'error') {
+        overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Couldn’t reach the map data provider just now. '
+          + '<button id="pvPoiRetry" style="background:none;border:none;padding:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit">Try again</button></p>';
+        fit([PROP]);
+        var retry = document.getElementById('pvPoiRetry');
+        if (retry) retry.addEventListener('click', function () { poiFetchedFor = null; fetchAmenities(propIdForFetch(), PROP[0], PROP[1]); });
+        return;
+      }
+      if (!POI.length) { overlay.innerHTML = NO_DATA; return; }
+      // renderPOI() can run again without going through setView() (e.g. the
+      // "back from route" button) — clear only OUR OWN previous markers so
+      // repeated calls don't stack duplicates on top of the home pin.
+      poiMarkers.forEach(function (m) { layer.removeLayer(m); });
+      poiMarkers = [];
       var pts = [PROP];
-      POI.forEach(function (p) { L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer).bindPopup('<b>' + p.n + '</b><br>' + META[p.t].lbl.replace(/s$/, '') + ' · ' + p.d); pts.push(p.c); });
+      POI.forEach(function (p) {
+        var m = L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer)
+          .bindPopup('<b>' + escHtml(p.n) + '</b><br>' + (AMENITY_LABEL[p.t] || META[p.t].lbl) + ' · ' + p.d)
+          .on('click', function () { showRoute(p); });
+        poiMarkers.push(m);
+        pts.push(p.c);
+      });
       var counts = {}; POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
       var leg = Object.keys(META).map(function (t) { return counts[t] ? ('<div class="r"><span class="dot" style="background:' + META[t].col + '">' + poiSvg(META[t].i, 12) + '</span>' + META[t].lbl + '<span class="n">' + counts[t] + '</span></div>') : ''; }).join('');
-      var near = POI.slice().sort(function (a, b) { return parseInt(a.d) - parseInt(b.d); }).slice(0, 4).map(function (p) { return '<div class="li"><b>' + p.n + '</b><span>' + p.d + '</span></div>'; }).join('');
-      overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div><div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
+      var near = POI.slice(0, 6).map(function (p, i) { return '<div class="li" data-poi="' + i + '" style="cursor:pointer"><b>' + escHtml(p.n) + '</b><span>' + p.d + '</span></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">What\'s around this home — tap one to see the walk</div><div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
+      overlay.querySelectorAll('[data-poi]').forEach(function (row) {
+        row.addEventListener('click', function () { showRoute(POI[+row.dataset.poi]); });
+      });
       fit(pts);
     }
     function renderCommute() {
@@ -904,12 +1085,14 @@
 
     /* The map waits for the listing. Without coordinates it stays on a national
        view with an honest panel rather than pinning a home somewhere it isn't. */
+    function propIdForFetch() { return (window.__pvListing && window.__pvListing.id) || null; }
     document.addEventListener('syn:property', function (e) {
       var p = e.detail || {};
       window.__pvListing = p;
       if (p.latitude != null && p.longitude != null) {
         PROP = [Number(p.latitude), Number(p.longitude)];
         map.setView(PROP, 14);
+        fetchAmenities(p.id || null, PROP[0], PROP[1]);
       }
       var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
       if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };
