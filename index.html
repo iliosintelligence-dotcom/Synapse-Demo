@@ -11,6 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
 <link rel="stylesheet" href="landing.css" />
+<link rel="stylesheet" href="landing-mobile.css" />
 <link rel="stylesheet" href="app/motion.css" />
 </head>
 <body>
@@ -33,6 +34,291 @@
 
 <!-- ══ NAV ══ -->
 <div id="syn-load" aria-hidden="true"><svg class="syn-load-mark" viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg></div>
+<!-- ══════════════════════════════════════════════════════════════════════
+     MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
+     the desktop markup below. Every element is m- prefixed and owns its own
+     layout; landing.css's desktop rules are untouched and simply hidden at
+     this breakpoint. Styles live in landing-mobile.css.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="m-page">
+
+  <nav class="m-navbar" id="mNavbar">
+    <a href="index.html" class="m-logo">
+      <svg viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/>
+      </svg>
+      <span class="m-logo-word">Synapse</span>
+    </a>
+    <a class="m-agencies-link" href="agencies.html">For agencies →</a>
+  </nav>
+
+  <!-- ── HERO ── the composer IS the primary action; no competing pill -->
+  <header class="m-hero m-wrap">
+    <div class="m-hero-eyebrow">For buyers &amp; renters</div>
+    <h1 class="m-hero-headline">Find the home that is <em>actually right for you.</em></h1>
+    <p class="m-hero-sub">Tell Toju what you want. See only homes we have actually checked.</p>
+
+    <div class="m-peek">
+      <div class="m-peek-bar">
+        <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+      </div>
+      <div class="m-peek-body" id="peekCustomerM" data-peek-customer></div>
+      <div class="m-hero-chips">
+        <a class="m-hero-chip" href="app/toju.html?ask=3-bed%20in%20Lekki%20under%20%E2%82%A6180M">3-bed in Lekki</a>
+        <a class="m-hero-chip" href="app/toju.html?ask=I%27m%20looking%20for%20shared%20living">Shared living</a>
+        <a class="m-hero-chip" href="app/toju.html?ask=Tell%20me%20about%20flexible%20payment%20plans">Flex plans</a>
+        <a class="m-hero-chip" href="app/toju.html?ask=I%27m%20buying%20as%20an%20investment">Investing</a>
+      </div>
+      <form class="m-hero-composer" action="app/toju.html" method="get">
+        <input class="m-hero-field" name="ask" autocomplete="off" maxlength="300"
+               placeholder="Tell Toju what you're looking for…"
+               aria-label="Tell Toju what you're looking for" />
+        <button class="m-hero-send" type="submit" aria-label="Ask Toju">↑</button>
+      </form>
+    </div>
+    <a class="m-hero-ask-link" href="app/toju.html">Or just talk to Toju →</a>
+
+    <div class="m-hero-trust">
+      <span class="m-hero-pip"><i></i> Free. No sign-up to start.</span>
+      <div class="m-hero-stat-lead">
+        <div class="val hero-stat-val">7</div>
+        <div class="label">Checks every listing passes before you ever see it</div>
+      </div>
+      <p class="m-hero-stat-secondary">Re-confirmed every <b>14 days</b>, or it disappears · Always <b>free</b> for buyers</p>
+    </div>
+  </header>
+
+  <!-- ── WHAT YOU GET ── swipeable, demo-first, no arrows (native swipe + peek) -->
+  <section class="m-fresh m-section">
+    <div class="m-wrap">
+      <div class="m-kicker">What you get</div>
+      <h2 class="m-h2">Built for what you <em>actually</em> need.</h2>
+      <p class="m-body">Swipe through — every one of these is live today.</p>
+    </div>
+
+    <div class="m-wrap">
+      <div class="m-car-track" id="mCarTrack" role="region" aria-label="Platform benefits, swipe to browse">
+
+        <article class="m-car-slide" aria-label="1 of 5: Nothing stale">
+          <div class="m-car-demo">
+            <div class="m-demo-head"><span>Your feed</span><span>Live</span></div>
+            <div class="m-d-row">
+              <div class="m-d-thumb"></div>
+              <div style="flex:1;min-width:0">
+                <div class="m-d-price">₦165M</div>
+                <div class="m-d-meta">3-Bed · Lekki Phase 1</div>
+                <div class="m-d-age" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span class="gone"></span><span class="gone"></span></div>
+              </div>
+              <span class="m-d-tag ok">Day 2</span>
+            </div>
+          </div>
+          <div class="m-car-copy">
+            <div class="m-kicker">Nothing stale</div>
+            <h3 class="m-h2">Confirmed real in the <em>last 14 days.</em></h3>
+            <p class="m-body">Unconfirmed listings vanish after 14 days. No ghost houses.</p>
+            <a class="m-cta-link" href="app/browse.html">Browse verified homes →</a>
+          </div>
+        </article>
+
+        <article class="m-car-slide" aria-label="2 of 5: Shared living">
+          <div class="m-car-demo">
+            <div class="m-demo-head"><span>Shared house · Yaba</span><span>2 rooms free</span></div>
+            <div class="m-d-row">
+              <div class="m-d-thumb"></div>
+              <div style="flex:1;min-width:0">
+                <div class="m-d-price">₦2.4M<span style="font-size:11px;color:var(--text-dim);font-weight:500">/yr</span></div>
+                <div class="m-d-meta">Ensuite · bills included</div>
+              </div>
+              <span class="m-d-tag ok">Verified</span>
+            </div>
+            <div class="m-d-match">
+              <div class="m-d-match-row"><span>Lifestyle match</span><span>91%</span></div>
+              <div class="m-d-bar"><i data-fill="91"></i></div>
+            </div>
+          </div>
+          <div class="m-car-copy">
+            <div class="m-kicker">Shared living</div>
+            <h3 class="m-h2">A good room, with people you can <em>actually live with.</em></h3>
+            <p class="m-body">Matched on what actually decides it: schedules, noise, guests.</p>
+            <a class="m-cta-link" href="app/toju.html?ask=I%27m%20looking%20for%20shared%20living">Ask about shared living →</a>
+          </div>
+        </article>
+
+        <article class="m-car-slide" aria-label="3 of 5: Flex plans">
+          <div class="m-car-demo">
+            <div class="m-demo-head"><span>Payment plan · ₦2.4M/yr</span><span>Quarterly</span></div>
+            <div class="m-d-plan paid"><span>Deposit · paid</span><b>₦600,000</b></div>
+            <div class="m-d-plan"><span>April</span><b>₦600,000</b></div>
+            <div class="m-d-plan"><span>July</span><b>₦600,000</b></div>
+            <div class="m-d-plan"><span>October</span><b>₦600,000</b></div>
+          </div>
+          <div class="m-car-copy">
+            <div class="m-kicker">Flex plans</div>
+            <h3 class="m-h2">Start with what you <em>have now.</em></h3>
+            <p class="m-body">Full instalment schedule up front. No balloon payment at the end.</p>
+            <a class="m-cta-link" href="app/toju.html?ask=Tell%20me%20about%20flexible%20payment%20plans">Ask about flex plans →</a>
+          </div>
+        </article>
+
+        <article class="m-car-slide" aria-label="4 of 5: Investing">
+          <div class="m-car-demo">
+            <div class="m-demo-head"><span>Rental yield · Lekki</span><span>This home</span></div>
+            <div class="m-d-yield" aria-hidden="true">
+              <span style="height:46%"></span><span style="height:54%"></span><span style="height:62%"></span><span class="hi" style="height:92%"></span><span style="height:56%"></span>
+            </div>
+            <div class="m-d-yield-foot">
+              <div><div class="m-d-price">8.4%</div><div class="m-d-meta">This property</div></div>
+              <div style="text-align:right"><div class="m-d-price" style="color:var(--text-dim)">6.1%</div><div class="m-d-meta">Lagos average</div></div>
+            </div>
+          </div>
+          <div class="m-car-copy">
+            <div class="m-kicker">Investing</div>
+            <h3 class="m-h2">Buy the yield, not the <em>sales pitch.</em></h3>
+            <p class="m-body">Real yield for the corridor, before anyone pitches you.</p>
+            <a class="m-cta-link" href="app/toju.html?ask=I%27m%20buying%20as%20an%20investment">Ask about investing →</a>
+          </div>
+        </article>
+
+        <article class="m-car-slide" aria-label="5 of 5: Buying from abroad">
+          <div class="m-car-demo">
+            <div class="m-demo-head"><span>Remote verification</span><span>Buyer in London</span></div>
+            <div class="m-d-check"><span class="b">✓</span>Video walkthrough recorded</div>
+            <div class="m-d-check"><span class="b">✓</span>Title documents cross-checked</div>
+            <div class="m-d-check"><span class="b">✓</span>Local rep confirmed in person</div>
+            <div class="m-d-check"><span class="b wait">·</span>Awaiting your questions</div>
+          </div>
+          <div class="m-car-copy">
+            <div class="m-kicker">Buying from abroad</div>
+            <h3 class="m-h2">Get it right, from <em>anywhere in the world.</em></h3>
+            <p class="m-body">We walk it for you, on camera, before you commit.</p>
+            <a class="m-cta-link" href="app/toju.html?ask=I%27m%20buying%20from%20abroad">Ask about buying from abroad →</a>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="m-car-foot">
+        <div class="m-car-dots" id="mCarDots" role="tablist" aria-label="Choose a benefit"></div>
+        <span class="m-car-count" id="mCarCount">1 / 5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── vertical sequence with a connector rail -->
+  <section class="m-section m-wrap">
+    <div class="m-kicker">How it works</div>
+    <h2 class="m-h2">Talk like a person. Get <em>real homes.</em></h2>
+    <p class="m-body">No filters. No forms.</p>
+    <div class="m-steps">
+      <div class="m-step">
+        <div class="n">01</div>
+        <div class="t">Tell Toju</div>
+        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school."</div>
+      </div>
+      <div class="m-step">
+        <div class="n">02</div>
+        <div class="t">See only verified homes</div>
+        <div class="d">Seven checks passed — and why each one fits you.</div>
+      </div>
+      <div class="m-step">
+        <div class="n">03</div>
+        <div class="t">Talk to the agent</div>
+        <div class="d">When you are ready, we connect you.</div>
+      </div>
+    </div>
+    <a class="m-cta-link" href="app/toju.html">Talk to Toju — it's free →</a>
+  </section>
+
+  <!-- ── PROXIMITY ── dark band; contrast values audited, copied verbatim -->
+  <section class="m-proximity m-section">
+    <div class="m-wrap">
+      <div class="m-kicker">Homes near you</div>
+      <h2 class="m-h2">The right home often finds you <em>on the way home.</em></h2>
+      <p class="m-body">We spot verified homes on the streets you already move through.</p>
+
+      <div class="m-prox-map" role="img" aria-label="A map of nearby streets showing a verified home eight minutes away.">
+        <span class="m-road" style="left:0;right:0;top:36%;height:10px"></span>
+        <span class="m-road" style="left:0;right:0;top:70%;height:7px"></span>
+        <span class="m-road" style="top:0;bottom:0;left:28%;width:9px"></span>
+        <span class="m-road" style="top:0;bottom:0;left:70%;width:7px"></span>
+        <span class="m-blk" style="left:6%;top:8%;width:18%;height:22%"></span>
+        <span class="m-blk" style="left:34%;top:8%;width:30%;height:22%"></span>
+        <span class="m-blk" style="left:76%;top:8%;width:18%;height:22%"></span>
+        <span class="m-prox-ping" style="left:54%;top:38%"></span>
+        <div class="m-prox-note">
+          <div style="flex:1;min-width:0">
+            <b>3-Bed Terrace · 8 minutes away</b>
+            <span>Verified 2 days ago · Ikate</span>
+          </div>
+        </div>
+      </div>
+      <div class="m-hero-pip" style="margin-top:20px"><i></i> You choose the areas. Turn it off any time.</div>
+    </div>
+  </section>
+
+  <!-- ── TRUST ── seven checks as a static glanceable grid, no stagger -->
+  <section class="m-trust m-section m-wrap">
+    <div class="m-kicker">Seven checks</div>
+    <h2 class="m-h2">We go and <em>look</em> before you do.</h2>
+    <p class="m-body">Seven checks, passed on a date we show you. We always say what we could not check.</p>
+    <div class="m-trust-grid">
+      <span class="m-trust-tag"><span class="b">✓</span>Title documents</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Ground survey</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Structure</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Flood risk</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Legal status</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Ownership confirmed</span>
+      <span class="m-trust-tag"><span class="b">✓</span>Photos match the house</span>
+    </div>
+  </section>
+
+  <!-- ── FINAL CTA ── -->
+  <section class="m-final-cta m-wrap">
+    <h2 class="m-h2">Your search ends <em>here.</em></h2>
+    <p class="m-body">Free to talk. Free to browse.</p>
+    <div class="m-final-btns">
+      <a class="m-btn-primary" href="app/toju.html">Talk to Toju — it's free</a>
+      <!-- same agency gate the desktop CTA routes through — the portal has
+           no anonymous mode, so landing on agencies.html would dead-end -->
+      <a class="m-btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Partner with us</a>
+    </div>
+    <p class="m-final-email">partnerships@synapse.ng</p>
+  </section>
+
+  <!-- ── FOOTER ── two useful columns, legal folded inline -->
+  <footer class="m-footer m-wrap">
+    <a href="index.html" class="m-logo" style="color:var(--text)">
+      <svg viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/>
+      </svg>
+      <span class="m-logo-word">Synapse</span>
+    </a>
+    <p class="m-footer-tagline">Every recommendation backed by verified data, verified agencies, and Toju.</p>
+    <div class="m-footer-links">
+      <div>
+        <div class="m-footer-col-title">Platform</div>
+        <a href="app/toju.html">Chat with Toju</a>
+        <a href="app/browse.html">Browse properties</a>
+        <a href="app/browse.html">Shared living</a>
+      </div>
+      <div>
+        <div class="m-footer-col-title">Agencies</div>
+        <a href="agencies.html">List properties</a>
+        <a href="agencies.html">Agency CRM</a>
+        <a href="agencies.html#pricing">Pricing &amp; plans</a>
+      </div>
+    </div>
+    <div class="m-footer-legal-row">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <span>© 2026 Synapse · Lagos</span>
+    </div>
+  </footer>
+
+</div>
+<!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
+
 <nav id="navbar">
   <a href="index.html" class="nav-logo">
     <div class="nav-logo-mark">
@@ -67,7 +353,7 @@
           Find the home that is <em>actually right for you.</em>
         </h1>
         <p class="hero-sub">
-          Tell Toju what you are looking for, in your own words. You will see every home that fits — and on each one, whether someone has checked it in person or not. You decide what you are comfortable with.
+          Tell Toju what you are looking for, in your own words. You will see every home that fits — and on each one, whether we have checked it in person or not. You decide what you are comfortable with.
         </p>
         <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
         <div class="hero-ctas">
@@ -265,7 +551,7 @@
             <div class="s-lede">
               <div class="s-kicker">Buying from abroad</div>
               <h2 class="s-h2">Get it right, from <em>anywhere in the world.</em></h2>
-              <p class="s-sub">You cannot walk the compound yourself from London or Houston, so someone verified walks it for you — the same seven checks, on camera, with a video walkthrough you actually watch before you commit to anything.</p>
+              <p class="s-sub">You cannot walk the compound yourself from London or Houston, so we walk it for you — the same seven checks, on camera, with a video walkthrough you actually watch before you commit to anything.</p>
               <p class="s-sub" style="margin-top:16px">Toju works in your time zone as much as anyone's, and where a developer accepts structured payments, you see the full schedule — in the local currency and your own — before you send anything.</p>
               <a class="s-cta" href="app/toju.html?ask=I%27m%20buying%20from%20abroad">Ask Toju about buying from abroad →</a>
             </div>
@@ -298,23 +584,23 @@
     <div class="s-lede reveal">
       <div class="s-kicker">How it works</div>
       <h2 class="s-h2">Talk like a person. Get <em>real homes.</em></h2>
-      <p class="s-sub">No filters to configure. No forms. You describe your life, and Toju does the searching.</p>
+      <p class="s-sub">No filters. No forms.</p>
     </div>
     <div class="s-steps">
       <div class="s-step reveal">
         <div class="n">01</div>
         <div class="t">Tell Toju</div>
-        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school." In your own words.</div>
+        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school."</div>
       </div>
       <div class="s-step reveal">
         <div class="n">02</div>
         <div class="t">See only verified homes</div>
-        <div class="d">Toju returns homes that passed our seven checks — and tells you why each one fits you.</div>
+        <div class="d">Seven checks passed — and why each one fits you.</div>
       </div>
       <div class="s-step reveal">
         <div class="n">03</div>
         <div class="t">Talk to the agent</div>
-        <div class="d">When you are ready, we connect you. Buying, renting, shared living or flex plans.</div>
+        <div class="d">When you are ready, we connect you.</div>
       </div>
     </div>
       <a class="s-cta" href="app/toju.html">Talk to Toju — it's free →</a>
@@ -327,7 +613,7 @@
       <div class="s-lede reveal">
         <div class="s-kicker">Homes near you</div>
         <h2 class="s-h2">The right home often finds you <em>on the way home.</em></h2>
-        <p class="s-sub">You drive past your future street every week without knowing it. Synapse notices when a verified home comes up in the areas you actually move through — and tells you while you are still nearby.</p>
+        <p class="s-sub">You drive past your future street every week without knowing it. We spot verified homes on the streets you already move through.</p>
         <p class="s-sub" style="margin-top:18px">No endless scrolling. No alerts for cities you will never live in. Just the street you already love, the moment something opens up on it.</p>
         <div style="margin-top:26px" class="pip"><i></i> You choose the areas. You can turn it off any time.</div>
       </div>
@@ -370,7 +656,7 @@
       </div>
       <div class="s-lede reveal">
         <div class="s-kicker">Seven checks</div>
-        <h2 class="s-h2">Someone goes and <em>looks</em> before you do.</h2>
+        <h2 class="s-h2">We go and <em>look</em> before you do.</h2>
         <p class="s-sub">Title documents. Structure. Flood risk. Legal status. Ownership. Photos that match the actual house. And whether it is still available.</p>
         <p class="s-sub" style="margin-top:18px"><b style="color:var(--text)">That is what "verified" means here</b> — those seven checks passed, on a date we show you. It is a process we run, not a promise about the building. We will always tell you what we could not check.</p>
       </div>
@@ -386,7 +672,7 @@
   <div class="cta-content container">
     <div class="reveal"><span class="chip">Get Started</span></div>
     <h2 class="cta-headline reveal">Your search ends <em>here.</em></h2>
-    <p class="cta-sub reveal">Free to talk. Free to browse. You decide when it costs anything.</p>
+    <p class="cta-sub reveal">Free to talk. Free to browse.</p>
     <div class="cta-btns reveal">
       <button class="btn-cta-primary">Talk to Toju — it's free</button>
       <button class="btn-cta-ghost">Partner with us</button>
@@ -563,9 +849,19 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     box.appendChild(d); show(d); return d;
   }
 
+  /* Desktop and mobile each own a peek box and only one is ever visible, so
+     this plays into whichever exist rather than the first id it finds. */
   function playCustomer() {
-    var box = document.getElementById('peekCustomer');
+    [].slice.call(document.querySelectorAll('#peekCustomer, [data-peek-customer]'))
+      .forEach(playCustomerIn);
+  }
+  function playCustomerIn(box) {
     if (!box) return;
+    /* Mobile's peek card is a shorter, fixed-height box (m-peek-body,
+       max-height:220px) — it gets the same visual language but a shorter
+       transcript (3 beats: ask → dots → answer+card) so nothing clips.
+       Desktop's taller card plays the fuller exchange. */
+    var compact = box.hasAttribute('data-peek-customer');
     box.innerHTML = '';
     at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
     at(750,  function () { box.__t = dots(box); });
@@ -582,6 +878,7 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
         + '<div class="c-v">✓ Verified 2 days ago</div></div>';
       box.appendChild(c); show(c);
     });
+    if (compact) return;
     at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
   }
 
@@ -690,6 +987,66 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
   function whichPeek() { return document.getElementById('peekAgency') ? 'agency' : 'customer'; }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek(whichPeek()); });
   else window.synPeek(whichPeek());
+})();
+
+/* ─── Mobile carousel ───────────────────────────────────────────────────────
+   Its own instance, not a fork of the desktop one: native swipe is the only
+   input (no prev/next buttons, no auto-advance), so this is just "read the
+   scroll position back into the dots". Scroll stays the source of truth. */
+(function () {
+  var track = document.getElementById('mCarTrack');
+  if (!track) return;
+  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
+  var dotsBox = document.getElementById('mCarDots');
+  var count = document.getElementById('mCarCount');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var idx = 0;
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
+    b.addEventListener('click', function () {
+      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
+    });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+
+  function sync() {
+    var best = 0, bestD = Infinity;
+    slides.forEach(function (s, i) {
+      var d = Math.abs(offset(i) - track.scrollLeft);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    idx = best;
+    dots.forEach(function (d, i) {
+      d.classList.toggle('on', i === idx);
+      d.setAttribute('aria-selected', i === idx);
+    });
+    count.textContent = (idx + 1) + ' / ' + slides.length;
+    slides[idx].querySelectorAll('.m-d-bar i[data-fill]').forEach(function (el) {
+      el.style.width = el.getAttribute('data-fill') + '%';
+    });
+  }
+
+  var t;
+  track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
+  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
+  sync();
+})();
+
+/* ─── Mobile navbar solidifies on scroll ─────────────────────────────────── */
+(function () {
+  var bar = document.getElementById('mNavbar');
+  if (!bar) return;
+  function upd() { bar.classList.toggle('solid', window.scrollY > 10); }
+  window.addEventListener('scroll', upd, { passive: true });
+  upd();
 })();
 
 /* ─── Benefit carousel ──────────────────────────────────────────────────────
@@ -935,12 +1292,24 @@ document.querySelectorAll('.faq-item').forEach(item => {
     if (!scrolled && window.scrollY > window.innerHeight * 0.5) { scrolled = true; update(); }
   }, { passive: true });
 
-  var footer = document.querySelector('footer');
-  if (footer && 'IntersectionObserver' in window) {
-    new IntersectionObserver(function (entries) {
-      footerVisible = entries[0].isIntersecting;
+  /* The bar yields to the whole end zone, not just the footer: once the
+     final CTA is on screen the visitor already has the same ask in front of
+     them full-width, and a floating pill repeating it just covers content.
+     Two footers exist (mobile + desktop) and only one is ever displayed, so
+     observing the hidden one would mean the bar never yields at all. */
+  var visible = function (el) { return el && el.offsetParent !== null; };
+  var endZone = [].slice.call(document.querySelectorAll('footer, #final-cta, .m-final-cta'))
+    .filter(visible);
+  if (endZone.length && 'IntersectionObserver' in window) {
+    var seen = new Set();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target);
+      });
+      footerVisible = seen.size > 0;
       update();
-    }).observe(footer);
+    });
+    endZone.forEach(function (el) { io.observe(el); });
   }
 
   bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
