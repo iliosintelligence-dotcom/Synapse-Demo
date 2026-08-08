@@ -218,6 +218,115 @@
       .rc { transition: none; }
       .rc:hover { transform: none; }
     }
+
+    /* the mobile chrome never exists above the phone breakpoint */
+    .bm-bar { display: none; }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       This page had no responsive rules at all — it was a desktop grid on a
+       phone. Rebuilt around what someone actually does here: search, scan a
+       single column of homes, and occasionally look at where they are.
+
+       The map is the biggest call. At 250px it sat between the search and
+       the first home, so the fold carried a map you can barely read and no
+       listings. The page already has a List/Map toggle, so on mobile the
+       list view drops the map entirely and Map view gives it the whole
+       screen — one thing at a time, properly, instead of two things badly. */
+    @media (max-width: 720px) {
+      .appbar { display: none; }          /* site nav is not app chrome */
+
+      .bm-bar {
+        position: sticky; top: 0; z-index: 25;
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-top));
+        background: rgba(245,245,245,0.86);
+        backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border-bottom: 1px solid rgba(255,255,255,0.6);
+      }
+      .bm-back {
+        width: 40px; height: 40px; flex: none; margin-left: -6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 21px; color: var(--ink); text-decoration: none;
+      }
+      .bm-ttl { flex: 1; min-width: 0; font-family: var(--f-serif); font-weight: 500; font-size: 19px; color: var(--ink); }
+      .bm-saved {
+        flex: none; min-height: 40px; padding: 0 13px; border-radius: 100px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 13px; font-weight: 700; color: var(--ink);
+        background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85);
+        text-decoration: none;
+      }
+      .bm-saved[hidden] { display: none; }
+
+      .wrap { padding-left: 16px; padding-right: 16px; }
+      .eyebrow { font-size: 10.5px; }
+      .h1 { font-size: 27px; line-height: 1.15; }
+
+      /* the Toju line is a prompt, not a paragraph — stack it so the CTA
+         is a real target instead of a squeezed nowrap link */
+      .brief { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 16px; margin: 14px 0 14px; }
+      .brief .txt { font-size: 13.5px; }
+      .brief .refine { min-height: 44px; display: inline-flex; align-items: center; }
+
+      /* 16px floor: below it iOS zooms the page on focus */
+      .searchbar { padding: 11px 14px; gap: 8px; }
+      .searchbar input { font-size: 16px; }
+      .searchbar button { width: 30px; height: 30px; }
+
+      /* list view: no map competing with the homes; Map view owns the screen */
+      body:not(.view-map) #map { display: none; }
+      body.view-map #map { height: calc(100dvh - 260px); min-height: 300px; margin-bottom: 12px; }
+
+      .viewseg { margin-bottom: 12px; }
+      .vseg { min-height: 40px; padding: 0 18px; }
+
+      /* filters scroll sideways instead of wrapping into three stacked rows */
+      .toolbar {
+        flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 14px;
+        padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;
+      }
+      .toolbar::-webkit-scrollbar { display: none; }
+      .toolbar > * { flex: none; }
+      .toolbar .hintt { display: none; }   /* desktop hover advice, not mobile copy */
+      #sortSel { min-height: 40px; font-size: 13px; }
+      .dealfilter button, .vtoggle { min-height: 40px; }
+
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .listing .img { height: 200px; }
+
+      /* Readability over the glass effect, same call as the chat page. A card
+         on a phone spans the full width, so the wallpaper runs directly under
+         the body copy — at 46% alpha the brief was barely legible. Heavier
+         wash, near-opaque cards; the frosted look survives, the guesswork
+         doesn't. */
+      .bg-wash {
+        background:
+          radial-gradient(120% 80% at 78% 0%, rgba(212,110,60,0.10), transparent 58%),
+          linear-gradient(180deg, rgba(249,245,241,0.80) 0%, rgba(247,241,235,0.86) 55%, rgba(244,236,228,0.92) 100%);
+      }
+      .card, .searchbar {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,253,250,0.90));
+      }
+
+      /* compare: a full-width bar and a full-screen sheet, not a floating
+         pill and a centred dialog */
+      .cmpbar {
+        left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: none; border-radius: 18px; padding: 12px 12px 12px 18px;
+        justify-content: space-between;
+      }
+      .cmpbar button { min-height: 44px; }
+      .cmpwrap { padding: 0; align-items: flex-end; }
+      .cmpsheet {
+        max-width: none; width: 100%; max-height: 92dvh;
+        padding: 22px 16px calc(24px + env(safe-area-inset-bottom));
+        border-radius: 22px 22px 0 0;
+      }
+      .cmpsheet h3 { font-size: 21px; }
+      /* the comparison is genuinely wide — let it scroll rather than crush */
+      #cmpTable { overflow-x: auto; }
+      .cmptable { min-width: 520px; }
+    }
   </style>
 </head>
 <body>
@@ -240,6 +349,17 @@
     <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="../index.html">← Back to site</a>
   </div>
+
+  <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
+       Replaces the site nav on a phone. The saved count mirrors the desktop
+       one rather than owning its own state — see the sync below. -->
+  <header class="bm-bar">
+    <a class="bm-back" href="toju.html" aria-label="Back to Toju">←</a>
+    <div class="bm-ttl" id="bmTitle">Your matches</div>
+    <a class="bm-saved" id="bmSaved" href="#" hidden title="Your saved homes">
+      <span aria-hidden="true">♥</span><b id="bmSavedN">0</b>
+    </a>
+  </header>
 
   <div class="wrap">
     <div class="eyebrow" id="pageEyebrow">Verified homes</div>
@@ -623,6 +743,9 @@
       el.hidden = n === 0;
       document.getElementById('navSavedN').textContent = n;
       document.getElementById('navSavedSr').textContent = ' saved home' + (n === 1 ? '' : 's');
+      // the mobile bar mirrors this rather than tracking saves itself
+      const mEl = document.getElementById('bmSaved');
+      if (mEl) { mEl.hidden = n === 0; document.getElementById('bmSavedN').textContent = n; }
       if (lastSavedCount !== null && n !== lastSavedCount && n > 0) {
         el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
       }
@@ -755,6 +878,8 @@
     function setMatchedHeadings() {
       document.getElementById('pageEyebrow').textContent = 'Picked for you';
       document.getElementById('pageTitle').textContent = 'Your matches';
+      const bt = document.getElementById('bmTitle');
+      if (bt) bt.textContent = 'Your matches';
       document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
     }
 
