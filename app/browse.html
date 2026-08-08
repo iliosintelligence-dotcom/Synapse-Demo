@@ -655,6 +655,7 @@
         const m = document.getElementById('map'); if (m) m.style.display = 'none';
         const bt = document.getElementById('briefTxt');
         if (bt) bt.textContent = 'We couldn’t load any homes just now.';
+        setMobileCount('Couldn’t load homes');
         box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
           + '<p class="empty-sub">' + (navigator.onLine
               ? 'We couldn’t reach our listings — nothing was found. This is on our side, not yours.'
@@ -927,6 +928,14 @@
     document.getElementById('cmpClose').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
     document.getElementById('cmpVeil').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
 
+    /* The mobile row replaces the summary card, so anything that writes the
+       summary has to write this too — the matched view updated only the card
+       and left the row stuck on "Loading homes…". */
+    function setMobileCount(html) {
+      const el = document.getElementById('bmCount');
+      if (el) el.innerHTML = html;
+    }
+
     function setMatchedHeadings() {
       document.getElementById('pageEyebrow').textContent = 'Picked for you';
       document.getElementById('pageTitle').textContent = 'Your matches';
@@ -979,8 +988,7 @@
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
       // the mobile row says the same thing in the space of one line
-      const bmc = document.getElementById('bmCount');
-      if (bmc) bmc.innerHTML = '<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified';
+      setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
       render();
     }).catch(() => {
       // Nothing came back: show nothing. The empty state explains why, and
@@ -1005,6 +1013,7 @@
           setMatchedHeadings();
           if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
             '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Toju for similar homes.';
+          setMobileCount('Nothing fits your brief yet');
           document.getElementById('map').style.display = 'none';
           render();
           return;
@@ -1019,6 +1028,7 @@
           document.querySelector('.brief .txt').innerHTML =
             '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
         }
+        setMobileCount('<b>' + items.length + '</b> match your brief');
         render();
       }).catch(() => {});
     }
