@@ -236,7 +236,12 @@
 
     /* desktop shows the canvas (hide inline chat cards); mobile keeps inline cards, hides canvas */
     @media (min-width: 900px) { .tj-chat .matches-h, .tj-chat .pcard { display: none; } }
-    @media (max-width: 899px) {
+
+    /* the mobile chrome never exists above the phone breakpoint */
+    .tjm-bar, .tjm-matches { display: none; }
+
+    /* tablet: unstack, keep the page-scrolling behaviour */
+    @media (min-width: 721px) and (max-width: 899px) {
       body { overflow: auto; }
       .tj-app { height: auto; min-height: 100dvh; }
       .tj-layout { flex-direction: column; }
@@ -244,6 +249,99 @@
       .convo-scroll { overflow: visible; }
       .tj-chat .composer { position: sticky; bottom: 0; }
       .tj-canvas, body.has-canvas .tj-canvas { display: none; }
+    }
+
+    /* ══ MOBILE (≤720px) — a chat app, not a scrolling web page ══════════
+       The page itself must NOT scroll: the bar stays put, the composer stays
+       docked above the keyboard, and only the transcript moves. A sticky
+       composer inside a scrolling page (the old behaviour) drifts as the iOS
+       URL bar shows and hides, which on a chat reads as the input running
+       away from your thumb. 100dvh + a single internal scroller fixes it. */
+    @media (max-width: 720px) {
+      html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+      .tj-app { height: 100dvh; display: flex; flex-direction: column; }
+      .appbar { display: none; }                 /* site nav is not chat chrome */
+      .tj-layout { flex: 1; flex-direction: column; min-height: 0; }
+      .tj-chat, body.has-canvas .tj-chat {
+        width: 100%; max-width: none; min-width: 0;
+        border-right: none; margin: 0; flex: 1; min-height: 0;
+      }
+      .tj-canvas, body.has-canvas .tj-canvas { display: none; }
+      .tj-head { display: none; }                /* the bar carries the identity */
+
+      .tjm-bar {
+        flex: none; display: flex; align-items: center; gap: 12px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-top)) 14px;
+        background: rgba(245,245,245,0.82);
+        backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border-bottom: 1px solid rgba(255,255,255,0.6);
+      }
+      .tjm-back {
+        width: 40px; height: 40px; flex: none; margin-left: -6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 21px; color: var(--ink); text-decoration: none;
+      }
+      .tjm-id { flex: 1; min-width: 0; }
+      .tjm-name { display: block; font-family: var(--f-serif); font-weight: 500; font-size: 20px; color: var(--ink); line-height: 1.1; }
+      .tjm-status { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-muted); margin-top: 2px; }
+      .tjm-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--success, #2e7d4f); flex: none; }
+      .tjm-act {
+        width: 42px; height: 42px; flex: none; border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.55);
+        color: var(--ink-muted); font-size: 16px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .tjm-act .syn-i { width: 17px; height: 17px; }
+
+      /* the matches strip only appears once there is something to show */
+      body.has-canvas .tjm-matches {
+        flex: none; display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 11px 16px; text-decoration: none;
+        background: rgba(54,54,54,0.07); border-bottom: 1px solid rgba(255,255,255,0.6);
+        font-size: 13px; color: var(--ink);
+      }
+      .tjm-matches b { font-weight: 700; }
+      .tjm-go { font-weight: 600; color: #121212; }
+
+      /* the one scroller on the page */
+      .convo-scroll {
+        flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        padding: 12px 16px 14px; overscroll-behavior: contain;
+      }
+      .convo-wrap { padding-bottom: 0; }
+
+      /* docked composer — in flow at the end of the column, not fixed, so the
+         keyboard pushes it instead of covering it */
+      .composer {
+        position: static; flex: none; z-index: 2;
+        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+        gap: 7px;
+      }
+      .chatbox { max-width: none; border-radius: 22px; }
+      .tj-hint { max-width: none; }
+      /* 16px floor: anything smaller and iOS zooms the page on focus */
+      .pillrow { padding: 4px 4px 4px 14px; }
+      .pillrow input { font-size: 16px; }
+      .mic, .send { width: 42px; height: 42px; }
+      .chatbox .suggest { padding: 9px 5px 3px; scrollbar-width: none; }
+      .chatbox .suggest button { font-size: 12.5px; padding: 8px 13px; }
+
+      /* inline property cards carry the matches on mobile */
+      .tj-chat .pcard { margin-left: 0; margin-right: 0; }
+
+      /* Readability beats the glass effect here. On desktop a bubble sits in
+         a narrow column with plenty of wash around it; on a phone it fills
+         the screen, so the photograph's detail runs straight under the body
+         text. The wash goes heavier and the panels go closer to opaque —
+         the frosted look survives, the guesswork doesn't. */
+      .tj-wash {
+        background:
+          radial-gradient(120% 80% at 78% 0%, rgba(54,54,54,0.05), transparent 58%),
+          linear-gradient(180deg, rgba(245,245,245,0.62) 0%, rgba(242,242,242,0.72) 55%, rgba(238,238,238,0.82) 100%);
+      }
+      .toju .bubble, .chatbox, .pcard, .tj-hint {
+        background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,253,250,0.88));
+      }
     }
   </style>
 </head>
@@ -253,6 +351,28 @@
   <div class="tj-wash"></div>
 
   <div class="tj-app">
+    <!-- ══ MOBILE APP BAR (≤720px) ══════════════════════════════════════
+         A phone gets a chat header, not a site nav. The chat itself is NOT
+         duplicated into a separate block — dozens of ids drive the convo,
+         composer, history panel and canvas, and a second copy would mean
+         duplicate ids and a silently dead chat. So this bar owns only the
+         chrome, and its buttons forward to the real controls in .appbar. -->
+    <header class="tjm-bar">
+      <a class="tjm-back" href="../index.html" aria-label="Back to Synapse">←</a>
+      <div class="tjm-id">
+        <span class="tjm-name">Toju</span>
+        <span class="tjm-status"><i></i> Verified homes only</span>
+      </div>
+      <button class="tjm-act" id="tjmHist" type="button" aria-label="Past conversations"><span data-icon="history"></span></button>
+      <button class="tjm-act" id="tjmNew" type="button" aria-label="New chat">↺</button>
+    </header>
+
+    <!-- appears only once Toju has matches; the canvas is desktop-only -->
+    <a class="tjm-matches" id="tjmMatches" href="browse.html">
+      <span><b id="tjmCount">0</b> matches ready</span>
+      <span class="tjm-go">See all →</span>
+    </a>
+
     <div class="appbar">
       <a class="brand" href="../index.html">
         <svg viewBox="0 0 64 92" fill="#15171a"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg>
@@ -383,6 +503,9 @@
     function renderCanvas() {
       const items = canvasMatches.map(SynMatches.shapeTojuMatch);
       cvCount.textContent = items.length;
+      // the mobile strip mirrors the same count (the canvas is desktop-only)
+      var tjmCount = document.getElementById('tjmCount');
+      if (tjmCount) tjmCount.textContent = items.length;
       document.body.classList.toggle('has-canvas', items.length > 0);
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
       cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');
@@ -538,6 +661,40 @@
       } catch (e) { return null; }
     }
 
+    /* If reply is still the model's JSON envelope, lift its fields up onto
+       the response object in place. Mutates `data` so every downstream reader
+       (reply, matches, suggestions) sees the unwrapped values. Tolerates a
+       ```json fence, and leaves anything it cannot parse untouched. */
+    function unwrapEnvelope(data) {
+      if (typeof data.reply !== 'string') return;
+      let raw = data.reply.trim();
+      if (!raw.startsWith('{') && !raw.startsWith('```')) return;
+      raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+      if (!raw.startsWith('{')) return;
+      let inner;
+      try {
+        inner = JSON.parse(raw);
+      } catch (e) {
+        /* Envelopes arrive truncated or with a malformed tail often enough
+           that a strict parse is not sufficient — that is exactly the case
+           that was leaking JSON to the screen. Salvage just the reply string,
+           which is the only part the reader actually needs. */
+        const m = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        if (m) {
+          try { data.reply = JSON.parse('"' + m[1] + '"'); } catch (e2) { /* leave as-is */ }
+        }
+        return;
+      }
+      if (!inner || typeof inner.reply !== 'string') return;
+      data.reply = inner.reply;
+      if (!Array.isArray(data.matches) || !data.matches.length) {
+        if (Array.isArray(inner.matches)) data.matches = inner.matches;
+      }
+      if (!Array.isArray(data.suggestions) || !data.suggestions.length) {
+        if (Array.isArray(inner.suggestions)) data.suggestions = inner.suggestions;
+      }
+    }
+
     async function ask() {
       clearError();
       const t = typing();
@@ -558,6 +715,13 @@
         clearTimeout(timer); t.remove();
         if (!res.ok) throw Object.assign(new Error('http ' + res.status), { kind: res.status === 429 ? 'busy' : 'server' });
         if (data.error || !data.reply) throw Object.assign(new Error('empty reply'), { kind: 'server' });
+        /* Guard: the function normally parses the model's JSON envelope and
+           returns its fields at the top level, but when that parse fails it
+           passes the raw text straight through — and the user gets a screenful
+           of {"reply": …} on the main product surface. Seen intermittently in
+           testing. Unwrap it here so a server-side parse miss can never surface
+           as raw JSON; the real fix belongs in the toju-demo function. */
+        unwrapEnvelope(data);
         // show the canvas whenever the function returns matches (not only when it
         // sets showMatches) so asking "show me what you found" always renders them.
         const matches = Array.isArray(data.matches) ? data.matches : [];
@@ -902,6 +1066,18 @@
     }
     const nc = document.getElementById('tjNew');
     if (nc) nc.addEventListener('click', newChat);
+
+    /* Mobile bar: forwards to the real controls rather than owning its own
+       copy of the logic, so history and new-chat can never drift apart
+       between the two layouts. */
+    (function () {
+      var mh = document.getElementById('tjmHist');
+      var mn = document.getElementById('tjmNew');
+      if (mh) mh.addEventListener('click', function () {
+        histPanel.hidden ? openHist() : closeHist();
+      });
+      if (mn) mn.addEventListener('click', newChat);
+    })();
   </script>
 </body>
 </html>
