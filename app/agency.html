@@ -1112,6 +1112,14 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ Toju Negotiator ══════════════════════════════════════════════
+         The handoff cards are 400px-minimum on desktop; one per row here.
+         The section lede goes the way of the page ledes — the heading above
+         the list is enough to say what the list is. */
+      #handoffs { grid-template-columns: 1fr; gap: 12px; margin-top: 10px; }
+      #pane-negotiator .h2 { margin-top: 0 !important; font-size: 18px; }
+      #pane-negotiator .sub { display: none; }
+
       /* ══ CRM ═══════════════════════════════════════════════════════════
          A 629px table inside a 343px card technically scrolled, but you
          could never see a lead's name and its stage at the same time, which
@@ -2949,6 +2957,22 @@
     // transcripts, offers and agreed prices for properties that never existed.
     const HANDOFFS = [];
     function renderHandoffs(){
+      /* HANDOFFS is deliberately empty until Toju negotiates a real lead on a
+         real listing. Without a message the pane just rendered a heading and
+         a blank grid, which reads as broken rather than as "nothing yet". */
+      if (!HANDOFFS.length) {
+        document.getElementById('handoffs').innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="negotiate"></span>'
+          + '<b>Nothing ready to close yet</b>'
+          + '<p>Toju hands a buyer over once it has qualified them and agreed a price. '
+          + 'That happens on your live listings — once those are up and leads start '
+          + 'arriving, finished negotiations land here with the full transcript.</p>'
+          + '<button class="btn btn-ghost" type="button" data-go-listings>Go to listings</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('handoffs'));
+        return;
+      }
       document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
         <div class="card handoff" role="group" aria-label="Toju deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
           <img class="bg" src="${propImg(h.prop)}" alt="" loading="eager">
@@ -2983,7 +3007,10 @@
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
     }
-    document.getElementById('handoffs').addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr); });
+    document.getElementById('handoffs').addEventListener('click', (e) => {
+      if (e.target.closest('[data-go-listings]')) { goToPane('listings'); return; }
+      const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr);
+    });
     renderHandoffs();
 
     // ── social composer: New post → AI captions (edge fn) → schedule ──
