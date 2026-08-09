@@ -222,7 +222,15 @@
     return agency().then(function (a) {
       if (!a) return null;
       var tier = a.verification_tier ? String(a.verification_tier) : '';
-      var tierLabel = tier ? '✦ ' + tier.charAt(0).toUpperCase() + tier.slice(1) + ' verified' : '';
+      /* The label is "<tier> verified" — which reads correctly for gold and
+         basic, but the most common tier in the database is literally
+         "verified", and that produced "Verified verified" on every page of
+         those agencies' portals. When the tier already names the state, say
+         it once. */
+      var tierWord = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : '';
+      var tierLabel = !tier ? ''
+        : tier.toLowerCase() === 'verified' ? '✦ Verified'
+        : '✦ ' + tierWord + ' verified';
       var initials = String(a.name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
       document.querySelectorAll('[data-agency-name]').forEach(function (el) { el.textContent = a.name || 'Your agency'; });
       document.querySelectorAll('[data-agency-tier]').forEach(function (el) { el.textContent = tierLabel; });

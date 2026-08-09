@@ -834,9 +834,46 @@
       body.portal{ overflow: auto; }
       .side{ display: none; }                       /* replaced by the dock */
       .content{ padding: 18px 16px 132px; }         /* room for the dock */
+
+      /* The top bar carried 504px of controls in a 375px box, so "Sign out"
+         and "Back to site" started at x=384 and x=483 — literally off the
+         side of the screen and unreachable. On a phone it keeps only what
+         must be glanceable (brand, notifications, who you are); the two
+         account actions move into the taskbar menu, where a Start menu puts
+         them anyway. */
+      .appbar{ padding-left: 14px; padding-right: 14px; gap: 8px; }
+      .appbar .brand span, .appbar .brand{ font-size: 0; }   /* mark only */
+      .appbar .brand svg{ width: 20px; height: 29px; }
+      .appbar > nav{ display: none; }               /* the taskbar says where you are */
+      .appbar [data-auth-slot]{ display: none; }
+      .appbar .home{ display: none; }
       .stats{ grid-template-columns: repeat(2,1fr); }
       .two{ grid-template-columns: 1fr; }
       .cmp-listings{ grid-template-columns: 1fr; }
+
+      /* ── pane headings: the title and its actions stop competing for one
+         375px row, and the tab strip scrolls instead of squashing ── */
+      .ov-head, .pane-head, .crm-head {
+        flex-direction: column; align-items: flex-start; gap: 12px;
+      }
+      .ov-head .h1, .pane .h1 { font-size: 27px; line-height: 1.15; }
+      .ov-actions, .crm-tools { flex-wrap: wrap; }
+      .ov-actions .btn-ghost, .tbtn { min-height: 40px; }
+
+      .ov-tabs {
+        overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+        margin: 14px 0 14px;
+      }
+      .ov-tabs::-webkit-scrollbar { display: none; }
+      .ov-tabs > * { flex: none; white-space: nowrap; }
+
+      /* the list/detail split becomes one column, and the list stops being an
+         inner scroller — a scroll region inside a scrolling page is a trap on
+         a phone, and the page itself is the natural scroller here */
+      .ov-grid { grid-template-columns: 1fr; gap: 14px; }
+      .ov-list { max-height: none; overflow-y: visible; padding: 0; }
+      .ov-detail { position: static; }
+      #ovMap { height: 240px; }
 
       .agd-scrim{
         display: block; position: fixed; inset: 0; z-index: 58;
@@ -3842,6 +3879,15 @@
             + 'font-size:11px;font-weight:700">' + (document.querySelector('#tabs .av2') || {}).textContent + '</span>'
             + '<span><b>' + nm.textContent + '</b>' + (tier ? tier.textContent : '') + '</span></div>';
         }
+        /* the two actions the top bar can no longer fit — a Start menu keeps
+           its account controls at the foot, so they belong here anyway */
+        html += '<div class="agd-sep"></div>'
+          + '<button class="agd-item" role="menuitem" data-nav-site>'
+          + '<span data-icon="home"></span>Back to site</button>';
+        if (document.querySelector('[data-auth-slot] .auth-out')) {
+          html += '<button class="agd-item" role="menuitem" data-nav-out>'
+            + '<span data-icon="user"></span>Sign out</button>';
+        }
         navSheet.innerHTML = html;
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
       }
@@ -3877,6 +3923,14 @@
       navSheet.addEventListener('click', (e) => {
         const grp = e.target.closest('.agd-grp');
         if (grp) { grp.parentElement.classList.toggle('open'); return; }
+        if (e.target.closest('[data-nav-site]')) { window.location.href = '../index.html'; return; }
+        const out = e.target.closest('[data-nav-out]');
+        if (out) {
+          closeAll();
+          const real = document.querySelector('[data-auth-slot] .auth-out');
+          if (real) real.click();   // auth.js owns sign-out; this only routes to it
+          return;
+        }
         const item = e.target.closest('[data-goto]');
         if (item) { closeAll(); goToPane(item.dataset.goto); }
       });
