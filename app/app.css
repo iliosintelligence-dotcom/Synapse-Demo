@@ -294,3 +294,34 @@ a { color: inherit; text-decoration: none; }
     background: rgba(255,255,255,0.92);
   }
 }
+
+/* ── Typing should not be framed ────────────────────────────────────────
+   The ring above is right for buttons, links and cards, which only show it
+   on keyboard navigation. Text fields are different: browsers treat them as
+   always :focus-visible, so the 4px halo appears the moment you click into
+   one and stays there the whole time you type — a rectangle drawn around
+   your own sentence. Text inputs and textareas get a quiet border shift
+   instead; the caret already says where focus is. Everything else keeps the
+   ring, so keyboard accessibility is untouched. */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input:not([type]):focus,
+textarea:focus,
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="search"]:focus-visible,
+input[type="url"]:focus-visible,
+input[type="tel"]:focus-visible,
+input[type="number"]:focus-visible,
+input:not([type]):focus-visible,
+textarea:focus-visible {
+  box-shadow: none !important;
+  outline: none !important;
+  border-color: rgba(20, 20, 20, 0.34);
+}

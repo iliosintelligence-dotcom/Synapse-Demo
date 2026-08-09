@@ -407,6 +407,16 @@
     .logo-tile .lt-empty { font-size: 11px; color: var(--ink-dim); }
     .logo-tile label { display: block; font: 700 11px var(--f-sans); color: var(--ink-muted); margin-bottom: 5px; }
     .logo-tile input { width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 12.5px var(--f-sans); color: var(--ink); outline: none; }
+    .logo-tile .lt-acts { display: flex; gap: 6px; }
+    .logo-tile .lt-btn { flex: 1; min-height: 34px; border-radius: 9px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: rgba(255,255,255,0.8);
+      font: 600 12px var(--f-sans); color: var(--ink); }
+    .logo-tile .lt-btn:hover { background: #fff; }
+    .logo-tile .lt-btn[disabled] { opacity: .55; cursor: progress; }
+    .logo-tile .lt-rm { flex: 0 0 auto; padding: 0 10px; color: var(--ink-muted); }
+    .logo-tile .lt-note { font-size: 10.5px; color: var(--ink-dim); margin-top: 6px; line-height: 1.4; }
+    .logo-tile .lt-note.err { color: var(--danger); }
+    .logo-tile.dark label, .logo-tile.dark .lt-note { color: var(--ink-muted); }
     .swatch-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .swatch-card { border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
     .swatch-card input[type="color"] { width: 100%; height: 52px; padding: 0; border: none; border-radius: 9px; cursor: pointer; background: none; }
@@ -837,7 +847,11 @@
       --warn-tint: rgba(156,122,30,0.14); --info: #2f6dbd; --info-tint: rgba(47,109,189,0.12);
       --danger: #b23b3b; --border-strong: rgba(15,18,24,0.16); --border-glass: rgba(255,255,255,0.7); }
     /* visible focus everywhere — the audit flagged outline:none across the app */
-    a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+    /* `input` is deliberately not in this list: browsers treat text fields as
+       always :focus-visible, so it drew a box around the field for the whole
+       time you were typing in it. app.css gives them a quiet border shift
+       instead; links, buttons and tab stops keep the ring. */
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
       outline: 2px solid var(--brand-deep); outline-offset: 2px; border-radius: 8px;
     }
 
@@ -1692,15 +1706,30 @@
                 <p class="sub" style="margin-bottom:14px">Used on your creatives and your public agency page.</p>
 
                 <div class="look-logos">
+                  <!-- The URL inputs stay as the value store (fill/collect and
+                       saveBrand already read them) but are hidden: agencies upload
+                       a file, they don't paste a CDN link. -->
                   <div class="logo-tile light">
                     <div class="lt-preview" id="bkLogoPrevLight"><span class="lt-empty">No logo yet</span></div>
-                    <label for="bkLogo">Logo</label>
-                    <input id="bkLogo" placeholder="https://…">
+                    <label>Logo</label>
+                    <input id="bkLogo" type="hidden">
+                    <input id="bkLogoFile" class="lt-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+                    <div class="lt-acts">
+                      <button type="button" class="lt-btn" data-upload="light">Upload</button>
+                      <button type="button" class="lt-btn lt-rm" data-clear="light" hidden>Remove</button>
+                    </div>
+                    <div class="lt-note" id="bkLogoNote">PNG, JPG, WEBP or SVG · up to 2MB</div>
                   </div>
                   <div class="logo-tile dark">
                     <div class="lt-preview" id="bkLogoPrevDark"><span class="lt-empty" style="color:rgba(255,255,255,0.4)">No logo yet</span></div>
-                    <label for="bkLogoDark">Dark background</label>
-                    <input id="bkLogoDark" placeholder="Optional">
+                    <label>Dark background</label>
+                    <input id="bkLogoDark" type="hidden">
+                    <input id="bkLogoDarkFile" class="lt-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+                    <div class="lt-acts">
+                      <button type="button" class="lt-btn" data-upload="dark">Upload</button>
+                      <button type="button" class="lt-btn lt-rm" data-clear="dark" hidden>Remove</button>
+                    </div>
+                    <div class="lt-note" id="bkLogoDarkNote">Optional — for dark creatives</div>
                   </div>
                 </div>
 
@@ -1797,6 +1826,14 @@
   <div class="modal-scrim" id="cmpScrim"></div>
   <div class="modal" id="cmpModal"></div>
 
+  <!-- These define window.SynIcons / SynAuth / SynListings and MUST load
+       before the inline script below. They used to sit at the end of the
+       body, so `if (!window.SynListings) return;` fired three times on
+       load and silently disabled the features behind those guards — the
+       whole Brand pane among them, which is why it never filled or saved. -->
+  <script src="icons.js"></script>
+  <script src="auth.js"></script>
+  <script src="agency-listings.js"></script>
   <script>
     // Channel attribution (Phase B) — every lead carries a source→tap→Toju→lead chain.
     const CH = {
@@ -4310,8 +4347,12 @@
           patch[FIELDS[id]] = el.value.trim ? el.value.trim() : el.value;
         });
         patch.specialties = f('bkSpecialties').value.split(/[|,;\n]+/).map(x => x.trim()).filter(Boolean);
+        /* `social` is NOT NULL with a '{}' default, so sending null failed the
+           whole update — which meant an agency with no Instagram or website
+           could never save its brand at all, not even its name. Empty means
+           an empty object, not null. */
         const ig = f('bkInstagram').value.trim(), web = f('bkWebsite').value.trim();
-        patch.social = (ig || web) ? { instagram: ig || null, website: web || null } : null;
+        patch.social = (ig || web) ? { instagram: ig || null, website: web || null } : {};
         return patch;
       }
 
@@ -4361,11 +4402,82 @@
           return;
         }
         fill(b);
+        paintLogo('light'); paintLogo('dark');
         refreshOnboard(b);
       }).catch(() => {
         form.hidden = true; saveBtn.disabled = true;
         gate.hidden = false;
         gate.textContent = 'Could not load your brand details — check your connection and reload.';
+      });
+
+      /* ── logo upload ──────────────────────────────────────────────────
+         The file goes to storage immediately and the resulting public URL is
+         written into the hidden input, so the existing collect()/saveBrand
+         path persists it with everything else — no second save path.
+
+         Uploading a replacement deletes the file it replaced, so an agency
+         that iterates on its mark does not leave a trail of dead objects in
+         its folder. That delete is best-effort: a storage hiccup must never
+         stop the new logo being saved. */
+      const LOGO_SLOTS = {
+        light: { url: 'bkLogo', file: 'bkLogoFile', prev: 'bkLogoPrevLight', note: 'bkLogoNote',
+                 idle: 'PNG, JPG, WEBP or SVG · up to 2MB' },
+        dark:  { url: 'bkLogoDark', file: 'bkLogoDarkFile', prev: 'bkLogoPrevDark', note: 'bkLogoDarkNote',
+                 idle: 'Optional — for dark creatives' },
+      };
+
+      function paintLogo(slot) {
+        const S = LOGO_SLOTS[slot];
+        const url = (f(S.url) && f(S.url).value || '').trim();
+        const prev = f(S.prev);
+        const rm = document.querySelector('[data-clear="' + slot + '"]');
+        if (!prev) return;
+        prev.innerHTML = url
+          ? '<img src="' + url.replace(/"/g, '&quot;') + '" alt="">'
+          : '<span class="lt-empty"' + (slot === 'dark' ? ' style="color:rgba(255,255,255,0.4)"' : '') + '>No logo yet</span>';
+        if (rm) rm.hidden = !url;
+      }
+
+      function note(slot, msg, isErr) {
+        const el = f(LOGO_SLOTS[slot].note); if (!el) return;
+        el.textContent = msg || LOGO_SLOTS[slot].idle;
+        el.classList.toggle('err', !!isErr);
+      }
+
+      Object.keys(LOGO_SLOTS).forEach((slot) => {
+        const S = LOGO_SLOTS[slot];
+        const btn = document.querySelector('[data-upload="' + slot + '"]');
+        const rm = document.querySelector('[data-clear="' + slot + '"]');
+        const input = f(S.file);
+        if (!btn || !input) return;
+
+        btn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', () => {
+          const file = input.files && input.files[0];
+          input.value = '';                       // re-picking the same file must refire
+          if (!file) return;
+          const previous = (f(S.url).value || '').trim();
+          btn.disabled = true; note(slot, 'Uploading…');
+          SynListings.uploadBrandAsset(file, slot)
+            .then((url) => {
+              f(S.url).value = url;
+              paintLogo(slot);
+              preview();                          // hero + specimen follow the new mark
+              note(slot, 'Uploaded — save to apply it everywhere');
+              return SynListings.removeBrandAsset(previous);
+            })
+            .catch((e) => note(slot, (e && e.message) || 'Upload failed', true))
+            .then(() => { btn.disabled = false; });
+        });
+
+        if (rm) rm.addEventListener('click', () => {
+          const previous = (f(S.url).value || '').trim();
+          f(S.url).value = '';
+          paintLogo(slot); preview();
+          note(slot, 'Removed — save to apply');
+          SynListings.removeBrandAsset(previous);
+        });
       });
 
       saveBtn.addEventListener('click', () => {
@@ -4389,9 +4501,6 @@
 
     // simple toggles in social studio
   </script>
-  <script src="icons.js"></script>
-  <script src="auth.js"></script>
-  <script src="agency-listings.js"></script>
   <script src="notify.js"></script>
   <script>
     /* The portal is an agency workspace — there is no anonymous view of it.
