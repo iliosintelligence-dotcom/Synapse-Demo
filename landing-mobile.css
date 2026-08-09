@@ -1,0 +1,552 @@
+/* ══════════════════════════════════════════════════════════════════════
+   landing-mobile.css — the mobile landing page (≤720px).
+
+   This is NOT a set of responsive overrides on the desktop layout. It
+   styles a structurally separate m- prefixed markup block in index.html,
+   designed for a phone from a blank page. landing.css's desktop rules are
+   never edited or overridden here — below 720px the desktop sections are
+   simply switched off and this block is switched on.
+
+   Tokens: draws only from the :root tokens already defined in landing.css
+   (--bg, --bg-1, --text, --text-muted, --text-dim, --brand, --tint*,
+   --f-sans, --ease, --crystal-*, --border) plus the dark-band token
+   overrides established by .s-band.dark (copied verbatim into
+   .m-proximity below, not reinvented). No new colours, no new font.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ─── the switch ───────────────────────────────────────────────────────
+   Exactly one of the two page bodies is live at any width. Desktop is the
+   default so no-JS / unknown-width clients get the full page. */
+.m-page { display: none; }
+
+@media (max-width: 1024px) {
+  .m-page { display: block; }
+  /* Structural selectors, not a list of ids: index.html and agencies.html
+     don't share section ids, and a page added later shouldn't have to
+     remember to register itself here. */
+  #navbar, .hero-section, .s-band, .ag-final, #final-cta,
+  .legal, body > footer { display: none !important; }
+  body { padding-top: 0; }
+}
+
+/* Above the breakpoint the mobile block must never claim layout, even
+   while its own rules below are still parsed. */
+@media (min-width: 1025px) {
+  .m-page { display: none !important; }
+}
+
+/* ─── shared mobile primitives ─────────────────────────────────────── */
+.m-page { font-family: var(--f-sans); color: var(--text); background: var(--bg); }
+
+/* ── gutter + rhythm ──────────────────────────────────────────────────
+   .m-wrap owns the HORIZONTAL gutter and .m-section owns the VERTICAL
+   rhythm, and the two must never fight. Every section rule below is
+   therefore padding-top/padding-bottom longhand only — a `padding: 64px 0`
+   shorthand here silently reset the gutter to 0 and ran the whole page
+   edge-to-edge. Longhands keep the two axes independent. */
+.m-wrap { padding-left: 22px; padding-right: 22px; }
+.m-section { padding-top: 72px; padding-bottom: 72px; }
+.m-kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--brand-text, var(--text-dim)); display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.m-kicker::before { content: ''; width: 18px; height: 1.5px; background: currentColor; opacity: .55; }
+.m-h2 { font-family: var(--f-sans); font-weight: 500; font-size: 28px; line-height: 1.15;
+  letter-spacing: -0.01em; color: var(--text); }
+.m-h2 em { font-style: normal; color: var(--brand); }
+.m-body { font-size: 15.5px; line-height: 1.6; color: var(--text-muted); font-weight: 500; margin-top: 10px; }
+.m-cta-link {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 20px;
+  min-height: 44px; padding: 0 2px;
+  font-size: 14px; font-weight: 600; color: var(--text);
+  text-decoration: none; border-bottom: 1px solid var(--crystal-border-bright);
+}
+
+/* ═══ NAV ═══════════════════════════════════════════════════════════
+   Call: SIMPLIFY. The desktop .aud-toggle is a persistent two-way
+   segmented switch — worth its width on desktop, where idle comparison
+   between audiences is common. On a 375px bar it would force the logo
+   or the CTA off-row. A mobile visitor arrived via one specific funnel;
+   the audience switch only needs to be a quiet one-way escape hatch. */
+.m-navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  height: 56px; padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background .3s var(--ease), border-color .3s var(--ease);
+  border-bottom: 1px solid transparent;
+}
+.m-navbar.solid {
+  background: rgba(255,255,255,0.9);
+  border-bottom-color: rgba(20,20,20,0.06);
+  backdrop-filter: blur(20px) saturate(1.3);
+}
+/* sizing lives on .m-logo itself, not scoped to the nav: an unsized inline
+   SVG falls back to its intrinsic box, which is how the footer copy of this
+   mark rendered enormous. Any future .m-logo is now safe by default. */
+.m-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+.m-logo svg { width: 20px; height: 29px; flex: none; }
+.m-navbar .m-logo-word { font-size: 10px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; }
+.m-navbar .m-agencies-link {
+  font-size: 12px; font-weight: 600; color: var(--text-dim);
+  text-decoration: none; letter-spacing: .02em;
+  min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px;
+}
+
+/* ═══ HERO ══════════════════════════════════════════════════════════
+   No forced min-height: 100vh (desktop centres in a full screen because
+   it's a calm establishing shot; mobile's job is to get to the live
+   product — chat peek — as fast as possible). Natural height, content
+   determines it.
+
+   The CTA problem: desktop has THREE asks stacked near each other once
+   you count the sticky bar — a pill button in the hero, a pip trust
+   line, and (after ~half a viewport of scroll) the floating sticky pill.
+   On mobile there is only ONE pill-shaped "Talk to Toju" button on
+   screen at any time: the sticky bar. In the hero itself, the working
+   chat input + send button IS the primary action — no separate button
+   duplicates it. A small text fallback link covers anyone who doesn't
+   want to type. */
+.m-hero { padding-top: 84px; padding-bottom: 48px; }
+.m-hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brand-text, var(--text-dim)); margin-bottom: 14px; }
+.m-hero-headline {
+  font-family: var(--f-sans); font-weight: 500; font-size: 34px; line-height: 1.1;
+  letter-spacing: -0.01em; color: var(--text); margin-bottom: 12px;
+}
+.m-hero-headline em { font-style: italic; }
+.m-hero-sub { font-size: 15.5px; line-height: 1.55; color: var(--text-muted); font-weight: 500;
+  margin-bottom: 28px; max-width: 30ch; }
+
+/* the live peek — visual centrepiece, replaces "empty input + cursor" */
+.m-peek {
+  border-radius: 18px; overflow: hidden; background: #fbfbfb;
+  border: 1px solid rgba(20,20,20,0.12);
+  box-shadow: 0 20px 44px rgba(20,20,20,0.16), 0 2px 0 rgba(255,255,255,0.9) inset;
+}
+.m-peek-bar { display: flex; align-items: center; gap: 6px; padding: 10px 12px;
+  background: #f2f2f2; border-bottom: 1px solid rgba(20,20,20,0.08); }
+.m-peek-bar .pd { width: 7px; height: 7px; border-radius: 50%; background: rgba(20,20,20,0.16); }
+.m-peek-url { margin-left: 8px; font-size: 10.5px; color: var(--text-dim); font-weight: 600; }
+.m-peek-body { padding: 16px 15px 14px; min-height: 196px; max-height: 250px; overflow: hidden;
+  display: flex; flex-direction: column; gap: 10px; }
+/* reuses the same .pk-msg / .pk-bub / .pk-card / .pk-dots visual language
+   already defined in landing.css — that language is fine at this size,
+   it just needs a shorter transcript (3–4 beats, not the desktop's fuller
+   exchange) so it settles inside ~200px instead of ~400px. Content-length
+   call, not a restyle. */
+
+.m-hero-chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px 2px;
+  border-top: 1px solid rgba(20,20,20,0.06); -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; -ms-overflow-style: none; }
+.m-hero-chips::-webkit-scrollbar { display: none; }
+.m-hero-chip {
+  flex: none; font-size: 12.5px; font-weight: 600; color: var(--text-muted);
+  background: rgba(20,20,20,0.04); border: 1px solid var(--crystal-border);
+  border-radius: 100px; padding: 8px 14px; white-space: nowrap;
+  min-height: 36px; display: inline-flex; align-items: center;
+  text-decoration: none;
+}
+.m-hero-chip:active { background: rgba(20,20,20,0.08); }
+
+.m-hero-composer { display: flex; align-items: center; gap: 8px; padding: 10px 12px 12px; }
+.m-hero-field {
+  flex: 1; min-height: 46px; border-radius: 100px; border: 1px solid var(--crystal-border-bright);
+  padding: 0 16px; font-family: var(--f-sans); font-size: 15px; background: #fff; color: var(--text);
+}
+.m-hero-send {
+  flex: none; width: 46px; height: 46px; border-radius: 50%; border: none;
+  background: var(--brand); color: #f5f5f5; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.m-hero-ask-link {
+  display: block; text-align: center; margin-top: 14px; font-size: 13px; font-weight: 600;
+  color: var(--text-dim); text-decoration: none; min-height: 44px; line-height: 44px;
+}
+
+/* trust: ONE lead stat, not three squeezed columns (finding #3) */
+.m-hero-trust { margin-top: 8px; }
+.m-hero-pip { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+.m-hero-pip i { width: 8px; height: 8px; border-radius: 50%; background: var(--tint-ink); flex: none; }
+.m-hero-stat-lead {
+  margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(20,20,20,0.09);
+  display: flex; align-items: baseline; gap: 14px;
+}
+.m-hero-stat-lead .val { font-family: var(--f-sans); font-weight: 500; font-size: 40px;
+  letter-spacing: -0.01em; color: var(--brand); line-height: 1; }
+.m-hero-stat-lead .label { font-size: 13px; color: var(--text-muted); line-height: 1.4; max-width: 220px; }
+.m-hero-stat-secondary { margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+.m-hero-stat-secondary b { color: var(--text); font-weight: 700; }
+
+/* ═══ FRESH — benefit carousel ═════════════════════════════════════
+   Mechanism unchanged: native scroll-snap, JS refactored to drive by
+   class. Slides now peek ~8% at the edge so "there's more" reads without
+   relying on prev/next buttons — which are dropped on mobile (see call
+   below) because native swipe + edge-peek already do that job, and two
+   44px circles in the foot row compete with the dot rail for a thumb's
+   attention on a narrow screen. */
+.m-fresh { padding-top: 64px; padding-bottom: 72px; background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
+.m-car-track {
+  display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 20px 20px 4px; margin: 0 -20px;
+  /* natural card heights: stretching every slide to match the tallest left
+     ~150px of empty white inside the shorter cards. The track still sizes to
+     the tallest, so the slack now falls outside the card where it reads as
+     spacing rather than as an unfinished panel. */
+  align-items: flex-start;
+}
+.m-car-track::-webkit-scrollbar { display: none; }
+.m-car-slide {
+  flex: 0 0 92vw; max-width: 420px; scroll-snap-align: center;
+  background: #fff; border: 1px solid var(--crystal-border); border-radius: 20px;
+  overflow: hidden; box-shadow: 0 14px 32px rgba(20,20,20,0.08);
+}
+/* visual (the demo mock) leads on mobile — narrow screens scan an image
+   faster than a paragraph; desktop's 2-col split can afford text-first
+   because both halves are visible at once, mobile's stack cannot. */
+.m-car-demo { padding: 20px 18px 22px; border-bottom: 1px solid rgba(20,20,20,0.06);
+  background: linear-gradient(180deg, #fdfdfd, #fafafa); }
+.m-car-copy { padding: 18px 18px 22px; }
+.m-car-slide .m-kicker { margin-bottom: 6px; }
+.m-car-slide .m-h2 { font-size: 21px; line-height: 1.2; }
+/* no line-clamp: the slides are equal-height regardless, so truncating at
+   two lines bought no vertical space — it only cut each promise in half
+   mid-sentence, which is the one thing these cards exist to deliver */
+.m-car-slide .m-body { font-size: 14px; }
+.m-car-slide .m-cta-link { margin-top: 14px; font-size: 13px; }
+
+.m-car-foot { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding: 0 20px; }
+.m-car-dots { display: flex; gap: 6px; }
+.m-car-dot { width: 22px; height: 4px; border-radius: 3px; border: none; padding: 0; background: rgba(20,20,20,0.14); }
+.m-car-dot.on { background: var(--brand); }
+.m-car-count { font-size: 11.5px; font-weight: 600; color: var(--text-dim); margin-left: auto; }
+/* m-car-prev / m-car-next intentionally not defined — dropped for mobile. */
+
+/* demo-mock family — same naming spine as desktop's .d-* classes so the
+   1:1 correspondence is obvious; independently sized/simplified per slide.
+   Only a representative subset is drafted here; frontend-developer should
+   mirror the remaining .d-plan / .d-yield / .d-check variants at this
+   same reduced density (see spec notes: 14→7 aging pips, 7→5 yield bars,
+   payment/verification lists unchanged at 4 rows each). */
+.m-demo-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-d-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px;
+  background: rgba(20,20,20,0.03); border: 1px solid rgba(20,20,20,0.06); }
+.m-d-thumb { width: 40px; height: 40px; border-radius: 8px; background: rgba(54,54,54,0.1); flex: none; }
+.m-d-price { font-size: 14px; font-weight: 700; color: var(--text); }
+.m-d-meta { font-size: 11px; color: var(--text-dim); }
+.m-d-age { display: flex; gap: 2px; margin-top: 6px; }
+.m-d-age span { flex: 1; height: 5px; border-radius: 3px; background: rgba(var(--tint), 0.35); }
+.m-d-age span.gone { background: rgba(20,20,20,0.08); }
+
+/* ═══ HOW IT WORKS — 3 steps ════════════════════════════════════════
+   A single stacked column is legitimately the mobile-native shape for a
+   sequential 3-step list (this is not the "desktop grid squeezed to one
+   column" anti-pattern — a 1-col numbered sequence is how you'd design
+   this for mobile from a blank page too). What's mobile-specific: a thin
+   connector line between steps, standing in for the left-to-right order
+   cue a 3-column row gives for free but a vertical stack does not. */
+.m-steps { position: relative; margin-top: 8px; padding-left: 34px; }
+.m-steps::before {
+  content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 1px;
+  background: linear-gradient(to bottom, rgba(var(--tint),0.4), rgba(20,20,20,0.08));
+}
+.m-step { position: relative; padding: 18px 0 22px; }
+.m-step::before {
+  content: ''; position: absolute; left: -34px; top: 22px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--brand);
+}
+.m-step .n { font-size: 12px; font-weight: 700; color: var(--text-dim); letter-spacing: .1em; }
+.m-step .t { font-size: 17px; font-weight: 600; margin-top: 6px; }
+.m-step .d { font-size: 14px; color: var(--text-muted); line-height: 1.55; margin-top: 6px; font-weight: 500; }
+
+/* ═══ PROXIMITY — dark band ═════════════════════════════════════════
+   Contrast tokens copied verbatim from .s-band.dark in landing.css
+   (already AA-audited: body 11.6:1, secondary 7.1:1 on #0e0e0e) — not
+   reinvented. Order is text-first, map-second (unlike desktop's flip):
+   desktop's media-first order only makes sense in a 2-column layout
+   where eye-flow starts left regardless of DOM order; stacked mobile
+   should follow the same headline→proof rhythm the rest of the page
+   uses, or the section reads inconsistently against its neighbours. */
+.m-proximity {
+  background: #0e0e0e; padding-top: 64px; padding-bottom: 72px;
+  --text: #f5f5f5; --text-muted: #d4d4d4; --text-dim: #a8a8a8;
+  --brand-text: #c9c9c9; color: var(--text);
+  /* deliberately NOT overriding --brand here: several shared components use
+     it as a BACKGROUND with --bg as their text (.d-tag does exactly this),
+     so flipping it to white rendered white-on-white. The headings that need
+     to go light are coloured explicitly below instead. */
+}
+.m-proximity .m-h2 { color: #f5f5f5; }
+.m-proximity .m-h2 em { color: #fff; }
+.m-prox-map { position: relative; height: 260px; border-radius: 18px; overflow: hidden;
+  background: #1c1c1c; margin-top: 26px; }
+.m-prox-ping { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--tint-ink);
+  box-shadow: 0 0 0 5px rgba(var(--tint),0.28); }
+.m-prox-ping::after { content: ''; position: absolute; inset: -5px; border-radius: 50%;
+  border: 2px solid var(--tint-ink); opacity: .55; animation: ping 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .m-prox-ping::after { animation: none; } }
+.m-prox-note { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 12px 14px;
+  border-radius: 13px; background: rgba(28,28,28,0.95); border: 1px solid rgba(255,255,255,0.16);
+  display: flex; align-items: center; gap: 10px; }
+.m-prox-note b { display: block; font-size: 13px; font-weight: 700; color: #fff; }
+.m-prox-note span { font-size: 11.5px; color: var(--text-muted); }
+
+/* ═══ TRUST — 7 checks ══════════════════════════════════════════════
+   Call: SIMPLIFY (drop the JS stagger, keep all 7 items). Desktop's
+   staggered reveal works because the 2-col layout gives the eye
+   somewhere to go (the text block) while the checklist plays out over
+   ~1.5s. Stacked mobile has nowhere else to look during that wait, and
+   the animation would either fire off-screen before the user scrolls to
+   it or force a dead 1.5s pause for no added value — the opposite of
+   "removes effort." A static tag grid delivers the same seven facts in
+   one glance, positioned AFTER the headline/body (capstone, not opener),
+   reversing desktop's demo-first order for the same reason proximity's
+   order flips. */
+/* left-aligned throughout, matching every other section on the page —
+   a centred body under a left-aligned headline reads as a mistake */
+.m-trust { padding-top: 64px; padding-bottom: 72px; }
+.m-trust-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.m-trust-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--text);
+  background: rgba(20,20,20,0.04); border: 1px solid var(--crystal-border);
+  border-radius: 100px; padding: 8px 13px;
+}
+.m-trust-tag .b { width: 15px; height: 15px; border-radius: 50%; background: var(--brand);
+  color: #f5f5f5; font-size: 9px; display: flex; align-items: center; justify-content: center; flex: none; }
+
+/* ═══ FINAL CTA ═════════════════════════════════════════════════════ */
+.m-final-cta { padding-top: 72px; padding-bottom: 80px; text-align: center; background: var(--bg-1); }
+.m-final-cta .m-h2 { text-align: center; font-size: 30px; }
+.m-final-cta .m-body { text-align: center; margin: 10px auto 24px; }
+.m-final-btns { display: flex; flex-direction: column; gap: 10px; }
+/* authored as links, not <button>s — they navigate, so they need the
+   centring a button would have given for free */
+.m-btn-primary, .m-btn-ghost {
+  min-height: 50px; border-radius: 100px; font-size: 15px; font-family: var(--f-sans);
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.m-btn-primary { border: none; background: var(--brand); color: #f5f5f5; font-weight: 600; }
+.m-btn-ghost {
+  border: 1px solid var(--crystal-border-bright);
+  background: transparent; color: var(--text-muted); font-weight: 500;
+}
+.m-final-email { margin-top: 18px; font-size: 12.5px; color: var(--text-dim); }
+
+/* ═══ FOOTER ════════════════════════════════════════════════════════
+   Not called out in the required deliverables, included for completeness.
+   Three full stacked link columns is a lot of scroll for a footer — the
+   opposite of "avoid clutter." Recommend: brand + tagline, then Platform
+   + Agencies as a 2-col mini-grid (the two links a buyer might actually
+   use again), Company folded into one inline legal-style row instead of
+   its own titled column. */
+.m-footer { padding-top: 56px; padding-bottom: 40px; border-top: 1px solid rgba(20,20,20,0.06); }
+.m-footer-links { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
+.m-footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.m-footer-links a { display: block; font-size: 13.5px; color: var(--text-muted); text-decoration: none; padding: 7px 0; min-height: 32px; }
+.m-footer-legal-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px; font-size: 12px; color: var(--text-dim); }
+.m-footer-legal-row a { color: inherit; text-decoration: none; }
+.m-footer-tagline { font-size: 13px; line-height: 1.55; color: var(--text-muted); margin-top: 14px; max-width: 40ch; }
+
+/* ═══ remaining demo-mock variants ══════════════════════════════════
+   Mirrors of desktop's .d-* family at the reduced density the spec calls
+   for (7 aging pips not 14, 5 yield bars not 7). Same visual language,
+   independently sized — none of these inherit from the desktop rules. */
+.m-d-tag { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 4px 8px;
+  border-radius: 100px; background: rgba(20,20,20,0.06); color: var(--text-dim); }
+.m-d-tag.ok { background: rgba(var(--tint), 0.14); color: #8a4a12; }
+
+.m-d-match { margin-top: 10px; }
+.m-d-match-row { display: flex; justify-content: space-between; font-size: 11.5px;
+  font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+.m-d-bar { height: 6px; border-radius: 3px; background: rgba(20,20,20,0.08); overflow: hidden; }
+.m-d-bar i { display: block; height: 100%; width: 0; border-radius: 3px;
+  background: var(--tint-ink); transition: width .8s var(--ease); }
+
+.m-d-plan { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 11px; border-radius: 10px; margin-bottom: 6px;
+  background: rgba(20,20,20,0.03); border: 1px solid rgba(20,20,20,0.06);
+  font-size: 12.5px; color: var(--text-muted); }
+.m-d-plan b { font-size: 13px; font-weight: 700; color: var(--text); }
+.m-d-plan.paid { border-color: rgba(var(--tint), 0.3); background: rgba(var(--tint), 0.06); }
+
+.m-d-yield { display: flex; align-items: flex-end; gap: 6px; height: 76px; margin-bottom: 12px; }
+.m-d-yield span { flex: 1; border-radius: 4px 4px 0 0; background: rgba(20,20,20,0.10); }
+.m-d-yield span.hi { background: var(--tint-ink); }
+.m-d-yield-foot { display: flex; justify-content: space-between; align-items: baseline; }
+
+.m-d-check { display: flex; align-items: center; gap: 9px; padding: 8px 0;
+  font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+.m-d-check .b { width: 17px; height: 17px; border-radius: 50%; flex: none;
+  background: var(--brand); color: #f5f5f5; font-size: 9px;
+  display: flex; align-items: center; justify-content: center; }
+.m-d-check .b.wait { background: rgba(20,20,20,0.12); color: var(--text-dim); }
+
+/* proximity map furniture */
+.m-road { position: absolute; background: rgba(255,255,255,0.07); border-radius: 2px; }
+.m-blk { position: absolute; background: rgba(255,255,255,0.045); border-radius: 4px; }
+
+@keyframes ping { to { transform: scale(2.2); opacity: 0; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AGENCIES PAGE (agencies.html) — reuses every primitive above; only the
+   pieces that exist solely on the B2B page are defined here.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* the one-line promise band — a hard beat between hero and the proof */
+.m-statement { background: #0e0e0e; padding-top: 56px; padding-bottom: 56px; }
+.m-statement p {
+  font-size: 25px; line-height: 1.2; font-weight: 500; letter-spacing: -0.01em;
+  color: #f5f5f5; margin: 0;
+}
+.m-statement em { font-style: normal; color: #fff; }
+
+/* portal header strip inside the hero peek */
+.m-peek-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; border-bottom: 1px solid rgba(20,20,20,0.07);
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.m-peek-live { display: inline-flex; align-items: center; gap: 6px; }
+.m-peek-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--tint-ink); }
+
+/* a standalone mock panel (the syndication fan, the 2am chat) — the same
+   card language as the carousel's .m-car-demo, freed from the carousel */
+.m-mock {
+  margin-top: 24px; padding: 18px 16px 20px; border-radius: 18px;
+  background: linear-gradient(180deg, #fdfdfd, #fafafa);
+  border: 1px solid var(--crystal-border);
+  box-shadow: 0 14px 32px rgba(20,20,20,0.08);
+}
+.m-mock-dark {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: none;
+}
+.m-mock-dark .m-demo-head { color: #a8a8a8; }
+
+/* the proximity handset needs room to read as a device, not a card */
+.m-phone-stage {
+  margin-top: 26px; padding: 26px 0 6px; border-radius: 20px;
+  background: #141414;
+  display: flex; justify-content: center;
+}
+
+/* ── pricing ──────────────────────────────────────────────────────────
+   Stacked, most-popular first: a phone has no side-by-side comparison, so
+   the plan most agencies want leads instead of sitting in a middle column
+   nobody scrolls to. */
+.m-pr-toggle {
+  display: inline-flex; gap: 4px; margin-top: 22px; padding: 4px;
+  border-radius: 100px; background: rgba(20,20,20,0.05);
+  border: 1px solid var(--crystal-border);
+}
+.m-pr-toggle .pr-per {
+  border: none; background: none; border-radius: 100px;
+  padding: 9px 16px; min-height: 40px;
+  font-family: var(--f-sans); font-size: 12.5px; font-weight: 600;
+  color: var(--text-muted); white-space: nowrap;
+}
+.m-pr-toggle .pr-per.on { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(20,20,20,0.10); }
+.m-pr-toggle .pr-save { display: block; font-size: 10px; font-weight: 700; color: var(--tint-ink); }
+
+.m-pr-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+.m-pr-card {
+  position: relative; padding: 22px 20px 24px; border-radius: 20px;
+  background: #fff; border: 1px solid var(--crystal-border);
+}
+.m-pr-card.feature { border-color: var(--text); box-shadow: 0 14px 34px rgba(20,20,20,0.12); }
+.m-pr-badge {
+  position: absolute; top: -9px; left: 20px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--brand); color: #f5f5f5; padding: 4px 10px; border-radius: 100px;
+}
+.m-pr-name { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+.m-pr-price {
+  font-size: 30px; font-weight: 500; letter-spacing: -0.01em; color: var(--text);
+  margin-top: 8px; line-height: 1.1;
+}
+.m-pr-price span { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-dim); margin-top: 4px; letter-spacing: 0; }
+.m-pr-best { font-size: 13px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+.m-pr-list { list-style: none; margin: 16px 0 20px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.m-pr-list li { position: relative; padding-left: 22px; font-size: 13.5px; color: var(--text-muted); line-height: 1.45; }
+.m-pr-list li::before {
+  content: '✓'; position: absolute; left: 0; top: 0;
+  font-size: 11px; font-weight: 700; color: var(--text);
+}
+.m-pr-note { font-size: 12px; color: var(--text-dim); margin-top: 18px; line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LEGAL PAGES (privacy.html, terms.html)
+
+   ⚠  The policy wording below lives in TWO places — this mobile block and
+   the desktop .legal block in the same file. They must be edited together.
+   Any change to one must be mirrored in the other, or the two audiences are
+   shown different terms.
+   ═══════════════════════════════════════════════════════════════════════ */
+.m-legal-hero { padding-top: 84px; padding-bottom: 8px; }
+.m-legal-title {
+  font-family: var(--f-sans); font-weight: 500; font-size: 34px; line-height: 1.1;
+  letter-spacing: -0.01em; color: var(--text);
+}
+.m-legal-updated { font-size: 12.5px; color: var(--text-dim); margin-top: 10px; }
+
+.m-legal-note {
+  margin-top: 22px; padding: 16px 16px 18px; border-radius: 16px;
+  background: rgba(var(--tint), 0.06); border: 1px solid rgba(var(--tint), 0.2);
+  font-size: 13.5px; line-height: 1.65; color: var(--text-muted);
+}
+.m-legal-note strong { color: var(--text); font-weight: 700; display: block; margin-bottom: 6px; }
+.m-legal-note code {
+  font-size: 12px; background: rgba(20,20,20,0.06);
+  padding: 1px 5px; border-radius: 4px;
+}
+
+/* Contents collapses by default: nine links ahead of the actual policy is a
+   full screen of navigation before a single word of the document. */
+.m-legal-toc {
+  margin-top: 24px; border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--crystal-border); background: #fff;
+}
+.m-legal-toc > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px; min-height: 52px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.m-legal-toc > summary::-webkit-details-marker { display: none; }
+.m-legal-toc > summary::after {
+  content: '＋'; font-size: 15px; color: var(--text-dim); font-weight: 400;
+}
+.m-legal-toc[open] > summary::after { content: '−'; }
+.m-legal-toc-links { padding: 0 18px 10px; display: flex; flex-direction: column; }
+.m-legal-toc-links a {
+  font-size: 14px; color: var(--text-muted); text-decoration: none;
+  padding: 11px 0; min-height: 44px; display: flex; align-items: center;
+  border-top: 1px solid rgba(20,20,20,0.06);
+}
+
+/* the document itself — set for reading on a phone, not for a wide column */
+.m-legal-doc { padding-bottom: 96px; }
+.m-legal-doc h2 {
+  font-family: var(--f-sans); font-weight: 500; font-size: 23px; line-height: 1.2;
+  letter-spacing: -0.01em; color: var(--text);
+  margin-top: 48px; padding-top: 26px; border-top: 1px solid rgba(20,20,20,0.09);
+  scroll-margin-top: 72px;                 /* clears the fixed bar on anchor jumps */
+}
+.m-legal-doc p, .m-legal-doc li {
+  font-size: 15.5px; line-height: 1.7; color: var(--text-muted); margin-top: 13px;
+}
+.m-legal-doc ul { padding-left: 20px; margin-top: 4px; }
+.m-legal-doc li { margin-top: 9px; }
+.m-legal-doc strong { color: var(--text); font-weight: 700; }
+.m-legal-doc a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.m-legal-flag {
+  display: inline; background: rgba(var(--tint), 0.14);
+  padding: 2px 5px; border-radius: 5px; color: var(--text-muted);
+}

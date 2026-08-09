@@ -50,7 +50,15 @@
     /* collapsed, every group is open — there is no room for headers */
     .side:not(:hover):not(:focus-within) .grp-sec .grp-items { max-height: 400px !important; opacity: 1 !important; }
     .side:not(:hover):not(:focus-within) .grp { height: 0; padding: 0; overflow: hidden; }
-    @media (hover: none) { .shell { padding-left: 236px; } .side { width: 236px; } .side .lbl-x, .side .grp, .side .me .who { opacity: 1; } }
+    @media (hover: none) {
+      .shell { padding-left: 236px; }
+      .side { width: 236px; overflow-y: auto; }
+      .side .lbl-x, .side .grp, .side .me .who { opacity: 1; pointer-events: auto; }
+      .side .grp,
+      .side:not(:hover):not(:focus-within) .grp { height: auto; padding: 14px 12px 6px; overflow: visible; }
+      .side .grp-sec:first-child .grp,
+      .side:not(:hover):not(:focus-within) .grp-sec:first-child .grp { padding-top: 2px; }
+    }
     @media (prefers-reduced-motion: reduce) { .side, .side .lbl-x, .side .grp { transition: none; } }
     .side .grp-sec { display: flex; flex-direction: column; }
     .side .grp { width: 100%; background: none; border: none; cursor: pointer; text-align: left; font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; display: flex; align-items: center; justify-content: space-between; }
@@ -811,7 +819,16 @@
     .tp-stats .statspark { margin-top: 6px; }
     @media (max-width: 560px){ .tpanel { max-width: 100%; } }
 
-    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; } body.portal{ overflow: auto; } .side{ width: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); } .side .grp, .side .me{ display: none; } .side .grp-sec, .side .grp-items{ display: contents; } .side .grp-items{ max-height: none; opacity: 1; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
+    /* the floating taskbar never exists above the phone breakpoint */
+    .agd-bar, .agd-scrim { display: none; }
+
+    /* ══ MOBILE (≤720px) — the portal as a floating dock ═══════════════
+       The rail is gone on a phone. Navigation and the primary create action
+       live in two thumb-reachable buttons at the bottom of the screen, the
+       way a taskbar does: tap the left one and the menu files out in groups;
+       tap the right one and it fans out the create actions that make sense
+       for the pane you are on. Nothing permanent eats the screen, and both
+       controls sit where a thumb already is rather than at the top. */
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
     /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
@@ -854,6 +871,14 @@
     .noti-h .t { font-weight: 700; font-size: 14px; }
     .noti-h .clr { font-size: 12px; color: var(--brand-text); cursor: pointer; background: none; border: none; font-weight: 600; }
     .noti-empty { text-align: center; color: var(--ink-dim); font-size: 13px; padding: 22px 0; }
+    /* a real empty state: says which of the two situations this is, and
+       carries the action that resolves it */
+    .ov-blank { text-align: center; padding: 34px 22px 30px; border: 1px dashed var(--border-strong);
+      border-radius: 16px; background: rgba(0,0,0,0.015); }
+    .ov-blank .ov-blank-i { display: inline-flex; width: 34px; height: 34px; opacity: .35; margin-bottom: 10px; }
+    .ov-blank .ov-blank-i .syn-i { width: 34px; height: 34px; }
+    .ov-blank b { display: block; font-size: 15.5px; color: var(--ink); font-weight: 600; }
+    .ov-blank p { font-size: 13px; line-height: 1.6; color: var(--ink-muted); margin: 7px auto 16px; max-width: 34ch; }
 
     /* ── overview command center: list · map · tabbed detail ── */
     .ov-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
@@ -1034,6 +1059,303 @@
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
     @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity .2s; } }
     @media (max-width: 900px){ .crm-tablecard { overflow-x: auto; } }
+    /* ── MOBILE OVERRIDES LIVE LAST ──────────────────────────────────
+       This block sat above the component rules it overrides. A media
+       query adds no specificity, so every later rule of equal weight
+       (.ov-head, .ov-grid, .ov-list, .ov-detail …) quietly won and the
+       phone layout only half-applied. Keep this block last. */
+    @media (max-width: 1024px){
+      .shell{ flex-direction: column; height: auto; padding-left: 0; }
+      body.portal{ overflow: auto; }
+      .side{ display: none; }                       /* replaced by the dock */
+      .content{ padding: 12px 16px 132px; }         /* room for the dock */
+
+      /* The top bar carried 504px of controls in a 375px box, so "Sign out"
+         and "Back to site" started at x=384 and x=483 — literally off the
+         side of the screen and unreachable. On a phone it keeps only what
+         must be glanceable (brand, notifications, who you are); the two
+         account actions move into the taskbar menu, where a Start menu puts
+         them anyway. */
+      .appbar{ padding-left: 14px; padding-right: 14px; gap: 8px; }
+      .appbar .brand span, .appbar .brand{ font-size: 0; }   /* mark only */
+      .appbar .brand svg{ width: 20px; height: 29px; }
+      .appbar > nav{ display: none; }               /* the taskbar says where you are */
+      .appbar [data-auth-slot]{ display: none; }
+      .appbar .home{ display: none; }
+      .stats{ grid-template-columns: repeat(2,1fr); }
+      .two{ grid-template-columns: 1fr; }
+      .cmp-listings{ grid-template-columns: 1fr; }
+
+      /* ── NO PANE CHROME ON A PHONE ────────────────────────────────────
+         Every pane opened with an agency name, a page title and a paragraph
+         of description — roughly a third of the screen spent restating where
+         you already know you are, before a single control. The taskbar menu
+         already names the current pane and highlights it, so the title is
+         redundant and the lede is reading material on a working screen.
+         All of it goes; the pane opens on its actual functions. */
+      .pane .eyebrow,
+      .pane .h1 { display: none; }
+      .pane > p.muted { display: none; }        /* the pane-level lede only */
+      .pane div:has(> .h1) { display: none; }   /* and the wrapper it sat in,
+                                                   so it leaves no flex gap */
+
+      .ov-head, .pane-head, .crm-head {
+        flex-direction: column; align-items: flex-start; gap: 12px;
+      }
+      .ov-actions, .crm-tools { flex-wrap: wrap; }
+      .ov-actions .btn-ghost, .tbtn { min-height: 40px; }
+
+      .ov-tabs {
+        overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+        margin: 14px 0 14px;
+      }
+      .ov-tabs::-webkit-scrollbar { display: none; }
+      .ov-tabs > * { flex: none; white-space: nowrap; }
+
+      /* ══ Subscription ══════════════════════════════════════════════════
+         The comparison grid stays a horizontal scroll — the sticky row-label
+         column means you keep the benefit name in view while swiping across
+         tiers, which is the right pattern here and already works. Only the
+         add-ons lede goes, consistent with the other panes. */
+      #pane-subscription .sub { display: none; }
+      #pane-subscription .h2 { font-size: 18px; margin-top: 18px; }
+
+      /* ══ Brand ══════════════════════════════════════════════════════════
+         The .sub items on this pane are field help ("Toju writes captions in
+         this tone — be specific"), not page chrome, so they stay: hiding them
+         would remove the guidance that makes the field answerable. */
+      #pane-brand .field { margin-bottom: 14px; }
+      #pane-brand input, #pane-brand textarea, #pane-brand select { font-size: 16px; }
+
+      /* ══ Agents ════════════════════════════════════════════════════════ */
+      .agrid { grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+
+      /* ══ Marketing ═════════════════════════════════════════════════════
+         Same treatment as Social: the section ledes go (the .sub rule there
+         was scoped to that pane, so these were still showing), the filter
+         rail already scrolls via .crm-tools, and the creative board drops to
+         one column. */
+      #pane-marketing .sub { display: none; }
+      #pane-marketing .h2 { font-size: 18px; }
+      #mkBoard, #campaigns { grid-template-columns: 1fr; gap: 12px; }
+
+      /* ══ Social studio ═════════════════════════════════════════════════
+         The section lede goes, same as the page ledes — "Content pipeline"
+         with the Pipeline/Calendar switch beside it already says what this
+         is. That header alone was 143px before a single stage appeared. */
+      .s-work-hd { margin: 16px 0 8px; gap: 10px; }
+      #pane-social .sub { display: none; }   /* section AND card ledes both go */
+      #pane-social .h2 { font-size: 18px; }
+      .cmp-head { margin-bottom: 10px; }
+
+      /* The "Generate a campaign" card comes off mobile entirely: the + in the
+         taskbar opens openComposer(), which picks a listing, chooses channels
+         and calls social-generate — everything this card does and more. Two
+         routes to one job is a phone screen wasted. Desktop keeps both. */
+      #pane-social #cmpGen { display: none; }
+
+      /* the listing picker was 495px of option text in a 297px control */
+      .cmp-gen select, #pane-social select, #pane-marketing select {
+        width: 100%; max-width: 100%; min-height: 44px; font-size: 16px;
+        text-overflow: ellipsis;
+      }
+      .cmp-gen { padding: 16px 15px 18px; }
+
+      /* the pipeline is a swipe strip: narrower columns so the next stage
+         peeks, and snap so a swipe lands on a stage instead of between two */
+      .pipeline { gap: 10px; scroll-snap-type: x mandatory;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .pipeline::-webkit-scrollbar { display: none; }
+      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; }
+
+      /* seven day-columns cannot work at 375px — the calendar scrolls */
+      .s-cal { grid-template-columns: repeat(7, 46vw); overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .s-cal::-webkit-scrollbar { display: none; }
+
+      /* ══ Listings ══════════════════════════════════════════════════════
+         The grid already collapses to one card per row. What doesn't work is
+         the title: it is nowrap+ellipsis so a card can read "Haven Manor
+         2-Bedroom Apartment - Ikola…", cutting off the very part that
+         distinguishes one listing from another. On a phone the card is the
+         full width of the screen and there is room for two lines. */
+      .lcard .tt {
+        white-space: normal; overflow: visible; text-overflow: clip;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+      }
+      .lcard .acts button { min-height: 44px; }
+      .lgrid { gap: 12px; }
+
+      /* ══ Toju Negotiator ══════════════════════════════════════════════
+         The handoff cards are 400px-minimum on desktop; one per row here.
+         The section lede goes the way of the page ledes — the heading above
+         the list is enough to say what the list is. */
+      #handoffs { grid-template-columns: 1fr; gap: 12px; margin-top: 10px; }
+      #pane-negotiator .h2 { margin-top: 0 !important; font-size: 18px; }
+      #pane-negotiator .sub { display: none; }
+
+      /* ══ CRM ═══════════════════════════════════════════════════════════
+         A 629px table inside a 343px card technically scrolled, but you
+         could never see a lead's name and its stage at the same time, which
+         is the one comparison this screen exists for. Each row becomes a
+         card instead. The cells already carry semantic classes, so this is
+         pure layout — the renderer is untouched and desktop keeps its
+         table. */
+      .crm-tools { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
+        scrollbar-width: none; -ms-overflow-style: none; margin: 0 0 12px; }
+      .crm-tools::-webkit-scrollbar { display: none; }
+      .crm-tools-l, .crm-tools-r { flex-wrap: nowrap; flex: none; margin-left: 0; }
+      .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: none; }
+      .crm-tools .tbtn { min-height: 40px; }
+
+      /* the funnel reads as a strip you swipe, not a 233px block of squares */
+      .crm-funnel { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .crm-funnel::-webkit-scrollbar { display: none; }
+      .crm-funnel > * { flex: 0 0 auto; min-width: 124px; }
+
+      .crm-tablecard { overflow-x: visible; padding: 0; }
+      .crm-table thead { display: none; }        /* headers make no sense per card */
+      /* `tr` is deliberately NOT in this list: ".crm-table tr" (0,1,1) would
+         outrank ".crm-row" (0,1,0) and force the row back to display:block,
+         stacking every cell full-width. The row rule below is scoped to match. */
+      .crm-table, .crm-table tbody, .crm-table td { display: block; width: auto; }
+      .crm-table td { padding: 0; border: none; }
+
+      .crm-table tr.crm-row {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px;
+        padding: 13px 14px; border-bottom: 1px solid var(--border);
+      }
+      .crm-row > .c-chk   { order: 1; flex: none; }
+      .crm-row > .c-lead  { order: 2; flex: 1 1 auto; min-width: 0; }
+      .crm-row > .c-act   { order: 3; flex: none; display: flex; gap: 6px; }
+      .crm-row > td:not([class]) { order: 4; }   /* the Source cell */
+      .crm-row > .c-budget{ order: 5; font-weight: 700; }
+      .crm-row > .c-score { order: 6; }
+      .crm-row > .c-status{ order: 7; margin-left: auto; }
+      .crm-row > .c-stage { order: 8; flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }
+      .crm-row > .c-time  { order: 9; flex: 1 1 100%; font-size: 11.5px; color: var(--ink-dim); }
+      .crm-row .nbax { font-size: 11.5px; color: var(--ink-muted); }
+      .crm-row .crm-wa, .crm-row .crm-more { min-width: 38px; min-height: 38px;
+        display: inline-flex; align-items: center; justify-content: center; }
+
+      /* pager: three rows, not three columns squeezed onto one */
+      #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .pg-nav { flex-wrap: wrap; }
+      .pg-n { min-width: 38px; min-height: 38px; }
+
+      /* the bulk bar clears the taskbar instead of sitting on top of it */
+      .crm-bulk { left: 12px; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom));
+        transform: translateY(14px); border-radius: 16px; justify-content: space-between; }
+      .crm-bulk.on { transform: none; }
+
+      /* the list/detail split becomes one column, and the list stops being an
+         inner scroller — a scroll region inside a scrolling page is a trap on
+         a phone, and the page itself is the natural scroller here */
+      .ov-grid { grid-template-columns: 1fr; gap: 14px; }
+      .ov-list { max-height: none; overflow-y: visible; padding: 0; }
+      .ov-detail { position: static; }
+      #ovMap { height: 240px; }
+
+      .agd-scrim{
+        display: block; position: fixed; inset: 0; z-index: 58;
+        background: rgba(15,15,15,0.34); backdrop-filter: blur(2px);
+        opacity: 0; pointer-events: none; transition: opacity .22s ease;
+      }
+      .agd-scrim.on{ opacity: 1; pointer-events: auto; }
+
+      /* the taskbar itself — one pill, both controls inside it */
+      .agd-bar{
+        display: flex; align-items: center; gap: 2px;
+        position: fixed; z-index: 60;
+        left: 16px; bottom: calc(18px + env(safe-area-inset-bottom));
+        padding: 6px; border-radius: 100px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border: 1px solid var(--border);
+        box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+      }
+      .agd{ display: block; position: relative; }
+      .agd-div{ width: 1px; height: 24px; background: var(--border); flex: none; }
+
+      .agd-btn{
+        width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: none; color: var(--ink); font-size: 21px;
+        transition: transform .2s cubic-bezier(.22,1,.36,1), background .15s ease;
+      }
+      .agd-btn:active{ transform: scale(0.9); }
+      .agd-btn .syn-i{ width: 21px; height: 21px; }
+      .agd-btn-primary{ background: #121212; color: #f5f5f5; }
+      .agd-add.open .agd-btn{ transform: rotate(45deg); }
+      .agd-nav.open .agd-btn{ background: rgba(0,0,0,0.07); }
+
+      /* ── the menu that files out ── */
+      .agd-sheet{
+        position: absolute; bottom: 58px; min-width: 232px;
+        background: rgba(255,255,255,0.97);
+        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border: 1px solid var(--border); border-radius: 18px;
+        box-shadow: 0 20px 52px rgba(15,15,15,0.26);
+        padding: 6px; overflow: hidden;
+        transform-origin: bottom left;
+        opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
+        transition: opacity .2s ease, transform .22s cubic-bezier(.22,1,.36,1);
+        max-height: 68dvh; overflow-y: auto;
+      }
+      .agd-add .agd-sheet{ left: -52px; transform-origin: bottom left; }
+      .agd-nav .agd-sheet{ left: 0; }
+      .agd.open .agd-sheet{ opacity: 1; transform: none; pointer-events: auto; }
+      @media (prefers-reduced-motion: reduce){
+        .agd-sheet{ transition: none; } .agd-fab{ transition: none; }
+      }
+
+      /* group header — tap to file its items out */
+      .agd-grp{
+        width: 100%; display: flex; align-items: center; justify-content: space-between;
+        background: none; border: none; cursor: pointer;
+        padding: 11px 12px; border-radius: 12px;
+        font: 700 10.5px var(--f-sans); letter-spacing: .12em; text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .agd-grp .chv{ font-size: 13px; transition: transform .2s ease; }
+      .agd-sec.open .agd-grp .chv{ transform: rotate(90deg); }
+      .agd-items{ display: none; padding-bottom: 4px; }
+      .agd-sec.open .agd-items{ display: block; }
+
+      .agd-item{
+        width: 100%; display: flex; align-items: center; gap: 11px;
+        background: none; border: none; cursor: pointer; text-align: left;
+        padding: 12px; min-height: 48px; border-radius: 12px;
+        font: 500 14px var(--f-sans); color: var(--ink);
+      }
+      .agd-item .syn-i{ width: 17px; height: 17px; opacity: .7; flex: none; }
+      .agd-item:active{ background: rgba(0,0,0,0.05); }
+      .agd-item.on{ background: rgba(54,54,54,0.10); font-weight: 700; }
+      .agd-item.on .syn-i{ opacity: 1; }
+      .agd-sep{ height: 1px; background: var(--border); margin: 4px 8px; }
+      .agd-me{
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px;
+        font-size: 12px; color: var(--ink-dim);
+      }
+      .agd-me b{ display: block; font-size: 13px; color: var(--ink); font-weight: 600; }
+
+      /* the create fan — labelled actions stacked above the + */
+      .agd-act{
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: none; border: none; cursor: pointer; text-align: left;
+        padding: 12px; min-height: 48px; border-radius: 12px;
+        font: 600 13.5px var(--f-sans); color: var(--ink); white-space: nowrap;
+      }
+      .agd-act:active{ background: rgba(0,0,0,0.05); }
+      .agd-act .syn-i{ width: 16px; height: 16px; opacity: .7; flex: none; }
+      .agd-add-hint{
+        padding: 8px 12px 4px; font: 700 10px var(--f-sans);
+        letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim);
+      }
+    }
+
   </style>
 </head>
 <body class="portal">
@@ -1425,6 +1747,31 @@
       </main>
     </div><!-- /content -->
   </div><!-- /shell -->
+
+  <!-- ══ FLOATING DOCK (≤720px) ═══════════════════════════════════════════
+       Two thumb-reachable controls replace the rail on a phone. The nav
+       menu is BUILT FROM the rail's own markup at runtime rather than being
+       a second hand-written copy, so panes can never exist in one and not
+       the other. The create fan is per-pane and delegates to the real
+       buttons already on each pane — it adds a route to them, not a second
+       implementation of them. -->
+  <div class="agd-scrim" id="agdScrim"></div>
+
+  <!-- one floating taskbar: navigation and create, side by side, where the
+       thumb already is. Sheets file out above whichever button was pressed. -->
+  <div class="agd-bar" id="agdBar">
+    <div class="agd agd-nav" id="agdNav">
+      <div class="agd-sheet" id="agdNavSheet" role="menu" aria-label="Portal navigation"></div>
+      <button class="agd-btn" id="agdNavFab" type="button" aria-expanded="false" aria-label="Open navigation">
+        <span data-icon="grid"></span>
+      </button>
+    </div>
+    <span class="agd-div" aria-hidden="true"></span>
+    <div class="agd agd-add" id="agdAdd">
+      <div class="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
+      <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">+</button>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -2401,6 +2748,22 @@
     function renderBoard(){
       const el = document.getElementById('mkBoard'); if (!el) return;
       const ads = allAds().sort((x, y) => MK.sort === 'leads' ? y.leads - x.leads : y.ctr - x.ctr);
+      /* With no campaigns the leaderboard rendered nothing at all — a toolbar
+         above blank space, which reads as broken rather than as "no data
+         yet". Same fix as the negotiator handoffs. */
+      if (!ads.length) {
+        el.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="chart"></span>'
+          + '<b>No creatives to rank yet</b>'
+          + '<p>Launch a campaign from one of your listings and every creative it '
+          + 'generates appears here, ranked by click-through and leads. Synapse '
+          + 'scales the winners and pauses the rest.</p>'
+          + '<button class="btn btn-primary" type="button" data-mk-new>+ New campaign</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
+        return;
+      }
       el.innerHTML = ads.map((a, i) => {
         const win = i === 0 && a.ctr > 0 && a.clive && a.st !== 'pausedai';
         return `<div class="lbrow ${a.st === 'pausedai' ? 'dim' : ''} ${win ? 'win' : ''}">
@@ -2433,6 +2796,11 @@
       renderBoard();
     });
     document.getElementById('mkBoard').addEventListener('click', (e) => {
+      if (e.target.closest('[data-mk-new]')) {
+        const real = document.getElementById('newCampBtn');
+        if (real) real.click();      // the pane's own campaign builder
+        return;
+      }
       const s = e.target.closest('[data-scale]'); if (!s) return;
       const [ci, ai] = s.dataset.scale.split('-').map(Number);
       const a = CAMPAIGNS[ci] && CAMPAIGNS[ci].ads[ai]; if (!a) return;
@@ -2556,6 +2924,22 @@
       const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
       const topIdx = top ? AGENTS.indexOf(top) : -1;
       renderAgentSummary();
+      /* An agency with no teammates yet rendered an empty grid under the
+         invite button. Say what this becomes instead. */
+      if (!AGENTS.length) {
+        const g = document.getElementById('agrid');
+        g.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="user"></span>'
+          + '<b>Just you so far</b>'
+          + '<p>Invite your agents and Synapse routes leads to them, tracks who '
+          + 'closes what, and builds the performance read on this page from their '
+          + 'real numbers.</p>'
+          + '<button class="btn btn-primary" type="button" data-ag-invite>+ Invite an agent</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(g);
+        return;
+      }
       document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
         if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
           <div class="ac-top"><span class="av">${initials(a.nm)}</span><div class="ac-id"><div class="ac-nm">${a.nm}</div><div class="ac-rl">${a.rl}</div></div></div>
@@ -2644,6 +3028,9 @@
       });
     }
     document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
+    document.getElementById('agrid').addEventListener('click', (e) => {
+      if (e.target.closest('[data-ag-invite]')) openInvite();
+    });
 
     // ── verification queue (7-node progress) ──
     // Verification lives on the listing cards (verified/pending badge + freshness),
@@ -2685,6 +3072,22 @@
     // transcripts, offers and agreed prices for properties that never existed.
     const HANDOFFS = [];
     function renderHandoffs(){
+      /* HANDOFFS is deliberately empty until Toju negotiates a real lead on a
+         real listing. Without a message the pane just rendered a heading and
+         a blank grid, which reads as broken rather than as "nothing yet". */
+      if (!HANDOFFS.length) {
+        document.getElementById('handoffs').innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="negotiate"></span>'
+          + '<b>Nothing ready to close yet</b>'
+          + '<p>Toju hands a buyer over once it has qualified them and agreed a price. '
+          + 'That happens on your live listings — once those are up and leads start '
+          + 'arriving, finished negotiations land here with the full transcript.</p>'
+          + '<button class="btn btn-ghost" type="button" data-go-listings>Go to listings</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('handoffs'));
+        return;
+      }
       document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
         <div class="card handoff" role="group" aria-label="Toju deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
           <img class="bg" src="${propImg(h.prop)}" alt="" loading="eager">
@@ -2719,7 +3122,10 @@
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
     }
-    document.getElementById('handoffs').addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr); });
+    document.getElementById('handoffs').addEventListener('click', (e) => {
+      if (e.target.closest('[data-go-listings]')) { goToPane('listings'); return; }
+      const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr);
+    });
     renderHandoffs();
 
     // ── social composer: New post → AI captions (edge fn) → schedule ──
@@ -3420,10 +3826,36 @@
          <div class="ov-body">${body}</div>`;
       if (window.synMotion) synMotion.refresh();
     }
+    /* Two different situations were showing the same sentence: an agency with
+       no listings at all, and an agency whose filter happens to match none.
+       They need different words and different actions — one is "add your
+       first listing", the other is "you have listings, just not these".
+       The detail column is also hidden while empty: renderOvDetail(null) only
+       blanked the card, leaving an empty grey panel and a map of nothing
+       sitting where the content should be. */
     function renderOverview() {
       const list = ovFiltered(), listEl = document.getElementById('ovList');
+      const detail = document.querySelector('#pane-overview .ov-detail');
+      if (detail) detail.hidden = !list.length;
       if (!list.length) {
-        listEl.innerHTML = '<div class="noti-empty">No listings match this view.</div>';
+        const none = !LISTINGS_DATA.length;
+        const filterName = { verified: 'Verified', pending: 'Pending', expiring: 'Expiring soon' }[OV.f];
+        listEl.innerHTML = none
+          ? '<div class="ov-blank">'
+            + '<span class="ov-blank-i" data-icon="home"></span>'
+            + '<b>No listings yet</b>'
+            + '<p>Add your first property and the seven verification checks start automatically. '
+            + 'Toju can only match buyers to homes that are listed here.</p>'
+            + '<button class="btn btn-primary" type="button" data-ov-add>+ Add your first listing</button>'
+            + '</div>'
+          : '<div class="ov-blank">'
+            + '<span class="ov-blank-i" data-icon="search"></span>'
+            + '<b>Nothing in ' + (filterName || 'this view') + '</b>'
+            + '<p>You have ' + LISTINGS_DATA.length + ' listing' + (LISTINGS_DATA.length === 1 ? '' : 's')
+            + (OV.q ? ' — none match "' + escT(OV.q) + '" in this view.' : ', just none in this one.') + '</p>'
+            + '<button class="btn btn-ghost" type="button" data-ov-all>Show all listings</button>'
+            + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(listEl);
         renderOvDetail(null); return;
       }
       if (OV.sel >= list.length) OV.sel = 0;
@@ -3452,6 +3884,18 @@
       if (OV.map.map && window.SynMatches) OV.map.map.panTo(SynMatches.coords(list[i].t, 0), { animate: true });
     }
     document.getElementById('ovList').addEventListener('click', (e) => {
+      if (e.target.closest('[data-ov-add]')) {
+        const real = document.getElementById('newListingBtn');
+        if (real) real.click();          // the Listings pane owns the form
+        return;
+      }
+      if (e.target.closest('[data-ov-all]')) {
+        OV.f = 'all'; OV.q = '';
+        document.querySelectorAll('#pane-overview .ov-tab').forEach((t) =>
+          t.classList.toggle('on', t.dataset.f === 'all'));
+        renderOverview();
+        return;
+      }
       const b = e.target.closest('[data-i]'); if (b) selectOv(+b.dataset.i);
     });
     document.getElementById('ovTabs').addEventListener('click', (e) => {
@@ -3611,6 +4055,153 @@
       const paneEl = document.getElementById('pane-' + pane);
       if (paneEl && paneEl.scrollIntoView) paneEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
+
+    /* ══ FLOATING DOCK (mobile) ═══════════════════════════════════════════
+       Navigation and creation as two thumb-reachable buttons, taskbar-style.
+
+       The nav menu is generated FROM the rail (#tabs) every time it opens,
+       so a pane added to the rail appears here automatically — a hand-copied
+       menu would be a second list to remember, and this file has already had
+       one bug of exactly that shape.
+
+       The create fan delegates to the button each pane already owns: it is a
+       shortcut to existing behaviour, never a parallel implementation that
+       could drift from it. */
+    (function () {
+      const nav = document.getElementById('agdNav');
+      const add = document.getElementById('agdAdd');
+      const scrim = document.getElementById('agdScrim');
+      if (!nav || !add || !scrim) return;
+
+      const navSheet = document.getElementById('agdNavSheet');
+      const addSheet = document.getElementById('agdAddSheet');
+      const navFab = document.getElementById('agdNavFab');
+      const addFab = document.getElementById('agdAddFab');
+
+      /* Per-pane create actions. `to` is the id of the real control on that
+         pane; label/icon are what the fan shows. A pane with nothing to
+         create simply offers the portal-wide ones. */
+      const CREATE = {
+        overview:     [['newListingBtn', 'New listing', 'home']],
+        listings:     [['newListingBtn', 'New listing', 'home']],
+        crm:          [['crmAdd', 'Add lead', 'user']],
+        social:       [['newPostBtn', 'New social post', 'share']],
+        marketing:    [['newCampBtn', 'New campaign', 'chart']],
+        agents:       [['inviteAgentBtn', 'Invite agent', 'user']],
+      };
+      /* Offered everywhere, because "add a property" is the job the portal
+         exists for and should never be more than two taps away. */
+      const ALWAYS = [
+        ['newListingBtn', 'New listing', 'home'],
+        ['newPostBtn', 'New social post', 'share'],
+        ['newCampBtn', 'New campaign', 'chart'],
+      ];
+
+      const isOpen = (el) => el.classList.contains('open');
+      function closeAll() {
+        nav.classList.remove('open'); add.classList.remove('open');
+        scrim.classList.remove('on');
+        navFab.setAttribute('aria-expanded', 'false');
+        addFab.setAttribute('aria-expanded', 'false');
+      }
+      function open(which) {
+        closeAll();
+        which.classList.add('open');
+        scrim.classList.add('on');
+        (which === nav ? navFab : addFab).setAttribute('aria-expanded', 'true');
+      }
+
+      // ── nav menu, mirrored from the rail ──
+      function buildNav() {
+        const current = (document.querySelector('#tabs a.on') || {}).dataset?.pane;
+        let html = '';
+        document.querySelectorAll('#tabs .grp-sec').forEach((sec, i) => {
+          const name = (sec.querySelector('.grp span') || {}).textContent || 'More';
+          const items = [...sec.querySelectorAll('a[data-pane]')].map((a) => {
+            const pane = a.dataset.pane;
+            const icon = (a.querySelector('[data-icon]') || {}).dataset?.icon || 'dot';
+            const label = (a.querySelector('.lbl-x') || {}).textContent || pane;
+            return '<button class="agd-item' + (pane === current ? ' on' : '') + '" role="menuitem"'
+              + ' data-goto="' + pane + '"><span data-icon="' + icon + '"></span>' + label + '</button>';
+          }).join('');
+          // the group holding the current pane starts filed out
+          const openSec = sec.querySelector('a[data-pane="' + current + '"]') ? ' open' : (i === 0 ? ' open' : '');
+          html += '<div class="agd-sec' + openSec + '">'
+            + '<button class="agd-grp" type="button"><span>' + name + '</span><span class="chv">›</span></button>'
+            + '<div class="agd-items">' + items + '</div></div>';
+        });
+        const nm = document.querySelector('#tabs .nm2');
+        const tier = document.querySelector('#tabs .sub2');
+        if (nm) {
+          html += '<div class="agd-sep"></div><div class="agd-me"><span class="av2" style="width:28px;height:28px;'
+            + 'border-radius:8px;background:#121212;color:#fff;display:flex;align-items:center;justify-content:center;'
+            + 'font-size:11px;font-weight:700">' + (document.querySelector('#tabs .av2') || {}).textContent + '</span>'
+            + '<span><b>' + nm.textContent + '</b>' + (tier ? tier.textContent : '') + '</span></div>';
+        }
+        /* the two actions the top bar can no longer fit — a Start menu keeps
+           its account controls at the foot, so they belong here anyway */
+        html += '<div class="agd-sep"></div>'
+          + '<button class="agd-item" role="menuitem" data-nav-site>'
+          + '<span data-icon="home"></span>Back to site</button>';
+        if (document.querySelector('[data-auth-slot] .auth-out')) {
+          html += '<button class="agd-item" role="menuitem" data-nav-out>'
+            + '<span data-icon="user"></span>Sign out</button>';
+        }
+        navSheet.innerHTML = html;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
+      }
+
+      // ── create fan, per pane ──
+      function buildAdd() {
+        const pane = (document.querySelector('#tabs a.on') || {}).dataset?.pane || 'overview';
+        const wanted = CREATE[pane] || [];
+        const seen = new Set(wanted.map((a) => a[0]));
+        const rest = ALWAYS.filter((a) => !seen.has(a[0]));
+        const rows = [...wanted, ...rest]
+          .filter(([id]) => document.getElementById(id))   // never offer a dead action
+          .map(([id, label, icon], i) =>
+            (i === wanted.length && wanted.length ? '<div class="agd-sep"></div>' : '')
+            + '<button class="agd-act" role="menuitem" data-act="' + id + '">'
+            + '<span data-icon="' + icon + '"></span>' + label + '</button>')
+          .join('');
+        addSheet.innerHTML = '<div class="agd-add-hint">Create</div>' + rows;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(addSheet);
+      }
+
+      navFab.addEventListener('click', () => {
+        if (isOpen(nav)) return closeAll();
+        buildNav(); open(nav);
+      });
+      addFab.addEventListener('click', () => {
+        if (isOpen(add)) return closeAll();
+        buildAdd(); open(add);
+      });
+      scrim.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+
+      navSheet.addEventListener('click', (e) => {
+        const grp = e.target.closest('.agd-grp');
+        if (grp) { grp.parentElement.classList.toggle('open'); return; }
+        if (e.target.closest('[data-nav-site]')) { window.location.href = '../index.html'; return; }
+        const out = e.target.closest('[data-nav-out]');
+        if (out) {
+          closeAll();
+          const real = document.querySelector('[data-auth-slot] .auth-out');
+          if (real) real.click();   // auth.js owns sign-out; this only routes to it
+          return;
+        }
+        const item = e.target.closest('[data-goto]');
+        if (item) { closeAll(); goToPane(item.dataset.goto); }
+      });
+
+      addSheet.addEventListener('click', (e) => {
+        const act = e.target.closest('[data-act]');
+        if (!act) return;
+        closeAll();
+        const real = document.getElementById(act.dataset.act);
+        if (real) real.click();   // the pane's own control does the work
+      });
+    })();
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {

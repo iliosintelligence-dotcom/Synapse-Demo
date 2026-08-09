@@ -134,6 +134,85 @@
     .toju-cta .t b { color: var(--ink); }
     .hidden { display: none !important; }
     @media (max-width: 560px){ .masonry{ columns: 2 140px; } }
+
+    /* the mobile bar never exists above the phone breakpoint */
+    .dm-bar { display: none; }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       A mood board is the one page in the app that is genuinely about the
+       pictures, so mobile leans into that: the pins start high, the prose
+       around them gets out of the way, and the controls become one-handed.
+       Two columns, not four — a pin you cannot read the mood of is not
+       inspiration, it is a thumbnail. */
+    @media (max-width: 1024px) {
+      .appbar { display: none; }
+
+      .dm-bar {
+        position: sticky; top: 0; z-index: 25;
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-top));
+        background: rgba(245,245,245,0.88);
+        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border-bottom: 1px solid var(--border);
+      }
+      .dm-back {
+        width: 40px; height: 40px; flex: none; margin-left: -6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; color: var(--ink); text-decoration: none;
+      }
+      .dm-ttl { flex: 1; min-width: 0; font-family: var(--f-serif); font-weight: 500; font-size: 19px; color: var(--ink); }
+
+      /* this page's container is .board-wrap, not .wrap — 34px gutters are
+         desktop margins, and they left the content out of line with the bar */
+      .board-wrap { padding-left: 16px; padding-right: 16px; padding-bottom: 64px; }
+
+      /* ── all-boards ── */
+      .eyebrow { font-size: 10.5px; }
+      .db-h1 { font-size: 26px; }
+      .db-top { gap: 10px; }
+      .db-top .btn { min-height: 42px; white-space: nowrap; }
+      /* the standing explanation is for a first visit, not every visit */
+      #homeView > p.muted { font-size: 13.5px; }
+      .boards-grid { grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+      .bcard .bname { font-size: 14px; margin-top: 9px; }
+      .bcard.watch .wc b { font-size: 34px; }
+
+      /* ── inside a board ──
+         The bar already carries the board name and a back arrow wired to the
+         same toHome(), so the in-page "All boards" link was a second control
+         doing an identical job one row below it. */
+      .db-back { display: none; }
+      .board-title { font-size: 25px; min-width: 0; width: 100%; }
+      .masonry { columns: 2 140px; column-gap: 10px; margin-top: 14px; }
+      .tile { margin-bottom: 10px; border-radius: 14px; }
+
+      /* both control rails scroll rather than wrapping into stacked rows */
+      .mode-switch, .cat-tabs {
+        display: flex; flex-wrap: nowrap; overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none;
+        max-width: 100%;
+      }
+      .mode-switch::-webkit-scrollbar, .cat-tabs::-webkit-scrollbar { display: none; }
+      .mode-switch .ms, .cat-tabs .ct { flex: none; min-height: 40px; }
+      .mode-hint { font-size: 12.5px; }
+
+      .signals { padding: 13px 15px 12px; }
+      .sig-rows { grid-template-columns: 1fr; gap: 7px; }
+
+      /* pinning: the URL field, its category and the button will not sit on
+         one 375px line without all three becoming unusable */
+      .add-card { padding: 16px 15px; }
+      .add-row { flex-wrap: wrap; gap: 8px; }
+      .add-row input { flex: 1 1 100%; font-size: 16px; min-height: 46px; }  /* 16px: no iOS zoom */
+      .add-row select { flex: 1 1 auto; min-height: 44px; font-size: 14px; }
+      .add-row .btn { flex: none; min-height: 44px; }
+      .palette { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+      /* the Toju handoff is the point of the board — full-width, not squeezed */
+      .toju-cta { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 15px; }
+      .toju-cta .t { font-size: 13.5px; }
+      .toju-cta .btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; }
+    }
   </style>
 </head>
 <body>
@@ -155,6 +234,14 @@
 
   <div class="board-wrap">
     <!-- ═══ BOARDS HOME ═══ -->
+    <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
+         Replaces the site nav. Its title follows whichever view is open, so
+         it always says where you are inside a board. -->
+    <header class="dm-bar">
+      <a class="dm-back" id="dmBack" href="toju.html" aria-label="Back">←</a>
+      <div class="dm-ttl" id="dmTitle">Dream boards</div>
+    </header>
+
     <section id="homeView">
       <div class="eyebrow">Your vision, in one place</div>
       <div class="db-top">
@@ -380,6 +467,21 @@
       openBoard(b.id);
     }
 
+    /* The mobile bar mirrors whichever view is open and whatever the board
+       is called. Routed through one function so a future view cannot forget
+       it — the browse page had exactly that bug. */
+    function syncMobileBar() {
+      var t = document.getElementById('dmTitle');
+      var b = document.getElementById('dmBack');
+      if (!t || !b) return;
+      var inBoard = !boardView.classList.contains('hidden');
+      var board = typeof activeBoard === 'function' ? activeBoard() : null;
+      t.textContent = inBoard ? ((board && board.name) || 'Board') : 'Dream boards';
+      // inside a board the back arrow returns to the boards, not off the page
+      b.setAttribute('href', inBoard ? '#' : 'toju.html');
+      b.onclick = inBoard ? function (e) { e.preventDefault(); toHome(); } : null;
+    }
+
     // ═══ INSIDE A BOARD ═══
     function openBoard(id) {
       state.activeId = id; boardCat = 'all'; saveState(); mirror();
@@ -388,6 +490,7 @@
       prevSig = null; // fresh board — no pip pop on first paint
       renderMode(); renderCatTabs(); renderCatPicker(); renderStarterNote();
       renderBoard(); renderVibe(); renderPalette(); renderSignals(); updateToju();
+      syncMobileBar();
       document.getElementById('boardTitle').value = activeBoard().name || '';
     }
 
@@ -500,12 +603,12 @@
     function toHome() {
       state.activeId = null; saveState();
       boardView.classList.add('hidden'); homeView.classList.remove('hidden');
-      window.scrollTo(0, 0); renderHome();
+      window.scrollTo(0, 0); renderHome(); syncMobileBar();
     }
     document.getElementById('backBtn').addEventListener('click', toHome);
 
     const boardTitle = document.getElementById('boardTitle');
-    boardTitle.addEventListener('input', () => { const b = activeBoard(); if (b) { b.name = boardTitle.value; saveState(); mirror(); } });
+    boardTitle.addEventListener('input', () => { const b = activeBoard(); if (b) { b.name = boardTitle.value; saveState(); mirror(); syncMobileBar(); } });
     document.getElementById('renameBtn').addEventListener('click', () => { boardTitle.focus(); boardTitle.select(); });
     document.getElementById('deleteBtn').addEventListener('click', () => {
       if (!confirm('Delete this board? Its pins will be removed.')) return;

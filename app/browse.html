@@ -218,6 +218,144 @@
       .rc { transition: none; }
       .rc:hover { transform: none; }
     }
+
+    /* the mobile chrome never exists above the phone breakpoint */
+    .bm-bar, .bm-meta { display: none; }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       This page had no responsive rules at all — it was a desktop grid on a
+       phone. Rebuilt around what someone actually does here: search, scan a
+       single column of homes, and occasionally look at where they are.
+
+       The map is the biggest call. At 250px it sat between the search and
+       the first home, so the fold carried a map you can barely read and no
+       listings. The page already has a List/Map toggle, so on mobile the
+       list view drops the map entirely and Map view gives it the whole
+       screen — one thing at a time, properly, instead of two things badly. */
+    @media (max-width: 1024px) {
+      .appbar { display: none; }          /* site nav is not app chrome */
+
+      .bm-bar {
+        position: sticky; top: 0; z-index: 25;
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-top));
+        background: rgba(245,245,245,0.86);
+        backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+        border-bottom: 1px solid rgba(255,255,255,0.6);
+      }
+      .bm-back {
+        width: 40px; height: 40px; flex: none; margin-left: -6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 21px; color: var(--ink); text-decoration: none;
+      }
+      .bm-ttl { flex: 1; min-width: 0; font-family: var(--f-serif); font-weight: 500; font-size: 19px; color: var(--ink); }
+      .bm-saved {
+        flex: none; min-height: 40px; padding: 0 13px; border-radius: 100px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 13px; font-weight: 700; color: var(--ink);
+        background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85);
+        text-decoration: none;
+      }
+      .bm-saved[hidden] { display: none; }
+
+      .wrap { padding-left: 16px; padding-right: 16px; }
+      .eyebrow { font-size: 10.5px; }
+      .h1 { font-size: 27px; line-height: 1.15; }
+
+      /* The summary card and the List/Map segment are both gone: between
+         them they pushed the first home most of a screen down, so a page
+         whose whole job is showing homes opened on no homes. Everything
+         they carried — the live/verified counts, the route to Toju, the
+         route to the map — moves into one line below the search. */
+      .brief, .viewseg { display: none; }
+
+      .bm-meta {
+        display: flex; align-items: center; gap: 8px;
+        margin: 0 0 14px;
+      }
+      .bm-count {
+        flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .bm-count b { color: var(--ink); font-weight: 700; }
+      .bm-chip {
+        flex: none; min-height: 38px; padding: 0 13px; border-radius: 100px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font: 600 12.5px var(--f-sans); color: var(--ink-muted);
+        background: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.9);
+        text-decoration: none; cursor: pointer;
+      }
+      .bm-chip .syn-i { width: 14px; height: 14px; }
+      .bm-chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: transparent; }
+      .bm-chip-toju { color: var(--ink); }
+
+      /* Same reasoning as the summary card: this is an opt-in prompt, not
+         reading material, and its explanation was 184px of paragraph ahead
+         of the first home. The offer and the button stay; the full
+         description belongs on the settings screen, not above the results. */
+      .prox-card { padding: 12px 14px; gap: 10px; align-items: center; }
+      .prox-txt span { display: none; }
+      .prox-txt b { font-size: 13.5px; }
+
+      /* 16px floor: below it iOS zooms the page on focus */
+      .searchbar { padding: 11px 14px; gap: 8px; }
+      .searchbar input { font-size: 16px; }
+      .searchbar button { width: 30px; height: 30px; }
+
+      /* list view: no map competing with the homes; Map view owns the screen */
+      body:not(.view-map) #map { display: none; }
+      body.view-map #map { height: calc(100dvh - 260px); min-height: 300px; margin-bottom: 12px; }
+
+      .viewseg { margin-bottom: 12px; }
+      .vseg { min-height: 40px; padding: 0 18px; }
+
+      /* filters scroll sideways instead of wrapping into three stacked rows */
+      .toolbar {
+        flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 14px;
+        padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;
+      }
+      .toolbar::-webkit-scrollbar { display: none; }
+      .toolbar > * { flex: none; }
+      .toolbar .hintt { display: none; }   /* desktop hover advice, not mobile copy */
+      #sortSel { min-height: 40px; font-size: 13px; }
+      .dealfilter button, .vtoggle { min-height: 40px; }
+
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .listing .img { height: 200px; }
+
+      /* Readability over the glass effect, same call as the chat page. A card
+         on a phone spans the full width, so the wallpaper runs directly under
+         the body copy — at 46% alpha the brief was barely legible. Heavier
+         wash, near-opaque cards; the frosted look survives, the guesswork
+         doesn't. */
+      .bg-wash {
+        background:
+          radial-gradient(120% 80% at 78% 0%, rgba(212,110,60,0.10), transparent 58%),
+          linear-gradient(180deg, rgba(249,245,241,0.80) 0%, rgba(247,241,235,0.86) 55%, rgba(244,236,228,0.92) 100%);
+      }
+      .card, .searchbar {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,253,250,0.90));
+      }
+
+      /* compare: a full-width bar and a full-screen sheet, not a floating
+         pill and a centred dialog */
+      .cmpbar {
+        left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: none; border-radius: 18px; padding: 12px 12px 12px 18px;
+        justify-content: space-between;
+      }
+      .cmpbar button { min-height: 44px; }
+      .cmpwrap { padding: 0; align-items: flex-end; }
+      .cmpsheet {
+        max-width: none; width: 100%; max-height: 92dvh;
+        padding: 22px 16px calc(24px + env(safe-area-inset-bottom));
+        border-radius: 22px 22px 0 0;
+      }
+      .cmpsheet h3 { font-size: 21px; }
+      /* the comparison is genuinely wide — let it scroll rather than crush */
+      #cmpTable { overflow-x: auto; }
+      .cmptable { min-width: 520px; }
+    }
   </style>
 </head>
 <body>
@@ -241,6 +379,17 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
+  <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
+       Replaces the site nav on a phone. The saved count mirrors the desktop
+       one rather than owning its own state — see the sync below. -->
+  <header class="bm-bar">
+    <a class="bm-back" href="toju.html" aria-label="Back to Toju">←</a>
+    <div class="bm-ttl" id="bmTitle">Your matches</div>
+    <a class="bm-saved" id="bmSaved" href="#" hidden title="Your saved homes">
+      <span aria-hidden="true">♥</span><b id="bmSavedN">0</b>
+    </a>
+  </header>
+
   <div class="wrap">
     <div class="eyebrow" id="pageEyebrow">Verified homes</div>
     <div class="h1" id="pageTitle">Your matches</div>
@@ -255,6 +404,17 @@
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input id="searchInput" type="text" placeholder="Search by area, city, type or price — e.g. Lekki, 3-bed, duplex, under 150M…" autocomplete="off" />
       <button id="searchClear" hidden aria-label="Clear">✕</button>
+    </div>
+
+    <!-- ══ MOBILE CONTEXT ROW (≤720px) ══════════════════════════════════
+         Carries what the summary card and the map/list segment used to say,
+         in one line instead of two blocks — so the homes start at the top of
+         the screen. Counts are written by the same code that writes the
+         desktop summary; the buttons drive the existing controls. -->
+    <div class="bm-meta">
+      <span class="bm-count" id="bmCount">Loading homes…</span>
+      <button class="bm-chip" id="bmMap" type="button" aria-pressed="false"><span data-icon="pin"></span> Map</button>
+      <a class="bm-chip bm-chip-toju" href="toju.html">✦ Toju</a>
     </div>
 
     <div id="map"></div>
@@ -495,6 +655,7 @@
         const m = document.getElementById('map'); if (m) m.style.display = 'none';
         const bt = document.getElementById('briefTxt');
         if (bt) bt.textContent = 'We couldn’t load any homes just now.';
+        setMobileCount('Couldn’t load homes');
         box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
           + '<p class="empty-sub">' + (navigator.onLine
               ? 'We couldn’t reach our listings — nothing was found. This is on our side, not yours.'
@@ -547,6 +708,18 @@
       const b = e.target.closest('[data-view]');
       if (b) setView(b.dataset.view);
     });
+
+    /* The mobile Map chip drives the same setView as the desktop segment —
+       one source of truth for the view, two ways in. */
+    (function () {
+      const chip = document.getElementById('bmMap');
+      if (!chip) return;
+      chip.addEventListener('click', () => {
+        const toMap = !document.body.classList.contains('view-map');
+        setView(toMap ? 'map' : 'list');
+        chip.setAttribute('aria-pressed', String(toMap));
+      });
+    })();
 
     function updateBar() {
       const bar = document.getElementById('cmpbar');
@@ -623,6 +796,9 @@
       el.hidden = n === 0;
       document.getElementById('navSavedN').textContent = n;
       document.getElementById('navSavedSr').textContent = ' saved home' + (n === 1 ? '' : 's');
+      // the mobile bar mirrors this rather than tracking saves itself
+      const mEl = document.getElementById('bmSaved');
+      if (mEl) { mEl.hidden = n === 0; document.getElementById('bmSavedN').textContent = n; }
       if (lastSavedCount !== null && n !== lastSavedCount && n > 0) {
         el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
       }
@@ -752,9 +928,19 @@
     document.getElementById('cmpClose').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
     document.getElementById('cmpVeil').addEventListener('click', () => document.getElementById('cmpwrap').classList.remove('on'));
 
+    /* The mobile row replaces the summary card, so anything that writes the
+       summary has to write this too — the matched view updated only the card
+       and left the row stuck on "Loading homes…". */
+    function setMobileCount(html) {
+      const el = document.getElementById('bmCount');
+      if (el) el.innerHTML = html;
+    }
+
     function setMatchedHeadings() {
       document.getElementById('pageEyebrow').textContent = 'Picked for you';
       document.getElementById('pageTitle').textContent = 'Your matches';
+      const bt = document.getElementById('bmTitle');
+      if (bt) bt.textContent = 'Your matches';
       document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
     }
 
@@ -801,6 +987,8 @@
       }));
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
+      // the mobile row says the same thing in the space of one line
+      setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
       render();
     }).catch(() => {
       // Nothing came back: show nothing. The empty state explains why, and
@@ -825,6 +1013,7 @@
           setMatchedHeadings();
           if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
             '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Toju for similar homes.';
+          setMobileCount('Nothing fits your brief yet');
           document.getElementById('map').style.display = 'none';
           render();
           return;
@@ -839,6 +1028,7 @@
           document.querySelector('.brief .txt').innerHTML =
             '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
         }
+        setMobileCount('<b>' + items.length + '</b> match your brief');
         render();
       }).catch(() => {});
     }

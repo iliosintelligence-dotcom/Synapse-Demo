@@ -197,7 +197,107 @@
     .pvo-eta b { font-weight: 700; }
     .pv-home-pin { background: #121212; color: #fff; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
     .pv-poi-pin { border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.28); border: 2px solid #fff; }
-    @media (max-width: 900px){ .pv-canvas { display: none; } .pv-split > .pdp { flex: 1; max-width: 460px; margin: 0 auto; border-right: none; } }
+    /* tablet: drop the canvas, centre the deck (unchanged behaviour) */
+
+    /* the mobile-only chrome never exists above the phone breakpoint */
+    .pvm-bar, .pvm-mapbtn, .pvm-close { display: none; }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       The swipe deck is already the right paradigm for a phone, so it stays
+       and simply gets the full width. The real change is the map canvas.
+
+       It used to be display:none below 900px, which quietly deleted the
+       whole nearby-amenities and commute feature on the device most likely
+       to be standing outside the building. Instead of hiding it, it becomes
+       a full-screen sheet you open from the deck header — the map gets the
+       entire screen when you want it and none of it when you don't. */
+    @media (max-width: 1024px) {
+      .appbar { display: none; }
+
+      .pvm-bar {
+        position: sticky; top: 0; z-index: 30;
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 12px calc(8px + env(safe-area-inset-top));
+        background: rgba(245,245,245,0.9);
+        backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+        border-bottom: 1px solid var(--border);
+      }
+      .pvm-back {
+        width: 40px; height: 40px; flex: none; margin-left: -4px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; color: var(--ink); text-decoration: none;
+      }
+      .pvm-ttl {
+        flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .pvm-mapbtn {
+        flex: none; min-height: 40px; padding: 0 14px; border-radius: 100px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font: 600 12.5px var(--f-sans); color: var(--ink);
+        background: rgba(255,255,255,0.8); border: 1px solid var(--border); cursor: pointer;
+      }
+
+      .pv-split { display: block; }
+      .pv-split > .pdp {
+        flex: none; max-width: none; width: 100%; margin: 0;
+        border-right: none; padding: 10px 14px 0;
+        height: auto; min-height: 0;
+      }
+      .hero { height: 244px; }
+      .thumbs img { width: 62px; height: 46px; }
+
+      /* the deck sizes to its tallest card instead of being trapped in a
+         flex column, so a phone scrolls the page rather than each card */
+      .deck { overflow-y: visible; }
+      .deck > .card { max-height: none; overflow-y: visible; }
+      .deckbar .arrow { width: 40px; height: 40px; }
+      .dots i { width: 7px; height: 7px; }
+      .dots i.on { width: 20px; }
+
+      .cta-dock {
+        position: sticky; bottom: 0;
+        padding: 12px 0 calc(14px + env(safe-area-inset-bottom));
+      }
+      .cta-dock .btn { min-height: 48px; }
+
+      /* ── the map, as a sheet ── */
+      .pv-canvas {
+        display: flex;
+        position: fixed; inset: 0; z-index: 80;
+        transform: translateY(100%);
+        transition: transform .3s cubic-bezier(.22,1,.36,1);
+        visibility: hidden;
+      }
+      .pv-canvas.pvm-open { transform: none; visibility: visible; }
+      @media (prefers-reduced-motion: reduce) { .pv-canvas { transition: none; } }
+
+      .pvc-head {
+        padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+        gap: 10px; align-items: flex-start;
+      }
+      .pvm-close {
+        order: -1; flex: none;
+        width: 38px; height: 38px; border-radius: 50%;
+        border: 1px solid var(--border); background: rgba(0,0,0,0.04);
+        font-size: 17px; color: var(--ink); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      /* five tabs will not fit across 375px — scroll them */
+      .pvc-tabs {
+        margin-left: 0; width: 100%; flex-wrap: nowrap;
+        overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+      }
+      .pvc-tabs::-webkit-scrollbar { display: none; }
+      .pvc-tabs button { flex: none; min-height: 38px; }
+      .pvc-trust { width: 100%; }
+
+      /* the overlay panel becomes a bottom card, not a floating box */
+      .pvc-overlay, .pvc-overlay.wide {
+        left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+        width: auto; max-height: 46%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -216,6 +316,17 @@
     <span data-auth-slot style="margin-right:16px"></span>
     <a class="home" href="browse.html">← Back to matches</a>
   </div>
+
+  <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
+       Replaces the site nav, and carries the entry point to the map sheet —
+       the canvas is otherwise unreachable on a phone. -->
+  <header class="pvm-bar">
+    <a class="pvm-back" href="browse.html" aria-label="Back to matches">←</a>
+    <div class="pvm-ttl" id="pvmTitle">Property</div>
+    <button class="pvm-mapbtn" id="pvmMapBtn" type="button">
+      <span data-icon="pin"></span> Map &amp; nearby
+    </button>
+  </header>
 
   <div class="pv-split">
   <div class="pdp">
@@ -383,6 +494,7 @@
     <!-- RIGHT: reactive map canvas — visualises whatever the active card is about -->
     <div class="pv-canvas">
       <div class="pvc-head">
+        <button class="pvm-close" id="pvmClose" type="button" aria-label="Close map">✕</button>
         <div class="pvc-title" id="pvcTitle">Nearby</div>
         <div class="pvc-trust" id="pvcTrust" hidden>
           <div class="pvc-ring" id="pvcRing">—</div>
@@ -588,6 +700,7 @@
       document.title = p.title + ' — Synapse';
       set('pvPrice', naira(p.price) + (PERIOD_SUFFIX[p.price_period] || ''));
       set('pvTitle', p.title);
+      set('pvmTitle', p.title);   // the mobile bar carries it too
       // De-duplicate: agencies routinely type the city into the address line,
       // which rendered as "Ikolaba GRA, Ibadan, Ibadan, Oyo state".
       const seen = new Set();
@@ -1099,6 +1212,34 @@
       setView(state.view || 'poi');
     });
     setView('poi');
+
+    /* ── mobile map sheet ────────────────────────────────────────────────
+       On a phone the canvas is a full-screen sheet rather than a hidden
+       panel. Leaflet measures its container on init, and this one starts
+       off-screen with no usable size, so the map must be re-measured the
+       first time the sheet is actually shown or it renders as grey tiles. */
+    (function () {
+      var canvas = document.querySelector('.pv-canvas');
+      var openBtn = document.getElementById('pvmMapBtn');
+      var closeBtn = document.getElementById('pvmClose');
+      if (!canvas || !openBtn) return;
+
+      function open() {
+        canvas.classList.add('pvm-open');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function () { map.invalidateSize(); }, 320);
+      }
+      function close() {
+        canvas.classList.remove('pvm-open');
+        document.body.style.overflow = '';
+      }
+      openBtn.addEventListener('click', open);
+      if (closeBtn) closeBtn.addEventListener('click', close);
+      // hardware/browser back should dismiss the sheet, not leave the page
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && canvas.classList.contains('pvm-open')) close();
+      });
+    })();
   })();
   </script>
 </body>
