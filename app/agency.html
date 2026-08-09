@@ -1112,6 +1112,20 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ Listings ══════════════════════════════════════════════════════
+         The grid already collapses to one card per row. What doesn't work is
+         the title: it is nowrap+ellipsis so a card can read "Haven Manor
+         2-Bedroom Apartment - Ikola…", cutting off the very part that
+         distinguishes one listing from another. On a phone the card is the
+         full width of the screen and there is room for two lines. */
+      .lcard .tt {
+        white-space: normal; overflow: visible; text-overflow: clip;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+      }
+      .lcard .acts button { min-height: 44px; }
+      .lgrid { gap: 12px; }
+
       /* ══ Toju Negotiator ══════════════════════════════════════════════
          The handoff cards are 400px-minimum on desktop; one per row here.
          The section lede goes the way of the page ledes — the heading above
