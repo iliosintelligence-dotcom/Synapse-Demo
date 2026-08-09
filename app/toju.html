@@ -241,15 +241,6 @@
     .tjm-bar, .tjm-matches { display: none; }
 
     /* tablet: unstack, keep the page-scrolling behaviour */
-    @media (min-width: 721px) and (max-width: 899px) {
-      body { overflow: auto; }
-      .tj-app { height: auto; min-height: 100dvh; }
-      .tj-layout { flex-direction: column; }
-      .tj-chat, body.has-canvas .tj-chat { width: 100%; max-width: none; min-width: 0; border-right: none; margin: 0; }
-      .convo-scroll { overflow: visible; }
-      .tj-chat .composer { position: sticky; bottom: 0; }
-      .tj-canvas, body.has-canvas .tj-canvas { display: none; }
-    }
 
     /* ══ MOBILE (≤720px) — a chat app, not a scrolling web page ══════════
        The page itself must NOT scroll: the bar stays put, the composer stays
@@ -257,7 +248,7 @@
        composer inside a scrolling page (the old behaviour) drifts as the iOS
        URL bar shows and hides, which on a chat reads as the input running
        away from your thumb. 100dvh + a single internal scroller fixes it. */
-    @media (max-width: 720px) {
+    @media (max-width: 1024px) {
       html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
       .tj-app { height: 100dvh; display: flex; flex-direction: column; }
       .appbar { display: none; }                 /* site nav is not chat chrome */
