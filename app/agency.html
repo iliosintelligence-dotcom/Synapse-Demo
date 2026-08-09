@@ -1112,6 +1112,34 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ Social studio ═════════════════════════════════════════════════
+         The section lede goes, same as the page ledes — "Content pipeline"
+         with the Pipeline/Calendar switch beside it already says what this
+         is. That header alone was 143px before a single stage appeared. */
+      .s-work-hd { margin: 16px 0 8px; gap: 10px; }
+      #pane-social .sub { display: none; }   /* section AND card ledes both go */
+      #pane-social .h2 { font-size: 18px; }
+      .cmp-head { margin-bottom: 10px; }
+
+      /* the listing picker was 495px of option text in a 297px control */
+      .cmp-gen select, #pane-social select, #pane-marketing select {
+        width: 100%; max-width: 100%; min-height: 44px; font-size: 16px;
+        text-overflow: ellipsis;
+      }
+      .cmp-gen { padding: 16px 15px 18px; }
+
+      /* the pipeline is a swipe strip: narrower columns so the next stage
+         peeks, and snap so a swipe lands on a stage instead of between two */
+      .pipeline { gap: 10px; scroll-snap-type: x mandatory;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .pipeline::-webkit-scrollbar { display: none; }
+      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; }
+
+      /* seven day-columns cannot work at 375px — the calendar scrolls */
+      .s-cal { grid-template-columns: repeat(7, 46vw); overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .s-cal::-webkit-scrollbar { display: none; }
+
       /* ══ Listings ══════════════════════════════════════════════════════
          The grid already collapses to one card per row. What doesn't work is
          the title: it is nowrap+ellipsis so a card can read "Haven Manor
