@@ -819,7 +819,122 @@
     .tp-stats .statspark { margin-top: 6px; }
     @media (max-width: 560px){ .tpanel { max-width: 100%; } }
 
-    @media (max-width: 720px){ .shell{ flex-direction: column; height: auto; padding-left: 0; } body.portal{ overflow: auto; } .side{ position: static; width: auto; height: auto; flex-direction: row; flex-wrap: wrap; align-items: flex-start; border-right: none; border-bottom: 1px solid var(--border); } .side:hover, .side:focus-within{ width: auto; overflow-y: visible; box-shadow: none; } .side .grp, .side .me{ display: none; } .side .grp-sec, .side .grp-items{ display: contents; } .side .grp-items{ max-height: none; opacity: 1; } .stats{ grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .cmp-listings{ grid-template-columns: 1fr; } }
+    /* the floating taskbar never exists above the phone breakpoint */
+    .agd-bar, .agd-scrim { display: none; }
+
+    /* ══ MOBILE (≤720px) — the portal as a floating dock ═══════════════
+       The rail is gone on a phone. Navigation and the primary create action
+       live in two thumb-reachable buttons at the bottom of the screen, the
+       way a taskbar does: tap the left one and the menu files out in groups;
+       tap the right one and it fans out the create actions that make sense
+       for the pane you are on. Nothing permanent eats the screen, and both
+       controls sit where a thumb already is rather than at the top. */
+    @media (max-width: 720px){
+      .shell{ flex-direction: column; height: auto; padding-left: 0; }
+      body.portal{ overflow: auto; }
+      .side{ display: none; }                       /* replaced by the dock */
+      .content{ padding: 18px 16px 132px; }         /* room for the dock */
+      .stats{ grid-template-columns: repeat(2,1fr); }
+      .two{ grid-template-columns: 1fr; }
+      .cmp-listings{ grid-template-columns: 1fr; }
+
+      .agd-scrim{
+        display: block; position: fixed; inset: 0; z-index: 58;
+        background: rgba(15,15,15,0.34); backdrop-filter: blur(2px);
+        opacity: 0; pointer-events: none; transition: opacity .22s ease;
+      }
+      .agd-scrim.on{ opacity: 1; pointer-events: auto; }
+
+      /* the taskbar itself — one pill, both controls inside it */
+      .agd-bar{
+        display: flex; align-items: center; gap: 2px;
+        position: fixed; z-index: 60;
+        left: 16px; bottom: calc(18px + env(safe-area-inset-bottom));
+        padding: 6px; border-radius: 100px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border: 1px solid var(--border);
+        box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+      }
+      .agd{ display: block; position: relative; }
+      .agd-div{ width: 1px; height: 24px; background: var(--border); flex: none; }
+
+      .agd-btn{
+        width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        background: none; color: var(--ink); font-size: 21px;
+        transition: transform .2s cubic-bezier(.22,1,.36,1), background .15s ease;
+      }
+      .agd-btn:active{ transform: scale(0.9); }
+      .agd-btn .syn-i{ width: 21px; height: 21px; }
+      .agd-btn-primary{ background: #121212; color: #f5f5f5; }
+      .agd-add.open .agd-btn{ transform: rotate(45deg); }
+      .agd-nav.open .agd-btn{ background: rgba(0,0,0,0.07); }
+
+      /* ── the menu that files out ── */
+      .agd-sheet{
+        position: absolute; bottom: 58px; min-width: 232px;
+        background: rgba(255,255,255,0.97);
+        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+        border: 1px solid var(--border); border-radius: 18px;
+        box-shadow: 0 20px 52px rgba(15,15,15,0.26);
+        padding: 6px; overflow: hidden;
+        transform-origin: bottom left;
+        opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
+        transition: opacity .2s ease, transform .22s cubic-bezier(.22,1,.36,1);
+        max-height: 68dvh; overflow-y: auto;
+      }
+      .agd-add .agd-sheet{ left: -52px; transform-origin: bottom left; }
+      .agd-nav .agd-sheet{ left: 0; }
+      .agd.open .agd-sheet{ opacity: 1; transform: none; pointer-events: auto; }
+      @media (prefers-reduced-motion: reduce){
+        .agd-sheet{ transition: none; } .agd-fab{ transition: none; }
+      }
+
+      /* group header — tap to file its items out */
+      .agd-grp{
+        width: 100%; display: flex; align-items: center; justify-content: space-between;
+        background: none; border: none; cursor: pointer;
+        padding: 11px 12px; border-radius: 12px;
+        font: 700 10.5px var(--f-sans); letter-spacing: .12em; text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .agd-grp .chv{ font-size: 13px; transition: transform .2s ease; }
+      .agd-sec.open .agd-grp .chv{ transform: rotate(90deg); }
+      .agd-items{ display: none; padding-bottom: 4px; }
+      .agd-sec.open .agd-items{ display: block; }
+
+      .agd-item{
+        width: 100%; display: flex; align-items: center; gap: 11px;
+        background: none; border: none; cursor: pointer; text-align: left;
+        padding: 12px; min-height: 48px; border-radius: 12px;
+        font: 500 14px var(--f-sans); color: var(--ink);
+      }
+      .agd-item .syn-i{ width: 17px; height: 17px; opacity: .7; flex: none; }
+      .agd-item:active{ background: rgba(0,0,0,0.05); }
+      .agd-item.on{ background: rgba(54,54,54,0.10); font-weight: 700; }
+      .agd-item.on .syn-i{ opacity: 1; }
+      .agd-sep{ height: 1px; background: var(--border); margin: 4px 8px; }
+      .agd-me{
+        display: flex; align-items: center; gap: 10px; padding: 10px 12px 6px;
+        font-size: 12px; color: var(--ink-dim);
+      }
+      .agd-me b{ display: block; font-size: 13px; color: var(--ink); font-weight: 600; }
+
+      /* the create fan — labelled actions stacked above the + */
+      .agd-act{
+        width: 100%; display: flex; align-items: center; gap: 10px;
+        background: none; border: none; cursor: pointer; text-align: left;
+        padding: 12px; min-height: 48px; border-radius: 12px;
+        font: 600 13.5px var(--f-sans); color: var(--ink); white-space: nowrap;
+      }
+      .agd-act:active{ background: rgba(0,0,0,0.05); }
+      .agd-act .syn-i{ width: 16px; height: 16px; opacity: .7; flex: none; }
+      .agd-add-hint{
+        padding: 8px 12px 4px; font: 700 10px var(--f-sans);
+        letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim);
+      }
+    }
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
     /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
@@ -1433,6 +1548,31 @@
       </main>
     </div><!-- /content -->
   </div><!-- /shell -->
+
+  <!-- ══ FLOATING DOCK (≤720px) ═══════════════════════════════════════════
+       Two thumb-reachable controls replace the rail on a phone. The nav
+       menu is BUILT FROM the rail's own markup at runtime rather than being
+       a second hand-written copy, so panes can never exist in one and not
+       the other. The create fan is per-pane and delegates to the real
+       buttons already on each pane — it adds a route to them, not a second
+       implementation of them. -->
+  <div class="agd-scrim" id="agdScrim"></div>
+
+  <!-- one floating taskbar: navigation and create, side by side, where the
+       thumb already is. Sheets file out above whichever button was pressed. -->
+  <div class="agd-bar" id="agdBar">
+    <div class="agd agd-nav" id="agdNav">
+      <div class="agd-sheet" id="agdNavSheet" role="menu" aria-label="Portal navigation"></div>
+      <button class="agd-btn" id="agdNavFab" type="button" aria-expanded="false" aria-label="Open navigation">
+        <span data-icon="grid"></span>
+      </button>
+    </div>
+    <span class="agd-div" aria-hidden="true"></span>
+    <div class="agd agd-add" id="agdAdd">
+      <div class="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
+      <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">+</button>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -3619,6 +3759,136 @@
       const paneEl = document.getElementById('pane-' + pane);
       if (paneEl && paneEl.scrollIntoView) paneEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
+
+    /* ══ FLOATING DOCK (mobile) ═══════════════════════════════════════════
+       Navigation and creation as two thumb-reachable buttons, taskbar-style.
+
+       The nav menu is generated FROM the rail (#tabs) every time it opens,
+       so a pane added to the rail appears here automatically — a hand-copied
+       menu would be a second list to remember, and this file has already had
+       one bug of exactly that shape.
+
+       The create fan delegates to the button each pane already owns: it is a
+       shortcut to existing behaviour, never a parallel implementation that
+       could drift from it. */
+    (function () {
+      const nav = document.getElementById('agdNav');
+      const add = document.getElementById('agdAdd');
+      const scrim = document.getElementById('agdScrim');
+      if (!nav || !add || !scrim) return;
+
+      const navSheet = document.getElementById('agdNavSheet');
+      const addSheet = document.getElementById('agdAddSheet');
+      const navFab = document.getElementById('agdNavFab');
+      const addFab = document.getElementById('agdAddFab');
+
+      /* Per-pane create actions. `to` is the id of the real control on that
+         pane; label/icon are what the fan shows. A pane with nothing to
+         create simply offers the portal-wide ones. */
+      const CREATE = {
+        overview:     [['newListingBtn', 'New listing', 'home']],
+        listings:     [['newListingBtn', 'New listing', 'home']],
+        crm:          [['crmAdd', 'Add lead', 'user']],
+        social:       [['newPostBtn', 'New social post', 'share']],
+        marketing:    [['newCampBtn', 'New campaign', 'chart']],
+        agents:       [['inviteAgentBtn', 'Invite agent', 'user']],
+      };
+      /* Offered everywhere, because "add a property" is the job the portal
+         exists for and should never be more than two taps away. */
+      const ALWAYS = [
+        ['newListingBtn', 'New listing', 'home'],
+        ['newPostBtn', 'New social post', 'share'],
+        ['newCampBtn', 'New campaign', 'chart'],
+      ];
+
+      const isOpen = (el) => el.classList.contains('open');
+      function closeAll() {
+        nav.classList.remove('open'); add.classList.remove('open');
+        scrim.classList.remove('on');
+        navFab.setAttribute('aria-expanded', 'false');
+        addFab.setAttribute('aria-expanded', 'false');
+      }
+      function open(which) {
+        closeAll();
+        which.classList.add('open');
+        scrim.classList.add('on');
+        (which === nav ? navFab : addFab).setAttribute('aria-expanded', 'true');
+      }
+
+      // ── nav menu, mirrored from the rail ──
+      function buildNav() {
+        const current = (document.querySelector('#tabs a.on') || {}).dataset?.pane;
+        let html = '';
+        document.querySelectorAll('#tabs .grp-sec').forEach((sec, i) => {
+          const name = (sec.querySelector('.grp span') || {}).textContent || 'More';
+          const items = [...sec.querySelectorAll('a[data-pane]')].map((a) => {
+            const pane = a.dataset.pane;
+            const icon = (a.querySelector('[data-icon]') || {}).dataset?.icon || 'dot';
+            const label = (a.querySelector('.lbl-x') || {}).textContent || pane;
+            return '<button class="agd-item' + (pane === current ? ' on' : '') + '" role="menuitem"'
+              + ' data-goto="' + pane + '"><span data-icon="' + icon + '"></span>' + label + '</button>';
+          }).join('');
+          // the group holding the current pane starts filed out
+          const openSec = sec.querySelector('a[data-pane="' + current + '"]') ? ' open' : (i === 0 ? ' open' : '');
+          html += '<div class="agd-sec' + openSec + '">'
+            + '<button class="agd-grp" type="button"><span>' + name + '</span><span class="chv">›</span></button>'
+            + '<div class="agd-items">' + items + '</div></div>';
+        });
+        const nm = document.querySelector('#tabs .nm2');
+        const tier = document.querySelector('#tabs .sub2');
+        if (nm) {
+          html += '<div class="agd-sep"></div><div class="agd-me"><span class="av2" style="width:28px;height:28px;'
+            + 'border-radius:8px;background:#121212;color:#fff;display:flex;align-items:center;justify-content:center;'
+            + 'font-size:11px;font-weight:700">' + (document.querySelector('#tabs .av2') || {}).textContent + '</span>'
+            + '<span><b>' + nm.textContent + '</b>' + (tier ? tier.textContent : '') + '</span></div>';
+        }
+        navSheet.innerHTML = html;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
+      }
+
+      // ── create fan, per pane ──
+      function buildAdd() {
+        const pane = (document.querySelector('#tabs a.on') || {}).dataset?.pane || 'overview';
+        const wanted = CREATE[pane] || [];
+        const seen = new Set(wanted.map((a) => a[0]));
+        const rest = ALWAYS.filter((a) => !seen.has(a[0]));
+        const rows = [...wanted, ...rest]
+          .filter(([id]) => document.getElementById(id))   // never offer a dead action
+          .map(([id, label, icon], i) =>
+            (i === wanted.length && wanted.length ? '<div class="agd-sep"></div>' : '')
+            + '<button class="agd-act" role="menuitem" data-act="' + id + '">'
+            + '<span data-icon="' + icon + '"></span>' + label + '</button>')
+          .join('');
+        addSheet.innerHTML = '<div class="agd-add-hint">Create</div>' + rows;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(addSheet);
+      }
+
+      navFab.addEventListener('click', () => {
+        if (isOpen(nav)) return closeAll();
+        buildNav(); open(nav);
+      });
+      addFab.addEventListener('click', () => {
+        if (isOpen(add)) return closeAll();
+        buildAdd(); open(add);
+      });
+      scrim.addEventListener('click', closeAll);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+
+      navSheet.addEventListener('click', (e) => {
+        const grp = e.target.closest('.agd-grp');
+        if (grp) { grp.parentElement.classList.toggle('open'); return; }
+        const item = e.target.closest('[data-goto]');
+        if (item) { closeAll(); goToPane(item.dataset.goto); }
+      });
+
+      addSheet.addEventListener('click', (e) => {
+        const act = e.target.closest('[data-act]');
+        if (!act) return;
+        closeAll();
+        const real = document.getElementById(act.dataset.act);
+        if (real) real.click();   // the pane's own control does the work
+      });
+    })();
 
     // sidebar tab switching
     document.getElementById('tabs').addEventListener('click', (e) => {
