@@ -550,11 +550,40 @@
 
     /* ── swipe deck: cards move left/right, image stays put ── */
     const deck = document.getElementById('deck');
-    const deckCards = [...deck.children];
     const deckLabel = document.getElementById('deckLabel');
     const deckDots = document.getElementById('deckDots');
     const deckPrev = document.getElementById('deckPrev');
     const deckNext = document.getElementById('deckNext');
+
+    /* The deck list has to be recomputed, not captured once.
+       "Toju's take" ships hidden and is revealed only when the listing has
+       real enrichment behind it. A hidden card takes no space in the scroll
+       flow but was still counted here, so every heading after it named the
+       wrong card and the counter read one too many — the offset between the
+       heading and the card underneath it.
+
+       The map view each card drives is stamped onto the element up front,
+       while the DOM order still matches CARD_VIEWS. After that nothing is
+       index-coupled, so hiding or revealing a card cannot desynchronise it. */
+    const CARD_VIEW_ORDER = ['poi', 'poi', 'agency', 'cost', 'poi', 'commute', 'poi', 'legal', 'agency', 'poi'];
+    [...deck.children].forEach((c, i) => { c.dataset.view = CARD_VIEW_ORDER[i] || 'poi'; });
+
+    const visibleCards = () => [...deck.children].filter((c) => !c.hidden && c.offsetParent !== null);
+    let deckCards = visibleCards();
+
+    function rebuildDeck() {
+      const current = deckCards[deckIdx];
+      deckCards = visibleCards();
+      deckDots.innerHTML = deckCards.map((_, i) => `<i data-i="${i}"></i>`).join('');
+      const keep = current ? deckCards.indexOf(current) : -1;
+      deckIdx = keep > -1 ? keep : Math.min(deckIdx, deckCards.length - 1);
+      if (deckIdx < 0) deckIdx = 0;
+      syncDeck();
+    }
+    /* Revealing a card mid-session (hydrate un-hides Toju's take) must rebuild
+       the dots and the count, or they describe the deck as it was on load. */
+    window.__pvDeckChanged = rebuildDeck;
+
     deckDots.innerHTML = deckCards.map((_, i) => `<i data-i="${i}"></i>`).join('');
     let deckIdx = 0;
     function cardTitle(c) {
@@ -584,7 +613,7 @@
       // fill any neighbourhood bars on the active card
       deckCards[deckIdx].querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; });
       // sync the right-hand map canvas to whatever this card is about
-      if (window.__pvView) window.__pvView(deckIdx);
+      if (window.__pvView) window.__pvView(deckCards[deckIdx]);
     }
     let deckRaf;
     deck.addEventListener('scroll', () => { cancelAnimationFrame(deckRaf); deckRaf = requestAnimationFrame(syncDeck); });
@@ -752,7 +781,7 @@
       if (p.description) { set('pvGlance', p.description); show('pvGlance', true); }
 
       const e = p.property_enrichment && (Array.isArray(p.property_enrichment) ? p.property_enrichment[0] : p.property_enrichment);
-      if (e && e.toju_summary) { set('pvTake', e.toju_summary); show('pvTakeCard', true); }
+      if (e && e.toju_summary) { set('pvTake', e.toju_summary); show('pvTakeCard', true); if (window.__pvDeckChanged) window.__pvDeckChanged(); }
 
       PHOTOS = (p.property_media || [])
         .slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
@@ -1057,7 +1086,8 @@
     var DEST = [];                   // no invented commutes
     var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: [] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: [] }, evening: { lbl: 'Evening', color: '#d9534f', etas: [] } };
     var AGENCY = null;               // filled from the listing's agency
-    var CARD_VIEWS = ['poi', 'poi', 'agency', 'cost', 'poi', 'commute', 'poi', 'legal', 'agency', 'poi'];
+    /* CARD_VIEWS moved next to the deck as CARD_VIEW_ORDER and is stamped
+       onto each card as data-view — see the deck setup. */
 
     var NO_DATA = '<div class="pvo-k">Neighbourhood detail</div>'
       + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
@@ -1194,7 +1224,11 @@
       if (v === 'commute') renderCommute(); else if (v === 'agency') renderAgency(); else if (v === 'cost') renderCost(); else if (v === 'legal') renderLegal(); else renderPOI();
     }
     document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
-    window.__pvView = function (i) { setView(CARD_VIEWS[i] || 'poi'); };
+    /* Takes the card element, not an index: the deck can hide or reveal cards,
+       and an index into a fixed array cannot survive that. */
+    window.__pvView = function (card) {
+      setView((card && card.dataset && card.dataset.view) || 'poi');
+    };
 
     /* The map waits for the listing. Without coordinates it stays on a national
        view with an honest panel rather than pinning a home somewhere it isn't. */
