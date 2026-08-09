@@ -1112,6 +1112,61 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ CRM ═══════════════════════════════════════════════════════════
+         A 629px table inside a 343px card technically scrolled, but you
+         could never see a lead's name and its stage at the same time, which
+         is the one comparison this screen exists for. Each row becomes a
+         card instead. The cells already carry semantic classes, so this is
+         pure layout — the renderer is untouched and desktop keeps its
+         table. */
+      .crm-tools { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
+        scrollbar-width: none; -ms-overflow-style: none; margin: 0 0 12px; }
+      .crm-tools::-webkit-scrollbar { display: none; }
+      .crm-tools-l, .crm-tools-r { flex-wrap: nowrap; flex: none; margin-left: 0; }
+      .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: none; }
+      .crm-tools .tbtn { min-height: 40px; }
+
+      /* the funnel reads as a strip you swipe, not a 233px block of squares */
+      .crm-funnel { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .crm-funnel::-webkit-scrollbar { display: none; }
+      .crm-funnel > * { flex: 0 0 auto; min-width: 124px; }
+
+      .crm-tablecard { overflow-x: visible; padding: 0; }
+      .crm-table thead { display: none; }        /* headers make no sense per card */
+      /* `tr` is deliberately NOT in this list: ".crm-table tr" (0,1,1) would
+         outrank ".crm-row" (0,1,0) and force the row back to display:block,
+         stacking every cell full-width. The row rule below is scoped to match. */
+      .crm-table, .crm-table tbody, .crm-table td { display: block; width: auto; }
+      .crm-table td { padding: 0; border: none; }
+
+      .crm-table tr.crm-row {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px;
+        padding: 13px 14px; border-bottom: 1px solid var(--border);
+      }
+      .crm-row > .c-chk   { order: 1; flex: none; }
+      .crm-row > .c-lead  { order: 2; flex: 1 1 auto; min-width: 0; }
+      .crm-row > .c-act   { order: 3; flex: none; display: flex; gap: 6px; }
+      .crm-row > td:not([class]) { order: 4; }   /* the Source cell */
+      .crm-row > .c-budget{ order: 5; font-weight: 700; }
+      .crm-row > .c-score { order: 6; }
+      .crm-row > .c-status{ order: 7; margin-left: auto; }
+      .crm-row > .c-stage { order: 8; flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }
+      .crm-row > .c-time  { order: 9; flex: 1 1 100%; font-size: 11.5px; color: var(--ink-dim); }
+      .crm-row .nbax { font-size: 11.5px; color: var(--ink-muted); }
+      .crm-row .crm-wa, .crm-row .crm-more { min-width: 38px; min-height: 38px;
+        display: inline-flex; align-items: center; justify-content: center; }
+
+      /* pager: three rows, not three columns squeezed onto one */
+      #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .pg-nav { flex-wrap: wrap; }
+      .pg-n { min-width: 38px; min-height: 38px; }
+
+      /* the bulk bar clears the taskbar instead of sitting on top of it */
+      .crm-bulk { left: 12px; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom));
+        transform: translateY(14px); border-radius: 16px; justify-content: space-between; }
+      .crm-bulk.on { transform: none; }
+
       /* the list/detail split becomes one column, and the list stops being an
          inner scroller — a scroll region inside a scrolling page is a trap on
          a phone, and the page itself is the natural scroller here */
