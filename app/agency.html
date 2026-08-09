@@ -1112,6 +1112,15 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ Marketing ═════════════════════════════════════════════════════
+         Same treatment as Social: the section ledes go (the .sub rule there
+         was scoped to that pane, so these were still showing), the filter
+         rail already scrolls via .crm-tools, and the creative board drops to
+         one column. */
+      #pane-marketing .sub { display: none; }
+      #pane-marketing .h2 { font-size: 18px; }
+      #mkBoard, #campaigns { grid-template-columns: 1fr; gap: 12px; }
+
       /* ══ Social studio ═════════════════════════════════════════════════
          The section lede goes, same as the page ledes — "Content pipeline"
          with the Pipeline/Calendar switch beside it already says what this
@@ -1120,6 +1129,12 @@
       #pane-social .sub { display: none; }   /* section AND card ledes both go */
       #pane-social .h2 { font-size: 18px; }
       .cmp-head { margin-bottom: 10px; }
+
+      /* The "Generate a campaign" card comes off mobile entirely: the + in the
+         taskbar opens openComposer(), which picks a listing, chooses channels
+         and calls social-generate — everything this card does and more. Two
+         routes to one job is a phone screen wasted. Desktop keeps both. */
+      #pane-social #cmpGen { display: none; }
 
       /* the listing picker was 495px of option text in a 297px control */
       .cmp-gen select, #pane-social select, #pane-marketing select {
@@ -2715,6 +2730,22 @@
     function renderBoard(){
       const el = document.getElementById('mkBoard'); if (!el) return;
       const ads = allAds().sort((x, y) => MK.sort === 'leads' ? y.leads - x.leads : y.ctr - x.ctr);
+      /* With no campaigns the leaderboard rendered nothing at all — a toolbar
+         above blank space, which reads as broken rather than as "no data
+         yet". Same fix as the negotiator handoffs. */
+      if (!ads.length) {
+        el.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="chart"></span>'
+          + '<b>No creatives to rank yet</b>'
+          + '<p>Launch a campaign from one of your listings and every creative it '
+          + 'generates appears here, ranked by click-through and leads. Synapse '
+          + 'scales the winners and pauses the rest.</p>'
+          + '<button class="btn btn-primary" type="button" data-mk-new>+ New campaign</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
+        return;
+      }
       el.innerHTML = ads.map((a, i) => {
         const win = i === 0 && a.ctr > 0 && a.clive && a.st !== 'pausedai';
         return `<div class="lbrow ${a.st === 'pausedai' ? 'dim' : ''} ${win ? 'win' : ''}">
@@ -2747,6 +2778,11 @@
       renderBoard();
     });
     document.getElementById('mkBoard').addEventListener('click', (e) => {
+      if (e.target.closest('[data-mk-new]')) {
+        const real = document.getElementById('newCampBtn');
+        if (real) real.click();      // the pane's own campaign builder
+        return;
+      }
       const s = e.target.closest('[data-scale]'); if (!s) return;
       const [ci, ai] = s.dataset.scale.split('-').map(Number);
       const a = CAMPAIGNS[ci] && CAMPAIGNS[ci].ads[ai]; if (!a) return;
