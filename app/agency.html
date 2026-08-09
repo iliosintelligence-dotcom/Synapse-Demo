@@ -1112,6 +1112,24 @@
       .ov-tabs::-webkit-scrollbar { display: none; }
       .ov-tabs > * { flex: none; white-space: nowrap; }
 
+      /* ══ Subscription ══════════════════════════════════════════════════
+         The comparison grid stays a horizontal scroll — the sticky row-label
+         column means you keep the benefit name in view while swiping across
+         tiers, which is the right pattern here and already works. Only the
+         add-ons lede goes, consistent with the other panes. */
+      #pane-subscription .sub { display: none; }
+      #pane-subscription .h2 { font-size: 18px; margin-top: 18px; }
+
+      /* ══ Brand ══════════════════════════════════════════════════════════
+         The .sub items on this pane are field help ("Toju writes captions in
+         this tone — be specific"), not page chrome, so they stay: hiding them
+         would remove the guidance that makes the field answerable. */
+      #pane-brand .field { margin-bottom: 14px; }
+      #pane-brand input, #pane-brand textarea, #pane-brand select { font-size: 16px; }
+
+      /* ══ Agents ════════════════════════════════════════════════════════ */
+      .agrid { grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+
       /* ══ Marketing ═════════════════════════════════════════════════════
          Same treatment as Social: the section ledes go (the .sub rule there
          was scoped to that pane, so these were still showing), the filter
@@ -2906,6 +2924,22 @@
       const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
       const topIdx = top ? AGENTS.indexOf(top) : -1;
       renderAgentSummary();
+      /* An agency with no teammates yet rendered an empty grid under the
+         invite button. Say what this becomes instead. */
+      if (!AGENTS.length) {
+        const g = document.getElementById('agrid');
+        g.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="user"></span>'
+          + '<b>Just you so far</b>'
+          + '<p>Invite your agents and Synapse routes leads to them, tracks who '
+          + 'closes what, and builds the performance read on this page from their '
+          + 'real numbers.</p>'
+          + '<button class="btn btn-primary" type="button" data-ag-invite>+ Invite an agent</button>'
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(g);
+        return;
+      }
       document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
         if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
           <div class="ac-top"><span class="av">${initials(a.nm)}</span><div class="ac-id"><div class="ac-nm">${a.nm}</div><div class="ac-rl">${a.rl}</div></div></div>
@@ -2994,6 +3028,9 @@
       });
     }
     document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
+    document.getElementById('agrid').addEventListener('click', (e) => {
+      if (e.target.closest('[data-ag-invite]')) openInvite();
+    });
 
     // ── verification queue (7-node progress) ──
     // Verification lives on the listing cards (verified/pending badge + freshness),
