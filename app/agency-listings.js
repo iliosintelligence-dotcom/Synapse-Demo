@@ -284,12 +284,73 @@
     });
   }
 
+  /* ── Brand assets ────────────────────────────────────────────────────
+     Logo files live in the public `brand` bucket at
+       brand/<agency_id>/<slot>-<timestamp>.<ext>
+     The agency-id folder is what the storage policies check, so a member can
+     only ever write inside their own agency's folder.
+
+     The timestamp matters: object storage is cached hard at the CDN, and
+     re-uploading to a fixed path (logo-light.png) would keep serving the old
+     image after a change. A fresh filename each time sidesteps that
+     entirely, and the previous file is deleted so the folder cannot grow
+     without bound. */
+  var BRAND_BUCKET = 'brand';
+  var LOGO_MAX_BYTES = 2 * 1024 * 1024;
+  var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+
+  function extFor(file) {
+    var m = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg' };
+    return m[file.type] || 'png';
+  }
+
+  /* Upload one logo. `slot` is 'light' or 'dark'. Resolves to the public URL,
+     which the caller writes into logo_url / logo_dark_url via saveBrand. */
+  function uploadBrandAsset(file, slot) {
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (LOGO_TYPES.indexOf(file.type) === -1) {
+      return Promise.reject(new Error('Use a PNG, JPG, WEBP or SVG'));
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      return Promise.reject(new Error('That file is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep a logo under 2MB'));
+    }
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('no-agency: this account is not a member of any agency');
+      aid = a;
+      var path = aid + '/logo-' + (slot === 'dark' ? 'dark' : 'light') + '-' + Date.now() + '.' + extFor(file);
+      return c1.storage.from(BRAND_BUCKET).upload(path, file, {
+        cacheControl: '31536000', upsert: false, contentType: file.type,
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return c1.storage.from(BRAND_BUCKET).getPublicUrl(path).data.publicUrl;
+      });
+    });
+  }
+
+  /* Remove a previously uploaded file. Best-effort: a logo the agency has
+     already replaced must never block saving the new one, so a failure here
+     is swallowed rather than surfaced. */
+  function removeBrandAsset(url) {
+    if (!url) return Promise.resolve(false);
+    var marker = '/' + BRAND_BUCKET + '/';
+    var i = String(url).indexOf(marker);
+    if (i === -1) return Promise.resolve(false);        // not ours (a pasted URL)
+    var path = decodeURIComponent(String(url).slice(i + marker.length).split('?')[0]);
+    return client()
+      .then(function (c) { return c.storage.from(BRAND_BUCKET).remove([path]); })
+      .then(function () { return true; })
+      .catch(function () { return false; });
+  }
+
   window.SynListings = {
     agencyId: agencyId,
     agency: agency,
     paintAgency: paintAgency,
     loadBrand: loadBrand,
     saveBrand: saveBrand,
+    uploadBrandAsset: uploadBrandAsset,
+    removeBrandAsset: removeBrandAsset,
     list: list,
     create: create,
     update: update,
