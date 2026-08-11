@@ -131,21 +131,32 @@
     });
   }
 
+  /* Both of these used to POST straight to /rest/v1. Neither table allows an
+     anonymous write — the policy is `authenticated` AND user_id = auth.uid() —
+     so proximity could never be switched on without an account, which is the
+     opposite of the intent. push-subscribe now owns both writes with the
+     service role and binds each row to the caller's own identity. */
   function saveSubscription(sub, side) {
     var j = sub.toJSON();
+    return callFn('subscribe', {
+      side: side,
+      subscription: {
+        endpoint: j.endpoint,
+        p256dh: j.keys && j.keys.p256dh,
+        auth: j.keys && j.keys.auth,
+      },
+    }).then(function () { return sub; });
+  }
+
+  function callFn(action, extra) {
     return authHeaders().then(function (h) {
-      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+      var payload = { action: action, visitorId: visitorId() };
+      for (var k in extra) payload[k] = extra[k];
+      return fetch(SUPABASE_URL + '/functions/v1/push-subscribe', {
         method: 'POST',
-        headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' }, h),
-        body: JSON.stringify({
-          endpoint: j.endpoint,
-          p256dh: j.keys && j.keys.p256dh,
-          auth_key: j.keys && j.keys.auth,
-          platform: 'web', side: side,
-          user_id: currentUserId(),
-          visitor_id: visitorId(),
-        }),
-      }).then(function () { return sub; });
+        headers: Object.assign({ 'Content-Type': 'application/json' }, h),
+        body: JSON.stringify(payload),
+      });
     });
   }
 
@@ -170,7 +181,12 @@
       s.on = !!on;
       localStorage.setItem(WATCH_KEY, JSON.stringify(s));
     } catch (e) {}
-    if (on) startWatching(); else stopWatching();
+    if (on) { startWatching(); } else {
+      stopWatching();
+      // The row stays behind otherwise, still enabled, and would resume the
+      // moment any page reported a position again.
+      callFn('disable', {}).catch(function () {});
+    }
     document.dispatchEvent(new CustomEvent('syn:proximity', { detail: { on: !!on } }));
   }
 
@@ -189,18 +205,7 @@
   }
 
   function upsertWatch(c) {
-    return authHeaders().then(function (h) {
-      return fetch(SUPABASE_URL + '/rest/v1/geofence_watches', {
-        method: 'POST',
-        headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' }, h),
-        body: JSON.stringify({
-          user_id: currentUserId(), visitor_id: visitorId(),
-          city: c.city || null, deal_type: c.dealType || null,
-          max_price: c.maxPrice || null, min_bedrooms: c.minBedrooms || null,
-          radius_m: c.radiusM || 1200,
-        }),
-      });
-    }).catch(function () {});
+    return callFn('watch', { criteria: c || {} }).catch(function () {});
   }
 
   // While a page is open we report position; the SERVER decides everything
