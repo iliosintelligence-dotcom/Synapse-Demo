@@ -1940,7 +1940,9 @@
         const sel = CRM.sel.has(oi);
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
           <td class="c-chk"><input type="checkbox" class="crm-chk" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
-          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph || 'No phone yet'}</span></span></span></td>
+          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
+      l.agentId ? (ROSTER_BY_ID[l.agentId] || 'Assigned') : (l.ph || 'No phone yet')
+    }</span></span></span></td>
           <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
           <td class="c-budget">${l.price}</td>
           <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}</button><span class="nbax">→ ${l.nba.do}</span></td>
@@ -2024,10 +2026,26 @@
         score: r.lead_score == null ? null : Math.round(Number(r.lead_score)),
         temp,
         failed: r.delivery_status === 'delivery_failed',
+        agentId: r.assigned_agent_id || null,
         nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
         attr: { channel: DB_CHANNEL[r.source] || 'direct' },
       };
     }
+    /* The agency's own people, fetched once. Both the Assign menu and the lead
+       drawer need them: without a name to show, assigning a lead would look
+       like it did nothing at all. */
+    let ROSTER = null;
+    const ROSTER_BY_ID = {};
+    function loadRoster(){
+      if (ROSTER) return Promise.resolve(ROSTER);
+      if (!window.SynListings || !SynListings.roster) return Promise.resolve([]);
+      return SynListings.roster().then((people) => {
+        ROSTER = people;
+        people.forEach((m) => { ROSTER_BY_ID[m.id] = m.name; });
+        return people;
+      }).catch((err) => { console.error('roster failed', err); return []; });
+    }
+
     function loadLeads(){
       if (!window.SynListings || !SynListings.leads) {
         CRM.loaded = true; CRM.error = 'the data layer did not load'; renderCrm(); return;
@@ -2045,6 +2063,7 @@
       });
     }
     loadLeads();
+    loadRoster().then(() => { if (leads.length) renderCrmTable(); });
 
     // ── CRM interactions ──
     (function(){
@@ -2110,13 +2129,99 @@
         if(e.target.id==='crmGoBtn'){ const v = +document.getElementById('crmGo').value; if(v){ CRM.page=v; renderCrmTable(); } }
       });
       pager.addEventListener('change', e => { if(e.target.id==='crmPer'){ CRM.per = +e.target.value; CRM.page=1; renderCrmTable(); } });
+      /* Bulk actions. These used to print a toast and change nothing at all.
+
+         CRM.sel holds positions in `leads`, so ids are resolved at click time
+         rather than stored -- the array is replaced wholesale on every reload
+         and a stored position would drift onto a different lead. */
+      const selectedLeads = () =>
+        [...CRM.sel].map(i => leads[i]).filter(Boolean);
+
+      function bulkAssign(anchor) {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const show = (people) => {
+          const opts = [{ k: '', label: 'Unassigned' }].concat(
+            people.map(m => ({ k: m.id, label: m.name + (m.role === 'agent' ? '' : ' · ' + m.role.replace('agency_', '')) }))
+          );
+          crmMenu(anchor, opts, (id) => {
+            SynListings.assignLeads(picked.map(l => l.id), id || null)
+              .then(({ updated, requested }) => {
+                const who = id ? (people.find(m => m.id === id) || {}).name : 'nobody';
+                toast(updated === requested
+                  ? updated + ' lead' + (updated !== 1 ? 's' : '') + ' assigned to ' + who
+                  : updated + ' of ' + requested + ' assigned to ' + who + ' — the rest could not be changed');
+                CRM.sel.clear();
+                return loadLeads();
+              })
+              .catch(err => {
+                toast((err && err.message) || 'Could not assign those leads');
+                console.error('assignLeads failed', err);
+              });
+          });
+        };
+        loadRoster().then(people => {
+          if (!people.length) { toast('Could not load your team — try again in a moment'); return; }
+          show(people);
+        });
+      }
+
+      /* WhatsApp has no multi-recipient deep link, and there is no outbox on
+         the platform yet -- Twilio is not configured, so nothing here could
+         actually send. Rather than pretend, one lead opens WhatsApp exactly as
+         the row's own button does, and several copy the numbers out so they
+         can be pasted into a broadcast. Leads with no phone are named, not
+         silently dropped. */
+      function bulkMessage() {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const withPhone = picked.filter(l => l.ph);
+        const without = picked.length - withPhone.length;
+        if (!withPhone.length) { toast('None of those leads has a phone number yet'); return; }
+        if (withPhone.length === 1) {
+          window.open(wa(withPhone[0].ph, withPhone[0].pr), '_blank', 'noreferrer');
+          if (without) toast('Opened WhatsApp — ' + without + ' selected lead' + (without !== 1 ? 's have' : ' has') + ' no number');
+          return;
+        }
+        const numbers = withPhone.map(l => l.ph).join(', ');
+        const done = () => toast(withPhone.length + ' number' + (withPhone.length !== 1 ? 's' : '') + ' copied' +
+          (without ? ' · ' + without + ' had no number' : '') + ' — paste into a WhatsApp broadcast');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(numbers).then(done).catch(() => toast('Could not copy: ' + numbers));
+        } else {
+          toast('Copy these numbers: ' + numbers);
+        }
+      }
+
+      function bulkDelete() {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const n = picked.length;
+        // Destructive and shared, so it asks first. Only admins and owners are
+        // permitted; anyone else gets told plainly rather than silently ignored.
+        if (!window.confirm('Delete ' + n + ' lead' + (n !== 1 ? 's' : '') + '? They will be removed from your CRM.')) return;
+        SynListings.deleteLeads(picked.map(l => l.id))
+          .then(({ deleted, requested, error }) => {
+            toast(deleted === requested
+              ? deleted + ' lead' + (deleted !== 1 ? 's' : '') + ' deleted'
+              : deleted + ' of ' + requested + ' deleted — ' + (error || 'the rest could not be removed'));
+            CRM.sel.clear();
+            return loadLeads();
+          })
+          .catch(err => {
+            toast((err && err.message) || 'Could not delete those leads');
+            console.error('deleteLeads failed', err);
+          });
+      }
+
       document.getElementById('crmBulk').addEventListener('click', e => {
         const b = e.target.closest('[data-bulk]'); if(!b) return;
         const act = b.dataset.bulk;
-        if(act==='clear'){ CRM.sel.clear(); renderCrmTable(); return; }
-        const n = CRM.sel.size;
-        toast(act.charAt(0).toUpperCase()+act.slice(1)+' · '+n+' lead'+(n!==1?'s':'')+' — Toju queued it');
-        if(act==='delete'){ CRM.sel.clear(); renderCrmTable(); }
+        if (act === 'clear') { CRM.sel.clear(); renderCrmTable(); return; }
+        if (!window.SynListings) { toast('Cannot do that right now — the data layer did not load'); return; }
+        if (act === 'assign') return bulkAssign(b);
+        if (act === 'message') return bulkMessage();
+        if (act === 'delete') return bulkDelete();
       });
       document.getElementById('crmExport').addEventListener('click', () => toast('Exporting your pipeline to CSV…'));
       document.getElementById('crmAdd').addEventListener('click', () => { toast('Refreshing leads...'); CRM.loaded = false; CRM.error = null; renderCrmTable(); loadLeads(); });
@@ -2186,6 +2291,9 @@
         </div>
         ${l.failed ? `<div class="sec" style="border-color:var(--danger,#c0392b)"><div class="k">\u26a0 Not delivered</div><p style="margin-top:6px;font-size:13px;line-height:1.5">This lead reached you here, but the WhatsApp alert did not go out. Reach out from this screen.</p></div>` : ''}
         <div class="sec nba"><div class="k">\u2726 Next best action</div>${l.nba.text ? `<p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>` : ''}${doBtn(l)}</div>
+        <div class="sec"><div class="k">Assigned to</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${
+          l.agentId ? (ROSTER_BY_ID[l.agentId] || 'A teammate') : 'Nobody yet'
+        }</p></div>
         ${sec('AI summary', l.summary ? `<p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p>` : '')}
         <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' \u00b7 ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' \u00b7 ').slice(1).join(' \u00b7 ')}</p></div>
         <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' \u00b7 campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">\u26a1 Auto-captured \u2014 no manual entry</div></div>

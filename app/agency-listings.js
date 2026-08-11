@@ -164,7 +164,7 @@
         .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
                 'risk_level, next_action_recommendation, budget_min, budget_max, ' +
                 'delivery_status, delivery_error, last_activity_at, created_at, ' +
-                'properties(title, price, city)')
+                'assigned_agent_id, properties(title, price, city)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .neq('current_stage', 'lost')
@@ -338,6 +338,77 @@
       if (r.error) throw r.error;
       if (!r.data) throw new Error('You do not have permission to change this creative');
       return r.data;
+    });
+  }
+
+  /* ── the agency's own people ─────────────────────────────────────────────
+     Needed by the CRM's Assign action. profiles used to be readable only by
+     their owner, so this returned a list of blank names; migration 0045 lets
+     members of the same agency see each other. Consumers are not agency
+     members and stay invisible. */
+  function roster() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('agency_members')
+        .select('profile_id, role, profiles(full_name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (m) {
+        return {
+          id: m.profile_id,
+          name: (m.profiles && m.profiles.full_name) || 'Unnamed teammate',
+          role: m.role,
+        };
+      }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    });
+  }
+
+  /* Assign several leads at once. agentId may be null to unassign. */
+  function assignLeads(ids, agentId) {
+    if (!ids || !ids.length) return Promise.resolve([]);
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ assigned_agent_id: agentId || null, last_activity_at: new Date().toISOString() })
+        .in('id', ids)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var done = (r.data || []).length;
+      if (!done) throw new Error('Those leads could not be assigned');
+      // A partial result is reported rather than smoothed over: the caller
+      // tells the user how many actually moved.
+      return { updated: done, requested: ids.length };
+    });
+  }
+
+  /* Soft-delete. This goes through the delete_lead function rather than an
+     UPDATE, because Postgres applies the table's SELECT policy to the row a
+     statement produces -- and leads_select requires deleted_at to be null, so
+     a client-side soft delete can never satisfy it. delete_lead checks that
+     the caller is an agency admin or owner, then bypasses RLS.
+
+     Each id is a separate call, so one failure does not silently take the rest
+     with it; the caller is told exactly how many were removed. */
+  function deleteLeads(ids) {
+    if (!ids || !ids.length) return Promise.resolve({ deleted: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(ids.map(function (id) {
+        return c.rpc('delete_lead', { p_lead_id: id }).then(function (r) {
+          return { ok: !r.error, error: r.error };
+        });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those leads could not be deleted');
+      return { deleted: ok, requested: ids.length, error: firstErr ? firstErr.message : null };
     });
   }
 
@@ -548,6 +619,9 @@
     list: list,
     leads: leads,
     setLeadStage: setLeadStage,
+    roster: roster,
+    assignLeads: assignLeads,
+    deleteLeads: deleteLeads,
     listCampaigns: listCampaigns,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,
