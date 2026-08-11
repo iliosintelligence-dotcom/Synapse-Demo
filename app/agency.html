@@ -1011,6 +1011,9 @@
     .fn-sep { align-self: center; color: var(--ink-dim); font-size: 15px; }
     /* Empty / loading / error row. Shares the table so the pane never
        collapses to a bare header when an agency has no leads yet. */
+    .stpill-btn { cursor: pointer; font-family: inherit; }
+    .stpill-btn:hover { filter: brightness(0.96); }
+    .stpill-btn[disabled] { opacity: .5; cursor: progress; }
     .crm-wa.off { opacity: .28; cursor: default; }
     .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
     @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
@@ -1940,7 +1943,7 @@
           <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph || 'No phone yet'}</span></span></span></td>
           <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
           <td class="c-budget">${l.price}</td>
-          <td class="c-stage"><span class="stpill ${STAGE_CLS[l.stage]}">${l.stage}</span><span class="nbax">→ ${l.nba.do}</span></td>
+          <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}</button><span class="nbax">→ ${l.nba.do}</span></td>
           <td class="c-time">${l.t}</td>
           <td class="c-score">${crmStars(l.score)}</td>
           <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
@@ -2016,6 +2019,7 @@
              : prop.price != null ? nairaShort(prop.price) : '-',
         pr: [prop.title, prop.city].filter(Boolean).join(' \u00b7 ') || 'Listing unavailable',
         stage,
+        dbStage: r.current_stage,   // the real value; `stage` is the folded label
         t: agoLabel(stamp),
         score: r.lead_score == null ? null : Math.round(Number(r.lead_score)),
         temp,
@@ -2056,9 +2060,45 @@
       });
       const body = document.getElementById('leads');
       body.addEventListener('click', e => {
+        const st = e.target.closest('[data-stage-i]');
+        if (st) { openStageMenu(st, +st.dataset.stageI); return; }
         if(e.target.closest('.crm-chk') || e.target.closest('[data-stop]')) return;
         const row = e.target.closest('[data-i]'); if(row) openLead(+row.dataset.i);
       });
+
+      /* Moving a lead through the pipeline.
+
+         The table folds nine database stages into the five the funnel shows,
+         so writing a stage back has to pick one canonical database value per
+         label. That is lossy in one direction only: a lead sitting at
+         `qualified` still reads as "Contacted", and stays `qualified` until
+         someone deliberately changes it. */
+      const UI_TO_DB = {
+        New: 'new', Contacted: 'contacted', Viewing: 'viewing_scheduled',
+        Negotiation: 'negotiating', Won: 'closed',
+      };
+      function openStageMenu(anchor, i){
+        const l = leads[i]; if (!l) return;
+        const opts = STAGE_ORDER.map(st => ({ k: st, label: st, on: l.stage === st }));
+        crmMenu(anchor, opts, st => {
+          if (st === l.stage) return;
+          if (!window.SynListings || !SynListings.setLeadStage) { toast('Cannot save that right now.'); return; }
+          const prevUi = l.stage, prevDb = l.dbStage;
+          // Optimistic, but reverted on failure -- the table must never show a
+          // stage the database did not accept.
+          l.stage = st; l.dbStage = UI_TO_DB[st];
+          anchor.disabled = true;
+          renderCrmFunnel(); renderCrmTable();
+          SynListings.setLeadStage(l.id, UI_TO_DB[st])
+            .then(() => { toast(l.nm + ' moved to ' + st); })
+            .catch(err => {
+              l.stage = prevUi; l.dbStage = prevDb;
+              renderCrmFunnel(); renderCrmTable();
+              toast('Could not move that lead - ' + ((err && err.message) || 'please try again'));
+              console.error('stage update failed', err);
+            });
+        });
+      }
       body.addEventListener('change', e => {
         const c = e.target.closest('.crm-chk'); if(!c) return;
         const oi = +c.dataset.sel; c.checked ? CRM.sel.add(oi) : CRM.sel.delete(oi);

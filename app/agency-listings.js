@@ -176,6 +176,40 @@
     });
   }
 
+  /* Move a lead through the pipeline.
+
+     Scoped by agency_id as well as id: RLS already restricts the row set, but
+     an explicit filter means a mistyped id fails as "no rows" rather than
+     quietly relying on the policy to be the only thing standing between this
+     agency and another one's lead.
+
+     Only pipeline columns are grantable to `authenticated` -- delivery_status,
+     source and consumer_phone are deliberately not updatable from the client,
+     so the attribution record cannot be rewritten after the fact. */
+  var LEAD_STAGES = ['new', 'contacted', 'qualified', 'viewing_scheduled',
+                     'viewing_completed', 'negotiating', 'commitment', 'closed', 'lost'];
+  function setLeadStage(id, stage) {
+    if (LEAD_STAGES.indexOf(stage) < 0) return Promise.reject(new Error('Unknown stage: ' + stage));
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ current_stage: stage, last_activity_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id, current_stage')
+        .maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      // RLS returning nothing is indistinguishable from a bad id at the wire;
+      // either way the write did not happen, so say so rather than reporting
+      // success and letting the UI drift from the database.
+      if (!r.data) throw new Error('That lead could not be updated');
+      return r.data;
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -382,6 +416,8 @@
     removeBrandAsset: removeBrandAsset,
     list: list,
     leads: leads,
+    setLeadStage: setLeadStage,
+    LEAD_STAGES: LEAD_STAGES,
     create: create,
     update: update,
     remove: remove,
