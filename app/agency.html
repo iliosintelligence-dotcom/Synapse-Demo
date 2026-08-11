@@ -2801,11 +2801,34 @@
       diaspora: ['Buy from abroad. Independently verified.', 'Verified on the ground so you don’t fly blind.', 'Seven checks passed before you ever see it.'],
       firsthome: ['Your first home, verified 7 ways.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning — safely.'],
     };
-    let CAMPAIGNS;
-    try { CAMPAIGNS = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) {}
-    // No seeded campaigns: one must be built from a real listing.
-    if (!Array.isArray(CAMPAIGNS)) CAMPAIGNS = [];
-    const saveCamps = () => localStorage.setItem(MK_KEY, JSON.stringify(CAMPAIGNS));
+    /* Campaigns live in the `campaigns` table, not in localStorage. In a
+       browser they belonged to one machine: a colleague opening the dashboard
+       saw nothing, and clearing the cache destroyed them.
+
+       MK_KEY survives only as the source for the one-time import below. */
+    let CAMPAIGNS = [];
+    const MKST = { loaded: false, error: null };
+
+    // Database row -> the shape this pane renders. Budget and spend are stored
+    // in naira and shown in thousands, which is how the form collects them.
+    const mapCampaign = (c) => ({
+      id: c.id,
+      nm: c.name,
+      persona: c.persona || 'family',
+      live: c.status === 'active',
+      budget: Math.round((Number(c.budget_naira) || 0) / 1000),
+      spend: Math.round((Number(c.spend_naira) || 0) / 1000),
+      chans: (c.target_platforms || []).length ? c.target_platforms : ['instagram'],
+      ads: (c.creatives || []).map((cr) => ({
+        id: cr.id,
+        img: cr.image_url || '',
+        hl: cr.headline,
+        ch: CH[cr.channel] ? cr.channel : 'direct',
+        ctr: Number(cr.ctr) || 0,
+        leads: cr.leads_count || 0,
+        st: cr.status || 'learning',
+      })),
+    });
     const AD_ST = { scaling: 'Scaling', learning: 'Learning', pausedai: 'Paused by AI' };
 
     function mkStats() {
@@ -2840,8 +2863,27 @@
         <div class="met"><span><b>${a.ctr.toFixed(1)}%</b> CTR</span><span><b>${a.leads}</b> leads</span></div>
       </div>`;
     }
+    const byId = (id) => CAMPAIGNS.find((c) => c.id === id);
     function renderCampaigns() {
-      document.getElementById('campaigns').innerHTML = CAMPAIGNS.map((c, i) => `
+      const host = document.getElementById('campaigns');
+      if (!CAMPAIGNS.length) {
+        host.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="chart"></span>'
+          + '<b>' + (MKST.error ? 'Could not load your campaigns'
+                   : !MKST.loaded ? 'Loading your campaigns…' : 'No campaigns yet') + '</b>'
+          + '<p>' + (MKST.error ? MKST.error
+                   : !MKST.loaded ? 'One moment.'
+                   : 'Build one from a listing and Synapse writes the first three creatives, then scales whichever earns the clicks.') + '</p>'
+          + (MKST.loaded && !MKST.error
+              ? '<button class="btn btn-primary" type="button" data-mk-new>+ New campaign</button>' : '')
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(host);
+        mkStats();
+        try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
+        return;
+      }
+      host.innerHTML = CAMPAIGNS.map((c, i) => `
         <div class="card campaign">
           <div class="chd">
             <span class="nm">${c.nm}</span>
@@ -2849,10 +2891,10 @@
             <span class="bdg ${c.live ? 'live' : 'paused'}">${c.live ? '● Live' : 'Paused'}</span>
             <span class="spend"><b>₦${c.budget}k</b>/day · ₦${c.spend}k spent</span>
           </div>
-          <div class="adgrid" id="ads-${i}">${c.ads.map(adTile).join('')}</div>
+          <div class="adgrid" id="ads-${c.id}">${c.ads.map(adTile).join('')}</div>
           <div class="cft">
-            <button class="gen2" data-gen="${i}">✦ Generate variants</button>
-            <button class="tgl" data-tgl="${i}">${c.live ? 'Pause campaign' : 'Resume campaign'}</button>
+            <button class="gen2" data-gen="${c.id}">✦ Generate variants</button>
+            <button class="tgl" data-tgl="${c.id}">${c.live ? 'Pause campaign' : 'Resume campaign'}</button>
           </div>
         </div>`).join('');
       mkStats();
@@ -2860,24 +2902,32 @@
       // renderCampaigns() runs before the leaderboard's own consts initialize (TDZ).
       try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
     }
-    function generateVariants(i) {
-      const c = CAMPAIGNS[i];
-      const grid = document.getElementById('ads-' + i);
-      grid.insertAdjacentHTML('beforeend', '<div class="ad gen" id="genTile"><div class="in"><span class="spin" style="display:inline-block;margin-bottom:8px"></span><br>AI writing 2 new<br>creatives…</div></div>');
-      setTimeout(() => {
-        const pool = HEADLINES[c.persona];
-        const imgs = [IMG.lekki, IMG.osapa, IMG.ikate, IMG.vi];
-        for (let k = 0; k < 2; k++) {
-          c.ads.push({
-            img: imgs[(c.ads.length + k) % imgs.length],
-            hl: pool[(c.ads.length + k) % pool.length],
-            ch: c.chans[(c.ads.length + k) % c.chans.length],
-            ctr: 0, leads: 0, st: 'learning',
-          });
-        }
-        saveCamps(); renderCampaigns();
-        toast('2 new creatives launched in “' + c.nm + '” — learning phase');
-      }, 1500);
+    function generateVariants(id) {
+      const c = byId(id); if (!c) return;
+      const grid = document.getElementById('ads-' + id);
+      if (grid) grid.insertAdjacentHTML('beforeend', '<div class="ad gen" id="genTile"><div class="in"><span class="spin" style="display:inline-block;margin-bottom:8px"></span><br>AI writing 2 new<br>creatives…</div></div>');
+      const pool = HEADLINES[c.persona] || HEADLINES.family;
+      const imgs = [IMG.lekki, IMG.osapa, IMG.ikate, IMG.vi];
+      const fresh = [0, 1].map((k) => ({
+        headline: pool[(c.ads.length + k) % pool.length],
+        imageUrl: imgs[(c.ads.length + k) % imgs.length],
+        channel: c.chans[(c.ads.length + k) % c.chans.length],
+      }));
+      SynListings.addCreatives(id, fresh, c.ads.length)
+        .then((rows) => {
+          rows.forEach((cr) => c.ads.push({
+            id: cr.id, img: cr.image_url || '', hl: cr.headline,
+            ch: CH[cr.channel] ? cr.channel : 'direct',
+            ctr: Number(cr.ctr) || 0, leads: cr.leads_count || 0, st: cr.status || 'learning',
+          }));
+          renderCampaigns();
+          toast('2 new creatives launched in “' + c.nm + '” — learning phase');
+        })
+        .catch((err) => {
+          const t = document.getElementById('genTile'); if (t) t.remove();
+          toast((err && err.message) || 'Could not add those creatives');
+          console.error('addCreatives failed', err);
+        });
     }
     function campaignForm() {
       drawer.innerHTML = `
@@ -2910,26 +2960,107 @@
         const chans = [...document.querySelectorAll('#cfC input:checked')].map(x => x.value);
         if (!chans.length) { toast('Pick at least one channel'); return; }
         const pool = HEADLINES[persona];
-        CAMPAIGNS.unshift({
-          nm, persona, live: true, budget: parseInt(document.getElementById('cfB').value, 10) || 15, spend: 0, chans,
-          ads: pool.slice(0, 3).map((hl, k) => ({ img: li.img, hl, ch: chans[k % chans.length], ctr: 0, leads: 0, st: 'learning' })),
+        const btn = document.getElementById('cfSave');
+        btn.disabled = true; btn.textContent = 'Launching…';
+        SynListings.createCampaign({
+          name: nm,
+          persona,
+          audience: PERSONAS[persona],
+          budgetNaira: (parseInt(document.getElementById('cfB').value, 10) || 15) * 1000,
+          channels: chans,
+          creatives: pool.slice(0, 3).map((hl, k) => ({
+            headline: hl, imageUrl: li.img, channel: chans[k % chans.length],
+          })),
+        }).then(() => {
+          closeLead();
+          toast('“' + nm + '” is live — 3 creatives in the learning phase');
+          return loadCampaigns();
+        }).catch((err) => {
+          btn.disabled = false; btn.textContent = '✦ Generate creatives & launch';
+          toast((err && err.message) || 'Could not launch that campaign');
+          console.error('createCampaign failed', err);
         });
-        saveCamps(); renderCampaigns(); closeLead();
-        toast('“' + nm + '” is live — 3 creatives in the learning phase');
       });
     }
     document.getElementById('campaigns').addEventListener('click', (e) => {
-      const g = e.target.closest('[data-gen]'); if (g) { generateVariants(+g.dataset.gen); return; }
+      if (e.target.closest('[data-mk-new]')) { campaignForm(); return; }
+      const g = e.target.closest('[data-gen]'); if (g) { generateVariants(g.dataset.gen); return; }
       const t = e.target.closest('[data-tgl]');
-      if (t) { const c = CAMPAIGNS[+t.dataset.tgl]; c.live = !c.live; saveCamps(); renderCampaigns(); toast(c.live ? 'Campaign resumed' : 'Campaign paused'); }
+      if (!t) return;
+      const c = byId(t.dataset.tgl); if (!c) return;
+      const was = c.live;
+      // Optimistic, then reverted if the database refuses. A plain agent can
+      // read campaigns but not change them, and RLS refuses by returning no
+      // rows rather than an error -- so silence here would show a paused
+      // campaign that is still running and still spending.
+      c.live = !was; t.disabled = true; renderCampaigns();
+      SynListings.setCampaignStatus(c.id, c.live)
+        .then(() => toast(c.live ? 'Campaign resumed' : 'Campaign paused'))
+        .catch((err) => {
+          c.live = was; renderCampaigns();
+          toast((err && err.message) || 'Could not change that campaign');
+          console.error('setCampaignStatus failed', err);
+        });
     });
     // creative insights now live in the Ask-Toju panel (marketing context).
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
 
+    function loadCampaigns() {
+      if (!window.SynListings || !SynListings.listCampaigns) {
+        MKST.loaded = true; MKST.error = 'the data layer did not load'; renderCampaigns();
+        return Promise.resolve();
+      }
+      return SynListings.listCampaigns().then((rows) => {
+        CAMPAIGNS = rows.map(mapCampaign);
+        MKST.loaded = true; MKST.error = null;
+        renderCampaigns();
+      }).catch((err) => {
+        MKST.loaded = true;
+        MKST.error = (err && err.message) || 'please refresh';
+        CAMPAIGNS = [];
+        renderCampaigns();
+        console.error('campaigns load failed', err);
+      });
+    }
+
+    /* One-time import. Anyone who built campaigns before this change has them
+       sitting in localStorage on this machine only. Rather than stranding that
+       work, it is written to the table once and the key is cleared so the
+       import cannot run twice and duplicate everything. */
+    function importLegacyCampaigns() {
+      // Guarded: without the data layer there is nothing to import into, and
+      // an exception here would leave the pane stuck on "Loading…" forever
+      // because the loader is chained off this promise.
+      if (!window.SynListings || !SynListings.createCampaign) return Promise.resolve(false);
+      let old = null;
+      try { old = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) { /* unreadable: nothing to import */ }
+      if (!Array.isArray(old) || !old.length) return Promise.resolve(false);
+      const jobs = old.map((c) => SynListings.createCampaign({
+        name: c.nm || 'Imported campaign',
+        persona: c.persona || null,
+        audience: PERSONAS[c.persona] || null,
+        budgetNaira: (c.budget || 0) * 1000,
+        channels: c.chans || [],
+        creatives: (c.ads || []).map((a) => ({ headline: a.hl, imageUrl: a.img, channel: a.ch })),
+      }));
+      return Promise.all(jobs).then(() => {
+        localStorage.removeItem(MK_KEY);
+        toast(old.length + ' campaign' + (old.length !== 1 ? 's' : '') + ' moved to your account');
+        return true;
+      }).catch((err) => {
+        // Leave the key in place: a failed import must not destroy the only copy.
+        console.error('campaign import failed', err);
+        toast('Some saved campaigns could not be moved — they are still on this device');
+        return false;
+      });
+    }
+
+    importLegacyCampaigns().then(loadCampaigns);
+
     // ── creative leaderboard: every ad across campaigns, ranked by performance ──
     const MK = { sort: 'ctr' };
-    const allAds = () => CAMPAIGNS.flatMap((c, ci) => c.ads.map((a, ai) => Object.assign({}, a, { camp: c.nm, clive: c.live, ci, ai })));
+    const allAds = () => CAMPAIGNS.flatMap((c) => c.ads.map((a) => Object.assign({}, a, { camp: c.nm, clive: c.live })));
     function adSpark(a){
       const h = sHash(a.hl || ''), base = Math.max(0.4, a.ctr);
       const trend = a.st === 'scaling' ? 0.12 : a.st === 'pausedai' ? -0.1 : 0.03;
@@ -2964,7 +3095,7 @@
           <div class="lbmid"><div class="lbhl">${a.hl}</div><div class="lbsub"><span class="lbcamp">${a.camp}</span>${chnBadge(a.ch)}<span class="lbst ${a.st}">${AD_ST[a.st]}</span></div></div>
           <div class="lbperf"><div class="lbspark">${sparkSVG(adSpark(a), { w: 72, h: 26 })}</div><div class="lbctr"><b>${a.ctr.toFixed(1)}%</b> CTR</div></div>
           <div class="lbleads"><b>${a.leads}</b><span>leads</span></div>
-          <button class="lbscale" data-scale="${a.ci}-${a.ai}" aria-label="Scale ${a.hl}">${a.st === 'scaling' ? 'Scaling ▴' : 'Scale ↑'}</button>
+          <button class="lbscale" data-scale="${a.id}" aria-label="Scale ${a.hl}">${a.st === 'scaling' ? 'Scaling ▴' : 'Scale ↑'}</button>
         </div>`;
       }).join('');
       if (!sReduce()) el.querySelectorAll('.lbspark path[stroke]').forEach(p => {
@@ -2993,11 +3124,23 @@
         return;
       }
       const s = e.target.closest('[data-scale]'); if (!s) return;
-      const [ci, ai] = s.dataset.scale.split('-').map(Number);
-      const a = CAMPAIGNS[ci] && CAMPAIGNS[ci].ads[ai]; if (!a) return;
-      if (a.st === 'pausedai') { a.st = 'learning'; toast('Creative re-activated — back into learning'); }
-      else { a.st = 'scaling'; toast('Scaling this creative — budget shifting to the winner'); }
-      saveCamps(); renderCampaigns();
+      // Creatives are addressed by id now that campaigns come from the table;
+      // array positions shifted whenever anything reloaded.
+      let a = null;
+      for (const c of CAMPAIGNS) { const hit = c.ads.find((x) => x.id === s.dataset.scale); if (hit) { a = hit; break; } }
+      if (!a) return;
+      const was = a.st;
+      a.st = was === 'pausedai' ? 'learning' : 'scaling';
+      renderCampaigns();
+      SynListings.setCreativeStatus(a.id, a.st)
+        .then(() => toast(a.st === 'learning'
+          ? 'Creative re-activated — back into learning'
+          : 'Scaling this creative — budget shifting to the winner'))
+        .catch((err) => {
+          a.st = was; renderCampaigns();
+          toast((err && err.message) || 'Could not change that creative');
+          console.error('setCreativeStatus failed', err);
+        });
     });
     // defer the first render so it runs after the chart primitives (C_BRAND) initialize
     setTimeout(renderBoard, 0);

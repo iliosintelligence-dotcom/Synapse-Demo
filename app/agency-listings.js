@@ -210,6 +210,137 @@
     });
   }
 
+  /* ── campaigns ───────────────────────────────────────────────────────────
+     Campaigns used to live in localStorage, which meant they belonged to one
+     browser rather than to the agency: invisible to colleagues, gone with a
+     cleared cache. These read and write the real table.
+
+     Note on permissions: campaigns_manage is admin/owner only, while
+     campaigns_select is any member. A plain agent can therefore see campaigns
+     but not change them, and an RLS-blocked write returns "no rows" rather
+     than an error -- so every writer below treats an empty result as failure
+     instead of reporting a success that did not happen. */
+
+  var CAMPAIGN_SELECT =
+    'id, name, persona, status, budget_naira, spend_naira, target_platforms, ' +
+    'target_audience_description, start_date, end_date, created_at, ' +
+    'campaign_creatives(id, headline, image_url, channel, status, ctr, leads_count, display_order)';
+
+  function listCampaigns() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('campaigns')
+        .select(CAMPAIGN_SELECT)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (c) {
+        c.creatives = (c.campaign_creatives || []).slice().sort(function (a, b) {
+          return a.display_order - b.display_order;
+        });
+        delete c.campaign_creatives;
+        return c;
+      });
+    });
+  }
+
+  /* data: { name, persona, budgetNaira, channels[], audience, creatives[] }
+     where each creative is { headline, imageUrl, channel }. The campaign and
+     its first creatives are written in two steps; if the creatives fail the
+     campaign is removed again, so a campaign with no ads never survives. */
+  function createCampaign(data) {
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('No agency on this account');
+      aid = a;
+      var today = new Date();
+      var end = new Date(today.getTime() + 30 * 86400000);
+      return c1.from('campaigns').insert({
+        agency_id: aid,
+        name: data.name,
+        // The form is always built from one listing, hence property_showcase.
+        campaign_type: 'property_showcase',
+        status: 'active',
+        start_date: today.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+        target_platforms: data.channels || [],
+        target_audience_description: data.audience || null,
+        budget_naira: data.budgetNaira || 0,
+        persona: data.persona || null,
+      }).select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to create campaigns');
+      var id = r.data.id;
+      var rows = (data.creatives || []).map(function (cr, i) {
+        return {
+          campaign_id: id, headline: cr.headline, image_url: cr.imageUrl || null,
+          channel: cr.channel, display_order: i,
+        };
+      });
+      if (!rows.length) return id;
+      return c1.from('campaign_creatives').insert(rows).select('id').then(function (r2) {
+        if (r2.error) {
+          // Roll back rather than leave a campaign with no creatives in it.
+          return c1.from('campaigns').delete().eq('id', id).then(function () { throw r2.error; });
+        }
+        return id;
+      });
+    });
+  }
+
+  function setCampaignStatus(id, live) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('campaigns')
+        .update({ status: live ? 'active' : 'paused' })
+        .eq('id', id).eq('agency_id', aid).is('deleted_at', null)
+        .select('id, status').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to change this campaign');
+      return r.data;
+    });
+  }
+
+  /* creatives: [{ headline, imageUrl, channel }] appended after the existing
+     ones, so display_order continues rather than restarting. */
+  function addCreatives(campaignId, creatives, startOrder) {
+    var c1;
+    return client().then(function (c) {
+      c1 = c;
+      return c1.from('campaign_creatives').insert(creatives.map(function (cr, i) {
+        return {
+          campaign_id: campaignId, headline: cr.headline, image_url: cr.imageUrl || null,
+          channel: cr.channel, display_order: (startOrder || 0) + i,
+        };
+      })).select('id, headline, image_url, channel, status, ctr, leads_count, display_order');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.length) throw new Error('You do not have permission to add creatives');
+      return r.data;
+    });
+  }
+
+  function setCreativeStatus(id, status) {
+    var ok = ['learning', 'scaling', 'pausedai'];
+    if (ok.indexOf(status) < 0) return Promise.reject(new Error('Unknown status: ' + status));
+    return client().then(function (c) {
+      return c.from('campaign_creatives')
+        .update({ status: status })
+        .eq('id', id).is('deleted_at', null)
+        .select('id, status').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to change this creative');
+      return r.data;
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -417,6 +548,11 @@
     list: list,
     leads: leads,
     setLeadStage: setLeadStage,
+    listCampaigns: listCampaigns,
+    createCampaign: createCampaign,
+    setCampaignStatus: setCampaignStatus,
+    addCreatives: addCreatives,
+    setCreativeStatus: setCreativeStatus,
     LEAD_STAGES: LEAD_STAGES,
     create: create,
     update: update,
