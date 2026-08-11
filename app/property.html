@@ -669,21 +669,52 @@
       const btn = this;
       contactBusy = true; btn.disabled = true; btn.textContent = 'Checking…';
 
-      const proceed = () => {
-        btn.textContent = 'Sending…';
-        setTimeout(() => {
-          toast("Your request has been sent to the agent — they'll reach out on WhatsApp shortly.");
-          btn.textContent = '✓ Request sent';
-          // stays disabled: the request is sent, re-sending helps nobody
-        }, 650);
+      /* This used to be a setTimeout and a toast. It told the buyer their
+         request had been sent and told the agency nothing at all — no lead was
+         ever written, which is why the CRM could only ever be empty. It now
+         calls create-lead, which persists the lead BEFORE attempting WhatsApp
+         delivery, so a Twilio outage (or Twilio simply not being configured
+         yet) costs the message, never the lead. */
+      const fail = (msg) => {
+        contactBusy = false; btn.disabled = false; btn.textContent = 'Contact agent';
+        toast(msg || 'Could not send that just now — please try again.');
       };
 
-      if (!window.SynAuth) { proceed(); return; }   // auth unavailable — don't trap the user
+      const proceed = () => {
+        if (!PROP_ID) return fail('This listing is still loading — try again in a moment.');
+        btn.textContent = 'Sending…';
+        SynAuth.client()
+          .then((c) => c.auth.getSession())
+          .then((r) => {
+            const tok = r && r.data && r.data.session && r.data.session.access_token;
+            if (!tok) throw new Error('no-session');
+            return fetch(SUPABASE_URL + '/functions/v1/create-lead', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
+              body: JSON.stringify({ property_id: PROP_ID, source: 'contact_button' }),
+            });
+          })
+          .then((res) => res.json().then((d) => ({ ok: res.ok || res.status === 207, d })))
+          .then(({ ok, d }) => {
+            // 207 means the lead is saved but WhatsApp did not go out. The buyer
+            // is still told the truth — their request WAS received — because it
+            // was; the agency sees it in the CRM flagged as undelivered.
+            if (!ok || !d.lead_id) return fail(d && d.error ? 'Not sent: ' + d.error : null);
+            toast(d.delivery_status === 'delivered'
+              ? "Sent — the agent will reach out on WhatsApp shortly."
+              : "Sent — the agency has your request and will be in touch.");
+            btn.textContent = '✓ Request sent';
+            // stays disabled: the request is sent, re-sending helps nobody
+          })
+          .catch((e) => fail(e && e.message === 'no-session' ? 'Please sign in to contact this agent.' : null));
+      };
+
+      if (!window.SynAuth) return fail('Sign-in is unavailable right now.');
       SynAuth.ready().then((u) => {
         if (u) { proceed(); return; }
         const here = window.location.pathname + window.location.search;
         window.location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
-      }).catch(() => { proceed(); });
+      }).catch(() => fail('Could not check your sign-in — please try again.'));
     });
 
     // animate neighbourhood bars on view
