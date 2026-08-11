@@ -412,6 +412,92 @@
     });
   }
 
+  /* ── message outbox ──────────────────────────────────────────────────────
+     Queue first, deliver later. queue_lead_message() writes the row and always
+     succeeds; send-outbox delivers it. That split is the point: with Twilio
+     unconfigured the message still exists, visible and retryable, instead of
+     evaporating into a toast.
+
+     There is no client INSERT on message_outbox. The recipient is derived
+     server-side from the lead, so the platform can only ever message someone
+     who actually enquired -- a table taking an arbitrary phone number plus
+     arbitrary text is an open SMS gateway on our own Twilio account. */
+
+  function queueMessages(leadIds, body) {
+    if (!leadIds || !leadIds.length) return Promise.resolve({ queued: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(leadIds.map(function (id) {
+        return c.rpc('queue_lead_message', { p_lead_id: id, p_body: body })
+          .then(function (r) { return { ok: !r.error, error: r.error }; });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those messages could not be queued');
+      return {
+        queued: ok,
+        requested: leadIds.length,
+        error: firstErr ? firstErr.message : null,
+      };
+    });
+  }
+
+  function listOutbox(limit) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('message_outbox')
+        .select('id, to_phone, body, status, attempts, max_attempts, last_error, ' +
+                'scheduled_for, sent_at, created_at, leads(consumer_name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(limit || 50);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* Cancel something still waiting. The database refuses anything else -- a
+     message already sent cannot be un-sent, and pretending otherwise in the UI
+     would be a lie about what the buyer received. */
+  function cancelMessage(id) {
+    return client().then(function (c) {
+      return c.from('message_outbox')
+        .update({ status: 'cancelled' })
+        .eq('id', id)
+        .eq('status', 'queued')
+        .select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('That message has already left the queue');
+      return r.data;
+    });
+  }
+
+  /* Drain the queue. Deliberately an explicit action rather than something
+     that fires on a timer: these are real messages to real buyers. */
+  function sendOutbox(limit) {
+    // functions.invoke carries the caller's session token, which send-outbox
+    // needs: it resolves the caller's agency and drains only that queue.
+    return client().then(function (c) {
+      return c.functions.invoke('send-outbox', { body: { limit: limit || 20 } });
+    }).then(function (r) {
+      if (r.error) {
+        // The function's own JSON error is more useful than "non-2xx status".
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (d) {
+            throw new Error((d && d.error) || r.error.message);
+          }, function () { throw new Error(r.error.message); });
+        }
+        throw new Error(r.error.message);
+      }
+      return r.data;
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -622,6 +708,10 @@
     roster: roster,
     assignLeads: assignLeads,
     deleteLeads: deleteLeads,
+    queueMessages: queueMessages,
+    listOutbox: listOutbox,
+    cancelMessage: cancelMessage,
+    sendOutbox: sendOutbox,
     listCampaigns: listCampaigns,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,

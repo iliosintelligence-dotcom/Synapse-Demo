@@ -1014,6 +1014,21 @@
     .stpill-btn { cursor: pointer; font-family: inherit; }
     .stpill-btn:hover { filter: brightness(0.96); }
     .stpill-btn[disabled] { opacity: .5; cursor: progress; }
+    .ob-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .ob-row:last-child { border-bottom: none; }
+    .ob-b { flex: 1; min-width: 0; }
+    .ob-who { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .ob-tx { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; overflow-wrap: anywhere; }
+    .ob-err { font-size: 11.5px; color: var(--danger, #b3261e); margin-top: 3px; }
+    .ob-st { font: 700 10.5px var(--f-sans); letter-spacing: .04em; text-transform: uppercase;
+             padding: 4px 9px; border-radius: 100px; white-space: nowrap; align-self: flex-start; }
+    .ob-st.queued { background: var(--surface); border: 1px solid var(--border-strong); color: var(--ink-muted); }
+    .ob-st.sending { background: var(--info-tint); color: var(--info); }
+    .ob-st.sent { background: var(--success-tint); color: var(--success); }
+    .ob-st.failed { background: rgba(179,38,30,0.1); color: #b3261e; }
+    .ob-st.cancelled { background: var(--surface); border: 1px dashed var(--border-strong); color: var(--ink-dim); }
+    .ob-x { border: 1px solid var(--border); background: transparent; border-radius: 8px;
+            font-size: 11.5px; padding: 4px 9px; cursor: pointer; color: var(--ink-muted); }
     .crm-wa.off { opacity: .28; cursor: default; }
     .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
     @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
@@ -2166,32 +2181,134 @@
         });
       }
 
-      /* WhatsApp has no multi-recipient deep link, and there is no outbox on
-         the platform yet -- Twilio is not configured, so nothing here could
-         actually send. Rather than pretend, one lead opens WhatsApp exactly as
-         the row's own button does, and several copy the numbers out so they
-         can be pasted into a broadcast. Leads with no phone are named, not
-         silently dropped. */
+      /* Messaging goes through a durable outbox: the message is written first
+         and delivered separately, so an unconfigured or failing provider costs
+         the send attempt and never the message itself. Nothing leaves on its
+         own -- sending is a button, because these are real messages to real
+         buyers. */
+      const esc = (t) => String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
       function bulkMessage() {
         const picked = selectedLeads();
         if (!picked.length) return;
         const withPhone = picked.filter(l => l.ph);
         const without = picked.length - withPhone.length;
         if (!withPhone.length) { toast('None of those leads has a phone number yet'); return; }
-        if (withPhone.length === 1) {
-          window.open(wa(withPhone[0].ph, withPhone[0].pr), '_blank', 'noreferrer');
-          if (without) toast('Opened WhatsApp — ' + without + ' selected lead' + (without !== 1 ? 's have' : ' has') + ' no number');
-          return;
-        }
-        const numbers = withPhone.map(l => l.ph).join(', ');
-        const done = () => toast(withPhone.length + ' number' + (withPhone.length !== 1 ? 's' : '') + ' copied' +
-          (without ? ' · ' + without + ' had no number' : '') + ' — paste into a WhatsApp broadcast');
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(numbers).then(done).catch(() => toast('Could not copy: ' + numbers));
-        } else {
-          toast('Copy these numbers: ' + numbers);
-        }
+
+        drawer.innerHTML = `
+          <button class="x" id="drawerX">\u00d7</button>
+          <div style="font-size:19px;font-weight:700">Message ${withPhone.length} lead${withPhone.length !== 1 ? 's' : ''}</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 16px">${
+            without
+              ? without + ' of the ' + picked.length + ' selected ' + (without !== 1 ? 'have' : 'has') + ' no phone number and will be skipped. '
+              : ''
+          }Each lead is messaged individually on WhatsApp — this is not a group chat.</p>
+          <div class="lf">
+            <div class="field"><label>Message</label>
+              <textarea id="obBody" rows="5" maxlength="1000" placeholder="Hello, following up on your enquiry about…"></textarea></div>
+            <p class="muted" style="font-size:11.5px;margin:-4px 0 0"><span id="obCount">0</span>/1000</p>
+            <button class="btn btn-primary btn-block" id="obQueue" style="margin-top:10px">Add to outbox</button>
+            <button class="btn btn-block" id="obOpen" style="margin-top:8px">View outbox</button>
+          </div>`;
+        scrim.classList.add('on'); drawer.classList.add('on');
+        document.getElementById('drawerX').addEventListener('click', closeLead);
+        const ta = document.getElementById('obBody');
+        const count = document.getElementById('obCount');
+        ta.addEventListener('input', () => { count.textContent = ta.value.length; });
+        ta.focus();
+        document.getElementById('obOpen').addEventListener('click', openOutbox);
+        document.getElementById('obQueue').addEventListener('click', function () {
+          const body = ta.value.trim();
+          if (!body) { toast('Write the message first'); ta.focus(); return; }
+          const btn = this;
+          btn.disabled = true; btn.textContent = 'Adding…';
+          SynListings.queueMessages(withPhone.map(l => l.id), body)
+            .then(({ queued, requested, error }) => {
+              toast(queued === requested
+                ? queued + ' message' + (queued !== 1 ? 's' : '') + ' queued — press Send when ready'
+                : queued + ' of ' + requested + ' queued — ' + (error || 'the rest were refused'));
+              CRM.sel.clear(); renderCrmTable();
+              openOutbox();
+            })
+            .catch(err => {
+              btn.disabled = false; btn.textContent = 'Add to outbox';
+              toast((err && err.message) || 'Could not queue those messages');
+              console.error('queueMessages failed', err);
+            });
+        });
       }
+
+      const OB_LABEL = { queued: 'Waiting', sending: 'Sending', sent: 'Sent', failed: 'Failed', cancelled: 'Cancelled' };
+      function openOutbox() {
+        drawer.innerHTML = `
+          <button class="x" id="drawerX">\u00d7</button>
+          <div style="font-size:19px;font-weight:700">Outbox</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 14px">Messages are held here until you send them. Nothing goes out on its own.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="btn btn-primary" id="obSend" style="flex:1">Send now</button>
+            <button class="btn" id="obRefresh">Refresh</button>
+          </div>
+          <div id="obList"><p class="muted" style="font-size:12.5px">Loading…</p></div>`;
+        scrim.classList.add('on'); drawer.classList.add('on');
+        document.getElementById('drawerX').addEventListener('click', closeLead);
+        document.getElementById('obRefresh').addEventListener('click', paintOutbox);
+        document.getElementById('obSend').addEventListener('click', function () {
+          const btn = this;
+          btn.disabled = true; btn.textContent = 'Sending…';
+          SynListings.sendOutbox(50)
+            .then((r) => {
+              btn.disabled = false; btn.textContent = 'Send now';
+              toast(!r.claimed ? 'Nothing waiting to send'
+                : r.sent + ' sent' + (r.failed ? ', ' + r.failed + ' failed — see below' : ''));
+              paintOutbox();
+            })
+            .catch(err => {
+              btn.disabled = false; btn.textContent = 'Send now';
+              toast((err && err.message) || 'Could not send');
+              console.error('sendOutbox failed', err);
+              paintOutbox();
+            });
+        });
+        paintOutbox();
+      }
+
+      function paintOutbox() {
+        const host = document.getElementById('obList'); if (!host) return;
+        SynListings.listOutbox(50).then((rows) => {
+          if (!rows.length) { host.innerHTML = '<p class="muted" style="font-size:12.5px">Nothing in the outbox.</p>'; return; }
+          host.innerHTML = rows.map((m) => {
+            const who = (m.leads && m.leads.consumer_name) || m.to_phone;
+            const tries = m.attempts > 0 ? ' · attempt ' + m.attempts + ' of ' + m.max_attempts : '';
+            return `<div class="ob-row">
+              <div class="ob-b">
+                <div class="ob-who">${esc(who)}</div>
+                <div class="ob-tx">${esc(m.body).slice(0, 160)}${m.body.length > 160 ? '…' : ''}</div>
+                ${m.last_error ? `<div class="ob-err">${esc(m.last_error)}${tries}</div>` : ''}
+              </div>
+              <span class="ob-st ${m.status}">${OB_LABEL[m.status] || m.status}</span>
+              ${m.status === 'queued' ? `<button class="ob-x" data-ob-cancel="${m.id}">Cancel</button>` : ''}
+            </div>`;
+          }).join('');
+        }).catch(err => {
+          host.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load the outbox — ' +
+            esc((err && err.message) || 'please try again') + '</p>';
+          console.error('listOutbox failed', err);
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const c = e.target.closest('[data-ob-cancel]'); if (!c) return;
+        c.disabled = true;
+        SynListings.cancelMessage(c.dataset.obCancel)
+          .then(() => { toast('Message cancelled'); paintOutbox(); })
+          .catch(err => {
+            c.disabled = false;
+            toast((err && err.message) || 'Could not cancel that');
+            paintOutbox();
+          });
+      });
 
       function bulkDelete() {
         const picked = selectedLeads();
