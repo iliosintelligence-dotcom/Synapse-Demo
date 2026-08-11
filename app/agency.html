@@ -1009,6 +1009,11 @@
     .fn-bar i { display: block; height: 100%; border-radius: 3px; }
     .fn-card.st-new .fn-bar i { background: var(--ink-dim); } .fn-card.st-cont .fn-bar i { background: var(--info); } .fn-card.st-view .fn-bar i { background: var(--gold); } .fn-card.st-nego .fn-bar i { background: var(--brand-deep); } .fn-card.st-won .fn-bar i { background: var(--success); }
     .fn-sep { align-self: center; color: var(--ink-dim); font-size: 15px; }
+    /* Empty / loading / error row. Shares the table so the pane never
+       collapses to a bare header when an agency has no leads yet. */
+    .crm-wa.off { opacity: .28; cursor: default; }
+    .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
+    @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
     .crm-tablecard { padding: 0; overflow: hidden; }
     .crm-table { width: 100%; border-collapse: collapse; }
     .crm-table thead th { text-align: left; font: 700 12px var(--f-sans); color: var(--ink-muted); padding: 14px 14px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; background: rgba(255,255,255,0.5); }
@@ -1846,8 +1851,10 @@
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
     };
     // Demo leads removed: each referenced a property that does not exist.
-    // Leads arrive from real buyer activity against real listings.
-    const leads = [];
+    // Leads arrive from real buyer activity against real listings, and are
+    // loaded from the `leads` table by loadLeads() below. `let`, not `const`:
+    // the array is replaced wholesale when the fetch lands.
+    let leads = [];
     const TEMP_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', dormant: 'Dormant', won: 'Won' };
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
@@ -1857,10 +1864,13 @@
     // ══════════ CRM — pipeline table ══════════
     const STAGE_ORDER = ['New','Contacted','Viewing','Negotiation','Won'];
     const STAGE_CLS = { New:'st-new', Contacted:'st-cont', Viewing:'st-view', Negotiation:'st-nego', Won:'st-won' };
-    const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set() };
+    const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set(), loaded:false, error:null };
     const tmin = t => { const m=/(\d+)\s*([mhd])/.exec(t||''); if(!m) return 1e9; const n=+m[1]; return m[2]==='m'?n:m[2]==='h'?n*60:n*1440; };
     const budgetN = l => { const m=/₦?(\d+(?:\.\d+)?)\s*([MB])/.exec(l.price||''); return m ? +m[1]*(m[2]==='B'?1000:1) : 0; };
     function crmStars(score){
+      // No scoring engine runs yet, so most real leads arrive unscored. Five
+      // empty stars would read as "scored zero" - a judgement we have not made.
+      if (score == null) return '<span class="muted" title="Not scored yet">-</span>';
       const v=Math.round(score/10)/2; let h='';
       for(let i=1;i<=5;i++){ h += v>=i ? '<span class="star full">★</span>' : (v>=i-0.5 ? '<span class="star half">★</span>' : '<span class="star">★</span>'); }
       return `<span class="stars" role="img" aria-label="${v} of 5 (${score} of 100)">${h}</span>`;
@@ -1869,7 +1879,7 @@
       let a = leads.map((l,i)=>({l, oi:i}));
       if(CRM.fStage) a = a.filter(x=>x.l.stage===CRM.fStage);
       if(CRM.fSrc) a = a.filter(x=>x.l.attr.channel===CRM.fSrc);
-      const key = { recent:x=>-tmin(x.l.t), score:x=>x.l.score, budget:x=>budgetN(x.l), stage:x=>STAGE_ORDER.indexOf(x.l.stage), lead:x=>x.l.nm.toLowerCase() }[CRM.sortK] || (x=>-tmin(x.l.t));
+      const key = { recent:x=>-tmin(x.l.t), score:x=>(x.l.score == null ? -1 : x.l.score), budget:x=>budgetN(x.l), stage:x=>STAGE_ORDER.indexOf(x.l.stage), lead:x=>x.l.nm.toLowerCase() }[CRM.sortK] || (x=>-tmin(x.l.t));
       const dir = CRM.sortDir;
       a.sort((p,q)=>{ const pv=key(p), qv=key(q); return pv<qv?-dir : pv>qv?dir : 0; });
       return a;
@@ -1908,18 +1918,33 @@
       const pages = Math.max(1, Math.ceil(all.length/CRM.per));
       if(CRM.page>pages) CRM.page = pages;
       const start = (CRM.page-1)*CRM.per;
-      document.getElementById('leads').innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
+      const body = document.getElementById('leads');
+      if (!all.length) {
+        body.innerHTML = '<tr class="crm-empty"><td colspan="9">' + (
+          CRM.error
+            ? 'Could not load your leads - ' + CRM.error
+            : !CRM.loaded
+              ? 'Loading your leads...'
+              : (CRM.fStage || CRM.fSrc)
+                ? 'No leads match this filter.'
+                : 'No leads yet. They arrive when a buyer taps Contact agent on one of your listings.'
+        ) + '</td></tr>';
+        document.getElementById('crmPager').innerHTML = '';
+        renderBulk();
+        return;
+      }
+      body.innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
         const sel = CRM.sel.has(oi);
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
           <td class="c-chk"><input type="checkbox" class="crm-chk" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
-          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph}</span></span></span></td>
+          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph || 'No phone yet'}</span></span></span></td>
           <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
           <td class="c-budget">${l.price}</td>
           <td class="c-stage"><span class="stpill ${STAGE_CLS[l.stage]}">${l.stage}</span><span class="nbax">→ ${l.nba.do}</span></td>
           <td class="c-time">${l.t}</td>
           <td class="c-score">${crmStars(l.score)}</td>
           <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
-          <td class="c-act"><a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a><button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
+          <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">✆</span>'}<button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
         </tr>`;
       }).join('');
       let nums = '';
@@ -1937,6 +1962,85 @@
     }
     function renderCrm(){ renderBrk(); renderCrmFunnel(); renderCrmTable(); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
     renderCrm();
+
+    /* ============ real leads ============
+       The CRM used to render a hard-coded array. It now reads the `leads`
+       table - the same rows create-lead writes when a buyer taps "Contact
+       agent" - and maps the database shape onto the shape this table renders.
+
+       The mapping is deliberately conservative: where the database has no
+       answer (no lead score, no recommended action), the UI says so rather
+       than inventing a number that would read as a judgement we made. */
+    const DB_STAGE = {
+      new: 'New',
+      contacted: 'Contacted', qualified: 'Contacted',
+      viewing_scheduled: 'Viewing', viewing_completed: 'Viewing',
+      negotiating: 'Negotiation', commitment: 'Negotiation',
+      closed: 'Won',
+    };
+    // lead_source -> attribution channel. Anything not from a social surface is
+    // the app itself; CH has no key for search/referral, and inventing one
+    // would misattribute the lead.
+    const DB_CHANNEL = {
+      social_instagram: 'instagram', social_tiktok: 'tiktok', social_facebook: 'facebook',
+    };
+    const DEFAULT_NBA = {
+      New: 'Call within the hour', Contacted: 'Qualify the budget',
+      Viewing: 'Confirm the viewing', Negotiation: 'Send the offer', Won: 'Close the paperwork',
+    };
+    function agoLabel(iso){
+      if (!iso) return '-';
+      const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+      if (mins < 60) return mins + 'm';
+      if (mins < 1440) return Math.round(mins / 60) + 'h';
+      return Math.round(mins / 1440) + 'd';
+    }
+    const nairaShort = n => {
+      if (n == null) return '-';
+      const v = Number(n);
+      return v >= 1e9 ? '\u20a6' + +(v / 1e9).toFixed(1) + 'B' : '\u20a6' + Math.round(v / 1e6) + 'M';
+    };
+    function mapLead(r){
+      const prop = r.properties || {};
+      const stage = DB_STAGE[r.current_stage] || 'New';
+      const stamp = r.last_activity_at || r.created_at;
+      const mins = stamp ? (Date.now() - new Date(stamp).getTime()) / 60000 : Infinity;
+      // Temperature from real recency, not from a score we do not have.
+      const temp = stage === 'Won' ? 'won'
+        : mins < 2880 ? 'hot' : mins < 10080 ? 'warm' : mins < 43200 ? 'cold' : 'dormant';
+      return {
+        id: r.id,
+        nm: r.consumer_name || 'Unnamed buyer',
+        ph: r.consumer_phone || '',
+        price: r.budget_max != null ? nairaShort(r.budget_max)
+             : prop.price != null ? nairaShort(prop.price) : '-',
+        pr: [prop.title, prop.city].filter(Boolean).join(' \u00b7 ') || 'Listing unavailable',
+        stage,
+        t: agoLabel(stamp),
+        score: r.lead_score == null ? null : Math.round(Number(r.lead_score)),
+        temp,
+        failed: r.delivery_status === 'delivery_failed',
+        nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
+        attr: { channel: DB_CHANNEL[r.source] || 'direct' },
+      };
+    }
+    function loadLeads(){
+      if (!window.SynListings || !SynListings.leads) {
+        CRM.loaded = true; CRM.error = 'the data layer did not load'; renderCrm(); return;
+      }
+      SynListings.leads().then(rows => {
+        leads = rows.map(mapLead);
+        CRM.loaded = true; CRM.error = null;
+        renderCrm();
+      }).catch(err => {
+        CRM.loaded = true;
+        CRM.error = (err && err.message) || 'please refresh';
+        leads = [];
+        renderCrm();
+        console.error('leads load failed', err);
+      });
+    }
+    loadLeads();
 
     // ── CRM interactions ──
     (function(){
@@ -1975,7 +2079,7 @@
         if(act==='delete'){ CRM.sel.clear(); renderCrmTable(); }
       });
       document.getElementById('crmExport').addEventListener('click', () => toast('Exporting your pipeline to CSV…'));
-      document.getElementById('crmAdd').addEventListener('click', () => toast('New-lead intake — Toju captures the next one automatically'));
+      document.getElementById('crmAdd').addEventListener('click', () => { toast('Refreshing leads...'); CRM.loaded = false; CRM.error = null; renderCrmTable(); loadLeads(); });
       document.getElementById('crmBoardBtn').addEventListener('click', () => toast('Board view is coming next'));
       function crmMenu(anchor, opts, pick){
         document.querySelectorAll('.crm-menu').forEach(m => m.remove());
@@ -2013,31 +2117,41 @@
     }
     const doBtn = (l) => {
       const n = l.nba;
-      if (n.act === 'call') return `<a class="btn btn-primary do" href="tel:${l.ph.replace(/[^\d+]/g,'')}">${n.do}</a>`;
-      if (n.act === 'wa') return `<a class="btn btn-primary do" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">${n.do}</a>`;
+      if (n.act === 'call' && l.ph) return `<a class="btn btn-primary do" href="tel:${l.ph.replace(/[^\d+]/g,'')}">${n.do}</a>`;
+      if (n.act === 'wa' && l.ph) return `<a class="btn btn-primary do" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">${n.do}</a>`;
       return `<button class="btn btn-primary do" onclick="this.textContent='✓ Done · Toju logged it'; this.disabled=true; this.style.opacity=.7">${n.do}</button>`;
     };
     const graphHtml = (g) => `<div class="gph">${g.map((nd,i) => `<div class="gnode"><span class="r">${nd[0]}</span><span class="n">${nd[1]}</span></div>${i < g.length-1 ? '<div class="gline"></div>' : ''}`).join('')}</div>`;
 
+    /* The drawer was written against demo leads that carried an AI summary, a
+       written next-best-action, a relationship graph and a Toju brief. Real
+       rows carry none of those - no engine produces them yet - so every one of
+       those sections is now conditional. Rendering "undefined" under a heading
+       like "AI summary" would be worse than not showing the heading at all. */
     function openLead(i){
-      const l = leads[i], a = l.attr, m = CH[a.channel];
+      const l = leads[i]; if (!l) return;
+      const a = l.attr, m = CH[a.channel];
+      const sec = (k, html) => html ? `<div class="sec"><div class="k">${k}</div>${html}</div>` : '';
       const won = l.stage === 'Won'
-        ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' — posted ' + a.posted : ''}.</p></div>` : '';
+        ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' \u2014 posted ' + a.posted : ''}.</p></div>` : '';
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
-        <div style="display:flex;align-items:center;gap:10px"><span class="score" style="${scoreTone(l.score)}">${l.score}</span><div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph}</div></div></div>
+        <button class="x" id="drawerX">\u00d7</button>
+        <div style="display:flex;align-items:center;gap:10px">${
+          l.score == null ? '' : `<span class="score" style="${scoreTone(l.score)}">${l.score}</span>`
+        }<div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph || 'No phone number yet'}</div></div></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
           <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
-          <span class="src ${l.src === 'toju' ? 'toju' : 'browse'}">${l.stage}</span>${chnBadge(a.channel)}
-          <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>
+          <span class="src browse">${l.stage}</span>${chnBadge(a.channel)}
+          ${l.ph ? `<a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>` : ''}
         </div>
-        <div class="sec nba"><div class="k">✦ Next best action</div><p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>${doBtn(l)}</div>
-        <div class="sec ai"><div class="k">AI summary</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p></div>
-        <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' · ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' · ').slice(1).join(' · ')}</p></div>
-        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' · campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">⚡ Auto-captured — no manual entry</div></div>
+        ${l.failed ? `<div class="sec" style="border-color:var(--danger,#c0392b)"><div class="k">\u26a0 Not delivered</div><p style="margin-top:6px;font-size:13px;line-height:1.5">This lead reached you here, but the WhatsApp alert did not go out. Reach out from this screen.</p></div>` : ''}
+        <div class="sec nba"><div class="k">\u2726 Next best action</div>${l.nba.text ? `<p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>` : ''}${doBtn(l)}</div>
+        ${sec('AI summary', l.summary ? `<p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p>` : '')}
+        <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' \u00b7 ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' \u00b7 ').slice(1).join(' \u00b7 ')}</p></div>
+        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' \u00b7 campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">\u26a1 Auto-captured \u2014 no manual entry</div></div>
         ${won}
-        <div class="sec"><div class="k">Relationship graph</div>${graphHtml(l.graph)}</div>
-        <div class="sec brief"><div class="k">✦ Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>`;
+        ${sec('Relationship graph', Array.isArray(l.graph) && l.graph.length ? graphHtml(l.graph) : '')}
+        ${l.brief ? `<div class="sec brief"><div class="k">\u2726 Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>` : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.synMotion) synMotion.refresh();

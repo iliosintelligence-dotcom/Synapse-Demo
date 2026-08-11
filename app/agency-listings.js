@@ -147,6 +147,35 @@
     });
   }
 
+  /* ── leads ───────────────────────────────────────────────────────────────
+     The CRM's data source. Same discipline as list(): scoped by agency_id
+     explicitly rather than trusting RLS to be the only filter.
+
+     `lost` leads are excluded because this feeds a live pipeline view whose
+     funnel has no column for them — they are not hidden data, they are simply
+     not pipeline. Soft-deleted rows are excluded for the same reason as
+     listings. The joined property supplies the title and price the agency
+     needs to recognise which listing the lead is actually about. */
+  function leads() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('leads')
+        .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
+                'risk_level, next_action_recommendation, budget_min, budget_max, ' +
+                'delivery_status, delivery_error, last_activity_at, created_at, ' +
+                'properties(title, price, city)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .neq('current_stage', 'lost')
+        .order('created_at', { ascending: false })
+        .limit(500);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -352,6 +381,7 @@
     uploadBrandAsset: uploadBrandAsset,
     removeBrandAsset: removeBrandAsset,
     list: list,
+    leads: leads,
     create: create,
     update: update,
     remove: remove,
