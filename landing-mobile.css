@@ -609,3 +609,68 @@
   .m-proximity .m-hero-headline em::after,
   .m-proximity .m-h2 em::after { background: var(--orange); height: 2px; bottom: -2px; opacity: .9; }
 }
+
+/* ═══ SEVEN CHECKS — an inspection sheet ═══════════════════════════════════
+   Was seven grey pills in a wrapping tag cloud, each carrying a green tick.
+   Two problems: it read as a pile of labels rather than a process, and the
+   ticks asserted that all seven had passed — on a page where no listing has a
+   single recorded check. These are the STANDARD a home is measured against.
+
+   Drawn as the sequence it is: a hairline rail, numbered rows, no ticks. The
+   numbering is real information here, not decoration — a listing moves through
+   these in order. */
+@media (max-width: 1024px) {
+  .m-checks {
+    list-style: none; margin: 24px 0 0; padding: 0 0 0 34px;
+    position: relative;
+  }
+  .m-checks::before {
+    content: ''; position: absolute; left: 5px; top: 14px; bottom: 14px; width: 1px;
+    background: linear-gradient(to bottom,
+      rgba(255,138,45,0.7), rgba(255,138,45,0.35) 60%, rgba(20,20,20,0.10));
+  }
+  .m-checks li {
+    position: relative;
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(20,20,20,0.07);
+  }
+  .m-checks li:last-child { border-bottom: none; }
+  /* the node on the rail */
+  .m-checks li::before {
+    content: ''; position: absolute; left: -32px; top: 20px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bg); border: 1.5px solid rgba(255,138,45,0.75);
+  }
+  .m-checks .n {
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .06em; color: var(--text-dim); flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .m-checks .c { font-size: 15.5px; font-weight: 600; color: var(--text); line-height: 1.45; }
+}
+
+/* ═══ MOBILE DEFECTS FOUND BY AUDIT ════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  /* iOS Safari zooms the whole page when a focused input is under 16px. The
+     composer is the primary action on the hero, so the zoom fired on the most
+     important tap on the page and left the layout scaled. 15px -> 16px. */
+  .m-hero-field { font-size: 16px; }
+
+  /* Footer links sat at 36px and the logo at 29px, under the 44px comfortable
+     minimum. The existing rule already sets display:block with min-height:32px,
+     so adding padding was the wrong lever -- the re-run audit still reported
+     36px. The minimum is what actually governs, so set that. */
+  .m-footer-links a { min-height: 44px; display: flex; align-items: center; }
+  .m-logo { display: inline-flex; align-items: center; min-height: 44px; }
+
+  /* The remaining three the audit found: the hero example chip at 38px, and
+     the Privacy/Terms legal links at 19px -- small enough to be a genuine
+     mis-tap risk on the two links people reach for when they are worried. */
+  .m-hero-chip { min-height: 44px; display: inline-flex; align-items: center; }
+  .m-footer-legal-row a { display: inline-flex; align-items: center; min-height: 44px; }
+
+  /* The navbar is fixed, so anchored jumps and in-page links landed with the
+     heading tucked underneath it. */
+  html { scroll-padding-top: 68px; }
+}
