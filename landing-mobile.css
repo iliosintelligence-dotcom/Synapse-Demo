@@ -550,3 +550,62 @@
   display: inline; background: rgba(var(--tint), 0.14);
   padding: 2px 5px; border-radius: 5px; color: var(--text-muted);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND LAYER — mobile.
+
+   The .m-page is a separate DOM with its own stylesheet, so the brand work
+   done in landing.css does not reach it. Same rules apply here: orange fills,
+   rules, glows and dots — never a word.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .m-page { --orange: #FF8A2D; --orange-accent: #FFB066; --graphite: #0D0D0F; }
+
+  /* The hero glow, scaled for a phone: a single warm corner rather than the
+     large field the desktop can afford. */
+  .m-hero { position: relative; isolation: isolate; }
+  .m-hero::before {
+    content: ''; position: absolute; top: -14%; right: -28%;
+    width: 86vw; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,138,45,0.42), rgba(255,176,102,0.14) 46%, transparent 70%);
+    z-index: -1; pointer-events: none;
+  }
+
+  /* Emphasis: an orange wash behind the words, never on them. */
+  .m-hero-headline { isolation: isolate; }
+  .m-hero-headline em { font-style: normal; position: relative; }
+  .m-hero-headline em::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 0.3em;
+    background: linear-gradient(90deg, rgba(255,138,45,0.36), rgba(255,176,102,0.20));
+    border-radius: 3px; z-index: -1;
+  }
+
+  /* Kickers and the hero eyebrow get the brand's short rule. */
+  .m-hero-eyebrow, .m-kicker { position: relative; padding-left: 24px; }
+  .m-hero-eyebrow::before, .m-kicker::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 2px; border-radius: 2px; background: var(--orange);
+  }
+
+  /* The composer send button is the primary action on this screen. Graphite
+     on orange, not white on orange — 8.25:1 against 2.35:1. */
+  .m-hero-send {
+    background: var(--orange) !important;
+    color: var(--graphite) !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(255,138,45,0.34);
+  }
+  .m-hero-send:active { background: #E8761B !important; }
+
+  /* Mobile steps are a vertical timeline with a dot per step, NOT cards --
+     an earlier version of this block gave them card lift and an edge rule,
+     which overwrote the dot that .m-step::before already draws and left a bar
+     floating at the bottom of each row. The layout is left alone; the dot
+     simply becomes the brand orange, which is the same "orange marks the
+     position" idea the brand sheet uses under the active nav item. */
+  .m-step::before { background: var(--orange) !important; }
+
+  /* Dark mobile sections stay flat, same call as the desktop bands. */
+  .m-proximity .m-hero-headline em::after,
+  .m-proximity .m-h2 em::after { background: var(--orange); height: 2px; bottom: -2px; opacity: .9; }
+}
