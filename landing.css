@@ -2187,7 +2187,9 @@ footer {
   transition: background .2s var(--ease), color .2s var(--ease); }
 .pr-per.on { background: var(--brand); color: #f5f5f5; }
 .pr-save { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px;
-  border-radius: 100px; background: rgba(var(--tint), 0.14); color: #8a4a12; }
+  /* The badge keeps the orange TINT as its background, which is the
+     brand-compliant way to use it; the words themselves are ink. */
+  border-radius: 100px; background: rgba(var(--tint), 0.16); color: #1C1C1E; }
 .pr-per.on .pr-save { background: rgba(255,255,255,0.18); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pr-per { transition: none; } }
 /* the toggle is centred above the grid */
@@ -2329,4 +2331,126 @@ textarea:focus-visible {
   box-shadow: none !important;
   outline: none !important;
   border-color: rgba(20, 20, 20, 0.34);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND LAYER — from the Synapse brand sheets.
+
+   The page read as colourless because the palette was a monochrome with a
+   0.022-alpha orange wash. The brand system is not monochrome: it is a
+   neutral 60% / dark 25% / orange 10% / semantic 5% ratio, built on soft
+   elevation and glass rather than flat panels. This adds the missing 10% and
+   the elevation language.
+
+   ORANGE IS NEVER TEXT. Everything below is a fill, a rule, a glow, a dot or
+   a border. #FF8A2D measures 2.20:1 on this ground; it cannot carry a word.
+   Where the brand sheets show an orange label, the word stays ink and the
+   orange sits under it or behind it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --orange:        #FF8A2D;
+  --orange-accent: #FFB066;
+  --orange-tint:   #FFE5CC;
+  --graphite:      #0D0D0F;
+  --charcoal:      #1C1C1E;
+
+  /* Gradient Expression, straight from the sheet's own row. */
+  --grad-orange-glow: radial-gradient(60% 60% at 70% 30%, rgba(255,138,45,0.55), rgba(255,176,102,0.18) 45%, transparent 72%);
+  --grad-glass-warmth: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,229,204,0.55));
+
+  /* Elevation. The sheets are built on soft, wide, low-opacity shadow --
+     "light, depth and spacing to create hierarchy" -- not on borders. */
+  --lift-1: 0 1px 2px rgba(13,13,15,0.04), 0 8px 24px rgba(13,13,15,0.05);
+  --lift-2: 0 2px 6px rgba(13,13,15,0.05), 0 18px 48px rgba(13,13,15,0.08);
+  --lift-orange: 0 8px 26px rgba(255,138,45,0.28);
+}
+
+/* ── the hero gets the brand's own orange glow ─────────────────────────── */
+.hero-section { position: relative; isolation: isolate; }
+.hero-section::before {
+  content: ''; position: absolute; inset: -10% -5% auto auto;
+  width: min(58vw, 760px); aspect-ratio: 1;
+  background: var(--grad-orange-glow);
+  filter: blur(10px);
+  z-index: -1; pointer-events: none;
+}
+
+/* ── primary action: orange fill, graphite label ───────────────────────────
+   The brand sheet puts white on this orange. That is 2.35:1 -- the least
+   readable element in the system on the most important control in the
+   product. Graphite on the same orange is 8.25:1. */
+.panel-btn-primary,
+.m-cta-primary {
+  background: var(--orange) !important;
+  color: var(--graphite) !important;
+  border: none !important;
+  box-shadow: var(--lift-orange);
+  font-weight: 700;
+  transition: transform .18s var(--ease, ease), box-shadow .18s ease, background .18s ease;
+}
+.panel-btn-primary:hover,
+.m-cta-primary:hover {
+  background: #FFA054 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(255,138,45,0.34);
+}
+.panel-btn-primary:active,
+.m-cta-primary:active { transform: translateY(0); background: #E8761B !important; }
+
+/* ── section kickers get the orange rule the sheets use ────────────────── */
+.s-kicker, .m-kicker { position: relative; padding-left: 26px; }
+.s-kicker::before, .m-kicker::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 2px; border-radius: 2px; background: var(--orange);
+}
+
+/* ── cards lift instead of sitting flat ────────────────────────────────── */
+.s-step, .car-card, .m-card {
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: var(--lift-1);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.s-step:hover, .car-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
+
+/* The step number stays ink. It is still text, and orange text is out --
+   including for numerals, including as a gradient. The orange marks the card
+   with a rule along its top edge instead, which is what the brand sheets do
+   with their accent anyway. */
+.s-step .n { color: var(--text-dim); font-weight: 800; }
+.s-step { position: relative; overflow: hidden; }
+.s-step::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 46px; height: 3px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-accent));
+  border-radius: 0 3px 3px 0;
+}
+
+/* Dark bands stay flat. The brand sheet's Depth/Elevation gradient was tried
+   here and read as a muddy brown wash across a large area -- that gradient is
+   built for small elevated surfaces like an icon tile, not a full-bleed
+   section. The dark band keeps its flat #0e0e0e; orange arrives on it as
+   pips, rules and the CTA instead. */
+
+/* ── emphasis inside headlines: an orange underline, never orange text ─── */
+.s-h2 em, .hero-headline em, .m-h1 em {
+  font-style: normal; position: relative; white-space: nowrap;
+}
+.s-h2 em::after, .hero-headline em::after, .m-h1 em::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 0.3em;
+  background: linear-gradient(90deg, rgba(255,138,45,0.38), rgba(255,176,102,0.22));
+  border-radius: 3px; z-index: -1;
+}
+.s-h2, .hero-headline, .m-h1 { isolation: isolate; }
+
+/* On a near-black band the translucent orange underline mixes down to brown.
+   On dark it becomes a thin solid rule at full strength instead, which reads
+   as orange rather than as mud. */
+.s-band.dark .s-h2 em::after,
+.s-close.dark .s-h2 em::after {
+  background: var(--orange);
+  height: 2px; bottom: -2px; border-radius: 2px; opacity: .9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s-step, .car-card, .panel-btn-primary, .m-cta-primary { transition: none; }
 }
