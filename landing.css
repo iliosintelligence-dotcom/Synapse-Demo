@@ -2500,3 +2500,34 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .s-step, .car-card, .panel-btn-primary, .m-cta-primary { transition: none; }
 }
+
+/* ═══ HERO STAT STRIP — full-bleed dark ════════════════════════════════════
+   The three facts under the hero now sit on the same near-black as the dark
+   bands elsewhere (#0e0e0e), so the page has one dark language rather than
+   two treatments of the same idea.
+
+   Full-bleed from inside .container without touching the markup: the
+   box-shadow paints the colour out past the viewport edges and the clip-path
+   trims it vertically, so nothing can cause a horizontal scrollbar. This
+   avoids a negative-margin/100vw pair, which overflows whenever a scrollbar
+   is present. */
+.hero-statline {
+  background: #0e0e0e;
+  box-shadow: 0 0 0 100vmax #0e0e0e;
+  clip-path: inset(0 -100vmax);
+  border-top: none;
+  margin-top: 84px;
+  padding: 0 4px;
+}
+/* On black the numeral carries the emphasis, so it goes to the light ink and
+   the divider rules invert. Orange stays off the text, as everywhere else. */
+.hero-statline .hero-stat-val { color: #f5f5f5; }
+.hero-statline .hero-stat-label { color: rgba(245,245,245,0.62); }
+.hero-statline .hero-stat + .hero-stat { border-left-color: rgba(255,255,255,0.14); }
+
+@media (max-width: 900px) {
+  .hero-statline .hero-stat + .hero-stat {
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.14);
+  }
+}
