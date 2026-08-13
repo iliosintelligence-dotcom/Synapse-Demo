@@ -420,10 +420,36 @@
   }
 
   // Exactly what would be sent to each platform's API.
-  function payloadFor(v) {
+  /* The tracked link. A post that cannot be traced to a lead is just posting,
+     so every variant carries the channel it went out on and the post it came
+     from. The property page reads these and records a touch; when that visitor
+     becomes a lead, the touches collapse into first/last-touch attribution.
+     Nothing here identifies a person -- the visitor id is an anonymous uuid
+     the browser already holds. */
+  function trackedLink(v, opts) {
+    opts = opts || {};
+    var base = (opts.origin || '') + 'app/property.html?id=' + encodeURIComponent(v.propertyId);
+    var ch = CHANNEL_FOR[v.platform];
+    if (ch) base += '&ch=' + encodeURIComponent(ch);
+    if (opts.postId) base += '&post=' + encodeURIComponent(opts.postId);
+    return base;
+  }
+
+  /* syndication.js platform names -> the attribution_channel enum. Anything
+     absent has no enum value, so its links simply carry no channel rather than
+     guessing at one. */
+  var CHANNEL_FOR = {
+    instagram: 'instagram',
+    tiktok: 'tiktok',
+    facebook: 'facebook',
+    whatsapp: 'whatsapp_campaign',
+  };
+
+  function payloadFor(v, opts) {
     var base = { caption: v.caption, hashtags: v.hashtags, ratio: v.ratio,
                  media: v.media ? { id: v.media.id, kind: v.media.kind, src: v.media.src || v.media.poster } : null,
-                 propertyId: v.propertyId };
+                 propertyId: v.propertyId,
+                 link: trackedLink(v, opts) };
     if (v.platform === 'youtube') base.title = v.title;
     return base;
   }
@@ -433,5 +459,6 @@
     shape: shape, generate: generate, validate: validate,
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
+    trackedLink: trackedLink, CHANNEL_FOR: CHANNEL_FOR,
   };
 })();

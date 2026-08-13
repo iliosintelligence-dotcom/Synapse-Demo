@@ -706,6 +706,22 @@
             // is still told the truth — their request WAS received — because it
             // was; the agency sees it in the CRM flagged as undelivered.
             if (!ok || !d.lead_id) return fail(d && d.error ? 'Not sent: ' + d.error : null);
+
+            /* Collapse this visitor's recorded touches into first/last-touch
+               attribution for the new lead. Done here rather than inside
+               create-lead because the visitor id lives in this browser and the
+               function has no way to know it; moving it server-side is a
+               small change if create-lead ever receives the visitor id.
+               Fire-and-forget: the lead is already saved, and failing to
+               attribute it must never look like failing to send it. */
+            try {
+              const visitor = localStorage.getItem('toju_visitor_v1');
+              if (visitor) {
+                SynAuth.client().then((c) =>
+                  c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: visitor }),
+                ).catch(() => {});
+              }
+            } catch (e) { /* storage blocked; the lead still stands */ }
             toast(d.delivery_status === 'delivered'
               ? "Sent — the agent will reach out on WhatsApp shortly."
               : "Sent — the agency has your request and will be in touch.");
@@ -944,6 +960,44 @@
         .map((m) => m.url).filter(Boolean);
       renderGallery();
     }
+
+    /* ── attribution ──────────────────────────────────────────────────────
+       A visitor arriving from a syndicated post carries the channel and the
+       post id on the URL. Record it once, against the anonymous visitor id the
+       browser already holds, so that if this person later becomes a lead the
+       agency can see which post produced them.
+
+       Deliberately quiet: it is a page view, not a transaction. A failure here
+       must never interrupt someone looking at a house, so every branch either
+       records or does nothing. Nothing is sent if the URL carries no channel,
+       which is the case for every ordinary visit. */
+    (function recordAttribution() {
+      const q = new URLSearchParams(window.location.search);
+      const channel = q.get('ch');
+      if (!channel || !URL_ID) return;
+
+      let visitor = null;
+      try {
+        visitor = localStorage.getItem('toju_visitor_v1');
+        if (!visitor) {
+          visitor = (crypto.randomUUID ? crypto.randomUUID() : null);
+          if (visitor) localStorage.setItem('toju_visitor_v1', visitor);
+        }
+      } catch (e) { return; }   // storage blocked: no visitor id, no attribution
+      if (!visitor) return;
+
+      fetch(SUPABASE_URL + '/rest/v1/rpc/record_channel_touch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify({
+          p_property_id: URL_ID,
+          p_channel: channel,
+          p_session_id: visitor,
+          p_post_id: q.get('post') || null,
+          p_kind: 'visit',
+        }),
+      }).catch(() => { /* attribution is never worth breaking a page view over */ });
+    })();
 
     (function hydrate() {
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
