@@ -2713,7 +2713,14 @@
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2600);
     }
     function freshness(l) {
-      const left = 14 - l.days;
+      /* Derive from expires_at when the row has one. This used to assume
+         "listed_at + 14 days", while Toju gates buyers on expires_at -- two
+         independent clocks that happened to agree only because the seed set
+         both. If they ever drift, the agency sees "10 days left" on a listing
+         buyers can no longer be shown. */
+      const left = l.expires_at
+        ? Math.ceil((new Date(l.expires_at).getTime() - Date.now()) / 864e5)
+        : 14 - l.days;
       if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', expired: true, warn: false };
       if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), expired: false, warn: true };
       return { cls: 'ok', label: left + ' days left', expired: false, warn: false };
@@ -2988,6 +2995,8 @@
     function fromDbRow(p) {
       const l = deriveLegacy(Object.assign({}, p));
       l.days = p.listed_at ? Math.max(0, Math.floor((Date.now() - new Date(p.listed_at).getTime()) / 864e5)) : 0;
+      l.expires_at = p.expires_at || null;
+      l.availability_confirmed_at = p.availability_confirmed_at || null;
       l.leads = l.leads || 0;
       return l;
     }

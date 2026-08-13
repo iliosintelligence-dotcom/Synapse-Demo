@@ -298,6 +298,11 @@
         width: auto; max-height: 46%;
       }
     }
+    .avail-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+      margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+    .avail-lbl { font:700 10.5px var(--f-sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-muted); }
+    .avail-val { font-size:12.5px; color:var(--ink); text-align:right; }
+    .avail-val.stale { color:#b3261e; }
   </style>
 </head>
 <body>
@@ -436,52 +441,53 @@
       <input type="file" id="vfile" accept="image/*" hidden />
     </div>
 
-    <div class="card section">
+    <!-- Verification, and availability, deliberately as two separate claims.
+         This card used to be seven hardcoded rows reading "6 of 7 checks
+         passed" on EVERY property, including unverified ones. There are zero
+         rows in property_verification_checks and verification_nodes is empty
+         on every listing, so that ring was inventing the one thing a buyer is
+         least able to check for themselves. It is now rendered from data, and
+         says so plainly when there is none. -->
+    <div class="card section" id="pvChecksCard" hidden>
       <div class="lbl"><span data-icon="shield"></span> What we checked</div>
       <div class="verify-summary">
-        <div class="verify-ring" style="background:conic-gradient(var(--success) 0% 86%, rgba(0,0,0,0.08) 86% 100%)"><span>6/7</span></div>
+        <div class="verify-ring" id="pvChecksRing"><span>—</span></div>
         <div class="verify-summary-txt">
-          <b>6 of 7 checks passed</b>
-          <p>What Synapse verified in person before this listing went live — not a guarantee.</p>
+          <b id="pvChecksHead">Not yet verified</b>
+          <p id="pvChecksNote"></p>
         </div>
       </div>
-      <!-- progressive disclosure: the checks buyers ask about first, rest on tap -->
-      <div class="verify-list">
-        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Title verified</span></div>
-        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Legal review</span></div>
-        <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Flood risk</span></div>
-        <div class="verify-row pending"><span class="vi-ic" data-icon="pending"></span><span class="vi-lbl">Financial — still checking</span></div>
+      <div class="verify-list" id="pvChecksList"></div>
+      <!-- Availability is a separate claim from verification and is labelled
+           as one. A home can be verified in March and gone by August. -->
+      <div class="avail-row" id="pvAvailRow">
+        <span class="avail-lbl">Availability</span>
+        <span class="avail-val" id="pvAvailVal">—</span>
       </div>
-      <details class="more-checks">
-        <summary>See all 7 checks</summary>
-        <div class="verify-list" style="margin-top:2px">
-          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Ground survey</span></div>
-          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Structure</span></div>
-          <div class="verify-row pass"><span class="vi-ic" data-icon="check"></span><span class="vi-lbl">Neighbourhood</span></div>
-        </div>
-      </details>
     </div>
 
     <div class="card section">
       <div class="lbl">Listed by</div>
+      <!-- Was "Prestige Realty Ltd. · Gold Verified · 4.6 ★ · 60 transactions",
+           hardcoded on every listing. The real agency was already being
+           fetched. The star rating and transaction count are not stored
+           anywhere, so they are not shown rather than guessed. -->
       <div class="agency">
-        <div class="logo">P</div>
+        <div class="logo" id="pvAgencyInitial">—</div>
         <div style="flex:1">
-          <div style="font-weight:600;font-size:14.5px">Prestige Realty Ltd.</div>
-          <div class="dim" style="font-size:12.5px">Gold Verified · 4.6 ★ · 60 transactions</div>
+          <div style="font-weight:600;font-size:14.5px" id="pvAgencyName">—</div>
+          <div class="dim" style="font-size:12.5px" id="pvAgencyMeta"></div>
         </div>
-        <span class="chip chip-gold">✦ Gold</span>
       </div>
     </div>
 
-    <!-- similar verified homes -->
-    <div class="card section">
-      <div class="lbl">More like this — verified</div>
-      <div class="sim">
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=340&q=60" alt=""><div class="b"><div class="p">₦148M</div><div class="t">3-Bed Terrace, Ikate</div><div class="m">Confidence 91 · 94% match</div></div></a>
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=340&q=60" alt=""><div class="b"><div class="p">₦150M</div><div class="t">3-Bed Duplex, Osapa</div><div class="m">Confidence 88 · 80% match</div></div></a>
-        <a href="browse.html"><img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=340&q=60" alt=""><div class="b"><div class="p">₦139M</div><div class="t">3-Bed, Sangotedo</div><div class="m">Confidence 84 · 76% match</div></div></a>
-      </div>
+    <!-- Was three hardcoded Lekki listings with invented "Confidence 91 ·
+         94% match" figures, shown under an Ibadan property. Now a real query
+         against the same city; the card hides itself when there is nothing
+         genuine to show, which at current inventory is often. -->
+    <div class="card section" id="pvSimCard" hidden>
+      <div class="lbl" id="pvSimLbl">More in this city</div>
+      <div class="sim" id="pvSim"></div>
     </div>
     </div><!-- /deck -->
 
@@ -730,6 +736,14 @@
     // everything id-scoped on this page (negotiation payload, saved places,
     // viewing state) AND now selects the listing itself.
     const URL_ID = new URLSearchParams(window.location.search).get('id');
+    /* Both used by the data-driven cards below. Titles and agency names are
+       agency-authored text going through innerHTML, so they are escaped. */
+    const esc = (t) => String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const fmtDate = (iso) => {
+      const d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
     const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
 
     /* ── the listing itself ───────────────────────────────────────────────
@@ -808,6 +822,117 @@
       const vLine = document.getElementById('pvVerifyLine'); if (vLine) vLine.textContent = lineTxt;
       const vcLine = document.getElementById('pvcVerifyLine'); if (vcLine) vcLine.textContent = lineTxt;
       set('pvVerifyNote', noteTxt); set('pvcVerifyNote', noteTxt);
+
+      /* ── the three blocks that used to be hardcoded ───────────────────
+         Each renders from data or hides. None of them invents a number. */
+
+      // Checks. verification_nodes is the only per-check evidence we store;
+      // property_verification_checks is empty platform-wide today. So a
+      // verified home with no nodes says exactly that, rather than drawing a
+      // ring and picking a fraction.
+      (function paintChecks() {
+        const card = document.getElementById('pvChecksCard'); if (!card) return;
+        const nodes = Array.isArray(p.verification_nodes) ? p.verification_nodes : [];
+        const pass = nodes.filter((n) => n && n.status === 'pass').length;
+        const ring = document.getElementById('pvChecksRing');
+        const head = document.getElementById('pvChecksHead');
+        const note = document.getElementById('pvChecksNote');
+        const list = document.getElementById('pvChecksList');
+        const isV = p.verification_status === 'verified';
+
+        if (nodes.length) {
+          const pct = Math.round((pass / nodes.length) * 100);
+          ring.style.background =
+            'conic-gradient(var(--success) 0% ' + pct + '%, rgba(0,0,0,0.08) ' + pct + '% 100%)';
+          ring.innerHTML = '<span>' + pass + '/' + nodes.length + '</span>';
+          head.textContent = pass + ' of ' + nodes.length + ' checks passed';
+          note.textContent = 'What Synapse checked before this listing went live \u2014 not a guarantee.';
+          list.innerHTML = nodes.map((n) => {
+            const ok = n.status === 'pass';
+            const cls = ok ? 'pass' : (n.status === 'pending' ? 'pending' : 'fail');
+            const ic = ok ? 'check' : 'pending';
+            return '<div class="verify-row ' + cls + '"><span class="vi-ic" data-icon="' + ic +
+                   '"></span><span class="vi-lbl">' + esc(n.label || n.name || n.type || 'Check') +
+                   (ok ? '' : ' \u2014 ' + esc(n.status || 'not passed')) + '</span></div>';
+          }).join('');
+        } else {
+          ring.style.background = 'rgba(0,0,0,0.06)';
+          ring.innerHTML = '<span>' + (isV ? '\u2713' : '\u2014') + '</span>';
+          head.textContent = isV ? 'Verified by Synapse' : 'Not yet verified';
+          note.textContent = isV
+            ? 'Synapse verified this listing' + (p.verified_at ? ' on ' + fmtDate(p.verified_at) : '') +
+              '. The individual check results are not published yet.'
+            : 'Listed by the agency. Synapse has not run its checks on this home yet.';
+          list.innerHTML = '';
+        }
+        card.hidden = false;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(card);
+        if (window.__pvDeckChanged) window.__pvDeckChanged();
+      })();
+
+      // Availability, stated as its own claim with its own date.
+      (function paintAvailability() {
+        const el = document.getElementById('pvAvailVal'); if (!el) return;
+        const conf = p.availability_confirmed_at;
+        const exp = p.expires_at ? new Date(p.expires_at) : null;
+        const expired = exp && exp.getTime() < Date.now();
+        if (expired) {
+          el.textContent = 'Not confirmed since ' + (conf ? fmtDate(conf) : 'listing') +
+            ' — ask the agency before viewing';
+          el.classList.add('stale');
+          return;
+        }
+        if (!conf) { el.textContent = 'Not confirmed yet'; el.classList.add('stale'); return; }
+        const days = Math.floor((Date.now() - new Date(conf).getTime()) / 864e5);
+        el.textContent = (days <= 0 ? 'Confirmed today'
+                        : days === 1 ? 'Confirmed yesterday'
+                        : 'Confirmed ' + days + ' days ago') + ' · ' + fmtDate(conf);
+        if (days > 14) el.classList.add('stale');
+      })();
+
+      // Listed by. Real agency, real tier, and nothing else -- we store no
+      // star rating and no transaction count.
+      (function paintAgency() {
+        const a = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
+        const nm = (a && a.name) || 'Agency not published';
+        set('pvAgencyName', nm);
+        const ini = document.getElementById('pvAgencyInitial');
+        if (ini) ini.textContent = (nm[0] || '\u2014').toUpperCase();
+        const tier = a && a.verification_tier;
+        set('pvAgencyMeta', tier === 'verified' ? 'Verified agency'
+                          : tier ? 'Agency tier: ' + tier
+                          : 'Agency not yet verified');
+      })();
+
+      // More in this city. A real query, and the card stays hidden unless it
+      // finds something.
+      (function paintSimilar() {
+        if (!p.city) return;
+        const q = SUPABASE_URL + '/rest/v1/properties'
+          + '?select=id,title,price,city,verification_status,property_media(url,display_order)'
+          + '&city=eq.' + encodeURIComponent(p.city)
+          + '&id=neq.' + encodeURIComponent(p.id)
+          + '&status=eq.live&is_active=is.true&deleted_at=is.null&limit=3';
+        fetch(q, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+          .then((r) => (r.ok ? r.json() : []))
+          .then((rows) => {
+            if (!rows || !rows.length) return;
+            document.getElementById('pvSim').innerHTML = rows.map((r) => {
+              const media = (r.property_media || []).slice()
+                .sort((x, y) => (x.display_order || 0) - (y.display_order || 0));
+              const img = media[0] && media[0].url;
+              return '<a href="property.html?id=' + encodeURIComponent(r.id) + '">'
+                + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '<div class="simph"></div>')
+                + '<div class="b"><div class="p">' + naira(r.price) + '</div>'
+                + '<div class="t">' + esc(r.title || 'Listing') + '</div>'
+                + '<div class="m">' + (r.verification_status === 'verified' ? 'Verified' : 'Not yet verified') + '</div>'
+                + '</div></a>';
+            }).join('');
+            document.getElementById('pvSimCard').hidden = false;
+            if (window.__pvDeckChanged) window.__pvDeckChanged();
+          })
+          .catch(() => { /* the card simply stays hidden */ });
+      })();
 
       if (p.description) { set('pvGlance', p.description); show('pvGlance', true); }
 

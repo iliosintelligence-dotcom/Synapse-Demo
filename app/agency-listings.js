@@ -538,12 +538,20 @@
   }
 
   /* Re-listing is what the 14-day freshness rule measures against. */
-  function relist(id) {
+  /* Renewing a listing is the agency asserting the home is still available,
+     so it goes through reconfirm_listing(): one statement that stamps
+     availability_confirmed_at and moves expires_at together, with the
+     membership check server-side. The old version wrote expires_at directly
+     and recorded no confirmation, so the freshness promise had a date but
+     nothing behind it. */
+  function relist(id, days) {
     return client().then(function (c) {
-      return c.from('properties').update(freshWindow()).eq('id', id);
+      return c.rpc('reconfirm_listing', { p_property_id: id, p_days: days || FRESH_DAYS });
     }).then(function (r) {
       if (r.error) throw r.error;
-      return true;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row) throw new Error('That listing could not be confirmed');
+      return row;
     });
   }
 
