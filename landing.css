@@ -1819,7 +1819,9 @@ footer {
 }
 .s-band.dark .s-h2, .s-close.dark .s-h2 { color: #f5f5f5; }
 .s-band.dark .s-h2 em { color: #fff; }
-.s-band.dark .s-step { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
+.s-band.dark .s-step { background: none; border: none; }
+.s-band.dark .s-step .n { background: #141414; border-color: rgba(255,138,45,0.5); color: #f5f5f5; box-shadow: 0 0 0 5px #0e0e0e; }
+.s-band.dark .s-step:hover .n { background: var(--orange); color: #0D0D0F; }
 .s-band.dark .s-step:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5); }
 .s-band.dark .pip i { box-shadow: 0 0 0 4px rgba(var(--tint), 0.24); }
 .s-lede { max-width: 680px; }
@@ -2398,31 +2400,75 @@ textarea:focus-visible {
 .m-cta-primary:active { transform: translateY(0); background: #E8761B !important; }
 
 /* ── section kickers get the orange rule the sheets use ────────────────── */
-.s-kicker, .m-kicker { position: relative; padding-left: 26px; }
+/* The brand sheets head every section with a small orange DOT before the
+   label ("● SYNAPSE · NAVIGATION SYSTEM"), not a dash. */
+.s-kicker, .m-kicker { position: relative; padding-left: 18px; }
 .s-kicker::before, .m-kicker::before {
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 18px; height: 2px; border-radius: 2px; background: var(--orange);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--orange);
 }
 
 /* ── cards lift instead of sitting flat ────────────────────────────────── */
-.s-step, .car-card, .m-card {
+.car-card, .m-card {
   background: var(--surface);
   border-radius: 18px;
   box-shadow: var(--lift-1);
   transition: transform .25s ease, box-shadow .25s ease;
 }
-.s-step:hover, .car-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
+.car-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
 
-/* The step number stays ink. It is still text, and orange text is out --
-   including for numerals, including as a gradient. The orange marks the card
-   with a rule along its top edge instead, which is what the brand sheets do
-   with their accent anyway. */
-.s-step .n { color: var(--text-dim); font-weight: 800; }
-.s-step { position: relative; overflow: hidden; }
-.s-step::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 46px; height: 3px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-accent));
-  border-radius: 0 3px 3px 0;
+/* ── THE JOURNEY RAIL ──────────────────────────────────────────────────────
+   These steps were five white boxes in a three-column grid, so they wrapped
+   3 + 2 and read as a pile of cards rather than a sequence. The content is a
+   journey -- "one adviser, the whole way through" -- so it is now drawn as
+   one: a single hairline running through numbered nodes.
+
+   No card chrome, no orange tabs. The line carries the orange, the nodes sit
+   on it, and everything else is neutral. Shared with agencies.html, which
+   uses the same component. */
+.s-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 30px 26px;
+  margin-top: 68px;
+  position: relative;
+}
+/* the rail itself, threaded behind the nodes */
+.s-steps::before {
+  content: ''; position: absolute; left: 26px; right: 26px; top: 21px; height: 1px;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,138,45,0.55) 12%, rgba(255,138,45,0.55) 88%, transparent);
+}
+.s-step {
+  background: none; border: none; border-radius: 0; box-shadow: none;
+  padding: 0; overflow: visible; position: relative;
+}
+.s-step:hover { transform: none; box-shadow: none; }
+
+/* the number becomes a node ON the rail */
+/* A pill, not a fixed circle: this slot holds "01" on the customer page and
+   words like CRM / TRUST / GROWTH on the agency page. min-width keeps the
+   numerals perfectly round while longer labels simply grow. */
+.s-step .n {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 42px; height: 42px; padding: 0 15px; border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid rgba(255,138,45,0.45);
+  box-shadow: 0 0 0 5px var(--bg);
+  font-family: var(--f-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; white-space: nowrap;
+  color: var(--text); margin-bottom: 18px;
+  transition: background .25s ease, border-color .25s ease, transform .25s ease;
+}
+.s-step:hover .n { background: var(--orange); border-color: var(--orange); transform: translateY(-2px); }
+.s-step .t { margin-top: 0; }
+
+/* Below the rail's breakpoint the line would run through stacked rows, so it
+   goes and the nodes carry the sequence on their own. */
+@media (max-width: 900px) {
+  .s-steps::before { display: none; }
+  .s-step .n { box-shadow: none; }
 }
 
 /* Dark bands stay flat. The brand sheet's Depth/Elevation gradient was tried
