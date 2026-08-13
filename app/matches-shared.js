@@ -112,10 +112,11 @@
       // 0 -- "we checked it and it scored nothing", which is worse than
       // silence. trust_score is currently NULL on every listing.
       score: m.trustScore == null || m.trustScore === '' ? null : Number(m.trustScore),
-      // No fitScore means we did not score this match. It used to fall back
-      // to 80, so essentially every card advertised "80% match" as though a
-      // model had produced it. null now, and the chip is suppressed.
-      match: Number(m.fitScore) > 0 ? Math.min(100, Math.round(Number(m.fitScore))) : null,
+      // No match percentage, by decision. The server no longer emits a score:
+      // the only producer read an archetype column from an empty table, so it
+      // was always 0, and this line used to turn that into "80% match". A
+      // percentage implies a model weighed something. Nothing did.
+      match: null,
       flood: m.neighbourhood ? m.neighbourhood.flood : null,
       power: m.neighbourhood ? m.neighbourhood.power : null,
       yield: m.yieldPct,
