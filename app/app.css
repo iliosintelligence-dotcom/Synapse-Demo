@@ -7,7 +7,27 @@
   --brand-dim: #000000;
   --brand-deep: #121212;
   --brand-text: #363636;
-  --bg: #f5f5f5;
+  /* Brand tint. The app was pure monochrome while landing.css already carried
+     the mark's colour, so the product felt unrelated to its own brand. These
+     are the mark's own values -- #c76a1a is the wordmark burnt orange, and
+     #FF9B4A / #D85A10 are the two stops of the logo's radial gradient
+     (landing.css:423). Named to match landing.css so both sheets agree.
+
+     Decorative only. Burnt orange on the page ground measures 3.45:1, well
+     under the 4.5:1 body-text floor, so it is used for washes, hairlines and
+     glows -- never for text. */
+  --tint: 199, 106, 26;                 /* #c76a1a — wordmark */
+  --tint-bright: 255, 155, 74;          /* #FF9B4A — logo gradient, light stop */
+  --tint-deep: 216, 90, 16;             /* #D85A10 — logo gradient, dark stop */
+  --tint-wash: rgba(var(--tint), 0.022);
+  --tint-edge: rgba(var(--tint), 0.10);
+  --tint-ink: rgba(var(--tint), 0.85);  /* pips + pings ONLY, never text */
+
+  /* Warmed off the flat grey toward the cream the brand cards sit on. Kept
+     well short of the marketing cream (#FBF1E9) because white surfaces still
+     have to separate from it. Text contrast is unmoved: ink reads 15.09:1
+     here against 15.29:1 before. */
+  --bg: #f7f3ee;
   --surface: #ffffff;
   --ink: #1e1e1e;
   --ink-muted: rgba(54,54,54,0.62);
@@ -42,7 +62,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 22px;
   padding: 14px 22px;
-  background: rgba(245,245,245,0.82);
+  background: rgba(247,243,238,0.82);   /* tracks --bg; translucency needs a literal */
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border-bottom: 1px solid var(--border);
@@ -324,4 +344,71 @@ textarea:focus-visible {
   box-shadow: none !important;
   outline: none !important;
   border-color: rgba(20, 20, 20, 0.34);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Brand ambience.
+
+   Not a re-skin: no component changes colour, no text changes colour. This is
+   only the room the interface stands in. Every motif here is taken from the
+   brand artwork rather than invented -- the concentric hairline rings that
+   orbit the mark, the dot field from the corner of the brand cards, and the
+   two-stop orange glow of the logo gradient.
+
+   Alphas are deliberately at the edge of perception (0.02–0.07). The test is
+   that you should not be able to point at it, only notice that the product
+   looks like it belongs to the brand. Both layers are inert: pointer-events
+   none, no animation, dropped for print.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;              /* above the body ground, beneath every child */
+  pointer-events: none;
+}
+
+/* Glow + orbit rings. The two radial stops are the logo gradient's own
+   colours, pushed to the corners so the centre of the screen -- where the
+   reading happens -- stays clean. */
+body::before {
+  background:
+    radial-gradient(58% 44% at 100% 0%,   rgba(var(--tint-bright), 0.10), transparent 68%),
+    radial-gradient(52% 42% at 0% 100%,   rgba(var(--tint-deep),   0.07), transparent 70%),
+    repeating-radial-gradient(circle at 88% 12%,
+      transparent 0 92px,
+      rgba(var(--tint), 0.055) 92px 93px);
+}
+
+/* The dot field, bottom-left, fading out as it travels in — exactly how it
+   behaves in the brand cards. Masked rather than faded with opacity so the
+   grid itself stays crisp where it is densest. */
+body::after {
+  background-image: radial-gradient(rgba(var(--tint), 0.42) 1.1px, transparent 1.7px);
+  background-size: 22px 22px;
+  background-position: 0 100%;
+  -webkit-mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
+          mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
+  /* 0.42 x 0.75 lands each dot near #e7c5a6 on the page ground -- present if
+     you look, invisible if you are reading. Any lower and the layer renders
+     but cannot be seen at all, which is just cost with no effect. */
+  opacity: .75;
+}
+
+/* Narrow screens: the rings and the dot field both read as noise at phone
+   width, where content runs edge to edge. Keep the glow, drop the pattern. */
+@media (max-width: 640px) {
+  body::before {
+    background:
+      radial-gradient(70% 30% at 100% 0%, rgba(var(--tint-bright), 0.09), transparent 70%),
+      radial-gradient(70% 26% at 0% 100%, rgba(var(--tint-deep),   0.06), transparent 72%);
+  }
+  body::after { content: none; }
+}
+
+@media print {
+  body::before, body::after { content: none; }
 }
