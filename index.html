@@ -717,6 +717,50 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
   upd();
 })();
 
+// RESTORED TWICE, for two different reasons, both worth recording.
+//
+// First: this block was collateral damage when the freshness-demo driver was
+// removed. That cut ran from a comment marker to the closing script tag, and
+// this router happened to sit between them, so every orange CTA on the page
+// silently stopped navigating. A range delete between two markers has to be
+// told what it is allowed to swallow.
+//
+// Then the restoration itself broke it again: the comment explaining the
+// above contained a literal closing script tag. The HTML parser does not care
+// that it sits inside a JS comment -- it ends the script element right there,
+// and everything below became inert text. Never write that sequence inside an
+// inline script, not even in prose.
+// ─── Wire the CTA buttons to the application ───
+// CTAs open the actual app screens (clickable prototypes of the real
+// @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
+// primary/secondary buttons are handled by the audience toggle below.
+(function () {
+  // Every customer CTA funnels to Toju. Only agency-audience actions and the
+  // explicit "Browse verified homes" button route elsewhere.
+  // Agency CTAs land on sign-in first — the portal has no anonymous mode.
+  var AGENCY_GATE = 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html');
+  var routes = [
+    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: AGENCY_GATE },
+    { match: /browse verified homes/i, target: 'app/browse.html' },
+  ];
+  var ctas = document.querySelectorAll(
+    '.panel-btn-primary, .panel-btn-secondary, ' +
+    '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
+  );
+  ctas.forEach(function (btn) {
+    var label = (btn.textContent || '').trim();
+    var route = routes.find(function (r) { return r.match.test(label); });
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function () {
+      if (route && route.target) window.location.href = route.target;
+      else if (route && route.scroll) {
+        var el = document.querySelector(route.scroll);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else window.location.href = 'app/toju.html';
+    });
+  });
+})();
+
 </script>
 <script src="app/icons.js"></script>
 <script src="app/motion.js" data-motion-base="app/motion/"></script>

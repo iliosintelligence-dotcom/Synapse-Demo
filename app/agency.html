@@ -1030,6 +1030,21 @@
     .ob-x { border: 1px solid var(--border); background: transparent; border-radius: 8px;
             font-size: 11.5px; padding: 4px 9px; cursor: pointer; color: var(--ink-muted); }
     .crm-wa.off { opacity: .28; cursor: default; }
+    /* Relationship-manager sheet. Deliberately not styled as an alert: it is
+       a phone number, available when it is available. */
+    .rm-card { padding: 4px 2px; min-width: 232px; }
+    .rm-name { font-size: 15px; font-weight: 650; color: var(--ink); }
+    .rm-role { font-size: 11.5px; color: var(--ink-muted); letter-spacing: .04em;
+      text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .rm-hours { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; }
+    .rm-call {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 12px; padding: 11px 14px; border-radius: 10px;
+      background: var(--action); color: var(--action-on);
+      font-weight: 700; font-size: 14px; text-decoration: none;
+    }
+    .rm-call:hover { background: var(--action-dim); }
+    .rm-none { font-size: 13px; color: var(--ink-muted); line-height: 1.5; margin-top: 4px; }
     .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
     @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
     .crm-tablecard { padding: 0; overflow: hidden; }
@@ -1343,6 +1358,7 @@
       }
       .agd-add .agd-sheet{ left: -52px; transform-origin: bottom left; }
       .agd-nav .agd-sheet{ left: 0; }
+      .agd-call .agd-sheet{ left: -88px; transform-origin: bottom center; }
       .agd.open .agd-sheet{ opacity: 1; transform: none; pointer-events: auto; }
       @media (prefers-reduced-motion: reduce){
         .agd-sheet{ transition: none; } .agd-fab{ transition: none; }
@@ -1816,6 +1832,16 @@
       <div class="agd-sheet" id="agdNavSheet" role="menu" aria-label="Portal navigation"></div>
       <button class="agd-btn" id="agdNavFab" type="button" aria-expanded="false" aria-label="Open navigation">
         <span data-icon="grid"></span>
+      </button>
+    </div>
+    <span class="agd-div" aria-hidden="true"></span>
+    <!-- Escalation lives in the taskbar because it is needed from whichever
+         pane you happen to be on when a deal starts going wrong, not from a
+         support page you have to navigate to. -->
+    <div class="agd agd-call" id="agdCall">
+      <div class="agd-sheet" id="agdCallSheet" role="menu" aria-label="Your relationship manager"></div>
+      <button class="agd-btn" id="agdCallFab" type="button" aria-expanded="false" aria-label="Call your relationship manager">
+        <span data-icon="phone"></span>
       </button>
     </div>
     <span class="agd-div" aria-hidden="true"></span>
@@ -3237,6 +3263,86 @@
         });
     });
     // creative insights now live in the Ask-Toju panel (marketing context).
+    /* Call your relationship manager.
+
+       Three states, and none of them invents a number:
+         unassigned              -> say so, and say who to email instead
+         assigned, no number     -> name them, say we have no number on file
+         assigned, with number   -> a tel: link
+
+       tel: rather than anything platform-mediated. Twilio is not configured,
+       so Synapse cannot place or route a call today -- and a dialler link
+       needs no provider at all, on any phone. */
+    (function relationshipManagerControl() {
+      /* Its own escaper. The one used by the CRM lives inside that pane's
+         IIFE, so it is not in scope here -- referencing it would have thrown
+         the moment anyone opened this sheet, and nothing about the syntax
+         would have shown it. */
+      const esc = (t) => String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const wrap = document.getElementById('agdCall');
+      const fab = document.getElementById('agdCallFab');
+      const sheet = document.getElementById('agdCallSheet');
+      if (!wrap || !fab || !sheet) return;
+      let cached = null;
+
+      const paint = (rm) => {
+        if (!rm.assigned) {
+          sheet.innerHTML = '<div class="rm-card">'
+            + '<div class="rm-role">Your relationship manager</div>'
+            + '<div class="rm-none">Nobody is assigned to your agency yet. '
+            + 'Email <b>ilios.intelligence@gmail.com</b> and we will put a name and a number here.</div>'
+            + '</div>';
+          return;
+        }
+        const head = '<div class="rm-card">'
+          + '<div class="rm-role">Your relationship manager</div>'
+          + '<div class="rm-name">' + esc(rm.name) + '</div>'
+          + (rm.hours ? '<div class="rm-hours">' + esc(rm.hours) + '</div>' : '');
+        sheet.innerHTML = rm.phone
+          ? head + '<a class="rm-call" href="tel:' + esc(rm.phone.replace(/[^\d+]/g, '')) + '">'
+                 + '\u2706 Call ' + esc(rm.phone) + '</a></div>'
+          : head + '<div class="rm-none">We do not have a phone number on file for them yet — '
+                 + 'email <b>ilios.intelligence@gmail.com</b> and we will add one.</div></div>';
+      };
+
+      const open = () => {
+        // Same 'open' class and same scrim the nav and create sheets use --
+        // the CSS only reveals .agd.open .agd-sheet, so toggling any other
+        // class would have left this sheet permanently invisible.
+        const wasOpen = wrap.classList.contains('open');
+        document.getElementById('agdNav')?.classList.remove('open');
+        document.getElementById('agdAdd')?.classList.remove('open');
+        const scrim = document.getElementById('agdScrim');
+        wrap.classList.toggle('open', !wasOpen);
+        if (scrim) scrim.classList.toggle('on', !wasOpen);
+        fab.setAttribute('aria-expanded', String(!wasOpen));
+        if (wasOpen) return;
+        if (cached) { paint(cached); return; }
+        sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Looking that up…</div></div>';
+        if (!window.SynListings || !SynListings.relationshipManager) {
+          sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that just now.</div></div>';
+          return;
+        }
+        SynListings.relationshipManager()
+          .then((rm) => { cached = rm; paint(rm); })
+          .catch((err) => {
+            sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that — '
+              + esc((err && err.message) || 'please try again') + '</div></div>';
+          });
+      };
+
+      fab.addEventListener('click', (e) => { e.stopPropagation(); open(); });
+      document.addEventListener('click', (e) => {
+        if (wrap.classList.contains('open') && !wrap.contains(e.target)) {
+          wrap.classList.remove('open');
+          const scrim = document.getElementById('agdScrim');
+          if (scrim) scrim.classList.remove('on');
+          fab.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
 
@@ -4668,6 +4774,14 @@
       const isOpen = (el) => el.classList.contains('open');
       function closeAll() {
         nav.classList.remove('open'); add.classList.remove('open');
+        // The call control is a third sheet on the same bar; without this it
+        // stays open behind the scrim when the nav or create menu opens.
+        const call = document.getElementById('agdCall');
+        if (call) {
+          call.classList.remove('open');
+          const cf = document.getElementById('agdCallFab');
+          if (cf) cf.setAttribute('aria-expanded', 'false');
+        }
         scrim.classList.remove('on');
         navFab.setAttribute('aria-expanded', 'false');
         addFab.setAttribute('aria-expanded', 'false');

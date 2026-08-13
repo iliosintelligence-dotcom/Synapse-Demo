@@ -498,6 +498,35 @@
     });
   }
 
+  /* The named human at Synapse this agency escalates to by phone.
+
+     Comes from a SECURITY DEFINER function rather than a table read: the
+     relationship manager is Synapse staff, not a colleague, so both
+     profiles_select_own and the agency-colleagues policy correctly refuse to
+     show them -- and widening either to expose staff profiles would leak far
+     more than a name and a number.
+
+     Three real states, and the caller must handle all three:
+       { assigned: false }                    nobody assigned
+       { assigned: true, phone: null }        assigned, but no number on file
+       { assigned: true, phone: '+234...' }   callable
+     Never invent a fallback number for the first two. */
+  function relationshipManager() {
+    return client().then(function (c) {
+      return c.rpc('my_relationship_manager');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.manager_name) return { assigned: false, name: null, phone: null, hours: null };
+      return {
+        assigned: true,
+        name: row.manager_name,
+        phone: row.manager_phone || null,
+        hours: row.hours || null,
+      };
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -714,6 +743,7 @@
     leads: leads,
     setLeadStage: setLeadStage,
     roster: roster,
+    relationshipManager: relationshipManager,
     assignLeads: assignLeads,
     deleteLeads: deleteLeads,
     queueMessages: queueMessages,
