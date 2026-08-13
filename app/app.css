@@ -472,3 +472,100 @@ body::after {
 @media print {
   body::before, body::after { content: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND COMPONENT LAYER — from the Synapse brand sheets.
+
+   The tokens landed earlier; this is the component language built on them:
+   the button system, the elevation scale, and the focus treatment.
+
+   Two rules govern everything below.
+
+   ORANGE IS NEVER TEXT. It fills, it lifts, it rings a focused control. The
+   label on an orange fill is graphite (8.25:1) -- the sheets show white there,
+   which measures 2.35:1 and would make the most important control in the
+   product the least readable thing on the page.
+
+   ORANGE IS 10% OF THE INTERFACE, per the sheet's own usage ratio. So it is
+   spent on the genuinely primary action -- the one thing per screen we want
+   pressed -- and nowhere else. Toolbar buttons, chips and secondary actions
+   deliberately stay neutral; a dashboard has dozens of buttons and turning
+   them all orange would spend the accent until it means nothing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── elevation scale ──────────────────────────────────────────────────────
+   The sheets build hierarchy with light and depth rather than borders. */
+:root {
+  --lift-1: 0 1px 2px rgba(13,13,15,0.04), 0 8px 24px rgba(13,13,15,0.05);
+  --lift-2: 0 2px 6px rgba(13,13,15,0.05), 0 18px 48px rgba(13,13,15,0.08);
+  --lift-action: 0 6px 20px rgba(255,138,45,0.30);
+}
+
+/* ── primary action ───────────────────────────────────────────────────────
+   Was charcoal with white text. The brand system makes orange the action
+   colour: "use orange to draw focus and communicate primary actions". */
+.btn-primary {
+  background: var(--action);
+  color: var(--action-on);
+  box-shadow: var(--lift-action);
+}
+.btn-primary:hover {
+  background: #FFA054;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(255,138,45,0.36);
+}
+.btn-primary:active {
+  background: var(--action-dim);
+  transform: translateY(0);
+  box-shadow: 0 3px 12px rgba(255,138,45,0.30);
+}
+.btn-primary[disabled], .btn-primary:disabled {
+  background: var(--mist);
+  color: var(--stone);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary and ghost stay neutral by design — see the 10% rule above. */
+.btn-secondary {
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border-strong); box-shadow: var(--lift-1);
+}
+.btn-secondary:hover { box-shadow: var(--lift-2); transform: translateY(-1px); }
+
+/* ── the persistent create control ────────────────────────────────────────
+   The one action available from every pane, so it carries the accent. */
+.agd-btn-primary {
+  background: var(--action) !important;
+  color: var(--action-on) !important;
+  box-shadow: var(--lift-action);
+}
+.agd-btn-primary:hover { background: #FFA054 !important; }
+.agd-btn-primary:active { background: var(--action-dim) !important; }
+
+/* ── focus ────────────────────────────────────────────────────────────────
+   The sheets show a soft ring around a focused control. Keyboard users get a
+   visible, branded target; the ring is a shadow so it never shifts layout. */
+.btn:focus-visible,
+.agd-btn:focus-visible,
+.tbtn:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,138,45,0.38), 0 0 0 1px rgba(13,13,15,0.16);
+}
+
+/* ── cards ────────────────────────────────────────────────────────────────
+   The base .card is already the sheets' "Glass" treatment. These are the
+   other three, available where a surface needs to sit forward or recede. */
+.card-elevated { box-shadow: var(--lift-2); }
+.card-outline {
+  background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid var(--border-strong); box-shadow: none;
+}
+.card-flat { background: var(--surface); box-shadow: var(--lift-1); border: 1px solid var(--hair, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .btn-secondary, .agd-btn-primary { transition: none; }
+  .btn-primary:hover, .btn-secondary:hover { transform: none; }
+}
