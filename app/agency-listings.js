@@ -147,6 +147,386 @@
     });
   }
 
+  /* ── leads ───────────────────────────────────────────────────────────────
+     The CRM's data source. Same discipline as list(): scoped by agency_id
+     explicitly rather than trusting RLS to be the only filter.
+
+     `lost` leads are excluded because this feeds a live pipeline view whose
+     funnel has no column for them — they are not hidden data, they are simply
+     not pipeline. Soft-deleted rows are excluded for the same reason as
+     listings. The joined property supplies the title and price the agency
+     needs to recognise which listing the lead is actually about. */
+  function leads() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('leads')
+        .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
+                'risk_level, next_action_recommendation, budget_min, budget_max, ' +
+                'delivery_status, delivery_error, last_activity_at, created_at, ' +
+                'assigned_agent_id, properties(title, price, city)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .neq('current_stage', 'lost')
+        .order('created_at', { ascending: false })
+        .limit(500);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* Move a lead through the pipeline.
+
+     Scoped by agency_id as well as id: RLS already restricts the row set, but
+     an explicit filter means a mistyped id fails as "no rows" rather than
+     quietly relying on the policy to be the only thing standing between this
+     agency and another one's lead.
+
+     Only pipeline columns are grantable to `authenticated` -- delivery_status,
+     source and consumer_phone are deliberately not updatable from the client,
+     so the attribution record cannot be rewritten after the fact. */
+  var LEAD_STAGES = ['new', 'contacted', 'qualified', 'viewing_scheduled',
+                     'viewing_completed', 'negotiating', 'commitment', 'closed', 'lost'];
+  function setLeadStage(id, stage) {
+    if (LEAD_STAGES.indexOf(stage) < 0) return Promise.reject(new Error('Unknown stage: ' + stage));
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ current_stage: stage, last_activity_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id, current_stage')
+        .maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      // RLS returning nothing is indistinguishable from a bad id at the wire;
+      // either way the write did not happen, so say so rather than reporting
+      // success and letting the UI drift from the database.
+      if (!r.data) throw new Error('That lead could not be updated');
+      return r.data;
+    });
+  }
+
+  /* ── campaigns ───────────────────────────────────────────────────────────
+     Campaigns used to live in localStorage, which meant they belonged to one
+     browser rather than to the agency: invisible to colleagues, gone with a
+     cleared cache. These read and write the real table.
+
+     Note on permissions: campaigns_manage is admin/owner only, while
+     campaigns_select is any member. A plain agent can therefore see campaigns
+     but not change them, and an RLS-blocked write returns "no rows" rather
+     than an error -- so every writer below treats an empty result as failure
+     instead of reporting a success that did not happen. */
+
+  var CAMPAIGN_SELECT =
+    'id, name, persona, status, budget_naira, spend_naira, target_platforms, ' +
+    'target_audience_description, start_date, end_date, created_at, ' +
+    'campaign_creatives(id, headline, image_url, channel, status, ctr, leads_count, display_order)';
+
+  function listCampaigns() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('campaigns')
+        .select(CAMPAIGN_SELECT)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (c) {
+        c.creatives = (c.campaign_creatives || []).slice().sort(function (a, b) {
+          return a.display_order - b.display_order;
+        });
+        delete c.campaign_creatives;
+        return c;
+      });
+    });
+  }
+
+  /* data: { name, persona, budgetNaira, channels[], audience, creatives[] }
+     where each creative is { headline, imageUrl, channel }. The campaign and
+     its first creatives are written in two steps; if the creatives fail the
+     campaign is removed again, so a campaign with no ads never survives. */
+  function createCampaign(data) {
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('No agency on this account');
+      aid = a;
+      var today = new Date();
+      var end = new Date(today.getTime() + 30 * 86400000);
+      return c1.from('campaigns').insert({
+        agency_id: aid,
+        name: data.name,
+        // The form is always built from one listing, hence property_showcase.
+        campaign_type: 'property_showcase',
+        status: 'active',
+        start_date: today.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+        target_platforms: data.channels || [],
+        target_audience_description: data.audience || null,
+        budget_naira: data.budgetNaira || 0,
+        persona: data.persona || null,
+      }).select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to create campaigns');
+      var id = r.data.id;
+      var rows = (data.creatives || []).map(function (cr, i) {
+        return {
+          campaign_id: id, headline: cr.headline, image_url: cr.imageUrl || null,
+          channel: cr.channel, display_order: i,
+        };
+      });
+      if (!rows.length) return id;
+      return c1.from('campaign_creatives').insert(rows).select('id').then(function (r2) {
+        if (r2.error) {
+          // Roll back rather than leave a campaign with no creatives in it.
+          return c1.from('campaigns').delete().eq('id', id).then(function () { throw r2.error; });
+        }
+        return id;
+      });
+    });
+  }
+
+  function setCampaignStatus(id, live) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('campaigns')
+        .update({ status: live ? 'active' : 'paused' })
+        .eq('id', id).eq('agency_id', aid).is('deleted_at', null)
+        .select('id, status').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to change this campaign');
+      return r.data;
+    });
+  }
+
+  /* creatives: [{ headline, imageUrl, channel }] appended after the existing
+     ones, so display_order continues rather than restarting. */
+  function addCreatives(campaignId, creatives, startOrder) {
+    var c1;
+    return client().then(function (c) {
+      c1 = c;
+      return c1.from('campaign_creatives').insert(creatives.map(function (cr, i) {
+        return {
+          campaign_id: campaignId, headline: cr.headline, image_url: cr.imageUrl || null,
+          channel: cr.channel, display_order: (startOrder || 0) + i,
+        };
+      })).select('id, headline, image_url, channel, status, ctr, leads_count, display_order');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.length) throw new Error('You do not have permission to add creatives');
+      return r.data;
+    });
+  }
+
+  function setCreativeStatus(id, status) {
+    var ok = ['learning', 'scaling', 'pausedai'];
+    if (ok.indexOf(status) < 0) return Promise.reject(new Error('Unknown status: ' + status));
+    return client().then(function (c) {
+      return c.from('campaign_creatives')
+        .update({ status: status })
+        .eq('id', id).is('deleted_at', null)
+        .select('id, status').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to change this creative');
+      return r.data;
+    });
+  }
+
+  /* ── the agency's own people ─────────────────────────────────────────────
+     Needed by the CRM's Assign action. profiles used to be readable only by
+     their owner, so this returned a list of blank names; migration 0045 lets
+     members of the same agency see each other. Consumers are not agency
+     members and stay invisible. */
+  function roster() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('agency_members')
+        .select('profile_id, role, profiles(full_name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (m) {
+        return {
+          id: m.profile_id,
+          name: (m.profiles && m.profiles.full_name) || 'Unnamed teammate',
+          role: m.role,
+        };
+      }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    });
+  }
+
+  /* Assign several leads at once. agentId may be null to unassign. */
+  function assignLeads(ids, agentId) {
+    if (!ids || !ids.length) return Promise.resolve([]);
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ assigned_agent_id: agentId || null, last_activity_at: new Date().toISOString() })
+        .in('id', ids)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var done = (r.data || []).length;
+      if (!done) throw new Error('Those leads could not be assigned');
+      // A partial result is reported rather than smoothed over: the caller
+      // tells the user how many actually moved.
+      return { updated: done, requested: ids.length };
+    });
+  }
+
+  /* Soft-delete. This goes through the delete_lead function rather than an
+     UPDATE, because Postgres applies the table's SELECT policy to the row a
+     statement produces -- and leads_select requires deleted_at to be null, so
+     a client-side soft delete can never satisfy it. delete_lead checks that
+     the caller is an agency admin or owner, then bypasses RLS.
+
+     Each id is a separate call, so one failure does not silently take the rest
+     with it; the caller is told exactly how many were removed. */
+  function deleteLeads(ids) {
+    if (!ids || !ids.length) return Promise.resolve({ deleted: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(ids.map(function (id) {
+        return c.rpc('delete_lead', { p_lead_id: id }).then(function (r) {
+          return { ok: !r.error, error: r.error };
+        });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those leads could not be deleted');
+      return { deleted: ok, requested: ids.length, error: firstErr ? firstErr.message : null };
+    });
+  }
+
+  /* ── message outbox ──────────────────────────────────────────────────────
+     Queue first, deliver later. queue_lead_message() writes the row and always
+     succeeds; send-outbox delivers it. That split is the point: with Twilio
+     unconfigured the message still exists, visible and retryable, instead of
+     evaporating into a toast.
+
+     There is no client INSERT on message_outbox. The recipient is derived
+     server-side from the lead, so the platform can only ever message someone
+     who actually enquired -- a table taking an arbitrary phone number plus
+     arbitrary text is an open SMS gateway on our own Twilio account. */
+
+  function queueMessages(leadIds, body) {
+    if (!leadIds || !leadIds.length) return Promise.resolve({ queued: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(leadIds.map(function (id) {
+        return c.rpc('queue_lead_message', { p_lead_id: id, p_body: body })
+          .then(function (r) { return { ok: !r.error, error: r.error }; });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those messages could not be queued');
+      return {
+        queued: ok,
+        requested: leadIds.length,
+        error: firstErr ? firstErr.message : null,
+      };
+    });
+  }
+
+  function listOutbox(limit) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('message_outbox')
+        .select('id, to_phone, body, status, attempts, max_attempts, last_error, ' +
+                'scheduled_for, sent_at, created_at, leads(consumer_name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(limit || 50);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* Cancel something still waiting. The database refuses anything else -- a
+     message already sent cannot be un-sent, and pretending otherwise in the UI
+     would be a lie about what the buyer received. */
+  function cancelMessage(id) {
+    return client().then(function (c) {
+      return c.from('message_outbox')
+        .update({ status: 'cancelled' })
+        .eq('id', id)
+        .eq('status', 'queued')
+        .select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('That message has already left the queue');
+      return r.data;
+    });
+  }
+
+  /* Drain the queue. Deliberately an explicit action rather than something
+     that fires on a timer: these are real messages to real buyers. */
+  function sendOutbox(limit) {
+    // functions.invoke carries the caller's session token, which send-outbox
+    // needs: it resolves the caller's agency and drains only that queue.
+    return client().then(function (c) {
+      return c.functions.invoke('send-outbox', { body: { limit: limit || 20 } });
+    }).then(function (r) {
+      if (r.error) {
+        // The function's own JSON error is more useful than "non-2xx status".
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (d) {
+            throw new Error((d && d.error) || r.error.message);
+          }, function () { throw new Error(r.error.message); });
+        }
+        throw new Error(r.error.message);
+      }
+      return r.data;
+    });
+  }
+
+  /* The named human at Synapse this agency escalates to by phone.
+
+     Comes from a SECURITY DEFINER function rather than a table read: the
+     relationship manager is Synapse staff, not a colleague, so both
+     profiles_select_own and the agency-colleagues policy correctly refuse to
+     show them -- and widening either to expose staff profiles would leak far
+     more than a name and a number.
+
+     Three real states, and the caller must handle all three:
+       { assigned: false }                    nobody assigned
+       { assigned: true, phone: null }        assigned, but no number on file
+       { assigned: true, phone: '+234...' }   callable
+     Never invent a fallback number for the first two. */
+  function relationshipManager() {
+    return client().then(function (c) {
+      return c.rpc('my_relationship_manager');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.manager_name) return { assigned: false, name: null, phone: null, hours: null };
+      return {
+        assigned: true,
+        name: row.manager_name,
+        phone: row.manager_phone || null,
+        hours: row.hours || null,
+      };
+    });
+  }
+
   function create(data) {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -187,12 +567,20 @@
   }
 
   /* Re-listing is what the 14-day freshness rule measures against. */
-  function relist(id) {
+  /* Renewing a listing is the agency asserting the home is still available,
+     so it goes through reconfirm_listing(): one statement that stamps
+     availability_confirmed_at and moves expires_at together, with the
+     membership check server-side. The old version wrote expires_at directly
+     and recorded no confirmation, so the freshness promise had a date but
+     nothing behind it. */
+  function relist(id, days) {
     return client().then(function (c) {
-      return c.from('properties').update(freshWindow()).eq('id', id);
+      return c.rpc('reconfirm_listing', { p_property_id: id, p_days: days || FRESH_DAYS });
     }).then(function (r) {
       if (r.error) throw r.error;
-      return true;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row) throw new Error('That listing could not be confirmed');
+      return row;
     });
   }
 
@@ -352,6 +740,22 @@
     uploadBrandAsset: uploadBrandAsset,
     removeBrandAsset: removeBrandAsset,
     list: list,
+    leads: leads,
+    setLeadStage: setLeadStage,
+    roster: roster,
+    relationshipManager: relationshipManager,
+    assignLeads: assignLeads,
+    deleteLeads: deleteLeads,
+    queueMessages: queueMessages,
+    listOutbox: listOutbox,
+    cancelMessage: cancelMessage,
+    sendOutbox: sendOutbox,
+    listCampaigns: listCampaigns,
+    createCampaign: createCampaign,
+    setCampaignStatus: setCampaignStatus,
+    addCreatives: addCreatives,
+    setCreativeStatus: setCreativeStatus,
+    LEAD_STAGES: LEAD_STAGES,
     create: create,
     update: update,
     remove: remove,

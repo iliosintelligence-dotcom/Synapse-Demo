@@ -108,8 +108,15 @@
       priceN: Number(m.price) || 0,
       ttl: m.title || '',
       loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || ''),
-      score: Number(m.trustScore) || 0,
-      match: Number(m.fitScore) > 0 ? Math.min(100, Math.round(Number(m.fitScore))) : 80,
+      // `|| 0` meant a verified home with no trust_score rendered a ring of
+      // 0 -- "we checked it and it scored nothing", which is worse than
+      // silence. trust_score is currently NULL on every listing.
+      score: m.trustScore == null || m.trustScore === '' ? null : Number(m.trustScore),
+      // No match percentage, by decision. The server no longer emits a score:
+      // the only producer read an archetype column from an empty table, so it
+      // was always 0, and this line used to turn that into "80% match". A
+      // percentage implies a model weighed something. Nothing did.
+      match: null,
       flood: m.neighbourhood ? m.neighbourhood.flood : null,
       power: m.neighbourhood ? m.neighbourhood.power : null,
       yield: m.yieldPct,
@@ -156,8 +163,13 @@
     const cmpBox = o.compare
       ? `<label class="cmpbox"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
       : '';
-    const score = (l.vstatus || 'verified') === 'verified'
-      ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
+    const isVerified = (l.vstatus || 'verified') === 'verified';
+    const score = isVerified
+      ? (l.score == null
+          // Verified, but no score recorded. State the fact we have, and not
+          // the number we do not.
+          ? `<div class="score" title="Synapse has verified this listing"><span class="ring">✓</span> Verified by Synapse</div>`
+          : `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`)
       : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Still checking this home' : 'Not yet verified — ask Toju to check'}</div>`;
     return `
       <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
@@ -208,7 +220,7 @@
         iconSize: [0, 0], iconAnchor: [0, 0],
       }) })
         .addTo(st.layer)
-        .bindPopup(`<b>${esc(l.ttl)}</b><br>${l.match ? l.match + '% match · ' : ''}Confidence ${l.score}`);
+        .bindPopup(`<b>${esc(l.ttl)}</b>${l.match ? '<br>' + l.match + '% match' : ''}${l.score != null ? '<br>Confidence ' + l.score : ''}`);
     });
     setTimeout(() => {
       st.map.invalidateSize();

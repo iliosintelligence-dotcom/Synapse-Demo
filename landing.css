@@ -53,7 +53,10 @@
      Synapse mark, never touches type or large areas — it survives only on
      small non-text elements (a pip, a countdown bar, a map ping). That is the
      whole lining: you feel the warmth, you never see orange. */
-  --tint: 199, 106, 26;                          /* burnt orange, from the logo */
+  --tint: 255, 138, 45;                          /* #FF8A2D — Primary Orange, from the
+                                                    brand sheet. Was 199,106,26, which
+                                                    was estimated from the artwork before
+                                                    the real palette existed. */
   --tint-wash: rgba(var(--tint), 0.022);         /* barely-there section wash */
   --tint-edge: rgba(var(--tint), 0.10);          /* hairlines only */
   --tint-ink: rgba(var(--tint), 0.85);           /* pips + pings ONLY, never text */
@@ -1816,7 +1819,9 @@ footer {
 }
 .s-band.dark .s-h2, .s-close.dark .s-h2 { color: #f5f5f5; }
 .s-band.dark .s-h2 em { color: #fff; }
-.s-band.dark .s-step { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.14); }
+.s-band.dark .s-step { background: none; border: none; }
+.s-band.dark .s-step .n { background: #141414; border-color: rgba(255,138,45,0.5); color: #f5f5f5; box-shadow: 0 0 0 5px #0e0e0e; }
+.s-band.dark .s-step:hover .n { background: var(--orange); color: #0D0D0F; }
 .s-band.dark .s-step:hover { box-shadow: 0 18px 40px rgba(0,0,0,0.5); }
 .s-band.dark .pip i { box-shadow: 0 0 0 4px rgba(var(--tint), 0.24); }
 .s-lede { max-width: 680px; }
@@ -2184,7 +2189,9 @@ footer {
   transition: background .2s var(--ease), color .2s var(--ease); }
 .pr-per.on { background: var(--brand); color: #f5f5f5; }
 .pr-save { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px;
-  border-radius: 100px; background: rgba(var(--tint), 0.14); color: #8a4a12; }
+  /* The badge keeps the orange TINT as its background, which is the
+     brand-compliant way to use it; the words themselves are ink. */
+  border-radius: 100px; background: rgba(var(--tint), 0.16); color: #1C1C1E; }
 .pr-per.on .pr-save { background: rgba(255,255,255,0.18); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pr-per { transition: none; } }
 /* the toggle is centred above the grid */
@@ -2326,4 +2333,201 @@ textarea:focus-visible {
   box-shadow: none !important;
   outline: none !important;
   border-color: rgba(20, 20, 20, 0.34);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND LAYER — from the Synapse brand sheets.
+
+   The page read as colourless because the palette was a monochrome with a
+   0.022-alpha orange wash. The brand system is not monochrome: it is a
+   neutral 60% / dark 25% / orange 10% / semantic 5% ratio, built on soft
+   elevation and glass rather than flat panels. This adds the missing 10% and
+   the elevation language.
+
+   ORANGE IS NEVER TEXT. Everything below is a fill, a rule, a glow, a dot or
+   a border. #FF8A2D measures 2.20:1 on this ground; it cannot carry a word.
+   Where the brand sheets show an orange label, the word stays ink and the
+   orange sits under it or behind it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --orange:        #FF8A2D;
+  --orange-accent: #FFB066;
+  --orange-tint:   #FFE5CC;
+  --graphite:      #0D0D0F;
+  --charcoal:      #1C1C1E;
+
+  /* Gradient Expression, straight from the sheet's own row. */
+  --grad-orange-glow: radial-gradient(60% 60% at 70% 30%, rgba(255,138,45,0.55), rgba(255,176,102,0.18) 45%, transparent 72%);
+  --grad-glass-warmth: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,229,204,0.55));
+
+  /* Elevation. The sheets are built on soft, wide, low-opacity shadow --
+     "light, depth and spacing to create hierarchy" -- not on borders. */
+  --lift-1: 0 1px 2px rgba(13,13,15,0.04), 0 8px 24px rgba(13,13,15,0.05);
+  --lift-2: 0 2px 6px rgba(13,13,15,0.05), 0 18px 48px rgba(13,13,15,0.08);
+  --lift-orange: 0 8px 26px rgba(255,138,45,0.28);
+}
+
+/* ── the hero gets the brand's own orange glow ─────────────────────────── */
+.hero-section { position: relative; isolation: isolate; }
+.hero-section::before {
+  content: ''; position: absolute; inset: -10% -5% auto auto;
+  width: min(58vw, 760px); aspect-ratio: 1;
+  background: var(--grad-orange-glow);
+  filter: blur(10px);
+  z-index: -1; pointer-events: none;
+}
+
+/* ── primary action: orange fill, graphite label ───────────────────────────
+   The brand sheet puts white on this orange. That is 2.35:1 -- the least
+   readable element in the system on the most important control in the
+   product. Graphite on the same orange is 8.25:1. */
+.panel-btn-primary,
+.m-cta-primary {
+  background: var(--orange) !important;
+  color: var(--graphite) !important;
+  border: none !important;
+  box-shadow: var(--lift-orange);
+  font-weight: 700;
+  transition: transform .18s var(--ease, ease), box-shadow .18s ease, background .18s ease;
+}
+.panel-btn-primary:hover,
+.m-cta-primary:hover {
+  background: #FFA054 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(255,138,45,0.34);
+}
+.panel-btn-primary:active,
+.m-cta-primary:active { transform: translateY(0); background: #E8761B !important; }
+
+/* ── section kickers get the orange rule the sheets use ────────────────── */
+/* The brand sheets head every section with a small orange DOT before the
+   label ("● SYNAPSE · NAVIGATION SYSTEM"), not a dash. */
+.s-kicker, .m-kicker { position: relative; padding-left: 18px; }
+.s-kicker::before, .m-kicker::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--orange);
+}
+
+/* ── cards lift instead of sitting flat ────────────────────────────────── */
+.car-card, .m-card {
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: var(--lift-1);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.car-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
+
+/* ── THE JOURNEY RAIL ──────────────────────────────────────────────────────
+   These steps were five white boxes in a three-column grid, so they wrapped
+   3 + 2 and read as a pile of cards rather than a sequence. The content is a
+   journey -- "one adviser, the whole way through" -- so it is now drawn as
+   one: a single hairline running through numbered nodes.
+
+   No card chrome, no orange tabs. The line carries the orange, the nodes sit
+   on it, and everything else is neutral. Shared with agencies.html, which
+   uses the same component. */
+.s-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 30px 26px;
+  margin-top: 68px;
+  position: relative;
+}
+/* the rail itself, threaded behind the nodes */
+.s-steps::before {
+  content: ''; position: absolute; left: 26px; right: 26px; top: 21px; height: 1px;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,138,45,0.55) 12%, rgba(255,138,45,0.55) 88%, transparent);
+}
+.s-step {
+  background: none; border: none; border-radius: 0; box-shadow: none;
+  padding: 0; overflow: visible; position: relative;
+}
+.s-step:hover { transform: none; box-shadow: none; }
+
+/* the number becomes a node ON the rail */
+/* A pill, not a fixed circle: this slot holds "01" on the customer page and
+   words like CRM / TRUST / GROWTH on the agency page. min-width keeps the
+   numerals perfectly round while longer labels simply grow. */
+.s-step .n {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 42px; height: 42px; padding: 0 15px; border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid rgba(255,138,45,0.45);
+  box-shadow: 0 0 0 5px var(--bg);
+  font-family: var(--f-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; white-space: nowrap;
+  color: var(--text); margin-bottom: 18px;
+  transition: background .25s ease, border-color .25s ease, transform .25s ease;
+}
+.s-step:hover .n { background: var(--orange); border-color: var(--orange); transform: translateY(-2px); }
+.s-step .t { margin-top: 0; }
+
+/* Below the rail's breakpoint the line would run through stacked rows, so it
+   goes and the nodes carry the sequence on their own. */
+@media (max-width: 900px) {
+  .s-steps::before { display: none; }
+  .s-step .n { box-shadow: none; }
+}
+
+/* Dark bands stay flat. The brand sheet's Depth/Elevation gradient was tried
+   here and read as a muddy brown wash across a large area -- that gradient is
+   built for small elevated surfaces like an icon tile, not a full-bleed
+   section. The dark band keeps its flat #0e0e0e; orange arrives on it as
+   pips, rules and the CTA instead. */
+
+/* ── emphasis inside headlines: an orange underline, never orange text ─── */
+.s-h2 em, .hero-headline em, .m-h1 em {
+  font-style: normal; position: relative; white-space: nowrap;
+}
+.s-h2 em::after, .hero-headline em::after, .m-h1 em::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 0.3em;
+  background: linear-gradient(90deg, rgba(255,138,45,0.38), rgba(255,176,102,0.22));
+  border-radius: 3px; z-index: -1;
+}
+.s-h2, .hero-headline, .m-h1 { isolation: isolate; }
+
+/* On a near-black band the translucent orange underline mixes down to brown.
+   On dark it becomes a thin solid rule at full strength instead, which reads
+   as orange rather than as mud. */
+.s-band.dark .s-h2 em::after,
+.s-close.dark .s-h2 em::after {
+  background: var(--orange);
+  height: 2px; bottom: -2px; border-radius: 2px; opacity: .9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s-step, .car-card, .panel-btn-primary, .m-cta-primary { transition: none; }
+}
+
+/* ═══ HERO STAT STRIP — full-bleed dark ════════════════════════════════════
+   The three facts under the hero now sit on the same near-black as the dark
+   bands elsewhere (#0e0e0e), so the page has one dark language rather than
+   two treatments of the same idea.
+
+   Full-bleed from inside .container without touching the markup: the
+   box-shadow paints the colour out past the viewport edges and the clip-path
+   trims it vertically, so nothing can cause a horizontal scrollbar. This
+   avoids a negative-margin/100vw pair, which overflows whenever a scrollbar
+   is present. */
+.hero-statline {
+  background: #0e0e0e;
+  box-shadow: 0 0 0 100vmax #0e0e0e;
+  clip-path: inset(0 -100vmax);
+  border-top: none;
+  margin-top: 84px;
+  padding: 0 4px;
+}
+/* On black the numeral carries the emphasis, so it goes to the light ink and
+   the divider rules invert. Orange stays off the text, as everywhere else. */
+.hero-statline .hero-stat-val { color: #f5f5f5; }
+.hero-statline .hero-stat-label { color: rgba(245,245,245,0.62); }
+.hero-statline .hero-stat + .hero-stat { border-left-color: rgba(255,255,255,0.14); }
+
+@media (max-width: 900px) {
+  .hero-statline .hero-stat + .hero-stat {
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.14);
+  }
 }

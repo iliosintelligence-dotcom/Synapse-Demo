@@ -338,14 +338,18 @@
     });
   }
 
-  // Reuse what Toju already learned rather than asking again.
+  /* This used to read a `toju_criteria_v1` localStorage key, under the comment
+     "reuse what Toju already learned rather than asking again". Nothing has
+     ever written that key -- grep the repo -- so the parse always produced {}
+     and every field came back null. It looked like personalisation and was a
+     no-op, which is worse than not having it, because it hid the fact that a
+     proximity watch currently carries no brief at all.
+
+     The authoritative criteria live server-side in demo_chat_sessions and come
+     back from toju-demo's `restore` action. Until this is wired to that, the
+     radius is the only real input, and saying so is the honest version. */
   function readCriteria() {
-    try {
-      var c = JSON.parse(localStorage.getItem('toju_criteria_v1') || '{}');
-      return { city: c.city || null, dealType: c.dealType || null,
-               maxPrice: c.maxPrice || null, minBedrooms: c.minBedrooms || null,
-               radiusM: 1200 };
-    } catch (e) { return { radiusM: 1200 }; }
+    return { radiusM: 1200 };
   }
 
   SynNotify.mountProximity = mountProximity;

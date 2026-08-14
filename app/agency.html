@@ -13,6 +13,10 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="matches-shared.js"></script>
   <script src="syndication.js"></script>
+  <!-- Validation harness. Loads only; runs when called. Meta approval is
+       pending, so this is the part of syndication provable today:
+       SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
+  <script src="syndication-audit.js"></script>
   <style>
     /* Agency portal — separate world from the customer app. Customer pages
        never link here; you arrive via "For Agencies" on the landing page.
@@ -555,7 +559,7 @@
 
     /* AI-native CRM — decisions, not records */
     .temp { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
-    .temp.hot { color: #c2410c; background: rgba(255,90,30,0.12); border: 1px solid rgba(255,90,30,0.3); }
+    .temp.hot { color: #1C1C1E; background: rgba(255,138,45,0.14); border: 1px solid rgba(255,138,45,0.34); }
     .temp.warm { color: #a8742b; background: rgba(176,125,43,0.12); border: 1px solid rgba(176,125,43,0.3); }
     .temp.cold { color: #3b6ea5; background: rgba(59,110,165,0.1); border: 1px solid rgba(59,110,165,0.25); }
     .temp.dormant { color: var(--ink-dim); background: rgba(0,0,0,0.04); border: 1px solid var(--border); }
@@ -684,7 +688,7 @@
     .cmp-tags { margin-top: 12px; font-size: 12px; color: var(--brand); font-weight: 500; line-height: 1.6; }
     .cmp-note { margin-top: 12px; font-size: 12px; color: var(--ink-muted); background: rgba(54,54,54,0.06); border: 1px solid rgba(54,54,54,0.18); border-radius: 10px; padding: 9px 12px; line-height: 1.5; }
     .cmp-note b { color: var(--brand); }
-    .cmp-err { margin-top: 12px; font-size: 12.5px; color: #b0521f; }
+    .cmp-err { margin-top: 12px; font-size: 12.5px; color: #B91C1C; }
     .spin2 { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin .7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
 
     /* listing freshness + actions (14-day rule) */
@@ -1009,6 +1013,54 @@
     .fn-bar i { display: block; height: 100%; border-radius: 3px; }
     .fn-card.st-new .fn-bar i { background: var(--ink-dim); } .fn-card.st-cont .fn-bar i { background: var(--info); } .fn-card.st-view .fn-bar i { background: var(--gold); } .fn-card.st-nego .fn-bar i { background: var(--brand-deep); } .fn-card.st-won .fn-bar i { background: var(--success); }
     .fn-sep { align-self: center; color: var(--ink-dim); font-size: 15px; }
+    /* Empty / loading / error row. Shares the table so the pane never
+       collapses to a bare header when an agency has no leads yet. */
+    .stpill-btn { cursor: pointer; font-family: inherit; }
+    .stpill-btn:hover { filter: brightness(0.96); }
+    .stpill-btn[disabled] { opacity: .5; cursor: progress; }
+    .ob-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .ob-row:last-child { border-bottom: none; }
+    .ob-b { flex: 1; min-width: 0; }
+    .ob-who { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .ob-tx { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; overflow-wrap: anywhere; }
+    .ob-err { font-size: 11.5px; color: var(--danger, #b3261e); margin-top: 3px; }
+    .ob-st { font: 700 10.5px var(--f-sans); letter-spacing: .04em; text-transform: uppercase;
+             padding: 4px 9px; border-radius: 100px; white-space: nowrap; align-self: flex-start; }
+    .ob-st.queued { background: var(--surface); border: 1px solid var(--border-strong); color: var(--ink-muted); }
+    .ob-st.sending { background: var(--info-tint); color: var(--info); }
+    .ob-st.sent { background: var(--success-tint); color: var(--success); }
+    .ob-st.failed { background: rgba(179,38,30,0.1); color: #b3261e; }
+    .ob-st.cancelled { background: var(--surface); border: 1px dashed var(--border-strong); color: var(--ink-dim); }
+    .ob-x { border: 1px solid var(--border); background: transparent; border-radius: 8px;
+            font-size: 11.5px; padding: 4px 9px; cursor: pointer; color: var(--ink-muted); }
+    .crm-wa.off { opacity: .28; cursor: default; }
+    /* Relationship-manager sheet. Deliberately not styled as an alert: it is
+       a phone number, available when it is available. */
+    .rmw { position: relative; display: inline-flex; }
+    .rm-pop {
+      position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
+      min-width: 262px; padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; box-shadow: var(--lift-2);
+      opacity: 0; transform: translateY(-6px); pointer-events: none;
+      transition: opacity .16s ease, transform .18s ease;
+    }
+    .rmw.open .rm-pop { opacity: 1; transform: none; pointer-events: auto; }
+    .rm-card { padding: 4px 2px; min-width: 232px; }
+    .rm-name { font-size: 15px; font-weight: 650; color: var(--ink); }
+    .rm-role { font-size: 11.5px; color: var(--ink-muted); letter-spacing: .04em;
+      text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .rm-hours { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; }
+    .rm-call {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 12px; padding: 11px 14px; border-radius: 10px;
+      background: var(--action); color: var(--action-on);
+      font-weight: 700; font-size: 14px; text-decoration: none;
+    }
+    .rm-call:hover { background: var(--action-dim); }
+    .rm-none { font-size: 13px; color: var(--ink-muted); line-height: 1.5; margin-top: 4px; }
+    .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
+    @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
     .crm-tablecard { padding: 0; overflow: hidden; }
     .crm-table { width: 100%; border-collapse: collapse; }
     .crm-table thead th { text-align: left; font: 700 12px var(--f-sans); color: var(--ink-muted); padding: 14px 14px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; background: rgba(255,255,255,0.5); }
@@ -1320,6 +1372,7 @@
       }
       .agd-add .agd-sheet{ left: -52px; transform-origin: bottom left; }
       .agd-nav .agd-sheet{ left: 0; }
+      .agd-call .agd-sheet{ left: -88px; transform-origin: bottom center; }
       .agd.open .agd-sheet{ opacity: 1; transform: none; pointer-events: auto; }
       @media (prefers-reduced-motion: reduce){
         .agd-sheet{ transition: none; } .agd-fab{ transition: none; }
@@ -1384,6 +1437,16 @@
     <div class="topsearch">
       <span class="ts-i" aria-hidden="true">⌕</span>
       <input id="ovSearch" placeholder="Search listings…" aria-label="Search listings" autocomplete="off" />
+    </div>
+    <!-- Escalation on desktop. The floating taskbar that carries this on a
+         phone does not exist above 720px, so without this the call route was
+         reachable on mobile only -- which is the opposite of where an agency
+         sits when a deal is closing. -->
+    <div class="rmw" id="rmDeskWrap">
+      <button class="bell" id="rmDeskBtn" aria-label="Call your relationship manager" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+      </button>
+      <div class="rm-pop" id="rmDeskPop" role="dialog" aria-label="Your relationship manager"></div>
     </div>
     <button class="bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -1796,6 +1859,16 @@
       </button>
     </div>
     <span class="agd-div" aria-hidden="true"></span>
+    <!-- Escalation lives in the taskbar because it is needed from whichever
+         pane you happen to be on when a deal starts going wrong, not from a
+         support page you have to navigate to. -->
+    <div class="agd agd-call" id="agdCall">
+      <div class="agd-sheet" id="agdCallSheet" role="menu" aria-label="Your relationship manager"></div>
+      <button class="agd-btn" id="agdCallFab" type="button" aria-expanded="false" aria-label="Call your relationship manager">
+        <span data-icon="phone"></span>
+      </button>
+    </div>
+    <span class="agd-div" aria-hidden="true"></span>
     <div class="agd agd-add" id="agdAdd">
       <div class="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
       <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">+</button>
@@ -1846,8 +1919,10 @@
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
     };
     // Demo leads removed: each referenced a property that does not exist.
-    // Leads arrive from real buyer activity against real listings.
-    const leads = [];
+    // Leads arrive from real buyer activity against real listings, and are
+    // loaded from the `leads` table by loadLeads() below. `let`, not `const`:
+    // the array is replaced wholesale when the fetch lands.
+    let leads = [];
     const TEMP_LABEL = { hot: 'Hot', warm: 'Warm', cold: 'Cold', dormant: 'Dormant', won: 'Won' };
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
@@ -1857,10 +1932,13 @@
     // ══════════ CRM — pipeline table ══════════
     const STAGE_ORDER = ['New','Contacted','Viewing','Negotiation','Won'];
     const STAGE_CLS = { New:'st-new', Contacted:'st-cont', Viewing:'st-view', Negotiation:'st-nego', Won:'st-won' };
-    const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set() };
+    const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set(), loaded:false, error:null };
     const tmin = t => { const m=/(\d+)\s*([mhd])/.exec(t||''); if(!m) return 1e9; const n=+m[1]; return m[2]==='m'?n:m[2]==='h'?n*60:n*1440; };
     const budgetN = l => { const m=/₦?(\d+(?:\.\d+)?)\s*([MB])/.exec(l.price||''); return m ? +m[1]*(m[2]==='B'?1000:1) : 0; };
     function crmStars(score){
+      // No scoring engine runs yet, so most real leads arrive unscored. Five
+      // empty stars would read as "scored zero" - a judgement we have not made.
+      if (score == null) return '<span class="muted" title="Not scored yet">-</span>';
       const v=Math.round(score/10)/2; let h='';
       for(let i=1;i<=5;i++){ h += v>=i ? '<span class="star full">★</span>' : (v>=i-0.5 ? '<span class="star half">★</span>' : '<span class="star">★</span>'); }
       return `<span class="stars" role="img" aria-label="${v} of 5 (${score} of 100)">${h}</span>`;
@@ -1869,7 +1947,7 @@
       let a = leads.map((l,i)=>({l, oi:i}));
       if(CRM.fStage) a = a.filter(x=>x.l.stage===CRM.fStage);
       if(CRM.fSrc) a = a.filter(x=>x.l.attr.channel===CRM.fSrc);
-      const key = { recent:x=>-tmin(x.l.t), score:x=>x.l.score, budget:x=>budgetN(x.l), stage:x=>STAGE_ORDER.indexOf(x.l.stage), lead:x=>x.l.nm.toLowerCase() }[CRM.sortK] || (x=>-tmin(x.l.t));
+      const key = { recent:x=>-tmin(x.l.t), score:x=>(x.l.score == null ? -1 : x.l.score), budget:x=>budgetN(x.l), stage:x=>STAGE_ORDER.indexOf(x.l.stage), lead:x=>x.l.nm.toLowerCase() }[CRM.sortK] || (x=>-tmin(x.l.t));
       const dir = CRM.sortDir;
       a.sort((p,q)=>{ const pv=key(p), qv=key(q); return pv<qv?-dir : pv>qv?dir : 0; });
       return a;
@@ -1908,18 +1986,35 @@
       const pages = Math.max(1, Math.ceil(all.length/CRM.per));
       if(CRM.page>pages) CRM.page = pages;
       const start = (CRM.page-1)*CRM.per;
-      document.getElementById('leads').innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
+      const body = document.getElementById('leads');
+      if (!all.length) {
+        body.innerHTML = '<tr class="crm-empty"><td colspan="9">' + (
+          CRM.error
+            ? 'Could not load your leads - ' + CRM.error
+            : !CRM.loaded
+              ? 'Loading your leads...'
+              : (CRM.fStage || CRM.fSrc)
+                ? 'No leads match this filter.'
+                : 'No leads yet. They arrive when a buyer taps Contact agent on one of your listings.'
+        ) + '</td></tr>';
+        document.getElementById('crmPager').innerHTML = '';
+        renderBulk();
+        return;
+      }
+      body.innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
         const sel = CRM.sel.has(oi);
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
           <td class="c-chk"><input type="checkbox" class="crm-chk" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
-          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${l.ph}</span></span></span></td>
+          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
+      l.agentId ? (ROSTER_BY_ID[l.agentId] || 'Assigned') : (l.ph || 'No phone yet')
+    }</span></span></span></td>
           <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
           <td class="c-budget">${l.price}</td>
-          <td class="c-stage"><span class="stpill ${STAGE_CLS[l.stage]}">${l.stage}</span><span class="nbax">→ ${l.nba.do}</span></td>
+          <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}</button><span class="nbax">→ ${l.nba.do}</span></td>
           <td class="c-time">${l.t}</td>
           <td class="c-score">${crmStars(l.score)}</td>
           <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
-          <td class="c-act"><a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a><button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
+          <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">✆</span>'}<button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
         </tr>`;
       }).join('');
       let nums = '';
@@ -1938,6 +2033,103 @@
     function renderCrm(){ renderBrk(); renderCrmFunnel(); renderCrmTable(); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
     renderCrm();
 
+    /* ============ real leads ============
+       The CRM used to render a hard-coded array. It now reads the `leads`
+       table - the same rows create-lead writes when a buyer taps "Contact
+       agent" - and maps the database shape onto the shape this table renders.
+
+       The mapping is deliberately conservative: where the database has no
+       answer (no lead score, no recommended action), the UI says so rather
+       than inventing a number that would read as a judgement we made. */
+    const DB_STAGE = {
+      new: 'New',
+      contacted: 'Contacted', qualified: 'Contacted',
+      viewing_scheduled: 'Viewing', viewing_completed: 'Viewing',
+      negotiating: 'Negotiation', commitment: 'Negotiation',
+      closed: 'Won',
+    };
+    // lead_source -> attribution channel. Anything not from a social surface is
+    // the app itself; CH has no key for search/referral, and inventing one
+    // would misattribute the lead.
+    const DB_CHANNEL = {
+      social_instagram: 'instagram', social_tiktok: 'tiktok', social_facebook: 'facebook',
+    };
+    const DEFAULT_NBA = {
+      New: 'Call within the hour', Contacted: 'Qualify the budget',
+      Viewing: 'Confirm the viewing', Negotiation: 'Send the offer', Won: 'Close the paperwork',
+    };
+    function agoLabel(iso){
+      if (!iso) return '-';
+      const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+      if (mins < 60) return mins + 'm';
+      if (mins < 1440) return Math.round(mins / 60) + 'h';
+      return Math.round(mins / 1440) + 'd';
+    }
+    const nairaShort = n => {
+      if (n == null) return '-';
+      const v = Number(n);
+      return v >= 1e9 ? '\u20a6' + +(v / 1e9).toFixed(1) + 'B' : '\u20a6' + Math.round(v / 1e6) + 'M';
+    };
+    function mapLead(r){
+      const prop = r.properties || {};
+      const stage = DB_STAGE[r.current_stage] || 'New';
+      const stamp = r.last_activity_at || r.created_at;
+      const mins = stamp ? (Date.now() - new Date(stamp).getTime()) / 60000 : Infinity;
+      // Temperature from real recency, not from a score we do not have.
+      const temp = stage === 'Won' ? 'won'
+        : mins < 2880 ? 'hot' : mins < 10080 ? 'warm' : mins < 43200 ? 'cold' : 'dormant';
+      return {
+        id: r.id,
+        nm: r.consumer_name || 'Unnamed buyer',
+        ph: r.consumer_phone || '',
+        price: r.budget_max != null ? nairaShort(r.budget_max)
+             : prop.price != null ? nairaShort(prop.price) : '-',
+        pr: [prop.title, prop.city].filter(Boolean).join(' \u00b7 ') || 'Listing unavailable',
+        stage,
+        dbStage: r.current_stage,   // the real value; `stage` is the folded label
+        t: agoLabel(stamp),
+        score: r.lead_score == null ? null : Math.round(Number(r.lead_score)),
+        temp,
+        failed: r.delivery_status === 'delivery_failed',
+        agentId: r.assigned_agent_id || null,
+        nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
+        attr: { channel: DB_CHANNEL[r.source] || 'direct' },
+      };
+    }
+    /* The agency's own people, fetched once. Both the Assign menu and the lead
+       drawer need them: without a name to show, assigning a lead would look
+       like it did nothing at all. */
+    let ROSTER = null;
+    const ROSTER_BY_ID = {};
+    function loadRoster(){
+      if (ROSTER) return Promise.resolve(ROSTER);
+      if (!window.SynListings || !SynListings.roster) return Promise.resolve([]);
+      return SynListings.roster().then((people) => {
+        ROSTER = people;
+        people.forEach((m) => { ROSTER_BY_ID[m.id] = m.name; });
+        return people;
+      }).catch((err) => { console.error('roster failed', err); return []; });
+    }
+
+    function loadLeads(){
+      if (!window.SynListings || !SynListings.leads) {
+        CRM.loaded = true; CRM.error = 'the data layer did not load'; renderCrm(); return;
+      }
+      SynListings.leads().then(rows => {
+        leads = rows.map(mapLead);
+        CRM.loaded = true; CRM.error = null;
+        renderCrm();
+      }).catch(err => {
+        CRM.loaded = true;
+        CRM.error = (err && err.message) || 'please refresh';
+        leads = [];
+        renderCrm();
+        console.error('leads load failed', err);
+      });
+    }
+    loadLeads();
+    loadRoster().then(() => { if (leads.length) renderCrmTable(); });
+
     // ── CRM interactions ──
     (function(){
       document.getElementById('crmFunnel').addEventListener('click', e => {
@@ -1952,9 +2144,45 @@
       });
       const body = document.getElementById('leads');
       body.addEventListener('click', e => {
+        const st = e.target.closest('[data-stage-i]');
+        if (st) { openStageMenu(st, +st.dataset.stageI); return; }
         if(e.target.closest('.crm-chk') || e.target.closest('[data-stop]')) return;
         const row = e.target.closest('[data-i]'); if(row) openLead(+row.dataset.i);
       });
+
+      /* Moving a lead through the pipeline.
+
+         The table folds nine database stages into the five the funnel shows,
+         so writing a stage back has to pick one canonical database value per
+         label. That is lossy in one direction only: a lead sitting at
+         `qualified` still reads as "Contacted", and stays `qualified` until
+         someone deliberately changes it. */
+      const UI_TO_DB = {
+        New: 'new', Contacted: 'contacted', Viewing: 'viewing_scheduled',
+        Negotiation: 'negotiating', Won: 'closed',
+      };
+      function openStageMenu(anchor, i){
+        const l = leads[i]; if (!l) return;
+        const opts = STAGE_ORDER.map(st => ({ k: st, label: st, on: l.stage === st }));
+        crmMenu(anchor, opts, st => {
+          if (st === l.stage) return;
+          if (!window.SynListings || !SynListings.setLeadStage) { toast('Cannot save that right now.'); return; }
+          const prevUi = l.stage, prevDb = l.dbStage;
+          // Optimistic, but reverted on failure -- the table must never show a
+          // stage the database did not accept.
+          l.stage = st; l.dbStage = UI_TO_DB[st];
+          anchor.disabled = true;
+          renderCrmFunnel(); renderCrmTable();
+          SynListings.setLeadStage(l.id, UI_TO_DB[st])
+            .then(() => { toast(l.nm + ' moved to ' + st); })
+            .catch(err => {
+              l.stage = prevUi; l.dbStage = prevDb;
+              renderCrmFunnel(); renderCrmTable();
+              toast('Could not move that lead - ' + ((err && err.message) || 'please try again'));
+              console.error('stage update failed', err);
+            });
+        });
+      }
       body.addEventListener('change', e => {
         const c = e.target.closest('.crm-chk'); if(!c) return;
         const oi = +c.dataset.sel; c.checked ? CRM.sel.add(oi) : CRM.sel.delete(oi);
@@ -1966,16 +2194,204 @@
         if(e.target.id==='crmGoBtn'){ const v = +document.getElementById('crmGo').value; if(v){ CRM.page=v; renderCrmTable(); } }
       });
       pager.addEventListener('change', e => { if(e.target.id==='crmPer'){ CRM.per = +e.target.value; CRM.page=1; renderCrmTable(); } });
+      /* Bulk actions. These used to print a toast and change nothing at all.
+
+         CRM.sel holds positions in `leads`, so ids are resolved at click time
+         rather than stored -- the array is replaced wholesale on every reload
+         and a stored position would drift onto a different lead. */
+      const selectedLeads = () =>
+        [...CRM.sel].map(i => leads[i]).filter(Boolean);
+
+      function bulkAssign(anchor) {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const show = (people) => {
+          const opts = [{ k: '', label: 'Unassigned' }].concat(
+            people.map(m => ({ k: m.id, label: m.name + (m.role === 'agent' ? '' : ' · ' + m.role.replace('agency_', '')) }))
+          );
+          crmMenu(anchor, opts, (id) => {
+            SynListings.assignLeads(picked.map(l => l.id), id || null)
+              .then(({ updated, requested }) => {
+                const who = id ? (people.find(m => m.id === id) || {}).name : 'nobody';
+                toast(updated === requested
+                  ? updated + ' lead' + (updated !== 1 ? 's' : '') + ' assigned to ' + who
+                  : updated + ' of ' + requested + ' assigned to ' + who + ' — the rest could not be changed');
+                CRM.sel.clear();
+                return loadLeads();
+              })
+              .catch(err => {
+                toast((err && err.message) || 'Could not assign those leads');
+                console.error('assignLeads failed', err);
+              });
+          });
+        };
+        loadRoster().then(people => {
+          if (!people.length) { toast('Could not load your team — try again in a moment'); return; }
+          show(people);
+        });
+      }
+
+      /* Messaging goes through a durable outbox: the message is written first
+         and delivered separately, so an unconfigured or failing provider costs
+         the send attempt and never the message itself. Nothing leaves on its
+         own -- sending is a button, because these are real messages to real
+         buyers. */
+      const esc = (t) => String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+      function bulkMessage() {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const withPhone = picked.filter(l => l.ph);
+        const without = picked.length - withPhone.length;
+        if (!withPhone.length) { toast('None of those leads has a phone number yet'); return; }
+
+        drawer.innerHTML = `
+          <button class="x" id="drawerX">\u00d7</button>
+          <div style="font-size:19px;font-weight:700">Message ${withPhone.length} lead${withPhone.length !== 1 ? 's' : ''}</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 16px">${
+            without
+              ? without + ' of the ' + picked.length + ' selected ' + (without !== 1 ? 'have' : 'has') + ' no phone number and will be skipped. '
+              : ''
+          }Each lead is messaged individually on WhatsApp — this is not a group chat.</p>
+          <div class="lf">
+            <div class="field"><label>Message</label>
+              <textarea id="obBody" rows="5" maxlength="1000" placeholder="Hello, following up on your enquiry about…"></textarea></div>
+            <p class="muted" style="font-size:11.5px;margin:-4px 0 0"><span id="obCount">0</span>/1000</p>
+            <button class="btn btn-primary btn-block" id="obQueue" style="margin-top:10px">Add to outbox</button>
+            <button class="btn btn-block" id="obOpen" style="margin-top:8px">View outbox</button>
+          </div>`;
+        scrim.classList.add('on'); drawer.classList.add('on');
+        document.getElementById('drawerX').addEventListener('click', closeLead);
+        const ta = document.getElementById('obBody');
+        const count = document.getElementById('obCount');
+        ta.addEventListener('input', () => { count.textContent = ta.value.length; });
+        ta.focus();
+        document.getElementById('obOpen').addEventListener('click', openOutbox);
+        document.getElementById('obQueue').addEventListener('click', function () {
+          const body = ta.value.trim();
+          if (!body) { toast('Write the message first'); ta.focus(); return; }
+          const btn = this;
+          btn.disabled = true; btn.textContent = 'Adding…';
+          SynListings.queueMessages(withPhone.map(l => l.id), body)
+            .then(({ queued, requested, error }) => {
+              toast(queued === requested
+                ? queued + ' message' + (queued !== 1 ? 's' : '') + ' queued — press Send when ready'
+                : queued + ' of ' + requested + ' queued — ' + (error || 'the rest were refused'));
+              CRM.sel.clear(); renderCrmTable();
+              openOutbox();
+            })
+            .catch(err => {
+              btn.disabled = false; btn.textContent = 'Add to outbox';
+              toast((err && err.message) || 'Could not queue those messages');
+              console.error('queueMessages failed', err);
+            });
+        });
+      }
+
+      const OB_LABEL = { queued: 'Waiting', sending: 'Sending', sent: 'Sent', failed: 'Failed', cancelled: 'Cancelled' };
+      function openOutbox() {
+        drawer.innerHTML = `
+          <button class="x" id="drawerX">\u00d7</button>
+          <div style="font-size:19px;font-weight:700">Outbox</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 14px">Messages are held here until you send them. Nothing goes out on its own.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="btn btn-primary" id="obSend" style="flex:1">Send now</button>
+            <button class="btn" id="obRefresh">Refresh</button>
+          </div>
+          <div id="obList"><p class="muted" style="font-size:12.5px">Loading…</p></div>`;
+        scrim.classList.add('on'); drawer.classList.add('on');
+        document.getElementById('drawerX').addEventListener('click', closeLead);
+        document.getElementById('obRefresh').addEventListener('click', paintOutbox);
+        document.getElementById('obSend').addEventListener('click', function () {
+          const btn = this;
+          btn.disabled = true; btn.textContent = 'Sending…';
+          SynListings.sendOutbox(50)
+            .then((r) => {
+              btn.disabled = false; btn.textContent = 'Send now';
+              toast(!r.claimed ? 'Nothing waiting to send'
+                : r.sent + ' sent' + (r.failed ? ', ' + r.failed + ' failed — see below' : ''));
+              paintOutbox();
+            })
+            .catch(err => {
+              btn.disabled = false; btn.textContent = 'Send now';
+              toast((err && err.message) || 'Could not send');
+              console.error('sendOutbox failed', err);
+              paintOutbox();
+            });
+        });
+        paintOutbox();
+      }
+
+      function paintOutbox() {
+        const host = document.getElementById('obList'); if (!host) return;
+        SynListings.listOutbox(50).then((rows) => {
+          if (!rows.length) { host.innerHTML = '<p class="muted" style="font-size:12.5px">Nothing in the outbox.</p>'; return; }
+          host.innerHTML = rows.map((m) => {
+            const who = (m.leads && m.leads.consumer_name) || m.to_phone;
+            const tries = m.attempts > 0 ? ' · attempt ' + m.attempts + ' of ' + m.max_attempts : '';
+            return `<div class="ob-row">
+              <div class="ob-b">
+                <div class="ob-who">${esc(who)}</div>
+                <div class="ob-tx">${esc(m.body).slice(0, 160)}${m.body.length > 160 ? '…' : ''}</div>
+                ${m.last_error ? `<div class="ob-err">${esc(m.last_error)}${tries}</div>` : ''}
+              </div>
+              <span class="ob-st ${m.status}">${OB_LABEL[m.status] || m.status}</span>
+              ${m.status === 'queued' ? `<button class="ob-x" data-ob-cancel="${m.id}">Cancel</button>` : ''}
+            </div>`;
+          }).join('');
+        }).catch(err => {
+          host.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load the outbox — ' +
+            esc((err && err.message) || 'please try again') + '</p>';
+          console.error('listOutbox failed', err);
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        const c = e.target.closest('[data-ob-cancel]'); if (!c) return;
+        c.disabled = true;
+        SynListings.cancelMessage(c.dataset.obCancel)
+          .then(() => { toast('Message cancelled'); paintOutbox(); })
+          .catch(err => {
+            c.disabled = false;
+            toast((err && err.message) || 'Could not cancel that');
+            paintOutbox();
+          });
+      });
+
+      function bulkDelete() {
+        const picked = selectedLeads();
+        if (!picked.length) return;
+        const n = picked.length;
+        // Destructive and shared, so it asks first. Only admins and owners are
+        // permitted; anyone else gets told plainly rather than silently ignored.
+        if (!window.confirm('Delete ' + n + ' lead' + (n !== 1 ? 's' : '') + '? They will be removed from your CRM.')) return;
+        SynListings.deleteLeads(picked.map(l => l.id))
+          .then(({ deleted, requested, error }) => {
+            toast(deleted === requested
+              ? deleted + ' lead' + (deleted !== 1 ? 's' : '') + ' deleted'
+              : deleted + ' of ' + requested + ' deleted — ' + (error || 'the rest could not be removed'));
+            CRM.sel.clear();
+            return loadLeads();
+          })
+          .catch(err => {
+            toast((err && err.message) || 'Could not delete those leads');
+            console.error('deleteLeads failed', err);
+          });
+      }
+
       document.getElementById('crmBulk').addEventListener('click', e => {
         const b = e.target.closest('[data-bulk]'); if(!b) return;
         const act = b.dataset.bulk;
-        if(act==='clear'){ CRM.sel.clear(); renderCrmTable(); return; }
-        const n = CRM.sel.size;
-        toast(act.charAt(0).toUpperCase()+act.slice(1)+' · '+n+' lead'+(n!==1?'s':'')+' — Toju queued it');
-        if(act==='delete'){ CRM.sel.clear(); renderCrmTable(); }
+        if (act === 'clear') { CRM.sel.clear(); renderCrmTable(); return; }
+        if (!window.SynListings) { toast('Cannot do that right now — the data layer did not load'); return; }
+        if (act === 'assign') return bulkAssign(b);
+        if (act === 'message') return bulkMessage();
+        if (act === 'delete') return bulkDelete();
       });
       document.getElementById('crmExport').addEventListener('click', () => toast('Exporting your pipeline to CSV…'));
-      document.getElementById('crmAdd').addEventListener('click', () => toast('New-lead intake — Toju captures the next one automatically'));
+      document.getElementById('crmAdd').addEventListener('click', () => { toast('Refreshing leads...'); CRM.loaded = false; CRM.error = null; renderCrmTable(); loadLeads(); });
       document.getElementById('crmBoardBtn').addEventListener('click', () => toast('Board view is coming next'));
       function crmMenu(anchor, opts, pick){
         document.querySelectorAll('.crm-menu').forEach(m => m.remove());
@@ -2013,31 +2429,44 @@
     }
     const doBtn = (l) => {
       const n = l.nba;
-      if (n.act === 'call') return `<a class="btn btn-primary do" href="tel:${l.ph.replace(/[^\d+]/g,'')}">${n.do}</a>`;
-      if (n.act === 'wa') return `<a class="btn btn-primary do" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">${n.do}</a>`;
+      if (n.act === 'call' && l.ph) return `<a class="btn btn-primary do" href="tel:${l.ph.replace(/[^\d+]/g,'')}">${n.do}</a>`;
+      if (n.act === 'wa' && l.ph) return `<a class="btn btn-primary do" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer">${n.do}</a>`;
       return `<button class="btn btn-primary do" onclick="this.textContent='✓ Done · Toju logged it'; this.disabled=true; this.style.opacity=.7">${n.do}</button>`;
     };
     const graphHtml = (g) => `<div class="gph">${g.map((nd,i) => `<div class="gnode"><span class="r">${nd[0]}</span><span class="n">${nd[1]}</span></div>${i < g.length-1 ? '<div class="gline"></div>' : ''}`).join('')}</div>`;
 
+    /* The drawer was written against demo leads that carried an AI summary, a
+       written next-best-action, a relationship graph and a Toju brief. Real
+       rows carry none of those - no engine produces them yet - so every one of
+       those sections is now conditional. Rendering "undefined" under a heading
+       like "AI summary" would be worse than not showing the heading at all. */
     function openLead(i){
-      const l = leads[i], a = l.attr, m = CH[a.channel];
+      const l = leads[i]; if (!l) return;
+      const a = l.attr, m = CH[a.channel];
+      const sec = (k, html) => html ? `<div class="sec"><div class="k">${k}</div>${html}</div>` : '';
       const won = l.stage === 'Won'
-        ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' — posted ' + a.posted : ''}.</p></div>` : '';
+        ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' \u2014 posted ' + a.posted : ''}.</p></div>` : '';
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
-        <div style="display:flex;align-items:center;gap:10px"><span class="score" style="${scoreTone(l.score)}">${l.score}</span><div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph}</div></div></div>
+        <button class="x" id="drawerX">\u00d7</button>
+        <div style="display:flex;align-items:center;gap:10px">${
+          l.score == null ? '' : `<span class="score" style="${scoreTone(l.score)}">${l.score}</span>`
+        }<div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph || 'No phone number yet'}</div></div></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
           <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
-          <span class="src ${l.src === 'toju' ? 'toju' : 'browse'}">${l.stage}</span>${chnBadge(a.channel)}
-          <a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>
+          <span class="src browse">${l.stage}</span>${chnBadge(a.channel)}
+          ${l.ph ? `<a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>` : ''}
         </div>
-        <div class="sec nba"><div class="k">✦ Next best action</div><p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>${doBtn(l)}</div>
-        <div class="sec ai"><div class="k">AI summary</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p></div>
-        <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' · ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' · ').slice(1).join(' · ')}</p></div>
-        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' · campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">⚡ Auto-captured — no manual entry</div></div>
+        ${l.failed ? `<div class="sec" style="border-color:var(--danger,#c0392b)"><div class="k">\u26a0 Not delivered</div><p style="margin-top:6px;font-size:13px;line-height:1.5">This lead reached you here, but the WhatsApp alert did not go out. Reach out from this screen.</p></div>` : ''}
+        <div class="sec nba"><div class="k">\u2726 Next best action</div>${l.nba.text ? `<p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>` : ''}${doBtn(l)}</div>
+        <div class="sec"><div class="k">Assigned to</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${
+          l.agentId ? (ROSTER_BY_ID[l.agentId] || 'A teammate') : 'Nobody yet'
+        }</p></div>
+        ${sec('AI summary', l.summary ? `<p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p>` : '')}
+        <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' \u00b7 ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' \u00b7 ').slice(1).join(' \u00b7 ')}</p></div>
+        <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' \u00b7 campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">\u26a1 Auto-captured \u2014 no manual entry</div></div>
         ${won}
-        <div class="sec"><div class="k">Relationship graph</div>${graphHtml(l.graph)}</div>
-        <div class="sec brief"><div class="k">✦ Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>`;
+        ${sec('Relationship graph', Array.isArray(l.graph) && l.graph.length ? graphHtml(l.graph) : '')}
+        ${l.brief ? `<div class="sec brief"><div class="k">\u2726 Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>` : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.synMotion) synMotion.refresh();
@@ -2334,7 +2763,14 @@
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2600);
     }
     function freshness(l) {
-      const left = 14 - l.days;
+      /* Derive from expires_at when the row has one. This used to assume
+         "listed_at + 14 days", while Toju gates buyers on expires_at -- two
+         independent clocks that happened to agree only because the seed set
+         both. If they ever drift, the agency sees "10 days left" on a listing
+         buyers can no longer be shown. */
+      const left = l.expires_at
+        ? Math.ceil((new Date(l.expires_at).getTime() - Date.now()) / 864e5)
+        : 14 - l.days;
       if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', expired: true, warn: false };
       if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), expired: false, warn: true };
       return { cls: 'ok', label: left + ' days left', expired: false, warn: false };
@@ -2609,6 +3045,8 @@
     function fromDbRow(p) {
       const l = deriveLegacy(Object.assign({}, p));
       l.days = p.listed_at ? Math.max(0, Math.floor((Date.now() - new Date(p.listed_at).getTime()) / 864e5)) : 0;
+      l.expires_at = p.expires_at || null;
+      l.availability_confirmed_at = p.availability_confirmed_at || null;
       l.leads = l.leads || 0;
       return l;
     }
@@ -2620,6 +3058,12 @@
           dbBacked = true;
           LISTINGS_DATA = rows.map(fromDbRow);
           renderListings();
+          /* Overview reads the same LISTINGS_DATA but had already rendered
+             before this fetch resolved, so it kept its "No listings yet"
+             empty state while the Listings grid showed five. The agency's
+             first screen said they had nothing. Anything reading this array
+             has to be repainted here, not just the grid that triggered it. */
+          if (typeof renderOverview === 'function') renderOverview();
           announceListings();
         });
       }).catch((e) => { console.warn('listings: staying on local data —', (e && e.message) || e); });
@@ -2647,11 +3091,34 @@
       diaspora: ['Buy from abroad. Independently verified.', 'Verified on the ground so you don’t fly blind.', 'Seven checks passed before you ever see it.'],
       firsthome: ['Your first home, verified 7 ways.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning — safely.'],
     };
-    let CAMPAIGNS;
-    try { CAMPAIGNS = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) {}
-    // No seeded campaigns: one must be built from a real listing.
-    if (!Array.isArray(CAMPAIGNS)) CAMPAIGNS = [];
-    const saveCamps = () => localStorage.setItem(MK_KEY, JSON.stringify(CAMPAIGNS));
+    /* Campaigns live in the `campaigns` table, not in localStorage. In a
+       browser they belonged to one machine: a colleague opening the dashboard
+       saw nothing, and clearing the cache destroyed them.
+
+       MK_KEY survives only as the source for the one-time import below. */
+    let CAMPAIGNS = [];
+    const MKST = { loaded: false, error: null };
+
+    // Database row -> the shape this pane renders. Budget and spend are stored
+    // in naira and shown in thousands, which is how the form collects them.
+    const mapCampaign = (c) => ({
+      id: c.id,
+      nm: c.name,
+      persona: c.persona || 'family',
+      live: c.status === 'active',
+      budget: Math.round((Number(c.budget_naira) || 0) / 1000),
+      spend: Math.round((Number(c.spend_naira) || 0) / 1000),
+      chans: (c.target_platforms || []).length ? c.target_platforms : ['instagram'],
+      ads: (c.creatives || []).map((cr) => ({
+        id: cr.id,
+        img: cr.image_url || '',
+        hl: cr.headline,
+        ch: CH[cr.channel] ? cr.channel : 'direct',
+        ctr: Number(cr.ctr) || 0,
+        leads: cr.leads_count || 0,
+        st: cr.status || 'learning',
+      })),
+    });
     const AD_ST = { scaling: 'Scaling', learning: 'Learning', pausedai: 'Paused by AI' };
 
     function mkStats() {
@@ -2686,8 +3153,27 @@
         <div class="met"><span><b>${a.ctr.toFixed(1)}%</b> CTR</span><span><b>${a.leads}</b> leads</span></div>
       </div>`;
     }
+    const byId = (id) => CAMPAIGNS.find((c) => c.id === id);
     function renderCampaigns() {
-      document.getElementById('campaigns').innerHTML = CAMPAIGNS.map((c, i) => `
+      const host = document.getElementById('campaigns');
+      if (!CAMPAIGNS.length) {
+        host.innerHTML =
+          '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="chart"></span>'
+          + '<b>' + (MKST.error ? 'Could not load your campaigns'
+                   : !MKST.loaded ? 'Loading your campaigns…' : 'No campaigns yet') + '</b>'
+          + '<p>' + (MKST.error ? MKST.error
+                   : !MKST.loaded ? 'One moment.'
+                   : 'Build one from a listing and Synapse writes the first three creatives, then scales whichever earns the clicks.') + '</p>'
+          + (MKST.loaded && !MKST.error
+              ? '<button class="btn btn-primary" type="button" data-mk-new>+ New campaign</button>' : '')
+          + '</div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(host);
+        mkStats();
+        try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
+        return;
+      }
+      host.innerHTML = CAMPAIGNS.map((c, i) => `
         <div class="card campaign">
           <div class="chd">
             <span class="nm">${c.nm}</span>
@@ -2695,10 +3181,10 @@
             <span class="bdg ${c.live ? 'live' : 'paused'}">${c.live ? '● Live' : 'Paused'}</span>
             <span class="spend"><b>₦${c.budget}k</b>/day · ₦${c.spend}k spent</span>
           </div>
-          <div class="adgrid" id="ads-${i}">${c.ads.map(adTile).join('')}</div>
+          <div class="adgrid" id="ads-${c.id}">${c.ads.map(adTile).join('')}</div>
           <div class="cft">
-            <button class="gen2" data-gen="${i}">✦ Generate variants</button>
-            <button class="tgl" data-tgl="${i}">${c.live ? 'Pause campaign' : 'Resume campaign'}</button>
+            <button class="gen2" data-gen="${c.id}">✦ Generate variants</button>
+            <button class="tgl" data-tgl="${c.id}">${c.live ? 'Pause campaign' : 'Resume campaign'}</button>
           </div>
         </div>`).join('');
       mkStats();
@@ -2706,24 +3192,32 @@
       // renderCampaigns() runs before the leaderboard's own consts initialize (TDZ).
       try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
     }
-    function generateVariants(i) {
-      const c = CAMPAIGNS[i];
-      const grid = document.getElementById('ads-' + i);
-      grid.insertAdjacentHTML('beforeend', '<div class="ad gen" id="genTile"><div class="in"><span class="spin" style="display:inline-block;margin-bottom:8px"></span><br>AI writing 2 new<br>creatives…</div></div>');
-      setTimeout(() => {
-        const pool = HEADLINES[c.persona];
-        const imgs = [IMG.lekki, IMG.osapa, IMG.ikate, IMG.vi];
-        for (let k = 0; k < 2; k++) {
-          c.ads.push({
-            img: imgs[(c.ads.length + k) % imgs.length],
-            hl: pool[(c.ads.length + k) % pool.length],
-            ch: c.chans[(c.ads.length + k) % c.chans.length],
-            ctr: 0, leads: 0, st: 'learning',
-          });
-        }
-        saveCamps(); renderCampaigns();
-        toast('2 new creatives launched in “' + c.nm + '” — learning phase');
-      }, 1500);
+    function generateVariants(id) {
+      const c = byId(id); if (!c) return;
+      const grid = document.getElementById('ads-' + id);
+      if (grid) grid.insertAdjacentHTML('beforeend', '<div class="ad gen" id="genTile"><div class="in"><span class="spin" style="display:inline-block;margin-bottom:8px"></span><br>AI writing 2 new<br>creatives…</div></div>');
+      const pool = HEADLINES[c.persona] || HEADLINES.family;
+      const imgs = [IMG.lekki, IMG.osapa, IMG.ikate, IMG.vi];
+      const fresh = [0, 1].map((k) => ({
+        headline: pool[(c.ads.length + k) % pool.length],
+        imageUrl: imgs[(c.ads.length + k) % imgs.length],
+        channel: c.chans[(c.ads.length + k) % c.chans.length],
+      }));
+      SynListings.addCreatives(id, fresh, c.ads.length)
+        .then((rows) => {
+          rows.forEach((cr) => c.ads.push({
+            id: cr.id, img: cr.image_url || '', hl: cr.headline,
+            ch: CH[cr.channel] ? cr.channel : 'direct',
+            ctr: Number(cr.ctr) || 0, leads: cr.leads_count || 0, st: cr.status || 'learning',
+          }));
+          renderCampaigns();
+          toast('2 new creatives launched in “' + c.nm + '” — learning phase');
+        })
+        .catch((err) => {
+          const t = document.getElementById('genTile'); if (t) t.remove();
+          toast((err && err.message) || 'Could not add those creatives');
+          console.error('addCreatives failed', err);
+        });
     }
     function campaignForm() {
       drawer.innerHTML = `
@@ -2756,26 +3250,228 @@
         const chans = [...document.querySelectorAll('#cfC input:checked')].map(x => x.value);
         if (!chans.length) { toast('Pick at least one channel'); return; }
         const pool = HEADLINES[persona];
-        CAMPAIGNS.unshift({
-          nm, persona, live: true, budget: parseInt(document.getElementById('cfB').value, 10) || 15, spend: 0, chans,
-          ads: pool.slice(0, 3).map((hl, k) => ({ img: li.img, hl, ch: chans[k % chans.length], ctr: 0, leads: 0, st: 'learning' })),
+        const btn = document.getElementById('cfSave');
+        btn.disabled = true; btn.textContent = 'Launching…';
+        SynListings.createCampaign({
+          name: nm,
+          persona,
+          audience: PERSONAS[persona],
+          budgetNaira: (parseInt(document.getElementById('cfB').value, 10) || 15) * 1000,
+          channels: chans,
+          creatives: pool.slice(0, 3).map((hl, k) => ({
+            headline: hl, imageUrl: li.img, channel: chans[k % chans.length],
+          })),
+        }).then(() => {
+          closeLead();
+          toast('“' + nm + '” is live — 3 creatives in the learning phase');
+          return loadCampaigns();
+        }).catch((err) => {
+          btn.disabled = false; btn.textContent = '✦ Generate creatives & launch';
+          toast((err && err.message) || 'Could not launch that campaign');
+          console.error('createCampaign failed', err);
         });
-        saveCamps(); renderCampaigns(); closeLead();
-        toast('“' + nm + '” is live — 3 creatives in the learning phase');
       });
     }
     document.getElementById('campaigns').addEventListener('click', (e) => {
-      const g = e.target.closest('[data-gen]'); if (g) { generateVariants(+g.dataset.gen); return; }
+      if (e.target.closest('[data-mk-new]')) { campaignForm(); return; }
+      const g = e.target.closest('[data-gen]'); if (g) { generateVariants(g.dataset.gen); return; }
       const t = e.target.closest('[data-tgl]');
-      if (t) { const c = CAMPAIGNS[+t.dataset.tgl]; c.live = !c.live; saveCamps(); renderCampaigns(); toast(c.live ? 'Campaign resumed' : 'Campaign paused'); }
+      if (!t) return;
+      const c = byId(t.dataset.tgl); if (!c) return;
+      const was = c.live;
+      // Optimistic, then reverted if the database refuses. A plain agent can
+      // read campaigns but not change them, and RLS refuses by returning no
+      // rows rather than an error -- so silence here would show a paused
+      // campaign that is still running and still spending.
+      c.live = !was; t.disabled = true; renderCampaigns();
+      SynListings.setCampaignStatus(c.id, c.live)
+        .then(() => toast(c.live ? 'Campaign resumed' : 'Campaign paused'))
+        .catch((err) => {
+          c.live = was; renderCampaigns();
+          toast((err && err.message) || 'Could not change that campaign');
+          console.error('setCampaignStatus failed', err);
+        });
     });
     // creative insights now live in the Ask-Toju panel (marketing context).
+    /* Call your relationship manager.
+
+       Three states, and none of them invents a number:
+         unassigned              -> say so, and say who to email instead
+         assigned, no number     -> name them, say we have no number on file
+         assigned, with number   -> a tel: link
+
+       tel: rather than anything platform-mediated. Twilio is not configured,
+       so Synapse cannot place or route a call today -- and a dialler link
+       needs no provider at all, on any phone. */
+    (function relationshipManagerControl() {
+      /* Its own escaper. The one used by the CRM lives inside that pane's
+         IIFE, so it is not in scope here -- referencing it would have thrown
+         the moment anyone opened this sheet, and nothing about the syntax
+         would have shown it. */
+      const esc = (t) => String(t == null ? '' : t)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const wrap = document.getElementById('agdCall');
+      const fab = document.getElementById('agdCallFab');
+      const sheet = document.getElementById('agdCallSheet');
+      if (!wrap || !fab || !sheet) return;
+      let cached = null;
+
+      const paint = (rm) => {
+        if (!rm.assigned) {
+          sheet.innerHTML = '<div class="rm-card">'
+            + '<div class="rm-role">Your relationship manager</div>'
+            + '<div class="rm-none">Nobody is assigned to your agency yet. '
+            + 'Email <b>ilios.intelligence@gmail.com</b> and we will put a name and a number here.</div>'
+            + '</div>';
+          return;
+        }
+        const head = '<div class="rm-card">'
+          + '<div class="rm-role">Your relationship manager</div>'
+          + '<div class="rm-name">' + esc(rm.name) + '</div>'
+          + (rm.hours ? '<div class="rm-hours">' + esc(rm.hours) + '</div>' : '');
+        sheet.innerHTML = rm.phone
+          ? head + '<a class="rm-call" href="tel:' + esc(rm.phone.replace(/[^\d+]/g, '')) + '">'
+                 + '\u2706 Call ' + esc(rm.phone) + '</a></div>'
+          : head + '<div class="rm-none">We do not have a phone number on file for them yet — '
+                 + 'email <b>ilios.intelligence@gmail.com</b> and we will add one.</div></div>';
+      };
+
+      const open = () => {
+        // Same 'open' class and same scrim the nav and create sheets use --
+        // the CSS only reveals .agd.open .agd-sheet, so toggling any other
+        // class would have left this sheet permanently invisible.
+        const wasOpen = wrap.classList.contains('open');
+        document.getElementById('agdNav')?.classList.remove('open');
+        document.getElementById('agdAdd')?.classList.remove('open');
+        const scrim = document.getElementById('agdScrim');
+        wrap.classList.toggle('open', !wasOpen);
+        if (scrim) scrim.classList.toggle('on', !wasOpen);
+        fab.setAttribute('aria-expanded', String(!wasOpen));
+        if (wasOpen) return;
+        if (cached) { paint(cached); return; }
+        sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Looking that up…</div></div>';
+        if (!window.SynListings || !SynListings.relationshipManager) {
+          sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that just now.</div></div>';
+          return;
+        }
+        SynListings.relationshipManager()
+          .then((rm) => { cached = rm; paint(rm); })
+          .catch((err) => {
+            sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that — '
+              + esc((err && err.message) || 'please try again') + '</div></div>';
+          });
+      };
+
+      fab.addEventListener('click', (e) => { e.stopPropagation(); open(); });
+
+      /* The desktop control. Same data, same three states, same escaper --
+         only the surface differs, because the taskbar is phone-only. The
+         fetch is shared through `cached`, so opening one then the other does
+         not hit the database twice. */
+      const dWrap = document.getElementById('rmDeskWrap');
+      const dBtn = document.getElementById('rmDeskBtn');
+      const dPop = document.getElementById('rmDeskPop');
+      if (dWrap && dBtn && dPop) {
+        const paintInto = (el, rm) => {
+          const keep = sheet.innerHTML;
+          paint(rm);                 // paint() writes into `sheet`
+          el.innerHTML = sheet.innerHTML;
+          sheet.innerHTML = keep;    // leave the phone sheet as it was
+        };
+        dBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = dWrap.classList.contains('open');
+          dWrap.classList.toggle('open', !wasOpen);
+          dBtn.setAttribute('aria-expanded', String(!wasOpen));
+          if (wasOpen) return;
+          if (cached) { paintInto(dPop, cached); return; }
+          dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Looking that up…</div></div>';
+          if (!window.SynListings || !SynListings.relationshipManager) {
+            dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that just now.</div></div>';
+            return;
+          }
+          SynListings.relationshipManager()
+            .then((rm) => { cached = rm; paintInto(dPop, rm); })
+            .catch((err) => {
+              dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that — '
+                + esc((err && err.message) || 'please try again') + '</div></div>';
+            });
+        });
+        document.addEventListener('click', (e) => {
+          if (dWrap.classList.contains('open') && !dWrap.contains(e.target)) {
+            dWrap.classList.remove('open');
+            dBtn.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+      document.addEventListener('click', (e) => {
+        if (wrap.classList.contains('open') && !wrap.contains(e.target)) {
+          wrap.classList.remove('open');
+          const scrim = document.getElementById('agdScrim');
+          if (scrim) scrim.classList.remove('on');
+          fab.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
 
+    function loadCampaigns() {
+      if (!window.SynListings || !SynListings.listCampaigns) {
+        MKST.loaded = true; MKST.error = 'the data layer did not load'; renderCampaigns();
+        return Promise.resolve();
+      }
+      return SynListings.listCampaigns().then((rows) => {
+        CAMPAIGNS = rows.map(mapCampaign);
+        MKST.loaded = true; MKST.error = null;
+        renderCampaigns();
+      }).catch((err) => {
+        MKST.loaded = true;
+        MKST.error = (err && err.message) || 'please refresh';
+        CAMPAIGNS = [];
+        renderCampaigns();
+        console.error('campaigns load failed', err);
+      });
+    }
+
+    /* One-time import. Anyone who built campaigns before this change has them
+       sitting in localStorage on this machine only. Rather than stranding that
+       work, it is written to the table once and the key is cleared so the
+       import cannot run twice and duplicate everything. */
+    function importLegacyCampaigns() {
+      // Guarded: without the data layer there is nothing to import into, and
+      // an exception here would leave the pane stuck on "Loading…" forever
+      // because the loader is chained off this promise.
+      if (!window.SynListings || !SynListings.createCampaign) return Promise.resolve(false);
+      let old = null;
+      try { old = JSON.parse(localStorage.getItem(MK_KEY)); } catch (e) { /* unreadable: nothing to import */ }
+      if (!Array.isArray(old) || !old.length) return Promise.resolve(false);
+      const jobs = old.map((c) => SynListings.createCampaign({
+        name: c.nm || 'Imported campaign',
+        persona: c.persona || null,
+        audience: PERSONAS[c.persona] || null,
+        budgetNaira: (c.budget || 0) * 1000,
+        channels: c.chans || [],
+        creatives: (c.ads || []).map((a) => ({ headline: a.hl, imageUrl: a.img, channel: a.ch })),
+      }));
+      return Promise.all(jobs).then(() => {
+        localStorage.removeItem(MK_KEY);
+        toast(old.length + ' campaign' + (old.length !== 1 ? 's' : '') + ' moved to your account');
+        return true;
+      }).catch((err) => {
+        // Leave the key in place: a failed import must not destroy the only copy.
+        console.error('campaign import failed', err);
+        toast('Some saved campaigns could not be moved — they are still on this device');
+        return false;
+      });
+    }
+
+    importLegacyCampaigns().then(loadCampaigns);
+
     // ── creative leaderboard: every ad across campaigns, ranked by performance ──
     const MK = { sort: 'ctr' };
-    const allAds = () => CAMPAIGNS.flatMap((c, ci) => c.ads.map((a, ai) => Object.assign({}, a, { camp: c.nm, clive: c.live, ci, ai })));
+    const allAds = () => CAMPAIGNS.flatMap((c) => c.ads.map((a) => Object.assign({}, a, { camp: c.nm, clive: c.live })));
     function adSpark(a){
       const h = sHash(a.hl || ''), base = Math.max(0.4, a.ctr);
       const trend = a.st === 'scaling' ? 0.12 : a.st === 'pausedai' ? -0.1 : 0.03;
@@ -2810,7 +3506,7 @@
           <div class="lbmid"><div class="lbhl">${a.hl}</div><div class="lbsub"><span class="lbcamp">${a.camp}</span>${chnBadge(a.ch)}<span class="lbst ${a.st}">${AD_ST[a.st]}</span></div></div>
           <div class="lbperf"><div class="lbspark">${sparkSVG(adSpark(a), { w: 72, h: 26 })}</div><div class="lbctr"><b>${a.ctr.toFixed(1)}%</b> CTR</div></div>
           <div class="lbleads"><b>${a.leads}</b><span>leads</span></div>
-          <button class="lbscale" data-scale="${a.ci}-${a.ai}" aria-label="Scale ${a.hl}">${a.st === 'scaling' ? 'Scaling ▴' : 'Scale ↑'}</button>
+          <button class="lbscale" data-scale="${a.id}" aria-label="Scale ${a.hl}">${a.st === 'scaling' ? 'Scaling ▴' : 'Scale ↑'}</button>
         </div>`;
       }).join('');
       if (!sReduce()) el.querySelectorAll('.lbspark path[stroke]').forEach(p => {
@@ -2839,11 +3535,23 @@
         return;
       }
       const s = e.target.closest('[data-scale]'); if (!s) return;
-      const [ci, ai] = s.dataset.scale.split('-').map(Number);
-      const a = CAMPAIGNS[ci] && CAMPAIGNS[ci].ads[ai]; if (!a) return;
-      if (a.st === 'pausedai') { a.st = 'learning'; toast('Creative re-activated — back into learning'); }
-      else { a.st = 'scaling'; toast('Scaling this creative — budget shifting to the winner'); }
-      saveCamps(); renderCampaigns();
+      // Creatives are addressed by id now that campaigns come from the table;
+      // array positions shifted whenever anything reloaded.
+      let a = null;
+      for (const c of CAMPAIGNS) { const hit = c.ads.find((x) => x.id === s.dataset.scale); if (hit) { a = hit; break; } }
+      if (!a) return;
+      const was = a.st;
+      a.st = was === 'pausedai' ? 'learning' : 'scaling';
+      renderCampaigns();
+      SynListings.setCreativeStatus(a.id, a.st)
+        .then(() => toast(a.st === 'learning'
+          ? 'Creative re-activated — back into learning'
+          : 'Scaling this creative — budget shifting to the winner'))
+        .catch((err) => {
+          a.st = was; renderCampaigns();
+          toast((err && err.message) || 'Could not change that creative');
+          console.error('setCreativeStatus failed', err);
+        });
     });
     // defer the first render so it runs after the chart primitives (C_BRAND) initialize
     setTimeout(renderBoard, 0);
@@ -4137,6 +4845,14 @@
       const isOpen = (el) => el.classList.contains('open');
       function closeAll() {
         nav.classList.remove('open'); add.classList.remove('open');
+        // The call control is a third sheet on the same bar; without this it
+        // stays open behind the scrim when the nav or create menu opens.
+        const call = document.getElementById('agdCall');
+        if (call) {
+          call.classList.remove('open');
+          const cf = document.getElementById('agdCallFab');
+          if (cf) cf.setAttribute('aria-expanded', 'false');
+        }
         scrim.classList.remove('on');
         navFab.setAttribute('aria-expanded', 'false');
         addFab.setAttribute('aria-expanded', 'false');

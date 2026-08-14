@@ -3,26 +3,102 @@
    Fonts, loaded per-page <link>). These mirror the real @synapse/ui screens
    so the flow can be clicked through. */
 :root {
-  --brand: #121212;          /* crypt.ee monochrome — near-black accents, no terracotta */
-  --brand-dim: #000000;
-  --brand-deep: #121212;
-  --brand-text: #363636;
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --ink: #1e1e1e;
-  --ink-muted: rgba(54,54,54,0.62);
-  --ink-dim: rgba(54,54,54,0.42);
-  --border: rgba(20,20,20,0.10);
+  /* ═══════════════════════════════════════════════════════════════════════
+     SYNAPSE BRAND SYSTEM
+     Values taken from the supplied brand sheets, not sampled by eye.
+
+     ORANGE IS NEVER TEXT. Not in any weight, size or state. It fills, it
+     underlines, it glows, it marks the active item with a dot — it never
+     carries a word. Where the brand sheets show orange link text ("Learn
+     more", "View Demo") or an orange active nav label, the word is charcoal
+     and the orange does its job some other way: the rule beneath it, the dot
+     under it, the arrow beside it, the fill behind it.
+
+     The measurements are why. On the brand's own light ground (#F7F7F8):
+
+        #FF8A2D primary orange   2.20:1   — body text needs 4.5:1
+        #FFB066 accent orange    1.68:1
+        #FFE5CC tangerine        1.13:1
+
+     One correction to the sheets, also measured: they show WHITE text on the
+     orange primary button at 2.35:1 — the least readable element in the
+     system, on the most important control in the product. Graphite on that
+     same orange is 8.25:1, so orange buttons carry graphite labels.
+
+     The semantic colours are fills too, and each has a darker sibling for the
+     cases where a warning or an error genuinely has to be words.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* Brand — primary & accent. Fills, icons, borders, glows. Never text. */
+  --orange:        #FF8A2D;   /* Primary Orange */
+  --orange-accent: #FFB066;   /* Accent Orange — secondary fills, gradient stops */
+  --orange-tint:   #FFE5CC;   /* Tangerine Tint — wash backgrounds only */
+  --orange-deep:   #C25400;   /* darker orange for pressed fills + rules. NOT text. */
+
+  /* Brand — neutrals. 60% of the interface, per the usage ratio. */
+  --graphite: #0D0D0F;
+  --charcoal: #1C1C1E;
+  --stone:    #6B6B70;
+  --mist:     #E7E7EA;
+  --cloud:    #F7F7F8;
+  --white:    #FFFFFF;
+
+  /* Brand — semantic. Fill value, then the sibling used when it must be read. */
+  --success:     #22C55E;  --success-ink: #15803D;   /* 4.68:1 on Cloud */
+  --info:        #3B82F6;  --info-ink:    #1D4ED8;   /* 6.26:1 */
+  --error:       #EF4444;  --error-ink:   #B91C1C;   /* 6.04:1 */
+  --danger:      #B91C1C;
+
+  /* Gradient expression, from the brand sheet's own row. */
+  --grad-glow:  radial-gradient(circle at 30% 30%, var(--orange-accent), var(--orange));
+  --grad-depth: linear-gradient(135deg, var(--graphite), #4A2A10);
+
+  /* ── application tokens, mapped onto the brand ────────────────────────── */
+  /* `--brand` stays a NEUTRAL, and that is a deliberate structural choice.
+     It is used as `color:` in ~20 places across the dashboard. Had it been
+     repointed at the orange, every one of those would silently have become
+     orange text — the exact thing we do not do — and the rule would depend on
+     remembering to fix 20 call sites. Instead the orange lives in its own
+     token that is only ever applied to a fill, so the rule cannot be broken
+     by accident. */
+  --brand: #1C1C1E;          /* Charcoal — brand ink */
+  --brand-dim: #0D0D0F;      /* Graphite */
+  --brand-deep: #1C1C1E;
+  --brand-text: #1C1C1E;
+
+  /* The action colour. Backgrounds, rules, dots, glows, icon fills — never a
+     `color:` on text. `--action-on` is what sits on top of it (8.25:1). */
+  --action:     #FF8A2D;
+  --action-dim: #E8761B;     /* hover / pressed */
+  --action-on:  #0D0D0F;
+
+  --bg: #F7F7F8;             /* Cloud. The brand ground is a cool neutral and the
+                                warmth arrives as an orange glow layer — which is
+                                exactly how the brand sheets are constructed. */
+  --surface: #FFFFFF;
+  --ink: #1C1C1E;                    /* Charcoal — 15.89:1 on Cloud */
+  --ink-muted: #6B6B70;              /* Stone — 4.95:1, clears AA. The value this
+                                        replaces measured 3.67:1 and did not. */
+  --ink-dim: rgba(107,107,112,0.62);
+  --border: rgba(13,13,15,0.10);
+  --border-strong: #E7E7EA;
   --glass: rgba(255,255,255,0.72);
-  --success: #2e7d4f;
   --gold: #9c7a1e;
+
+  /* Tint aliases kept so existing rules keep working, now pointing at the real
+     brand orange rather than the value I had estimated from the artwork. */
+  --tint: 255, 138, 45;
+  --tint-bright: 255, 176, 102;
+  --tint-deep: 226, 110, 20;
+  --tint-wash: rgba(var(--tint), 0.022);
+  --tint-edge: rgba(var(--tint), 0.10);
+  --tint-ink: rgba(var(--tint), 0.85);   /* pips + pings ONLY, never text */
+
   --radius: 10px;
   --radius-sm: 8px;
   --f-sans: 'Josefin Sans', system-ui, sans-serif;
   --f-serif: 'Josefin Sans', system-ui, sans-serif;
-  --f-accent: 'Josefin Sans', system-ui, sans-serif; /* all-caps eyebrows/kickers/chips:
-                                                Lato 700, uppercase, +0.14em — a recipe, not a face */
-  --brand-text: #363636; /* terracotta for small text on --bg — 5.3:1, AA */
+  --f-accent: 'Josefin Sans', system-ui, sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -42,7 +118,7 @@ a { color: inherit; text-decoration: none; }
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 22px;
   padding: 14px 22px;
-  background: rgba(245,245,245,0.82);
+  background: rgba(247,247,248,0.82);   /* tracks --bg; translucency needs a literal */
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border-bottom: 1px solid var(--border);
@@ -61,7 +137,11 @@ a { color: inherit; text-decoration: none; }
   transition: all .2s;
 }
 .appbar nav a:hover { color: var(--ink); background: rgba(0,0,0,0.04); }
-.appbar nav a.active { color: var(--brand); background: rgba(54,54,54,0.08); }
+/* The active item is marked by its filled pill alone. An orange dot under the
+   label was tried -- the brand sheet uses one under its active nav item -- but
+   at this scale, on every page of both portals, it read as a stray mark rather
+   than an indicator. The pill already says which page you are on. */
+.appbar nav a.active { color: var(--ink); background: rgba(13,13,15,0.08); }
 .appbar .spacer { flex: 1; }
 .appbar .home { font-size: 12.5px; color: var(--ink-dim); }
 .appbar .home:hover { color: var(--ink); }
@@ -324,4 +404,168 @@ textarea:focus-visible {
   box-shadow: none !important;
   outline: none !important;
   border-color: rgba(20, 20, 20, 0.34);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Brand ambience.
+
+   Not a re-skin: no component changes colour, no text changes colour. This is
+   only the room the interface stands in. Every motif here is taken from the
+   brand artwork rather than invented -- the concentric hairline rings that
+   orbit the mark, the dot field from the corner of the brand cards, and the
+   two-stop orange glow of the logo gradient.
+
+   Alphas are deliberately at the edge of perception (0.02–0.07). The test is
+   that you should not be able to point at it, only notice that the product
+   looks like it belongs to the brand. Both layers are inert: pointer-events
+   none, no animation, dropped for print.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;              /* above the body ground, beneath every child */
+  pointer-events: none;
+}
+
+/* Glow + orbit rings. The two radial stops are the logo gradient's own
+   colours, pushed to the corners so the centre of the screen -- where the
+   reading happens -- stays clean. */
+body::before {
+  background:
+    radial-gradient(58% 44% at 100% 0%,   rgba(var(--tint-bright), 0.10), transparent 68%),
+    radial-gradient(52% 42% at 0% 100%,   rgba(var(--tint-deep),   0.07), transparent 70%),
+    repeating-radial-gradient(circle at 88% 12%,
+      transparent 0 92px,
+      rgba(var(--tint), 0.055) 92px 93px);
+}
+
+/* The dot field, bottom-left, fading out as it travels in — exactly how it
+   behaves in the brand cards. Masked rather than faded with opacity so the
+   grid itself stays crisp where it is densest. */
+body::after {
+  background-image: radial-gradient(rgba(var(--tint), 0.42) 1.1px, transparent 1.7px);
+  background-size: 22px 22px;
+  background-position: 0 100%;
+  -webkit-mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
+          mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
+  /* 0.42 x 0.75 lands each dot near #e7c5a6 on the page ground -- present if
+     you look, invisible if you are reading. Any lower and the layer renders
+     but cannot be seen at all, which is just cost with no effect. */
+  opacity: .75;
+}
+
+/* Narrow screens: the rings and the dot field both read as noise at phone
+   width, where content runs edge to edge. Keep the glow, drop the pattern. */
+@media (max-width: 640px) {
+  body::before {
+    background:
+      radial-gradient(70% 30% at 100% 0%, rgba(var(--tint-bright), 0.09), transparent 70%),
+      radial-gradient(70% 26% at 0% 100%, rgba(var(--tint-deep),   0.06), transparent 72%);
+  }
+  body::after { content: none; }
+}
+
+@media print {
+  body::before, body::after { content: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND COMPONENT LAYER — from the Synapse brand sheets.
+
+   The tokens landed earlier; this is the component language built on them:
+   the button system, the elevation scale, and the focus treatment.
+
+   Two rules govern everything below.
+
+   ORANGE IS NEVER TEXT. It fills, it lifts, it rings a focused control. The
+   label on an orange fill is graphite (8.25:1) -- the sheets show white there,
+   which measures 2.35:1 and would make the most important control in the
+   product the least readable thing on the page.
+
+   ORANGE IS 10% OF THE INTERFACE, per the sheet's own usage ratio. So it is
+   spent on the genuinely primary action -- the one thing per screen we want
+   pressed -- and nowhere else. Toolbar buttons, chips and secondary actions
+   deliberately stay neutral; a dashboard has dozens of buttons and turning
+   them all orange would spend the accent until it means nothing.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── elevation scale ──────────────────────────────────────────────────────
+   The sheets build hierarchy with light and depth rather than borders. */
+:root {
+  --lift-1: 0 1px 2px rgba(13,13,15,0.04), 0 8px 24px rgba(13,13,15,0.05);
+  --lift-2: 0 2px 6px rgba(13,13,15,0.05), 0 18px 48px rgba(13,13,15,0.08);
+  --lift-action: 0 6px 20px rgba(255,138,45,0.30);
+}
+
+/* ── primary action ───────────────────────────────────────────────────────
+   Was charcoal with white text. The brand system makes orange the action
+   colour: "use orange to draw focus and communicate primary actions". */
+.btn-primary {
+  background: var(--action);
+  color: var(--action-on);
+  box-shadow: var(--lift-action);
+}
+.btn-primary:hover {
+  background: #FFA054;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(255,138,45,0.36);
+}
+.btn-primary:active {
+  background: var(--action-dim);
+  transform: translateY(0);
+  box-shadow: 0 3px 12px rgba(255,138,45,0.30);
+}
+.btn-primary[disabled], .btn-primary:disabled {
+  background: var(--mist);
+  color: var(--stone);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary and ghost stay neutral by design — see the 10% rule above. */
+.btn-secondary {
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border-strong); box-shadow: var(--lift-1);
+}
+.btn-secondary:hover { box-shadow: var(--lift-2); transform: translateY(-1px); }
+
+/* ── the persistent create control ────────────────────────────────────────
+   The one action available from every pane, so it carries the accent. */
+.agd-btn-primary {
+  background: var(--action) !important;
+  color: var(--action-on) !important;
+  box-shadow: var(--lift-action);
+}
+.agd-btn-primary:hover { background: #FFA054 !important; }
+.agd-btn-primary:active { background: var(--action-dim) !important; }
+
+/* ── focus ────────────────────────────────────────────────────────────────
+   The sheets show a soft ring around a focused control. Keyboard users get a
+   visible, branded target; the ring is a shadow so it never shifts layout. */
+.btn:focus-visible,
+.agd-btn:focus-visible,
+.tbtn:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,138,45,0.38), 0 0 0 1px rgba(13,13,15,0.16);
+}
+
+/* ── cards ────────────────────────────────────────────────────────────────
+   The base .card is already the sheets' "Glass" treatment. These are the
+   other three, available where a surface needs to sit forward or recede. */
+.card-elevated { box-shadow: var(--lift-2); }
+.card-outline {
+  background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 1px solid var(--border-strong); box-shadow: none;
+}
+.card-flat { background: var(--surface); box-shadow: var(--lift-1); border: 1px solid var(--hair, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .btn-secondary, .agd-btn-primary { transition: none; }
+  .btn-primary:hover, .btn-secondary:hover { transform: none; }
 }
