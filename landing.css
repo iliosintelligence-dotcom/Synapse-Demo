@@ -2381,8 +2381,11 @@ textarea:focus-visible {
    The brand sheet puts white on this orange. That is 2.35:1 -- the least
    readable element in the system on the most important control in the
    product. Graphite on the same orange is 8.25:1. */
-.panel-btn-primary,
-.m-cta-primary {
+/* .m-cta-primary was listed here and exists in no mobile DOM -- the mobile
+   primary is .m-btn-primary, which is styled in landing-mobile.css alongside
+   the rest of the mobile brand layer. The dead selector is dropped rather than
+   corrected, so there is one place that owns the mobile button. */
+.panel-btn-primary {
   background: var(--orange) !important;
   color: var(--graphite) !important;
   border: none !important;
@@ -2390,14 +2393,12 @@ textarea:focus-visible {
   font-weight: 700;
   transition: transform .18s var(--ease, ease), box-shadow .18s ease, background .18s ease;
 }
-.panel-btn-primary:hover,
-.m-cta-primary:hover {
+.panel-btn-primary:hover {
   background: #FFA054 !important;
   transform: translateY(-1px);
   box-shadow: 0 12px 32px rgba(255,138,45,0.34);
 }
-.panel-btn-primary:active,
-.m-cta-primary:active { transform: translateY(0); background: #E8761B !important; }
+.panel-btn-primary:active { transform: translateY(0); background: #E8761B !important; }
 
 /* ── section kickers get the orange rule the sheets use ────────────────── */
 /* The brand sheets head every section with a small orange DOT before the
@@ -2498,7 +2499,10 @@ textarea:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .s-step, .car-card, .panel-btn-primary, .m-cta-primary { transition: none; }
+  /* .m-btn-primary, not .m-cta-primary: the latter never existed, so the
+     mobile primary button was the one control on the page still animating
+     under prefers-reduced-motion. */
+  .s-step, .car-card, .panel-btn-primary, .m-btn-primary { transition: none; }
 }
 
 /* ═══ HERO STAT STRIP — full-bleed dark ════════════════════════════════════

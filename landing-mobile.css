@@ -452,7 +452,22 @@
   color: var(--text-muted); white-space: nowrap;
 }
 .m-pr-toggle .pr-per.on { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(20,20,20,0.10); }
-.m-pr-toggle .pr-save { display: block; font-size: 10px; font-weight: 700; color: var(--tint-ink); }
+/* Was `color: var(--tint-ink)` -- orange words, on the one element in the
+   pricing toggle that argues for the annual plan. landing.css already solved
+   this for desktop and says so in a comment two lines long: the tint is the
+   BACKGROUND and the words are ink. This rule overrode that and put the orange
+   back on the text, at 10px, where it measures about 2.2:1.
+   Same treatment as desktop now. The segment is a row flex, so this sits
+   beside "Annual" rather than under it, and as a flex item it shrink-wraps to
+   the words on its own -- inline-block is blockified here by spec and the pill
+   still sizes correctly. */
+.m-pr-toggle .pr-save {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  padding: 1px 6px; border-radius: 100px;
+  background: rgba(var(--tint), 0.16); color: #1C1C1E;
+}
+.m-pr-toggle .pr-per.on .pr-save { background: rgba(var(--tint), 0.22); }
 
 .m-pr-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
 .m-pr-card {
@@ -673,4 +688,103 @@
   /* The navbar is fixed, so anchored jumps and in-page links landed with the
      heading tucked underneath it. */
   html { scroll-padding-top: 68px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND LAYER — mobile, part two.
+
+   The first mobile brand block covered the hero, the kickers, the step dots
+   and the seven-check rail. Everything below the hero was still the original
+   monochrome: an audit of the 43 .m-* classes actually used across the four
+   pages with a mobile DOM found 32 of them untouched by the brand system.
+
+   The one that mattered: landing.css styles `.m-cta-primary` as the orange
+   primary action, and that class does not exist in any mobile DOM. The class
+   that does is `.m-btn-primary`, which was still `background: var(--brand)` --
+   near-black. So the closing call to action, the last thing a visitor sees on
+   a phone, was monochrome on every page while its desktop twin was orange.
+   Five buttons across index.html and agencies.html.
+
+   Same rules as everywhere else: orange is a fill, a rule, a dot or a glow,
+   and never a word. Every surface touched here is a light ground, so the warm
+   washes below are safe -- the dark bands stay flat, as called before.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+
+  /* ── the primary action ──────────────────────────────────────────────────
+     Graphite on orange, not white on orange: 8.25:1 against 2.35:1. Matches
+     .panel-btn-primary on the desktop side exactly, so the two DOMs finally
+     render the same button. */
+  .m-btn-primary {
+    background: var(--orange);
+    color: var(--graphite);
+    border: none;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(255,138,45,0.30);
+    transition: background .18s var(--ease, ease), box-shadow .18s ease;
+  }
+  .m-btn-primary:active {
+    background: #E8761B;
+    box-shadow: 0 3px 10px rgba(255,138,45,0.26);
+  }
+
+  /* The ghost button's label was --text-muted (#545454). Beside a saturated
+     orange that read as disabled rather than as the second of two choices, so
+     it takes graphite ink and a little more weight.
+
+     The border is left at 1px and barely moves: it was already
+     rgba(20,20,20,0.22), which is the same edge to within a rounding error.
+     Authored at 1.5px first, which Chrome rounds down to 1px anyway -- the
+     label was doing all the work, so the label is what changed. */
+  .m-btn-ghost {
+    border: 1px solid rgba(13,13,15,0.24);
+    color: var(--graphite);
+    font-weight: 600;
+  }
+  .m-btn-ghost:active { background: rgba(13,13,15,0.04); }
+
+  /* ── the closing section ─────────────────────────────────────────────────
+     Flat #ededed. The brand's glass warmth costs nothing here and stops the
+     page ending on the greyest surface it owns. */
+  .m-final-cta {
+    background:
+      radial-gradient(90% 60% at 50% 0%, rgba(255,138,45,0.10), transparent 70%),
+      var(--bg-1);
+  }
+
+  /* ── navigation ──────────────────────────────────────────────────────────
+     The solid state was plain white glass. A trace of warmth and the system's
+     own elevation, rather than a hairline doing all the work. */
+  .m-navbar.solid {
+    background: rgba(255,252,249,0.92);
+    box-shadow: 0 1px 2px rgba(13,13,15,0.04), 0 8px 24px rgba(13,13,15,0.05);
+  }
+
+  /* ── example chips ───────────────────────────────────────────────────────
+     These are suggestions, so they carry the warm hairline rather than a fill:
+     visible as a group, never competing with the composer's send button. */
+  .m-hero-chip {
+    border-color: rgba(255,138,45,0.30);
+    background: rgba(255,138,45,0.045);
+  }
+  .m-hero-chip:active { background: rgba(255,138,45,0.10); }
+
+  /* ── footer column headings ──────────────────────────────────────────────
+     The same dot the kickers use, so the labelling language is one idea across
+     the whole page instead of two. */
+  .m-footer-col-title { position: relative; padding-left: 14px; }
+  .m-footer-col-title::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--orange);
+  }
+
+  /* ── the product peek ────────────────────────────────────────────────────
+     Its shadow was neutral grey. The brand builds depth with warm, wide, low
+     opacity light; this is the same shape, warmed. */
+  .m-peek {
+    box-shadow:
+      0 20px 44px rgba(13,13,15,0.14),
+      0 4px 14px rgba(255,138,45,0.10),
+      0 2px 0 rgba(255,255,255,0.9) inset;
+  }
 }
