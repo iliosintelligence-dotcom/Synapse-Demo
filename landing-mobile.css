@@ -788,3 +788,63 @@
       0 2px 0 rgba(255,255,255,0.9) inset;
   }
 }
+
+/* ═══ THE DARK BAND UNDER THE HERO ═════════════════════════════════════════
+   Desktop puts these facts on near-black (.hero-statline in landing.css) so
+   the page has one dark language. Mobile never got that: the same three
+   pieces sat on the light ground with no shared container, no type scale and
+   no rhythm -- a 40px numeral, a 13px label and a 12px line, each spaced by
+   whatever margin happened to be nearest.
+
+   Full-bleed from inside the padded .m-wrap without touching the markup's
+   layout: box-shadow paints the colour past the viewport edges and clip-path
+   trims it horizontally, so it can never produce a sideways scroll. Same
+   technique as desktop, which is already proven here.
+
+   Orange stays off the text, as everywhere. On this ground the numeral
+   carries the emphasis by weight and size, not by hue. ══════════════════ */
+@media (max-width: 1024px) {
+  .m-hero-band {
+    background: #0e0e0e;
+    box-shadow: 0 0 0 100vmax #0e0e0e;
+    clip-path: inset(0 -100vmax);
+    margin-top: 26px;
+    padding: 24px 0 26px;
+  }
+
+  /* The numeral and its label, on one baseline. The label is the thing people
+     actually read, so it gets the width and leading to be readable rather
+     than being squeezed beside a big number. */
+  .m-hero-band .m-hero-stat-lead {
+    margin: 0; padding: 0; border-top: none;
+    display: grid; grid-template-columns: auto 1fr;
+    align-items: start; column-gap: 15px;
+  }
+  .m-hero-band .m-hero-stat-lead .val {
+    font-size: 46px; font-weight: 600; line-height: 0.9;
+    letter-spacing: -0.02em; color: #f7f7f8;
+    font-variant-numeric: tabular-nums;
+  }
+  .m-hero-band .m-hero-stat-lead .label {
+    font-size: 14px; line-height: 1.45; max-width: 30ch;
+    color: rgba(247,247,248,0.70); font-weight: 400;
+    align-self: center;
+  }
+
+  /* The qualifying line. Separated by a rule rather than a margin, so the two
+     halves read as one statement with a hierarchy instead of two stray
+     sentences that happen to share a colour. */
+  .m-hero-band .m-hero-stat-secondary {
+    margin: 18px 0 0; padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.13);
+    font-size: 13px; line-height: 1.5;
+    color: rgba(247,247,248,0.58);
+  }
+  .m-hero-band .m-hero-stat-secondary b {
+    color: #f7f7f8; font-weight: 650;
+  }
+
+  /* The hero glow sits above this band; without its own stacking context the
+     blurred orange field bleeds over the near-black and greys it out. */
+  .m-hero-band { position: relative; z-index: 1; }
+}
