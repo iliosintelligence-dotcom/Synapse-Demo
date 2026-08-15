@@ -71,11 +71,18 @@
 
     <div class="m-hero-trust">
       <span class="m-hero-pip"><i></i> Warm leads on WhatsApp · live in minutes</span>
-      <div class="m-hero-stat-lead">
-        <div class="val hero-stat-val">1</div>
-        <div class="label">Upload — marketed across every channel automatically</div>
+      <!-- The dark band. Desktop puts these same facts on near-black
+           (.hero-statline); mobile left them on the light ground with no
+           grouping, so the page had two treatments of one idea. Wrapped so
+           the band is a single element rather than two that have to stay
+           glued together for the background not to break. -->
+      <div class="m-hero-band">
+        <div class="m-hero-stat-lead">
+          <div class="val hero-stat-val">1</div>
+          <div class="label">Upload — marketed across every channel automatically</div>
+        </div>
+        <p class="m-hero-stat-secondary"><b>7</b> checks in our verification standard · Toju qualifies <b>24/7</b></p>
       </div>
-      <p class="m-hero-stat-secondary"><b>7</b> checks in our verification standard · Toju qualifies <b>24/7</b></p>
     </div>
   </header>
 
@@ -704,12 +711,14 @@ gsap.registerPlugin(ScrollTrigger);
   var KEY = 'syn-sticky-cta-agency-dismissed';
   try { if (sessionStorage.getItem(KEY)) { bar.remove(); return; } } catch (e) {}
 
-  var scrolled = false, endVisible = false, dismissed = false;
-  function update() { bar.classList.toggle('show', scrolled && !endVisible && !dismissed); }
-
-  window.addEventListener('scroll', function () {
-    if (!scrolled && window.scrollY > window.innerHeight * 0.5) { scrolled = true; update(); }
-  }, { passive: true });
+  /* Was gated behind half a viewport of scroll, so the one persistent way to
+     sign in did not exist until you had already gone looking. It is the
+     standing action on the page -- there is no reason to make someone earn it.
+     Shown immediately; the dismiss button and the end-zone rule still apply,
+     so it can still be got rid of and still gets out of the way of the
+     footer's own call to action. */
+  var endVisible = false, dismissed = false;
+  function update() { bar.classList.toggle('show', !endVisible && !dismissed); }
 
   var visible = function (el) { return el && el.offsetParent !== null; };
   var endZone = [].slice.call(
@@ -731,6 +740,12 @@ gsap.registerPlugin(ScrollTrigger);
     dismissed = true; update();
     try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
   });
+
+  /* Explicit, because the scroll listener that used to make the first call is
+     gone. Without this the bar depends on the IntersectionObserver callback
+     firing, which does not happen when there is no end zone on the page or no
+     observer support -- and then it would never appear at all. */
+  update();
 })();
 
 // ─── NAV solid on scroll ───

@@ -78,11 +78,18 @@
 
     <div class="m-hero-trust">
       <span class="m-hero-pip"><i></i> Free. No sign-up to start.</span>
-      <div class="m-hero-stat-lead">
-        <div class="val hero-stat-val">7</div>
-        <div class="label">Checks in our verification process — and we show you which ones a home has passed</div>
+      <!-- The dark band. Desktop puts these same facts on near-black
+           (.hero-statline); mobile left them on the light ground with no
+           grouping, so the page had two treatments of one idea. Wrapped so
+           the band is a single element rather than two that have to stay
+           glued together for the background not to break. -->
+      <div class="m-hero-band">
+        <div class="m-hero-stat-lead">
+          <div class="val hero-stat-val">7</div>
+          <div class="label">Checks in our verification process — and we show you which ones a home has passed</div>
+        </div>
+        <p class="m-hero-stat-secondary">Re-confirmed every <b>14 days</b>, or it disappears · Always <b>free</b> for buyers</p>
       </div>
-      <p class="m-hero-stat-secondary">Re-confirmed every <b>14 days</b>, or it disappears · Always <b>free</b> for buyers</p>
     </div>
   </header>
 
@@ -424,6 +431,49 @@
 
 <script>
 gsap.registerPlugin(ScrollTrigger);
+
+/* ─── Sticky CTA bar ────────────────────────────────────────────────────
+   This markup shipped with no script at all. .sticky-cta is opacity:0 and
+   visibility:hidden until something adds .show, and nothing ever did -- so
+   the floating "Talk to Toju" pill has never appeared on this page. The
+   agencies page had the behaviour; this one only had the div.
+
+   Shown immediately rather than after half a viewport of scroll: it is the
+   standing action on the page, and there is no reason to make someone earn
+   it. It still yields to the end zone, so it never covers the footer's own
+   call to action, and a dismissal still sticks for the session. */
+(function () {
+  var bar = document.getElementById('stickyCta');
+  if (!bar) return;
+  var KEY = 'syn-sticky-cta-dismissed';
+  try { if (sessionStorage.getItem(KEY)) { bar.remove(); return; } } catch (e) {}
+
+  var endVisible = false, dismissed = false;
+  function update() { bar.classList.toggle('show', !endVisible && !dismissed); }
+
+  var visible = function (el) { return el && el.offsetParent !== null; };
+  var endZone = [].slice.call(
+    document.querySelectorAll('footer, #final-cta, .m-final-cta')
+  ).filter(visible);
+  if (endZone.length && 'IntersectionObserver' in window) {
+    var seen = new Set();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target);
+      });
+      endVisible = seen.size > 0;
+      update();
+    });
+    endZone.forEach(function (el) { io.observe(el); });
+  }
+
+  bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
+    dismissed = true; update();
+    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+  });
+
+  update();
+})();
 
 // ─── NAV solid on scroll ───
 window.addEventListener('scroll', () => {
