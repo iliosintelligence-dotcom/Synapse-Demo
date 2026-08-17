@@ -1696,6 +1696,27 @@
         transition: transform .2s cubic-bezier(.22,1,.36,1), background .15s ease;
       }
       .agd-btn:active{ transform: scale(0.9); }
+
+      /* ── the AI button, matched to the taskbar ─────────────────────────────
+         It was 58px at bottom:26px while the taskbar's buttons are 46px sitting
+         at 24px, so the two floating controls were different sizes on slightly
+         different lines -- which reads as an accident rather than a pair.
+
+         The arithmetic, so it survives a change to the bar: the bar sits at
+         bottom 18px + safe area, and a .agd-btn's own bottom edge is inset by
+         the bar's 1px border plus its 6px padding -- 25px + safe area, not the
+         24px you get by forgetting the border. Same bottom edge and same
+         height means the centres line up too.
+
+         Horizontal inset mirrored to the bar's 16px as well. Only the vertical
+         and the size were asked for, but a pair of floating controls inset
+         differently from their own edges looks like a mistake. */
+      .toju-fab {
+        width: 46px; height: 46px;
+        right: 16px;
+        bottom: calc(25px + env(safe-area-inset-bottom));
+        font-size: 20px;
+      }
       .agd-btn .syn-i{ width: 21px; height: 21px; }
       .agd-btn-primary{ background: #121212; color: #f5f5f5; }
       .agd-add.open .agd-btn{ transform: rotate(45deg); }
