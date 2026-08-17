@@ -3,7 +3,7 @@
 
    The agency dashboard kept listings in localStorage only: `toPropertyRow()`
    existed in agency.html and was never called, so a listing an agency created
-   never reached the database and neither Tayo nor browse could see it. This
+   never reached the database and neither Toju nor browse could see it. This
    module is the real write path.
 
    TRUST BOUNDARY (the important part):
@@ -15,9 +15,9 @@
    unverified and stays unverified until the platform says otherwise. Client
    code is not the control; RLS is. This file simply never asks.
 
-   Consequence worth knowing: because Tayo only surfaces verified listings, a
+   Consequence worth knowing: because Toju only surfaces verified listings, a
    freshly uploaded listing appears in the agency dashboard and in browse, but
-   NOT in Tayo's recommendations, until it is verified. That is correct, not a
+   NOT in Toju's recommendations, until it is verified. That is correct, not a
    bug.
    ───────────────────────────────────────────────────────────────────────── */
 (function () {

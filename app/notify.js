@@ -32,7 +32,7 @@
                           title: 'A verified home, right where you are',
                           body: function (d) { return d.title + ' · ' + d.distance + 'm away · verified ' + d.verifiedAgo; } },
     new_match:          { side: 'customer', icon: 'spark',    route: 'browse.html',
-                          title: 'Tayo found something new',
+                          title: 'Toju found something new',
                           body: function (d) { return d.count + ' new verified home' + (d.count === 1 ? '' : 's') + ' fit your brief.'; } },
     price_drop:         { side: 'customer', icon: 'costs',    route: 'property.html',
                           title: 'The price moved',
@@ -339,7 +339,7 @@
   }
 
   /* This used to read a `toju_criteria_v1` localStorage key, under the comment
-     "reuse what Tayo already learned rather than asking again". Nothing has
+     "reuse what Toju already learned rather than asking again". Nothing has
      ever written that key -- grep the repo -- so the parse always produced {}
      and every field came back null. It looked like personalisation and was a
      no-op, which is worse than not having it, because it hid the fact that a
