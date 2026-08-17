@@ -1536,37 +1536,110 @@
       }
     }
 
-    /* Real places, real distances, measured from this property. Fed by the same
-       Overpass result the map already uses, so it costs no extra request. */
+    /* ── what is nearby, from the database ──────────────────────────────────
+       The surroundings are computed server-side by the property-intelligence
+       function (Google Places + Distance Matrix) and stored in property_places,
+       one row per real place near this specific listing. The page only reads
+       them. That is the difference between intelligence and page text: the
+       answer exists whether or not anyone is looking at it, it is the same for
+       every visitor, it survives the provider being down, and it can be counted
+       over instead of asserted.
+
+       A house in Benin City gets Benin City's places because the fetch is
+       driven by that property's own coordinates.
+
+       Until GOOGLE_MAPS_API_KEY is set there will be no stored rows, so this
+       falls back to a live OpenStreetMap lookup rather than showing an empty
+       section -- and says which source it used, because silently mixing two
+       providers under one heading is its own small dishonesty. */
+    var PLACES = null;          // rows from property_places
+    var placesState = 'idle';   // idle | loading | ready | empty
+
+    var PLACE_LABEL = {
+      school: 'School', hospital: 'Hospital', pharmacy: 'Pharmacy',
+      supermarket: 'Supermarket', market: 'Shopping', bank: 'Bank',
+      university: 'University', transit: 'Transport', park: 'Park',
+    };
+
+    function fetchStoredPlaces(propId) {
+      if (!propId) { placesState = 'empty'; paintAround(); return; }
+      placesState = 'loading';
+      paintAround();
+      fetch(SUPABASE_URL + '/rest/v1/rpc/property_surroundings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify({ p_property_id: propId, p_limit: 12 }),
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          if (Array.isArray(rows) && rows.length) {
+            PLACES = rows;
+            placesState = 'ready';
+            paintAround();
+          } else {
+            placesState = 'empty';   // nothing surveyed yet; POI fallback fills in
+            paintAround();
+          }
+        })
+        .catch(function () { placesState = 'empty'; paintAround(); });
+    }
+
+    function fmtDrive(sec) {
+      if (sec == null) return null;
+      var m = Math.round(sec / 60);
+      return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : m + ' min';
+    }
+
     function paintAround() {
       var host = document.getElementById('nbAround');
       if (!host) return;
+      var K = '<div class="nba-k">What is nearby</div>';
+
+      // 1. the stored survey, which is the real answer
+      if (placesState === 'ready' && PLACES && PLACES.length) {
+        host.innerHTML = K + '<div class="nba-list">'
+          + PLACES.map(function (x) {
+              var drive = fmtDrive(x.drive_seconds);
+              return '<div class="nba-row"><span class="nba-n">' + esc(x.name) + '</span>'
+                + '<span class="nba-t">' + esc(PLACE_LABEL[x.category] || x.category) + '</span>'
+                + '<span class="nba-d">'
+                + (drive ? drive : (x.distance_m != null ? formatDist(x.distance_m) : '—'))
+                + '</span></div>';
+            }).join('')
+          + '</div><p class="cmt-src">Places and driving times from Google Maps, measured from this address.</p>';
+        return;
+      }
+
+      if (placesState === 'loading') {
+        host.innerHTML = K + '<p class="nb-empty">Looking up what is around this address…</p>';
+        return;
+      }
+
+      // 2. nothing stored yet: live OpenStreetMap, clearly labelled as such
       if (poiState === 'loading') {
-        host.innerHTML = '<div class="nba-k">What is nearby</div>'
-          + '<p class="nb-empty">Looking up real places around this address…</p>';
+        host.innerHTML = K + '<p class="nb-empty">Looking up what is around this address…</p>';
         return;
       }
       if (!POI || !POI.length) {
-        host.innerHTML = '<div class="nba-k">What is nearby</div>'
-          + '<p class="nb-empty">' + (poiState === 'failed'
-              ? 'We could not reach the map data service just now.'
-              : 'Nothing is mapped close to this address yet.') + '</p>';
+        host.innerHTML = K + '<p class="nb-empty">' + (poiState === 'failed'
+            ? 'We could not reach the map service just now, so we cannot show what is nearby.'
+            : 'We have not surveyed this address yet, so we are not going to guess at what is around it.') + '</p>';
         return;
       }
-      // Nearest of each kind, so the list is a survey rather than eight cafes.
       var seen = {}, rows = [];
       POI.forEach(function (x) {
         if (seen[x.t] || rows.length >= 8) return;
         seen[x.t] = 1;
         rows.push(x);
       });
-      host.innerHTML = '<div class="nba-k">What is nearby</div><div class="nba-list">'
+      host.innerHTML = K + '<div class="nba-list">'
         + rows.map(function (x) {
             return '<div class="nba-row"><span class="nba-n">' + esc(x.n) + '</span>'
               + '<span class="nba-t">' + esc(AMENITY_LABEL[x.t] || x.t) + '</span>'
               + '<span class="nba-d">' + formatDist(x.dm) + '</span></div>';
           }).join('')
-        + '</div>';
+        + '</div><p class="cmt-src">Places from OpenStreetMap, straight-line distance from this address. '
+        + 'This listing has not been surveyed with Google yet.</p>';
     }
 
     function fetchAmenities(propId, lat, lng) {
@@ -1794,6 +1867,7 @@
       var p = e.detail || {};
       window.__pvListing = p;
       paintNeighbourhood(p);
+      fetchStoredPlaces(p.id || null);
       var askBtn = document.getElementById('askTojuBtn');
       if (askBtn && p.title) {
         var where = [p.neighbourhood, p.city].filter(Boolean).join(', ');
