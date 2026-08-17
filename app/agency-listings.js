@@ -716,6 +716,50 @@
     });
   }
 
+  /* ── listing photographs ────────────────────────────────────────────────
+     The new-listing form only ever asked for a URL, so an agency holding a
+     photo on their phone had nowhere to put it. That is how a listing came to
+     be published with a Google share link as its image: not carelessness, an
+     absent feature. Same bucket convention as brand assets -- first folder is
+     the agency id, and the storage policy checks membership of that folder. */
+  var PHOTO_BUCKET = 'property-photos';
+  var PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
+  var PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+
+  function photoExtFor(file) {
+    var m = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif' };
+    return m[file.type] || 'jpg';
+  }
+
+  /* Upload one listing photograph. Resolves to its public URL, which the
+     caller stores in property_media.url. */
+  function uploadPropertyPhoto(file) {
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (PHOTO_TYPES.indexOf(file.type) === -1) {
+      return Promise.reject(new Error('Use a JPG, PNG, WEBP or AVIF photo'));
+    }
+    if (file.size > PHOTO_MAX_BYTES) {
+      return Promise.reject(new Error(
+        'That photo is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under 10MB'));
+    }
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('no-agency: this account is not a member of any agency');
+      aid = a;
+      /* Random suffix, not just a timestamp: two photos chosen in the same
+         second would otherwise collide, and upsert:false would reject the
+         second with an error the person cannot act on. */
+      var rand = (Math.random().toString(36).slice(2, 8));
+      var path = aid + '/photo-' + Date.now() + '-' + rand + '.' + photoExtFor(file);
+      return c1.storage.from(PHOTO_BUCKET).upload(path, file, {
+        cacheControl: '31536000', upsert: false, contentType: file.type,
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return c1.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+      });
+    });
+  }
+
   /* Remove a previously uploaded file. Best-effort: a logo the agency has
      already replaced must never block saving the new one, so a failure here
      is swallowed rather than surfaced. */
@@ -732,6 +776,7 @@
   }
 
   window.SynListings = {
+    uploadPropertyPhoto: uploadPropertyPhoto,
     agencyId: agencyId,
     agency: agency,
     paintAgency: paintAgency,

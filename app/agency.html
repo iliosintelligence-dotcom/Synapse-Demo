@@ -483,6 +483,13 @@
     .logo-tile .lt-note { font-size: 10.5px; color: var(--ink-dim); margin-top: 6px; line-height: 1.4; }
     .logo-tile .lt-note.err { color: var(--danger); }
     .logo-tile.dark label, .logo-tile.dark .lt-note { color: var(--ink-muted); }
+    .lfimg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .lfimg-or { font-size: 12px; color: var(--ink-dim); }
+    .lfimg-prev { margin-top: 9px; min-height: 0; }
+    .lfimg-prev img { width: 100%; max-width: 220px; height: 132px; object-fit: cover;
+      border-radius: 11px; border: 1px solid var(--border); display: block; }
+    .lfimg-prev .st { font-size: 12px; color: var(--ink-muted); }
+    .lfimg-prev .st.err { color: var(--danger); }
     .swatch-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .swatch-card { border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
     .swatch-card input[type="color"] { width: 100%; height: 52px; padding: 0; border: none; border-radius: 9px; cursor: pointer; background: none; }
@@ -3324,7 +3331,23 @@
             <label class="lf-toggle"><span>Listing active (visible to buyers)</span><span class="sw ${d.is_active ? 'on' : ''}" id="lfActive" role="switch" aria-checked="${d.is_active}" tabindex="0"></span></label>
           </fieldset>
           <fieldset class="lf-sec"><legend>Media</legend>
-            <div class="field"><label>Primary image URL *</label><input id="lfImg" value="${esc(primary)}" placeholder="https://…"><span class="ferr" id="e_img"></span></div>
+            <!-- Photograph, not "image URL".
+                 This field used to be a URL box and nothing else, so an agency
+                 holding a photo on their phone had no way to give it to us.
+                 That is how a listing was published with a Google share link
+                 as its picture. Choosing a file is the primary path now; the
+                 URL box stays for anyone whose photos already live somewhere. -->
+            <div class="field">
+              <label>Photo of the property *</label>
+              <div class="lfimg-row">
+                <button type="button" class="btn-ghost" id="lfImgPick">Choose a photo</button>
+                <input id="lfImgFile" type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden>
+                <span class="lfimg-or">or paste a link</span>
+              </div>
+              <input id="lfImg" value="${esc(primary)}" placeholder="https://… (a direct link to the image itself)">
+              <div class="lfimg-prev" id="lfImgPrev"></div>
+              <span class="ferr" id="e_img"></span>
+            </div>
           </fieldset>
           <button class="btn btn-primary btn-block" id="lfSave" style="margin-top:6px">${isNew ? 'Create listing' : 'Save changes'}</button>
           ${isNew ? '' : '<button class="btn btn-ghost btn-block" id="lfDel" style="margin-top:8px">Delete listing</button>'}
@@ -3396,7 +3419,7 @@
           e_state: g('lfState').value.trim() ? '' : 'Required',
           e_price: parseFloat(g('lfPrice').value) > 0 ? '' : 'Enter a price in naira',
           e_beds: (isLand || (g('lfBeds').value !== '' && +g('lfBeds').value >= 0)) ? '' : 'Required',
-          e_img: imgUrlError(g('lfImg').value.trim()),
+          e_img: imgUrlError(g('lfImg').value.trim()),   // set by upload or paste
           e_lat: ((la && lo) || (!la && !lo)) ? '' : 'Enter both latitude and longitude, or neither',
         };
         let ok = true;
@@ -3409,6 +3432,67 @@
       /* Probe on blur rather than per keystroke: one request when they have
          finished pasting, not one per character. */
       g('lfImg').addEventListener('blur', () => imgProbe(g('lfImg').value.trim()));
+
+      /* ── choosing a photo ──────────────────────────────────────────────────
+         Uploads to the property-photos bucket and puts the resulting public URL
+         into the same field a pasted link would fill, so everything downstream
+         -- validation, preview, save -- has exactly one thing to read. */
+      (function wirePhotoUpload() {
+        const pick = g('lfImgPick'), fileEl = g('lfImgFile'), prev = g('lfImgPrev'), urlEl = g('lfImg');
+        if (!pick || !fileEl || !urlEl) return;
+
+        function showPreview(url, note, isErr) {
+          if (!prev) return;
+          prev.innerHTML = (url ? `<img src="${esc2(url)}" alt="">` : '')
+            + (note ? `<div class="st${isErr ? ' err' : ''}">${esc2(note)}</div>` : '');
+        }
+
+        pick.addEventListener('click', () => fileEl.click());
+
+        fileEl.addEventListener('change', () => {
+          const file = fileEl.files && fileEl.files[0];
+          if (!file) return;
+          if (!window.SynListings || !SynListings.uploadPropertyPhoto) {
+            showPreview('', 'Uploads are unavailable on this page.', true); return;
+          }
+          /* Show it immediately from the local file. The upload may take a
+             while on a Nigerian mobile connection, and staring at nothing is
+             how people conclude it did not work and press the button again. */
+          const localUrl = URL.createObjectURL(file);
+          showPreview(localUrl, 'Uploading…');
+          pick.disabled = true; pick.textContent = 'Uploading…';
+
+          SynListings.uploadPropertyPhoto(file)
+            .then((publicUrl) => {
+              urlEl.value = publicUrl;
+              imgProbeCache[publicUrl] = 'ok';   // we just uploaded it; it is an image
+              showPreview(localUrl, 'Photo attached.');
+              validate();
+            })
+            .catch((err) => {
+              // The listing is not saved yet, so nothing is lost -- but say what
+              // happened rather than silently leaving the field empty.
+              showPreview('', (err && err.message) || 'That upload did not go through.', true);
+              fileEl.value = '';
+              validate();
+            })
+            .finally(() => {
+              pick.disabled = false; pick.textContent = 'Choose a photo';
+              URL.revokeObjectURL(localUrl);
+            });
+        });
+
+        // A pasted link previews too, once it is known to load.
+        urlEl.addEventListener('blur', () => {
+          const v = urlEl.value.trim();
+          if (!v) { showPreview('', ''); return; }
+          const err = imgUrlError(v);
+          if (err) { showPreview('', err, true); return; }
+          showPreview(v, '');
+        });
+
+        if (urlEl.value.trim()) showPreview(urlEl.value.trim(), '');
+      })();
       priceEcho(); validate();
       // save
       g('lfSave').addEventListener('click', () => {
