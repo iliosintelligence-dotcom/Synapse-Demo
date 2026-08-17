@@ -965,6 +965,10 @@
     .ovi .lc { font-size: 12px; color: var(--ink-muted); }
     .ovi .rt { text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
     .ovi .pr { font: 500 18px var(--f-serif); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand-text); line-height: 1; }
+    /* chevron affordance for the row-as-navigation reading it gets on a
+       phone (see the ≤1024px block) — off by default so desktop, where the
+       row selects rather than navigates, doesn't grow a stray ›. */
+    .ovi-chv { display: none; }
     .ovs { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 100px; display: inline-block; letter-spacing: .01em; }
     .ovs.verified { color: var(--success); background: rgba(46,125,79,0.1); }
     .ovs.pending { color: var(--gold); background: rgba(156,122,30,0.12); }
@@ -1002,6 +1006,10 @@
     .cmp-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.55; }
 
     .ov-detail { position: sticky; top: 0; }
+    /* Sheet-only header (back button + selected listing's name). Hidden here
+       so desktop — where .ov-detail never leaves the grid — never shows a
+       "back" affordance to nowhere; the ≤1024px block turns it on. */
+    .ov-sheet-hd { display: none; }
     .ov-map { height: 300px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 0; background: rgba(0,0,0,0.03); }
     .ov-card { margin-top: 14px; padding: 8px; }
     .ov-dtabs { display: flex; gap: 4px; padding: 5px; background: rgba(0,0,0,0.035); border-radius: 100px; }
@@ -1174,7 +1182,12 @@
     .cm-i.on { color: var(--brand-text); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
     @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity .2s; } }
-    @media (max-width: 900px){ .crm-tablecard { overflow-x: auto; } }
+    /* The `@media (max-width: 900px){ .crm-tablecard { overflow-x: auto } }`
+       that used to sit here is gone. It was written when the row was a real
+       table that had to scroll; the row is a grid card now, so the rule could
+       only ever re-enable a sideways drag we deliberately removed. It also
+       read as a 721-900px hole in the fix, which cost a review cycle to
+       disprove — dead CSS that implies a bug is worse than none. */
     /* ── MOBILE OVERRIDES LIVE LAST ──────────────────────────────────
        This block sat above the component rules it overrides. A media
        query adds no specificity, so every later rule of equal weight
@@ -1182,7 +1195,15 @@
        phone layout only half-applied. Keep this block last. */
     @media (max-width: 1024px){
       .shell{ flex-direction: column; height: auto; padding-left: 0; }
-      body.portal{ overflow: auto; }
+      /* The page scrolls one way. `overflow: auto` made the body a scroll
+         container on BOTH axes, so every sideways-overflow bug this file has
+         ever had was silently scrollable rather than visible — which is how
+         a 322vw calendar survived. Clipping x (not `hidden`, which would
+         force y into its own scroll container) makes a sideways drag
+         structurally impossible instead of merely absent today. Fixed
+         children — the taskbar, the AI button, the off-canvas panels — are
+         not clipped by this, since body establishes no containing block. */
+      body.portal{ overflow-y: auto; overflow-x: clip; }
       .side{ display: none; }                       /* replaced by the dock */
       .content{ padding: 12px 16px 132px; }         /* room for the dock */
 
@@ -1218,15 +1239,33 @@
       .ov-head, .pane-head, .crm-head {
         flex-direction: column; align-items: flex-start; gap: 12px;
       }
-      .ov-actions, .crm-tools { flex-wrap: wrap; }
-      .ov-actions .btn-ghost, .tbtn { min-height: 40px; }
+      .crm-tools { flex-wrap: wrap; }
+      .tbtn { min-height: 40px; }
+      /* Sort and Filter were a plain flex row, so at 375px they wrapped or
+         sat at whatever width their labels happened to need — one ragged
+         row instead of a deliberate pair. They're the only two controls
+         above the list, so make that pairing obvious: one row, equal
+         width, both a real 44px target. */
+      .ov-actions { flex-wrap: nowrap; width: 100%; }
+      .ov-actions .btn-ghost { flex: 1; min-height: 44px; text-align: center; }
 
+      /* The Overview filters were the last swipe strip, and the one that hid
+         it best: four tabs at 375px measured exactly 0px of headroom, so it
+         reported "no overflow" while being one longer label away from
+         scrolling sideways. A row that only behaves because of today's
+         wording is not fixed, it is lucky.
+
+         So it wraps, and the 22px desktop gutters come in to 12px to buy
+         real slack — the four tabs now sit on one row with room to spare,
+         and a fifth filter would drop to a second row instead of starting a
+         sideways drag. Each label still keeps nowrap so "Expiring soon"
+         breaks between tabs, never mid-phrase. */
       .ov-tabs {
-        overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
-        margin: 14px 0 14px;
+        flex-wrap: wrap; overflow: visible;
+        margin: 14px 0 14px; row-gap: 2px;
       }
-      .ov-tabs::-webkit-scrollbar { display: none; }
-      .ov-tabs > * { flex: none; white-space: nowrap; }
+      .ov-tabs > * { flex: 0 1 auto; white-space: nowrap; }
+      .ovtab { margin-right: 12px; }
 
       /* ══ Subscription ══════════════════════════════════════════════════
          The comparison grid stays a horizontal scroll — the sticky row-label
@@ -1393,7 +1432,13 @@
       .pr-table-wrap { display: none; }
       .pr-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
 
-      .crm-tablecard { overflow-x: visible; padding: 0; }
+      /* `overflow-x: visible` here did NOT do what it says. The base rule is
+         `overflow: hidden` (to clip the table to the card's radius), and CSS
+         resolves `visible` to `auto` when the other axis is not visible — so
+         this card computed to overflow-x: auto and stayed a horizontal scroll
+         container at every mobile width. It never scrolled only because the
+         grid card fits. `clip` keeps the corner clipping and cannot scroll. */
+      .crm-tablecard { overflow: clip; padding: 0; }
       .crm-table thead { display: none; }        /* headers make no sense per card */
       /* `tr` is deliberately NOT in this list: ".crm-table tr" (0,1,1) would
          outrank ".crm-row" (0,1,0) and force the row back to display:block,
@@ -1486,13 +1531,85 @@
         transform: translateY(14px); border-radius: 16px; justify-content: space-between; }
       .crm-bulk.on { transform: none; }
 
-      /* the list/detail split becomes one column, and the list stops being an
-         inner scroller — a scroll region inside a scrolling page is a trap on
-         a phone, and the page itself is the natural scroller here */
+      /* the list becomes the whole pane, and stops being an inner scroller —
+         a scroll region inside a scrolling page is a trap on a phone, and
+         the page itself is the natural scroller here */
       .ov-grid { grid-template-columns: 1fr; gap: 14px; }
       .ov-list { max-height: none; overflow-y: visible; padding: 0; }
-      .ov-detail { position: static; }
-      #ovMap { height: 240px; }
+
+      /* ── MASTER-DETAIL → PUSHED SHEET, NOT A STACKED ONE ──────────────
+         `.ov-detail { position: static }` was the only rule here before,
+         and it was written for tablets: at phone width it left the map and
+         detail card sitting BELOW the entire list in source order, so
+         selectOv() was updating a map and a card the tap couldn't see —
+         potentially thousands of pixels down, with a border-colour change
+         on the row as the only visible feedback. That's not a collapsed
+         layout, it's a broken one.
+
+         This file already has the right idiom, twice (.tpanel, #drawer):
+         a record opens as a full-screen sheet sliding in from the right,
+         not a card appended to the page. `.ov-detail` becomes that sheet
+         here — same transform and timing as `.tpanel`, and the same
+         z-index tier (97, one above .tpanel's 96) so it simply paints over
+         the taskbar (60) and the AI button the way `.tpanel` already does.
+         Nothing about the taskbar or the button changes; the sheet just
+         sits above them. selectOv() adds `.on` and pans the map to the
+         tapped listing; the back button, Escape, and `#ovBack` remove it.
+         Desktop keeps `.ov-detail { position: sticky }` above this
+         breakpoint — verified unchanged at 1440. */
+      .ov-detail {
+        position: fixed; inset: 0; z-index: 97;
+        background: var(--surface);
+        transform: translateX(100%);
+        transition: transform .32s cubic-bezier(.22,1,.36,1);
+        overflow-y: auto; overscroll-behavior: contain;
+        padding: 0 16px 24px;
+      }
+      .ov-detail.on { transform: none; }
+      @media (prefers-reduced-motion: reduce) { .ov-detail { transition: none; } }
+
+      /* full-bleed header: back button + the listing's own name, so the
+         sheet always says whose map and detail you're looking at */
+      .ov-sheet-hd {
+        display: flex; align-items: center; gap: 8px;
+        margin: 0 -16px 14px; padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        position: sticky; top: 0; z-index: 1;
+      }
+      .ov-sheet-back {
+        display: flex; align-items: center; justify-content: center;
+        width: 44px; height: 44px; flex: none; margin-left: -10px;
+        border: none; background: none; border-radius: 50%;
+        font-size: 19px; color: var(--ink); cursor: pointer; transition: background .15s;
+      }
+      .ov-sheet-back:hover { background: rgba(0,0,0,0.05); }
+      .ov-sheet-tt {
+        font-size: 15px; font-weight: 600; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+
+      /* scoped to whatever listing was tapped — selectOv() already pans it
+         there, so this is no longer a 240px map guessed at before anything
+         is selected, it's the map for the record you're reading */
+      #ovMap { height: 220px; }
+      .ov-sheet-hd { display: flex; }   /* base rule hides it; only the sheet shows it */
+
+      /* the row now navigates instead of just selecting, so it needs to
+         read that way: a trailing chevron, same idiom as .grp-chv and
+         .agd-grp .chv elsewhere in this file. */
+      .ovi { min-height: 44px; }
+      .ovi-chv { display: block; font-size: 19px; line-height: 1; color: var(--ink-dim); flex: none; margin-left: 2px; }
+
+      /* the title was nowrap+ellipsis, so a card read "Haven Manor
+         2-Bedroom Apart…" — cutting off the part that actually tells one
+         listing from another. Same fix as .lcard .tt above: let it wrap to
+         two lines instead of truncating the distinguishing half. */
+      .ovi .tt {
+        white-space: normal; overflow: visible; text-overflow: clip;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+      }
 
       .agd-scrim{
         display: block; position: fixed; inset: 0; z-index: 58;
@@ -1697,7 +1814,11 @@
 
           <div class="ov-grid">
             <div class="ov-list" id="ovList"></div>
-            <div class="ov-detail">
+            <div class="ov-detail" aria-label="Listing detail">
+              <div class="ov-sheet-hd">
+                <button class="ov-sheet-back" id="ovBack" type="button" aria-label="Back to listings">←</button>
+                <div class="ov-sheet-tt" id="ovSheetTitle"></div>
+              </div>
               <div class="ov-map" id="ovMap"></div>
               <div class="card ov-card" id="ovCard"></div>
             </div>
@@ -4791,6 +4912,12 @@
        shared SynMatches map helper. Overview is the default pane (see markup). */
     const OV = { f: 'all', sel: 0, dtab: 'details', q: '', map: {} };
     const OV_CHECKS = ['Title deed', 'Structural survey', 'Flood assessment', 'Legal search', 'Ownership KYC', 'Media validation', 'Freshness'];
+    // Single source of truth for the breakpoint where .ov-detail becomes a
+    // slide-in sheet instead of a sticky sidebar — matches the CSS media
+    // query at max-width:1024px. Anything that needs to know whether the
+    // Overview pane is in "phone" mode calls this instead of a second copy
+    // of 1024 living in the JS.
+    const ovIsMobile = () => window.matchMedia('(max-width: 1024px)').matches;
     const ovHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
     const ovLoc = (t) => { const p = t.split(','); return p.length > 1 ? p.slice(1).join(',').trim() : t; };
     const ovBeds = (t) => { const m = t.match(/(\d+)\s*-?\s*bed/i); return m ? m[1] : '—'; };
@@ -4825,7 +4952,9 @@
     }
     function renderOvDetail(l) {
       const card = document.getElementById('ovCard');
-      if (!l) { card.innerHTML = ''; return; }
+      const sheetTt = document.getElementById('ovSheetTitle');
+      if (!l) { card.innerHTML = ''; if (sheetTt) sheetTt.textContent = ''; return; }
+      if (sheetTt) sheetTt.textContent = l.t.split(',')[0];   // same short form as the list row
       const f = freshness(l), checks = ovChecks(l);
       const tabs = [['details', 'Details'], ['verification', 'Verification'], ['leads', 'Leads'], ['performance', 'Performance']];
       let body = '';
@@ -4905,7 +5034,7 @@
             + '<button class="btn btn-ghost" type="button" data-ov-all>Show all listings</button>'
             + '</div>';
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(listEl);
-        renderOvDetail(null); return;
+        renderOvDetail(null); syncOvSheetA11y(); return;
       }
       if (OV.sel >= list.length) OV.sel = 0;
       listEl.innerHTML = list.map((l, i) => `
@@ -4920,17 +5049,83 @@
             <div class="pr">${nairaM(l.pr)}</div>
             <span class="ovs ${l.st === 'verified' ? 'verified' : 'pending'}">${l.st === 'verified' ? '✓ Verified' : '◷ Pending'}</span>
           </div>
+          <span class="ovi-chv" aria-hidden="true">›</span>
         </button>`).join('');
       renderOvDetail(list[OV.sel]);
       const items = list.map(l => ({ loc: l.t, ttl: l.t, priceN: l.pr * 1e6, score: ovChecks(l) * 13, match: 0 }));
       if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items);
+      syncOvSheetA11y();
     }
-    function selectOv(i) {
+    /* ── the sheet itself: open/close, not selection ──────────────────
+       Selecting a listing (selectOv) and presenting its detail (this pair)
+       are different concerns on a phone, where .ov-detail is a fixed
+       full-screen sheet rather than the sticky sidebar it is at width. On
+       desktop the sheet is never opened, so it never needs closing either
+       — the CSS media query and the ovIsMobile() check below stay in sync. */
+    let ovSheetTrigger = null;
+    // Off-canvas via `transform` still leaves the sheet in the a11y tree —
+    // unlike `hidden`/`display:none`, a translateX(100%) panel is fully
+    // reachable by tab and by a screen reader even though nothing is on
+    // screen. aria-hidden is what actually removes it while it's closed;
+    // only on a phone, since desktop's sheet is always the visible detail
+    // panel and must never be hidden from assistive tech.
+    function syncOvSheetA11y() {
+      const detail = document.querySelector('#pane-overview .ov-detail');
+      if (!detail) return;
+      if (ovIsMobile() && !detail.classList.contains('on')) detail.setAttribute('aria-hidden', 'true');
+      else detail.removeAttribute('aria-hidden');
+    }
+    function openOvSheet(trigger) {
+      const detail = document.querySelector('#pane-overview .ov-detail');
+      if (!detail) return;
+      ovSheetTrigger = trigger || null;
+      detail.classList.add('on');
+      detail.setAttribute('role', 'dialog');
+      detail.setAttribute('aria-modal', 'true');
+      syncOvSheetA11y();
+      // Leaflet measures its container at creation time; a container that
+      // was off-canvas (translateX(100%)) sizes to 0 and paints grey tiles
+      // forever unless told to re-measure. invalidateSize() is already used
+      // for the same reason in goToPane() (~line 5132) — this waits past
+      // the .32s slide so the container has an actual size when it fires.
+      if (OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 360);
+      const back = document.getElementById('ovBack');
+      if (back) back.focus();
+    }
+    function closeOvSheet() {
+      const detail = document.querySelector('#pane-overview .ov-detail');
+      if (!detail) return;
+      detail.classList.remove('on');
+      detail.removeAttribute('role');
+      detail.removeAttribute('aria-modal');
+      // OV.sel is deliberately untouched — closing is "go back", not
+      // "deselect", so reopening lands on the same listing.
+      // Move focus out before hiding the sheet from assistive tech —
+      // aria-hidden on a container that still holds focus is itself an
+      // a11y bug, so the order here matters.
+      if (ovSheetTrigger && ovSheetTrigger.focus) ovSheetTrigger.focus();
+      ovSheetTrigger = null;
+      syncOvSheetA11y();
+    }
+    document.getElementById('ovBack').addEventListener('click', closeOvSheet);
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const detail = document.querySelector('#pane-overview .ov-detail');
+      if (detail && detail.classList.contains('on')) closeOvSheet();
+    });
+    // Crossing the breakpoint mid-session (a resized/rotated window, or
+    // devtools) should not leave the sheet's a11y state stale.
+    window.addEventListener('resize', syncOvSheetA11y);
+    function selectOv(i, trigger) {
       OV.sel = i;
       const list = ovFiltered();
       document.querySelectorAll('#ovList .ovi').forEach((b, k) => b.classList.toggle('on', k === i));
       renderOvDetail(list[i]);
       if (OV.map.map && window.SynMatches) OV.map.map.panTo(SynMatches.coords(list[i].t, 0), { animate: true });
+      // On a phone the map and card above just updated off-screen — .tpanel
+      // and #drawer's own idiom is the fix: push the detail in as a sheet
+      // instead of leaving the result of the tap invisible below the list.
+      if (ovIsMobile()) openOvSheet(trigger || document.querySelector('#ovList .ovi.on'));
     }
     document.getElementById('ovList').addEventListener('click', (e) => {
       if (e.target.closest('[data-ov-add]')) {
@@ -4940,12 +5135,17 @@
       }
       if (e.target.closest('[data-ov-all]')) {
         OV.f = 'all'; OV.q = '';
-        document.querySelectorAll('#pane-overview .ov-tab').forEach((t) =>
+        // was `.ov-tab`, which matches nothing — the class is `.ovtab`
+        // (see #ovTabs markup and the correct query in the tab-click
+        // handler below). With the wrong selector this reset the filter
+        // but left the previous tab looking active, so "Show all listings"
+        // changed the data without ever updating the tab that says so.
+        document.querySelectorAll('#pane-overview .ovtab').forEach((t) =>
           t.classList.toggle('on', t.dataset.f === 'all'));
         renderOverview();
         return;
       }
-      const b = e.target.closest('[data-i]'); if (b) selectOv(+b.dataset.i);
+      const b = e.target.closest('[data-i]'); if (b) selectOv(+b.dataset.i, b);
     });
     document.getElementById('ovTabs').addEventListener('click', (e) => {
       const b = e.target.closest('[data-f]'); if (!b) return;
