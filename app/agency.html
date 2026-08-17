@@ -190,10 +190,16 @@
     /* content pipeline (Phase A — brought over from the standalone dashboard) */
     .pipeline { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-top: 10px; }
     .col { min-width: 208px; flex: 1; background: rgba(0,0,0,0.015); border: 1px solid var(--border); border-radius: 16px; padding: 10px; }
-    .col > .ch { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 10px; }
+    /* .ch is a <button> (mobile turns it into an accordion header) even on
+       desktop, where it stays inert chrome — these resets strip the browser's
+       default button appearance back to what the plain <div> used to render. */
+    .col > .ch { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 10px;
+      width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: default; }
     .col .ch .t { font-size: 12.5px; font-weight: 700; }
     .col .ch .w { font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
     .col .ct { font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--surface); border-radius: 100px; padding: 1px 8px; }
+    .col-chv { display: none; }             /* the chevron only means something once .ch collapses something, i.e. on mobile */
+    .col-body { display: block; }           /* desktop: always open, no accordion */
     .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); }
     .pcard.warn { border-color: rgba(156,122,30,0.4); }
     .pcard .ptop { display: flex; gap: 9px; }
@@ -1114,6 +1120,13 @@
     .crm-chk { width: 16px; height: 16px; accent-color: var(--brand-deep); cursor: pointer; }
     .c-lead > .cell { display: flex; align-items: center; gap: 10px; }
     .crm-av { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-tint); color: var(--brand-deep); font: 700 11px var(--f-sans); display: flex; align-items: center; justify-content: center; flex: none; }
+    /* The avatar is a <label> so a phone can tap it to select the lead (the
+       mobile card has no checkbox column). Desktop has a real checkbox column
+       and its own click-the-row-to-open behaviour, so the label must not
+       swallow that click: inert here, re-enabled in the mobile block. Without
+       this, clicking a desktop avatar silently selected the row instead of
+       opening the lead. */
+    .crm-av { pointer-events: none; }
     .crm-lead-tx { display: flex; flex-direction: column; min-width: 0; }
     .crm-lead-tx .nmx { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
     .crm-lead-tx .phx { font-size: 12px; color: var(--ink-dim); }
@@ -1264,17 +1277,48 @@
       }
       .cmp-gen { padding: 16px 15px 18px; }
 
-      /* the pipeline is a swipe strip: narrower columns so the next stage
-         peeks, and snap so a swipe lands on a stage instead of between two */
-      .pipeline { gap: 10px; scroll-snap-type: x mandatory;
-        scrollbar-width: none; -ms-overflow-style: none; }
-      .pipeline::-webkit-scrollbar { display: none; }
-      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; }
+      /* ── PIPELINE → STAGE ACCORDION, NOT A SWIPE STRIP ────────────────
+         This used to be a snap-scrolling strip of six 78%-wide columns —
+         1655px of kanban in a 343px box, i.e. exactly the sideways drag the
+         brief rules out. Mobile kanban converges on one vertical scroll axis
+         with sections grouped by what used to be a column and collapsible
+         (Buffer/Later/Hootsuite queues; Linear drops board view for a status
+         list below a viewport threshold), so that's what this is: the six
+         stages stack, each opens to show its cards, and the two stages that
+         actually need you (Awaiting approval, Underperforming) start open
+         while the four "nothing to do here yet" stages start collapsed —
+         see ACTION_STAGES in renderPipeline(). */
+      .pipeline { flex-direction: column; overflow: visible; gap: 10px; }
+      .pipeline > .col { min-width: 0; flex: none; }
+      .col > .ch { width: 100%; cursor: pointer; }
+      .col-chv { display: inline-block; font-size: 13px; color: var(--ink-dim);
+        transition: transform .2s ease; flex: none; margin-left: 8px; align-self: center; }
+      .col:not(.open) .col-chv { transform: rotate(0deg); }
+      .col.open .col-chv { transform: rotate(90deg); }
+      .col-body { display: none; padding-top: 8px; }
+      .col.open .col-body { display: block; }
+      @media (prefers-reduced-motion: reduce) { .col-chv { transition: none; } }
 
-      /* seven day-columns cannot work at 375px — the calendar scrolls */
-      .s-cal { grid-template-columns: repeat(7, 46vw); overflow-x: auto;
-        scrollbar-width: none; -ms-overflow-style: none; }
-      .s-cal::-webkit-scrollbar { display: none; }
+      /* ── CALENDAR → AGENDA LIST, NOT A WEEK GRID ──────────────────────
+         Seven columns at 46vw is 322vw; no amount of narrowing fits seven
+         day-columns beside each other on a phone. Google Calendar's mobile
+         Schedule view is the reference here: a single vertical list, a date
+         header per day, and days with nothing on them omitted so a quiet
+         week reads as a short list instead of seven empty boxes. Today stays
+         pinned even when empty, so the pane always says something.
+         Still `display: grid`, not `flex` — the view switcher below sets
+         #calendar's display inline (style.display = 'grid'/'none') to show
+         and hide the pane, and an inline style always beats a stylesheet, so
+         fighting it with `display: flex` here would silently lose. One grid
+         column stacks exactly like a flex column would. */
+      .s-cal { grid-template-columns: 1fr; gap: 12px; overflow: visible; }
+      .s-cal .cday { min-height: 0; }
+      .s-cal .cday.empty:not(.today) { display: none; }
+      .s-cal .cev { display: flex; align-items: center; gap: 8px; }
+      .s-cal .cem { display: contents; }
+      .s-cal .cev .cav { order: 1; }
+      .s-cal .cet { order: 2; flex: 1; min-width: 0; margin: 0; }
+      .s-cal .cev .cew { order: 3; flex: none; }
 
       /* ══ Listings ══════════════════════════════════════════════════════
          The grid already collapses to one card per row. What doesn't work is
@@ -1305,18 +1349,45 @@
          card instead. The cells already carry semantic classes, so this is
          pure layout — the renderer is untouched and desktop keeps its
          table. */
-      .crm-tools { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
-        scrollbar-width: none; -ms-overflow-style: none; margin: 0 0 12px; }
-      .crm-tools::-webkit-scrollbar { display: none; }
-      .crm-tools-l, .crm-tools-r { flex-wrap: nowrap; flex: none; margin-left: 0; }
-      .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: none; }
+      /* ── TOOL RAILS WRAP, THEY DO NOT SWIPE ───────────────────────────
+         These were `nowrap + overflow-x: auto`, i.e. a swipe strip. On
+         Listings that rail was 801px of controls in a 341px box, so "Sort"
+         and "+ New listing" were two thirds of a screen away behind a
+         sideways drag, and nothing on screen said they existed. A filter
+         you cannot see is a filter you do not use.
+
+         Wrapping instead: the rail takes as many rows as it needs and
+         every control is reachable without moving the page. */
+      .crm-tools { flex-wrap: wrap; overflow: visible; gap: 8px; margin: 0 0 12px; }
+      .crm-tools-l, .crm-tools-r { flex-wrap: wrap; flex: 1 1 auto; min-width: 0; margin-left: 0; gap: 8px; }
+
+      /* Controls size to their label and flow, rather than each stretching to
+         fill its row. Stretching looked tidy with two buttons and turned the
+         rail into three tall bands of mostly empty pill — about 300px of
+         chrome before the first lead. Packing them puts the same controls in
+         two short rows and gets the data above the fold. */
+      .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: 0 1 auto; }
       .crm-tools .tbtn { min-height: 40px; }
 
-      /* the funnel reads as a strip you swipe, not a 233px block of squares */
-      .crm-funnel { flex-wrap: nowrap; overflow-x: auto; gap: 8px;
-        scrollbar-width: none; -ms-overflow-style: none; }
-      .crm-funnel::-webkit-scrollbar { display: none; }
-      .crm-funnel > * { flex: 0 0 auto; min-width: 124px; }
+      /* A segmented control with five options (Listings: All/Verified/
+         Pending/Expiring/Expired) cannot be one pill row at 375px. It keeps
+         its grouping and wraps internally, so the radius relaxes from a pill
+         to a rounded block — a wrapped pill reads as broken. Where it does
+         fit (Table/Board, two options) it stays inline with Filter and Sort. */
+      .crm-tools .seg { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; border-radius: 14px; }
+      .crm-tools .seg-b { flex: 0 1 auto; min-height: 38px; border-radius: 11px; white-space: nowrap; }
+
+      /* the search field gets its own row rather than a 170px stub */
+      .lsearch { flex: 1 1 100%; min-width: 0; width: 100%; height: 40px; font-size: 16px; }
+
+      /* the funnel was a strip you swiped (1180px of five cards in a 343px
+         box) — a wrapping grid instead, same as the tool rails above. The ›
+         separators implied a horizontal flow between cards; with no flow
+         left to imply, they go. */
+      .crm-funnel { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+        gap: 8px; overflow: visible; }
+      .fn-card { min-width: 0; }
+      .fn-sep { display: none; }
 
       /* The comparison table stops being a table. */
       .pr-table-wrap { display: none; }
@@ -1330,52 +1401,80 @@
       .crm-table, .crm-table tbody, .crm-table td { display: block; width: auto; }
       .crm-table td { padding: 0; border: none; }
 
-      /* A LEAD CARD, NOT A WRAPPED TABLE ROW.
-         This was nine cells in a flex container ordered 1..9 with
-         flex-wrap: wrap, so where each line broke depended on how long the
-         name and the next-best-action happened to be. Every lead wrapped
-         differently and the result read as two ragged lines rather than a
-         record.
+      /* A 3-TIER LEAD CARD, NOT A WRAPPED TABLE ROW.
+         This was nine cells at equal weight — checkbox, star score and the
+         WhatsApp icon competed with the lead's own name for attention, and
+         "untidy and scattered" was the accurate complaint. The fix is
+         hierarchy, not tidier wrapping:
 
-         Grid areas instead: the shape is fixed, so every card in the list has
-         the same anatomy no matter how long the content is.
+           tier 1 — identity:   who this is, and their stage, side by side
+                                 (that comparison is the one reason this
+                                 screen exists)
+           tier 2 — the action: temperature + what to do about it — the
+                                 single highest-value line on the card
+           tier 3 — meta:       budget, last activity, and the two things
+                                 you can actually do without opening the lead
 
-             [x]  Name                       status
-             [x]  ₦budget · source · stars
-             [x]  stage -> next best action
-             [x]  when                        call  more            */
+         Source chip and star score move behind the tap into openLead() —
+         that drawer already renders both, so this isn't losing the data,
+         it's stopping the card from restating the drawer's job. Hidden with
+         display:none rather than trimmed from the renderer, so desktop's
+         <td>s are provably unchanged. */
+      /* column 1 carries the identity block in row 1 (spanning col 1+2) but
+         stands alone in rows 2 and 3 (temp, budget). With `minmax(0,1fr)` as
+         its floor, Grid's own spec pushes a spanning item's width need onto
+         the *non-flexible* track it also spans (col 2) rather than growing
+         the flexible one -- col 1 measured 0px and row 2/3 landed exactly on
+         top of row 1's tail. A 150px floor is a track-sizing fix, not a
+         cosmetic one: it stops col 1 from being starved to nothing. */
       .crm-table tr.crm-row {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(150px,1fr) auto auto;
         grid-template-areas:
-          "chk lead   lead   status"
-          "chk budget source score"
-          "chk stage  stage  stage"
-          "chk time   act    act";
+          "lead   lead   stage"
+          "temp   nba    nba"
+          "budget time   act";
         align-items: center;
-        column-gap: 10px; row-gap: 7px;
+        column-gap: 10px; row-gap: 6px;
         padding: 14px 14px 15px;
         border-bottom: 1px solid var(--border);
       }
-      .crm-row > .c-chk    { grid-area: chk; align-self: start; padding-top: 2px; }
-      .crm-row > .c-lead   { grid-area: lead; min-width: 0; }
-      .crm-row > .c-status { grid-area: status; justify-self: end; white-space: nowrap; }
-      .crm-row > .c-budget { grid-area: budget; font-weight: 700; }
-      .crm-row > td:not([class]) { grid-area: source; min-width: 0; }   /* Source */
-      .crm-row > .c-score  { grid-area: score; justify-self: end; }
-      .crm-row > .c-stage  { grid-area: stage; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .crm-row > .c-chk    { display: none; }         /* the avatar is the tap target now */
+      .crm-row > .c-lead   { grid-area: lead; display: contents; }
+      .crm-row > .c-lead .cell { grid-area: lead; min-width: 0; }
+      .crm-row > td:not([class]) { display: none; }   /* Source — behind the tap */
+      .crm-row > .c-score  { display: none; }         /* Score — behind the tap */
+      .crm-row > .c-budget { grid-area: budget; font: 700 13.5px var(--f-sans); text-align: left; }
+      .crm-row > .c-stage  { grid-area: stage; display: contents; }
+      .crm-row > .c-stage .stpill-btn { grid-area: stage; justify-self: end; align-self: start; }
+      .crm-row > .c-stage .nbax {
+        grid-area: nba; margin: 0; font: 500 12.5px var(--f-sans); color: var(--ink-muted);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .crm-row > .c-status { grid-area: temp; justify-self: start; white-space: nowrap; }
       .crm-row > .c-time   { grid-area: time; font-size: 11.5px; color: var(--ink-dim); }
       .crm-row > .c-act    { grid-area: act; justify-self: end; display: flex; gap: 6px; }
 
-      /* Long names and long next-best-actions truncate rather than reflowing
-         the card -- the grid holds its shape, so something has to give, and it
-         should be the text and not the layout. */
-      .crm-row .nmx { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .crm-row .nbax { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .crm-row .crm-srcchip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .crm-row .nbax { font-size: 11.5px; color: var(--ink-muted); }
-      .crm-row .crm-wa, .crm-row .crm-more { min-width: 38px; min-height: 38px;
+      /* Long names truncate rather than reflowing the card — the grid holds
+         its shape, so something has to give, and it should be the text. */
+      .crm-row .nmx { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+      .crm-row .crm-wa, .crm-row .crm-more { min-width: 44px; min-height: 44px;
         display: inline-flex; align-items: center; justify-content: center; }
+
+      /* Tap the avatar, select the row — the checkbox itself still exists
+         (renderCrmTable gives it an id and the avatar a matching `for`), it
+         just isn't drawn; native label semantics do the toggling, so there
+         is no new listener to keep in sync with the desktop one. */
+      .crm-av { cursor: pointer; pointer-events: auto; }
+      /* selection mode: every avatar becomes an empty ring so the card says
+         "tap to select" without singling one lead out; the selected row's
+         ring fills in and shows a check — the same trade Gmail makes on
+         mobile so a photo grid can be a selection UI without a checkbox on
+         every tile. */
+      .crm-tablecard.selecting .crm-av { font-size: 0; color: transparent; background: var(--surface); border: 2px solid var(--border-strong); }
+      .crm-tablecard.selecting .crm-av::after { content: ''; }
+      .crm-tablecard.selecting .crm-row.sel .crm-av { background: var(--brand-deep); border-color: var(--brand-deep); }
+      .crm-tablecard.selecting .crm-row.sel .crm-av::after { content: '✓'; font-size: 14px; font-weight: 700; color: #fff; }
 
       /* pager: three rows, not three columns squeezed onto one */
       #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -2084,8 +2183,8 @@
       body.innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
         const sel = CRM.sel.has(oi);
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
-          <td class="c-chk"><input type="checkbox" class="crm-chk" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
-          <td class="c-lead"><span class="cell"><span class="crm-av">${initials(l.nm)}</span><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
+          <td class="c-chk"><input type="checkbox" class="crm-chk" id="crmsel-${oi}" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
+          <td class="c-lead"><span class="cell"><label for="crmsel-${oi}" class="crm-av" data-stop title="Select ${l.nm}">${initials(l.nm)}</label><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
       l.agentId ? (ROSTER_BY_ID[l.agentId] || 'Assigned') : (l.ph || 'No phone yet')
     }</span></span></span></td>
           <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
@@ -2109,6 +2208,13 @@
       const n = CRM.sel.size;
       document.getElementById('crmBulk').classList.toggle('on', n>0);
       document.getElementById('crmBulkN').textContent = n + ' selected';
+      // On mobile there's no checkbox on every card (the avatar doubles as
+      // the tap target) — .selecting turns every avatar into a selection
+      // ring the moment one lead is picked, so the affordance is visible
+      // without a checkbox drawn on nine rows at once. No-op on desktop,
+      // which still shows a real checkbox per row.
+      const card = document.querySelector('.crm-tablecard');
+      if (card) card.classList.toggle('selecting', n > 0);
     }
     function renderCrm(){ renderBrk(); renderCrmFunnel(); renderCrmTable(); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
     renderCrm();
@@ -2569,6 +2675,20 @@
       { id: 'published', label: 'Published', who: 'Metrics collected every 6h' },
       { id: 'underperforming', label: 'Underperforming', who: 'Toju suggests a boost' },
     ];
+    // Mobile collapses the pipeline into an accordion (see renderPipeline);
+    // these two are the only stages where the agent has something to do, so
+    // they're the only ones that start open. Desktop ignores this — every
+    // .col-body is always visible there — so it costs nothing on the
+    // columns' native home.
+    const PSTAGE_ACTION = { approval: true, underperforming: true };
+    const PSTAGE_EMPTY = {
+      uploaded: 'No listings waiting on content.',
+      generating: 'Nothing generating right now.',
+      approval: 'Nothing waiting on your review.',
+      scheduled: 'Nothing scheduled yet.',
+      published: 'Nothing published yet.',
+      underperforming: 'Nothing flagged — performance looks fine.',
+    };
     // Demo social posts removed — every one advertised an invented property.
     let posts = [];
     const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
@@ -2602,8 +2722,22 @@
       const el = document.getElementById('pipeline'); if (!el) return;
       el.innerHTML = PSTAGES.map(s => {
         const col = posts.filter(p => p.stage === s.id);
-        return `<div class="col" data-stage="${s.id}"><div class="ch"><div><div class="t">${s.label}</div><div class="w">${s.who}</div></div><span class="ct">${col.length}</span></div>
-          ${col.map(p => pcard(p, s.id)).join('') || '<div class="w" style="text-align:center;padding:14px 0;color:var(--ink-dim)">—</div>'}</div>`;
+        const open = !!PSTAGE_ACTION[s.id];
+        const bodyId = 'colbody-' + s.id;
+        // .ch is a real <button> so mobile can make it an accordion header
+        // without a second click handler duplicating what [data-act] and
+        // .pcard already do below — see the dedicated listener after the
+        // pipeline's action handler. Desktop keeps it looking like the old
+        // div: .col > .ch resets the button chrome back to flush/borderless.
+        return `<div class="col${open ? ' open' : ''}" data-stage="${s.id}">
+          <button class="ch" type="button" aria-expanded="${open}" aria-controls="${bodyId}">
+            <div><div class="t">${s.label}</div><div class="w">${s.who}</div></div>
+            <span class="ct">${col.length}</span><span class="col-chv" aria-hidden="true">›</span>
+          </button>
+          <div class="col-body" id="${bodyId}">
+            ${col.map(p => pcard(p, s.id)).join('') || `<div class="w" style="text-align:center;padding:14px 0;color:var(--ink-dim)">${PSTAGE_EMPTY[s.id] || '—'}</div>`}
+          </div>
+        </div>`;
       }).join('');
     }
     // ── bento overview strip ──
@@ -2632,10 +2766,14 @@
       const nums = [], buckets = [[],[],[],[],[],[],[]];
       for (let i = 0; i < 7; i++) { const dt = new Date(base); dt.setDate(base.getDate() - ti + i); nums.push(dt.getDate()); }
       posts.forEach(p => { if (['scheduled','published','underperforming'].includes(p.stage)) { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; buckets[di].push(p); } });
+      // `empty` drives the mobile agenda list: days with nothing scheduled
+      // are omitted there (Google Calendar's mobile Schedule view does the
+      // same), except `today`, which stays as the "you are here" anchor even
+      // when it's empty — desktop ignores the class and renders all seven.
       el.innerHTML = names.map((dn, i) => `
-        <div class="cday ${i === ti ? 'today' : ''}">
+        <div class="cday ${i === ti ? 'today' : ''}${!buckets[i].length ? ' empty' : ''}">
           <div class="dh"><span class="dn">${dn}</span><span class="dd">${nums[i]}</span></div>
-          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${CH[c].short}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : '<div class="cempty">—</div>'}
+          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${CH[c].short}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : `<div class="cempty">${i === ti ? 'Nothing scheduled today.' : 'Nothing scheduled.'}</div>`}
         </div>`).join('');
     }
     // pipeline actions
@@ -2701,6 +2839,20 @@
         setTimeout(() => { delete p._justpub; }, 700);
       }
       if (window.synMotion) synMotion.refresh();
+    });
+    // stage accordion header — same expand/collapse idiom as the nav rail's
+    // .grp-sec (line ~67) and the taskbar's .agd-sec (line ~1469), so there
+    // is one accordion pattern in this codebase, not three. A second
+    // listener rather than folding into the one above: that one already
+    // returns early for anything that isn't [data-act] or inside .pcard, so
+    // a .ch click reaches here safely without also trying to open a preview.
+    // Harmless above 1024px — .col-body only ever gets display:none inside
+    // the mobile block, so toggling .open there has nothing to show or hide.
+    document.getElementById('pipeline').addEventListener('click', (e) => {
+      const h = e.target.closest('.ch'); if (!h) return;
+      const col = h.closest('.col'); if (!col) return;
+      const open = col.classList.toggle('open');
+      h.setAttribute('aria-expanded', String(open));
     });
     // view switcher: pipeline ⇄ calendar
     document.getElementById('socialView').addEventListener('click', (e) => {
