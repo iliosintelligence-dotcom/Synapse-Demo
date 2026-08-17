@@ -51,6 +51,9 @@
   const naira = (n) => money(n, CURRENCY_FALLBACK);
 
   // deterministic photo pool — cards without a real image cycle through these
+  /* Retained only because it is still exported on window.SynMatches and other
+     pages may reference it. The card renderer no longer uses it: see
+     listingCardHtml. Do not reintroduce it as a fallback for a missing photo. */
   const IMG_POOL = [
     'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70',
     'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70',
@@ -153,7 +156,12 @@
     const o = opts || {};
     const saves = o.saves || new Set();
     const picked = o.picked || new Set();
-    const img = l.img || IMG_POOL[i % IMG_POOL.length];
+    /* No stock fallback. IMG_POOL cycled five Unsplash flats whenever a
+       listing had no photo of its own, so a home with no picture was shown
+       wearing a photograph of a different building -- indistinguishable, to a
+       buyer, from a real photo of the place they were about to enquire about.
+       An honest empty state is worth more than a pretty wrong one. */
+    const img = typeof l.img === 'string' && l.img.trim() ? l.img.trim() : null;
     const matchChip = l.match
       ? `<span class="match">${l.match}% match</span>`
       : `<span class="match" style="color:var(--ink-muted);background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.08)">${esc(l.deal || '')}</span>`;
@@ -187,7 +195,9 @@
           ${score}
         </div>
         <div class="img">
-          <img src="${img}" alt="" />
+          ${img
+            ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`
+            : ''}
           <div class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${saves.has(l.id) ? '♥' : '♡'}</div>
         </div>
       </div>`;
@@ -200,7 +210,7 @@
     if (!window.L) return st;
     if (!st.map) {
       st.map = L.map(elId, { scrollWheelZoom: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
       }).addTo(st.map);
       st.layer = L.layerGroup().addTo(st.map);

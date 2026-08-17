@@ -227,6 +227,22 @@
     .listing .ring.unv { border-color: rgba(0,0,0,0.22); color: var(--ink-dim); font-size: 12px; }
     .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
     .listing .img img { width: 100%; height: 100%; object-fit: cover; }
+    /* A listing with no photo of its own. Says so, rather than borrowing a
+       stock flat -- see listingCardHtml in matches-shared.js. */
+    .listing .img:not(:has(img)),
+    .listing .img.no-photo {
+      display: flex; align-items: center; justify-content: center;
+      background:
+        repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px);
+    }
+    .listing .img:not(:has(img))::after,
+    .listing .img.no-photo::after {
+      content: 'No photo yet';
+      font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      color: var(--ink-muted, #6B6B70);
+      background: rgba(255,255,255,0.86);
+      padding: 5px 11px; border-radius: 100px;
+    }
     .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
       display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }

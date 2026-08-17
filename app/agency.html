@@ -2914,6 +2914,44 @@
       const priceEcho = () => { const v = parseFloat(g('lfPrice').value); g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaM(Math.round(v / 1e6)) + ')' : ''; };
       // validation
       const setErr = (id, msg) => { const el = g(id); if (el) { el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none'; } };
+      /* Image URL validation.
+         This only ever tested /^https?:\/\//, which any link on earth passes.
+         A listing was published yesterday whose "image" was
+         https://share.google/EiSyLU6CGrkHy9pYw -- a Google share redirect that
+         answers 302 text/html. It saved cleanly and then rendered as nothing,
+         because it is not an image and never was.
+
+         Two gates. This one is synchronous and rejects the shapes that cannot
+         be images; imgProbe() below actually loads the URL, which is the only
+         way to be sure. */
+      var IMG_SHORTENERS = /^(share\.google|goo\.gl|maps\.app\.goo\.gl|bit\.ly|tinyurl\.com|t\.co|lnkd\.in|rb\.gy)$/i;
+      var imgProbeCache = Object.create(null);   // url -> 'ok' | 'bad' | 'pending'
+
+      function imgUrlError(v) {
+        if (!v) return 'A direct image link (https://…)';
+        var u;
+        try { u = new URL(v); } catch (e) { return 'That is not a valid URL'; }
+        if (!/^https?:$/.test(u.protocol)) return 'Must start with http:// or https://';
+        if (IMG_SHORTENERS.test(u.hostname)) {
+          return 'That is a share link, not an image. Open it, right-click the photo, and copy the image address.';
+        }
+        if (imgProbeCache[v] === 'bad') return 'That link did not load as an image';
+        return '';
+      }
+
+      /* The real test: can a browser actually decode it as an image? Catches
+         404s, HTML pages, PDFs and hotlink blocks alike, without needing to
+         know anything about the URL's shape. */
+      function imgProbe(v) {
+        if (!v || imgProbeCache[v]) return;
+        imgProbeCache[v] = 'pending';
+        var im = new Image();
+        im.onload = function () { imgProbeCache[v] = 'ok'; validate(); };
+        im.onerror = function () { imgProbeCache[v] = 'bad'; validate(); };
+        im.referrerPolicy = 'no-referrer';
+        im.src = v;
+      }
+
       function validate() {
         const isLand = ['land', 'commercial'].includes(g('lfType').value);
         const la = g('lfLat').value.trim(), lo = g('lfLng').value.trim();
@@ -2925,7 +2963,7 @@
           e_state: g('lfState').value.trim() ? '' : 'Required',
           e_price: parseFloat(g('lfPrice').value) > 0 ? '' : 'Enter a price in naira',
           e_beds: (isLand || (g('lfBeds').value !== '' && +g('lfBeds').value >= 0)) ? '' : 'Required',
-          e_img: /^https?:\/\//.test(g('lfImg').value.trim()) ? '' : 'A valid image URL (http…)',
+          e_img: imgUrlError(g('lfImg').value.trim()),
           e_lat: ((la && lo) || (!la && !lo)) ? '' : 'Enter both latitude and longitude, or neither',
         };
         let ok = true;
@@ -2935,6 +2973,9 @@
       }
       ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg', 'lfLat', 'lfLng'].forEach(id =>
         g(id).addEventListener('input', () => { validate(); if (id === 'lfPrice') priceEcho(); }));
+      /* Probe on blur rather than per keystroke: one request when they have
+         finished pasting, not one per character. */
+      g('lfImg').addEventListener('blur', () => imgProbe(g('lfImg').value.trim()));
       priceEcho(); validate();
       // save
       g('lfSave').addEventListener('click', () => {

@@ -94,6 +94,8 @@
     .commute { display: flex; gap: 8px; flex-wrap: wrap; }
     .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
     .commute .c b { color: var(--ink); font-weight: 600; }
+    .cmt-src { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-muted); }
+    .commute .c.pending { opacity: .55; }
 
     /* similar homes */
     .sim { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
@@ -423,12 +425,12 @@
     <!-- commute intelligence: times shift with time of day; add your own places -->
     <div class="card section">
       <div class="lbl"><span data-icon="commute"></span> Commute intelligence</div>
-      <div class="tod" id="tod">
-        <button data-mult="1.55">Morning peak</button>
-        <button data-mult="1" class="on">Midday</button>
-        <button data-mult="1.75">Evening peak</button>
-      </div>
+      <!-- The morning/midday/evening buttons multiplied a made-up number by
+           another made-up number (1.55 / 1.75). Routed times below are
+           free-flow and are labelled as such; a peak figure we cannot measure
+           is not worth inventing. -->
       <div class="commute" id="commute"></div>
+      <p class="cmt-src" id="commuteSrc"></p>
     </div>
 
     <!-- viewing assistant: inspection checklist + notes + photos, saved to this home -->
@@ -1077,35 +1079,157 @@
       }
     });
 
-    /* ── 10 · Commute intelligence (time-of-day multiplier + custom places) ── */
-    const BASE_COMMUTE = [
-      { place: 'Lagos Island', min: 35 }, { place: 'Victoria Island', min: 25 },
-      { place: 'Lekki Phase 1 gate', min: 6 }, { place: 'Airport (MMIA)', min: 70 },
-      { place: 'Nearest school', min: 12 },
-    ];
-    let commuteMult = 1;
-    let customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
-    function fmtMin(m) { return m >= 60 ? Math.floor(m/60) + 'h ' + (m%60 ? (m%60)+'m' : '').trim() : Math.round(m) + ' min'; }
+    /* -- 10 - Commute intelligence -----------------------------------------
+       WAS: a hardcoded array of Lagos destinations -- Lagos Island, Victoria
+       Island, "Lekki Phase 1 gate 6 min", MMIA -- with invented minutes, shown
+       identically on every listing. Every property in this database is in
+       Ibadan, roughly 130km from Lekki, so the panel confidently told buyers a
+       two-hour drive was a six-minute one, and told them the same thing
+       whatever they were looking at.
+
+       NOW: destinations are real places found near THIS property via
+       OpenStreetMap, and the times are real driving durations from OSRM. Both
+       are free and need no API key. If either is unavailable we say so and
+       show distance alone -- a straight-line distance is a fact, an unrouted
+       "minutes" figure would just be the old bug in a new coat. */
+    var CMT_DESTS = null;          // [{name, type, c:[lat,lng], dm, sec|null}]
+    var cmtState = 'idle';         // idle | loading | ready | failed
+    var cmtFetchedFor = null;
+    var customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
+
+    function fmtMin(m) {
+      if (m == null) return null;
+      return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : Math.round(m) + ' min';
+    }
+
+    /* The places people actually commute to, at city scale. Deliberately not
+       the corner-shop set already shown under "Nearby": a hospital you might
+       drive to is a different question from a cafe you can walk to. */
+    var CMT_QUERY_TPL = '[out:json][timeout:20];('
+      + 'node["amenity"="university"](around:14000,{lat},{lng});'
+      + 'node["amenity"="hospital"](around:12000,{lat},{lng});'
+      + 'node["amenity"="marketplace"](around:12000,{lat},{lng});'
+      + 'node["shop"="mall"](around:14000,{lat},{lng});'
+      + 'node["amenity"="bus_station"](around:14000,{lat},{lng});'
+      + 'node["aeroway"="aerodrome"](around:40000,{lat},{lng});'
+      + ');out body 60;';
+
+    function cmtType(tags) {
+      if (tags.amenity === 'university') return 'University';
+      if (tags.amenity === 'hospital') return 'Hospital';
+      if (tags.amenity === 'marketplace') return 'Market';
+      if (tags.shop === 'mall') return 'Shopping mall';
+      if (tags.amenity === 'bus_station') return 'Bus station';
+      if (tags.aeroway === 'aerodrome') return 'Airport';
+      return null;
+    }
+
+    /* One OSRM table call gives durations from the property to every
+       destination at once, rather than N round trips. */
+    function routeDurations(origin, dests) {
+      var coords = [origin[1] + ',' + origin[0]]
+        .concat(dests.map(function (d) { return d.c[1] + ',' + d.c[0]; })).join(';');
+      var url = 'https://router.project-osrm.org/table/v1/driving/' + coords
+        + '?sources=0&annotations=duration';
+      return fetchWithTimeout(url, {}, 12000)
+        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
+        .then(function (d) {
+          var row = d && d.durations && d.durations[0];
+          if (!row) throw new Error('no durations');
+          dests.forEach(function (dest, i) {
+            var sec = row[i + 1];
+            dest.sec = (typeof sec === 'number' && isFinite(sec)) ? sec : null;
+          });
+          return dests;
+        });
+    }
+
+    function fetchCommute(propId, lat, lng) {
+      if (cmtFetchedFor === propId) return;
+      cmtFetchedFor = propId;
+      cmtState = 'loading';
+      renderCommute();
+
+      var q = CMT_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
+      fetchWithTimeout(OVERPASS_URL, { method: 'POST', body: 'data=' + encodeURIComponent(q) }, 15000)
+        .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
+        .then(function (data) {
+          var seen = {};
+          var out = (data.elements || []).reduce(function (acc, el) {
+            var t = cmtType(el.tags || {});
+            var nm = el.tags && el.tags.name;
+            // An unnamed node is useless here: "Hospital, 14 min" tells you nothing.
+            if (!t || !nm || el.lat == null || el.lon == null) return acc;
+            if (seen[t]) return acc;          // one of each kind, the nearest
+            seen[t] = true;
+            acc.push({ name: nm, type: t, c: [el.lat, el.lon], dm: haversineM([lat, lng], [el.lat, el.lon]), sec: null });
+            return acc;
+          }, []);
+          out.sort(function (a, b) { return a.dm - b.dm; });
+          CMT_DESTS = out.slice(0, 5);
+          if (!CMT_DESTS.length) { cmtState = 'ready'; renderCommute(); return; }
+          return routeDurations([lat, lng], CMT_DESTS)
+            .then(function () { cmtState = 'ready'; renderCommute(); })
+            .catch(function () { cmtState = 'ready'; renderCommute(); });  // distances still stand
+        })
+        .catch(function () { cmtState = 'failed'; renderCommute(); });
+    }
+
     function renderCommute() {
-      const all = BASE_COMMUTE.concat(customPlaces);
-      document.getElementById('commute').innerHTML = all.map((c) =>
-        '<span class="c">' + c.place + ' <b>' + fmtMin(c.min * commuteMult) + '</b></span>').join('')
-        + '<button class="addplace" id="addPlace">+ add a place</button>';
-      document.getElementById('addPlace').addEventListener('click', () => {
-        const place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
-        const mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
+      var host = document.getElementById('commute');
+      var src = document.getElementById('commuteSrc');
+      if (!host) return;
+
+      var parts = [];
+      if (cmtState === 'loading') {
+        parts.push('<span class="c pending">Looking up real places and drive times…</span>');
+      } else if (cmtState === 'failed') {
+        parts.push('<span class="c">Couldn’t reach the maps service just now</span>');
+      } else if (CMT_DESTS && CMT_DESTS.length) {
+        CMT_DESTS.forEach(function (d) {
+          var t = fmtMin(d.sec != null ? Math.round(d.sec / 60) : null);
+          parts.push('<span class="c">' + esc(d.name) + ' <b>'
+            + (t ? t : formatDist(d.dm)) + '</b></span>');
+        });
+      } else if (cmtState === 'ready') {
+        parts.push('<span class="c">No major destinations mapped near this address yet</span>');
+      }
+
+      // The buyer's own places. They typed the minutes, so they are theirs to
+      // trust -- but they are labelled as theirs, not presented as measured.
+      customPlaces.forEach(function (c, i) {
+        parts.push('<span class="c">' + esc(c.place) + ' <b>' + fmtMin(c.min) + '</b> · yours'
+          + ' <button class="cmt-rm" data-i="' + i + '" aria-label="Remove">×</button></span>');
+      });
+      parts.push('<button class="addplace" id="addPlace">+ add a place</button>');
+      host.innerHTML = parts.join('');
+
+      if (src) {
+        var routed = (CMT_DESTS || []).some(function (d) { return d.sec != null; });
+        src.textContent = cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length
+          ? (routed
+              ? 'Places from OpenStreetMap · driving times from OSRM, free-flow traffic. Real journeys at peak will be longer.'
+              : 'Places from OpenStreetMap. Driving times unavailable, so these are straight-line distances.')
+          : '';
+      }
+
+      var add = document.getElementById('addPlace');
+      if (add) add.addEventListener('click', function () {
+        var place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
+        var mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
         if (!place.trim() || isNaN(mins)) return;
         customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
         localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
         renderCommute();
       });
+      host.querySelectorAll('.cmt-rm').forEach(function (b) {
+        b.addEventListener('click', function () {
+          customPlaces.splice(Number(b.dataset.i), 1);
+          localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
+          renderCommute();
+        });
+      });
     }
-    document.getElementById('tod').addEventListener('click', (e) => {
-      const b = e.target.closest('button[data-mult]'); if (!b) return;
-      commuteMult = parseFloat(b.dataset.mult);
-      document.querySelectorAll('#tod button').forEach((x) => x.classList.toggle('on', x === b));
-      renderCommute();
-    });
     renderCommute();
 
     /* ── 9 · Viewing assistant (checklist + notes + photos, saved to this home) ── */
@@ -1305,7 +1429,13 @@
       + 'We would rather show you nothing than another property’s neighbourhood.</p>';
 
     var map = L.map('pvMap', { scrollWheelZoom: false }).setView([9.0820, 8.6753], 6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
+    /* Voyager, not Positron ('light_all'). Positron is a deliberately blank
+       canvas -- almost no POI labels, no business names, roads barely
+       distinguished -- which is right for a heatmap and wrong for a buyer
+       asking "what is around this house?". The pin was in the correct place
+       on a map that showed nothing near it. Voyager keeps the light styling
+       but carries the labels. Same CARTO service, same attribution, no key. */
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
     var layer = L.layerGroup().addTo(map);
     var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
     function poiIcon(t) { var m = META[t]; return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
@@ -1450,6 +1580,8 @@
         PROP = [Number(p.latitude), Number(p.longitude)];
         map.setView(PROP, 14);
         fetchAmenities(p.id || null, PROP[0], PROP[1]);
+        // Commute needs the same coordinates, and they only exist here.
+        fetchCommute(p.id || null, PROP[0], PROP[1]);
       }
       var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
       if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };

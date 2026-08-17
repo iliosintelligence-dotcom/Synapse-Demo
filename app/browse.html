@@ -102,6 +102,22 @@
     .listing .ring { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--ink); }
     .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
     .listing .img img { width: 100%; height: 100%; object-fit: cover; }
+    /* A listing with no photo of its own. Says so, rather than borrowing a
+       stock flat -- see listingCardHtml in matches-shared.js. */
+    .listing .img:not(:has(img)),
+    .listing .img.no-photo {
+      display: flex; align-items: center; justify-content: center;
+      background:
+        repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px);
+    }
+    .listing .img:not(:has(img))::after,
+    .listing .img.no-photo::after {
+      content: 'No photo yet';
+      font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      color: var(--ink-muted, #6B6B70);
+      background: rgba(255,255,255,0.86);
+      padding: 5px 11px; border-radius: 100px;
+    }
     .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
       background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
       display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
@@ -970,7 +986,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,expires_at,listed_at,currency,neighbourhoods(name,flood_risk,power_reliability)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,expires_at,listed_at,currency,property_media(url,display_order),neighbourhoods(name,flood_risk,power_reliability)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -986,7 +1002,16 @@
       if (hasSessionView) return;
       if (rows.length === 0) { render(); return; }   // truly nothing live — say so
       items = rows.map((p, i) => ({
-        id: p.id, img: null,
+        /* The listing's own first photo. This query did not ask for
+           property_media at all, so img was always null and the card renderer
+           fell back to a pool of stock flats -- every home in Browse wore a
+           photograph of a different building. */
+        id: p.id,
+        img: ((p.property_media || [])
+                .slice()
+                .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+                .map((m) => m && m.url)
+                .filter(Boolean)[0]) || null,
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
         per: p.listing_type === 'rent',
         vstatus: p.verification_status,
