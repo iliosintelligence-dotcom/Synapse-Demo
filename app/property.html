@@ -95,6 +95,19 @@
     .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
     .commute .c b { color: var(--ink); font-weight: 600; }
     .cmt-src { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-muted); }
+    .nb-addr { margin: 2px 0 12px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
+    .nb-empty { font-size: 13px; line-height: 1.55; color: var(--ink-muted); margin: 4px 0 0; }
+    .nb-around { margin-top: 14px; }
+    .nb-around .nba-k { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase;
+      color: var(--ink-dim); margin-bottom: 9px; }
+    .nba-list { display: flex; flex-direction: column; gap: 0; }
+    .nba-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 0;
+      border-bottom: 1px solid rgba(20,20,20,0.07); font-size: 13.5px; }
+    .nba-row:last-child { border-bottom: none; }
+    .nba-row .nba-n { flex: 1 1 auto; min-width: 0; color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nba-row .nba-t { flex: none; font-size: 11.5px; color: var(--ink-dim); }
+    .nba-row .nba-d { flex: none; font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; }
     .commute .c.pending { opacity: .55; }
 
     /* similar homes */
@@ -408,18 +421,19 @@
       <p class="cost-note">Buying cash? Your ₦165M earns back ≈ ₦13.9M/yr at the corridor's 8.4% gross yield if you ever rent it out. Estimates from verified listing data + area intelligence — refine with Toju.</p>
     </div>
 
-    <!-- neighbourhood intelligence (RentCast-style, from the twin) -->
+    <!-- Neighbourhood intelligence.
+         WAS: "Neighbourhood intelligence — Lekki Phase 1" with six invented
+         score bars (82, 85, 88, 74, 86, 28) and a note about a rising corridor
+         and ₦8.5M rents, hardcoded into the page and therefore shown on every
+         listing in the database -- including properties 130km away in Ibadan.
+         Everything below is now drawn from the listing itself, and where we
+         have nothing the section says so. -->
     <div class="card section">
-      <div class="lbl"><span data-icon="pin"></span> Neighbourhood intelligence — Lekki Phase 1</div>
-      <div class="nb">
-        <div class="row"><span>Safety</span><div class="bar"><i class="good" data-w="82"></i></div><span class="v">82</span></div>
-        <div class="row"><span>Family life</span><div class="bar"><i class="good" data-w="85"></i></div><span class="v">85</span></div>
-        <div class="row"><span>Schools access</span><div class="bar"><i class="good" data-w="88"></i></div><span class="v">88</span></div>
-        <div class="row"><span>Power reliability</span><div class="bar"><i data-w="74"></i></div><span class="v">74</span></div>
-        <div class="row"><span>Internet</span><div class="bar"><i class="good" data-w="86"></i></div><span class="v">86</span></div>
-        <div class="row"><span>Flood risk</span><div class="bar"><i data-w="28"></i></div><span class="v">28</span></div>
-      </div>
-      <p class="nb-note">Prices in this corridor are <b style="color:var(--success)">rising</b> · typical 3-bed rent ₦8.5M/yr · rental demand high. 4 schools, 2 hospitals and 3 supermarkets within 10 minutes.</p>
+      <div class="lbl"><span data-icon="pin"></span> <span id="nbTitle">Around this property</span></div>
+      <p class="nb-addr" id="nbAddr"></p>
+      <div class="nb" id="nbScores"></div>
+      <p class="nb-note" id="nbNote"></p>
+      <div class="nb-around" id="nbAround"></div>
     </div>
 
     <!-- commute intelligence: times shift with time of day; add your own places -->
@@ -494,7 +508,9 @@
     </div><!-- /deck -->
 
     <div class="cta-dock">
-      <a class="btn btn-toju" href="toju.html?ask=Tell me more about the 3-Bed Apartment in Lekki Phase 1 — is it right for me?"><span data-icon="chat"></span> Ask Toju</a>
+      <!-- href is filled from the real listing by paintProperty; a hardcoded
+           question named a Lekki flat whatever you were actually looking at. -->
+      <a class="btn btn-toju" id="askTojuBtn" href="toju.html"><span data-icon="chat"></span> Ask Toju</a>
       <button class="btn btn-primary" style="flex:1" id="contactBtn">Contact agent</button>
     </div>
   </div><!-- /pdp -->
@@ -652,7 +668,16 @@
     });
     paintSave();
     document.getElementById('shareBtn').addEventListener('click', async () => {
-      const data = { title: '3-Bed Apartment, Lekki Phase 1 — Synapse', text: 'Verified · Property Confidence 94 · ₦165M', url: location.href };
+      /* Was a hardcoded Lekki flat with an invented "Property Confidence 94"
+         and a price that belonged to no listing on screen -- so sharing any
+         home sent someone else's home. */
+      const L = window.__pvListing || PROP || {};
+      const where = [L.neighbourhood, L.city].filter(Boolean).join(', ');
+      const data = {
+        title: (L.title || document.title.replace(/ — Synapse$/, '') || 'A home on Synapse') + ' — Synapse',
+        text: [L.verification_status === 'verified' ? 'Verified' : null, where].filter(Boolean).join(' · '),
+        url: location.href,
+      };
       if (navigator.share) { try { await navigator.share(data); } catch (e) {} }
       else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
     });
@@ -1005,6 +1030,10 @@
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
       const q = SUPABASE_URL + '/rest/v1/properties'
         + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier)'
+        // The neighbourhood record this listing is actually attached to.
+        // Without it the section below had nothing to draw from, which is
+        // why it was hardcoded to Lekki Phase 1 on every property.
+        + ',neighbourhoods(name,safety_score,family_score,walkability_score,power_reliability,internet_quality,flood_risk,price_trend,avg_rent_3bed,rental_demand,coord_verified_at)'
         + '&id=eq.' + encodeURIComponent(URL_ID) + '&limit=1';
       fetch(q, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
         .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
@@ -1423,6 +1452,123 @@
     }
     renderCommutePanel();
 
+    /* ── the neighbourhood card, painted from this listing ──────────────────
+       Three separate questions, kept separate because we can answer them to
+       very different standards:
+
+         WHERE IS IT     -- the listing's own address. Always known.
+         HOW IS THE AREA -- scores from the neighbourhood record, and ONLY when
+                            the listing is actually attached to one. Most are
+                            not, and inventing bars is what this section used to
+                            do. A coordinate that was never verified is flagged
+                            rather than quietly drawn as fact.
+         WHAT IS NEARBY  -- real named places from OpenStreetMap with real
+                            straight-line distances from this property.
+
+       A missing answer is printed as a missing answer. */
+    var SCORE_ROWS = [
+      { k: 'safety_score',      lbl: 'Safety',            good: true  },
+      { k: 'family_score',      lbl: 'Family life',       good: true  },
+      { k: 'walkability_score', lbl: 'Walkability',       good: true  },
+      { k: 'power_reliability', lbl: 'Power reliability', good: true  },
+      { k: 'internet_quality',  lbl: 'Internet',          good: true  },
+      { k: 'flood_risk',        lbl: 'Flood risk',        good: false },
+    ];
+
+    function paintNeighbourhood(p) {
+      var nb = p && p.neighbourhoods;
+      if (Array.isArray(nb)) nb = nb[0];
+
+      var title = document.getElementById('nbTitle');
+      var addrEl = document.getElementById('nbAddr');
+      var scoresEl = document.getElementById('nbScores');
+      var noteEl = document.getElementById('nbNote');
+      if (!title || !scoresEl) return;
+
+      var area = (nb && nb.name) || p.neighbourhood || p.city || '';
+      title.textContent = area ? ('Around ' + area) : 'Around this property';
+
+      /* The address, because "which property is this actually about?" was
+         exactly the question the hardcoded heading got wrong. */
+      var addr = [p.address, p.neighbourhood, p.city, p.state].filter(function (x) {
+        return x && String(x).trim();
+      });
+      // De-duplicate: "Bodija, Bodija, Ibadan" reads as a bug.
+      var seenA = {}, addrParts = [];
+      addr.forEach(function (x) {
+        var k = String(x).trim().toLowerCase();
+        if (seenA[k]) return; seenA[k] = 1; addrParts.push(String(x).trim());
+      });
+      if (addrEl) addrEl.textContent = addrParts.join(' · ');
+
+      var rows = nb ? SCORE_ROWS.filter(function (r) { return nb[r.k] != null; }) : [];
+      if (!rows.length) {
+        scoresEl.innerHTML = '';
+        scoresEl.insertAdjacentHTML('afterend', '');
+        if (noteEl) {
+          noteEl.className = 'nb-empty';
+          noteEl.textContent = nb
+            ? 'We hold no scored data for this area yet.'
+            : 'This listing is not linked to a surveyed neighbourhood yet, so we have no area scores for it. What is nearby, below, is measured from this property.';
+        }
+        return;
+      }
+
+      scoresEl.innerHTML = rows.map(function (r) {
+        var v = Math.max(0, Math.min(100, Number(nb[r.k])));
+        // Flood risk is the one row where a high number is bad.
+        var strong = r.good ? v >= 70 : v <= 35;
+        return '<div class="row"><span>' + r.lbl + '</span><div class="bar"><i'
+          + (strong ? ' class="good"' : '') + ' style="width:' + v + '%"></i></div>'
+          + '<span class="v">' + v + '</span></div>';
+      }).join('');
+
+      if (noteEl) {
+        noteEl.className = 'nb-note';
+        var bits = [];
+        if (nb.price_trend) bits.push('Prices here are ' + esc(String(nb.price_trend)));
+        if (nb.avg_rent_3bed) bits.push('typical 3-bed rent ' + esc(String(nb.avg_rent_3bed)));
+        if (nb.rental_demand) bits.push('rental demand ' + esc(String(nb.rental_demand)));
+        if (!nb.coord_verified_at) {
+          bits.push('this area’s location has not been verified by us yet');
+        }
+        noteEl.innerHTML = bits.length ? bits.join(' · ') : '';
+      }
+    }
+
+    /* Real places, real distances, measured from this property. Fed by the same
+       Overpass result the map already uses, so it costs no extra request. */
+    function paintAround() {
+      var host = document.getElementById('nbAround');
+      if (!host) return;
+      if (poiState === 'loading') {
+        host.innerHTML = '<div class="nba-k">What is nearby</div>'
+          + '<p class="nb-empty">Looking up real places around this address…</p>';
+        return;
+      }
+      if (!POI || !POI.length) {
+        host.innerHTML = '<div class="nba-k">What is nearby</div>'
+          + '<p class="nb-empty">' + (poiState === 'failed'
+              ? 'We could not reach the map data service just now.'
+              : 'Nothing is mapped close to this address yet.') + '</p>';
+        return;
+      }
+      // Nearest of each kind, so the list is a survey rather than eight cafes.
+      var seen = {}, rows = [];
+      POI.forEach(function (x) {
+        if (seen[x.t] || rows.length >= 8) return;
+        seen[x.t] = 1;
+        rows.push(x);
+      });
+      host.innerHTML = '<div class="nba-k">What is nearby</div><div class="nba-list">'
+        + rows.map(function (x) {
+            return '<div class="nba-row"><span class="nba-n">' + esc(x.n) + '</span>'
+              + '<span class="nba-t">' + esc(AMENITY_LABEL[x.t] || x.t) + '</span>'
+              + '<span class="nba-d">' + formatDist(x.dm) + '</span></div>';
+          }).join('')
+        + '</div>';
+    }
+
     function fetchAmenities(propId, lat, lng) {
       if (poiFetchedFor === propId) return; // already have it (or are getting it)
       poiFetchedFor = propId;
@@ -1442,6 +1588,7 @@
             return out;
           }, []);
           POI.sort(function (a, b) { return a.dm - b.dm; });
+          paintAround();     // the neighbourhood card's "what is nearby" list
           POI = POI.slice(0, 60);
           POI.forEach(function (p) { p.d = formatDist(p.dm); });
           poiState = 'loaded';
@@ -1646,12 +1793,20 @@
     document.addEventListener('syn:property', function (e) {
       var p = e.detail || {};
       window.__pvListing = p;
+      paintNeighbourhood(p);
+      var askBtn = document.getElementById('askTojuBtn');
+      if (askBtn && p.title) {
+        var where = [p.neighbourhood, p.city].filter(Boolean).join(', ');
+        askBtn.href = 'toju.html?ask=' + encodeURIComponent(
+          'Tell me more about ' + p.title + (where ? ' in ' + where : '') + ' — is it right for me?');
+      }
       if (p.latitude != null && p.longitude != null) {
         PROP = [Number(p.latitude), Number(p.longitude)];
         map.setView(PROP, 14);
         fetchAmenities(p.id || null, PROP[0], PROP[1]);
         // Commute needs the same coordinates, and they only exist here.
         fetchCommutePanel(p.id || null, PROP[0], PROP[1]);
+        paintAround();
       }
       var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
       if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };
