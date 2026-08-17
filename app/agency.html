@@ -107,6 +107,27 @@
        columns, every benefit as its own row, so reading across a row tells
        you exactly which plans include it. ── */
     .pr-table-wrap { overflow-x: auto; margin-top: 28px; border-radius: 20px; border: 1px solid var(--border); }
+    /* Desktop shows the comparison grid; phones get the cards. Exactly one is
+       ever displayed, so the grid's 680px minimum can never force the page to
+       scroll sideways. */
+    .pr-cards { display: none; }
+    .prc-card {
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .prc-card.pop { border-color: var(--ink); }
+    .prc-name { font: 700 15px var(--f-sans); color: var(--ink); }
+    .prc-head { font-size: 12.5px; color: var(--ink-muted); line-height: 1.45; }
+    .prc-amt { font: 700 26px var(--f-sans); color: var(--ink); margin-top: 6px; letter-spacing: -0.01em; }
+    .prc-amt small { font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+    .prc-card .btn { margin-top: 10px; width: 100%; justify-content: center; }
+    .prc-feats { list-style: none; margin: 14px 0 0; padding: 14px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 9px; }
+    .prc-feats li { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; font-size: 13px; }
+    .prc-feats li .prc-k { color: var(--ink-muted); min-width: 0; }
+    .prc-feats li .prc-v { color: var(--ink); font-weight: 650; text-align: right; flex: none; }
+    /* A row that is simply included needs no value, just a mark. */
+    .prc-feats li.yes .prc-k { color: var(--ink); }
+    .prc-feats li.yes::after { content: '✓'; color: var(--success, #15803D); font-weight: 700; flex: none; }
     .pr-compare { display: grid; grid-template-columns: minmax(190px,1.3fr) repeat(3, minmax(150px,1fr)); min-width: 680px; background: var(--surface); }
     .pr-compare > div { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
     .pr-compare > div:nth-last-child(-n+4) { border-bottom: none; }
@@ -429,6 +450,22 @@
     .sw-info { display: flex; justify-content: space-between; align-items: baseline; }
     .sw-name { font: 700 11.5px var(--f-sans); color: var(--ink-muted); }
     .sw-hex { font: 600 11.5px ui-monospace, monospace; color: var(--ink-dim); text-transform: uppercase; }
+    /* A default is drawn as a default: hatched, so "no colour yet" cannot be
+       mistaken for "we chose black". */
+    .swatch-card.unset input[type="color"] { opacity: .32; }
+    .swatch-card.unset::after {
+      content: 'Pick one below, or tap the swatch';
+      font: 500 10.5px var(--f-sans); color: var(--ink-dim); margin-top: -2px;
+    }
+    .swatch-card.unset .sw-hex { text-transform: none; font-style: italic; }
+    .sw-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sw-presets button {
+      width: 22px; height: 22px; padding: 0; border-radius: 6px; cursor: pointer;
+      border: 1px solid rgba(13,13,15,0.16);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .sw-presets button:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(13,13,15,0.18); }
+    .sw-presets button.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
     .type-specimen { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-top: 2px; }
     .ts-name { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
     .ts-glyphs { font-size: 40px; line-height: 1.2; margin: 6px 0 4px; }
@@ -1281,6 +1318,10 @@
       .crm-funnel::-webkit-scrollbar { display: none; }
       .crm-funnel > * { flex: 0 0 auto; min-width: 124px; }
 
+      /* The comparison table stops being a table. */
+      .pr-table-wrap { display: none; }
+      .pr-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+
       .crm-tablecard { overflow-x: visible; padding: 0; }
       .crm-table thead { display: none; }        /* headers make no sense per card */
       /* `tr` is deliberately NOT in this list: ".crm-table tr" (0,1,1) would
@@ -1289,19 +1330,49 @@
       .crm-table, .crm-table tbody, .crm-table td { display: block; width: auto; }
       .crm-table td { padding: 0; border: none; }
 
+      /* A LEAD CARD, NOT A WRAPPED TABLE ROW.
+         This was nine cells in a flex container ordered 1..9 with
+         flex-wrap: wrap, so where each line broke depended on how long the
+         name and the next-best-action happened to be. Every lead wrapped
+         differently and the result read as two ragged lines rather than a
+         record.
+
+         Grid areas instead: the shape is fixed, so every card in the list has
+         the same anatomy no matter how long the content is.
+
+             [x]  Name                       status
+             [x]  ₦budget · source · stars
+             [x]  stage -> next best action
+             [x]  when                        call  more            */
       .crm-table tr.crm-row {
-        display: flex; flex-wrap: wrap; align-items: center; gap: 7px 10px;
-        padding: 13px 14px; border-bottom: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-areas:
+          "chk lead   lead   status"
+          "chk budget source score"
+          "chk stage  stage  stage"
+          "chk time   act    act";
+        align-items: center;
+        column-gap: 10px; row-gap: 7px;
+        padding: 14px 14px 15px;
+        border-bottom: 1px solid var(--border);
       }
-      .crm-row > .c-chk   { order: 1; flex: none; }
-      .crm-row > .c-lead  { order: 2; flex: 1 1 auto; min-width: 0; }
-      .crm-row > .c-act   { order: 3; flex: none; display: flex; gap: 6px; }
-      .crm-row > td:not([class]) { order: 4; }   /* the Source cell */
-      .crm-row > .c-budget{ order: 5; font-weight: 700; }
-      .crm-row > .c-score { order: 6; }
-      .crm-row > .c-status{ order: 7; margin-left: auto; }
-      .crm-row > .c-stage { order: 8; flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }
-      .crm-row > .c-time  { order: 9; flex: 1 1 100%; font-size: 11.5px; color: var(--ink-dim); }
+      .crm-row > .c-chk    { grid-area: chk; align-self: start; padding-top: 2px; }
+      .crm-row > .c-lead   { grid-area: lead; min-width: 0; }
+      .crm-row > .c-status { grid-area: status; justify-self: end; white-space: nowrap; }
+      .crm-row > .c-budget { grid-area: budget; font-weight: 700; }
+      .crm-row > td:not([class]) { grid-area: source; min-width: 0; }   /* Source */
+      .crm-row > .c-score  { grid-area: score; justify-self: end; }
+      .crm-row > .c-stage  { grid-area: stage; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .crm-row > .c-time   { grid-area: time; font-size: 11.5px; color: var(--ink-dim); }
+      .crm-row > .c-act    { grid-area: act; justify-self: end; display: flex; gap: 6px; }
+
+      /* Long names and long next-best-actions truncate rather than reflowing
+         the card -- the grid holds its shape, so something has to give, and it
+         should be the text and not the layout. */
+      .crm-row .nmx { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .crm-row .nbax { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .crm-row .crm-srcchip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .crm-row .nbax { font-size: 11.5px; color: var(--ink-muted); }
       .crm-row .crm-wa, .crm-row .crm-more { min-width: 38px; min-height: 38px;
         display: inline-flex; align-items: center; justify-content: center; }
@@ -1583,6 +1654,7 @@
           <p class="muted" style="font-size:14px;margin-top:4px;max-width:560px">Synapse isn&#39;t software you pay for — it&#39;s the platform that brings you qualified buyers, closes deals faster, and shows you exactly which marketing earns its keep.</p>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
+          <div class="pr-cards" id="pricingCards"></div>
 
           <div class="h2" style="margin-top:40px">Grow as you need</div>
           <p class="sub">Top up a plan without upgrading — one-off or monthly.</p>
@@ -1796,14 +1868,22 @@
                   </div>
                 </div>
 
+                <!-- An <input type="color"> can only ever show a colour: there is
+                     no "not chosen" state, so an untouched field rendered as
+                     #121212 and read as though the agency had deliberately picked
+                     black. It also drops you straight into the OS colour dialog
+                     with nothing to start from. The presets give somewhere to
+                     start; .unset marks a colour that is a default, not a choice. -->
                 <div class="swatch-row">
                   <div class="swatch-card">
-                    <input id="bkColor" type="color" value="#121212">
-                    <div class="sw-info"><span class="sw-name">Primary</span><span class="sw-hex" id="bkColorHex">#121212</span></div>
+                    <input id="bkColor" type="color" value="#121212" aria-label="Primary brand colour">
+                    <div class="sw-info"><span class="sw-name">Primary</span><span class="sw-hex" id="bkColorHex">Not set</span></div>
+                    <div class="sw-presets" data-for="bkColor"></div>
                   </div>
                   <div class="swatch-card">
-                    <input id="bkColor2" type="color" value="#c76a1a">
-                    <div class="sw-info"><span class="sw-name">Secondary</span><span class="sw-hex" id="bkColor2Hex">#c76a1a</span></div>
+                    <input id="bkColor2" type="color" value="#c76a1a" aria-label="Secondary brand colour">
+                    <div class="sw-info"><span class="sw-name">Secondary</span><span class="sw-hex" id="bkColor2Hex">Not set</span></div>
+                    <div class="sw-presets" data-for="bkColor2"></div>
                   </div>
                 </div>
 
@@ -4314,6 +4394,35 @@
       });
       return html;
     }
+    /* The same comparison, as cards.
+       .pr-compare is a 4-column grid with min-width:680px and no mobile rule,
+       so on a 375px phone the plans could only be read by dragging the table
+       sideways -- and a comparison you can only see one column of at a time is
+       not a comparison. The grid is row-major in the DOM (label, cell, cell,
+       cell), so CSS alone cannot transpose it into per-plan blocks; this
+       renders the same data the other way round.
+
+       Both are always in the DOM and CSS picks one, so there is no resize
+       listener to get wrong and no flash on rotate. */
+    function pricingCardsHTML(plans, rows) {
+      return plans.map((p, i) => {
+        const feats = rows.map((r) => {
+          const v = r.vals[i];
+          if (v === false) return '';                       // omit, don't clutter
+          const val = v === true ? '' : `<span class="prc-v">${v}</span>`;
+          return `<li${v === true ? ' class="yes"' : ''}><span class="prc-k">${r.label}</span>${val}</li>`;
+        }).join('');
+        return `<div class="prc-card${p.badge ? ' pop' : ''}">
+          ${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}
+          <div class="prc-name">${p.name}</div>
+          <div class="prc-head">${p.headline}</div>
+          <div class="prc-amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
+          <button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button>
+          <ul class="prc-feats">${feats}</ul>
+        </div>`;
+      }).join('');
+    }
+
     // AddOnCard
     function addonHTML(a) {
       return `<div class="card addon"><div class="aico">${a.ico}</div>
@@ -4338,6 +4447,8 @@
     }
     function renderPricing() {
       document.getElementById('pricingGrid').innerHTML = pricingCompareHTML(PRICING.plans, COMPARE_ROWS);
+      const pc = document.getElementById('pricingCards');
+      if (pc) pc.innerHTML = pricingCardsHTML(PRICING.plans, COMPARE_ROWS);
       wirePricingToasts();
     }
     renderPricing();
@@ -5027,8 +5138,48 @@
         bkVoice: 'brand_voice', bkWhatsapp: 'whatsapp_number', bkCity: 'city',
       };
 
+      /* Somewhere to start. Deliberately not the Synapse palette -- this is the
+         agency's brand, not ours -- and spread across the hue wheel so the row
+         reads as a choice rather than a shade of one idea. */
+      const SWATCHES = ['#1F4E5F', '#2E7D4F', '#7A3E9D', '#B8860B', '#C2552B',
+                        '#1D4ED8', '#B91C4C', '#0F766E', '#334155', '#121212'];
+
+      function buildPresets() {
+        document.querySelectorAll('.sw-presets').forEach((host) => {
+          const target = f(host.dataset.for);
+          if (!target || host.childElementCount) return;
+          host.innerHTML = SWATCHES.map((c) =>
+            `<button type="button" data-c="${c}" title="${c}" style="background:${c}"></button>`).join('');
+          host.addEventListener('click', (e) => {
+            const b = e.target.closest('button[data-c]'); if (!b) return;
+            target.value = b.dataset.c;
+            target.dataset.stored = '1';        // an explicit choice, so it saves
+            preview();
+          });
+        });
+      }
+
+      /* A colour input always reports a value, so "did they choose it?" can only
+         be answered by dataset.stored, which fill() sets from the record and a
+         real interaction sets here. */
+      ['bkColor', 'bkColor2'].forEach((id) => {
+        const el = f(id);
+        if (el) el.addEventListener('input', () => { el.dataset.stored = '1'; preview(); });
+      });
+
       function preview() {
+        buildPresets();
         const c1 = f('bkColor').value || '#121212', c2 = f('bkColor2').value || '#c76a1a';
+        // Reflect chosen-vs-default on the cards and the hex readouts.
+        [['bkColor', 'bkColorHex'], ['bkColor2', 'bkColor2Hex']].forEach(([iid, hid]) => {
+          const inp = f(iid), card = inp && inp.closest('.swatch-card'), hex = f(hid);
+          if (!inp || !card) return;
+          const chosen = inp.dataset.stored === '1';
+          card.classList.toggle('unset', !chosen);
+          if (hex) hex.textContent = chosen ? inp.value.toUpperCase() : 'Not set';
+          card.querySelectorAll('.sw-presets button').forEach((b) =>
+            b.classList.toggle('on', chosen && b.dataset.c.toLowerCase() === inp.value.toLowerCase()));
+        });
         const nm = f('bkName').value.trim() || 'Your agency';
         const tag = f('bkTagline').value.trim() || 'Your tagline appears here';
         const logo = f('bkLogo').value.trim();
@@ -5048,10 +5199,7 @@
         if (lp) lp.innerHTML = logo ? `<img src="${esc2(logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty">No logo yet</span>';
         if (dp) dp.innerHTML = (logoDark || logo) ? `<img src="${esc2(logoDark || logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot; style=&quot;color:rgba(255,255,255,0.4)&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty" style="color:rgba(255,255,255,0.4)">No logo yet</span>';
 
-        // Swatch hex readouts.
-        const ch1 = f('bkColorHex'), ch2 = f('bkColor2Hex');
-        if (ch1) ch1.textContent = c1.toUpperCase();
-        if (ch2) ch2.textContent = c2.toUpperCase();
+        // (hex readouts are handled above, where chosen-vs-default is known)
 
         // Type specimen — the typeface rendered large, at real size, rather
         // than a name typed into a box with no visual feedback.
