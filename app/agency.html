@@ -383,7 +383,13 @@
     /* listings */
     .lsearch { height: 36px; background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 0 15px; font: 400 13px var(--f-sans); color: var(--ink); min-width: 170px; }
     .lsearch::placeholder { color: var(--ink-dim); }
-    .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-top: 2px; }
+    /* Denser grid: the cards were 280px minimum with 168px of photo and 18px
+       gutters, so a 1440px pane fitted four and a 1024px pane three. At 232px
+       with a shallower image and tighter padding the same panes fit six and
+       four, which is the difference between scanning inventory and paging
+       through it. Nothing is removed from the card -- it is the same
+       information at a smaller pitch. */
+    .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px,1fr)); gap: 12px; margin-top: 2px; }
     .lcard { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform .16s, box-shadow .16s, border-color .16s; }
     .lcard:hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.14); border-color: rgba(54,54,54,0.35); }
     /* ── LISTING PHOTOS, OR AN HONEST ABSENCE ──────────────────────────────
@@ -417,7 +423,7 @@
     .lph-sm:not(:has(img))::after, .lph-sm.no-photo::after { content: none; }
 
     .lcard .media { position: relative; }
-    .lcard .media .lph { width: 100%; height: 168px; }
+    .lcard .media .lph { width: 100%; height: 132px; }
     .lcard .vbadge { position: absolute; top: 10px; right: 10px; z-index: 1; font: 700 12px var(--f-sans); padding: 4px 11px; border-radius: 100px; color: #fff; }
     .lcard .vbadge.verified { background: var(--success); }
     .lcard .vbadge.pending { background: #7a5410; }
@@ -426,15 +432,15 @@
     .lcard .fprog.ok i { background: var(--success); }
     .lcard .fprog.warn i { background: #7a5410; }
     .lcard .fprog.dead i { background: var(--danger); }
-    .lcard .bd { padding: 16px 18px 18px; }
+    .lcard .bd { padding: 12px 13px 13px; }
     /* Was 23px against a 14px title. Same honesty fix as .ovi .pr: no serif
        exists behind --f-serif, and tabular figures keep a grid of cards
        aligned rather than each price setting its own width. */
-    .lcard .pr { font-family: var(--f-sans); font-weight: 600; font-size: 19px; font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "lnum" 1, "tnum" 1; color: var(--brand-deep); line-height: 1.1; }
+    .lcard .pr { font-family: var(--f-sans); font-weight: 600; font-size: 17px; font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "lnum" 1, "tnum" 1; color: var(--brand-deep); line-height: 1.1; }
     /* 700 at this size in Josefin closes up the counters and reads muddy; 600
        at a larger size is both louder and cleaner. */
-    .lcard .tt { font: 600 16px/1.3 var(--f-sans); letter-spacing: -0.005em; color: var(--ink); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lcard .ft { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+    .lcard .tt { font: 600 14.5px/1.3 var(--f-sans); letter-spacing: -0.005em; color: var(--ink); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lcard .ft { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; }
     .st-chip { font-size: 12px; font-weight: 700; padding: 3px 11px; border-radius: 100px; border: 1px solid; }
     .st-chip.verified { color: var(--success); background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.25); }
     .st-chip.pending { color: #7a5410; background: var(--warn-tint); border-color: rgba(156,122,30,0.3); }
@@ -783,8 +789,8 @@
     .lcard .fresh.warn { background: rgba(176,125,43,0.94); color: #fff; }
     .lcard .fresh.dead { background: rgba(20,22,26,0.85); color: #fff; }
     .lcard.expired .media img { filter: grayscale(0.7) brightness(0.82); }
-    .lcard .acts { display: flex; gap: 8px; margin-top: 14px; }
-    .lcard .acts button { flex: 1; border: none; border-radius: 100px; padding: 9px; font: 600 12.5px var(--f-sans); cursor: pointer; }
+    .lcard .acts { display: flex; gap: 7px; margin-top: 11px; }
+    .lcard .acts button { flex: 1; border: none; border-radius: 100px; padding: 8px; font: 600 12px var(--f-sans); cursor: pointer; }
     .lcard .acts .edit { background: rgba(0,0,0,0.05); color: var(--ink); }
     .lcard .acts .edit:hover { background: rgba(0,0,0,0.09); }
     .lcard .acts .relist { background: rgba(54,54,54,0.1); color: var(--brand-text); border: 1px solid rgba(54,54,54,0.3); }
@@ -1384,37 +1390,29 @@
          actually need you (Awaiting approval, Underperforming) start open
          while the four "nothing to do here yet" stages start collapsed —
          see ACTION_STAGES in renderPipeline(). */
-      .pipeline { flex-direction: column; overflow: visible; gap: 10px; }
-      .pipeline > .col { min-width: 0; flex: none; }
-      .col > .ch { width: 100%; cursor: pointer; }
-      .col-chv { display: inline-block; font-size: 13px; color: var(--ink-dim);
-        transition: transform .2s ease; flex: none; margin-left: 8px; align-self: center; }
-      .col:not(.open) .col-chv { transform: rotate(0deg); }
-      .col.open .col-chv { transform: rotate(90deg); }
-      .col-body { display: none; padding-top: 8px; }
-      .col.open .col-body { display: block; }
-      @media (prefers-reduced-motion: reduce) { .col-chv { transition: none; } }
+      /* Reverted to the swipe strip at the user's request: the accordion that
+         replaced it was not liked. Narrower columns so the next stage peeks,
+         and snap so a swipe lands on a stage rather than between two.
 
-      /* ── CALENDAR → AGENDA LIST, NOT A WEEK GRID ──────────────────────
-         Seven columns at 46vw is 322vw; no amount of narrowing fits seven
-         day-columns beside each other on a phone. Google Calendar's mobile
-         Schedule view is the reference here: a single vertical list, a date
-         header per day, and days with nothing on them omitted so a quiet
-         week reads as a short list instead of seven empty boxes. Today stays
-         pinned even when empty, so the pane always says something.
-         Still `display: grid`, not `flex` — the view switcher below sets
-         #calendar's display inline (style.display = 'grid'/'none') to show
-         and hide the pane, and an inline style always beats a stylesheet, so
-         fighting it with `display: flex` here would silently lose. One grid
-         column stacks exactly like a flex column would. */
-      .s-cal { grid-template-columns: 1fr; gap: 12px; overflow: visible; }
-      .s-cal .cday { min-height: 0; }
-      .s-cal .cday.empty:not(.today) { display: none; }
-      .s-cal .cev { display: flex; align-items: center; gap: 8px; }
-      .s-cal .cem { display: contents; }
-      .s-cal .cev .cav { order: 1; }
-      .s-cal .cet { order: 2; flex: 1; min-width: 0; margin: 0; }
-      .s-cal .cev .cew { order: 3; flex: none; }
+         This does scroll sideways, deliberately. That was the point of the
+         accordion, and it is being traded back for a shape the user prefers --
+         a kanban reads as a kanban. The chevron and .col-body markup stay in
+         place but do nothing here, so the accordion can be restored without
+         touching the renderer again. */
+      .pipeline { gap: 10px; scroll-snap-type: x mandatory;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .pipeline::-webkit-scrollbar { display: none; }
+      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; }
+      .col-chv { display: none; }
+      .col-body { display: block; }
+
+      /* Reverted to the seven-day grid at the user's request. Seven columns at
+         46vw is 322vw, so this scrolls sideways -- which is what the agenda
+         list was built to remove, and what is being traded back for the shape
+         the user wants. A week that looks like a week. */
+      .s-cal { grid-template-columns: repeat(7, 46vw); overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none; }
+      .s-cal::-webkit-scrollbar { display: none; }
 
       /* ══ Listings ══════════════════════════════════════════════════════
          The grid already collapses to one card per row. What doesn't work is
