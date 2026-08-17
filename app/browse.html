@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="motion.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    /* Not a catalogue — only the homes Toju picked for this brief.
+    /* Not a catalogue — only the homes Tayo picked for this brief.
        Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
     body { background: var(--bg); }
     .bg-scene { position: fixed; inset: 0; z-index: 0;
@@ -253,7 +253,7 @@
 
       /* ── cross-page nav ────────────────────────────────────────────────
          Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
+         pages with it, so Tayo, Your matches and Dream Home became mutually
          unreachable on a phone. Rather than hand-writing a second copy of
          those links (which would drift), the appbar stays in the layout with
          everything except its <nav> stripped out, and the nav becomes a
@@ -301,7 +301,7 @@
       /* The summary card and the List/Map segment are both gone: between
          them they pushed the first home most of a screen down, so a page
          whose whole job is showing homes opened on no homes. Everything
-         they carried — the live/verified counts, the route to Toju, the
+         they carried — the live/verified counts, the route to Tayo, the
          route to the map — moves into one line below the search. */
       .brief, .viewseg { display: none; }
 
@@ -404,7 +404,7 @@
       Synapse
     </a>
     <nav>
-      <a href="toju.html">Toju</a>
+      <a href="toju.html">Tayo</a>
       <a href="browse.html" class="active">Your matches</a>
       <a href="dream.html">Dream Home</a>
     </nav>
@@ -419,7 +419,7 @@
        Replaces the site nav on a phone. The saved count mirrors the desktop
        one rather than owning its own state — see the sync below. -->
   <header class="bm-bar">
-    <a class="bm-back" href="toju.html" aria-label="Back to Toju">←</a>
+    <a class="bm-back" href="toju.html" aria-label="Back to Tayo">←</a>
     <div class="bm-ttl" id="bmTitle">Your matches</div>
     <a class="bm-saved" id="bmSaved" href="#" hidden title="Your saved homes">
       <span aria-hidden="true">♥</span><b id="bmSavedN">0</b>
@@ -432,8 +432,8 @@
 
     <div class="card brief">
       <div class="orb">✦</div>
-      <div class="txt" id="briefTxt">Every verified home on Synapse, across Nigeria. Chat with Toju and this page becomes <b>your matches</b> — refined to your life, not filters.</div>
-      <a class="refine" href="toju.html">Talk to Toju →</a>
+      <div class="txt" id="briefTxt">Every verified home on Synapse, across Nigeria. Chat with Tayo and this page becomes <b>your matches</b> — refined to your life, not filters.</div>
+      <a class="refine" href="toju.html">Talk to Tayo →</a>
     </div>
 
     <div class="searchbar">
@@ -450,7 +450,7 @@
     <div class="bm-meta">
       <span class="bm-count" id="bmCount">Loading homes…</span>
       <button class="bm-chip" id="bmMap" type="button" aria-pressed="false"><span data-icon="pin"></span> Map</button>
-      <a class="bm-chip bm-chip-toju" href="toju.html">✦ Toju</a>
+      <a class="bm-chip bm-chip-toju" href="toju.html">✦ Tayo</a>
     </div>
 
     <div id="map"></div>
@@ -510,7 +510,7 @@
     <div class="card cmpsheet">
       <button class="cmpclose" id="cmpClose">✕</button>
       <h3>Side by side</h3>
-      <p class="sub">Toju's read: green = strongest of the set, terracotta = watch it.</p>
+      <p class="sub">Tayo's read: green = strongest of the set, terracotta = watch it.</p>
       <div id="cmpTable"></div>
     </div>
   </div>
@@ -521,7 +521,7 @@
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
     const VISITOR = localStorage.getItem('toju_visitor_v1');
-    // card markup, shaper, map and helpers shared with the Toju canvas —
+    // card markup, shaper, map and helpers shared with the Tayo canvas —
     // matches-shared.js + docs/STATE_CONTRACT.md
     const { naira, esc } = window.SynMatches;
 
@@ -678,7 +678,7 @@
       box.hidden = false;
 
       // While the request is in flight the grid shows skeletons instead (render()
-      // returns early) — unless a real Toju session already answered with an
+      // returns early) — unless a real Tayo session already answered with an
       // empty match list, in which case the honest "nothing fit" copy below is
       // the truth and must not be replaced by shimmer.
       if (loadState === 'loading' && !hasSessionView) {
@@ -698,7 +698,7 @@
               : 'You’re offline, so nothing could be found. Reconnect and try again.') + '</p>'
           + '<div class="empty-acts">'
           + '<button class="btn btn-primary" type="button" id="retryLoad">Try again</button>'
-          + '<a class="btn btn-ghost" href="toju.html">Ask Toju instead</a></div>';
+          + '<a class="btn btn-ghost" href="toju.html">Ask Tayo instead</a></div>';
         const r = document.getElementById('retryLoad');
         if (r) r.addEventListener('click', () => location.reload());
         return;
@@ -709,7 +709,7 @@
         + '<div class="empty-acts">'
         + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Widen my budget a little and show me what opens up') + '">Widen the budget</a>'
         + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Show me good homes in nearby areas too') + '">Try a nearby area</a>'
-        + '<a class="btn btn-primary" href="toju.html?ask=' + encodeURIComponent('Help me find homes similar to what I asked for') + '">Ask Toju to help</a></div>';
+        + '<a class="btn btn-primary" href="toju.html?ask=' + encodeURIComponent('Help me find homes similar to what I asked for') + '">Ask Tayo to help</a></div>';
     }
 
     const mapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
@@ -939,14 +939,14 @@
       });
       html += '</table>';
       html += '<div style="margin-top:16px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">'
-        + '<button id="verdictBtn" class="btn btn-primary" style="padding:10px 18px;font-size:13px">✦ Ask Toju: which is better for me?</button>'
+        + '<button id="verdictBtn" class="btn btn-primary" style="padding:10px 18px;font-size:13px">✦ Ask Tayo: which is better for me?</button>'
         + '<div id="verdictBox" style="flex:1;min-width:240px;font-size:13.5px;line-height:1.6;color:var(--ink-muted)"></div></div>';
       document.getElementById('cmpTable').innerHTML = html;
       document.getElementById('cmpwrap').classList.add('on');
 
       document.getElementById('verdictBtn').addEventListener('click', async () => {
         const box = document.getElementById('verdictBox');
-        box.innerHTML = '<i>Toju is weighing them against your brief…</i>';
+        box.innerHTML = '<i>Tayo is weighing them against your brief…</i>';
         try {
           const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
             method: 'POST',
@@ -957,7 +957,7 @@
             }),
           });
           const d = await r.json();
-          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">✦ Toju:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Toju — try again.';
+          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">✦ Tayo:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Tayo — try again.';
         } catch (e) { box.textContent = 'Connection hiccup — try again.'; }
       });
     });
@@ -977,11 +977,11 @@
       document.getElementById('pageTitle').textContent = 'Your matches';
       const bt = document.getElementById('bmTitle');
       if (bt) bt.textContent = 'Your matches';
-      document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
+      document.querySelector('.brief .refine').textContent = 'Refine with Tayo →';
     }
 
     // ── default: EVERY live home in the dataset (browse-all) ──
-    // Verified AND unverified show, each clearly labelled; Toju only recommends
+    // Verified AND unverified show, each clearly labelled; Tayo only recommends
     // verified. Refines into "Your matches" after a real conversation.
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
@@ -1027,11 +1027,11 @@
         flood: p.neighbourhoods ? p.neighbourhoods.flood_risk : null,
         power: p.neighbourhoods ? p.neighbourhoods.power_reliability : null,
         why: p.verification_status === 'verified'
-          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Toju if it fits your life'
-          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · <b style="color:#a8742b">listed but not yet verified</b> — Toju can run the 7 checks before you commit',
+          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Tayo if it fits your life'
+          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · <b style="color:#a8742b">listed but not yet verified</b> — Tayo can run the 7 checks before you commit',
       }));
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
-      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
+      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Tayo and this becomes <b>your matches</b>.';
       // the mobile row says the same thing in the space of one line
       setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
       render();
@@ -1043,7 +1043,7 @@
     });
     window.addEventListener('online', () => { if (loadState === 'failed') location.reload(); });
 
-    // ── real matches from this visitor's Toju session ──
+    // ── real matches from this visitor's Tayo session ──
     if (VISITOR) {
       fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
         method: 'POST',
@@ -1057,7 +1057,7 @@
           items = []; picked = new Set();
           setMatchedHeadings();
           if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
-            '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Toju for similar homes.';
+            '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Tayo for similar homes.';
           setMobileCount('Nothing fits your brief yet');
           document.getElementById('map').style.display = 'none';
           render();
@@ -1066,12 +1066,12 @@
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
         hasSessionView = true;
         setMatchedHeadings();
-        // SAME shaper the Toju canvas uses — the canvas is an exact preview of this page
+        // SAME shaper the Tayo canvas uses — the canvas is an exact preview of this page
         items = d.matches.map(SynMatches.shapeTojuMatch);
         picked = new Set();
         if (d.criteria && d.criteria.brief) {
           document.querySelector('.brief .txt').innerHTML =
-            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
+            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Tayo found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
         }
         setMobileCount('<b>' + items.length + '</b> match your brief');
         render();

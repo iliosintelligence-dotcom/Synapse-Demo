@@ -14,7 +14,7 @@
     /* Dream Boards — Pinterest for the home you're dreaming of. Create as many
        boards as you like (pods/folders), pin images into each, keep a watchlist
        of saved homes. The ACTIVE board is mirrored to synapse_moodboard_v1 so
-       Toju keeps reading your vibe. All local (synapse_dream_boards_v1). */
+       Tayo keeps reading your vibe. All local (synapse_dream_boards_v1). */
     body { background: var(--bg); }
     .board-wrap { max-width: none; margin: 0 auto; padding: 26px 34px 90px; }
     .db-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -149,7 +149,7 @@
 
       /* ── cross-page nav ────────────────────────────────────────────────
          Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
+         pages with it, so Tayo, Your matches and Dream Home became mutually
          unreachable on a phone. Rather than hand-writing a second copy of
          those links (which would drift), the appbar stays in the layout with
          everything except its <nav> stripped out, and the nav becomes a
@@ -228,7 +228,7 @@
       .add-row .btn { flex: none; min-height: 44px; }
       .palette { grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
-      /* the Toju handoff is the point of the board — full-width, not squeezed */
+      /* the Tayo handoff is the point of the board — full-width, not squeezed */
       .toju-cta { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 15px; }
       .toju-cta .t { font-size: 13.5px; }
       .toju-cta .btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; }
@@ -243,7 +243,7 @@
       Synapse
     </a>
     <nav>
-      <a href="toju.html">Toju</a>
+      <a href="toju.html">Tayo</a>
       <a href="browse.html">Your matches</a>
       <a href="dream.html" class="active">Dream Home</a>
     </nav>
@@ -268,7 +268,7 @@
         <div class="db-h1">Dream boards</div>
         <button class="btn btn-primary" id="newBoardBtn" style="padding:11px 18px;font-size:13.5px">+ New board</button>
       </div>
-      <p class="muted" style="font-size:14px;margin-top:6px">Make a board for every idea — a whole home, a kitchen, a corridor you love. Pin what you like. Toju reads each board and finds real verified homes that feel like it.</p>
+      <p class="muted" style="font-size:14px;margin-top:6px">Make a board for every idea — a whole home, a kitchen, a corridor you love. Pin what you like. Tayo reads each board and finds real verified homes that feel like it.</p>
       <div class="boards-grid" id="boardsGrid"></div>
     </section>
 
@@ -292,7 +292,7 @@
 
       <div class="vibe" id="vibe"></div>
 
-      <!-- what the board actually says — the signals Toju reads, no scores -->
+      <!-- what the board actually says — the signals Tayo reads, no scores -->
       <section class="signals hidden" id="signals" aria-label="What this board says so far">
         <div class="sig-h">What this board says so far</div>
         <div class="sig-rows" id="sigRows"></div>
@@ -318,7 +318,7 @@
 
       <div class="card toju-cta">
         <span data-lottie="orb-pulse" data-speed="0.8" style="width:44px;height:44px;display:inline-block"></span>
-        <div class="t"><b>Turn this board into homes.</b> Toju reads the styles, the light and the space you pinned and lines up verified listings that match the feeling.</div>
+        <div class="t"><b>Turn this board into homes.</b> Tayo reads the styles, the light and the space you pinned and lines up verified listings that match the feeling.</div>
         <a class="btn btn-primary" id="tojuBtn" href="toju.html" style="white-space:nowrap">Find my matches →</a>
       </div>
     </section>
@@ -326,7 +326,7 @@
 
   <script>
     const BKEY = 'synapse_dream_boards_v1';   // all boards
-    const MIRROR = 'synapse_moodboard_v1';    // active board — what Toju reads
+    const MIRROR = 'synapse_moodboard_v1';    // active board — what Tayo reads
     const SAVES = 'synapse_saved';            // ♥'d homes → watchlist count
 
     const PALETTE = [
@@ -355,7 +355,7 @@
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     const uid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-    // ── curation categories (a pin is tagged so Toju reads it as the right signal) ──
+    // ── curation categories (a pin is tagged so Tayo reads it as the right signal) ──
     const CATS = [
       { id: 'housing',   lbl: 'Housing',   dot: '#121212' },
       { id: 'area',      lbl: 'Areas',     dot: '#3f9c6d' },
@@ -374,7 +374,7 @@
     }
     // the three board modes — one board, a mode switch that reframes it
     const MODES = [
-      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Toju matches you to.' },
+      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Tayo matches you to.' },
       { id: 'mood',   lbl: 'Mood',   hint: 'The feeling — palettes, textures and interior vibe.' },
       { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
     ];
@@ -382,7 +382,7 @@
     // ── starter board — INSPIRATION CONTENT, never listings ──────────────────
     // Guardrail: nothing here may look like inventory. No prices, no addresses,
     // no verification chips, no agency names — just interiors and light to
-    // react to. A starter board never mirrors to Toju (that would be a signal
+    // react to. A starter board never mirrors to Tayo (that would be a signal
     // the visitor didn't send); it only becomes theirs via "Keep this board".
     const STARTER_PINS = [
       { u: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=500&q=70', c: 'Warm wood, stone counters', cat: 'decor' },
@@ -419,14 +419,14 @@
     const activeBoard = () => state.boards.find((b) => b.id === state.activeId) || null;
     let boardCat = 'all'; // active category filter inside a board
 
-    // mirror the active board into the shape Toju reads — now split by category
-    // so Toju treats Area pins as a location signal, Housing as a type signal,
+    // mirror the active board into the shape Tayo reads — now split by category
+    // so Tayo treats Area pins as a location signal, Housing as a type signal,
     // and Décor/Palette as aesthetic. Keeps name/vibe/images for backward-compat.
     function mirror() {
       const b = activeBoard();
       if (!b) return;
       // A starter board is inspiration we authored, not the visitor's taste.
-      // It must never reach Toju as a signal — leave the mirror untouched
+      // It must never reach Tayo as a signal — leave the mirror untouched
       // (it still holds the last board the visitor actually curated).
       if (b.starter) return;
       const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
@@ -525,7 +525,7 @@
         Remove what doesn't resonate, pin what does — then make it yours.</div>
         <button class="keep" id="keepBtn">Keep this board</button>`;
       document.getElementById('keepBtn').addEventListener('click', () => {
-        delete b.starter; saveState(); mirror(); // now it's theirs — Toju may read it
+        delete b.starter; saveState(); mirror(); // now it's theirs — Tayo may read it
         renderStarterNote(); renderSignals(); updateToju();
       });
     }
@@ -579,7 +579,7 @@
         } else if (n[weak.id] < 3) {
           read.innerHTML = `Every signal has something. The thinnest is <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
         } else {
-          read.innerHTML = 'Style, areas, housing and lifestyle all come through clearly. This board is ready for Toju.';
+          read.innerHTML = 'Style, areas, housing and lifestyle all come through clearly. This board is ready for Tayo.';
         }
       }
       prevSig = n;
@@ -634,7 +634,7 @@
       if (!confirm('Delete this board? Its pins will be removed.')) return;
       state.boards = state.boards.filter((b) => b.id !== state.activeId);
       if (state.boards.length === 0) state.boards.push({ id: uid(), name: 'My dream home', vibe: [], images: [] });
-      // the deleted board must stop informing Toju — clear the mirror until
+      // the deleted board must stop informing Tayo — clear the mirror until
       // the visitor opens another board (which re-mirrors it)
       try { localStorage.removeItem(MIRROR); } catch (e) {}
       saveState(); toHome();
@@ -648,7 +648,7 @@
     function renderBoard() {
       const b = activeBoard();
       if (!b.images.length) {
-        boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape — Toju does the rest.</p></div></div>';
+        boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape — Tayo does the rest.</p></div></div>';
         return;
       }
       // keep original indices so remove/lookup stays correct under a filter
@@ -766,7 +766,7 @@
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
 
     // boot — a share lands first, then deep link ?board=<id>, else boards home.
-    // Re-mirror the last-active board so synapse_moodboard_v1 (what Toju
+    // Re-mirror the last-active board so synapse_moodboard_v1 (what Tayo
     // reads) is always in step with the boards store, even after edits made
     // in another tab or an interrupted session.
     saveState();

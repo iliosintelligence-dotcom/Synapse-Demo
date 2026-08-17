@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Toju — Synapse</title>
+  <title>Tayo — Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
     .user .bubble { background: #363636; color: #fff;
       border: 1px solid rgba(255,255,255,0.12); border-bottom-right-radius: 6px;
       box-shadow: 0 10px 26px rgba(20,20,20,0.22); }
-    /* markdown inside a Toju bubble renders as real HTML, not raw text */
+    /* markdown inside a Tayo bubble renders as real HTML, not raw text */
     .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
     .bubble ul, .bubble ol { margin: 6px 0 8px; padding-left: 20px; } .bubble li { margin: 3px 0; }
     .bubble strong { font-weight: 700; } .bubble em { font-style: italic; }
@@ -84,7 +84,7 @@
     .pcard .watch b { color: #1C1C1E; font-weight: 700; }
     .pcard .trust { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; color: var(--brand); }
 
-    /* error notice — deliberately NOT a chat bubble: Toju didn't say this */
+    /* error notice — deliberately NOT a chat bubble: Tayo didn't say this */
     .tj-error { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 2px;
       padding: 14px 16px; border-radius: 16px;
       background: rgba(122,39,26,0.05); border: 1px solid rgba(122,39,26,0.18); }
@@ -99,7 +99,7 @@
     .tj-error .er:hover { opacity: .88; transform: translateY(-1px); }
     .tj-error .er:active { transform: none; }
 
-    /* "Toju remembers your search" — quiet, dismissible, only on return */
+    /* "Tayo remembers your search" — quiet, dismissible, only on return */
     .tj-memory { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       margin: 6px 0 2px; padding: 9px 13px; border-radius: 12px;
       background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.8);
@@ -145,8 +145,8 @@
     .tj-app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100dvh; }
     .tj-app .appbar { flex: none; }
     .tj-layout { flex: 1; display: flex; min-height: 0; }
-    /* The chat opens centered, exactly like the original Toju page. The moment
-       Toju surfaces matches, the page morphs into the Gemini-canvas split —
+    /* The chat opens centered, exactly like the original Tayo page. The moment
+       Tayo surfaces matches, the page morphs into the Gemini-canvas split —
        chat 25% left, matches canvas 75% right. */
     .tj-chat { position: relative; display: flex; flex-direction: column; min-height: 0; width: 100%; max-width: 780px; margin: 0 auto; transition: max-width .35s cubic-bezier(.22,1,.36,1); }
     body.has-canvas .tj-chat { width: 25%; min-width: 280px; max-width: none; margin: 0; border-right: 1px solid rgba(255,255,255,0.55); }
@@ -186,7 +186,7 @@
     .tj-chat .chatbox, .tj-chat .tj-hint { max-width: none; }
 
     /* right matches canvas — a live preview of the Your-matches page.
-       Hidden until Toju has something to show. */
+       Hidden until Tayo has something to show. */
     .tj-canvas { flex: 1; display: none; flex-direction: column; min-height: 0; }
     body.has-canvas .tj-canvas { display: flex; animation: cvIn .4s cubic-bezier(.22,1,.36,1); }
     @keyframes cvIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
@@ -269,7 +269,7 @@
 
       /* ── cross-page nav ────────────────────────────────────────────────
          Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
+         pages with it, so Tayo, Your matches and Dream Home became mutually
          unreachable on a phone. Rather than hand-writing a second copy of
          those links (which would drift), the appbar stays in the layout with
          everything except its <nav> stripped out, and the nav becomes a
@@ -387,14 +387,14 @@
     <header class="tjm-bar">
       <a class="tjm-back" href="../index.html" aria-label="Back to Synapse">←</a>
       <div class="tjm-id">
-        <span class="tjm-name">Toju</span>
+        <span class="tjm-name">Tayo</span>
         <span class="tjm-status"><i></i> Every home shows its status</span>
       </div>
       <button class="tjm-act" id="tjmHist" type="button" aria-label="Past conversations"><span data-icon="history"></span></button>
       <button class="tjm-act" id="tjmNew" type="button" aria-label="New chat">↺</button>
     </header>
 
-    <!-- appears only once Toju has matches; the canvas is desktop-only -->
+    <!-- appears only once Tayo has matches; the canvas is desktop-only -->
     <a class="tjm-matches" id="tjmMatches" href="browse.html">
       <span><b id="tjmCount">0</b> matches ready</span>
       <span class="tjm-go">See all →</span>
@@ -406,7 +406,7 @@
         Synapse
       </a>
       <nav>
-        <a href="toju.html" class="active">Toju</a>
+        <a href="toju.html" class="active">Tayo</a>
         <a href="browse.html">Your matches</a>
         <a href="dream.html">Dream Home</a>
       </nav>
@@ -422,11 +422,11 @@
       <section class="tj-chat">
         <div class="tj-head">
           <div class="tj-eyebrow">Your property advisor</div>
-          <div class="tj-title">Toju <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
+          <div class="tj-title">Tayo <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
           <div class="tj-trust">Every home shows its verification status. No need to sign up.</div>
         </div>
         <!-- past conversations — every chat is kept; open one to pick it back up
-             with the homes Toju recommended still on its cards -->
+             with the homes Tayo recommended still on its cards -->
         <div class="tj-hist" id="tjHistPanel" hidden>
           <div class="tj-hist-head">
             <span><span data-icon="history"></span> Past conversations</span>
@@ -439,7 +439,7 @@
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
             <div class="pillrow">
-              <input id="tjInput" placeholder="Tell Toju what you're looking for…" autocomplete="off" />
+              <input id="tjInput" placeholder="Tell Tayo what you're looking for…" autocomplete="off" />
               <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
               </button>
@@ -456,7 +456,7 @@
 
       <!-- RIGHT: the matches canvas — a live preview of the Your-matches page.
            No toolbar: whatever the user wants (cheaper, bigger, another area),
-           they just tell Toju. Expand opens the full page. -->
+           they just tell Tayo. Expand opens the full page. -->
       <aside class="tj-canvas">
         <div class="cv-head">
           <span class="cv-t">Your matches</span>
@@ -508,7 +508,7 @@
 
     /* ── right-side MATCHES CANVAS — a live preview of the Your-matches page.
        Cards, map and layout mirror browse.html EXACTLY (keep in sync with that
-       page). No toolbar: whatever the user wants changed, they tell Toju. The
+       page). No toolbar: whatever the user wants changed, they tell Tayo. The
        page opens as a centered chat and morphs to 25/75 when matches land. ── */
     const cvGrid = document.getElementById('cvGrid');
     const cvCount = document.getElementById('cvCount');
@@ -522,7 +522,7 @@
 
     // browse.html parity: shaper, card markup and map all come from
     // matches-shared.js — the canvas renders the SAME card browse.html does
-    // (compare checkboxes are a browse-only tool; here you just tell Toju).
+    // (compare checkboxes are a browse-only tool; here you just tell Tayo).
     let cvSaves = SynMatches.readSaves();
     SynMatches.onSavesChanged(function (s) { cvSaves = s; renderCanvas(); });
     const cvMapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
@@ -572,7 +572,7 @@
           + '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>'
           + '<div><div class="price">' + naira(m.price) + (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '') + '</div>'
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
-          // Verification state sits on every card. Toju shows checked and
+          // Verification state sits on every card. Tayo shows checked and
           // unchecked homes alike, so the label is what keeps that honest.
           + '<div class="vrow">' + SynMatches.verifyChip(m.verificationStatus || (m.verified ? 'verified' : 'unverified')) + '</div>'
           + '<div class="meta"><span class="trust" title="Property Confidence — how much of our verification this home has passed">✦ Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
@@ -605,7 +605,7 @@
     function tojuMsg(text, matches) {
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -616,11 +616,11 @@
     }
     /* Staged waiting narration. A two-pass grounded answer takes real seconds,
        and an undifferentiated "thinking…" makes every one of them feel like a
-       hang. These say what is actually happening, in Toju's voice, at the two
+       hang. These say what is actually happening, in Tayo's voice, at the two
        moments a person starts to doubt the page.
 
        The wording is the doctrine's, not invented here, and it is deliberately
-       non-specific about counts — Toju never claims to be "checking 214
+       non-specific about counts — Tayo never claims to be "checking 214
        listings" unless it is. Cleared by remove(), so a fast reply never shows
        a stage at all. */
     const TYPING_STAGES = [
@@ -631,7 +631,7 @@
     function typing() {
       const el = document.createElement('div');
       el.className = 'msg toju typing m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div>'
+      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Tayo</div>'
         + '<div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span>'
         + '<span class="tj-stage" style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el);
@@ -654,8 +654,8 @@
       scrollDown(); return el;
     }
 
-    // ── Dream Home board → Toju's knowledge ──
-    // Toju reads the visitor's mood board (title, vibe chips, pinned image
+    // ── Dream Home board → Tayo's knowledge ──
+    // Tayo reads the visitor's mood board (title, vibe chips, pinned image
     // captions) and folds it into every conversation as silent context. The
     // message is sent to the model but never rendered in the chat.
     const DREAM_CTX_PREFIX = '[Background from my Dream Home mood board';
@@ -768,8 +768,8 @@
     }
 
     /* ── error states ──────────────────────────────────────────────────────
-       An error is NOT a Toju message: it never enters the saved thread and
-       never speaks in Toju's voice (he didn't say it — the connection failed).
+       An error is NOT a Tayo message: it never enters the saved thread and
+       never speaks in Tayo's voice (he didn't say it — the connection failed).
        It's a system notice that names the real cause, says what happens to the
        user's question, and offers the one action that fixes it. */
     const ERRORS = {
@@ -825,7 +825,7 @@
       ask();
     }
 
-    // suggestions are DYNAMIC — Toju sends tap-to-answer options for the
+    // suggestions are DYNAMIC — Tayo sends tap-to-answer options for the
     // question it just asked ("Married with kids", "Just me", …)
     const suggestEl = document.getElementById('tjSuggest');
     const DEFAULT_SUGGEST = suggestEl.innerHTML;
@@ -854,7 +854,7 @@
       hintEl.textContent = msg; hintEl.hidden = false;
       clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 5000);
     }
-    function stopMicUI() { listening = false; micBtn.classList.remove('listening'); input.placeholder = "Tell Toju what you're looking for…"; }
+    function stopMicUI() { listening = false; micBtn.classList.remove('listening'); input.placeholder = "Tell Tayo what you're looking for…"; }
     function startMic() {
       recog = new SR();
       // en-NG is rejected by many Chrome builds ("language-not-supported"); en-US
@@ -929,12 +929,12 @@
        Never hardcode a number here: a stale count is a trust bug. The count
        arrives with the restore response and the greeting is rewritten in place.
 
-       It deliberately does not promise everything is verified — Toju shows both
+       It deliberately does not promise everything is verified — Tayo shows both
        and says which is which. The old copy ("verified homes that fit", with a
        hardcoded "Good afternoon" that was wrong most of the day) promised the
-       opposite of what Toju now does. */
+       opposite of what Tayo now does. */
     const GREETING_TEMPLATE =
-      "I'm Toju — your consultant at Synapse. I work from {{LISTING_COUNT}}the homes agencies have listed with us: "
+      "I'm Tayo — your consultant at Synapse. I work from {{LISTING_COUNT}}the homes agencies have listed with us: "
       + "I can narrow them to what genuinely fits you, tell you what an area is really like to live in, and connect you to the agency when you're ready.\n\n"
       + "Some of those homes have passed our seven checks and some haven't yet — I'll tell you which is which every time, and you decide what you're comfortable with. "
       + "I can't look outside Synapse, and I won't pass your details to anyone until you choose to. So, tell me what's prompting the move.";
@@ -968,19 +968,19 @@
 
       // Live inventory count → the greeting's placeholder. Only rewrites the
       // greeting while it is still the ONLY thing said; once a conversation has
-      // started, editing Toju's first line under the user would be dishonest.
+      // started, editing Tayo's first line under the user would be dishonest.
       if (Number.isFinite(d.listingCount) && saved.length === 1 && saved[0].role === 'assistant') {
         saved[0].content = greetingWith(d.listingCount);
         persist(); render();
       }
 
-      // Item 3 — make the memory visible. Toju already remembered; nothing said
+      // Item 3 — make the memory visible. Tayo already remembered; nothing said
       // so, which is the whole point of the feature: the reason to come back
       // here instead of scrolling Instagram again is that it kept your thread.
       showMemoryNote(d.criteria, msgs);
     }).catch(() => {});
 
-    /* A quiet line above the conversation on return, stating what Toju actually
+    /* A quiet line above the conversation on return, stating what Tayo actually
        still holds. Rendered ONLY from real restored state — the brief the user
        themselves gave — never a generic "welcome back". If there is no brief and
        no prior exchange, nothing appears. */
@@ -993,7 +993,7 @@
       const el = document.createElement('div');
       el.id = 'tjMemory';
       el.className = 'tj-memory';
-      el.innerHTML = '<span class="tj-mem-k">Toju remembers your search</span>'
+      el.innerHTML = '<span class="tj-mem-k">Tayo remembers your search</span>'
         + (brief ? '<span class="tj-mem-b">' + esc(brief) + '</span>' : '')
         + '<button type="button" class="tj-mem-x" aria-label="Dismiss">×</button>';
       convo.parentNode.insertBefore(el, convo);
@@ -1018,7 +1018,7 @@
 
     /* ── chat history: every conversation is kept, with the homes it surfaced.
        A session archives on "New chat" (or when you open an older one) and can
-       be picked back up: its visitorId comes back too, so Toju's server-side
+       be picked back up: its visitorId comes back too, so Tayo's server-side
        memory continues where that conversation left off. ── */
     const SESS = 'toju_sessions_v1';
     const loadSessions = () => { try { return JSON.parse(localStorage.getItem(SESS)) || []; } catch (e) { return []; } };
@@ -1048,7 +1048,7 @@
     function renderHist() {
       const sessions = loadSessions();
       if (!sessions.length) {
-        histList.innerHTML = '<div class="hist-empty">No past conversations yet.<br>When you start a new chat, the old one is saved here — with every home Toju recommended.</div>';
+        histList.innerHTML = '<div class="hist-empty">No past conversations yet.<br>When you start a new chat, the old one is saved here — with every home Tayo recommended.</div>';
         return;
       }
       histList.innerHTML = sessions.map((s) => {
