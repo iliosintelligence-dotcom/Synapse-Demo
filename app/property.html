@@ -1079,159 +1079,6 @@
       }
     });
 
-    /* -- 10 - Commute intelligence -----------------------------------------
-       WAS: a hardcoded array of Lagos destinations -- Lagos Island, Victoria
-       Island, "Lekki Phase 1 gate 6 min", MMIA -- with invented minutes, shown
-       identically on every listing. Every property in this database is in
-       Ibadan, roughly 130km from Lekki, so the panel confidently told buyers a
-       two-hour drive was a six-minute one, and told them the same thing
-       whatever they were looking at.
-
-       NOW: destinations are real places found near THIS property via
-       OpenStreetMap, and the times are real driving durations from OSRM. Both
-       are free and need no API key. If either is unavailable we say so and
-       show distance alone -- a straight-line distance is a fact, an unrouted
-       "minutes" figure would just be the old bug in a new coat. */
-    var CMT_DESTS = null;          // [{name, type, c:[lat,lng], dm, sec|null}]
-    var cmtState = 'idle';         // idle | loading | ready | failed
-    var cmtFetchedFor = null;
-    var customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
-
-    function fmtMin(m) {
-      if (m == null) return null;
-      return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : Math.round(m) + ' min';
-    }
-
-    /* The places people actually commute to, at city scale. Deliberately not
-       the corner-shop set already shown under "Nearby": a hospital you might
-       drive to is a different question from a cafe you can walk to. */
-    var CMT_QUERY_TPL = '[out:json][timeout:20];('
-      + 'node["amenity"="university"](around:14000,{lat},{lng});'
-      + 'node["amenity"="hospital"](around:12000,{lat},{lng});'
-      + 'node["amenity"="marketplace"](around:12000,{lat},{lng});'
-      + 'node["shop"="mall"](around:14000,{lat},{lng});'
-      + 'node["amenity"="bus_station"](around:14000,{lat},{lng});'
-      + 'node["aeroway"="aerodrome"](around:40000,{lat},{lng});'
-      + ');out body 60;';
-
-    function cmtType(tags) {
-      if (tags.amenity === 'university') return 'University';
-      if (tags.amenity === 'hospital') return 'Hospital';
-      if (tags.amenity === 'marketplace') return 'Market';
-      if (tags.shop === 'mall') return 'Shopping mall';
-      if (tags.amenity === 'bus_station') return 'Bus station';
-      if (tags.aeroway === 'aerodrome') return 'Airport';
-      return null;
-    }
-
-    /* One OSRM table call gives durations from the property to every
-       destination at once, rather than N round trips. */
-    function routeDurations(origin, dests) {
-      var coords = [origin[1] + ',' + origin[0]]
-        .concat(dests.map(function (d) { return d.c[1] + ',' + d.c[0]; })).join(';');
-      var url = 'https://router.project-osrm.org/table/v1/driving/' + coords
-        + '?sources=0&annotations=duration';
-      return fetchWithTimeout(url, {}, 12000)
-        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
-        .then(function (d) {
-          var row = d && d.durations && d.durations[0];
-          if (!row) throw new Error('no durations');
-          dests.forEach(function (dest, i) {
-            var sec = row[i + 1];
-            dest.sec = (typeof sec === 'number' && isFinite(sec)) ? sec : null;
-          });
-          return dests;
-        });
-    }
-
-    function fetchCommute(propId, lat, lng) {
-      if (cmtFetchedFor === propId) return;
-      cmtFetchedFor = propId;
-      cmtState = 'loading';
-      renderCommute();
-
-      var q = CMT_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
-      fetchWithTimeout(OVERPASS_URL, { method: 'POST', body: 'data=' + encodeURIComponent(q) }, 15000)
-        .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
-        .then(function (data) {
-          var seen = {};
-          var out = (data.elements || []).reduce(function (acc, el) {
-            var t = cmtType(el.tags || {});
-            var nm = el.tags && el.tags.name;
-            // An unnamed node is useless here: "Hospital, 14 min" tells you nothing.
-            if (!t || !nm || el.lat == null || el.lon == null) return acc;
-            if (seen[t]) return acc;          // one of each kind, the nearest
-            seen[t] = true;
-            acc.push({ name: nm, type: t, c: [el.lat, el.lon], dm: haversineM([lat, lng], [el.lat, el.lon]), sec: null });
-            return acc;
-          }, []);
-          out.sort(function (a, b) { return a.dm - b.dm; });
-          CMT_DESTS = out.slice(0, 5);
-          if (!CMT_DESTS.length) { cmtState = 'ready'; renderCommute(); return; }
-          return routeDurations([lat, lng], CMT_DESTS)
-            .then(function () { cmtState = 'ready'; renderCommute(); })
-            .catch(function () { cmtState = 'ready'; renderCommute(); });  // distances still stand
-        })
-        .catch(function () { cmtState = 'failed'; renderCommute(); });
-    }
-
-    function renderCommute() {
-      var host = document.getElementById('commute');
-      var src = document.getElementById('commuteSrc');
-      if (!host) return;
-
-      var parts = [];
-      if (cmtState === 'loading') {
-        parts.push('<span class="c pending">Looking up real places and drive times…</span>');
-      } else if (cmtState === 'failed') {
-        parts.push('<span class="c">Couldn’t reach the maps service just now</span>');
-      } else if (CMT_DESTS && CMT_DESTS.length) {
-        CMT_DESTS.forEach(function (d) {
-          var t = fmtMin(d.sec != null ? Math.round(d.sec / 60) : null);
-          parts.push('<span class="c">' + esc(d.name) + ' <b>'
-            + (t ? t : formatDist(d.dm)) + '</b></span>');
-        });
-      } else if (cmtState === 'ready') {
-        parts.push('<span class="c">No major destinations mapped near this address yet</span>');
-      }
-
-      // The buyer's own places. They typed the minutes, so they are theirs to
-      // trust -- but they are labelled as theirs, not presented as measured.
-      customPlaces.forEach(function (c, i) {
-        parts.push('<span class="c">' + esc(c.place) + ' <b>' + fmtMin(c.min) + '</b> · yours'
-          + ' <button class="cmt-rm" data-i="' + i + '" aria-label="Remove">×</button></span>');
-      });
-      parts.push('<button class="addplace" id="addPlace">+ add a place</button>');
-      host.innerHTML = parts.join('');
-
-      if (src) {
-        var routed = (CMT_DESTS || []).some(function (d) { return d.sec != null; });
-        src.textContent = cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length
-          ? (routed
-              ? 'Places from OpenStreetMap · driving times from OSRM, free-flow traffic. Real journeys at peak will be longer.'
-              : 'Places from OpenStreetMap. Driving times unavailable, so these are straight-line distances.')
-          : '';
-      }
-
-      var add = document.getElementById('addPlace');
-      if (add) add.addEventListener('click', function () {
-        var place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
-        var mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
-        if (!place.trim() || isNaN(mins)) return;
-        customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
-        localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
-        renderCommute();
-      });
-      host.querySelectorAll('.cmt-rm').forEach(function (b) {
-        b.addEventListener('click', function () {
-          customPlaces.splice(Number(b.dataset.i), 1);
-          localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
-          renderCommute();
-        });
-      });
-    }
-    renderCommute();
-
     /* ── 9 · Viewing assistant (checklist + notes + photos, saved to this home) ── */
     const CHECKS = ['Check water pressure', 'Test electrical outlets & sockets', 'Ask about service charges', 'Inspect ceilings & walls for leaks/damp', 'Confirm legal documentation (C of O / deed)', 'Test the backup power / generator', 'Check mobile signal & internet', 'Walk the compound security & parking'];
     const vKey = 'synapse_viewing_' + PROP_ID;
@@ -1309,7 +1156,38 @@
     function poiSvg(name, size) { return window.SynIcons ? SynIcons.svg(name, { size: size }) : ''; }
 
     /* ── real amenities: OpenStreetMap Overpass API ──────────────────────── */
+    /* Overpass is free and public, which also means it is regularly overloaded:
+       the main instance answered 504 on the first real test of this page, and
+       a cold query for a Nigerian city can take 30s+. One endpoint with a 15s
+       timeout therefore failed most of the time, and the honest failure
+       message was the thing users would mostly see.
+
+       So: mirrors, tried in order, with a timeout that matches how slow this
+       service genuinely is. kumi.systems is the usual community mirror and is
+       markedly more reliable than the main instance. */
     var OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+    var OVERPASS_MIRRORS = [
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass-api.de/api/interpreter',
+      // overpass.osm.jp was here and is not usable from a browser: it serves a
+      // certificate for the wrong common name, so Chrome refuses the request
+      // before it is even sent (ERR_CERT_COMMON_NAME_INVALID).
+    ];
+
+    /* Tries each mirror until one answers. Resolves with parsed JSON, rejects
+       only when every mirror has failed. */
+    function overpassFetch(query, perTryMs) {
+      var body = 'data=' + encodeURIComponent(query);
+      var i = 0;
+      function attempt() {
+        if (i >= OVERPASS_MIRRORS.length) return Promise.reject(new Error('all overpass mirrors failed'));
+        var url = OVERPASS_MIRRORS[i++];
+        return fetchWithTimeout(url, { method: 'POST', body: body }, perTryMs || 25000)
+          .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
+          .catch(function () { return attempt(); });
+      }
+      return attempt();
+    }
     var OVERPASS_QUERY_TPL = '[out:json][timeout:15];('
       + 'node["amenity"="school"](around:1200,{lat},{lng});'
       + 'node["leisure"="fitness_centre"](around:1200,{lat},{lng});'
@@ -1352,14 +1230,206 @@
       opts.signal = ctrl.signal;
       return fetch(url, opts).finally(function () { clearTimeout(timer); });
     }
+    /* -- Commute intelligence (the card panel) --------------------------
+       Lives here, not beside the other card sections, because it needs
+       PROP, OVERPASS_URL, haversineM, formatDist and fetchWithTimeout --
+       all of which are defined in this script block. Named ...Panel to
+       stay clear of renderCommute() below, which draws the map overlay.
+
+       ORIGINALLY (-- 10 --) -----------------------------------------
+       WAS: a hardcoded array of Lagos destinations -- Lagos Island, Victoria
+       Island, "Lekki Phase 1 gate 6 min", MMIA -- with invented minutes, shown
+       identically on every listing. Every property in this database is in
+       Ibadan, roughly 130km from Lekki, so the panel confidently told buyers a
+       two-hour drive was a six-minute one, and told them the same thing
+       whatever they were looking at.
+
+       NOW: destinations are real places found near THIS property via
+       OpenStreetMap, and the times are real driving durations from OSRM. Both
+       are free and need no API key. If either is unavailable we say so and
+       show distance alone -- a straight-line distance is a fact, an unrouted
+       "minutes" figure would just be the old bug in a new coat. */
+    var CMT_DESTS = null;          // [{name, type, c:[lat,lng], dm, sec|null}]
+    var cmtState = 'idle';         // idle | loading | ready | failed
+    var cmtFetchedFor = null;
+    var customPlaces = JSON.parse(localStorage.getItem('synapse_places_' + PROP_ID) || '[]');
+
+    function fmtMin(m) {
+      if (m == null) return null;
+      return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : Math.round(m) + ' min';
+    }
+
+    /* The places people actually commute to, at city scale. Deliberately not
+       the corner-shop set already shown under "Nearby": a hospital you might
+       drive to is a different question from a cafe you can walk to. */
+    var CMT_QUERY_TPL = '[out:json][timeout:20];('
+      + 'node["amenity"="university"](around:14000,{lat},{lng});'
+      + 'node["amenity"="hospital"](around:12000,{lat},{lng});'
+      + 'node["amenity"="marketplace"](around:12000,{lat},{lng});'
+      + 'node["shop"="mall"](around:14000,{lat},{lng});'
+      + 'node["amenity"="bus_station"](around:14000,{lat},{lng});'
+      + 'node["aeroway"="aerodrome"](around:40000,{lat},{lng});'
+      + ');out body 60;';
+
+    function cmtType(tags) {
+      if (tags.amenity === 'university') return 'University';
+      if (tags.amenity === 'hospital') return 'Hospital';
+      if (tags.amenity === 'marketplace') return 'Market';
+      if (tags.shop === 'mall') return 'Shopping mall';
+      if (tags.amenity === 'bus_station') return 'Bus station';
+      if (tags.aeroway === 'aerodrome') return 'Airport';
+      return null;
+    }
+
+    /* One OSRM table call gives durations from the property to every
+       destination at once, rather than N round trips. */
+    function routeDurations(origin, dests) {
+      var coords = [origin[1] + ',' + origin[0]]
+        .concat(dests.map(function (d) { return d.c[1] + ',' + d.c[0]; })).join(';');
+      var url = 'https://router.project-osrm.org/table/v1/driving/' + coords
+        + '?sources=0&annotations=duration';
+      return fetchWithTimeout(url, {}, 12000)
+        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
+        .then(function (d) {
+          var row = d && d.durations && d.durations[0];
+          if (!row) throw new Error('no durations');
+          dests.forEach(function (dest, i) {
+            var sec = row[i + 1];
+            dest.sec = (typeof sec === 'number' && isFinite(sec)) ? sec : null;
+          });
+          return dests;
+        });
+    }
+
+    /* Overpass is free, public and regularly overloaded -- on the first real
+       test of this page every mirror answered 504. A live call on every page
+       load therefore means the feature is down whenever Overpass is, which is
+       often. So a successful lookup is kept: the places near a house do not
+       move, and a month-old answer is a great deal better than none.
+
+       Only successes are cached. A failure must never be written, or one bad
+       afternoon would be remembered as "no destinations here". */
+    var CMT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+    function cmtCacheKey(id) { return 'synapse_commute_' + id; }
+    function cmtCacheRead(id) {
+      try {
+        var raw = localStorage.getItem(cmtCacheKey(id));
+        if (!raw) return null;
+        var o = JSON.parse(raw);
+        if (!o || !o.at || (Date.now() - o.at) > CMT_TTL_MS) return null;
+        return Array.isArray(o.d) ? o.d : null;
+      } catch (e) { return null; }
+    }
+    function cmtCacheWrite(id, dests) {
+      try { localStorage.setItem(cmtCacheKey(id), JSON.stringify({ at: Date.now(), d: dests })); } catch (e) {}
+    }
+
+    function fetchCommutePanel(propId, lat, lng) {
+      if (cmtFetchedFor === propId) return;
+      cmtFetchedFor = propId;
+
+      var cached = propId && cmtCacheRead(propId);
+      if (cached && cached.length) {
+        CMT_DESTS = cached;
+        cmtState = 'ready';
+        renderCommutePanel();
+        return;
+      }
+
+      cmtState = 'loading';
+      renderCommutePanel();
+
+      var q = CMT_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
+      overpassFetch(q, 25000)
+        .then(function (data) {
+          var seen = {};
+          var out = (data.elements || []).reduce(function (acc, el) {
+            var t = cmtType(el.tags || {});
+            var nm = el.tags && el.tags.name;
+            // An unnamed node is useless here: "Hospital, 14 min" tells you nothing.
+            if (!t || !nm || el.lat == null || el.lon == null) return acc;
+            if (seen[t]) return acc;          // one of each kind, the nearest
+            seen[t] = true;
+            acc.push({ name: nm, type: t, c: [el.lat, el.lon], dm: haversineM([lat, lng], [el.lat, el.lon]), sec: null });
+            return acc;
+          }, []);
+          out.sort(function (a, b) { return a.dm - b.dm; });
+          CMT_DESTS = out.slice(0, 5);
+          if (!CMT_DESTS.length) { cmtState = 'ready'; renderCommutePanel(); return; }
+          var settle = function () {
+            cmtState = 'ready';
+            if (propId) cmtCacheWrite(propId, CMT_DESTS);
+            renderCommutePanel();
+          };
+          return routeDurations([lat, lng], CMT_DESTS).then(settle).catch(settle);  // distances still stand
+        })
+        .catch(function () { cmtState = 'failed'; renderCommutePanel(); });
+    }
+
+    function renderCommutePanel() {
+      var host = document.getElementById('commute');
+      var src = document.getElementById('commuteSrc');
+      if (!host) return;
+
+      var parts = [];
+      if (cmtState === 'loading') {
+        parts.push('<span class="c pending">Looking up real places and drive times…</span>');
+      } else if (cmtState === 'failed') {
+        parts.push('<span class="c">Couldn’t reach the maps service just now</span>');
+      } else if (CMT_DESTS && CMT_DESTS.length) {
+        CMT_DESTS.forEach(function (d) {
+          var t = fmtMin(d.sec != null ? Math.round(d.sec / 60) : null);
+          parts.push('<span class="c">' + esc(d.name) + ' <b>'
+            + (t ? t : formatDist(d.dm)) + '</b></span>');
+        });
+      } else if (cmtState === 'ready') {
+        parts.push('<span class="c">No major destinations mapped near this address yet</span>');
+      }
+
+      // The buyer's own places. They typed the minutes, so they are theirs to
+      // trust -- but they are labelled as theirs, not presented as measured.
+      customPlaces.forEach(function (c, i) {
+        parts.push('<span class="c">' + esc(c.place) + ' <b>' + fmtMin(c.min) + '</b> · yours'
+          + ' <button class="cmt-rm" data-i="' + i + '" aria-label="Remove">×</button></span>');
+      });
+      parts.push('<button class="addplace" id="addPlace">+ add a place</button>');
+      host.innerHTML = parts.join('');
+
+      if (src) {
+        var routed = (CMT_DESTS || []).some(function (d) { return d.sec != null; });
+        src.textContent = cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length
+          ? (routed
+              ? 'Places from OpenStreetMap · driving times from OSRM, free-flow traffic. Real journeys at peak will be longer.'
+              : 'Places from OpenStreetMap. Driving times unavailable, so these are straight-line distances.')
+          : '';
+      }
+
+      var add = document.getElementById('addPlace');
+      if (add) add.addEventListener('click', function () {
+        var place = prompt('Somewhere you go often (work, church, gym)?'); if (!place) return;
+        var mins = parseInt(prompt('Roughly how many minutes away, at normal traffic?', '20'), 10);
+        if (!place.trim() || isNaN(mins)) return;
+        customPlaces.push({ place: place.trim().slice(0, 40), min: mins });
+        localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
+        renderCommutePanel();
+      });
+      host.querySelectorAll('.cmt-rm').forEach(function (b) {
+        b.addEventListener('click', function () {
+          customPlaces.splice(Number(b.dataset.i), 1);
+          localStorage.setItem('synapse_places_' + PROP_ID, JSON.stringify(customPlaces));
+          renderCommutePanel();
+        });
+      });
+    }
+    renderCommutePanel();
+
     function fetchAmenities(propId, lat, lng) {
       if (poiFetchedFor === propId) return; // already have it (or are getting it)
       poiFetchedFor = propId;
       poiState = 'loading';
       if (state.view === 'poi') renderPOI();
       var q = OVERPASS_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
-      fetchWithTimeout(OVERPASS_URL, { method: 'POST', body: 'data=' + encodeURIComponent(q) }, 12000)
-        .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
+      overpassFetch(q, 25000)
         .then(function (data) {
           var seen = {};
           POI = (data.elements || []).reduce(function (out, el) {
@@ -1581,7 +1651,7 @@
         map.setView(PROP, 14);
         fetchAmenities(p.id || null, PROP[0], PROP[1]);
         // Commute needs the same coordinates, and they only exist here.
-        fetchCommute(p.id || null, PROP[0], PROP[1]);
+        fetchCommutePanel(p.id || null, PROP[0], PROP[1]);
       }
       var ag = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
       if (ag && ag.name) AGENCY = { n: ag.name, sub: ag.verification_tier ? (ag.verification_tier + ' tier') : '' };
