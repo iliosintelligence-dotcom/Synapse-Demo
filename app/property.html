@@ -1363,6 +1363,7 @@
         CMT_DESTS = cached;
         cmtState = 'ready';
         renderCommutePanel();
+        paintAround();
         return;
       }
 
@@ -1390,6 +1391,9 @@
             cmtState = 'ready';
             if (propId) cmtCacheWrite(propId, CMT_DESTS);
             renderCommutePanel();
+            /* The nearby card falls back to these when nothing is mapped within
+               walking distance, so it has to be told they have arrived. */
+            paintAround();
           };
           return routeDurations([lat, lng], CMT_DESTS).then(settle).catch(settle);  // distances still stand
         })
@@ -1837,10 +1841,41 @@
         host.innerHTML = K + '<p class="nb-empty">Looking up what is around this address…</p>';
         return;
       }
+      /* Nothing within walking distance is common outside a city centre, and it
+         is not the same as nothing nearby. The amenity lookup searches 600m to
+         2km; around 13 Aafin Iyanu, Ologuneru that returns exactly zero
+         elements -- verified directly against Overpass -- while the commute
+         lookup at 12-14km returns a hospital, two markets and a mall.
+
+         So when the close-in search is empty we fall back to the destinations
+         the commute panel already fetched, rather than reporting nothing while
+         holding real data. No extra request; the distances shown are the true
+         ones, so a 6km market reads as 6km. */
+      if ((!POI || !POI.length) && cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length) {
+        var wide = CMT_DESTS.map(function (d) {
+          return { name: d.name, category: d.type, distance_m: d.dm, drive_seconds: d.sec };
+        });
+        host.innerHTML = K + areaBlock(window.__pvListing, wide, 'openstreetmap')
+          + '<div class="nba-list">'
+          + wide.map(function (x) {
+              var t = x.drive_seconds != null ? fmtDrive(x.drive_seconds) : formatDist(x.distance_m);
+              return '<div class="nba-row"><span class="nba-n">' + esc(x.name) + '</span>'
+                + '<span class="nba-t">' + esc(x.category) + '</span>'
+                + '<span class="nba-d">' + t + '</span></div>';
+            }).join('')
+          + '</div><p class="cmt-src">Nothing is mapped within walking distance of this address, '
+          + 'so these are the nearest places further out. From OpenStreetMap.</p>';
+        return;
+      }
+
       if (!POI || !POI.length) {
-        host.innerHTML = K + '<p class="nb-empty">' + (poiState === 'failed'
+        /* 'error' is the value fetchAmenities actually sets; this read 'failed',
+           which is never assigned, so an outage fell through to the "nothing
+           here" wording. And "we have not surveyed this address" was wrong in
+           the other direction -- we did look, the map simply has nothing there. */
+        host.innerHTML = K + '<p class="nb-empty">' + (poiState === 'error'
             ? 'We could not reach the map service just now, so we cannot show what is nearby.'
-            : 'We have not surveyed this address yet, so we are not going to guess at what is around it.') + '</p>';
+            : 'OpenStreetMap has nothing mapped around this address yet. That usually means the area is under-recorded rather than empty.') + '</p>';
         return;
       }
       var seen = {}, rows = [];
@@ -1879,14 +1914,19 @@
             return out;
           }, []);
           POI.sort(function (a, b) { return a.dm - b.dm; });
-          paintAround();     // the neighbourhood card's "what is nearby" list
           POI = POI.slice(0, 60);
           POI.forEach(function (p) { p.d = formatDist(p.dm); });
           poiState = 'loaded';
+          /* AFTER the state flips, not before. Painting first meant
+             paintAround() read poiState as 'loading' and rendered "Looking up
+             what is around this address…", then was never called again -- so
+             the list was fetched, parsed, sorted, and never shown. */
+          paintAround();
           if (state.view === 'poi') renderPOI();
         })
         .catch(function () {
           poiState = 'error';
+          paintAround();     // the card must say it failed, not sit on "looking up"
           if (state.view === 'poi') renderPOI();
         });
     }
