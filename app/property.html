@@ -1616,6 +1616,35 @@
     var AREA_WALK_M = 1200;          // a walk, not a drive
     var areaLogged = 0;
 
+    /* ── the viewer's own anchors ───────────────────────────────────────────
+       Their workplace, school, gym -- geocoded once at save time by the
+       save-place function and read here. Empty for a signed-out visitor, and
+       empty for a signed-in one who has not told Toju anything yet, which is
+       the common case and is treated as ordinary rather than as an error.
+
+       A place whose geocode failed is never returned by my_places(), so
+       nothing below can measure a distance to a coordinate we do not believe. */
+    var MY_PLACES = null;
+    var myPlacesState = 'idle';        // idle | loading | ready | none
+
+    var KIND_LABEL = {
+      workplace: 'work', school: 'school', gym: 'gym',
+      worship: 'church or mosque', family: 'family', other: 'there',
+    };
+
+    function fetchMyPlaces() {
+      if (!window.SynAuth || !SynAuth.client) { myPlacesState = 'none'; return Promise.resolve(); }
+      myPlacesState = 'loading';
+      return SynAuth.client()
+        .then(function (c) { return c.rpc('my_places'); })
+        .then(function (r) {
+          var rows = (r && r.data) || [];
+          MY_PLACES = rows.filter(function (x) { return x.lat != null && x.lon != null; });
+          myPlacesState = MY_PLACES.length ? 'ready' : 'none';
+        })
+        .catch(function () { myPlacesState = 'none'; });   // signed out, or RPC unavailable
+    }
+
     function buildAreaContext(listing, places, source) {
       var lat = listing && listing.latitude, lon = listing && listing.longitude;
       var ctx = {
@@ -1650,6 +1679,23 @@
         ctx.byCategory[c].sort(function (a, b) { return a.distance_m - b.distance_m; });
         ctx.counts[c] = ctx.byCategory[c].length;
       });
+
+      /* The viewer's own anchors, measured from THIS property. Straight-line
+         only: we hold coordinates for their places but no routing budget per
+         viewer, so the narrative says "away" and never "drive", which would be
+         a claim we have not measured. */
+      ctx.mine = [];
+      if (ctx.hasCoords && MY_PLACES && MY_PLACES.length) {
+        MY_PLACES.forEach(function (m) {
+          ctx.mine.push({
+            kind: m.kind,
+            label: m.label,
+            distance_m: haversineM(ctx.coords, [Number(m.lat), Number(m.lon)]),
+            confidence: m.geocode_confidence || 'approximate',
+          });
+        });
+        ctx.mine.sort(function (a, b) { return a.distance_m - b.distance_m; });
+      }
       return ctx;
     }
 
@@ -1715,11 +1761,33 @@
              + esc(w.name) + '.'));
       }
 
+      /* What it means for THIS viewer. Placed after the area facts because a
+         person reads "what is here" before "what is it to me". An approximate
+         geocode is hedged in words rather than quietly rounded, because the
+         difference between a pinned office and a guessed one is exactly the
+         difference the number depends on. */
+      if (ctx.mine && ctx.mine.length) {
+        ctx.mine.slice(0, 3).forEach(function (m) {
+          var where = KIND_LABEL[m.kind] || m.kind;
+          var d = formatDist(m.distance_m);
+          bits.push(m.confidence === 'exact'
+            ? ('Your ' + where + ' (' + esc(m.label) + ') is about ' + d + ' from here, in a straight line.')
+            : ('Your ' + where + ' (' + esc(m.label) + ') looks to be roughly ' + d
+               + ' away — we could not pin that address exactly, so treat it as a rough guide.'));
+        });
+      }
+
       var missing = ['hospital', 'school', 'market', 'supermarket', 'pharmacy']
         .filter(function (c) { return !ctx.byCategory[c]; });
       if (missing.length >= 3) {
         bits.push('Little else is mapped around here yet, which usually means the '
           + 'area is under-recorded rather than empty.');
+      }
+      /* Nothing of theirs to measure against. Ask once, plainly, rather than
+         inventing a "perfect for families" line -- and only when there is
+         already something real on screen to attach the invitation to. */
+      if ((!ctx.mine || !ctx.mine.length) && ctx.total && myPlacesState === 'none') {
+        bits.push('Tell Toju where you work or train and this will say how far each of those is from here.');
       }
       return bits.join(' ');
     }
@@ -2017,6 +2085,9 @@
       var p = e.detail || {};
       window.__pvListing = p;
       paintNeighbourhood(p);
+      // Their anchors first, so the very first paint can already include them
+      // rather than flashing an area-only paragraph and then rewriting it.
+      fetchMyPlaces().then(function () { paintAround(); });
       fetchStoredPlaces(p.id || null);
       var askBtn = document.getElementById('askTojuBtn');
       if (askBtn && p.title) {
