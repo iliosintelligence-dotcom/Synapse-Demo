@@ -98,6 +98,7 @@
     .nb-addr { margin: 2px 0 12px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
     .nb-empty { font-size: 13px; line-height: 1.55; color: var(--ink-muted); margin: 4px 0 0; }
     .nb-around { margin-top: 14px; }
+    .area-note { margin: 0 0 12px; font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); }
     .nb-around .nba-k { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase;
       color: var(--ink-dim); margin-bottom: 9px; }
     .nba-list { display: flex; flex-direction: column; gap: 0; }
@@ -1590,6 +1591,153 @@
       return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : m + ' min';
     }
 
+    /* ── AREA RELEVANCE: a structured object, then prose from it ────────────
+       The page used to carry a hardcoded paragraph -- "4 schools, 2 hospitals
+       and 3 supermarkets within 10 minutes" -- printed identically under every
+       listing in the database. This replaces it with something that cannot say
+       anything it has not measured.
+
+       Two deliberate choices:
+
+       1. A CONTEXT OBJECT FIRST, prose second. Everything below reads from one
+          object built per (property, source) pair, so what is rendered and what
+          was measured cannot drift apart. It is logged in full for the first
+          few loads so the two can be compared by eye.
+
+       2. NO LLM. A template that interpolates measured numbers is incapable of
+          inventing a hospital; a model asked to describe the same numbers is
+          merely unlikely to. Given this page previously asserted a six-minute
+          drive to a gate 130km away, "incapable" is worth more than "unlikely".
+          The context object is already the right shape to hand to a model later
+          if a richer narrative is wanted -- that is a prompt away, and the
+          honesty constraint would then have to be stated in a system prompt
+          rather than guaranteed by construction. */
+
+    var AREA_WALK_M = 1200;          // a walk, not a drive
+    var areaLogged = 0;
+
+    function buildAreaContext(listing, places, source) {
+      var lat = listing && listing.latitude, lon = listing && listing.longitude;
+      var ctx = {
+        propertyId: listing && listing.id,
+        title: (listing && listing.title) || '',
+        address: [listing && listing.address, listing && listing.city].filter(Boolean).join(', '),
+        hasCoords: lat != null && lon != null,
+        coords: (lat != null && lon != null) ? [Number(lat), Number(lon)] : null,
+        source: source || null,
+        byCategory: {},
+        counts: {},
+        nearest: null,
+        walkable: [],
+        total: 0,
+      };
+      (places || []).forEach(function (x) {
+        var cat = x.category || x.t;
+        if (!cat) return;
+        var row = {
+          name: x.name || x.n,
+          category: cat,
+          distance_m: (x.distance_m != null ? x.distance_m : x.dm),
+          drive_seconds: (x.drive_seconds != null ? x.drive_seconds : null),
+        };
+        if (!row.name || row.distance_m == null) return;
+        (ctx.byCategory[cat] = ctx.byCategory[cat] || []).push(row);
+        ctx.total++;
+        if (row.distance_m <= AREA_WALK_M) ctx.walkable.push(row);
+        if (!ctx.nearest || row.distance_m < ctx.nearest.distance_m) ctx.nearest = row;
+      });
+      Object.keys(ctx.byCategory).forEach(function (c) {
+        ctx.byCategory[c].sort(function (a, b) { return a.distance_m - b.distance_m; });
+        ctx.counts[c] = ctx.byCategory[c].length;
+      });
+      return ctx;
+    }
+
+    /* Prose assembled only from fields present on the context object. Every
+       branch is guarded: a category with nothing found produces no clause, not
+       an empty one, and nothing here can name a place that is not in `places`. */
+    function areaNarrative(ctx) {
+      if (!ctx.hasCoords) {
+        return 'This listing has no map coordinates on file, so we cannot measure '
+             + 'what is around it. We would rather say that than describe somewhere else.';
+      }
+      if (!ctx.total) return '';
+
+      var bits = [];
+      var named = {};                  // a place is worth naming once
+      var label = function (c) { return (PLACE_LABEL[c] || c).toLowerCase(); };
+      var dist = function (r) {
+        if (r.drive_seconds != null) return fmtDrive(r.drive_seconds) + ' drive';
+        return formatDist(r.distance_m) + ' away';
+      };
+
+      if (ctx.nearest) {
+        named[ctx.nearest.name] = 1;
+        bits.push('The closest thing to this address is ' + esc(ctx.nearest.name)
+          + ' (' + label(ctx.nearest.category) + '), ' + dist(ctx.nearest) + '.');
+      }
+
+      /* Health and schooling are the two people ask about first. A single
+         entry already named as the nearest overall is skipped -- saying
+         "the closest thing is X… the nearest school is X… one of them, X"
+         reads as a stutter, which is what the first draft of this did. */
+      ['hospital', 'school'].forEach(function (c) {
+        var list = ctx.byCategory[c];
+        if (!list || !list.length) return;
+        var n = list.length;
+        if (n === 1) {
+          if (named[list[0].name]) return;
+          named[list[0].name] = 1;
+          bits.push('The nearest ' + label(c) + ' is ' + esc(list[0].name) + ', ' + dist(list[0]) + '.');
+          return;
+        }
+        // More than one: the count is news even if the closest was already named.
+        if (named[list[0].name]) {
+          bits.push(n + ' ' + label(c) + 's are mapped nearby.');
+        } else {
+          named[list[0].name] = 1;
+          bits.push(n + ' ' + label(c) + 's are mapped nearby, the closest being '
+            + esc(list[0].name) + ' at ' + dist(list[0]) + '.');
+        }
+      });
+
+      /* Always name the walkable place, even at the cost of repeating it.
+         The first attempt said "That one is close enough to walk to", which
+         pointed at whatever the previous sentence happened to mention -- for
+         one listing that was a hospital 5.8km away, so a pronoun turned a
+         drive into a walk. A repeated name is untidy; an ambiguous one is
+         wrong, and this panel exists because wrong was the old default. */
+      if (ctx.walkable.length) {
+        var w = ctx.walkable[0];
+        bits.push(ctx.walkable.length === 1
+          ? esc(w.name) + ' is close enough to walk to.'
+          : (ctx.walkable.length + ' of them are within a walk, the nearest being '
+             + esc(w.name) + '.'));
+      }
+
+      var missing = ['hospital', 'school', 'market', 'supermarket', 'pharmacy']
+        .filter(function (c) { return !ctx.byCategory[c]; });
+      if (missing.length >= 3) {
+        bits.push('Little else is mapped around here yet, which usually means the '
+          + 'area is under-recorded rather than empty.');
+      }
+      return bits.join(' ');
+    }
+    /* Builds the context, logs it while we are still checking this works, and
+       returns the paragraph. Returns '' when there is nothing true to say, so
+       the caller renders the list alone rather than an empty flourish. */
+    function areaBlock(listing, places, source) {
+      var ctx = buildAreaContext(listing || {}, places, source);
+      if (areaLogged < 3) {
+        areaLogged++;
+        try {
+          console.log('[area context] ' + (ctx.title || ctx.propertyId), JSON.parse(JSON.stringify(ctx)));
+        } catch (e) { /* logging must never break a page */ }
+      }
+      var text = areaNarrative(ctx);
+      return text ? '<p class="nb-note area-note">' + text + '</p>' : '';
+    }
+
     function paintAround() {
       var host = document.getElementById('nbAround');
       if (!host) return;
@@ -1597,7 +1745,8 @@
 
       // 1. the stored survey, which is the real answer
       if (placesState === 'ready' && PLACES && PLACES.length) {
-        host.innerHTML = K + '<div class="nba-list">'
+        host.innerHTML = K + areaBlock(window.__pvListing, PLACES, 'google_places')
+          + '<div class="nba-list">'
           + PLACES.map(function (x) {
               var drive = fmtDrive(x.drive_seconds);
               return '<div class="nba-row"><span class="nba-n">' + esc(x.name) + '</span>'
@@ -1632,7 +1781,8 @@
         seen[x.t] = 1;
         rows.push(x);
       });
-      host.innerHTML = K + '<div class="nba-list">'
+      host.innerHTML = K + areaBlock(window.__pvListing, rows, 'openstreetmap')
+        + '<div class="nba-list">'
         + rows.map(function (x) {
             return '<div class="nba-row"><span class="nba-n">' + esc(x.n) + '</span>'
               + '<span class="nba-t">' + esc(AMENITY_LABEL[x.t] || x.t) + '</span>'
