@@ -3,6 +3,18 @@
    Fonts, loaded per-page <link>). These mirror the real @synapse/ui screens
    so the flow can be clicked through. */
 :root {
+  /* ── GRAIN ────────────────────────────────────────────────────────────────
+     Replaces the blurred radial washes that sat behind most of this site. A
+     soft coloured orb behind a section is the single most recognisable
+     ambient treatment of the last few years, and it does the same thing on
+     every page: adds warmth without adding texture.
+
+     Grain adds texture without adding a shape. It is what a printed page,
+     a film still or a Behance case study actually looks like up close, and it
+     survives being scaled or cropped because it has no composition to break.
+     One SVG turbulence, inlined so it costs no request. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E");
+
   /* ═══════════════════════════════════════════════════════════════════════
      SYNAPSE BRAND SYSTEM
      Values taken from the supplied brand sheets, not sampled by eye.
@@ -436,44 +448,32 @@ body::after {
   pointer-events: none;
 }
 
-/* Glow + orbit rings. The two radial stops are the logo gradient's own
-   colours, pushed to the corners so the centre of the screen -- where the
-   reading happens -- stays clean. */
+/* ── the ambient layer ──────────────────────────────────────────────────────
+   WAS: two corner glows, a set of repeating orbit rings, and a field of dots
+   fading in from the bottom-left. Three of the most recognisable ambient
+   treatments of the last few years stacked on one page, and between them they
+   did what a texture does -- but as shapes, which means they read as
+   decoration you are meant to notice.
+
+   Grain does the same job without a composition. It survives cropping, it
+   does not fight the content for attention, and it is what a printed page or
+   a photograph actually looks like close up. One inlined SVG turbulence, no
+   request, no shapes.
+
+   The hero keeps its warm wash. That one is doing something specific -- it is
+   the brand colour arriving where the eye lands first -- and stripping it was
+   what made the page read as colourless in the first place. */
 body::before {
-  background:
-    radial-gradient(58% 44% at 100% 0%,   rgba(var(--tint-bright), 0.10), transparent 68%),
-    radial-gradient(52% 42% at 0% 100%,   rgba(var(--tint-deep),   0.07), transparent 70%),
-    repeating-radial-gradient(circle at 88% 12%,
-      transparent 0 92px,
-      rgba(var(--tint), 0.055) 92px 93px);
+  background-image: var(--grain);
+  background-repeat: repeat;
+  opacity: .55;
 }
 
-/* The dot field, bottom-left, fading out as it travels in — exactly how it
-   behaves in the brand cards. Masked rather than faded with opacity so the
-   grid itself stays crisp where it is densest. */
-body::after {
-  background-image: radial-gradient(rgba(var(--tint), 0.42) 1.1px, transparent 1.7px);
-  background-size: 22px 22px;
-  background-position: 0 100%;
-  -webkit-mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
-          mask-image: radial-gradient(46% 40% at 0% 100%, #000 0%, transparent 72%);
-  /* 0.42 x 0.75 lands each dot near #e7c5a6 on the page ground -- present if
-     you look, invisible if you are reading. Any lower and the layer renders
-     but cannot be seen at all, which is just cost with no effect. */
-  opacity: .75;
-}
+/* The dot field is gone rather than replaced. Two textures on one ground is
+   one more than a ground needs. */
+body::after { content: none; }
 
-/* Narrow screens: the rings and the dot field both read as noise at phone
-   width, where content runs edge to edge. Keep the glow, drop the pattern. */
-@media (max-width: 640px) {
-  body::before {
-    background:
-      radial-gradient(70% 30% at 100% 0%, rgba(var(--tint-bright), 0.09), transparent 70%),
-      radial-gradient(70% 26% at 0% 100%, rgba(var(--tint-deep),   0.06), transparent 72%);
-  }
-  body::after { content: none; }
-}
-
+/* Print keeps neither. */
 @media print {
   body::before, body::after { content: none; }
 }

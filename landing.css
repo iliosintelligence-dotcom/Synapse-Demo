@@ -11,6 +11,18 @@
    Lato 700, uppercase, +0.14em tracking — not a separate face. */
 
 :root {
+  /* ── GRAIN ────────────────────────────────────────────────────────────────
+     Replaces the blurred radial washes that sat behind most of this site. A
+     soft coloured orb behind a section is the single most recognisable
+     ambient treatment of the last few years, and it does the same thing on
+     every page: adds warmth without adding texture.
+
+     Grain adds texture without adding a shape. It is what a printed page,
+     a film still or a Behance case study actually looks like up close, and it
+     survives being scaled or cropped because it has no composition to break.
+     One SVG turbulence, inlined so it costs no request. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E");
+
   /* crypt.ee monochrome — near-black accents on light grey, no terracotta */
   --brand: #121212;
   --brand-dim: #000000;
@@ -849,7 +861,9 @@ section { padding: 120px 0; }
   top: -300px; left: 50%;
   transform: translateX(-50%);
   width: 900px; height: 900px;
-  background: radial-gradient(circle, rgba(54,54,54,0.04) 0%, transparent 65%);
+  /* was a 900px blurred circle behind the demo */
+  background-image: var(--grain);
+  opacity: .4;
   pointer-events: none;
 }
 
@@ -1059,7 +1073,9 @@ section { padding: 120px 0; }
 .trust-void {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(54,54,54,0.05) 0%, transparent 70%);
+  /* was a centred ellipse wash */
+  background-image: var(--grain);
+  opacity: .4;
   pointer-events: none;
 }
 
@@ -1198,10 +1214,11 @@ section { padding: 120px 0; }
   position: absolute;
   top: 0; right: 0;
   width: 300px; height: 200px;
-  background: radial-gradient(ellipse at 100% 0%,
-    rgba(54,54,54,0.12) 0%,
-    transparent 70%
-  );
+  /* was a corner "light leak" ellipse -- a named glow, which is the same
+     treatment as an orb with a different label */
+  background-image: var(--grain);
+  background-position: 100% 0%;
+  opacity: .5;
   pointer-events: none;
 }
 
@@ -1571,10 +1588,10 @@ section { padding: 120px 0; }
   position: absolute;
   inset: 0;
   background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 84px),
-    repeating-linear-gradient(0deg,  rgba(255,255,255,0.05) 0 1px, transparent 1px 84px),
-    radial-gradient(70% 60% at 50% 0%, rgba(var(--tint), 0.10), transparent 70%);
-  opacity: .9;
+    var(--grain);
+  /* was a 84px line grid crossed with a warm radial wash: a grid is a dot
+     field with the dots joined up, and it is the same tell. */
+  opacity: .5;
 }
 .cta-dark {
   position: absolute;
@@ -1586,7 +1603,9 @@ section { padding: 120px 0; }
   top: 50%; left: 50%;
   transform: translate(-50%,-50%);
   width: 800px; height: 400px;
-  background: radial-gradient(ellipse, rgba(54,54,54,0.08), transparent 70%);
+  /* was an 800x400 ellipse behind the closing CTA */
+  background-image: var(--grain);
+  opacity: .45;
   pointer-events: none;
 }
 .cta-content { position: relative; z-index: 1; }
@@ -1811,11 +1830,27 @@ footer {
 
 /* split: statement one side, photograph the other */
 .s-split { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(56px, 7vw, 104px); align-items: center; }
-.s-split.flip > .s-media { order: -1; }
+/* The flip targeted `.s-media`, which appears nowhere in agencies.html or
+   index.html -- the media column is `.demo`. So `.s-split.flip` has never
+   flipped anything, and every split section has run text-left / demo-right
+   regardless of the class on it. Third time a rule in this codebase has
+   pointed at a class that does not exist; it is worth noticing that all three
+   failed silently, because CSS has no way to complain about a selector that
+   matches nothing.
+
+   Both names are listed so the rule keeps working if a section is ever built
+   with the other one. */
+.s-split.flip > .s-media,
+.s-split.flip > .demo { order: -1; }
 .s-media { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4/3;
   box-shadow: 0 26px 60px rgba(20,26,38,0.16); background: var(--bg-1); }
 .s-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-@media (max-width: 900px) { .s-split { grid-template-columns: 1fr; gap: 30px; } .s-split.flip > .s-media { order: 0; } }
+/* One column on a phone, so the flip has nothing to flip: the demo always
+   follows its text rather than appearing above it. */
+@media (max-width: 900px) {
+  .s-split { grid-template-columns: 1fr; gap: 30px; }
+  .s-split.flip > .s-media, .s-split.flip > .demo { order: 0; }
+}
 
 /* three steps — the only place the page asks you to hold a sequence */
 .s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 68px; }
