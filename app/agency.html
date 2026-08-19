@@ -822,6 +822,10 @@
     .insight .pct { font-family: var(--f-serif); font-size: 24px; color: var(--brand); flex: none; width: 74px; text-align: center; }
     .insight .tx { flex: 1; font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
     .insight .tx b { color: var(--ink); }
+    /* No number to lead with, so the row drops the numeral column rather than
+       showing an empty 74px gutter where a percentage used to sit. */
+    .insight-empty { border-style: dashed; background: none; }
+    .insight-empty .tx { padding: 2px 0; }
     .insight button { border: 1px solid rgba(54,54,54,0.35); background: none; color: var(--brand); font: 600 11.5px var(--f-sans); padding: 7px 13px; border-radius: 100px; cursor: pointer; flex: none; }
     .insight button:hover { background: rgba(54,54,54,0.08); }
     .campaign { padding: 18px 20px; margin-bottom: 16px; }
@@ -3711,15 +3715,57 @@
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('marketing');
     }
-    const INSIGHTS = [
-      { pct: '+41%', tx: 'Creatives showing the <b>✓ Verified badge</b> earn 41% higher CTR than those without it.', act: 'Add badge to all' },
-      { pct: '3.1×', tx: '<b>Video walkthroughs</b> outperform photo ads 3.1× on TikTok for listings under ₦100M.', act: 'Generate video variants' },
-      { pct: '+27%', tx: 'Headlines with a <b>monthly figure</b> (“from ₦1.2M/mo”) beat lump-sum prices with first-home buyers.', act: 'Rewrite headlines' },
-    ];
+    /* ── channel insight, from attribution ──────────────────────────────────
+       WAS three hardcoded claims dressed as measurements: "+41% creatives with
+       the Verified badge earn 41% higher CTR", "3.1x video outperforms photo on
+       TikTok", "+27% headlines with a monthly figure". No CTR exists anywhere
+       in this product -- every social post so far is a dry run -- so those
+       numbers were not stale or approximate, they were invented, and they sat
+       on the panel an agency would use to decide where to spend.
+
+       What IS real is attribution: lead_attribution records which channel a
+       lead came from. This counts leads by last-touch channel and says nothing
+       at all until there are some. */
+    var INSIGHTS = [];
+
     function renderInsights() {
-      document.getElementById('insights').innerHTML = INSIGHTS.map((i, k) => `
-        <div class="insight"><span class="pct">${i.pct}</span><span class="tx">${i.tx}</span><button data-ins="${k}">${i.act}</button></div>`).join('');
+      var host = document.getElementById('insights');
+      if (!host) return;
+      if (!INSIGHTS.length) {
+        host.innerHTML = '<div class="insight insight-empty"><span class="tx">'
+          + 'Once leads arrive we will show which channel actually produced them. '
+          + 'Nothing here is estimated, so it stays empty until there is something to count.'
+          + '</span></div>';
+        return;
+      }
+      host.innerHTML = INSIGHTS.map(function (i, k) {
+        return '<div class="insight"><span class="pct">' + esc2(i.pct) + '</span>'
+          + '<span class="tx">' + i.tx + '</span></div>';
+      }).join('');
     }
+
+    /* Counts real attributed leads per channel. RLS scopes lead_channel_mix()
+       to the caller's own agency. */
+    function loadInsights() {
+      if (!window.SynAuth || !SynAuth.client) { renderInsights(); return; }
+      SynAuth.client()
+        .then(function (c) { return c.rpc('lead_channel_mix'); })
+        .then(function (r) {
+          var rows = (r && r.data) || [];
+          var total = rows.reduce(function (n, x) { return n + Number(x.leads || 0); }, 0);
+          INSIGHTS = !total ? [] : rows.slice(0, 3).map(function (x) {
+            var n = Number(x.leads || 0);
+            return {
+              pct: Math.round((n / total) * 100) + '%',
+              tx: '<b>' + esc2(String(x.channel).replace(/_/g, ' ')) + '</b> brought '
+                  + n + ' of your ' + total + ' attributed lead' + (total === 1 ? '' : 's') + '.',
+            };
+          });
+          renderInsights();
+        })
+        .catch(function () { INSIGHTS = []; renderInsights(); });
+    }
+
     function adTile(a) {
       return `<div class="ad ${a.st === 'pausedai' ? 'dim' : ''}">
         ${photoHtml(a.img)}
@@ -5021,7 +5067,12 @@
           </div>` },
       marketing: { title: 'Creative insights', sub: 'What the AI learned from your ads',
         html: () => `<div class="tp-sec"><div class="tp-k">✦ What’s working</div><div id="insights"></div></div>`,
-        after: () => { renderInsights(); document.getElementById('insights').addEventListener('click', (e) => { const b = e.target.closest('[data-ins]'); if (!b) return; b.textContent = '✓ Queued'; b.disabled = true; b.style.opacity = .6; toast('Toju is applying this across your creatives'); }); } },
+        /* loadInsights() replaces renderInsights() here: the panel now counts
+           real attributed leads rather than rendering a fixed array, so it has
+           to fetch before it can draw. The old click handler queued an
+           "apply this across your creatives" action against advice that was
+           invented; there is no action to offer on a count of your own leads. */
+        after: () => { loadInsights(); } },
       crm: { title: 'Pipeline read', sub: 'Toju’s take on your leads',
         html: () => tpSummary('Where your attention pays off', [
           'Toju ranks your leads by intent, deal value and how close the SLA is.',
