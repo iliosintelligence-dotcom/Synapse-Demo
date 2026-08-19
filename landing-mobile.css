@@ -447,7 +447,10 @@
 }
 .m-pr-toggle .pr-per {
   border: none; background: none; border-radius: 100px;
-  padding: 9px 16px; min-height: 40px;
+  /* 44px, not 40. This is the control that decides what someone pays, and
+     it sat 4px under the comfortable minimum -- close enough to look
+     deliberate and still be the hardest thing on the page to hit. */
+  padding: 9px 16px; min-height: 44px;
   font-family: var(--f-sans); font-size: 12.5px; font-weight: 600;
   color: var(--text-muted); white-space: nowrap;
 }
@@ -683,7 +686,15 @@
      the Privacy/Terms legal links at 19px -- small enough to be a genuine
      mis-tap risk on the two links people reach for when they are worried. */
   .m-hero-chip { min-height: 44px; display: inline-flex; align-items: center; }
-  .m-footer-legal-row a { display: inline-flex; align-items: center; min-height: 44px; }
+  /* min-height alone left these 44px tall and 31px wide -- "Terms" is a
+     short word, and a target is only as good as its smaller dimension.
+     min-width plus centring makes the tappable box square enough to hit
+     without moving the text, and the negative margin keeps the row's
+     visual spacing where it was rather than pushing the links apart. */
+  .m-footer-legal-row a {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; min-width: 44px; padding: 0 6px; margin: 0 -6px;
+  }
 
   /* The navbar is fixed, so anchored jumps and in-page links landed with the
      heading tucked underneath it. */
