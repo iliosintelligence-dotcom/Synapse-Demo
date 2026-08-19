@@ -47,7 +47,10 @@
     .msg.user { flex-direction: row-reverse; }
     .col { max-width: 84%; display: flex; flex-direction: column; }
     .av { width: 30px; height: 30px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .av-toju { background: var(--brand); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 16px rgba(150,70,20,0.25); }
+    /* An initial, not a sparkle. Sized and tracked like a monogram rather
+       than an icon: a letter at icon metrics reads as a mistake. */
+    .av-toju { background: var(--brand); color: #fff; font-weight: 600;
+      font-size: 13px; letter-spacing: .02em; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 16px rgba(150,70,20,0.25); }
     .av-user { background: rgba(255,255,255,0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.8); color: var(--ink-muted); font-size: 13px; font-weight: 600; }
     .sender { font-size: 11.5px; font-weight: 600; color: #121212; margin: 0 0 5px 3px; }
 
@@ -62,7 +65,12 @@
     .bubble strong { font-weight: 700; } .bubble em { font-style: italic; }
     .bubble code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 5px; font-size: 0.9em; }
 
-    .matches-h { display: flex; align-items: center; gap: 7px; margin: 12px 0 8px; }
+    .matches-h { display: flex; align-items: center; gap: 9px; margin: 12px 0 8px; }
+    /* Replaces a sparkle that sat here purely to say "this bit is the AI".
+       A short rule is how a print sub-head is marked, and it does not claim
+       anything about how the list was produced. */
+    .matches-h .mh-rule { width: 16px; height: 1.5px; background: var(--ink, #121212);
+      opacity: .5; border-radius: 2px; flex: none; }
     .matches-h .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #121212; }
     .matches-h .cnt { font-size: 11px; font-weight: 700; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.2); border-radius: 9px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
     .matches-h .viewall { margin-left: auto; font-size: 11.5px; font-weight: 600; color: #121212; text-decoration: none; }
@@ -575,11 +583,11 @@
           // Verification state sits on every card. Toju shows checked and
           // unchecked homes alike, so the label is what keeps that honest.
           + '<div class="vrow">' + SynMatches.verifyChip(m.verificationStatus || (m.verified ? 'verified' : 'unverified')) + '</div>'
-          + '<div class="meta"><span class="trust" title="Property Confidence — how much of our verification this home has passed">✦ Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
+          + '<div class="meta"><span class="trust" title="Property Confidence: how much of our verification this home has passed">Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
           + esc(m.city || '') + yld + '</div>'
           + room + why + watch + '</div></a>';
       }).join('');
-      return '<div class="matches-h"><span style="color:var(--brand)">✦</span><span class="lbl">HOMES WORTH A LOOK</span>'
+      return '<div class="matches-h"><span class="mh-rule" aria-hidden="true"></span><span class="lbl">HOMES WORTH A LOOK</span>'
         + '<span class="cnt">' + matches.length + '</span>'
         + '<a class="viewall" href="browse.html">View all →</a></div>' + cards;
     }
@@ -605,7 +613,7 @@
     function tojuMsg(text, matches) {
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
+      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Toju</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -631,7 +639,7 @@
     function typing() {
       const el = document.createElement('div');
       el.className = 'msg toju typing m-enter';
-      el.innerHTML = '<div class="av av-toju">✦</div><div class="col"><div class="sender">Toju</div>'
+      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Toju</div>'
         + '<div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span>'
         + '<span class="tj-stage" style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el);

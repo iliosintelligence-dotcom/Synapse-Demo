@@ -45,7 +45,12 @@
   /* These two were referenced by the audience toggle but only ever defined
      in app/app.css, which the landing pages do not load — so the toggle's
      border and active pill were resolving to nothing. Defined here. */
-  --surface: #ffffff;
+  /* Not pure white. #FFFFFF is the default nobody chose, and against a warm
+     brand it reads as a screen rather than a surface. This is white
+     carrying a trace of the same warmth, the way paper stock does in
+     print: close enough that nothing looks tinted, far enough that the
+     page stops looking like an unstyled document. */
+  --surface: #FCFBF9;
   --border: rgba(20,20,20,0.10);
 
   /* ── The silver lining ──────────────────────────────────────────────────
@@ -1510,43 +1515,12 @@ section { padding: 120px 0; }
 .b-price-val { font-size: 13px; font-weight: 700; color: var(--brand); }
 .b-verified { font-size: 10px; color: var(--brand); display: flex; align-items: center; gap: 3px; margin-top: 3px; justify-content: flex-end; }
 
-/* ─── TESTIMONIALS ─── */
-#testimonials { background: var(--bg-1); border-top: 1px solid rgba(15,18,24,0.04); }
-.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 56px; }
-.testi-card {
-  background: rgba(15,18,24,0.022);
-  border: 1px solid rgba(15,18,24,0.08);
-  border-radius: 22px;
-  padding: 32px 28px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.4s var(--ease);
-  display: flex; flex-direction: column; gap: 22px;
-}
-.testi-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 14%; right: 14%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(15,18,24,0.16), transparent);
-}
-.testi-card:hover {
-  border-color: rgba(54,54,54,0.2);
-  transform: translateY(-6px);
-  box-shadow: inset 0 1px 0 rgba(15,18,24,0.12), 0 28px 70px rgba(20,26,38,0.15);
-}
-.testi-quote { font-size: 15px; color: var(--text); line-height: 1.7; font-weight: 500; font-style: italic; }
-.testi-quote::before { content: '"'; color: var(--brand); font-family: var(--f-serif); font-size: 28px; line-height: 0; margin-right: 2px; }
-.testi-person { display: flex; align-items: center; gap: 12px; margin-top: auto; }
-.testi-avatar {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: var(--brand);
-  box-shadow: inset 0 1px 0 rgba(140,140,140,0.15);
-}
-.testi-name { font-size: 13px; font-weight: 600; color: var(--text); }
-.testi-role { font-size: 11.5px; color: var(--text-dim); }
+/* The testimonials block lived here: a three-across grid of quote cards
+   with avatars, names and roles. No page ever rendered it -- there is no
+   .testi-card markup anywhere -- so it was styling for people who do not
+   exist, waiting for someone to fill it in. Removed rather than left as
+   an invitation. When there are real customers to quote, the block can be
+   written against what they actually said. */
 
 /* ─── FAQ ─── */
 #faq { background: var(--bg); }
@@ -1925,7 +1899,7 @@ footer {
 
 /* the result card — the payoff of the demo */
 .pk-card { display: flex; gap: 11px; align-items: center; padding: 10px; border-radius: 13px;
-  background: #fff; border: 1px solid rgba(20,20,20,0.10); box-shadow: 0 8px 20px rgba(20,20,20,0.07);
+  background: var(--surface); border: 1px solid rgba(20,20,20,0.10); box-shadow: 0 8px 20px rgba(20,20,20,0.07);
   opacity: 0; transform: translateY(8px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
 .pk-card.in { opacity: 1; transform: none; }
 .pk-card img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; flex: none; }
@@ -1941,7 +1915,7 @@ footer {
   color: #2e7d4f; margin-top: 3px; }
 
 .peek-composer { display: flex; align-items: center; gap: 9px; padding: 11px 13px;
-  border-top: 1px solid rgba(20,20,20,0.08); background: #fff; }
+  border-top: 1px solid rgba(20,20,20,0.08); background: var(--surface); }
 /* Real controls now, not spans dressed as them — reset the browser chrome so
    the live composer looks exactly like the mock it replaced. */
 .peek-field { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500;
@@ -1965,7 +1939,7 @@ footer {
 .pp-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--tint-ink); }
 .pp-leads { gap: 9px; }
 .pk-lead { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 13px;
-  background: #fff; border: 1px solid rgba(20,20,20,0.10);
+  background: var(--surface); border: 1px solid rgba(20,20,20,0.10);
   opacity: 0; transform: translateY(8px); transition: opacity .32s var(--ease), transform .32s var(--ease); }
 .pk-lead.in { opacity: 1; transform: none; }
 .pk-lead .av { width: 34px; height: 34px; border-radius: 50%; background: #ececec; flex: none;
@@ -1998,7 +1972,7 @@ footer {
 
 /* a listing row, drawn — used across several demos */
 .d-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 13px;
-  background: #fff; border: 1px solid rgba(20,20,20,0.10); }
+  background: var(--surface); border: 1px solid rgba(20,20,20,0.10); }
 .s-band.dark .d-row { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
 .d-thumb { width: 46px; height: 46px; border-radius: 10px; flex: none;
   background: linear-gradient(135deg, #e2e2e2, #cfcfcf); position: relative; overflow: hidden; }
@@ -2069,7 +2043,7 @@ footer {
 /* map demo — a neighbourhood drawn, not photographed */
 .d-map { position: relative; height: 300px; background: #efefef; overflow: hidden; }
 .s-band.dark .d-map { background: #1c1c1c; }
-.d-map .road { position: absolute; background: #fff; }
+.d-map .road { position: absolute; background: var(--surface); }
 .s-band.dark .d-map .road { background: rgba(255,255,255,0.13); }
 .d-map .blk { position: absolute; border-radius: 4px; background: rgba(20,20,20,0.07); }
 .s-band.dark .d-map .blk { background: rgba(255,255,255,0.06); }
@@ -2087,7 +2061,7 @@ footer {
 /* syndication demo — one upload, every channel */
 .d-fan { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 .d-chan { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 12px;
-  background: #fff; border: 1px solid rgba(20,20,20,0.10); font-size: 13px; font-weight: 600;
+  background: var(--surface); border: 1px solid rgba(20,20,20,0.10); font-size: 13px; font-weight: 600;
   opacity: 0; transform: translateY(6px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
 .s-band.dark .d-chan { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
 .d-chan.in { opacity: 1; transform: none; }
@@ -2133,12 +2107,12 @@ footer {
   background: rgba(20,20,20,0.14); transition: background .25s var(--ease); }
 .car-dot.on { background: var(--brand); }
 .s-band.dark .car-dot { background: rgba(255,255,255,0.22); }
-.s-band.dark .car-dot.on { background: #fff; }
+.s-band.dark .car-dot.on { background: var(--surface); }
 .car-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--crystal-border);
   background: rgba(255,255,255,0.7); color: var(--text); cursor: pointer; flex: none;
   display: flex; align-items: center; justify-content: center; font-size: 15px;
   transition: background .2s, transform .18s var(--ease); }
-.car-btn:hover { background: #fff; transform: translateY(-1px); }
+.car-btn:hover { background: var(--surface); transform: translateY(-1px); }
 .car-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
 .car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); letter-spacing: .04em; }
 
@@ -2151,7 +2125,7 @@ footer {
 .d-bar i { display: block; height: 100%; border-radius: 4px; background: var(--brand); width: 0;
   transition: width .9s var(--ease); }
 .d-plan { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 11px 13px; border-radius: 12px; background: #fff; border: 1px solid rgba(20,20,20,0.10); }
+  padding: 11px 13px; border-radius: 12px; background: var(--surface); border: 1px solid rgba(20,20,20,0.10); }
 .d-plan .pm { font-size: 13px; font-weight: 600; color: var(--text-muted); }
 .d-plan .pv { font-size: 14.5px; font-weight: 700; }
 .d-plan.paid { background: rgba(46,125,79,0.07); border-color: rgba(46,125,79,0.22); }
@@ -2222,7 +2196,7 @@ footer {
 .pr-card { position: relative; padding: 28px 26px 26px; border-radius: 20px;
   border: 1px solid var(--crystal-border); background: rgba(255,255,255,0.6);
   backdrop-filter: blur(20px); display: flex; flex-direction: column; height: 100%; }
-.pr-card.feature { border-color: rgba(20,20,20,0.42); background: #fff;
+.pr-card.feature { border-color: rgba(20,20,20,0.42); background: var(--surface);
   box-shadow: 0 26px 60px rgba(20,20,20,0.14); }
 .pr-badge { position: absolute; top: -11px; left: 26px; font-size: 10px; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; background: var(--brand); color: var(--bg);
@@ -2246,7 +2220,7 @@ footer {
   font-size: 14px; font-weight: 700; color: var(--brand);
   padding: 11px 20px; border-radius: 100px; border: 1px solid var(--crystal-border);
   background: rgba(255,255,255,0.55); transition: transform .18s var(--ease), background .2s, border-color .2s; }
-.s-cta:hover { transform: translateY(-1px); background: #fff; border-color: rgba(20,20,20,0.3); }
+.s-cta:hover { transform: translateY(-1px); background: var(--surface); border-color: rgba(20,20,20,0.3); }
 .s-band.dark .s-cta { color: #f5f5f5; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.22); }
 .s-band.dark .s-cta:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.4); }
 
@@ -2269,7 +2243,7 @@ footer {
   z-index: 900;
   display: flex; align-items: center; gap: 4px;
   padding: 6px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--crystal-border-bright);
   border-radius: 100px;
   box-shadow: 0 16px 44px rgba(20,26,38,0.20), 0 2px 8px rgba(20,26,38,0.08);
