@@ -212,8 +212,10 @@
     .deckbar .arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--ink); flex: none; transition: all var(--m-micro, .1s) ease; }
     .deckbar .arrow:active { transform: scale(0.9); }
     .deckbar .arrow:disabled { opacity: .28; cursor: default; }
-    .deckbar .dlabel { flex: 1; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--ink); }
-    .deckbar .dlabel small { display: block; font-weight: 500; font-size: 10.5px; letter-spacing: .04em; color: var(--ink-dim); margin-top: 1px; }
+    /* .dlabel and its counter are gone at every width — the element no longer
+       exists. The bar is now just the two arrows around the dots, so it
+       shrinks to the height of a tap target instead of a caption plus one. */
+    .deckbar { justify-content: center; }
     .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .deck::-webkit-scrollbar { display: none; }
     .deck > .card { flex: 0 0 100%; scroll-snap-align: center; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
@@ -364,8 +366,7 @@
 
          So the label goes, the arrows sit either side of the dots, and the
          duplication comes back as content. */
-      .deckbar { padding: 6px 2px 2px; gap: 8px; justify-content: center; }
-      .deckbar .dlabel { display: none; }
+      .deckbar { padding: 6px 2px 2px; gap: 8px; }
       .dots { margin: 0 4px; }
 
       /* Nothing floats over the map on a phone. The list this used to carry
@@ -459,7 +460,11 @@
 
     <div class="deckbar">
       <button class="arrow" id="deckPrev" aria-label="Previous card">‹</button>
-      <div class="dlabel" id="deckLabel">Overview</div>
+      <!-- The label lived here and printed the current card's title plus
+           "4 OF 9", directly above a card whose own heading already says which
+           card it is. Two rows of chrome for one fact, and the counter told
+           people how much was left rather than what was in front of them. The
+           dots below carry position; the card carries its name. -->
       <button class="arrow" id="deckNext" aria-label="Next card">›</button>
     </div>
     <div class="dots" id="deckDots"></div>
@@ -509,13 +514,16 @@
     <!-- true monthly cost — the Zillow calculator, Lagos reality -->
     <div class="card section">
       <div class="lbl"><span data-icon="costs"></span> What it really costs</div>
-      <div class="cost-rows">
-        <div class="cost-row"><span>Service charge</span><b>₦83k/mo</b></div>
-        <div class="cost-row"><span>Power backup &amp; utilities (est.)</span><b>₦120k/mo</b></div>
-        <div class="cost-row"><span>School run fuel — 12 min route (est.)</span><b>₦45k/mo</b></div>
-        <div class="cost-row total"><span>True monthly cost</span><b>≈ ₦248k/mo</b></div>
-      </div>
-      <p class="cost-note">Buying cash? Your ₦165M earns back ≈ ₦13.9M/yr at the corridor's 8.4% gross yield if you ever rent it out. Estimates from verified listing data + area intelligence — refine with Toju.</p>
+      <!-- Every figure here was written into the page: ₦83k service charge,
+           ₦120k power, ₦45k for a "12 min route", a ₦248k total and a note
+           about ₦165M earning back ₦13.9M at 8.4%. All of it showed on every
+           listing in the database. The Aafin Iyanu flat rents for ₦800k a year
+           with a ₦150k service charge -- about ₦12.5k a month -- and was being
+           told its service charge was ₦83k.
+           Filled from the listing now, and silent about anything it does not
+           state. -->
+      <div class="cost-rows" id="costRows"></div>
+      <p class="cost-note" id="costNote"></p>
     </div>
 
     <!-- Neighbourhood intelligence.
@@ -683,7 +691,7 @@
 
     /* ── swipe deck: cards move left/right, image stays put ── */
     const deck = document.getElementById('deck');
-    const deckLabel = document.getElementById('deckLabel');
+    // deckLabel is gone — see the deckbar markup for why.
     const deckDots = document.getElementById('deckDots');
     const deckPrev = document.getElementById('deckPrev');
     const deckNext = document.getElementById('deckNext');
@@ -739,7 +747,7 @@
       const w = deck.clientWidth || 0;
       const i = w ? Math.round(deck.scrollLeft / w) : deckIdx;
       deckIdx = Math.max(0, Math.min(deckCards.length - 1, Number.isFinite(i) ? i : 0));
-      deckLabel.innerHTML = cardTitle(deckCards[deckIdx]) + ' <small>' + (deckIdx + 1) + ' OF ' + deckCards.length + '</small>';
+      // No label to write any more; the dots below are the only position cue.
       deckDots.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === deckIdx));
       deckPrev.disabled = deckIdx === 0;
       deckNext.disabled = deckIdx === deckCards.length - 1;
@@ -1657,6 +1665,80 @@
       { k: 'flood_risk',        lbl: 'Flood risk',        good: false },
     ];
 
+    /* Kept as a named function so the three cases are visible side by side
+       rather than buried in a ternary inside a ternary. */
+    function haveplaces_text(havePlaces, nb) {
+      if (havePlaces) return '';                       // the card below says it better
+      if (nb) return 'We hold no scored data for this area yet.';
+      return 'We have not mapped what is around this address yet.';
+    }
+
+    /* ── what it really costs, from the listing ─────────────────────────────
+       Only what the agency actually recorded. A cost we have not been given is
+       omitted, not estimated: an invented "power & utilities" line repeated on
+       every property is indistinguishable, to a buyer, from one we looked up.
+
+       Rent and sale are genuinely different questions, so they render
+       differently rather than being forced through one template. */
+    function paintCosts(p) {
+      var rowsEl = document.getElementById('costRows');
+      var noteEl = document.getElementById('costNote');
+      if (!rowsEl) return;
+
+      var cur = p.currency || 'NGN';
+      var money = function (n) {
+        if (n == null) return null;
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: 'currency', currency: cur, maximumFractionDigits: 0,
+          }).format(Number(n));
+        } catch (e) { return String(n); }
+      };
+
+      var isRent = p.listing_type === 'rent';
+      var per = p.price_period === 'per_year' ? '/yr'
+              : p.price_period === 'per_month' ? '/mo' : '';
+      var rows = [];
+
+      if (p.price != null) {
+        rows.push(['' + (isRent ? 'Rent' : 'Price'), money(p.price) + per]);
+      }
+      if (p.service_charge != null) {
+        rows.push(['Service charge', money(p.service_charge) + (isRent ? '/yr' : '')]);
+      }
+      if (p.move_in_cost != null) {
+        rows.push(['Move-in cost (one-off)', money(p.move_in_cost)]);
+      }
+
+      /* A first-year total only where every part of it is known. Adding up two
+         of three numbers and calling it a total is worse than not showing one. */
+      if (isRent && p.price != null && p.service_charge != null && p.move_in_cost != null) {
+        var first = Number(p.price) + Number(p.service_charge) + Number(p.move_in_cost);
+        rows.push(['First year, all in', money(first), true]);
+      }
+
+      if (!rows.length) {
+        rowsEl.innerHTML = '';
+        if (noteEl) noteEl.textContent = 'This listing does not state its costs yet. Ask the agency what is payable beyond the headline price.';
+        return;
+      }
+
+      rowsEl.innerHTML = rows.map(function (r) {
+        return '<div class="cost-row' + (r[2] ? ' total' : '') + '">'
+          + '<span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>';
+      }).join('');
+
+      if (noteEl) {
+        var missing = [];
+        if (p.service_charge == null) missing.push('service charge');
+        if (p.move_in_cost == null) missing.push('move-in cost');
+        noteEl.textContent = missing.length
+          ? ('The agency has not stated a ' + missing.join(' or a ')
+             + ' for this listing. Utilities, power and any agency fee are separate and not shown here.')
+          : 'Utilities, power and any agency fee are separate and not shown here.';
+      }
+    }
+
     function paintNeighbourhood(p) {
       var nb = p && p.neighbourhoods;
       if (Array.isArray(nb)) nb = nb[0];
@@ -1688,10 +1770,19 @@
         scoresEl.innerHTML = '';
         scoresEl.insertAdjacentHTML('afterend', '');
         if (noteEl) {
+          /* "Not linked to a surveyed neighbourhood" was an apology for a gap
+             that no longer exists. Nobody has to survey anything: what is
+             around this address is measured from the map, and the card below
+             lists it by category with distances. Saying we lack area scores,
+             directly above fourteen real places, told the reader we knew less
+             than we do.
+
+             So: nothing at all when we have places -- they answer the
+             question. A short line only when we genuinely have neither. */
+          var haveplaces = (placesState === 'ready' && PLACES && PLACES.length)
+            || placesState === 'loading';
           noteEl.className = 'nb-empty';
-          noteEl.textContent = nb
-            ? 'We hold no scored data for this area yet.'
-            : 'This listing is not linked to a surveyed neighbourhood yet, so we have no area scores for it. What is nearby, below, is measured from this property.';
+          noteEl.textContent = haveplaces_text(haveplaces, nb);
         }
         return;
       }
@@ -1764,6 +1855,8 @@
             /* The map uses the same rows. Marked 'loaded' so fetchAmenities()
                does not then overwrite a Google survey with a thinner Overpass
                one. */
+            // The neighbourhood note asks whether we have places; now we do.
+            if (window.__pvListing) paintNeighbourhood(window.__pvListing);
             POI = poiFromStored(rows);
             if (POI.length) {
               poiState = 'loaded';
@@ -2447,6 +2540,7 @@
       var p = e.detail || {};
       window.__pvListing = p;
       paintNeighbourhood(p);
+      paintCosts(p);
       // Their anchors first, so the very first paint can already include them
       // rather than flashing an area-only paragraph and then rewriting it.
       fetchMyPlaces().then(function () { paintAround(); });
