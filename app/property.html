@@ -101,6 +101,40 @@
     .area-note { margin: 0 0 12px; font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); }
     .nb-around .nba-k { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase;
       color: var(--ink-dim); margin-bottom: 9px; }
+    /* The same rectangle-with-icon rows the map legend uses, so the card and
+       the map read as one thing rather than two designs for one dataset.
+       Tiles were tried first and were worse: eight boxes of chrome to carry
+       eight numbers. */
+    .nba-rows { display: flex; flex-direction: column; gap: 2px; }
+    .nba-cr { border-radius: 10px; overflow: hidden; }
+    .nba-crh {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding: 10px 11px; background: none; border: none; cursor: pointer;
+      font: inherit; color: var(--ink); text-align: left;
+      border-radius: 10px; transition: background .12s;
+    }
+    .nba-crh:hover { background: rgba(0,0,0,0.035); }
+    .nba-crh .dot {
+      width: 22px; height: 22px; border-radius: 7px; flex: none;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .nba-crh .lb { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 600; }
+    .nba-crh .n {
+      flex: none; font: 700 12px var(--f-sans); color: var(--ink-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .nba-crh .chv { flex: none; color: var(--ink-dim); font-size: 15px; line-height: 1;
+      transition: transform .18s ease; }
+    .nba-cr.open .nba-crh .chv { transform: rotate(90deg); }
+    .nba-crb { display: none; padding: 2px 11px 10px 43px; }
+    .nba-cr.open .nba-crb { display: block; }
+    .nba-crb .pl {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+      padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(20,20,20,0.055);
+    }
+    .nba-crb .pl:last-child { border-bottom: none; }
+    .nba-crb .pl .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nba-crb .pl .ds { flex: none; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
     .nba-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; }
     .nba-cat {
       border: 1px solid var(--border); border-radius: 13px; padding: 11px 13px 12px;
@@ -1923,24 +1957,47 @@
           return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
         });
 
-        host.innerHTML = K + '<div class="nba-grid">'
+        host.innerHTML = K + '<div class="nba-rows">'
           + keys.map(function (c) {
               var list = groups[c].slice().sort(function (a, b) {
                 return (a.distance_m || 0) - (b.distance_m || 0);
               });
-              var top = list[0];
-              var drive = fmtDrive(top.drive_seconds);
-              var more = list.length > 1
-                ? ('<div class="cm">+ ' + (list.length - 1) + ' more</div>') : '';
-              return '<div class="nba-cat">'
-                + '<div class="ct"><span class="cn">' + esc(PLACE_LABEL[c] || c) + '</span>'
-                + '<span class="cc">' + list.length + '</span></div>'
-                + '<div class="cp">' + esc(top.name) + '</div>'
-                + '<div class="cd">'
-                + (drive ? drive + ' drive' : (top.distance_m != null ? formatDist(top.distance_m) : ''))
-                + '</div>' + more + '</div>';
+              var m = metaFor(c);
+              var rows = list.map(function (x) {
+                var drive = fmtDrive(x.drive_seconds);
+                return '<div class="pl"><span class="nm">' + esc(x.name) + '</span>'
+                  + '<span class="ds">'
+                  + (drive ? drive : (x.distance_m != null ? formatDist(x.distance_m) : ''))
+                  + '</span></div>';
+              }).join('');
+              return '<div class="nba-cr" data-cat="' + esc(c) + '">'
+                + '<button class="nba-crh" type="button" aria-expanded="false">'
+                + '<span class="dot" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</span>'
+                + '<span class="lb">' + esc(m.lbl) + '</span>'
+                + '<span class="n">' + list.length + '</span>'
+                + '<span class="chv" aria-hidden="true">›</span>'
+                + '</button>'
+                + '<div class="nba-crb">' + rows + '</div>'
+                + '</div>';
             }).join('')
           + '</div><p class="cmt-src">From Google Maps, measured from this address.</p>';
+
+        /* Open one, and only one: eight open at once is the flat list this was
+           meant to replace. */
+        host.querySelectorAll('.nba-crh').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var row = btn.parentElement;
+            var wasOpen = row.classList.contains('open');
+            host.querySelectorAll('.nba-cr.open').forEach(function (r) {
+              r.classList.remove('open');
+              r.querySelector('.nba-crh').setAttribute('aria-expanded', 'false');
+            });
+            if (!wasOpen) {
+              row.classList.add('open');
+              btn.setAttribute('aria-expanded', 'true');
+            }
+          });
+        });
         return;
       }
 
