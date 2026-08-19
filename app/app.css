@@ -57,6 +57,14 @@
 
   /* Brand — semantic. Fill value, then the sibling used when it must be read. */
   --success:     #22C55E;  --success-ink: #15803D;   /* 4.68:1 on Cloud */
+  /* The "pending / still checking" amber had no token at all: #a8742b was
+     pasted as a literal in six places across three files, so there was
+     nowhere to fix it. As 11-12px text it measured 3.77:1 on Cloud and
+     3.40:1 on its own tint. #8E6225 is the same hue, and clears 4.5 on the
+     DARKEST ground it lands on (#f0ebe4, the pending chip) rather than on
+     Cloud -- which is how the three tokens above each ended up wrong once.
+     Solve against the worst ground a token can reach, not the common one. */
+  --warn-ink: #8E6225;
   --info:        #3B82F6;  --info-ink:    #1D4ED8;   /* 6.26:1 */
   --error:       #EF4444;  --error-ink:   #B91C1C;   /* 6.04:1 */
   --danger:      #B91C1C;
@@ -94,9 +102,20 @@
      page stops looking like an unstyled document. */
   --surface: #FCFBF9;
   --ink: #1C1C1E;                    /* Charcoal — 15.89:1 on Cloud */
-  --ink-muted: #6B6B70;              /* Stone — 4.95:1, clears AA. The value this
+  --ink-muted: #6A6A6F;              /* Stone — 4.95:1, clears AA. The value this
                                         replaces measured 3.67:1 and did not. */
-  --ink-dim: rgba(107,107,112,0.62);
+  /* --ink-muted above was raised to #6B6B70 because its predecessor measured
+     3.67:1 and failed. --ink-dim was the SAME grey at 62% alpha and was not
+     rechecked, so it composites to about 2.43:1 on Cloud -- worse than the
+     value that prompted the fix. Measured on the property cards in Browse,
+     where it carries the location line under every listing.
+     Solid, and dark enough to clear AA while staying visibly quieter than
+     --ink-muted. #717171 measures 4.56:1 against the card ground the text
+     actually sits on -- measured in the browser, not computed against a
+     background I assumed. My first replacement was #7C7C82, picked that
+     way, and landed at 3.87:1: the same mistake as the token it fixed.
+     Alpha is what hid the original problem, so this uses none. */
+  --ink-dim: #717171;
   --border: rgba(13,13,15,0.10);
   --border-strong: #E7E7EA;
   --glass: rgba(255,255,255,0.72);
@@ -371,8 +390,16 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;
 }
-.chip-pass { background: rgba(46,125,79,0.1); color: var(--success); border: 1px solid rgba(46,125,79,0.2); }
-.chip-pending { background: rgba(176,125,43,0.1); color: #a8742b; border: 1px solid rgba(176,125,43,0.2); }
+/* --success-ink, not --success. #22C55E is a FILL colour: as 11px text on a
+   10%-tint background it measures 1.87:1, and this is the single most
+   important label on a property card in a product whose whole pitch is
+   verification. --success-ink (#15803D) already existed for exactly this
+   and clears AA -- but #15803D is itself specified against Cloud, and on the
+   chip's own 10% green tint (#e3ebe7 composited) it measures 4.13:1. Darkened
+   along the same hue to #147839, which is 4.56:1 on the ground it really
+   sits on. Measured in the browser. */
+.chip-pass { background: rgba(46,125,79,0.1); color: #147839; border: 1px solid rgba(46,125,79,0.2); }
+.chip-pending { background: rgba(176,125,43,0.1); color: var(--warn-ink); border: 1px solid rgba(176,125,43,0.2); }
 .chip-gold { background: rgba(156,122,30,0.1); color: var(--gold); border: 1px solid rgba(156,122,30,0.3); }
 
 /* ── No-backdrop-filter fallback ─────────────────────────────────────────
