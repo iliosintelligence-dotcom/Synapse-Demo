@@ -110,6 +110,77 @@
     } catch (e) { return fallback; }
   }
 
+  /* ── OAuth ───────────────────────────────────────────────────────────────
+     Sign-in was email and password only, which is a real barrier here: it
+     means remembering another password to look at houses, and it means we
+     hold a password hash for people who never wanted an account with us.
+
+     The redirect is built through safeNext() for the same reason every other
+     navigation is. An OAuth `redirectTo` is attacker-reachable -- it travels
+     as a query parameter through a third party and comes back -- so it must
+     never be echoed from the URL without being checked. Supabase also
+     requires the final URL to be on its allow-list, which is a second gate,
+     but the first one is ours and should not depend on their configuration
+     being right.
+
+     No callback page is needed: the client is created with
+     detectSessionInUrl, so the session in the returning fragment is consumed
+     wherever the person lands. */
+  var OAUTH_PROVIDERS = ['google'];
+
+  /* Which providers this project actually has switched on.
+     GoTrue publishes this at /auth/v1/settings, and asking is the difference
+     between a button that works and a button that throws the person out to a
+     raw JSON error on a supabase.co domain. signInWithOAuth navigates the
+     browser itself, so a .catch() around it never runs -- the tab has already
+     gone. The only way to fail gracefully is to know before pressing.
+
+     Cached for the page: the answer cannot change mid-session, and the sign-in
+     screen would otherwise ask twice. */
+  var providersPromise = null;
+  function enabledProviders() {
+    if (providersPromise) return providersPromise;
+    providersPromise = fetch(SUPABASE_URL + '/auth/v1/settings', {
+      headers: { apikey: PUBLISHABLE_KEY },
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ext = (d && d.external) || {};
+        return OAUTH_PROVIDERS.filter(function (name) { return ext[name] === true; });
+      })
+      .catch(function () { return []; });   // unreachable settings: offer nothing
+    return providersPromise;
+  }
+
+  function signInWithProvider(provider, next) {
+    if (OAUTH_PROVIDERS.indexOf(provider) === -1) {
+      return Promise.reject(new Error('Unsupported sign-in provider: ' + provider));
+    }
+    // Resolve to an absolute same-origin URL: safeNext() returns a path, and
+    // Supabase needs a full URL to hand to the provider.
+    var path = safeNext(next, 'toju.html');
+    var target = new URL(path, window.location.href).toString();
+
+    return client().then(function (c) {
+      return c.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: target,
+          // Ask for the minimum. A name and an email are what a profile needs;
+          // anything more is data we would be holding without a use for it.
+          scopes: provider === 'google' ? 'email profile' : undefined,
+        },
+      });
+    }).then(function (r) {
+      /* signInWithOAuth resolves BEFORE the browser leaves, and reports a
+         misconfigured provider here rather than at the destination. Surfacing
+         it means "Google sign-in is not enabled on this project" instead of a
+         silent no-op when the button is pressed. */
+      if (r && r.error) throw r.error;
+      return r;
+    });
+  }
+
   /* ── actions ─────────────────────────────────────────────────────────── */
   function signUp(email, password, opts) {
     opts = opts || {};
@@ -195,6 +266,8 @@
     client: client, ready: ready, user: function () { return cachedUser; },
     getUser: getUser, roleOf: roleOf, safeNext: safeNext,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
+    signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
+    enabledProviders: enabledProviders,
     requireAuth: requireAuth, paint: paintAll,
   };
 
