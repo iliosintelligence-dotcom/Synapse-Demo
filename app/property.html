@@ -354,6 +354,25 @@
       }
       .cta-dock .btn { min-height: 48px; }
 
+      /* ── MOBILE: stop saying the same thing twice ─────────────────────────
+         The deck bar printed the current card's name -- "Overview",
+         "Negotiate with Toju" -- directly above a card whose own heading says
+         exactly that. Two lines of chrome for one piece of information, at the
+         top of a phone screen where vertical space is the scarcest thing there
+         is. The dots already say where you are in the deck, and arrows do not
+         need a caption to be understood.
+
+         So the label goes, the arrows sit either side of the dots, and the
+         duplication comes back as content. */
+      .deckbar { padding: 6px 2px 2px; gap: 8px; justify-content: center; }
+      .deckbar .dlabel { display: none; }
+      .dots { margin: 0 4px; }
+
+      /* Nothing floats over the map on a phone. The list this used to carry
+         now lives in the card below, so at this size it is pure obstruction:
+         the sheet exists to show the map, and it should show the map. */
+      .pvc-overlay { display: none !important; }
+
       /* ── the map, as a sheet ── */
       .pv-canvas {
         display: flex;
