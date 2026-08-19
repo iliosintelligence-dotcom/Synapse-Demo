@@ -191,10 +191,32 @@
     .pvc-tabs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; cursor: pointer; transition: .15s; }
     .pvc-tabs button:hover { color: var(--ink); }
     .pvc-tabs button.on { background: #121212; color: #fff; border-color: #121212; }
-    .pvc-map-wrap { position: relative; flex: 1; min-height: 0; }
-    #pvMap { position: absolute; inset: 0; z-index: 0; }
-    .pvc-overlay { position: absolute; left: 16px; bottom: 16px; z-index: 500; width: min(340px, 62%); background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(20,26,38,0.2); padding: 14px 16px; max-height: calc(100% - 32px); overflow-y: auto; }
-    .pvc-overlay.wide { width: min(420px, 74%); }
+    /* The old absolute pair is replaced wholesale below rather than layered
+       over -- leaving `#pvMap { position:absolute; inset:0 }` in place would
+       have taken the map straight back out of the flex row. */
+    /* WAS: position:absolute over the map, 62% of its width, bottom-left. It
+       covered the pins it was describing -- you could read the list or see
+       where the places were, not both, and on a narrow map it took most of the
+       view. Now it sits beside the map on a wide screen and beneath it on a
+       narrow one, so the map is never obscured by its own caption.
+
+       Collapsible, because on a phone even a panel below the map pushes the
+       map off screen if it is long. */
+    .pvc-map-wrap { display: flex; gap: 12px; align-items: stretch; flex: 1; min-height: 0; }
+    #pvMap { position: relative; inset: auto; flex: 1 1 auto; min-width: 0; z-index: 0; }
+    .pvc-overlay {
+      flex: 0 0 300px; align-self: stretch; overflow-y: auto;
+      background: var(--surface, #fff); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      box-shadow: 0 6px 18px rgba(20,26,38,0.06);
+    }
+    .pvc-overlay.wide { flex-basis: 360px; }
+    .pvo-hint { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--ink-dim); }
+    @media (max-width: 900px) {
+      .pvc-map-wrap { flex-direction: column; }
+      #pvMap { min-height: 260px; }
+      .pvc-overlay, .pvc-overlay.wide { flex: 0 0 auto; max-height: 40vh; }
+    }
     .pvo-k { font: 700 11px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
     .pvo-leg { display: flex; flex-direction: column; gap: 8px; }
     .pvo-leg .r { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink); }
@@ -526,11 +548,17 @@
           <div class="pvc-trust-txt"><b id="pvcVerifyLine"></b><small id="pvcVerifyNote"></small></div>
         </div>
         <div class="pvc-tabs" id="pvcTabs" role="tablist" aria-label="Map view">
+          <!-- Map views only. Agency, Costs and Legal were tabs here and none of
+               them puts anything on a map -- they swapped the map's own panel
+               for text that belongs in the cards below, so the map went blank
+               while you read about a service charge. The rest are filters over
+               the same pins. -->
           <button data-view="poi" class="on" role="tab" aria-selected="true"><span data-icon="pin"></span> Nearby</button>
           <button data-view="commute" role="tab" aria-selected="false"><span data-icon="commute"></span> Commute</button>
-          <button data-view="agency" role="tab" aria-selected="false"><span data-icon="agency"></span> Agency</button>
-          <button data-view="cost" role="tab" aria-selected="false"><span data-icon="costs"></span> Costs</button>
-          <button data-view="legal" role="tab" aria-selected="false"><span data-icon="legal"></span> Legal</button>
+          <button data-view="school" role="tab" aria-selected="false">Schools</button>
+          <button data-view="health" role="tab" aria-selected="false">Health</button>
+          <button data-view="shops" role="tab" aria-selected="false">Shops</button>
+          <button data-view="transit" role="tab" aria-selected="false">Transport</button>
         </div>
       </div>
       <div class="pvc-map-wrap">
@@ -1165,7 +1193,13 @@
        rather say "couldn't reach it, try again" than show a stale or
        invented answer. */
     var PROP = null;                 // [lat, lng] from the listing
-    var POI = [];                    // filled by fetchAmenities() once PROP is known
+    var POI = [];                    // filled from the stored survey, or by fetchAmenities()
+    /* Which source POI currently holds. The stored Google survey always wins:
+       both lookups are started in the same handler, the Overpass one first, so
+       without this the slower-but-emptier answer arrives second and overwrites
+       the better one. On Ologuneru that meant fourteen real places were
+       replaced by OpenStreetMap's nothing, seconds after they appeared. */
+    var poiSource = null;            // 'stored' | 'osm'
     var poiState = 'idle';           // idle | loading | loaded | error
     var poiFetchedFor = null;        // property id already fetched, so tab-switching doesn't refetch
     var routeLine = null;            // the one active "connect to this amenity" route, if any
@@ -1182,7 +1216,28 @@
       bus_stop: { i: 'bus', col: '#1d7a8c', lbl: 'Bus stops' },
       hospital: { i: 'hospital', col: '#c94040', lbl: 'Hospitals' },
       supermarket: { i: 'cart', col: '#a8742b', lbl: 'Supermarkets' },
+      /* The stored Google survey uses its own category names, and META was
+         written for OpenStreetMap's. When the map switched to the stored
+         source, every Google-only category -- pharmacy, bank, market,
+         university, transit, park -- hit `META[t].col` on an undefined and
+         threw mid-render: the markers were already drawn, so the map filtered
+         correctly while the panel beside it silently kept the previous tab's
+         text. Anything missing here is now a real gap in the legend, not a
+         crash. */
+      pharmacy: { i: 'hospital', col: '#b3506b', lbl: 'Pharmacies' },
+      market: { i: 'cart', col: '#a8742b', lbl: 'Markets & malls' },
+      bank: { i: 'cart', col: '#5a6b7a', lbl: 'Banks' },
+      university: { i: 'school', col: '#2f6dbd', lbl: 'Universities' },
+      transit: { i: 'bus', col: '#1d7a8c', lbl: 'Transport' },
+      park: { i: 'church', col: '#3f9c6d', lbl: 'Parks' },
+      cafe: { i: 'restaurant', col: '#c98b3a', lbl: 'Cafes' },
+      other: { i: 'cart', col: '#6B6B70', lbl: 'Other' },
     };
+    /* Never index META directly again: an unknown category must degrade to a
+       grey pin, not take the whole panel down with it. */
+    function metaFor(t) {
+      return META[t] || { i: 'cart', col: '#6B6B70', lbl: (String(t || 'Other')).replace(/_/g, ' ') };
+    }
     function poiSvg(name, size) { return window.SynIcons ? SynIcons.svg(name, { size: size }) : ''; }
 
     /* ── real amenities: OpenStreetMap Overpass API ──────────────────────── */
@@ -1580,6 +1635,16 @@
           if (Array.isArray(rows) && rows.length) {
             PLACES = rows;
             placesState = 'ready';
+            /* The map uses the same rows. Marked 'loaded' so fetchAmenities()
+               does not then overwrite a Google survey with a thinner Overpass
+               one. */
+            POI = poiFromStored(rows);
+            if (POI.length) {
+              poiState = 'loaded';
+              poiSource = 'stored';
+              poiFetchedFor = propId;
+              if (typeof setView === 'function') setView(state.view || 'poi');
+            }
             paintAround();
           } else {
             placesState = 'empty';   // nothing surveyed yet; POI fallback fills in
@@ -1895,6 +1960,33 @@
         + 'This listing has not been surveyed with Google yet.</p>';
     }
 
+    /* ── the map's pins come from the stored survey first ───────────────────
+       The map fetched its own pins from Overpass while the card beneath it read
+       the stored Google places. On an address OpenStreetMap has not mapped --
+       Ologuneru, for one -- that meant the map showed nothing at all while the
+       card listed fourteen places, from the same page, about the same house.
+
+       One source, preferred in the order we trust it: the stored survey if the
+       property has one, Overpass only as a fallback for listings not yet
+       enriched. POI keeps its existing shape ({c, t, n, d, dm}) so every
+       renderer downstream is untouched. */
+    function poiFromStored(rows) {
+      return (rows || [])
+        .filter(function (r) { return r.lat != null && r.lon != null; })
+        .map(function (r) {
+          return {
+            c: [Number(r.lat), Number(r.lon)],
+            t: String(r.category || 'other'),
+            n: r.name,
+            dm: r.distance_m,
+            // Prefer a measured drive time; fall back to the distance we know.
+            d: r.drive_text || (r.drive_seconds != null
+                 ? Math.round(r.drive_seconds / 60) + ' min'
+                 : formatDist(r.distance_m)),
+          };
+        });
+    }
+
     function fetchAmenities(propId, lat, lng) {
       if (poiFetchedFor === propId) return; // already have it (or are getting it)
       poiFetchedFor = propId;
@@ -1903,6 +1995,8 @@
       var q = OVERPASS_QUERY_TPL.split('{lat}').join(lat).split('{lng}').join(lng);
       overpassFetch(q, 25000)
         .then(function (data) {
+          // The stored survey got here first, and is the better answer.
+          if (poiSource === 'stored') return;
           var seen = {};
           POI = (data.elements || []).reduce(function (out, el) {
             var t = elementToType(el.tags || {});
@@ -1925,6 +2019,7 @@
           if (state.view === 'poi') renderPOI();
         })
         .catch(function () {
+          if (poiSource === 'stored') return;   // nothing to fall back to; we already have better
           poiState = 'error';
           paintAround();     // the card must say it failed, not sit on "looking up"
           if (state.view === 'poi') renderPOI();
@@ -1945,7 +2040,7 @@
           var route = data.routes && data.routes[0];
           if (!route) throw new Error('no route');
           var latlngs = route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
-          routeLine = L.polyline(latlngs, { color: META[poi.t].col, weight: 4, opacity: 0.85 }).addTo(layer);
+          routeLine = L.polyline(latlngs, { color: metaFor(poi.t).col, weight: 4, opacity: 0.85 }).addTo(layer);
           var mins = Math.round(route.duration / 60);
           overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
             + '<div class="pvo-eta"><span>' + (AMENITY_LABEL[poi.t] || '') + ' · ' + poi.d + ' away</span></div>'
@@ -1986,13 +2081,23 @@
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18 }).addTo(map);
     var layer = L.layerGroup().addTo(map);
     var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
-    function poiIcon(t) { var m = META[t]; return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
+    function poiIcon(t) { var m = metaFor(t); return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
     var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
     var state = { view: 'poi', time: 'midday' };
     var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE }); }, 60); }
 
-    function renderPOI() {
+    /* Which pin kinds each tab shows. Names cover both sources: the stored
+       Google categories and the OpenStreetMap types the fallback produces, so a
+       filter works whichever one is loaded. */
+    var POI_FILTERS = {
+      school:  ['school', 'university'],
+      health:  ['hospital', 'pharmacy'],
+      shops:   ['supermarket', 'market', 'shopping mall', 'restaurant', 'cafe', 'bank'],
+      transit: ['transit', 'bus_stop', 'bus station', 'park'],
+    };
+
+    function renderPOI(only) {
       overlay.className = 'pvc-overlay';
       if (!PROP) { overlay.innerHTML = NO_DATA; return; }
       if (poiState === 'loading') {
@@ -2011,25 +2116,60 @@
         return;
       }
       if (!POI.length) { overlay.innerHTML = NO_DATA; return; }
+
+      /* `only` is the tab's filter. Matching is loose on purpose: the stored
+         Google categories and the OpenStreetMap fallback types do not use the
+         same words for the same thing, and a filter that silently shows nothing
+         because one source says 'bus_stop' and the other 'transit' is worse
+         than one that is slightly generous. */
+      var shown = POI;
+      if (only && only.length) {
+        shown = POI.filter(function (p) {
+          var t = String(p.t || '').toLowerCase().replace(/_/g, ' ');
+          return only.some(function (k) {
+            k = k.toLowerCase().replace(/_/g, ' ');
+            return t === k || t.indexOf(k) !== -1 || k.indexOf(t) !== -1;
+          });
+        });
+        if (!shown.length) {
+          poiMarkers.forEach(function (m) { layer.removeLayer(m); });
+          poiMarkers = [];
+          overlay.innerHTML = '<div class="pvo-k">' + escHtml(titleEl.textContent) + '</div>'
+            + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
+            + 'Nothing of this kind is mapped near this home.</p>';
+          fit([PROP]);
+          return;
+        }
+      }
+
       // renderPOI() can run again without going through setView() (e.g. the
       // "back from route" button) — clear only OUR OWN previous markers so
       // repeated calls don't stack duplicates on top of the home pin.
       poiMarkers.forEach(function (m) { layer.removeLayer(m); });
       poiMarkers = [];
       var pts = [PROP];
-      POI.forEach(function (p) {
+      shown.forEach(function (p) {
         var m = L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer)
-          .bindPopup('<b>' + escHtml(p.n) + '</b><br>' + (AMENITY_LABEL[p.t] || META[p.t].lbl) + ' · ' + p.d)
+          .bindPopup('<b>' + escHtml(p.n) + '</b><br>' + (AMENITY_LABEL[p.t] || metaFor(p.t).lbl) + ' · ' + p.d)
           .on('click', function () { showRoute(p); });
         poiMarkers.push(m);
         pts.push(p.c);
       });
-      var counts = {}; POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
-      var leg = Object.keys(META).map(function (t) { return counts[t] ? ('<div class="r"><span class="dot" style="background:' + META[t].col + '">' + poiSvg(META[t].i, 12) + '</span>' + META[t].lbl + '<span class="n">' + counts[t] + '</span></div>') : ''; }).join('');
-      var near = POI.slice(0, 6).map(function (p, i) { return '<div class="li" data-poi="' + i + '" style="cursor:pointer"><b>' + escHtml(p.n) + '</b><span>' + p.d + '</span></div>'; }).join('');
-      overlay.innerHTML = '<div class="pvo-k">What\'s around this home — tap one to see the walk</div><div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
+      var counts = {}; shown.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
+      /* Iterate the categories actually present, not META's keys: a Google
+         category with no META entry would otherwise never appear in the
+         legend even though its pins are on the map. */
+      var leg = Object.keys(counts).map(function (t) {
+        var m = metaFor(t);
+        return '<div class="r"><span class="dot" style="background:' + m.col + '">' + poiSvg(m.i, 12)
+          + '</span>' + escHtml(m.lbl) + '<span class="n">' + counts[t] + '</span></div>';
+      }).join('');
+      var near = shown.slice(0, 6).map(function (p, i) { return '<div class="li" data-poi="' + i + '" style="cursor:pointer"><b>' + escHtml(p.n) + '</b><span>' + p.d + '</span></div>'; }).join('');
+      overlay.innerHTML = '<div class="pvo-k">' + escHtml(titleEl.textContent)
+        + ' <span class="pvo-hint">tap one for the route</span></div>'
+        + '<div class="pvo-leg">' + leg + '</div><div class="pvo-list">' + near + '</div>';
       overlay.querySelectorAll('[data-poi]').forEach(function (row) {
-        row.addEventListener('click', function () { showRoute(POI[+row.dataset.poi]); });
+        row.addEventListener('click', function () { showRoute(shown[+row.dataset.poi]); });
       });
       fit(pts);
     }
@@ -2108,8 +2248,10 @@
         L.marker(PROP, { icon: homeIcon }).addTo(layer)
           .bindPopup('<b>This home</b>' + (L2.title ? '<br>' + L2.title : ''));
       }
-      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', agency: 'Listing agency', cost: 'Costs', legal: 'Legal & documents' }[v] || 'Nearby';
-      if (v === 'commute') renderCommute(); else if (v === 'agency') renderAgency(); else if (v === 'cost') renderCost(); else if (v === 'legal') renderLegal(); else renderPOI();
+      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', school: 'Schools',
+        health: 'Health', shops: 'Shops & markets', transit: 'Getting around' }[v] || 'Nearby';
+      if (v === 'commute') renderCommute();
+      else renderPOI(POI_FILTERS[v] || null);
     }
     document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
     /* Takes the card element, not an index: the deck can hide or reveal cards,
