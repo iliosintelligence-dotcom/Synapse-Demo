@@ -94,6 +94,7 @@
     .commute { display: flex; gap: 8px; flex-wrap: wrap; }
     .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
     .commute .c b { color: var(--ink); font-weight: 600; }
+    .cmt-ff { font-style: normal; color: var(--ink-dim); margin-left: 3px; font-size: 11px; }
     .cmt-src { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-muted); }
     .nb-addr { margin: 2px 0 12px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
     .nb-empty { font-size: 13px; line-height: 1.55; color: var(--ink-muted); margin: 4px 0 0; }
@@ -516,10 +517,16 @@
     <!-- commute intelligence: times shift with time of day; add your own places -->
     <div class="card section">
       <div class="lbl"><span data-icon="commute"></span> Commute intelligence</div>
-      <!-- The morning/midday/evening buttons multiplied a made-up number by
-           another made-up number (1.55 / 1.75). Routed times below are
-           free-flow and are labelled as such; a peak figure we cannot measure
-           is not worth inventing. -->
+      <!-- The morning/midday/evening buttons are back, and now they switch
+           between three MEASUREMENTS rather than three multiples of a guess:
+           Google's Routes API is asked for each departure with traffic-aware
+           routing, and each answer is stored in its own column. A slot we
+           could not measure shows no figure rather than a derived one. -->
+      <div class="tod" id="tod" role="group" aria-label="Time of day">
+        <button type="button" data-slot="morning">Morning</button>
+        <button type="button" data-slot="midday" class="on">Midday</button>
+        <button type="button" data-slot="evening">Evening</button>
+      </div>
       <div class="commute" id="commute"></div>
       <p class="cmt-src" id="commuteSrc"></p>
     </div>
@@ -1509,6 +1516,40 @@
         .catch(function () { cmtState = 'failed'; renderCommutePanel(); });
     }
 
+    /* Which departure the buttons are showing. Midday is the default because it
+       is the closest thing to "normally", and because a page that opens on the
+       worst hour of the day is arguing rather than informing. */
+    var cmtSlot = 'midday';
+    var CMT_SLOT_FIELD = {
+      morning: 'drive_seconds_morning',
+      midday: 'drive_seconds_midday',
+      evening: 'drive_seconds_evening',
+    };
+
+    /* The measurement for the chosen hour, or the free-flow one if that hour
+       was never measured. Returns which it used, so the panel can say so
+       instead of passing one off as the other. */
+    function cmtSecondsFor(d) {
+      var field = CMT_SLOT_FIELD[cmtSlot];
+      if (d[field] != null) return { sec: d[field], measured: true };
+      if (d.drive_seconds != null) return { sec: d.drive_seconds, measured: false };
+      return { sec: null, measured: false };
+    }
+
+    (function wireTod() {
+      var tod = document.getElementById('tod');
+      if (!tod) return;
+      tod.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-slot]');
+        if (!b) return;
+        cmtSlot = b.dataset.slot;
+        tod.querySelectorAll('[data-slot]').forEach(function (x) {
+          x.classList.toggle('on', x === b);
+        });
+        renderCommutePanel();
+      });
+    })();
+
     function renderCommutePanel() {
       var host = document.getElementById('commute');
       var src = document.getElementById('commuteSrc');
@@ -1521,9 +1562,13 @@
         parts.push('<span class="c">Couldn’t reach the maps service just now</span>');
       } else if (CMT_DESTS && CMT_DESTS.length) {
         CMT_DESTS.forEach(function (d) {
-          var t = fmtMin(d.sec != null ? Math.round(d.sec / 60) : null);
+          var pick = cmtSecondsFor(d);
+          var t = fmtMin(pick.sec != null ? Math.round(pick.sec / 60) : null);
           parts.push('<span class="c">' + esc(d.name) + ' <b>'
-            + (t ? t : formatDist(d.dm)) + '</b></span>');
+            + (t ? t : formatDist(d.dm)) + '</b>'
+            // An hour we did not measure is marked, not quietly substituted.
+            + (t && !pick.measured ? '<i class="cmt-ff" title="Free-flow time; this hour was not measured">~</i>' : '')
+            + '</span>');
         });
       } else if (cmtState === 'ready') {
         parts.push('<span class="c">No major destinations mapped near this address yet</span>');
@@ -1542,7 +1587,11 @@
         var routed = (CMT_DESTS || []).some(function (d) { return d.sec != null; });
         src.textContent = cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length
           ? (routed
-              ? 'Places from OpenStreetMap · driving times from OSRM, free-flow traffic. Real journeys at peak will be longer.'
+              /* Was "free-flow traffic. Real journeys at peak will be longer." --
+                 a hedge standing in for a measurement we can now actually take.
+                 The buttons above answer that question directly, so the line
+                 only needs to name where the numbers came from. */
+              ? 'Places and drive times from Google Maps, measured from this address.'
               : 'Places from OpenStreetMap. Driving times unavailable, so these are straight-line distances.')
           : '';
       }
