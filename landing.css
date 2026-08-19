@@ -35,7 +35,15 @@
      small x-height, so it read even worse than the number suggests. These are
      solid colours (no alpha guesswork) at 6.8:1 and 4.5:1. */
   --text-muted: #545454;   /* 6.84:1 on --bg — body copy */
-  --text-dim:   #6e6e6e;   /* 4.51:1 on --bg — genuinely secondary only */
+  /* Measured, not estimated. The old value was #6e6e6e with a comment
+     claiming 4.51:1 -- correct against --bg (#f5f5f5, where it is really
+     4.68) and wrong everywhere it is actually used most: the footer sits
+     on --bg-1 (#ededed), where the same grey is 4.36 and fails AA. A
+     token measured against one ground and applied on another is a trap,
+     so this is the darkest-ground number now.
+     #6b6b6b: 4.55 on --bg-1, 4.88 on --bg, 5.13 on --surface. Passes on
+     every ground this token can land on. */
+  --text-dim:   #6b6b6b;
 
   /* surface tokens — neutral, flat, monochrome */
   --crystal-bg: rgba(20,20,20,0.025);
