@@ -1698,6 +1698,23 @@
       /* the row now navigates instead of just selecting, so it needs to
          read that way: a trailing chevron, same idiom as .grp-chv and
          .agd-grp .chv elsewhere in this file. */
+      /* ── campaigns ────────────────────────────────────────────────────
+         "+ New campaign" appeared twice on one screen: once in the pane header
+         and again inside the empty state a few hundred pixels below. The
+         header copy goes on a phone — the taskbar's create button already
+         offers New campaign on this pane, and the empty state keeps its own,
+         so the action is never further than one tap either way. */
+      #pane-marketing > div > #newCampBtn { display: none; }
+
+      /* 38px and 40px controls, and a segmented pill wider than the two
+         buttons inside it. */
+      #pane-marketing .seg { display: flex; width: 100%; }
+      #pane-marketing .seg-b { flex: 1; min-height: 44px; justify-content: center; }
+      #pane-marketing #mkSort { min-height: 44px; }
+      #pane-marketing .crm-tools-l { display: flex; flex-wrap: wrap; gap: 8px; }
+      #pane-marketing .seg-b .syn-i,
+      #pane-marketing #mkSort .syn-i { width: 15px; height: 15px; }
+
       /* Explanations off the brand page. Five blocks of prose — the pane lede
          plus a subtitle under each of Identity, Look, Voice and Links — came
          to 232px of reading before the first thing you can change. The field
@@ -2127,10 +2144,10 @@
           <div class="crm-tools" style="margin-top:18px">
             <div class="crm-tools-l">
               <div class="seg" id="mkView">
-                <button class="seg-b on" data-mv="board">🏆 Leaderboard</button>
-                <button class="seg-b" data-mv="campaigns">▤ Campaigns</button>
+                <button class="seg-b on" data-mv="board"><span data-icon="chart"></span> Leaderboard</button>
+                <button class="seg-b" data-mv="campaigns"><span data-icon="card"></span> Campaigns</button>
               </div>
-              <button class="tbtn" id="mkSort">↕ Sort: CTR</button>
+              <button class="tbtn" id="mkSort"><span data-icon="sliders"></span> Sort: CTR</button>
             </div>
           </div>
           <p class="sub" id="mkBoardSub" style="margin:0 0 12px">Every creative across your campaigns, ranked by performance. Winners scale; the AI pauses the losers.</p>
