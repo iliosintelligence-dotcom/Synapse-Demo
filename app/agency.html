@@ -1488,10 +1488,23 @@
          box) — a wrapping grid instead, same as the tool rails above. The ›
          separators implied a horizontal flow between cards; with no flow
          left to imply, they go. */
-      .crm-funnel { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-        gap: 8px; overflow: visible; }
-      .fn-card { min-width: 0; }
+      /* Sized for the taskbar sheet it now lives in, not for the page. These
+         are filter rows in a menu, not dashboard tiles: label and count on one
+         line, the bar as a hairline under them. At page scale they took ~500px
+         of a 640px sheet and pushed the navigation itself out of view. */
+      .crm-funnel { display: grid; grid-template-columns: 1fr 1fr;
+        gap: 5px; overflow: visible; margin: 0; }
+      .fn-card {
+        min-width: 0; padding: 8px 10px 7px; border-radius: 10px;
+        display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+        column-gap: 8px; row-gap: 5px; min-height: 44px;
+      }
+      .fn-l { font-size: 10.5px; letter-spacing: .03em; }
+      .fn-n { font-size: 15px; }
+      .fn-bar { grid-column: 1 / -1; height: 2px; }
       .fn-sep { display: none; }
+      .agd-funnelsec { padding: 0 6px 6px; }
+      .agd-funnelsec .agd-grp { opacity: .75; }
 
       /* The comparison table stops being a table. */
       .pr-table-wrap { display: none; }
@@ -2528,6 +2541,8 @@
       document.getElementById('crmFunnel').addEventListener('click', e => {
         const b = e.target.closest('[data-stage]'); if(!b) return;
         CRM.fStage = CRM.fStage===b.dataset.stage ? null : b.dataset.stage; CRM.page=1; renderCrmFunnel(); renderCrmTable();
+        // picked from inside the taskbar sheet: get out of the way of the result
+        if (b.closest('.agd-sheet')) { const sc = document.getElementById('agdScrim'); document.getElementById('agdNav')?.classList.remove('open'); if (sc) sc.classList.remove('on'); }
       });
       document.getElementById('crmHead').addEventListener('click', e => {
         const th = e.target.closest('[data-sort]'); if(!th) return;
@@ -5667,6 +5682,33 @@
         }
         navSheet.innerHTML = html;
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
+        lendFunnel(current);
+      }
+
+      /* ── the CRM stage filter lives here on a phone ──────────────────────
+         Five cards, 150px of screen, above a list where every row already
+         carries its own stage chip -- and on this account three of the five
+         read zero. The summary was physically larger than the thing it
+         summarised.
+
+         The node is MOVED, not rebuilt. Its click handler is bound to
+         #crmFunnel itself, so filtering keeps working from in here with no
+         second implementation to drift. It goes back to the pane the moment
+         you are not on CRM, and on desktop it never leaves. */
+      const funnelHome = document.getElementById('crmFunnel')?.parentElement || null;
+      function lendFunnel(pane) {
+        const fn = document.getElementById('crmFunnel');
+        if (!fn || !funnelHome) return;
+        const phone = window.matchMedia('(max-width: 1024px)').matches;
+        if (phone && pane === 'crm') {
+          const grp = document.createElement('div');
+          grp.className = 'agd-sec open agd-funnelsec';
+          grp.innerHTML = '<div class="agd-grp" style="pointer-events:none"><span>Filter by stage</span></div>';
+          grp.appendChild(fn);
+          navSheet.insertBefore(grp, navSheet.firstChild);
+        } else if (fn.parentElement !== funnelHome) {
+          funnelHome.insertBefore(fn, funnelHome.firstChild);
+        }
       }
 
       // ── create fan, per pane ──
