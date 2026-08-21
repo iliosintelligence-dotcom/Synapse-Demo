@@ -296,6 +296,7 @@
 
     /* the mobile-only chrome never exists above the phone breakpoint */
     .pvm-bar, .pvm-mapbtn, .pvm-close { display: none; }
+    .pv-backslot { display: block; }
 
     /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
        The swipe deck is already the right paradigm for a phone, so it stays
@@ -308,6 +309,7 @@
        entire screen when you want it and none of it when you don't. */
     @media (max-width: 1024px) {
       .appbar { display: none; }
+      .pv-backslot { display: none; }   /* .pvm-back covers this width */
 
       .pvm-bar {
         position: sticky; top: 0; z-index: 30;
@@ -322,10 +324,7 @@
         display: flex; align-items: center; justify-content: center;
         font-size: 20px; color: var(--ink); text-decoration: none;
       }
-      .pvm-ttl {
-        flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
+      .pvm-gap { flex: 1; }
       .pvm-mapbtn {
         flex: none; min-height: 40px; padding: 0 14px; border-radius: 100px;
         display: inline-flex; align-items: center; gap: 6px;
@@ -436,11 +435,15 @@
   </div>
 
   <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
-       Replaces the site nav, and carries the entry point to the map sheet —
-       the canvas is otherwise unreachable on a phone. -->
+       Carries the entry point to the map sheet — the canvas is otherwise
+       unreachable on a phone — and the back control.
+
+       It used to print the property title as well, directly above the summary
+       heading that prints the same title. One statement of it is enough, and
+       the page's own is the one with room for it. -->
   <header class="pvm-bar">
-    <a class="pvm-back" href="browse.html" aria-label="Back to matches">←</a>
-    <div class="pvm-ttl" id="pvmTitle">Property</div>
+    <a class="pvm-back" href="browse.html" data-cnav-back aria-label="Back">←</a>
+    <span class="pvm-gap"></span>
     <button class="pvm-mapbtn" id="pvmMapBtn" type="button">
       <span data-icon="pin"></span> Map &amp; nearby
     </button>
@@ -448,6 +451,10 @@
 
   <div class="pv-split">
   <div class="pdp">
+    <!-- Desktop mount for the back button. Hidden on a phone, where .pvm-back
+         in the bar above carries it, so exactly one of the two is ever on
+         screen. -->
+    <div class="pv-backslot" data-cnav-back-slot></div>
     <div class="hero">
       <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
       <span class="counter" id="counter">1 / 5</span>
@@ -934,7 +941,6 @@
       document.title = p.title + ' — Synapse';
       set('pvPrice', naira(p.price) + (PERIOD_SUFFIX[p.price_period] || ''));
       set('pvTitle', p.title);
-      set('pvmTitle', p.title);   // the mobile bar carries it too
       // De-duplicate: agencies routinely type the city into the address line,
       // which rendered as "Ikolaba GRA, Ibadan, Ibadan, Oyo state".
       const seen = new Set();
@@ -1256,6 +1262,7 @@
     renderChecks(); renderPhotos();
   </script>
   <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
   <script src="auth.js"></script>
   <script src="notify.js"></script>
   <script src="motion.js"></script>

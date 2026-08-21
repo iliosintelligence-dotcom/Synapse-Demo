@@ -139,6 +139,11 @@
     @keyframes micpulse { 0%{ box-shadow: 0 0 0 0 rgba(54,54,54,0.5);} 70%{ box-shadow: 0 0 0 10px rgba(54,54,54,0);} 100%{ box-shadow: 0 0 0 0 rgba(54,54,54,0);} }
     .send { background: var(--brand); color: #fff; font-size: 17px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
     .send:disabled { opacity: .45; }
+    /* One line, scrolled sideways. This is the composer, not the page: the
+       chips sit above the keyboard and a second or third row of them pushes
+       the conversation off screen. Keeping them on one line costs a swipe to
+       reach the far ones and keeps the chat readable, which is the right way
+       round here. */
     .chatbox .suggest { display: flex; gap: 7px; padding: 9px 5px 2px; margin-top: 4px; overflow-x: auto; border-top: 1px solid rgba(255,255,255,0.6); }
     .chatbox .suggest::-webkit-scrollbar { display: none; }
     .chatbox .suggest button { white-space: nowrap; font-family: var(--f-sans); font-size: 12px; font-weight: 500; color: rgba(21,23,26,0.7); cursor: pointer;
@@ -261,7 +266,7 @@
     @media (min-width: 900px) { .tj-chat .matches-h, .tj-chat .pcard { display: none; } }
 
     /* the mobile chrome never exists above the phone breakpoint */
-    .tjm-bar, .tjm-matches { display: none; }
+    .tjm-bar { display: none; }
 
     /* tablet: unstack, keep the page-scrolling behaviour */
 
@@ -275,23 +280,14 @@
       html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 
       /* ── cross-page nav ────────────────────────────────────────────────
-         Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
-         unreachable on a phone. Rather than hand-writing a second copy of
-         those links (which would drift), the appbar stays in the layout with
-         everything except its <nav> stripped out, and the nav becomes a
-         compact row. Same hrefs, same .active state, one source of truth. */
-      .appbar { display: flex !important; padding: 0 12px; min-height: 0;
-        border-bottom: 1px solid var(--border); background: rgba(245,245,245,0.9);
-        backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); }
-      .appbar > *:not(nav) { display: none !important; }
-      .appbar > nav { display: flex; gap: 4px; width: 100%; overflow-x: auto;
-        scrollbar-width: none; -ms-overflow-style: none; padding: 7px 0; }
-      .appbar > nav::-webkit-scrollbar { display: none; }
-      .appbar > nav a { flex: none; min-height: 38px; display: inline-flex; align-items: center;
-        padding: 0 14px; border-radius: 100px; font-size: 13px; font-weight: 600;
-        color: var(--ink-muted); text-decoration: none; white-space: nowrap; }
-      .appbar > nav a.active { background: #121212; color: #f5f5f5; }
+         Hiding .appbar took the only links to the other consumer pages with
+         it, so Toju, Your matches and Dream Home became mutually unreachable
+         on a phone. This used to be solved by keeping .appbar in the layout
+         with everything except its <nav> stripped out, rendered as a row of
+         pills. That cost a strip of vertical space on every screen for links
+         people touch a few times a session, and it was three hand-maintained
+         copies of one list. cust-nav.js now injects a single floating taskbar
+         from one array of destinations, so .appbar can stay fully hidden. */
 
       .tj-app { height: 100dvh; display: flex; flex-direction: column; }
       .appbar { display: none; }                 /* site nav is not chat chrome */
@@ -326,16 +322,6 @@
         display: flex; align-items: center; justify-content: center;
       }
       .tjm-act .syn-i { width: 17px; height: 17px; }
-
-      /* the matches strip only appears once there is something to show */
-      body.has-canvas .tjm-matches {
-        flex: none; display: flex; align-items: center; justify-content: space-between;
-        gap: 10px; padding: 11px 16px; text-decoration: none;
-        background: rgba(54,54,54,0.07); border-bottom: 1px solid rgba(255,255,255,0.6);
-        font-size: 13px; color: var(--ink);
-      }
-      .tjm-matches b { font-weight: 700; }
-      .tjm-go { font-weight: 600; color: #121212; }
 
       /* the one scroller on the page */
       .convo-scroll {
@@ -391,7 +377,10 @@
          duplicate ids and a silently dead chat. So this bar owns only the
          chrome, and its buttons forward to the real controls in .appbar. -->
     <header class="tjm-bar">
-      <a class="tjm-back" href="../index.html" aria-label="Back to Synapse">←</a>
+      <!-- Keeps its place in the bar -- the top-right corner here is already
+           History and New chat -- but takes the shared back behaviour rather
+           than always going to the same page. -->
+      <a class="tjm-back" href="../index.html" data-cnav-back aria-label="Back">←</a>
       <div class="tjm-id">
         <span class="tjm-name">Toju</span>
         <span class="tjm-status"><i></i> Every home shows its status</span>
@@ -400,11 +389,6 @@
       <button class="tjm-act" id="tjmNew" type="button" aria-label="New chat">↺</button>
     </header>
 
-    <!-- appears only once Toju has matches; the canvas is desktop-only -->
-    <a class="tjm-matches" id="tjmMatches" href="browse.html">
-      <span><b id="tjmCount">0</b> matches ready</span>
-      <span class="tjm-go">See all →</span>
-    </a>
 
     <div class="appbar">
       <a class="brand" href="../index.html">
@@ -426,7 +410,10 @@
     <div class="tj-layout">
       <!-- LEFT: the chat (smaller window) -->
       <section class="tj-chat">
-        <div class="tj-head">
+        <!-- Desktop mount for the back button. .tj-head is hidden on a phone,
+             where .tjm-back in the mobile bar carries it instead, so exactly
+             one of the two is ever on screen. -->
+        <div class="tj-head" data-cnav-back-slot>
           <div class="tj-eyebrow">Your property advisor</div>
           <div class="tj-title">Toju <span style="position:relative"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
           <div class="tj-trust">Every home shows its verification status. No need to sign up.</div>
@@ -441,7 +428,7 @@
           <div class="tj-hist-list" id="tjHistList"></div>
         </div>
         <div class="convo-scroll" aria-live="polite"><div class="convo" id="convo"></div></div>
-        <div class="composer">
+        <div class="composer" data-cnav-clear>
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
             <div class="pillrow">
@@ -480,6 +467,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="matches-shared.js"></script>
   <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
   <script src="auth.js"></script>
   <script src="notify.js"></script>
   <script src="motion.js"></script>
@@ -536,9 +524,12 @@
     function renderCanvas() {
       const items = canvasMatches.map(SynMatches.shapeTojuMatch);
       cvCount.textContent = items.length;
-      // the mobile strip mirrors the same count (the canvas is desktop-only)
-      var tjmCount = document.getElementById('tjmCount');
-      if (tjmCount) tjmCount.textContent = items.length;
+      /* On a phone this used to be a strip under the header reading "N matches
+         ready · See all →". The taskbar already lists Your matches and already
+         carries a count badge, so the strip was a second copy of a row that is
+         always one tap away -- and it sat between the header and the first
+         thing Toju said. */
+      if (window.CustNav) window.CustNav.setCount('browse.html', items.length);
       document.body.classList.toggle('has-canvas', items.length > 0);
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
       cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');

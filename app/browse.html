@@ -24,12 +24,6 @@
     .card { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
       backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
 
-    .brief { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin: 18px 0 14px; }
-    .brief .orb { width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
-    .brief .txt { flex: 1; font-size: 13.5px; color: var(--ink-muted); }
-    .brief .txt b { color: var(--ink); font-weight: 600; }
-    .brief .refine { white-space: nowrap; font-size: 13px; font-weight: 600; color: #121212; }
-    .brief .refine:hover { text-decoration: underline; }
 
     /* map — the Zillow-parity view, but only YOUR pins */
     #map { height: 250px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
@@ -74,7 +68,6 @@
     .chip-prog { background: rgba(176,125,43,0.1); color: var(--warn-ink); border: 1px solid rgba(176,125,43,0.28); }
     .listing .score.unv { color: var(--ink-dim); }
     .listing .ring.unv { border-color: rgba(0,0,0,0.22); color: var(--ink-dim); font-size: 12px; }
-    .toolbar .hintt { font-size: 12px; color: var(--ink-dim); margin-left: auto; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
     .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative;
@@ -235,7 +228,35 @@
     }
 
     /* the mobile chrome never exists above the phone breakpoint */
-    .bm-bar, .bm-meta { display: none; }
+    /* The one-line count. It used to be the phone's stand-in for a summary
+       card that sat above the search box; the card is gone at both widths now,
+       and every fact it carried was already being written here in a line
+       instead of a paragraph.
+
+       It carries its own opaque surface because it sits directly on the
+       background photograph, and text on a photograph has no contrast ratio --
+       it has a different one over every pixel. A translucent chip does not fix
+       that either: white at 55% over a dark part of the image composites to
+       about #9F9F9F, which puts this grey near 2.2:1. Only an opaque ground
+       makes the number measurable, and therefore legible wherever the photo
+       happens to be dark. */
+    .bm-meta {
+      display: inline-flex; align-items: center; gap: 8px;
+      max-width: 100%; margin: 0 0 14px;
+      padding: 5px 13px; border-radius: 100px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .bm-count {
+      min-width: 0; font-size: 12.5px; color: var(--ink-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bm-count b { color: var(--ink); font-weight: 700; }
+    /* The map toggle is the phone-sized twin of .viewseg, so it only ever
+       belongs in the taskbar sheet -- never in the page, never in the desktop
+       popover. Keyed on where it is rather than where it came from, because it
+       moves between all three. */
+    #bmMap { display: none; }
+    .cnav-group #bmMap { display: flex; }
 
     /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
        This page had no responsive rules at all — it was a desktop grid on a
@@ -251,50 +272,27 @@
       .appbar { display: none; }
 
       /* ── cross-page nav ────────────────────────────────────────────────
-         Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
-         unreachable on a phone. Rather than hand-writing a second copy of
-         those links (which would drift), the appbar stays in the layout with
-         everything except its <nav> stripped out, and the nav becomes a
-         compact row. Same hrefs, same .active state, one source of truth. */
-      .appbar { display: flex !important; padding: 0 12px; min-height: 0;
-        border-bottom: 1px solid var(--border); background: rgba(245,245,245,0.9);
-        backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); }
-      .appbar > *:not(nav) { display: none !important; }
-      .appbar > nav { display: flex; gap: 4px; width: 100%; overflow-x: auto;
-        scrollbar-width: none; -ms-overflow-style: none; padding: 7px 0; }
-      .appbar > nav::-webkit-scrollbar { display: none; }
-      .appbar > nav a { flex: none; min-height: 38px; display: inline-flex; align-items: center;
-        padding: 0 14px; border-radius: 100px; font-size: 13px; font-weight: 600;
-        color: var(--ink-muted); text-decoration: none; white-space: nowrap; }
-      .appbar > nav a.active { background: #121212; color: #f5f5f5; }
-          /* site nav is not app chrome */
+         Hiding .appbar took the only links to the other consumer pages with
+         it, so Toju, Your matches and Dream Home became mutually unreachable
+         on a phone. This used to be solved by keeping .appbar in the layout
+         with everything except its <nav> stripped out, rendered as a row of
+         pills. That cost a strip of vertical space on every screen for links
+         people touch a few times a session, and it was three hand-maintained
+         copies of one list. cust-nav.js now injects a single floating taskbar
+         from one array of destinations, so .appbar can stay fully hidden. */
 
-      .bm-bar {
-        position: sticky; top: 0; z-index: 25;
-        display: flex; align-items: center; gap: 10px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-top));
-        background: rgba(245,245,245,0.86);
-        backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
-        border-bottom: 1px solid rgba(255,255,255,0.6);
-      }
-      .bm-back {
-        width: 40px; height: 40px; flex: none; margin-left: -6px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 21px; color: var(--ink); text-decoration: none;
-      }
-      .bm-ttl { flex: 1; min-width: 0; font-family: var(--f-serif); font-weight: 500; font-size: 19px; color: var(--ink); }
-      .bm-saved {
-        flex: none; min-height: 40px; padding: 0 13px; border-radius: 100px;
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 13px; font-weight: 700; color: var(--ink);
-        background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85);
-        text-decoration: none;
-      }
-      .bm-saved[hidden] { display: none; }
+      /* The mobile header that used to be here is gone, all three of its parts
+         accounted for. The back arrow pointed at Toju, which the taskbar now
+         reaches from anywhere. The title repeated the h1 a few pixels below it.
+         The saved count moved onto the taskbar's Dream boards row, which is
+         where tapping it was going anyway. */
 
-      .wrap { padding-left: 16px; padding-right: 16px; }
-      .eyebrow { font-size: 10.5px; }
+      /* The removed header carried the notch clearance. Without it the heading
+         sat against the status bar. */
+      .wrap {
+        padding-left: 16px; padding-right: 16px;
+        padding-top: calc(20px + env(safe-area-inset-top));
+      }
       .h1 { font-size: 27px; line-height: 1.15; }
 
       /* The summary card and the List/Map segment are both gone: between
@@ -302,27 +300,7 @@
          whose whole job is showing homes opened on no homes. Everything
          they carried — the live/verified counts, the route to Toju, the
          route to the map — moves into one line below the search. */
-      .brief, .viewseg { display: none; }
-
-      .bm-meta {
-        display: flex; align-items: center; gap: 8px;
-        margin: 0 0 14px;
-      }
-      .bm-count {
-        flex: 1; min-width: 0; font-size: 12.5px; color: var(--ink-muted);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .bm-count b { color: var(--ink); font-weight: 700; }
-      .bm-chip {
-        flex: none; min-height: 38px; padding: 0 13px; border-radius: 100px;
-        display: inline-flex; align-items: center; gap: 6px;
-        font: 600 12.5px var(--f-sans); color: var(--ink-muted);
-        background: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.9);
-        text-decoration: none; cursor: pointer;
-      }
-      .bm-chip .syn-i { width: 14px; height: 14px; }
-      .bm-chip[aria-pressed="true"] { background: var(--brand); color: #fff; border-color: transparent; }
-      .bm-chip-toju { color: var(--ink); }
+      .viewseg { display: none; }
 
       /* Same reasoning as the summary card: this is an opt-in prompt, not
          reading material, and its explanation was 184px of paragraph ahead
@@ -344,14 +322,15 @@
       .viewseg { margin-bottom: 12px; }
       .vseg { min-height: 40px; padding: 0 18px; }
 
-      /* filters scroll sideways instead of wrapping into three stacked rows */
+      /* Fallback only: the taskbar's filter pill normally takes these over.
+         If it does not, they wrap into two rows here rather than doing what
+         they used to, which was scroll sideways -- half of them off-screen
+         with nothing saying so, reachable only by discovering you could swipe
+         a row that does not look swipeable. */
       .toolbar {
-        flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 14px;
-        padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;
+        flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
       }
-      .toolbar::-webkit-scrollbar { display: none; }
       .toolbar > * { flex: none; }
-      .toolbar .hintt { display: none; }   /* desktop hover advice, not mobile copy */
       #sortSel { min-height: 40px; font-size: 13px; }
       .dealfilter button, .vtoggle { min-height: 40px; }
 
@@ -413,26 +392,8 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
-  <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
-       Replaces the site nav on a phone. The saved count mirrors the desktop
-       one rather than owning its own state — see the sync below. -->
-  <header class="bm-bar">
-    <a class="bm-back" href="toju.html" aria-label="Back to Toju">←</a>
-    <div class="bm-ttl" id="bmTitle">Your matches</div>
-    <a class="bm-saved" id="bmSaved" href="#" hidden title="Your saved homes">
-      <span aria-hidden="true">♥</span><b id="bmSavedN">0</b>
-    </a>
-  </header>
-
-  <div class="wrap">
-    <div class="eyebrow" id="pageEyebrow">Verified homes</div>
+  <div class="wrap" data-cnav-back-slot>
     <div class="h1" id="pageTitle">Your matches</div>
-
-    <div class="card brief">
-      <div class="orb" aria-hidden="true"></div>
-      <div class="txt" id="briefTxt">Every verified home on Synapse, across Nigeria. Chat with Toju and this page becomes <b>your matches</b> Refined to your life, not filters.</div>
-      <a class="refine" href="toju.html">Talk to Toju →</a>
-    </div>
 
     <div class="searchbar">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -447,13 +408,24 @@
          desktop summary; the buttons drive the existing controls. -->
     <div class="bm-meta">
       <span class="bm-count" id="bmCount">Loading homes…</span>
-      <button class="bm-chip" id="bmMap" type="button" aria-pressed="false"><span data-icon="pin"></span> Map</button>
-      <a class="bm-chip bm-chip-toju" href="toju.html">Ask Toju</a>
     </div>
+
 
     <div id="map"></div>
 
-    <div data-proximity-slot></div>
+    <!-- Lent to the taskbar on a phone, and left right here on desktop. The map
+         toggle and the location opt-in are both occasional, and on mobile they
+         sat between the search box and the first home -- pushing the homes off
+         the fold on the page whose whole job is showing homes. Desktop has the
+         room, and its own List/Map segment, so nothing moves there.
+         "Ask Toju" used to sit alongside them and is simply gone: the taskbar
+         already lists Toju as a destination, so it was the same link twice. -->
+    <div data-cnav-actions>
+      <button class="cnav-act" id="bmMap" type="button" aria-pressed="false">
+        <span data-icon="pin"></span> Map view
+      </button>
+      <div data-proximity-slot></div>
+    </div>
 
     <!-- List ⇄ Map. Both show the same filtered set — the toggle changes how
          you look at it, never what you are looking at. -->
@@ -462,19 +434,24 @@
       <button type="button" class="vseg" data-view="map" aria-pressed="false">Map</button>
     </div>
 
-    <div class="toolbar">
-      <select id="sortSel">
-        <option value="match">Sort: Best match</option>
-        <option value="price">Sort: Price (low → high)</option>
-        <option value="trust">Sort: Property confidence</option>
-      </select>
+    <!-- On a phone this whole toolbar is lent to the taskbar's filter pill and
+         hidden here; on desktop it stays exactly where it is. If cust-nav.js
+         never runs, nothing is hidden and the controls stay put, which is why
+         the mobile wrapping rules below are still worth keeping. -->
+    <div class="toolbar" data-cnav-filters>
+      <!-- Buy/Rent/Shared leads: it is the one control that changes what you
+           are shopping for rather than how the same set is arranged. -->
       <div class="dealfilter" id="dealFilter">
         <button data-deal="sale">Buy</button>
         <button data-deal="rent">Rent</button>
         <button data-deal="shared">Shared living</button>
       </div>
+      <select id="sortSel">
+        <option value="match">Sort: Best match</option>
+        <option value="price">Sort: Price (low → high)</option>
+        <option value="trust">Sort: Property confidence</option>
+      </select>
       <button class="vtoggle" id="verifyToggle" title="Show only independently verified homes"><span class="box"></span> Verified only</button>
-      <span class="hintt" id="toolHint">♡ save · tick up to four to compare · every card shows its verification status</span>
     </div>
 
     <!-- homes this device actually opened — [hidden] whenever there is no history -->
@@ -498,7 +475,7 @@
     <div class="empty" role="status" aria-live="polite" hidden></div>
   </div>
 
-  <div class="cmpbar" id="cmpbar">
+  <div class="cmpbar" id="cmpbar" data-cnav-clear>
     <span><b id="cmpCount">0</b> selected</span>
     <button id="cmpGo">Compare side by side</button>
   </div>
@@ -632,9 +609,6 @@
       shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
       grid.innerHTML = shownItems.map((l, i) =>
         SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
-      document.getElementById('toolHint').textContent = compareOn
-        ? '♡ save · tick up to four to compare · every card shows its verification status'
-        : '♡ save two or more homes to unlock compare · every card shows its verification status';
       renderFreshSince(compareOn);
       renderEmptyState();
       if (window.synMotion) synMotion.refresh();
@@ -687,8 +661,6 @@
       if (loadState === 'failed') {
         // an empty map of Nigeria is just noise when there's nothing to plot
         const m = document.getElementById('map'); if (m) m.style.display = 'none';
-        const bt = document.getElementById('briefTxt');
-        if (bt) bt.textContent = 'We couldn’t load any homes just now.';
         setMobileCount('Couldn’t load homes');
         box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
           + '<p class="empty-sub">' + (navigator.onLine
@@ -831,8 +803,8 @@
       document.getElementById('navSavedN').textContent = n;
       document.getElementById('navSavedSr').textContent = ' saved home' + (n === 1 ? '' : 's');
       // the mobile bar mirrors this rather than tracking saves itself
-      const mEl = document.getElementById('bmSaved');
-      if (mEl) { mEl.hidden = n === 0; document.getElementById('bmSavedN').textContent = n; }
+      // the taskbar's Dream boards row mirrors this rather than tracking saves itself
+      if (window.CustNav) window.CustNav.setCount('dream.html', n);
       if (lastSavedCount !== null && n !== lastSavedCount && n > 0) {
         el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
       }
@@ -971,11 +943,7 @@
     }
 
     function setMatchedHeadings() {
-      document.getElementById('pageEyebrow').textContent = 'Picked for you';
       document.getElementById('pageTitle').textContent = 'Your matches';
-      const bt = document.getElementById('bmTitle');
-      if (bt) bt.textContent = 'Your matches';
-      document.querySelector('.brief .refine').textContent = 'Refine with Toju →';
     }
 
     // ── default: EVERY live home in the dataset (browse-all) ──
@@ -1029,8 +997,6 @@
           : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · <b style="color:var(--warn-ink)">listed but not yet verified</b> — Toju can run the 7 checks before you commit',
       }));
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
-      document.getElementById('briefTxt').innerHTML = 'Browsing all <b>' + rows.length + '</b> live homes across Nigeria — <b>' + vCount + ' verified</b>, the rest awaiting checks. Every card shows its status; chat with Toju and this becomes <b>your matches</b>.';
-      // the mobile row says the same thing in the space of one line
       setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
       render();
     }).catch(() => {
@@ -1054,8 +1020,6 @@
           hasSessionView = true;
           items = []; picked = new Set();
           setMatchedHeadings();
-          if (d.criteria.brief) document.querySelector('.brief .txt').innerHTML =
-            '<b>What you asked for:</b> ' + esc(d.criteria.brief) + ' No verified homes fit this yet — try widening the budget or area below, or ask Toju for similar homes.';
           setMobileCount('Nothing fits your brief yet');
           document.getElementById('map').style.display = 'none';
           render();
@@ -1067,16 +1031,13 @@
         // SAME shaper the Toju canvas uses — the canvas is an exact preview of this page
         items = d.matches.map(SynMatches.shapeTojuMatch);
         picked = new Set();
-        if (d.criteria && d.criteria.brief) {
-          document.querySelector('.brief .txt').innerHTML =
-            '<b>Your brief:</b> ' + esc(d.criteria.brief) + ' Toju found ' + items.length + ' verified home' + (items.length > 1 ? 's' : '') + ' that fit.';
-        }
         setMobileCount('<b>' + items.length + '</b> match your brief');
         render();
       }).catch(() => {});
     }
   </script>
   <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
   <script src="auth.js"></script>
   <script src="notify.js"></script>
   <script src="motion.js"></script>

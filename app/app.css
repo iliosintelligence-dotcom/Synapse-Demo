@@ -601,3 +601,294 @@ a:focus-visible {
   .btn-primary, .btn-secondary, .agd-btn-primary { transition: none; }
   .btn-primary:hover, .btn-secondary:hover { transform: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOMER TASKBAR
+   The three consumer pages carried their cross-page links as a horizontal row
+   pinned under the top bar. It was permanent chrome for something people use
+   a few times a session, and on a phone it cost a row of vertical space on
+   every screen -- the scarcest thing there is on the page where someone is
+   trying to read about a house.
+
+   Same idea as the agency portal's taskbar, and deliberately the same shape,
+   so the two halves of the product do not each invent their own navigation:
+   a floating pill that opens a sheet, out of the way until asked for.
+
+   Bottom-LEFT on purpose. Bottom-right is where a thumb rests and where the
+   agency portal keeps its AI button; leaving that corner free means the two
+   never fight if a page ever carries both.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* Hidden by default, exactly like the agency portal's .agd-bar. On desktop
+   the .appbar across the top already carries these links and has the room for
+   them; the taskbar is the answer to a phone-sized screen, not to every
+   screen. Two navigations at once would be worse than the row it replaced. */
+.cnav { display: none; }
+
+/* ── back ──────────────────────────────────────────────────────────────────
+   Every width, not just phones. Sits at the top left of the page's own
+   content, in the flow, so it takes up space instead of covering something.
+   Lighter than the floating taskbar buttons on purpose: it is on the page, not
+   hovering above it, so it does not need the lift a shadow gives. */
+.cnav-back {
+  display: inline-flex;
+  width: 42px; height: 42px; border-radius: 50%;
+  align-items: center; justify-content: center;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.7); color: var(--ink);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.22,1,.36,1), background .18s ease;
+}
+.cnav-back:hover { background: rgba(255,255,255,0.95); }
+.cnav-back:active { transform: scale(0.92); }
+.cnav-back:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* The icon set has one arrow and it points right. Turning it is honest here --
+   it is the same mark, reversed -- and beats shipping a near-duplicate glyph. */
+.cnav-back .syn-i { width: 19px; height: 19px; transform: rotate(180deg); }
+
+/* Fallback for a page that never declared a mount point: float it, top left,
+   rather than dropping it at the end of the body where nobody would find it. */
+.cnav-back-float {
+  position: fixed; z-index: 70;
+  top: calc(14px + env(safe-area-inset-top)); left: 16px;
+  margin-bottom: 0;
+  background: rgba(255,255,255,0.94);
+  box-shadow: 0 10px 26px rgba(15,15,15,0.2);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+}
+
+@media (max-width: 1024px) {
+.cnav {
+  display: block;
+  position: fixed; z-index: 70;
+  left: 16px;
+  /* Pages with their own fixed bottom furniture raise this: toju.html has a
+     composer pinned to the bottom edge, and a nav sitting on top of the text
+     box would be worse than no nav at all. */
+  bottom: calc(var(--cnav-bottom, 18px) + env(safe-area-inset-bottom));
+}
+.cnav-triggers { display: flex; align-items: center; gap: 9px; }
+
+.cnav-btn {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.94); color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  cursor: pointer; font-size: 19px; line-height: 1;
+  transition: transform .18s cubic-bezier(.22,1,.36,1);
+}
+.cnav-btn:active { transform: scale(0.92); }
+.cnav-btn .syn-i { width: 20px; height: 20px; }
+
+/* Same surface as the round button beside it, drawn as a stadium because it
+   carries a word. Fully rounded ends rather than a soft-cornered rectangle, so
+   the pair reads as one control strip. */
+.cnav-fbtn {
+  display: flex; align-items: center; gap: 8px;
+  height: 46px; padding: 0 17px; border-radius: 100px;
+  background: rgba(255,255,255,0.94); color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  cursor: pointer; font: 600 14px var(--f-sans); line-height: 1;
+  transition: transform .18s cubic-bezier(.22,1,.36,1);
+  max-width: 58vw;
+}
+.cnav-fbtn[hidden] { display: none; }
+.cnav-fbtn:active { transform: scale(0.96); }
+.cnav-fbtn .syn-i { width: 17px; height: 17px; flex: none; }
+.cnav-flabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Filled only while something is actually narrowing the list. */
+.cnav-fbtn.on { background: #121212; color: #f5f5f5; border-color: transparent; }
+
+.cnav-sheet {
+  position: absolute; bottom: 58px; left: 0; min-width: 226px;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: 0 20px 52px rgba(15,15,15,0.26);
+  padding: 6px; overflow: hidden auto;
+  /* The sheet can carry page controls as well as the three destinations, so
+     it has to be able to outgrow the screen gracefully rather than run off
+     the top of it. */
+  max-height: calc(100vh - 96px);
+  overscroll-behavior: contain;
+  transform-origin: bottom left;
+  opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
+  transition: opacity .2s ease, transform .22s cubic-bezier(.22,1,.36,1);
+}
+.cnav.open  > #cnavSheet,
+.cnav.fopen > #cnavFSheet { opacity: 1; transform: none; pointer-events: auto; }
+
+/* ── the filter sheet ──────────────────────────────────────────────────────
+   The controls came from a horizontal toolbar and have to work as a stacked
+   column here: full-width targets, one decision per line.
+
+   They also have to be re-skinned rather than just re-laid-out. Out in the
+   page they sit on a photograph, so they are drawn as translucent white pills
+   with white borders. On this near-white sheet that border is invisible and
+   they read as bare text, which is why they are given a real edge here. */
+.cnav-fsheet { padding: 8px; min-width: 236px; }
+
+.cnav-fsheet .dealfilter { display: flex; flex-direction: column; gap: 4px; }
+.cnav-fsheet .dealfilter button {
+  width: 100%; min-height: 44px; box-sizing: border-box;
+  padding: 0 13px; border-radius: 12px;
+  font: 600 14px var(--f-sans); text-align: left;
+  color: var(--ink); background: none; border: 1px solid transparent;
+}
+.cnav-fsheet .dealfilter button:hover { background: rgba(0,0,0,0.045); }
+/* Selected keeps the brand fill it has everywhere else in the product. */
+.cnav-fsheet .dealfilter button.on {
+  background: var(--brand); color: #fff; border-color: transparent; box-shadow: none;
+}
+
+/* A rule, not a gap: sort and the verified toggle change how the same set is
+   presented, which is a different question from what you are shopping for. */
+.cnav-fsheet select {
+  width: 100%; min-height: 44px; box-sizing: border-box;
+  margin-top: 8px; padding: 0 12px; border-radius: 12px;
+  font: 600 13.5px var(--f-sans); color: var(--ink);
+  background: rgba(0,0,0,0.03); border: 1px solid var(--border);
+}
+.cnav-fsheet .vtoggle {
+  width: 100%; min-height: 44px; box-sizing: border-box;
+  margin-top: 4px; padding: 0 13px; border-radius: 12px;
+  font: 600 14px var(--f-sans); color: var(--ink);
+  background: none; border: 1px solid transparent;
+}
+.cnav-fsheet .vtoggle:hover { background: rgba(0,0,0,0.045); }
+.cnav-fsheet .vtoggle.on { background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.3); }
+
+
+.cnav-item {
+  display: flex; align-items: center; gap: 11px;
+  min-height: 46px; padding: 0 13px; border-radius: 13px;
+  font: 600 14px var(--f-sans); color: var(--ink); text-decoration: none;
+}
+.cnav-item:hover { background: rgba(0,0,0,0.045); }
+/* The page you are on is stated, not just implied by absence. */
+.cnav-item[aria-current="page"] { background: #121212; color: #f5f5f5; }
+.cnav-item .syn-i { width: 18px; height: 18px; flex: none; }
+.cnav-item .cn-txt { flex: 1; min-width: 0; }
+.cn-count {
+  flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 100px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--brand); color: #fff;
+  font: 700 11.5px var(--f-sans); font-variant-numeric: tabular-nums;
+}
+.cn-count[hidden] { display: none; }
+.cnav-item .cn-sub {
+  display: block; font-weight: 500; font-size: 11.5px; color: var(--ink-muted); margin-top: 1px;
+}
+.cnav-item[aria-current="page"] .cn-sub { color: rgba(245,245,245,0.66); }
+
+/* ── controls the page handed over ─────────────────────────────────────────
+   Separated from the destinations by a rule and a label, because "where do I
+   go" and "do something here" are different questions and running them
+   together as one undifferentiated list makes both harder to scan. */
+.cnav-group { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+.cnav-grouph {
+  font: 600 10.5px var(--f-sans); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-dim); padding: 4px 13px 6px;
+}
+.cnav-act {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  min-height: 46px; padding: 0 13px; border-radius: 13px;
+  font: 600 14px var(--f-sans); color: var(--ink); text-decoration: none;
+  background: none; border: none; cursor: pointer; text-align: left;
+}
+.cnav-act:hover { background: rgba(0,0,0,0.045); }
+.cnav-act .syn-i { width: 18px; height: 18px; flex: none; }
+.cnav-act[aria-pressed="true"] { background: #121212; color: #f5f5f5; }
+.cnav-act:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* The proximity opt-in keeps its full explanation in here. It is a request for
+   someone's location, and shortening the copy to fit a menu would trade an
+   honest ask for a tidy one. */
+.cnav-group .prox-card {
+  display: block; padding: 10px 13px 12px; margin: 0;
+  background: none; border: none; box-shadow: none;
+}
+.cnav-group .prox-pin { display: none; }
+.cnav-group .prox-txt b { display: block; font: 600 14px var(--f-sans); color: var(--ink); }
+/* .prox-txt, not .prox-card: a bare `span` under .prox-card also matches
+   .prox-pin, and being the more specific selector it quietly overrode the
+   display:none above it. */
+.cnav-group .prox-txt span { display: block; font: 500 11.5px/1.5 var(--f-sans); color: var(--ink-muted); margin-top: 3px; }
+.cnav-group .prox-btn {
+  margin-top: 9px; min-height: 40px; width: 100%;
+  border-radius: 11px; border: 1px solid var(--border); background: rgba(0,0,0,0.03);
+  font: 600 13px var(--f-sans); color: var(--ink); cursor: pointer;
+}
+.cnav-group .prox-btn:disabled { opacity: 0.55; cursor: default; }
+
+/* Keyboard users get the same ring the rest of the app uses. Without this the
+   button is a focus black hole -- reachable by Tab, with nothing to show it. */
+.cnav-btn:focus-visible,
+.cnav-fbtn:focus-visible,
+.cnav-item:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+}
+
+/* ── page actions on desktop ───────────────────────────────────────────────
+   A small app-bar button and a popover, the desktop counterpart to the
+   taskbar's "On this page" group. */
+.cnav-desk { position: relative; display: flex; align-items: center; margin-right: 16px; }
+.cnav-desk[hidden] { display: none; }
+.cnav-dbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 0 13px; border-radius: 100px;
+  background: rgba(255,255,255,0.6); color: var(--ink);
+  border: 1px solid var(--border);
+  font: 600 13px var(--f-sans); cursor: pointer;
+  transition: background .15s ease;
+}
+.cnav-dbtn:hover { background: rgba(255,255,255,0.95); }
+.cnav-dbtn .syn-i { width: 15px; height: 15px; }
+/* Filled only while it is actually watching. */
+.cnav-dbtn.on { background: #121212; color: #f5f5f5; border-color: transparent; }
+.cnav-dbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.cnav-dpop {
+  position: absolute; top: calc(100% + 10px); right: 0; width: 320px;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: 0 20px 52px rgba(15,15,15,0.24);
+  padding: 4px; z-index: 80;
+  opacity: 0; transform: translateY(-6px) scale(0.98); pointer-events: none;
+  transition: opacity .18s ease, transform .2s cubic-bezier(.22,1,.36,1);
+}
+.cnav-desk.open .cnav-dpop { opacity: 1; transform: none; pointer-events: auto; }
+
+/* The card drops its own frame in here -- the popover is the frame. */
+.cnav-dpop .prox-card {
+  display: block; margin: 0; padding: 13px 14px 14px;
+  background: none; border: none; box-shadow: none;
+}
+.cnav-dpop .prox-pin { display: none; }
+.cnav-dpop .prox-txt b { display: block; font: 600 14px var(--f-sans); color: var(--ink); }
+.cnav-dpop .prox-txt span { display: block; font: 500 12px/1.55 var(--f-sans); color: var(--ink-muted); margin-top: 4px; }
+.cnav-dpop .prox-btn {
+  margin-top: 11px; min-height: 38px; width: 100%;
+  border-radius: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.03);
+  font: 600 13px var(--f-sans); color: var(--ink); cursor: pointer;
+}
+.cnav-dpop .prox-btn:disabled { opacity: 0.55; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) { .cnav-dpop { transition: none; } }
+
+/* A borrowed container is empty but still carries its own margins, so it has
+   to be taken out of the flow while its contents are in the taskbar. Two
+   classes deep to beat the page's own .toolbar rule. */
+[data-cnav-filters].cnav-lent,
+[data-cnav-actions].cnav-lent { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cnav-sheet, .cnav-btn, .cnav-fbtn, .cnav-back { transition: none; }
+}

@@ -140,7 +140,6 @@
     @media (max-width: 560px){ .masonry{ columns: 2 140px; } }
 
     /* the mobile bar never exists above the phone breakpoint */
-    .dm-bar { display: none; }
 
     /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
        A mood board is the one page in the app that is genuinely about the
@@ -152,46 +151,31 @@
       .appbar { display: none; }
 
       /* ── cross-page nav ────────────────────────────────────────────────
-         Hiding .appbar wholesale took the only links to the other consumer
-         pages with it, so Toju, Your matches and Dream Home became mutually
-         unreachable on a phone. Rather than hand-writing a second copy of
-         those links (which would drift), the appbar stays in the layout with
-         everything except its <nav> stripped out, and the nav becomes a
-         compact row. Same hrefs, same .active state, one source of truth. */
-      .appbar { display: flex !important; padding: 0 12px; min-height: 0;
-        border-bottom: 1px solid var(--border); background: rgba(245,245,245,0.9);
-        backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); }
-      .appbar > *:not(nav) { display: none !important; }
-      .appbar > nav { display: flex; gap: 4px; width: 100%; overflow-x: auto;
-        scrollbar-width: none; -ms-overflow-style: none; padding: 7px 0; }
-      .appbar > nav::-webkit-scrollbar { display: none; }
-      .appbar > nav a { flex: none; min-height: 38px; display: inline-flex; align-items: center;
-        padding: 0 14px; border-radius: 100px; font-size: 13px; font-weight: 600;
-        color: var(--ink-muted); text-decoration: none; white-space: nowrap; }
-      .appbar > nav a.active { background: #121212; color: #f5f5f5; }
+         Hiding .appbar took the only links to the other consumer pages with
+         it, so Toju, Your matches and Dream Home became mutually unreachable
+         on a phone. This used to be solved by keeping .appbar in the layout
+         with everything except its <nav> stripped out, rendered as a row of
+         pills. That cost a strip of vertical space on every screen for links
+         people touch a few times a session, and it was three hand-maintained
+         copies of one list. cust-nav.js now injects a single floating taskbar
+         from one array of destinations, so .appbar can stay fully hidden. */
 
 
-      .dm-bar {
-        position: sticky; top: 0; z-index: 25;
-        display: flex; align-items: center; gap: 10px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-top));
-        background: rgba(245,245,245,0.88);
-        backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
-        border-bottom: 1px solid var(--border);
-      }
-      .dm-back {
-        width: 40px; height: 40px; flex: none; margin-left: -6px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; color: var(--ink); text-decoration: none;
-      }
-      .dm-ttl { flex: 1; min-width: 0; font-family: var(--f-serif); font-weight: 500; font-size: 19px; color: var(--ink); }
+      /* The sticky bar that used to head this page said "Dream boards" directly
+         above the .db-h1 that also says "Dream boards", and carried a back
+         arrow that was really a fixed link to Toju. The heading is now stated
+         once, on the page, next to New board; back is a real back control in
+         the top-right corner, handed to this page's own handler while a board
+         is open. */
 
       /* this page's container is .board-wrap, not .wrap — 34px gutters are
          desktop margins, and they left the content out of line with the bar */
-      .board-wrap { padding-left: 16px; padding-right: 16px; padding-bottom: 64px; }
+      .board-wrap {
+        padding-left: 16px; padding-right: 16px; padding-bottom: 64px;
+        padding-top: calc(18px + env(safe-area-inset-top));
+      }
 
       /* ── all-boards ── */
-      .eyebrow { font-size: 10.5px; }
       .db-h1 { font-size: 26px; }
       .db-top { gap: 10px; }
       .db-top .btn { min-height: 42px; white-space: nowrap; }
@@ -256,23 +240,18 @@
     <a class="home" href="../index.html">← Back to site</a>
   </div>
 
-  <div class="board-wrap">
+  <div class="board-wrap" data-cnav-back-slot>
     <!-- ═══ BOARDS HOME ═══ -->
-    <!-- ══ MOBILE BAR (≤720px) ══════════════════════════════════════════
-         Replaces the site nav. Its title follows whichever view is open, so
-         it always says where you are inside a board. -->
-    <header class="dm-bar">
-      <a class="dm-back" id="dmBack" href="toju.html" aria-label="Back">←</a>
-      <div class="dm-ttl" id="dmTitle">Dream boards</div>
-    </header>
-
     <section id="homeView">
-      <div class="eyebrow">Your vision, in one place</div>
       <div class="db-top">
         <div class="db-h1">Dream boards</div>
         <button class="btn btn-primary" id="newBoardBtn" style="padding:11px 18px;font-size:13.5px">+ New board</button>
       </div>
-      <p class="muted" style="font-size:14px;margin-top:6px">Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Toju reads each board and finds real verified homes that feel like it.</p>
+      <!-- Shown only while there are no boards yet. Dream boards are an
+           unfamiliar idea, so the first visit needs the explanation; once
+           somebody has boards of their own, three lines telling them what a
+           board is are three lines between them and their boards. -->
+      <p class="muted" id="dbIntro" style="font-size:14px;margin-top:6px" hidden>Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Toju reads each board and finds real verified homes that feel like it.</p>
       <div class="boards-grid" id="boardsGrid"></div>
     </section>
 
@@ -474,6 +453,12 @@
       const add = `<button class="bcard new" data-new><div class="bcover"><span class="plus">+</span></div>
         <div class="bname">Create board</div><div class="bmeta">A new pod for a fresh idea</div></button>`;
       grid.innerHTML = cards + watch + add;
+
+      /* Starter boards are seeded, not made. Counting them as "has boards"
+         hides the explanation from someone who has never built one -- which is
+         precisely the person it was written for. Only boards they made count. */
+      var intro = document.getElementById('dbIntro');
+      if (intro) intro.hidden = state.boards.some(function (b) { return !b.starter; });
     }
 
     document.getElementById('boardsGrid').addEventListener('click', (e) => {
@@ -495,15 +480,11 @@
        is called. Routed through one function so a future view cannot forget
        it — the browse page had exactly that bug. */
     function syncMobileBar() {
-      var t = document.getElementById('dmTitle');
-      var b = document.getElementById('dmBack');
-      if (!t || !b) return;
+      if (!window.CustNav) return;
+      // Inside a board, back means back to the boards -- leaving the page
+      // entirely would skip a level the visitor can see they are inside of.
       var inBoard = !boardView.classList.contains('hidden');
-      var board = typeof activeBoard === 'function' ? activeBoard() : null;
-      t.textContent = inBoard ? ((board && board.name) || 'Board') : 'Dream boards';
-      // inside a board the back arrow returns to the boards, not off the page
-      b.setAttribute('href', inBoard ? '#' : 'toju.html');
-      b.onclick = inBoard ? function (e) { e.preventDefault(); toHome(); } : null;
+      window.CustNav.setBack(inBoard ? toHome : null);
     }
 
     // ═══ INSIDE A BOARD ═══
@@ -783,6 +764,7 @@
     }
   </script>
   <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
   <script src="auth.js"></script>
   <script src="notify.js"></script>
   <script src="motion.js"></script>
