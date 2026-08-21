@@ -1701,11 +1701,17 @@
       }
       .ovi .lph { grid-area: ph; width: 56px; height: 56px; }
       .ovi .mid { grid-area: mid; }
+      /* Price, status and the reference read as one metadata strip. The
+         reference used to sit first in the text column -- top-left, the spot
+         the eye lands on -- which gave the least-scanned thing on the card the
+         most prominent position and cost a whole line doing it. It goes last
+         here, and pushes to the far end so it never crowds the price. */
       .ovi .rt {
         grid-area: meta;
         flex-direction: row; align-items: center; justify-content: flex-start;
-        gap: 9px; text-align: left;
+        gap: 9px; text-align: left; flex-wrap: wrap;
       }
+      .ovi .rt .rf { margin-left: auto; }
       .ovi-chv { grid-area: chv; align-self: center; }
       .ovi-chv { display: block; font-size: 19px; line-height: 1; color: var(--ink-dim); flex: none; margin-left: 2px; }
 
@@ -5383,13 +5389,13 @@
         <button class="ovi ${i === OV.sel ? 'on' : ''}" data-i="${i}">
           ${photoHtml(l.img, { small: true })}
           <div class="mid">
-            <div class="rf">SYN-${1000 + LISTINGS_DATA.indexOf(l)}</div>
             <div class="tt">${l.t.split(',')[0]}</div>
             <div class="lc">◍ ${ovLoc(l)}</div>
           </div>
           <div class="rt">
             <div class="pr">${nairaM(l.pr)}</div>
             <span class="ovs ${l.st === 'verified' ? 'verified' : 'pending'}">${l.st === 'verified' ? '✓ Verified' : '◷ Pending'}</span>
+            <div class="rf">SYN-${1000 + LISTINGS_DATA.indexOf(l)}</div>
           </div>
           <span class="ovi-chv" aria-hidden="true">›</span>
         </button>`).join('');
