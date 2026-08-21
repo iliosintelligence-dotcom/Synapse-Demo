@@ -3178,6 +3178,23 @@
 
        `small` suppresses the "No photo yet" pill on thumbnails under ~64px,
        where it cannot be read; the hatch still reads as "nothing here". */
+    /* Shared by photoHtml, the logo preview and the insight rows. It used to
+       exist only inside brandPage() further down this file, so every caller
+       above threw ReferenceError: esc2 is not defined.
+
+       That threw exactly where it did the most damage. photoHtml only reaches
+       this line when a listing HAS a photo, so an agency with no listings saw
+       a page that worked, and an agency with listings saw renderOverview()
+       die mid-map -- the pane kept whatever it had painted last, which was
+       the "No listings yet" empty state, and everything queued after the
+       render never ran. A portal that looked frozen, on the accounts that had
+       something to show. */
+    function esc2(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
     function photoHtml(url, opts) {
       opts = opts || {};
       const cls = 'lph' + (opts.small ? ' lph-sm' : '') + (opts.cls ? ' ' + opts.cls : '');
@@ -5804,7 +5821,6 @@
         if (sg) sg.style.fontFamily = font || 'inherit';
         if (ss) { ss.style.fontFamily = font || 'inherit'; ss.textContent = nm !== 'Your agency' ? nm : 'Your agency name in this typeface'; }
       }
-      function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
 
       /* A colour <input> always reports a value, so an untouched picker looks
          identical to a deliberate choice — and collect() would have saved the
