@@ -126,7 +126,13 @@
      No callback page is needed: the client is created with
      detectSessionInUrl, so the session in the returning fragment is consumed
      wherever the person lands. */
-  var OAUTH_PROVIDERS = ['google'];
+  /* Empty on purpose. Google sign-in was removed from the sign-in page:
+     the button only ever appeared when the provider was enabled on the
+     project, and while it was not, the flow left half-finished PKCE
+     code-verifier keys behind in storage. Email and password is the one
+     way in. Re-add a provider name here and build its button to bring it
+     back -- enabledProviders() and signInWithProvider() still work. */
+  var OAUTH_PROVIDERS = [];
 
   /* Which providers this project actually has switched on.
      GoTrue publishes this at /auth/v1/settings, and asking is the difference

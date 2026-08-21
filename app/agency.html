@@ -1290,18 +1290,24 @@
       .two{ grid-template-columns: 1fr; }
       .cmp-listings{ grid-template-columns: 1fr; }
 
-      /* ── NO PANE CHROME ON A PHONE ────────────────────────────────────
-         Every pane opened with an agency name, a page title and a paragraph
-         of description — roughly a third of the screen spent restating where
-         you already know you are, before a single control. The taskbar menu
-         already names the current pane and highlights it, so the title is
-         redundant and the lede is reading material on a working screen.
-         All of it goes; the pane opens on its actual functions. */
-      .pane .eyebrow,
-      .pane .h1 { display: none; }
+      /* ── MINIMAL PANE CHROME ON A PHONE ───────────────────────────────
+         Every pane used to open with an agency name, a page title and a
+         paragraph of description — roughly a third of the screen spent before
+         a single control. The eyebrow and the lede are still gone: one
+         restates the account you are signed into, the other is reading matter
+         on a working screen.
+
+         The title stays. Hiding it too left all nine panes unlabelled: you tap
+         something in the taskbar, the screen changes, and nothing confirms
+         what it changed to. The argument for cutting it was that the taskbar
+         already names the current pane — but it only does so while the sheet
+         is open, which is the one moment you do not need telling. Compact
+         rather than absent. */
+      .pane .eyebrow { display: none; }
       .pane > p.muted { display: none; }        /* the pane-level lede only */
-      .pane div:has(> .h1) { display: none; }   /* and the wrapper it sat in,
-                                                   so it leaves no flex gap */
+      .pane .h1 {
+        font-size: 21px; line-height: 1.2; margin: 0 0 10px;
+      }
 
       .ov-head, .pane-head, .crm-head {
         flex-direction: column; align-items: flex-start; gap: 12px;
@@ -5875,11 +5881,25 @@
       function refreshOnboard(b) {
         const welcomed = new URLSearchParams(location.search).get('welcome') === 'agency';
         const skipped = localStorage.getItem(SKIP_KEY) === '1';
+        const firstRun = isFirstRun(b);
         paintSteps(b);
         // Show while anything is genuinely missing, unless they've dismissed it
         // and did not just arrive from signup.
-        onboard.hidden = !isFirstRun(b) || (skipped && !welcomed);
-        if (welcomed) goToPane('brand');
+        onboard.hidden = !firstRun || (skipped && !welcomed);
+
+        /* Do not make ?welcome=agency the only route here. Email confirmation
+           destroys it: signup shows "check your email" and returns without
+           redirecting, so the sign-in that follows runs with mode 'in' and
+           lands on plain agency.html. The flag never arrives, this never fires,
+           and because #brandOnboard lives inside the brand pane, the checklist
+           is not just un-jumped-to -- it is invisible. An agency that has to
+           confirm its email silently loses the whole brand step, which is the
+           one thing Toju needs before it can write anything on their behalf.
+
+           The saved record already knows: nothing set up means first run. Ask
+           it, rather than trusting a query string to survive a round trip
+           through an inbox. */
+        if (welcomed || (firstRun && !skipped)) goToPane('brand');
       }
 
       if (skipBtn) skipBtn.addEventListener('click', () => {
