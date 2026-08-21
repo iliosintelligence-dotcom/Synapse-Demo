@@ -1010,7 +1010,14 @@
       border: 1px solid var(--border); cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; align-items: center; text-align: left; width: 100%; }
     .ovi:hover { border-color: rgba(54,54,54,0.35); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(20,26,38,0.07); }
     .ovi.on { border: 1.5px solid var(--brand-deep); box-shadow: 0 12px 28px rgba(54,54,54,0.15); }
-    .ovi .ph { width: 62px; height: 62px; border-radius: 12px; }
+    /* .lph, not .ph. Listing photos were renamed to .lph so they would stop
+       colliding with .lead .ph, the phone-number line -- and this selector was
+       left behind pointing at a class nothing emits any more. With no size on
+       the box, .lph img's width/height:100% resolved against nothing and each
+       photo painted at its intrinsic 1200x800: tiles 826px tall instead of
+       111px, and the Overview 5.3 screens long for six listings. A selector
+       that matches nothing is silent -- only the rendered size showed it. */
+    .ovi .lph { width: 62px; height: 62px; border-radius: 12px; }
     .ovi .mid { min-width: 0; flex: 1; }
     /* ── TYPE ON A LISTING CARD ────────────────────────────────────────────
        The title was 13.5px and the price 18px, so the price was the loudest
@@ -1684,9 +1691,14 @@
          listing from another. Same fix as .lcard .tt above: let it wrap to
          two lines instead of truncating the distinguishing half. */
       .ovi .tt {
-        white-space: normal; overflow: visible; text-overflow: clip;
+        white-space: normal; text-overflow: clip;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         overflow-wrap: anywhere;
+        /* hidden, not visible. -webkit-line-clamp only reserves two lines --
+           it needs overflow:hidden to actually cut the rest. With visible, a
+           three-line title kept painting and landed on top of the location
+           line underneath it. */
+        overflow: hidden;
       }
 
       .agd-scrim{
@@ -5195,7 +5207,38 @@
     // of 1024 living in the JS.
     const ovIsMobile = () => window.matchMedia('(max-width: 1024px)').matches;
     const ovHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
-    const ovLoc = (t) => { const p = t.split(','); return p.length > 1 ? p.slice(1).join(',').trim() : t; };
+    /* Reads the address the listing actually carries. This used to split the
+       title on a comma and take what followed -- so a title with no comma in
+       it ("Ring Road 2-Bedroom Bungalow") returned itself, and every tile
+       printed its own heading twice, once as the title and once as the
+       location.
+
+       De-duplicated on the way out: agencies routinely type the city into the
+       address line, which otherwise reads "Ring Road, Ibadan, Ibadan, Oyo
+       state". Falls back to the old behaviour only if the row carries no
+       address at all. */
+    const ovLoc = (l) => {
+      if (typeof l === 'string') l = { t: l };
+      const parts = [l.address, l.city, l.state].filter(function (x) { return x && String(x).trim(); });
+      if (!parts.length) {
+        const t = l.t || '';
+        const p = t.split(',');
+        return p.length > 1 ? p.slice(1).join(',').trim() : '';
+      }
+      /* Split on commas before de-duplicating. Comparing whole fields is not
+         enough: address is often already "Ikolaba GRA, Ibadan", and city is
+         "Ibadan", so the two differ as strings and the city survives twice. */
+      const seen = {}, out = [];
+      parts.forEach(function (x) {
+        String(x).split(',').forEach(function (seg) {
+          const v = seg.trim();
+          if (!v) return;
+          const k = v.toLowerCase();
+          if (!seen[k]) { seen[k] = 1; out.push(v); }
+        });
+      });
+      return out.join(', ');
+    };
     const ovBeds = (t) => { const m = t.match(/(\d+)\s*-?\s*bed/i); return m ? m[1] : '—'; };
 
     /* Reads the listing's real verification_nodes. This used to DERIVE a check
@@ -5240,7 +5283,7 @@
           <div class="ovd-ttl">${l.t}</div>
           <div class="ovd-chips">
             <span class="ovd-chip">${ovBeds(l.t)} beds</span>
-            <span class="ovd-chip">◍ ${ovLoc(l.t)}</span>
+            <span class="ovd-chip">◍ ${ovLoc(l)}</span>
             <span class="ovd-chip ${f.cls === 'ok' ? '' : f.cls}">${f.label}</span>
             <span class="ovd-chip">${l.leads} active ${l.leads === 1 ? 'lead' : 'leads'}</span>
           </div>
@@ -5319,7 +5362,7 @@
           <div class="mid">
             <div class="rf">SYN-${1000 + LISTINGS_DATA.indexOf(l)}</div>
             <div class="tt">${l.t.split(',')[0]}</div>
-            <div class="lc">◍ ${ovLoc(l.t)}</div>
+            <div class="lc">◍ ${ovLoc(l)}</div>
           </div>
           <div class="rt">
             <div class="pr">${nairaM(l.pr)}</div>
