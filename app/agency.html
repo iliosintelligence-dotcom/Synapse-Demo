@@ -807,6 +807,21 @@
     .lf-sec { border: none; border-top: 1px solid var(--border); padding: 15px 0 2px; margin: 0; }
     .lf-sec:first-of-type { border-top: none; padding-top: 4px; }
     .lf-sec legend { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--brand-text); padding: 0; margin-bottom: 11px; }
+    /* Handing over: one row of equal, obvious routes. */
+    /* .lead-ho, not .handoff -- that name is already taken further up this
+       file by the negotiator's handoff panel, which is a 470px-tall column.
+       Reusing it inherited min-height:470px and flex-direction:column, and the
+       single Call button stretched to fill all of it. */
+    .lead-ho { display: flex; flex-direction: row; align-items: stretch; gap: 8px; margin-top: 10px; }
+    .lead-ho .ho {
+      flex: 1 1 0; min-height: 44px; max-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+      font: 600 13px var(--f-sans); color: var(--ink); text-decoration: none;
+    }
+    .lead-ho .ho:hover { border-color: rgba(54,54,54,0.35); }
+    .lead-ho .ho .syn-i { width: 16px; height: 16px; }
+    .lead-ho:empty { display: none; }
+
     .lf .ferr { display: none; font: 500 12px var(--f-sans); color: var(--danger); margin-top: 4px; }
     .lf-hint { font: 400 12px var(--f-sans); color: var(--ink-dim); margin: 2px 0 4px; }
     .lf-echo { display: block; font: 600 12px var(--f-sans); color: var(--brand-text); margin-top: 4px; }
@@ -2899,11 +2914,23 @@
         <button class="x" id="drawerX">\u00d7</button>
         <div style="display:flex;align-items:center;gap:10px">${
           l.score == null ? '' : `<span class="score" style="${scoreTone(l.score)}">${l.score}</span>`
-        }<div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${l.ph || 'No phone number yet'}</div></div></div>
+        }<div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${
+          l.ph ? `<a href="tel:${l.ph.replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none">${l.ph}</a>` : 'No phone number yet'
+        }</div></div></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
           <span class="temp ${l.temp}">${TEMP_LABEL[l.temp]}</span>
           <span class="src browse">${l.stage}</span>${chnBadge(a.channel)}
           ${l.ph ? `<a class="wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" style="margin-left:auto">WhatsApp</a>` : ''}
+        </div>
+        <!-- Handing a lead over is the last thing this screen is for, and
+             WhatsApp was the only way out of it. The number was printed as
+             plain text — unTAPPABLE on the one device where a phone number is
+             a button — and there was no email route at all. All three are
+             offered now, and each is hidden rather than faked when the lead
+             did not leave that detail. -->
+        <div class="lead-ho">
+          ${l.ph ? `<a class="ho" href="tel:${l.ph.replace(/[^\d+]/g,'')}"><span data-icon="commute"></span>Call</a>` : ''}
+          ${l.em ? `<a class="ho" href="mailto:${encodeURIComponent(l.em)}?subject=${encodeURIComponent('About ' + l.pr.split(' · ')[0])}"><span data-icon="share"></span>Email</a>` : ''}
         </div>
         ${l.failed ? `<div class="sec" style="border-color:var(--danger,#c0392b)"><div class="k">\u26a0 Not delivered</div><p style="margin-top:6px;font-size:13px;line-height:1.5">This lead reached you here, but the WhatsApp alert did not go out. Reach out from this screen.</p></div>` : ''}
         <div class="sec nba"><div class="k">\u2726 Next best action</div>${l.nba.text ? `<p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>` : ''}${doBtn(l)}</div>
@@ -3472,6 +3499,23 @@
       const priceEcho = () => { const v = parseFloat(g('lfPrice').value); g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaM(Math.round(v / 1e6)) + ')' : ''; };
       // validation
       const setErr = (id, msg) => { const el = g(id); if (el) { el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none'; } };
+
+      /* An empty form should not open shouting. validate() runs on open to work
+         out whether the listing can be saved yet, and it used to paint every
+         message while it was at it -- so a new agency posting its first
+         property met seven red errors before touching a key, for fields it had
+         not been given a chance to fill.
+
+         The check still runs; only the telling is held back, until the field
+         has been edited or the agency has tried to save. */
+      const touched = {};
+      let revealAllErrors = false;
+      const ERR_OF = {
+        lfTitle: 'e_title', lfDesc: 'e_desc', lfAddr: 'e_addr', lfCity: 'e_city',
+        lfState: 'e_state', lfPrice: 'e_price', lfBeds: 'e_beds', lfImg: 'e_img',
+        lfLat: 'e_lat', lfLng: 'e_lat',
+      };
+      const setErrGated = (id, msg) => setErr(id, (revealAllErrors || touched[id]) ? msg : '');
       /* Image URL validation.
          This only ever tested /^https?:\/\//, which any link on earth passes.
          A listing was published yesterday whose "image" was
@@ -3525,12 +3569,24 @@
           e_lat: ((la && lo) || (!la && !lo)) ? '' : 'Enter both latitude and longitude, or neither',
         };
         let ok = true;
-        Object.keys(checks).forEach(k => { setErr(k, checks[k]); if (checks[k]) ok = false; });
-        const save = g('lfSave'); save.disabled = !ok; save.style.opacity = ok ? '1' : '.55'; save.setAttribute('aria-disabled', String(!ok));
+        Object.keys(checks).forEach(k => { setErrGated(k, checks[k]); if (checks[k]) ok = false; });
+        /* Left enabled deliberately. A disabled Save with no errors on screen
+           is a dead end -- nothing tells you what is missing, and a disabled
+           control shows no tooltip on touch. Pressing it reveals every
+           outstanding message instead, which is what the toast below already
+           assumed could happen. */
+        const save = g('lfSave');
+        save.disabled = false; save.removeAttribute('aria-disabled');
+        save.style.opacity = ok ? '1' : '.75';
         return ok;
       }
-      ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg', 'lfLat', 'lfLng'].forEach(id =>
-        g(id).addEventListener('input', () => { validate(); if (id === 'lfPrice') priceEcho(); }));
+      ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg', 'lfLat', 'lfLng'].forEach(id => {
+        const mark = () => { if (ERR_OF[id]) touched[ERR_OF[id]] = true; };
+        g(id).addEventListener('input', () => { mark(); validate(); if (id === 'lfPrice') priceEcho(); });
+        // blur counts too: tabbing through a required field and leaving it
+        // empty is a decision, and worth telling them about there and then.
+        g(id).addEventListener('blur', () => { mark(); validate(); });
+      });
       /* Probe on blur rather than per keystroke: one request when they have
          finished pasting, not one per character. */
       g('lfImg').addEventListener('blur', () => imgProbe(g('lfImg').value.trim()));
@@ -3598,7 +3654,13 @@
       priceEcho(); validate();
       // save
       g('lfSave').addEventListener('click', () => {
-        if (!validate()) { toast('Fill in the required fields (*) first'); return; }
+        if (!validate()) {
+          revealAllErrors = true; validate();
+          const first = document.querySelector('.lf .ferr[style*="block"]');
+          if (first) first.closest('.field')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          toast('Fill in the required fields (*) first');
+          return;
+        }
         const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
         const data = {
           title: g('lfTitle').value.trim(), description: g('lfDesc').value.trim(),
