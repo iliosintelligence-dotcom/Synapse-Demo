@@ -63,6 +63,10 @@
     'arrow-right':'<path d="M4 12h16M14 6l6 6-6 6"/>',
     'check':      '<path d="M4 12l5 5L20 6"/>',
     'close':      '<path d="M6 6l12 12M18 6L6 18"/>',
+    // "we do not know yet" -- the honest third state beside check and close.
+    // Drawn as a mark, not a letter, so it keeps the stroke language when a
+    // glyph would fall back to whatever question mark the system font has.
+    'question':   '<path d="M9.1 9.2a3 3 0 1 1 3.9 2.9c-.7.3-1 .9-1 1.7v.7"/><path d="M12 17.6h.01"/>',
   };
 
   function svg(name, opts) {
