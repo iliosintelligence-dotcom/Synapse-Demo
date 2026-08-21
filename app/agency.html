@@ -1698,6 +1698,38 @@
       /* the row now navigates instead of just selecting, so it needs to
          read that way: a trailing chevron, same idiom as .grp-chv and
          .agd-grp .chv elsewhere in this file. */
+      /* Explanations off the brand page. Five blocks of prose — the pane lede
+         plus a subtitle under each of Identity, Look, Voice and Links — came
+         to 232px of reading before the first thing you can change. The field
+         labels and the format hints inside them stay: "Comma separated" tells
+         you how to fill a box, which is instruction, not explanation.
+
+         Same reasoning the pane lede was already hidden under. That rule was
+         .pane > p.muted and this one sits inside a wrapper div, so it never
+         matched. */
+      #pane-brand p.muted,
+      #pane-brand .sub { display: none; }
+
+      /* ── brand ────────────────────────────────────────────────────────
+         Save sat at the top of a pane 3.2 screens long, 465px above the first
+         field you can edit — so the shape of the job was: scroll down, fill it
+         in, scroll all the way back up to keep it. It rides above the taskbar
+         instead, in reach from wherever you have got to. */
+      #pane-brand #brandSave {
+        position: fixed; z-index: 55;
+        left: 16px; right: 16px; width: auto;
+        bottom: calc(84px + env(safe-area-inset-bottom));
+        box-shadow: 0 10px 28px rgba(15,15,15,0.22);
+      }
+
+      /* The preview is a desktop row — logo, mark, name, tagline, accent chip.
+         At 375px it squeezed the name into 62px: three lines for the name and
+         four for the tagline. The marks and the chip keep their row; the words
+         drop underneath and take the full width. */
+      .brand-preview { flex-wrap: wrap; gap: 10px 12px; }
+      .brand-preview .bp-txt { flex: 1 0 100%; order: 3; }
+      .brand-preview .bp-chip { margin-left: auto; order: 2; }
+
       /* The row was four columns wide on a 343px tile — photo, text, price,
          chevron — which left the text column 138px. Every title truncated at
          two lines and the location wrapped to three, while the price column
@@ -5978,7 +6010,7 @@
         f('bkPreview').innerHTML =
           (logo ? `<img src="${esc2(logo)}" alt="" onerror="this.remove()">` : '')
           + `<div class="bp-mark" style="background:${esc2(c1)}">${esc2(initials)}</div>`
-          + `<div style="min-width:0"><div class="bp-nm" style="font-family:${esc2(font || 'inherit')}">${esc2(nm)}</div>`
+          + `<div class="bp-txt" style="min-width:0"><div class="bp-nm" style="font-family:${esc2(font || 'inherit')}">${esc2(nm)}</div>`
           + `<div class="bp-tag">${esc2(tag)}</div></div>`
           + `<span class="bp-chip" style="background:${esc2(c2)}">Accent</span>`;
 
