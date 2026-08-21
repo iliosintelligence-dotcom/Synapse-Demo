@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dream Boards · Synapse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <style>
+    /* Dream Boards — Pinterest for the home you're dreaming of. Create as many
+       boards as you like (pods/folders), pin images into each, keep a watchlist
+       of saved homes. The ACTIVE board is mirrored to synapse_moodboard_v1 so
+       Toju keeps reading your vibe. All local (synapse_dream_boards_v1). */
+    body { background: var(--bg); }
+    .board-wrap { max-width: none; margin: 0 auto; padding: 26px 34px 90px; }
+    .db-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .db-h1 { font-family: var(--f-serif); font-weight: 500; font-size: 37px; line-height: 1.12; letter-spacing: -0.01em; }
+
+    /* ── boards home: grid of board cover cards ── */
+    .boards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; margin-top: 24px; }
+    .bcard { cursor: pointer; text-align: left; border: none; background: none; padding: 0; }
+    .bcover { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; height: 168px; border-radius: 18px; overflow: hidden; background: rgba(0,0,0,0.05);
+      box-shadow: 0 14px 34px rgba(20,26,38,0.10); transition: transform .2s, box-shadow .2s; }
+    .bcard:hover .bcover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.16); }
+    .bcover img { width: 100%; height: 100%; object-fit: cover; }
+    .bcover img:first-child { grid-row: 1 / 3; }
+    /* An empty board held a sparkle. It now holds nothing but a faint hatch,
+   which is what an unfilled frame looks like in a layout tool and reads as
+   "not filled in" rather than "magic pending". */
+    .bcover .bempty { grid-column: 1 / 3; grid-row: 1 / 3; background:
+      repeating-linear-gradient(135deg, rgba(20,20,20,0.028) 0 9px, rgba(20,20,20,0.05) 9px 18px); }
+    .bcard .bname { font-weight: 600; font-size: 15px; margin-top: 11px; }
+    .bcard .bmeta { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+    .bcard.new .bcover { border: 2px dashed rgba(54,54,54,0.35); background: rgba(54,54,54,0.05); display: flex; align-items: center; justify-content: center; }
+    .bcard.new .plus { font-size: 30px; color: #121212; font-weight: 300; }
+    .bcard.watch .bcover { background: linear-gradient(135deg, #121212, #121212); display: flex; align-items: center; justify-content: center; color: #fff; }
+    .bcard.watch .wc { text-align: center; }
+    .bcard.watch .wc b { font-family: var(--f-serif); font-size: 42px; line-height: 1; }
+    .bcard.watch .wc span { font-size: 12px; letter-spacing: .1em; opacity: .9; }
+
+    /* ── inside a board ── */
+    .db-back { font-size: 13px; color: #121212; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .db-back:hover { text-decoration: underline; }
+    .board-title { font-family: var(--f-serif); font-weight: 500; font-size: 32px; color: var(--ink); border: none; background: none; outline: none; letter-spacing: -0.02em; min-width: 200px; }
+    .board-title:focus { border-bottom: 1px dashed rgba(54,54,54,0.5); }
+    .db-tools { display: flex; gap: 8px; }
+    .db-tools button { font: 600 12.5px var(--f-sans); border-radius: 100px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.6); color: var(--ink-muted); }
+    .db-tools button:hover { color: var(--ink); }
+    .db-tools .del:hover { color: #121212; border-color: rgba(54,54,54,0.4); }
+
+    .vibe { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 8px; align-items: center; }
+    .vibe .v { font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: 100px; padding: 7px 12px 7px 14px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(20,26,38,0.05); }
+    .vibe .v button { background: none; border: none; color: var(--ink-dim); cursor: pointer; font-size: 14px; line-height: 1; }
+    .vibe .v button:hover { color: #121212; }
+    .vibe input { font: 13px var(--f-sans); border: 1px dashed var(--border); background: rgba(255,255,255,0.5); border-radius: 100px; padding: 7px 14px; outline: none; color: var(--ink); width: 150px; }
+    .vibe input:focus { border-color: rgba(54,54,54,0.5); }
+
+    .masonry { columns: 4 200px; column-gap: 14px; margin-top: 18px; }
+    .tile { break-inside: avoid; margin-bottom: 14px; border-radius: 18px; overflow: hidden; position: relative; box-shadow: 0 12px 30px rgba(20,26,38,0.10); background: #eee; cursor: default; }
+    .tile img { width: 100%; display: block; border-radius: 18px; }
+    .tile .rm { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(20,20,22,0.55); color: #fff; font-size: 14px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .15s; backdrop-filter: blur(4px); }
+    .tile:hover .rm { opacity: 1; }
+    .tile .cap { position: absolute; left: 10px; bottom: 10px; font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+    .tile .catdot { position: absolute; top: 9px; left: 9px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); }
+    @keyframes pinPop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .masonry .tile { animation: pinPop .28s cubic-bezier(.22,1,.36,1) both; }
+
+    /* mode switch — Dream / Mood / Vision */
+    .mode-switch { display: inline-flex; gap: 3px; margin: 14px 0 4px; padding: 4px; background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 100px; }
+    .mode-switch .ms { border: none; background: none; cursor: pointer; font: 600 13px var(--f-sans); color: var(--ink-muted); padding: 7px 16px; border-radius: 100px; transition: all .2s; }
+    .mode-switch .ms.on { background: #121212; color: #f5f5f5; box-shadow: 0 4px 14px rgba(20,20,20,0.25); }
+    .mode-switch .ms:not(.on):hover { color: var(--ink); background: rgba(0,0,0,0.04); }
+    .mode-hint { font-size: 13px; margin: 2px 0 4px; }
+
+    /* category tabs */
+    .cat-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 2px; }
+    .cat-tabs .ct { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); cursor: pointer; font: 600 12.5px var(--f-sans); color: var(--ink-muted); padding: 6px 12px; border-radius: 100px; transition: all .2s; }
+    .cat-tabs .ct i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .cat-tabs .ct b { font-weight: 700; font-size: 12px; opacity: .55; }
+    .cat-tabs .ct.on { background: #121212; color: #f5f5f5; border-color: #121212; }
+    .cat-tabs .ct.on b { opacity: .7; }
+    .cat-tabs .ct:not(.on):hover { color: var(--ink); background: rgba(0,0,0,0.04); }
+    /* ── starter board: clearly-labelled inspiration, never listings ──
+       burnt-orange (--pip) is reserved for pips and hairlines only — no text. */
+    .signals, .starter-note, .share-note { --pip: #b4551d; }
+    .starter-note { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; margin: 14px 0 2px; border: 1px solid var(--border); border-left: 2px solid rgba(180,85,29,0.55); border-radius: 12px; background: rgba(255,255,255,0.6); font-size: 13px; color: var(--ink-muted); line-height: 1.6; }
+    .starter-note b { color: var(--ink); }
+    .starter-note .t { flex: 1; min-width: 240px; }
+    .keep { font: 600 12.5px var(--f-sans); border-radius: 100px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--ink); background: rgba(255,255,255,0.8); color: var(--ink); white-space: nowrap; transition: transform var(--m-micro) var(--m-ease); }
+    .keep:hover { background: #121212; color: #f5f5f5; }
+    .keep:active { transform: scale(.97); }
+
+    /* ── board signal summary — what the board says, no scores ── */
+    .signals { padding: 15px 20px 13px; margin: 14px 0 2px; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,0.6); }
+    .sig-h { font: 700 12px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+    .sig-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 26px; margin-top: 10px; }
+    .sig-row { display: flex; align-items: baseline; gap: 10px; font-size: 13px; color: var(--ink); }
+    .sig-row .lbl { font-weight: 600; min-width: 62px; }
+    .sig-pips { display: inline-flex; gap: 5px; align-self: center; }
+    .sig-pip { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(180,85,29,0.4); background: transparent; transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease); }
+    .sig-pip.fill { background: var(--pip); border-color: var(--pip); }
+    @keyframes pipIn { from { transform: scale(.35); opacity: .2; } to { transform: scale(1); opacity: 1; } }
+    .sig-pip.pop { animation: pipIn var(--m-standard) var(--m-ease-spring) both; }
+    .sig-state { font-size: 12.5px; color: var(--ink-muted); }
+    .sig-read { font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(180,85,29,0.22); }
+    .sig-read b { color: var(--ink); }
+
+    /* ── pin-from-share banner ── */
+    .share-note { display: flex; align-items: center; gap: 12px; padding: 13px 18px; margin: 16px 0 0; border: 1px solid var(--border); border-left: 2px solid rgba(180,85,29,0.55); border-radius: 12px; background: rgba(255,255,255,0.7); font-size: 13px; color: var(--ink-muted); line-height: 1.6; animation: mEnterLocal var(--m-expanded) var(--m-ease) both; }
+    @keyframes mEnterLocal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .share-note .t { flex: 1; }
+    .share-note b { color: var(--ink); }
+    .share-note .sn-x { border: none; background: none; cursor: pointer; color: var(--ink-dim); font-size: 16px; line-height: 1; padding: 4px 6px; }
+    .share-note .sn-x:hover { color: var(--ink); }
+
+    .keep:focus-visible, .sn-x:focus-visible, .lnk-all:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+
+    @media (prefers-reduced-motion: reduce){ .masonry .tile { animation: none; } .mode-switch .ms, .cat-tabs .ct { transition: none; } .sig-pip { transition: none; } .sig-pip.pop, .share-note { animation: none; } .keep { transition: none; } }
+
+    .add-card { padding: 20px 22px; margin-top: 6px; }
+    .add-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .add-row input { flex: 1; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.65); font: 14px var(--f-sans); color: var(--ink); outline: none; }
+    .add-row select { padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink); outline: none; cursor: pointer; }
+    .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+    .pal { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; border: none; padding: 0; box-shadow: 0 6px 16px rgba(20,26,38,0.08); }
+    .pal img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+    .pal:hover img { transform: scale(1.06); }
+    .pal.added::after { content: '✓ pinned'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(54,54,54,0.75); color: #fff; font: 700 12px var(--f-sans); }
+    .pal .catdot { position: absolute; top: 6px; left: 6px; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); z-index: 1; }
+
+    .toju-cta { display: flex; align-items: center; gap: 14px; padding: 18px 22px; margin-top: 20px; }
+    .toju-cta .t { flex: 1; font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
+    .toju-cta .t b { color: var(--ink); }
+    .hidden { display: none !important; }
+    @media (max-width: 560px){ .masonry{ columns: 2 140px; } }
+
+    /* the mobile bar never exists above the phone breakpoint */
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       A mood board is the one page in the app that is genuinely about the
+       pictures, so mobile leans into that: the pins start high, the prose
+       around them gets out of the way, and the controls become one-handed.
+       Two columns, not four — a pin you cannot read the mood of is not
+       inspiration, it is a thumbnail. */
+    @media (max-width: 1024px) {
+      .appbar { display: none; }
+
+      /* ── cross-page nav ────────────────────────────────────────────────
+         Hiding .appbar took the only links to the other consumer pages with
+         it, so Toju, Your matches and Dream Home became mutually unreachable
+         on a phone. This used to be solved by keeping .appbar in the layout
+         with everything except its <nav> stripped out, rendered as a row of
+         pills. That cost a strip of vertical space on every screen for links
+         people touch a few times a session, and it was three hand-maintained
+         copies of one list. cust-nav.js now injects a single floating taskbar
+         from one array of destinations, so .appbar can stay fully hidden. */
+
+
+      /* The sticky bar that used to head this page said "Dream boards" directly
+         above the .db-h1 that also says "Dream boards", and carried a back
+         arrow that was really a fixed link to Toju. The heading is now stated
+         once, on the page, next to New board; back is a real back control in
+         the top-right corner, handed to this page's own handler while a board
+         is open. */
+
+      /* this page's container is .board-wrap, not .wrap — 34px gutters are
+         desktop margins, and they left the content out of line with the bar */
+      .board-wrap {
+        padding-left: 16px; padding-right: 16px; padding-bottom: 64px;
+        padding-top: calc(18px + env(safe-area-inset-top));
+      }
+
+      /* ── all-boards ── */
+      .db-h1 { font-size: 26px; }
+      .db-top { gap: 10px; }
+      /* 42 here beat the 44px floor on .btn -- a page rule is more specific
+         than the class it is tightening. Matched to the floor rather than
+         removed, since the nowrap still earns its place. */
+      .db-top .btn { min-height: 44px; white-space: nowrap; }
+      /* the standing explanation is for a first visit, not every visit */
+      #homeView > p.muted { font-size: 13.5px; }
+      .boards-grid { grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+      .bcard .bname { font-size: 14px; margin-top: 9px; }
+      .bcard.watch .wc b { font-size: 34px; }
+
+      /* ── inside a board ──
+         The bar already carries the board name and a back arrow wired to the
+         same toHome(), so the in-page "All boards" link was a second control
+         doing an identical job one row below it. */
+      .db-back { display: none; }
+      .board-title { font-size: 25px; min-width: 0; width: 100%; }
+      .masonry { columns: 2 140px; column-gap: 10px; margin-top: 14px; }
+      .tile { margin-bottom: 10px; border-radius: 14px; }
+
+      /* both control rails scroll rather than wrapping into stacked rows */
+      .mode-switch, .cat-tabs {
+        display: flex; flex-wrap: nowrap; overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none;
+        max-width: 100%;
+      }
+      .mode-switch::-webkit-scrollbar, .cat-tabs::-webkit-scrollbar { display: none; }
+      .mode-switch .ms, .cat-tabs .ct { flex: none; min-height: 40px; }
+      .mode-hint { font-size: 12.5px; }
+
+      .signals { padding: 13px 15px 12px; }
+      .sig-rows { grid-template-columns: 1fr; gap: 7px; }
+
+      /* pinning: the URL field, its category and the button will not sit on
+         one 375px line without all three becoming unusable */
+      .add-card { padding: 16px 15px; }
+      .add-row { flex-wrap: wrap; gap: 8px; }
+      .add-row input { flex: 1 1 100%; font-size: 16px; min-height: 46px; }  /* 16px: no iOS zoom */
+      .add-row select { flex: 1 1 auto; min-height: 44px; font-size: 14px; }
+      .add-row .btn { flex: none; min-height: 44px; }
+      .palette { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+      /* the Toju handoff is the point of the board — full-width, not squeezed */
+      .toju-cta { flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px 15px; }
+      .toju-cta .t { font-size: 13.5px; }
+      .toju-cta .btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div id="syn-load" aria-hidden="true"><svg class="syn-load-mark" viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg></div>
+  <div class="appbar">
+    <a class="brand" href="../index.html">
+      <svg viewBox="0 0 64 92" fill="#15171a"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg>
+      Synapse
+    </a>
+    <nav>
+      <a href="toju.html">Toju</a>
+      <a href="browse.html">Your matches</a>
+      <a href="dream.html" class="active">Dream Home</a>
+    </nav>
+    <span class="spacer"></span>
+    <span data-auth-slot style="margin-right:16px"></span>
+    <a class="home" href="../index.html">← Back to site</a>
+  </div>
+
+  <div class="board-wrap" data-cnav-back-slot>
+    <!-- ═══ BOARDS HOME ═══ -->
+    <section id="homeView">
+      <div class="db-top">
+        <div class="db-h1">Dream boards</div>
+        <button class="btn btn-primary" id="newBoardBtn" style="padding:11px 18px;font-size:13.5px">+ New board</button>
+      </div>
+      <!-- Shown only while there are no boards yet. Dream boards are an
+           unfamiliar idea, so the first visit needs the explanation; once
+           somebody has boards of their own, three lines telling them what a
+           board is are three lines between them and their boards. -->
+      <p class="muted" id="dbIntro" style="font-size:14px;margin-top:6px" hidden>Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Toju reads each board and finds real verified homes that feel like it.</p>
+      <div class="boards-grid" id="boardsGrid"></div>
+    </section>
+
+    <!-- ═══ INSIDE A BOARD ═══ -->
+    <section id="boardView" class="hidden">
+      <a class="db-back" id="backBtn">← All boards</a>
+      <div class="db-top" style="margin-top:12px">
+        <input class="board-title" id="boardTitle" aria-label="Board name" />
+        <div class="db-tools">
+          <button id="renameBtn">✎ Rename</button>
+          <button class="del" id="deleteBtn">🗑 Delete</button>
+        </div>
+      </div>
+
+      <!-- mode switch: the same board, reframed — Dream / Mood / Vision -->
+      <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Board mode"></div>
+      <p class="mode-hint muted" id="modeHint"></p>
+
+      <!-- shown only on the starter board — inspiration content, never listings -->
+      <div class="starter-note hidden" id="starterNote"></div>
+
+      <div class="vibe" id="vibe"></div>
+
+      <!-- what the board actually says — the signals Toju reads, no scores -->
+      <section class="signals hidden" id="signals" aria-label="What this board says so far">
+        <div class="sig-h">What this board says so far</div>
+        <div class="sig-rows" id="sigRows"></div>
+        <p class="sig-read" id="sigRead" aria-live="polite"></p>
+      </section>
+
+      <!-- category tabs: filter the masonry by what a pin is about -->
+      <div class="cat-tabs" id="catTabs" role="tablist" aria-label="Filter pins by category"></div>
+      <div id="board"></div>
+
+      <!-- appears when the page was opened via the share target -->
+      <div class="share-note hidden" id="shareNote"></div>
+
+      <div class="card add-card">
+        <div class="add-row">
+          <input id="urlInput" type="url" placeholder="Paste an image URL to pin it to this board…" />
+          <select id="urlCat" aria-label="Category for the pinned image"></select>
+          <button class="btn btn-primary" id="addUrlBtn" style="padding:11px 18px;font-size:13.5px">Pin it</button>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-bottom:10px">Or pin from a little inspiration:</p>
+        <div class="palette" id="palette"></div>
+      </div>
+
+      <div class="card toju-cta">
+        <span data-lottie="orb-pulse" data-speed="0.8" style="width:44px;height:44px;display:inline-block"></span>
+        <div class="t"><b>Turn this board into homes.</b> Toju reads the styles, the light and the space you pinned and lines up verified listings that match the feeling.</div>
+        <a class="btn btn-primary" id="tojuBtn" href="toju.html" style="white-space:nowrap">Find my matches →</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const BKEY = 'synapse_dream_boards_v1';   // all boards
+    const MIRROR = 'synapse_moodboard_v1';    // active board — what Toju reads
+    const SAVES = 'synapse_saved';            // ♥'d homes → watchlist count
+
+    const PALETTE = [
+      // housing — the building itself
+      { u: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=70', c: 'Modern facade', cat: 'housing' },
+      { u: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', c: 'Detached duplex', cat: 'housing' },
+      { u: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', c: 'Terrace houses', cat: 'housing' },
+      // areas — neighbourhood & setting
+      { u: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&q=70', c: 'Leafy estate street', cat: 'area' },
+      { u: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=70', c: 'Waterfront view', cat: 'area' },
+      { u: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&q=70', c: 'City skyline', cat: 'area' },
+      // décor — interiors
+      { u: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', c: 'Open plan', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&q=70', c: 'Quiet bedroom', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Kitchen', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=70', c: 'Living room', cat: 'decor' },
+      // lifestyle — how you'll live there
+      { u: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=70', c: 'Lounge', cat: 'lifestyle' },
+      { u: 'https://images.unsplash.com/photo-1585128792020-803d29415281?w=500&q=70', c: 'Terrace view', cat: 'lifestyle' },
+      { u: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500&q=70', c: 'Poolside', cat: 'lifestyle' },
+      // palette — colour, light & material
+      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft light', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright & airy', cat: 'palette' },
+    ];
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const uid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    // ── curation categories (a pin is tagged so Toju reads it as the right signal) ──
+    const CATS = [
+      { id: 'housing',   lbl: 'Housing',   dot: '#121212' },
+      { id: 'area',      lbl: 'Areas',     dot: '#3f9c6d' },
+      { id: 'decor',     lbl: 'Décor',     dot: '#c98b3a' },
+      { id: 'lifestyle', lbl: 'Lifestyle', dot: '#8a5cd6' },
+      { id: 'palette',   lbl: 'Palette',   dot: '#2f6dbd' },
+    ];
+    const CAT = Object.fromEntries(CATS.map((c) => [c.id, c]));
+    function inferCat(c) {
+      c = String(c || '').toLowerCase();
+      if (/facade|duplex|penthouse|curb|exterior|villa|bungalow|maisonette|block|storey|building/.test(c)) return 'housing';
+      if (/lekki|ikoyi|island|ikeja|yaba|estate|street|waterfront|neighbourhood|\barea\b|gated|skyline|corridor|district/.test(c)) return 'area';
+      if (/palette|colou?r|texture|material|tone|marble|wood|light|airy|minimal/.test(c)) return 'palette';
+      if (/pool|gym|garden|terrace|lounge|workspace|balcony|patio|rooftop|bar|spa/.test(c)) return 'lifestyle';
+      return 'decor';
+    }
+    // the three board modes — one board, a mode switch that reframes it
+    const MODES = [
+      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Toju matches you to.' },
+      { id: 'mood',   lbl: 'Mood',   hint: 'The feeling — palettes, textures and interior vibe.' },
+      { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
+    ];
+
+    // ── starter board — INSPIRATION CONTENT, never listings ──────────────────
+    // Guardrail: nothing here may look like inventory. No prices, no addresses,
+    // no verification chips, no agency names — just interiors and light to
+    // react to. A starter board never mirrors to Toju (that would be a signal
+    // the visitor didn't send); it only becomes theirs via "Keep this board".
+    const STARTER_PINS = [
+      { u: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=500&q=70', c: 'Warm wood, stone counters', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=500&q=70', c: 'An island for slow Sunday cooking', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?w=500&q=70', c: 'Deep green cabinetry', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=500&q=70', c: 'White and timber, kept simple', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Clean lines, open shelves', cat: 'decor' },
+      { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft morning light', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal', cat: 'palette' },
+      { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright and airy', cat: 'palette' },
+    ];
+    const starterBoard = () => ({ id: uid(), name: 'Lagos kitchens we love', starter: true, vibe: [],
+      images: STARTER_PINS.map((p) => ({ u: p.u, c: p.c, cat: p.cat })) });
+
+    // ── state: { boards:[{id,name,starter?,vibe[],images:[{u,c,cat}]}], activeId } ──
+    let state;
+    try { state = JSON.parse(localStorage.getItem(BKEY)); } catch (e) {}
+    if (!state || !Array.isArray(state.boards)) {
+      // migrate a legacy single mood board, else offer the labelled starter
+      // board — never a pre-filled board presented as the visitor's own.
+      let legacy = null;
+      try { legacy = JSON.parse(localStorage.getItem(MIRROR)); } catch (e) {}
+      const first = legacy && (legacy.images || legacy.vibe)
+        ? { id: uid(), name: legacy.name || 'My dream home', vibe: legacy.vibe || [], images: legacy.images || [] }
+        : starterBoard();
+      state = { boards: [first], activeId: null };
+    }
+    // migrate older boards forward: every board gets a mode, every pin a category
+    state.boards.forEach((b) => {
+      if (!b.mode) b.mode = 'dream';
+      (b.images || []).forEach((im) => { if (!im.cat) im.cat = inferCat(im.c); });
+    });
+    const saveState = () => localStorage.setItem(BKEY, JSON.stringify(state));
+    const activeBoard = () => state.boards.find((b) => b.id === state.activeId) || null;
+    let boardCat = 'all'; // active category filter inside a board
+
+    // mirror the active board into the shape Toju reads — now split by category
+    // so Toju treats Area pins as a location signal, Housing as a type signal,
+    // and Décor/Palette as aesthetic. Keeps name/vibe/images for backward-compat.
+    function mirror() {
+      const b = activeBoard();
+      if (!b) return;
+      // A starter board is inspiration we authored, not the visitor's taste.
+      // It must never reach Toju as a signal — leave the mirror untouched
+      // (it still holds the last board the visitor actually curated).
+      if (b.starter) return;
+      const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
+      localStorage.setItem(MIRROR, JSON.stringify({
+        name: b.name, mode: b.mode || 'dream', vibe: b.vibe, images: b.images,
+        areas: capsOf('area'),
+        housing: capsOf('housing'),
+        lifestyle: capsOf('lifestyle'),
+        aesthetic: capsOf('decor').concat(capsOf('palette')),
+      }));
+    }
+    function savesCount() { try { return (JSON.parse(localStorage.getItem(SAVES)) || []).length; } catch (e) { return 0; } }
+
+    const homeView = document.getElementById('homeView');
+    const boardView = document.getElementById('boardView');
+
+    // ═══ BOARDS HOME ═══
+    function renderHome() {
+      const grid = document.getElementById('boardsGrid');
+      const cards = state.boards.map((b) => {
+        const imgs = (b.images || []).slice(0, 4);
+        const cover = imgs.length
+          ? imgs.map((im) => `<img src="${esc(im.u)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`).join('')
+          : '<div class="bempty" aria-hidden="true"></div>';
+        const meta = b.starter
+          ? 'Inspiration — not real listings'
+          : `${(b.images || []).length} pin${(b.images || []).length === 1 ? '' : 's'}${b.vibe && b.vibe.length ? ' · ' + b.vibe.length + ' vibes' : ''}`;
+        return `<button class="bcard" data-open="${b.id}">
+          <div class="bcover">${cover}</div>
+          <div class="bname">${esc(b.name || 'Untitled board')}</div>
+          <div class="bmeta">${meta}</div>
+        </button>`;
+      }).join('');
+      const n = savesCount();
+      const watch = n > 0
+        ? `<a class="bcard watch" href="browse.html" style="text-decoration:none;color:inherit">
+             <div class="bcover"><div class="wc"><b>${n}</b><span>SAVED HOMES</span></div></div>
+             <div class="bname">Saved homes</div><div class="bmeta">Your ♥ watchlist · open Your matches</div></a>`
+        : '';
+      const add = `<button class="bcard new" data-new><div class="bcover"><span class="plus">+</span></div>
+        <div class="bname">Create board</div><div class="bmeta">A new pod for a fresh idea</div></button>`;
+      grid.innerHTML = cards + watch + add;
+
+      /* Starter boards are seeded, not made. Counting them as "has boards"
+         hides the explanation from someone who has never built one -- which is
+         precisely the person it was written for. Only boards they made count. */
+      var intro = document.getElementById('dbIntro');
+      if (intro) intro.hidden = state.boards.some(function (b) { return !b.starter; });
+    }
+
+    document.getElementById('boardsGrid').addEventListener('click', (e) => {
+      const open = e.target.closest('[data-open]');
+      if (open) { openBoard(open.dataset.open); return; }
+      if (e.target.closest('[data-new]')) createBoard();
+    });
+    document.getElementById('newBoardBtn').addEventListener('click', createBoard);
+
+    function createBoard() {
+      const raw = prompt('Name your new board', 'New board');
+      if (raw === null) return; // cancelled — don't create an empty board
+      const b = { id: uid(), name: raw.trim() || 'New board', vibe: [], images: [] };
+      state.boards.push(b); saveState();
+      openBoard(b.id);
+    }
+
+    /* The mobile bar mirrors whichever view is open and whatever the board
+       is called. Routed through one function so a future view cannot forget
+       it — the browse page had exactly that bug. */
+    function syncMobileBar() {
+      if (!window.CustNav) return;
+      // Inside a board, back means back to the boards -- leaving the page
+      // entirely would skip a level the visitor can see they are inside of.
+      var inBoard = !boardView.classList.contains('hidden');
+      window.CustNav.setBack(inBoard ? toHome : null);
+    }
+
+    // ═══ INSIDE A BOARD ═══
+    function openBoard(id) {
+      state.activeId = id; boardCat = 'all'; saveState(); mirror();
+      homeView.classList.add('hidden'); boardView.classList.remove('hidden');
+      window.scrollTo(0, 0);
+      prevSig = null; // fresh board — no pip pop on first paint
+      renderMode(); renderCatTabs(); renderCatPicker(); renderStarterNote();
+      renderBoard(); renderVibe(); renderPalette(); renderSignals(); updateToju();
+      syncMobileBar();
+      document.getElementById('boardTitle').value = activeBoard().name || '';
+    }
+
+    // ── starter-board note — labels the inspiration, offers adoption ──
+    function renderStarterNote() {
+      const el = document.getElementById('starterNote');
+      const b = activeBoard();
+      if (!b || !b.starter) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+      el.classList.remove('hidden');
+      el.innerHTML = `<div class="t"><b>This is an inspiration board</b> — kitchens and light we love, just to react to.
+        Nothing here is a Synapse listing, and it doesn't shape your matches.
+        Remove what doesn't resonate, pin what does — then make it yours.</div>
+        <button class="keep" id="keepBtn">Keep this board</button>`;
+      document.getElementById('keepBtn').addEventListener('click', () => {
+        delete b.starter; saveState(); mirror(); // now it's theirs — Toju may read it
+        renderStarterNote(); renderSignals(); updateToju();
+      });
+    }
+
+    // ── board signal summary — what the board says, honestly. No score, no
+    //    percentage: there is no scoring model, so we only surface the signals
+    //    the board actually holds (vibe + categorised pins) and which are thin. ──
+    const SIGNALS = [
+      { id: 'style',     lbl: 'Style',     tip: 'pin an interior or a palette you love' },
+      { id: 'area',      lbl: 'areas',     tip: 'pin a street, skyline or neighbourhood that feels right' },
+      { id: 'housing',   lbl: 'housing',   tip: 'pin the kind of building you see yourself in' },
+      { id: 'lifestyle', lbl: 'lifestyle', tip: 'pin how you want to live — a pool, a terrace, a workspace' },
+    ];
+    let prevSig = null; // last rendered counts, so only newly-lit pips animate
+    function signalCounts(b) {
+      const n = { style: 0, area: 0, housing: 0, lifestyle: 0 };
+      (b.images || []).forEach((im) => {
+        const c = im.cat || 'decor';
+        if (c === 'decor' || c === 'palette') n.style++;
+        else if (n[c] !== undefined) n[c]++;
+      });
+      n.style += (b.vibe || []).length;
+      return n;
+    }
+    const sigWord = (n) => n === 0 ? 'nothing yet' : n < 3 ? 'starting to show' : 'coming through clearly';
+    function renderSignals() {
+      const el = document.getElementById('signals');
+      const b = activeBoard();
+      if (!b || b.starter) { el.classList.add('hidden'); prevSig = null; return; }
+      el.classList.remove('hidden');
+      const n = signalCounts(b);
+      document.getElementById('sigRows').innerHTML = SIGNALS.map((s) => {
+        const lit = Math.min(n[s.id], 3), was = prevSig ? Math.min(prevSig[s.id], 3) : lit;
+        const pips = [0, 1, 2].map((i) =>
+          `<i class="sig-pip ${i < lit ? 'fill' : ''} ${i < lit && i >= was ? 'pop' : ''}"></i>`).join('');
+        const cap = s.lbl.charAt(0).toUpperCase() + s.lbl.slice(1);
+        return `<div class="sig-row"><span class="lbl">${cap}</span>
+          <span class="sig-pips" aria-hidden="true">${pips}</span>
+          <span class="sig-state">${sigWord(n[s.id])}</span></div>`;
+      }).join('');
+      // one honest guidance line: strongest signal vs the thinnest one
+      const read = document.getElementById('sigRead');
+      const total = SIGNALS.reduce((t, s) => t + n[s.id], 0);
+      if (total === 0) {
+        read.innerHTML = 'Nothing pinned yet — each pin teaches this board something: style, an area, a kind of home, a way of living.';
+      } else {
+        const sorted = SIGNALS.slice().sort((a, c) => n[c.id] - n[a.id]);
+        const strong = sorted[0], weak = sorted[sorted.length - 1];
+        if (n[weak.id] === 0) {
+          read.innerHTML = `This board says ${n[strong.id] >= 3 ? 'a lot' : 'a little'} about <b>${strong.lbl.toLowerCase()}</b>, nothing yet about <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+        } else if (n[weak.id] < 3) {
+          read.innerHTML = `Every signal has something. The thinnest is <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+        } else {
+          read.innerHTML = 'Style, areas, housing and lifestyle all come through clearly. This board is ready for Toju.';
+        }
+      }
+      prevSig = n;
+    }
+
+    // ── mode switch (Dream / Mood / Vision) ──
+    function renderMode() {
+      const b = activeBoard(); const cur = b.mode || 'dream';
+      document.getElementById('modeSwitch').innerHTML = MODES.map((m) =>
+        `<button role="tab" class="ms ${m.id === cur ? 'on' : ''}" data-mode="${m.id}" aria-selected="${m.id === cur}">${m.lbl}</button>`).join('');
+      document.getElementById('modeHint').textContent = (MODES.find((m) => m.id === cur) || MODES[0]).hint;
+    }
+    document.getElementById('modeSwitch').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-mode]'); if (!btn) return;
+      const b = activeBoard(); if (!b) return;
+      b.mode = btn.dataset.mode; saveState(); mirror(); renderMode(); updateToju();
+    });
+
+    // ── category tabs (filter the masonry) ──
+    function catCount(id) { return (activeBoard().images || []).filter((im) => (im.cat || 'decor') === id).length; }
+    function renderCatTabs() {
+      const total = (activeBoard().images || []).length;
+      const tab = (id, lbl, dot, n) =>
+        `<button role="tab" class="ct ${boardCat === id ? 'on' : ''}" data-cat="${id}" aria-selected="${boardCat === id}">
+           ${dot ? `<i style="background:${dot}"></i>` : ''}${lbl}<b>${n}</b></button>`;
+      let html = tab('all', 'All', '', total);
+      CATS.forEach((c) => { const n = catCount(c.id); if (n) html += tab(c.id, c.lbl, c.dot, n); });
+      document.getElementById('catTabs').innerHTML = html;
+    }
+    document.getElementById('catTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-cat]'); if (!btn) return;
+      boardCat = btn.dataset.cat; renderCatTabs(); renderBoard();
+    });
+
+    // ── category picker for freshly-pasted URLs ──
+    function renderCatPicker() {
+      const sel = document.getElementById('urlCat');
+      const start = boardCat === 'all' ? 'decor' : boardCat;
+      sel.innerHTML = CATS.map((c) => `<option value="${c.id}" ${c.id === start ? 'selected' : ''}>${c.lbl}</option>`).join('');
+    }
+    function toHome() {
+      state.activeId = null; saveState();
+      boardView.classList.add('hidden'); homeView.classList.remove('hidden');
+      window.scrollTo(0, 0); renderHome(); syncMobileBar();
+    }
+    document.getElementById('backBtn').addEventListener('click', toHome);
+
+    const boardTitle = document.getElementById('boardTitle');
+    boardTitle.addEventListener('input', () => { const b = activeBoard(); if (b) { b.name = boardTitle.value; saveState(); mirror(); syncMobileBar(); } });
+    document.getElementById('renameBtn').addEventListener('click', () => { boardTitle.focus(); boardTitle.select(); });
+    document.getElementById('deleteBtn').addEventListener('click', () => {
+      if (!confirm('Delete this board? Its pins will be removed.')) return;
+      state.boards = state.boards.filter((b) => b.id !== state.activeId);
+      if (state.boards.length === 0) state.boards.push({ id: uid(), name: 'My dream home', vibe: [], images: [] });
+      // the deleted board must stop informing Toju — clear the mirror until
+      // the visitor opens another board (which re-mirrors it)
+      try { localStorage.removeItem(MIRROR); } catch (e) {}
+      saveState(); toHome();
+    });
+
+    const boardEl = document.getElementById('board');
+    const vibeEl = document.getElementById('vibe');
+    const paletteEl = document.getElementById('palette');
+    const hasImg = (u) => activeBoard().images.some((i) => i.u === u);
+
+    function renderBoard() {
+      const b = activeBoard();
+      if (!b.images.length) {
+        boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape — Toju does the rest.</p></div></div>';
+        return;
+      }
+      // keep original indices so remove/lookup stays correct under a filter
+      const shown = b.images.map((im, i) => ({ im, i })).filter(({ im }) => boardCat === 'all' || (im.cat || 'decor') === boardCat);
+      if (!shown.length) {
+        boardEl.innerHTML = `<div class="card add-card"><div style="text-align:center;padding:34px 0;color:var(--ink-muted)"><p style="font-size:14px">No <b>${esc((CAT[boardCat] || {}).lbl || '')}</b> pins yet. Pin one below, or switch back to <button class="lnk-all">All</button>.</p></div></div>`;
+        const back = boardEl.querySelector('.lnk-all'); if (back) back.onclick = () => { boardCat = 'all'; renderCatTabs(); renderBoard(); };
+        return;
+      }
+      boardEl.innerHTML = '<div class="masonry">' + shown.map(({ im, i }) => {
+        const c = CAT[im.cat || 'decor'] || CAT.decor;
+        return `<div class="tile">
+          <img src="${esc(im.u)}" alt="${esc(im.c || 'pinned image')}" loading="lazy" onerror="this.closest('.tile').remove()" />
+          <span class="catdot" style="background:${c.dot}" title="${c.lbl}"></span>
+          ${im.c ? `<span class="cap">${esc(im.c)}</span>` : ''}
+          <button class="rm" data-i="${i}" title="Remove">×</button>
+        </div>`;
+      }).join('') + '</div>';
+    }
+    function renderVibe() {
+      const b = activeBoard();
+      vibeEl.innerHTML = b.vibe.map((v, i) => `<span class="v">${esc(v)} <button data-i="${i}" title="Remove">×</button></span>`).join('')
+        + '<input id="vibeInput" placeholder="+ add a vibe…" />';
+      document.getElementById('vibeInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+          b.vibe.push(e.target.value.trim()); saveState(); mirror(); renderVibe(); renderSignals(); updateToju();
+          document.getElementById('vibeInput').focus();
+        }
+      });
+    }
+    function renderPalette() {
+      // show inspiration for the active category first (or all when on "All")
+      const pool = PALETTE.filter((p) => boardCat === 'all' || (p.cat || 'decor') === boardCat);
+      const list = pool.length ? pool : PALETTE;
+      paletteEl.innerHTML = list.map((p) => {
+        const c = CAT[p.cat || 'decor'] || CAT.decor;
+        return `<button class="pal ${hasImg(p.u) ? 'added' : ''}" data-u="${esc(p.u)}" data-c="${esc(p.c)}" data-cat="${p.cat || 'decor'}" title="${esc(p.c)} · ${c.lbl}">
+          <img src="${esc(p.u)}" alt="${esc(p.c)}" loading="lazy" />
+          <span class="catdot" style="background:${c.dot}"></span>
+        </button>`;
+      }).join('');
+    }
+    function updateToju() {
+      const b = activeBoard();
+      const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
+      const areas = capsOf('area'), housing = capsOf('housing');
+      const parts = [];
+      if (b.vibe.length) parts.push('vibe: ' + b.vibe.join(', '));
+      if (housing.length) parts.push('home type: ' + housing.join(', '));
+      if (areas.length) parts.push('areas that feel right: ' + areas.join(', '));
+      const q = 'Find me verified homes that match my "' + (b.name || 'dream') + '" board'
+        + (parts.length ? ' — ' + parts.join('; ') : '') + '.';
+      document.getElementById('tojuBtn').href = 'toju.html?ask=' + encodeURIComponent(q);
+    }
+
+    boardEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.rm'); if (!btn) return;
+      activeBoard().images.splice(+btn.dataset.i, 1); saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
+    });
+    vibeEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-i]'); if (!btn) return;
+      activeBoard().vibe.splice(+btn.dataset.i, 1); saveState(); mirror(); renderVibe(); renderSignals(); updateToju();
+    });
+    paletteEl.addEventListener('click', (e) => {
+      const p = e.target.closest('.pal'); if (!p) return;
+      const b = activeBoard(), u = p.dataset.u;
+      if (hasImg(u)) b.images = b.images.filter((i) => i.u !== u);
+      else b.images.push({ u, c: p.dataset.c, cat: p.dataset.cat || 'decor' });
+      saveState(); mirror(); renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
+    });
+    function addUrl() {
+      const inp = document.getElementById('urlInput');
+      const u = inp.value.trim(); if (!u) return;
+      const cat = (document.getElementById('urlCat') || {}).value || 'decor';
+      activeBoard().images.push({ u, c: '', cat }); saveState(); mirror();
+      inp.value = ''; renderBoard(); renderCatTabs(); renderPalette(); renderSignals();
+    }
+    document.getElementById('addUrlBtn').addEventListener('click', addUrl);
+    document.getElementById('urlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addUrl(); });
+
+    // ── pin from anywhere (Web Share Target) ─────────────────────────────────
+    // The manifest's share_target (GET) lands shares here as ?share_title/
+    // share_text/share_url. HONEST SCOPE: the OS share sheet only offers
+    // Synapse after the PWA is INSTALLED (Chromium on Android/desktop). In a
+    // normal browser tab nothing new appears in the share sheet — this page
+    // just also understands those params if a link carries them. We never
+    // auto-pin: the shared link is previewed into the pin box for the visitor
+    // to confirm, because a share is not yet a decision.
+    function firstUrl(s) { const m = String(s || '').match(/https?:\/\/[^\s"'<>]+/); return m ? m[0] : null; }
+    function handleShare(qp) {
+      const su = firstUrl(qp.get('share_url')) || firstUrl(qp.get('share_text'));
+      if (!su) return false;
+      const label = (qp.get('share_title') || '').trim().slice(0, 80);
+      // land in a board the visitor owns — never the inspiration starter
+      let b = activeBoard();
+      if (!b || b.starter) b = state.boards.find((x) => !x.starter);
+      if (!b) { b = { id: uid(), name: 'My pins', vibe: [], images: [] }; state.boards.push(b); saveState(); }
+      openBoard(b.id);
+      const note = document.getElementById('shareNote');
+      note.classList.remove('hidden');
+      note.innerHTML = `<div class="t"><b>Shared to Synapse${label ? ' — “' + esc(label) + '”' : ''}.</b>
+          The link is ready below: pick a category and hit <b>Pin it</b> to add it to “${esc(b.name)}”.
+          If the link isn't a direct image it may not render as a tile.</div>
+        <button class="sn-x" aria-label="Dismiss shared link">×</button>`;
+      note.querySelector('.sn-x').addEventListener('click', () => { note.classList.add('hidden'); note.innerHTML = ''; });
+      const inp = document.getElementById('urlInput');
+      inp.value = su; inp.focus();
+      // strip the share params so refresh/back doesn't replay the share
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      return true;
+    }
+
+    // make this page installable / share-target capable; same registration
+    // notify.js performs lazily, so this is idempotent.
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
+
+    // boot — a share lands first, then deep link ?board=<id>, else boards home.
+    // Re-mirror the last-active board so synapse_moodboard_v1 (what Toju
+    // reads) is always in step with the boards store, even after edits made
+    // in another tab or an interrupted session.
+    saveState();
+    if (activeBoard()) mirror();
+    const qp = new URLSearchParams(location.search);
+    if (!handleShare(qp)) {
+      const deep = qp.get('board');
+      if (deep && state.boards.some((b) => b.id === deep)) openBoard(deep);
+      else renderHome();
+    }
+  </script>
+  <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
+  <script src="auth.js"></script>
+  <script src="notify.js"></script>
+  <script src="motion.js"></script>
+</body>
+</html>
