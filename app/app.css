@@ -208,6 +208,11 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--f-sans); font-weight: 700; font-size: 14px;
   padding: 13px 22px; border-radius: 100px; border: none; cursor: pointer;
   transition: all .25s;
+  /* A floor, not a height. The padding above already clears 44px, but several
+     call sites tighten it with an inline style -- the negotiator's "Get my
+     opening offer" came out at 35px that way. Fixing them one at a time only
+     works until the next one, so the guarantee lives on the class. */
+  min-height: 44px;
 }
 .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 0 30px rgba(54,54,54,0.28); }
 .btn-primary:hover { background: var(--brand-dim); transform: translateY(-1px); }

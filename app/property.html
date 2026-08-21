@@ -16,7 +16,11 @@
        monthly cost, neighbourhood intelligence, commute, similar homes. */
     .hero { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; }
     .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
-    .hero .counter { position: absolute; top: 16px; right: 16px; background: rgba(21,23,26,0.5); color: #fff; font-size: 12px; padding: 5px 11px; border-radius: 100px; }
+    /* The scrim was 50%, which over a bright part of the photograph composites
+       to roughly #8A8C8E and puts this white text at 3.6:1. A scrim over an
+       image has to be opaque enough to bound its own worst case, because the
+       image behind it is not knowable. At 0.7 the worst case is ~6.6:1. */
+    .hero .counter { position: absolute; top: 16px; right: 16px; background: rgba(21,23,26,0.7); color: #fff; font-size: 12px; padding: 5px 11px; border-radius: 100px; }
     .hero .actions { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; }
     .hero .act { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; }
     .hero .act.on { color: #121212; background: rgba(255,255,255,0.9); }
@@ -185,9 +189,12 @@
 
     /* commute time-of-day */
     .tod { display: flex; gap: 5px; margin-bottom: 12px; }
-    .tod button { font: 600 11.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; cursor: pointer; }
+    /* 26px tall was under every touch guideline there is. These are the
+       morning/midday/evening switch on a page people read standing outside a
+       building, one-handed. */
+    .tod button { min-height: 44px; font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 15px; cursor: pointer; }
     .tod button.on { color: #121212; background: rgba(54,54,54,0.1); border-color: rgba(54,54,54,0.3); }
-    .addplace { font: 600 12px var(--f-sans); color: var(--ink-dim); background: none; border: 1px dashed rgba(0,0,0,0.2); border-radius: 100px; padding: 7px 13px; cursor: pointer; }
+    .addplace { min-height: 44px; font: 600 12px var(--f-sans); color: var(--ink-dim); background: none; border: 1px dashed rgba(0,0,0,0.2); border-radius: 100px; padding: 7px 15px; cursor: pointer; }
     .addplace:hover { color: #121212; border-color: rgba(54,54,54,0.4); }
 
     /* viewing assistant */
@@ -390,7 +397,7 @@
       }
       .pvm-close {
         order: -1; flex: none;
-        width: 38px; height: 38px; border-radius: 50%;
+        width: 44px; height: 44px; border-radius: 50%;
         border: 1px solid var(--border); background: rgba(0,0,0,0.04);
         font-size: 17px; color: var(--ink); cursor: pointer;
         display: flex; align-items: center; justify-content: center;
@@ -401,7 +408,7 @@
         overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
       }
       .pvc-tabs::-webkit-scrollbar { display: none; }
-      .pvc-tabs button { flex: none; min-height: 38px; }
+      .pvc-tabs button { flex: none; min-height: 44px; }
       .pvc-trust { width: 100%; }
 
       /* the overlay panel becomes a bottom card, not a floating box */
