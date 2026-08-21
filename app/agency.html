@@ -1683,7 +1683,30 @@
       /* the row now navigates instead of just selecting, so it needs to
          read that way: a trailing chevron, same idiom as .grp-chv and
          .agd-grp .chv elsewhere in this file. */
-      .ovi { min-height: 44px; }
+      /* The row was four columns wide on a 343px tile — photo, text, price,
+         chevron — which left the text column 138px. Every title truncated at
+         two lines and the location wrapped to three, while the price column
+         reserved 70px to display 34px of number.
+
+         Price and status drop to their own row under the title instead, so
+         the text column roughly doubles to ~230px and titles fit whole. The
+         photo comes in slightly to 56px, which is still a legible thumbnail
+         at this size. */
+      .ovi {
+        min-height: 44px;
+        display: grid; align-items: start;
+        grid-template-columns: 56px minmax(0, 1fr) auto;
+        grid-template-areas: "ph mid chv" "ph meta chv";
+        column-gap: 12px; row-gap: 7px;
+      }
+      .ovi .lph { grid-area: ph; width: 56px; height: 56px; }
+      .ovi .mid { grid-area: mid; }
+      .ovi .rt {
+        grid-area: meta;
+        flex-direction: row; align-items: center; justify-content: flex-start;
+        gap: 9px; text-align: left;
+      }
+      .ovi-chv { grid-area: chv; align-self: center; }
       .ovi-chv { display: block; font-size: 19px; line-height: 1; color: var(--ink-dim); flex: none; margin-left: 2px; }
 
       /* the title was nowrap+ellipsis, so a card read "Haven Manor
