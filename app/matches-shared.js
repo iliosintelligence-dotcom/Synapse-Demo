@@ -172,13 +172,16 @@
       ? `<label class="cmpbox"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
       : '';
     const isVerified = (l.vstatus || 'verified') === 'verified';
-    const score = isVerified
-      ? (l.score == null
-          // Verified, but no score recorded. State the fact we have, and not
-          // the number we do not.
-          ? `<div class="score" title="Synapse has verified this listing"><span class="ring">✓</span> Verified by Synapse</div>`
-          : `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`)
-      : `<div class="score unv"><span class="ring unv">?</span> ${l.vstatus === 'in_progress' ? 'Still checking this home' : 'Not yet verified — ask Toju to check'}</div>`;
+    /* One rule: this line appears only when there is a score to show.
+       It used to restate verification status in every case, which made each
+       card say the same thing three times -- the chip at the top, the why-line
+       in the middle, and this row at the bottom. The chip carries the status
+       and the why-line carries what it means and what to do about it; neither
+       of them can carry a number, so a number is the one thing this row is
+       for. */
+    const score = (isVerified && l.score != null)
+      ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
+      : '';
     return `
       <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
         <div class="body">

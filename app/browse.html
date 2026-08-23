@@ -1015,9 +1015,17 @@
         score: p.trust_score, match: null,
         flood: p.neighbourhoods ? p.neighbourhoods.flood_risk : null,
         power: p.neighbourhoods ? p.neighbourhoods.power_reliability : null,
+        /* "independently verified" is not repeated here: the chip at the top
+           of the card already says Verified, and the score line below said it
+           a third time. One card, one statement of a fact. The unverified copy
+           below DOES stay long, because there it is carrying something the
+           chip cannot -- what unverified actually means and what to do next. */
         why: p.verification_status === 'verified'
-          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · independently verified · ask Toju if it fits your life'
-          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · <b style="color:var(--warn-ink)">listed but not yet verified</b> — Toju can run the 7 checks before you commit',
+          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · ask Toju if it fits your life'
+          /* "listed but not yet verified" is dropped for the same reason:
+             the chip above already reads Not verified. What the chip cannot
+             say is what to do about it, so that half stays. */
+          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · Toju can run the 7 checks before you commit',
       }));
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
