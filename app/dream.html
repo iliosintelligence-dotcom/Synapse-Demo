@@ -523,9 +523,13 @@
       const b = activeBoard();
       if (!b || !b.starter) { el.classList.add('hidden'); el.innerHTML = ''; return; }
       el.classList.remove('hidden');
-      el.innerHTML = `<div class="t"><b>This is an inspiration board</b> — kitchens and light we love, just to react to.
-        Nothing here is a Synapse listing, and it doesn't shape your matches.
-        Remove what doesn't resonate, pin what does — then make it yours.</div>
+      /* The three-line explanation is gone; the action it wrapped is not.
+         What it said is still said where it is needed: the board's own card in
+         the grid reads "Inspiration — not real listings", so nobody opens this
+         thinking these are homes for sale. Repeating it inside the board, in a
+         paragraph, was telling someone a second time what they had already
+         read on the way in. */
+      el.innerHTML = `<div class="t">Nothing here is a Synapse listing.</div>
         <button class="keep" id="keepBtn">Keep this board</button>`;
       document.getElementById('keepBtn').addEventListener('click', () => {
         delete b.starter; saveState(); mirror(); // now it's theirs — Toju may read it
