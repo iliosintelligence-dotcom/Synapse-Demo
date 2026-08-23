@@ -61,6 +61,14 @@
     'chart':      '<path d="M4 20v-6M9 20V8M14 20v-9M19 20V5"/><path d="M3 20h18"/>',
     'card':       '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
     'arrow-right':'<path d="M4 12h16M14 6l6 6-6 6"/>',
+    // toolbar verbs — added so the portal's toolbars stop standing in glyphs
+    // (▤ ▦ ↕ ⚙ ⇪ ▽ ⋯ ✆) for icons
+    'sort':       '<path d="M7 4.5v15M7 4.5L4.2 7.6M7 4.5l2.8 3.1"/><path d="M17 19.5v-15M17 19.5l-2.8-3.1M17 19.5l2.8-3.1"/>',
+    'filter':     '<path d="M3.5 5.5h17l-6.6 7.6v5.4l-3.8 1.9v-7.3z"/>',
+    'export':     '<path d="M12 3.5v11M12 3.5L8.6 7M12 3.5L15.4 7"/><path d="M4.5 14.5V18a2.5 2.5 0 0 0 2.5 2.5h10a2.5 2.5 0 0 0 2.5-2.5v-3.5"/>',
+    'calendar':   '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3"/>',
+    'more':       '<circle cx="5" cy="12" r="1.15"/><circle cx="12" cy="12" r="1.15"/><circle cx="19" cy="12" r="1.15"/>',
+    'phone':      '<path d="M6.4 3.5h3.1l1.5 3.9-2 1.5a12.2 12.2 0 0 0 6.1 6.1l1.5-2 3.9 1.5v3.1a2 2 0 0 1-2.2 2A17.2 17.2 0 0 1 4.4 5.7a2 2 0 0 1 2-2.2z"/>',
     'check':      '<path d="M4 12l5 5L20 6"/>',
     'close':      '<path d="M6 6l12 12M18 6L6 18"/>',
     // "we do not know yet" -- the honest third state beside check and close.

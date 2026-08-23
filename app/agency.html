@@ -722,14 +722,19 @@
 
     /* ── Ready-for-handoff: a visual "deal report" laid over the property ── */
     #handoffs { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 18px; margin-top: 14px; }
-    .handoff { position: relative; padding: 0; overflow: hidden; min-height: 470px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(150deg, #3a2b22 0%, #6b4326 55%, #8a5a34 100%); }
+    /* Was a photo card: 470px tall, a dark gradient behind a listing image, and
+     the report floating over it on frosted glass. The image went when propImg()
+     turned out not to exist, which left the frame with nothing to frame — a
+     dark square wrapped around a white panel. It is a card like the rest of the
+     portal now: the report IS the card, not something laid on top of one. */
+.handoff { position: relative; padding: 0; overflow: hidden; background: var(--surface); }
     .handoff .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-    .handoff .veil { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(21,23,26,0.5) 0%, rgba(21,23,26,0.12) 26%, rgba(21,23,26,0) 46%); }
-    .handoff .top { position: absolute; z-index: 2; top: 14px; left: 14px; right: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .handoff .stamp { display: inline-flex; align-items: center; gap: 7px; font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(21,23,26,0.42); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 100px; }
+    .handoff .veil { display: none; }   /* nothing left to veil */
+    .handoff .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 0; }
+    .handoff .stamp { display: inline-flex; align-items: center; gap: 7px; font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--brand-deep); padding: 6px 12px; border-radius: 100px; }
     .handoff .stamp .o { width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg,#121212,#121212); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 700 9px var(--f-sans); flex: none; }
-    .handoff .intent { font: 700 10.5px var(--f-sans); letter-spacing: .03em; color: var(--brand-text); background: rgba(255,255,255,0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 6px 12px; border-radius: 100px; }
-    .handoff .report { position: relative; z-index: 2; margin: 0 12px 12px; background: rgba(255,255,255,0.9); backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border: 1px solid rgba(255,255,255,0.7); border-radius: 18px; padding: 18px 18px 16px; box-shadow: 0 20px 50px rgba(20,26,38,0.28); }
+    .handoff .intent { font: 700 10.5px var(--f-sans); letter-spacing: .03em; color: var(--brand-text); background: var(--brand-tint); padding: 6px 12px; border-radius: 100px; }
+    .handoff .report { padding: 14px 16px 16px; }
     .handoff .rp-nm { font: 600 23px var(--f-serif); color: var(--ink); line-height: 1.1; }
     .handoff .rp-sub { font: 400 12.5px var(--f-sans); color: var(--ink-muted); margin-top: 3px; }
     .handoff .rp-price { display: flex; align-items: center; gap: 12px; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -1703,6 +1708,21 @@
       /* the row now navigates instead of just selecting, so it needs to
          read that way: a trailing chevron, same idiom as .grp-chv and
          .agd-grp .chv elsewhere in this file. */
+      /* The filter sheet holds a whole toolbar rather than a list of rows, so
+         it is wider than the nav sheet and lays the borrowed controls out in a
+         column with room to breathe. */
+      #agdFilterSheet { min-width: 250px; padding: 12px; }
+      #agdFilterSheet .crm-tools,
+      #agdFilterSheet .crm-tools-l,
+      #agdFilterSheet .crm-tools-r,
+      #agdFilterSheet .ov-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+      #agdFilterSheet .seg { display: flex; width: 100%; }
+      #agdFilterSheet .seg-b { flex: 1; justify-content: center; }
+      #agdFilterSheet .ov-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+      #agdFilterSheet .tbtn,
+      #agdFilterSheet .seg-b,
+      #agdFilterSheet select { min-height: 44px; }
+
       /* ── campaigns ────────────────────────────────────────────────────
          "+ New campaign" appeared twice on one screen: once in the pane header
          and again inside the empty state a few hundred pixels below. The
@@ -2008,13 +2028,13 @@
               <div class="eyebrow" data-agency-eyebrow>Your agency</div>
               <div class="h1">Overview</div>
             </div>
-            <div class="ov-actions">
-              <button class="btn-ghost" id="ovSort">↕ Sort</button>
-              <button class="btn-ghost" id="ovFilter">⚙ Filter</button>
+            <div class="ov-actions" data-pane-filters>
+              <button class="btn-ghost" id="ovSort"><span data-icon="sort"></span> Sort</button>
+              <button class="btn-ghost" id="ovFilter"><span data-icon="filter"></span> Filter</button>
             </div>
           </div>
 
-          <div class="ov-tabs" id="ovTabs">
+          <div class="ov-tabs" data-pane-filters id="ovTabs">
             <button class="ovtab on" data-f="all">All</button>
             <button class="ovtab" data-f="verified">Verified</button>
             <button class="ovtab" data-f="pending">Pending</button>
@@ -2041,14 +2061,14 @@
           <p class="muted" style="font-size:14px;margin-top:4px">Your whole pipeline at a glance — every lead, its stage, and the next move.</p>
 
           <!-- toolbar -->
-          <div class="crm-tools">
+          <div class="crm-tools" data-pane-filters>
             <div class="crm-tools-l">
-              <div class="seg"><button class="seg-b on">▤ Table</button><button class="seg-b" id="crmBoardBtn">▦ Board</button></div>
-              <button class="tbtn" id="crmFilterBtn">▽ Filter</button>
-              <button class="tbtn" id="crmSortBtn">↕ Sort</button>
+              <div class="seg"><button class="seg-b on"><span data-icon="card"></span> Table</button><button class="seg-b" id="crmBoardBtn"><span data-icon="boards"></span> Board</button></div>
+              <button class="tbtn" id="crmFilterBtn"><span data-icon="filter"></span> Filter</button>
+              <button class="tbtn" id="crmSortBtn"><span data-icon="sort"></span> Sort</button>
             </div>
             <div class="crm-tools-r">
-              <button class="tbtn" id="crmExport">⇪ Export</button>
+              <button class="tbtn" id="crmExport"><span data-icon="export"></span> Export</button>
               <button class="tbtn primary" id="crmAdd">+ Add lead</button>
             </div>
           </div>
@@ -2100,7 +2120,7 @@
               <div class="h1">Social studio</div>
               <p class="muted" style="font-size:14px;margin-top:4px">Every verified listing becomes content — captioned by AI, posted on schedule, everywhere at once.</p>
             </div>
-            <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px">✨ New post</button>
+            <button class="btn btn-primary" id="newPostBtn" style="padding:11px 18px;font-size:13.5px"><span data-icon="spark"></span> New post</button>
           </div>
 
           <!-- ══ Campaign generator ══════════════════════════════════
@@ -2117,7 +2137,7 @@
             </div>
             <div class="cmp-controls">
               <select id="cmpProp" aria-label="Listing"></select>
-              <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px">✨ Generate</button>
+              <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px"><span data-icon="spark"></span> Generate</button>
             </div>
             <div class="cmp-out" id="cmpOut" hidden></div>
           </div>
@@ -2127,9 +2147,9 @@
               <div class="h2">Content pipeline</div>
               <p class="sub" style="margin:0">Every verified listing flows through — upload triggers AI captioning, you approve once, Synapse publishes everywhere.</p>
             </div>
-            <div class="seg" id="socialView">
-              <button class="seg-b on" data-sv="pipeline">▤ Pipeline</button>
-              <button class="seg-b" data-sv="calendar">▦ Calendar</button>
+            <div class="seg" id="socialView" data-pane-filters>
+              <button class="seg-b on" data-sv="pipeline"><span data-icon="boards"></span> Pipeline</button>
+              <button class="seg-b" data-sv="calendar"><span data-icon="calendar"></span> Calendar</button>
             </div>
           </div>
           <div class="pipeline" id="pipeline"></div>
@@ -2146,7 +2166,7 @@
             </div>
             <button class="btn btn-primary" id="newCampBtn">+ New campaign</button>
           </div>
-          <div class="crm-tools" style="margin-top:18px">
+          <div class="crm-tools" data-pane-filters style="margin-top:18px">
             <div class="crm-tools-l">
               <div class="seg" id="mkView">
                 <button class="seg-b on" data-mv="board"><span data-icon="chart"></span> Leaderboard</button>
@@ -2181,7 +2201,7 @@
           <div class="h1">Listings</div>
           <p class="muted" style="font-size:14px;margin-top:4px">Your inventory, its verification status, and its 14-day freshness. Expired listings are hidden from buyers until you re-list.</p>
 
-          <div class="crm-tools" style="margin-top:18px">
+          <div class="crm-tools" data-pane-filters style="margin-top:18px">
             <div class="crm-tools-l">
               <div class="seg" id="listSeg">
                 <button class="seg-b on" data-lf="all">All</button>
@@ -2191,7 +2211,7 @@
                 <button class="seg-b" data-lf="expired">Expired</button>
               </div>
               <input class="lsearch" id="listSearch" type="search" placeholder="Search listings…" aria-label="Search listings" autocomplete="off">
-              <button class="tbtn" id="listSort">↕ Sort: Freshness</button>
+              <button class="tbtn" id="listSort"><span data-icon="sort"></span> Sort: Freshness</button>
             </div>
             <div class="crm-tools-r">
               <button class="tbtn primary" id="newListingBtn">+ New listing</button>
@@ -2378,6 +2398,17 @@
       </button>
     </div>
     <span class="agd-div" aria-hidden="true"></span>
+    <!-- Filters. Every pane keeps its own controls in its own toolbar; this
+         lends whichever set belongs to the pane you are on, so the row of
+         sorts and segments does not have to sit above the content on a phone.
+         Hidden on panes that have nothing to filter. -->
+    <div class="agd agd-filter" id="agdFilter" hidden>
+      <div class="agd-sheet" id="agdFilterSheet" role="menu" aria-label="Filter and sort"></div>
+      <button class="agd-btn" id="agdFilterFab" type="button" aria-expanded="false" aria-label="Filter and sort">
+        <span data-icon="filter"></span>
+      </button>
+    </div>
+    <span class="agd-div" aria-hidden="true"></span>
     <div class="agd agd-add" id="agdAdd">
       <div class="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
       <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">+</button>
@@ -2523,7 +2554,7 @@
           <td class="c-time">${l.t}</td>
           <td class="c-score">${crmStars(l.score)}</td>
           <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
-          <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">✆</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">✆</span>'}<button class="crm-more" aria-label="Open ${l.nm}">⋯</button></td>
+          <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">${SynIcons.svg('phone')}</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">' + SynIcons.svg('phone') + '</span>'}<button class="crm-more" aria-label="Open ${l.nm}">${SynIcons.svg('more')}</button></td>
         </tr>`;
       }).join('');
       let nums = '';
@@ -3880,7 +3911,7 @@
     document.getElementById('listSort').addEventListener('click', () => {
       const order = ['fresh', 'price', 'leads'], lbl = { fresh: 'Freshness', price: 'Price', leads: 'Leads' };
       LIST.sort = order[(order.indexOf(LIST.sort) + 1) % order.length];
-      document.getElementById('listSort').textContent = '↕ Sort: ' + lbl[LIST.sort];
+      document.getElementById('listSort').innerHTML = SynIcons.svg('sort') + ' Sort: ' + lbl[LIST.sort];
       renderListings();
     });
     renderListings();
@@ -4425,7 +4456,7 @@
     });
     document.getElementById('mkSort').addEventListener('click', function(){
       MK.sort = MK.sort === 'ctr' ? 'leads' : 'ctr';
-      this.textContent = '↕ Sort: ' + (MK.sort === 'ctr' ? 'CTR' : 'Leads');
+      this.innerHTML = SynIcons.svg('sort') + ' Sort: ' + (MK.sort === 'ctr' ? 'CTR' : 'Leads');
       renderBoard();
     });
     document.getElementById('mkBoard').addEventListener('click', (e) => {
@@ -5041,7 +5072,7 @@
         <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}">${photoHtml(l.img, { small: true })}<div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">₦${Math.round(l.price / 1e6)}M</div></div></button>`).join('')}</div>
         <div class="cmp-step">2 · Channels</div>
         <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
-        <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '✨ Generate captions with AI'}</button>`;
+        <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '<span data-icon="spark"></span> Generate captions with AI'}</button>`;
       if (cmp.err) html += `<div class="cmp-err">${cmp.err}</div>`;
       if (cmp.captions) {
         html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
@@ -5160,11 +5191,11 @@
           ] },
       ],
       addons: [
-        { ico: '🏘️', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
-        { ico: '✨', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
-        { ico: '🚀', name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels — never affects Toju\'s ranking.', price: '₦10k', unit: 'each' },
-        { ico: '🛡️', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
-        { ico: '📣', name: 'Campaign Boost', desc: 'Extra reach behind a marketing campaign that\'s working.', price: '₦20k', unit: 'each' },
+        { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
+        { ico: 'spark', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
+        { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels — never affects Toju\'s ranking.', price: '₦10k', unit: 'each' },
+        { ico: 'shield', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
+        { ico: 'chart',  name: 'Campaign Boost', desc: 'Extra reach behind a marketing campaign that\'s working.', price: '₦20k', unit: 'each' },
       ],
       roi: {
         title: 'One sale can pay for your subscription many times over.',
@@ -5244,7 +5275,7 @@
 
     // AddOnCard
     function addonHTML(a) {
-      return `<div class="card addon"><div class="aico">${a.ico}</div>
+      return `<div class="card addon"><div class="aico">${SynIcons.svg(a.ico)}</div>
         <div class="aname">${a.name}</div><div class="adesc">${a.desc}</div>
         <div class="aprice">${a.price}<small> ${a.unit}</small></div>
         <button class="abtn">Add</button></div>`;
@@ -5766,7 +5797,7 @@
 
       const pending = L.filter(l => l.verification_status !== 'verified');
       if (pending.length) {
-        out.push({ type: 'verification', tag: 'Verification', icon: '🛡', pane: 'listings',
+        out.push({ type: 'verification', tag: 'Verification', icon: 'shield', pane: 'listings',
           title: pending.length + ' listing' + (pending.length === 1 ? '' : 's') + ' awaiting verification',
           sub: pending.length === 1 ? (pending[0].title || pending[0].t) : 'Not yet checked by Synapse',
           group: 'Today' });
@@ -5775,14 +5806,14 @@
       // freshness() returns { expired, left } for the 14-day rule
       const expiring = L.filter(l => { try { const f = freshness(l); return f && !f.expired && f.left <= 3; } catch (e) { return false; } });
       if (expiring.length) {
-        out.push({ type: 'reminder', tag: 'Reminder', icon: '⏳', pane: 'listings',
+        out.push({ type: 'reminder', tag: 'Reminder', icon: 'pending', pane: 'listings',
           title: expiring.length + ' listing' + (expiring.length === 1 ? '' : 's') + ' expiring soon',
           sub: 'Re-list to keep ' + (expiring.length === 1 ? 'it' : 'them') + ' visible to buyers',
           group: 'Today' });
       }
       const expired = L.filter(l => { try { return freshness(l).expired; } catch (e) { return false; } });
       if (expired.length) {
-        out.push({ type: 'reminder', tag: 'Reminder', icon: '⏳', pane: 'listings',
+        out.push({ type: 'reminder', tag: 'Reminder', icon: 'pending', pane: 'listings',
           title: expired.length + ' listing' + (expired.length === 1 ? '' : 's') + ' expired',
           sub: 'Hidden from buyers until re-listed', group: 'Today' });
       }
@@ -5790,7 +5821,7 @@
       if (typeof leads !== 'undefined' && Array.isArray(leads) && leads.length) {
         const fresh = leads.filter(x => x.stage === 'New');
         if (fresh.length) {
-          out.push({ type: 'lead', tag: 'Lead', icon: '👤', pane: 'leads',
+          out.push({ type: 'lead', tag: 'Lead', icon: 'user', pane: 'leads',
             title: fresh.length + ' new lead' + (fresh.length === 1 ? '' : 's'),
             sub: 'Waiting on a first response', group: 'Today' });
         }
@@ -5799,7 +5830,7 @@
       if (typeof posts !== 'undefined' && Array.isArray(posts)) {
         const appr = posts.filter(p => p.stage === 'approval');
         if (appr.length) {
-          out.push({ type: 'social', tag: 'Social', icon: '✦', pane: 'social',
+          out.push({ type: 'social', tag: 'Social', icon: 'share', pane: 'social',
             title: appr.length + ' post' + (appr.length === 1 ? '' : 's') + ' awaiting approval',
             sub: 'In the social studio', group: 'Today' });
         }
@@ -5819,7 +5850,7 @@
           (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
           g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
             data-noti-pane="${n.pane || ''}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}>
-            <span class="ico">${n.icon}</span>
+            <span class="ico">${SynIcons.svg(n.icon)}</span>
             <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
           </div>`).join('')
         ).join('');
@@ -5874,6 +5905,7 @@
        function is what stops a notification from highlighting a tab without
        actually switching the view, or vice versa. */
     function goToPane(pane) {
+      if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
       const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
       document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
@@ -5903,6 +5935,9 @@
       const add = document.getElementById('agdAdd');
       const scrim = document.getElementById('agdScrim');
       if (!nav || !add || !scrim) return;
+      const filt = document.getElementById('agdFilter');
+      const filtSheet = document.getElementById('agdFilterSheet');
+      const filtFab = document.getElementById('agdFilterFab');
 
       const navSheet = document.getElementById('agdNavSheet');
       const addSheet = document.getElementById('agdAddSheet');
@@ -5928,8 +5963,39 @@
         ['newCampBtn', 'New campaign', 'chart'],
       ];
 
+      /* ── filters, lent from the pane you are on ────────────────────────
+         The controls are MOVED, not copied: a sort dropdown that is a second
+         copy of the real one is a sort dropdown that disagrees with it. Each
+         is put back exactly where it came from when the sheet closes, so the
+         pane is unchanged the moment you are not looking at the sheet. */
+      let lent = [];
+      function lendFilters() {
+        const pane = document.querySelector('.pane.on') || document.querySelector('.pane:not([hidden])');
+        if (!pane) return;
+        lent = [...pane.querySelectorAll('[data-pane-filters]')].map((el) => {
+          const home = { el, parent: el.parentNode, next: el.nextSibling };
+          filtSheet.appendChild(el);
+          return home;
+        });
+      }
+      function returnFilters() {
+        lent.forEach(({ el, parent, next }) => parent.insertBefore(el, next));
+        lent = [];
+      }
+      /* Nothing to filter on Brand, Agents, Subscription or the Negotiator —
+         the button goes rather than opening on an empty sheet. */
+      function syncFilterFab() {
+        const pane = document.querySelector('.pane.on') || document.querySelector('.pane:not([hidden])');
+        const has = !!(pane && pane.querySelector('[data-pane-filters]'));
+        if (filt) filt.hidden = !has && !lent.length;
+      }
+      window.syncFilterFab = syncFilterFab;
+
       const isOpen = (el) => el.classList.contains('open');
       function closeAll() {
+        if (lent.length) returnFilters();
+        if (filt) filt.classList.remove('open');
+        if (filtFab) filtFab.setAttribute('aria-expanded', 'false');
         nav.classList.remove('open'); add.classList.remove('open');
         // The call control is a third sheet on the same bar; without this it
         // stays open behind the scrim when the nav or create menu opens.
@@ -6041,6 +6107,14 @@
       addFab.addEventListener('click', () => {
         if (isOpen(add)) return closeAll();
         buildAdd(); open(add);
+      });
+      if (filtFab) filtFab.addEventListener('click', () => {
+        if (isOpen(filt)) return closeAll();
+        closeAll();
+        lendFilters();
+        filt.classList.add('open');
+        scrim.classList.add('on');
+        filtFab.setAttribute('aria-expanded', 'true');
       });
       scrim.addEventListener('click', closeAll);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
