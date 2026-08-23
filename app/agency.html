@@ -748,12 +748,12 @@
     .handoff .rp-verdict { display: flex; gap: 9px; margin-top: 14px; font: 500 13px var(--f-sans); color: var(--ink); line-height: 1.45; background: var(--success-tint); border-radius: 12px; padding: 11px 13px; }
     .handoff .rp-verdict .vi { color: var(--success); flex: none; }
     .handoff .rp-actions { display: flex; gap: 10px; margin-top: 14px; }
-    /* Sets the colour too. .btn-primary pairs var(--action) with
-       var(--action-on) — dark text meant to sit on the orange. This rule
-       repainted the background near-black and left that foreground behind, so
-       the card's primary action rendered at 1.04:1: black on black. A rule that
-       changes one half of a colour pair has to change the other. */
-    .handoff .rp-actions .btn-primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; flex: 1; }
+    /* Layout only. Taking a negotiation over is the one thing this card exists
+       to make you do, so it wears the app's action orange like every other
+       primary — .btn-primary already pairs var(--action) with var(--action-on),
+       dark ink on the orange at 8.25:1. Overriding one half of a colour pair
+       without the other is what once rendered this button black on black. */
+    .handoff .rp-actions .btn-primary { flex: 1; }
     .tr .stg { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin: 16px 0 8px; }
     .msg { max-width: 86%; padding: 9px 13px; border-radius: 14px; font-size: 12.5px; line-height: 1.5; margin-bottom: 8px; }
     .msg.toju { background: rgba(54,54,54,0.08); border: 1px solid rgba(54,54,54,0.18); border-bottom-left-radius: 4px; }
@@ -1708,6 +1708,16 @@
       /* the row now navigates instead of just selecting, so it needs to
          read that way: a trailing chevron, same idiom as .grp-chv and
          .agd-grp .chv elsewhere in this file. */
+      /* Gone from the page, not merely duplicated into the sheet. Lending them
+         on open and handing them back on close left the row sitting above the
+         content the whole time the sheet was shut, which is the row the
+         taskbar exists to remove.
+
+         Scoped to `.pane` so the rule stops applying the moment one is moved
+         into #agdFilterSheet — the same reason .cnav-group #bmMap works on the
+         consumer side. */
+      .pane [data-pane-filters] { display: none; }
+
       /* The filter sheet holds a whole toolbar rather than a list of rows, so
          it is wider than the nav sheet and lays the borrowed controls out in a
          column with room to breathe. */
@@ -1716,8 +1726,23 @@
       #agdFilterSheet .crm-tools-l,
       #agdFilterSheet .crm-tools-r,
       #agdFilterSheet .ov-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
-      #agdFilterSheet .seg { display: flex; width: 100%; }
-      #agdFilterSheet .seg-b { flex: 1; justify-content: center; }
+      /* These wrappers are flex items on the page, where they size to content.
+         In the sheet that let the segment inside collapse to its narrowest
+         column instead of filling the panel, so claim the full line. */
+      #agdFilterSheet .crm-tools-l,
+      #agdFilterSheet .crm-tools-r { flex: 1 1 100%; min-width: 0; }
+      /* .seg is built for one horizontal row: flex children, a 100px stadium
+         round the outside. In a 250px sheet a four-option segment has to wrap,
+         and flex wrapping left the last row ragged with the pill flush to the
+         edge. Grid gives every option the same cell whatever the count, and a
+         25px radius reads as a stadium at one row (50px tall) and as a rounded
+         block at two — so both shapes look deliberate. */
+      #agdFilterSheet .seg {
+        display: grid; width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+        gap: 3px; padding: 4px; border-radius: 25px;
+      }
+      #agdFilterSheet .seg-b { justify-content: center; padding: 6px 8px; }
       #agdFilterSheet .ov-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
       #agdFilterSheet .tbtn,
       #agdFilterSheet .seg-b,
@@ -2074,7 +2099,7 @@
           </div>
 
           <!-- pipeline funnel (always visible — it's the process) -->
-          <div class="crm-funnel" id="crmFunnel"></div>
+          <div class="crm-funnel" id="crmFunnel" data-pane-filters></div>
 
           <!-- pipeline table -->
           <div class="card crm-tablecard">
@@ -2191,6 +2216,19 @@
                it hands you, not about browsing inventory a second time. -->
 
           <div class="h2" style="margin-top:22px">Ready for handoff</div>
+          <!-- The list is short by nature, but "who is worth calling first" is
+               the whole question this pane answers, so the rating it already
+               assigns is filterable. -->
+          <div class="crm-tools" data-pane-filters>
+            <div class="crm-tools-l">
+              <div class="seg" id="handoffFilter">
+                <button class="seg-b on" data-hf="all">All</button>
+                <button class="seg-b" data-hf="High intent">High intent</button>
+                <button class="seg-b" data-hf="Worth a call">Worth a call</button>
+                <button class="seg-b" data-hf="Early">Early</button>
+              </div>
+            </div>
+          </div>
           <p class="sub">Toju has already qualified, pitched and pre-negotiated these. You just close.</p>
           <div id="handoffs"></div>
         </section>
@@ -2234,6 +2272,17 @@
           <!-- The KPI strip and the two performance charts moved into the
                Ask-Toju side panel: this page is the roster, and the read on the
                roster belongs beside it, not above it. -->
+          <!-- A roster is a list, and the question an owner actually has of it is
+               "who is carrying the most" — so it sorts, from the taskbar like
+               every other pane's controls. -->
+          <div class="crm-tools" data-pane-filters>
+            <div class="crm-tools-l">
+              <div class="seg" id="agentSort">
+                <button class="seg-b on" data-as="name">Name</button>
+                <button class="seg-b" data-as="leads">Open leads</button>
+              </div>
+            </div>
+          </div>
           <div class="agrid" id="agrid"></div>
         </section>
 
@@ -2387,16 +2436,10 @@
         <span data-icon="grid"></span>
       </button>
     </div>
-    <span class="agd-div" aria-hidden="true"></span>
-    <!-- Escalation lives in the taskbar because it is needed from whichever
-         pane you happen to be on when a deal starts going wrong, not from a
-         support page you have to navigate to. -->
-    <div class="agd agd-call" id="agdCall">
-      <div class="agd-sheet" id="agdCallSheet" role="menu" aria-label="Your relationship manager"></div>
-      <button class="agd-btn" id="agdCallFab" type="button" aria-expanded="false" aria-label="Call your relationship manager">
-        <span data-icon="phone"></span>
-      </button>
-    </div>
+    <!-- The relationship manager was here too. It is still one tap away in the
+         top bar, and the taskbar is for getting around rather than escalating,
+         so the filters take the slot. The JS for it guards on the element and
+         becomes a no-op. -->
     <span class="agd-div" aria-hidden="true"></span>
     <!-- Filters. Every pane keeps its own controls in its own toolbar; this
          lends whichever set belongs to the pane you are on, so the row of
@@ -4596,6 +4639,12 @@
     }
 
     function renderAgents(){
+      /* Sorted in place before anything reads it, so the "top performer" mark
+         below and the cards agree on the same order. Open leads descending,
+         because the reason to sort by workload is to find who is carrying it. */
+      AGENTS.sort((a, b) => AGENT_SORT === 'leads'
+        ? (b.active || 0) - (a.active || 0)
+        : String(a.nm || '').localeCompare(String(b.nm || '')));
       const real = AGENTS.filter(a => !a.pending);
       const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
       const topIdx = top ? AGENTS.indexOf(top) : -1;
@@ -4774,6 +4823,28 @@
           };
         });
     }
+    /* Both new segments follow the pattern the other panes use: flip the .on
+       class, set the state, re-render. Neither invents data — the rating is
+       what buildHandoffs already derived, and the roster sort reads the same
+       rows the grid draws from. */
+    let HF = 'all';
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('#handoffFilter .seg-b');
+      if (!b) return;
+      [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b));
+      HF = b.dataset.hf;
+      renderHandoffs();
+    });
+
+    let AGENT_SORT = 'name';
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('#agentSort .seg-b');
+      if (!b) return;
+      [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b));
+      AGENT_SORT = b.dataset.as;
+      if (typeof renderAgents === 'function') renderAgents();
+    });
+
     function renderHandoffs(){
       /* HANDOFFS is deliberately empty until Toju negotiates a real lead on a
          real listing. Without a message the pane just rendered a heading and
@@ -4791,7 +4862,14 @@
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('handoffs'));
         return;
       }
-      document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
+      const shown = HF === 'all' ? HANDOFFS : HANDOFFS.filter(h => h.rating === HF);
+      if (!shown.length) {
+        document.getElementById('handoffs').innerHTML =
+          '<div class="ov-blank"><b>Nothing at that level yet</b>'
+          + '<p>No handoff is rated ' + HF.toLowerCase() + ' right now.</p></div>';
+        return;
+      }
+      document.getElementById('handoffs').innerHTML = shown.map((h, i) => `
         <div class="card handoff" role="group" aria-label="Toju deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
           <!-- propImg() went with the invented handoffs and was never replaced,
                so this line threw the moment the array had anything in it. It
@@ -4806,7 +4884,7 @@
           </div>
           <div class="report">
             <div class="rp-nm">${h.buyer}</div>
-            <div class="rp-sub">${h.prop} · ${h.source}</div>
+            <div class="rp-sub">${h.prop} · via ${h.source}</div>
             <div class="rp-price">
               <div><div class="lab">Listed</div><div class="listed">${h.price}</div></div>
               <span class="arrow">→</span>
@@ -4815,7 +4893,7 @@
             <div class="rp-sig">${h.signals.map(s => `<span class="sig">${s}</span>`).join('')}</div>
             <div class="rp-verdict"><span class="vi">✦</span><span>${h.rec}</span></div>
             <div class="rp-actions">
-              <button class="btn btn-primary" style="padding:10px 16px;font-size:13px" onclick="this.textContent='✓ Taken over'; this.disabled=true; this.style.opacity=.75">Take over →</button>
+              <button class="btn btn-primary" style="padding:10px 16px;font-size:13px" onclick="this.textContent='✓ Taken over'; this.disabled=true">Take over →</button>
               <button class="btn btn-ghost" style="padding:10px 16px;font-size:13px" data-tr="${i}">View full report</button>
             </div>
           </div>
