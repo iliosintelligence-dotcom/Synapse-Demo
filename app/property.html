@@ -71,9 +71,11 @@
        the min-width:901px rule below — so it stops competing with price,
        facts and the description for attention in the same card (Hick's Law:
        the fewer things asking for a decision at once, the faster the read). */
-    .pvtrust-row { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
-    .pvtrust-row[hidden] { display: none; }
-    @media (min-width: 901px) { .pvtrust-row { display: none; } }
+    /* Never on a phone now -- the What we checked card carries this, and said
+       the same two lines. Kept above 901px only because the desktop layout has
+       no such card next to the summary; there the copy in the map header does
+       the job. */
+    .pvtrust-row { display: none; }
     .agency { display: flex; align-items: center; gap: 14px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
@@ -493,6 +495,12 @@
       <div class="ttl" id="pvTitle">Loading listing…</div>
       <div class="loc" id="pvLoc"></div>
       <div class="facts" id="pvFacts"></div>
+      <!-- Hidden on a phone: this row said "Not yet verified / Listed by the
+           agency; Synapse has not run its checks on this home yet", and the
+           What we checked card below says the same two lines almost word for
+           word. Verification has a card of its own; the summary does not need
+           to pre-announce it. The desktop copy lives in the map header
+           (.pvc-trust), where there is no such card beside it. -->
       <div class="pvtrust-row" id="pvTrust" hidden>
         <div class="ringbig" id="pvRing">—</div>
         <div>
@@ -515,7 +523,6 @@
     <!-- AI negotiation assistant -->
     <div class="card section">
       <div class="lbl"><span data-icon="negotiate"></span> Negotiate with Toju</div>
-      <p class="reason" style="font-size:13px;color:var(--ink-muted)">Toju reads the data (area medians, yield, verification flags) and suggests a respectful opening offer, plus a message you can send as-is.</p>
       <button class="btn btn-primary" id="negBtn" style="margin-top:12px;padding:11px 20px;font-size:13.5px">Get my opening offer</button>
       <div id="negOut" hidden>
         <div class="neg-offer" id="negOffer"></div>
@@ -575,7 +582,6 @@
     <!-- viewing assistant: inspection checklist + notes + photos, saved to this home -->
     <div class="card section">
       <div class="lbl"><span data-icon="legal"></span> Viewing assistant</div>
-      <p class="reason" style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">Take this with you to the inspection. Everything you tick, note or snap stays attached to this home.</p>
       <div class="vcheck" id="vcheck"></div>
       <textarea class="vnotes" id="vnotes" placeholder="Notes from the viewing — water pressure, smells, the agent's answers…"></textarea>
       <div class="vphotos" id="vphotos"></div>
