@@ -3510,11 +3510,16 @@
               <div class="field"><label>Neighbourhood</label><input id="lfHood" value="${esc(d.neighbourhood)}" placeholder="Lekki Phase 1"></div>
               <div class="field"><label>Country *</label><select id="lfCountry"><option ${d.country === 'Nigeria' ? 'selected' : ''}>Nigeria</option></select></div>
             </div>
-            <div class="row2">
-              <div class="field"><label>Latitude</label><input id="lfLat" type="number" step="any" value="${esc(d.latitude)}" placeholder="6.45"><span class="ferr" id="e_lat"></span></div>
-              <div class="field"><label>Longitude</label><input id="lfLng" type="number" step="any" value="${esc(d.longitude)}" placeholder="3.47"></div>
-            </div>
-            <p class="lf-hint">Coordinates enable the map pin and proximity matching — recommended.</p>
+            <!-- Latitude and longitude were two number fields on the form an
+                 agency fills to post its first property. Nobody selling a house
+                 knows its coordinates, and the pair was optional, so the honest
+                 outcome was that most listings simply had none — no map pin, no
+                 proximity matching. They are looked up from the address now and
+                 kept here, so the save path below is unchanged. -->
+            <input type="hidden" id="lfLat" value="${esc(d.latitude)}">
+            <input type="hidden" id="lfLng" value="${esc(d.longitude)}">
+            <span class="ferr" id="e_lat"></span>
+            <p class="lf-hint" id="lfGeoNote">The map pin is found from the address.</p>
           </fieldset>
           <fieldset class="lf-sec"><legend>Specifications</legend>
             <div class="row2">
@@ -3663,13 +3668,57 @@
         save.style.opacity = ok ? '1' : '.75';
         return ok;
       }
-      ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg', 'lfLat', 'lfLng'].forEach(id => {
+      ['lfTitle', 'lfDesc', 'lfAddr', 'lfCity', 'lfState', 'lfPrice', 'lfBeds', 'lfImg'].forEach(id => {
         const mark = () => { if (ERR_OF[id]) touched[ERR_OF[id]] = true; };
         g(id).addEventListener('input', () => { mark(); validate(); if (id === 'lfPrice') priceEcho(); });
         // blur counts too: tabbing through a required field and leaving it
         // empty is a decision, and worth telling them about there and then.
         g(id).addEventListener('blur', () => { mark(); validate(); });
       });
+      /* ── the map pin, from the address ─────────────────────────────────
+         Nominatim, the same geocoder save-place already uses for a buyer's
+         places: free, no key, and asked with the city because "Bodija" alone
+         matches in several countries.
+
+         Runs on blur of the address, city or state — one request when they
+         have finished typing, not one per keystroke. Failure is silent and
+         costs only the pin: coordinates were always optional here, and a
+         listing that cannot be geocoded is still a listing. It never blocks
+         the save. */
+      let geoKey = '';
+      function findPin() {
+        const addr = g('lfAddr').value.trim();
+        const city = g('lfCity').value.trim();
+        const state = g('lfState').value.trim();
+        if (!addr || !city) return;
+        const key = [addr, city, state].join('|').toLowerCase();
+        if (key === geoKey) return;              // nothing new to look up
+        geoKey = key;
+        const note = g('lfGeoNote');
+        if (note) note.textContent = 'Finding the map pin…';
+        const q = [addr, city, state, 'Nigeria'].filter(Boolean).join(', ');
+        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ng&q='
+              + encodeURIComponent(q))
+          .then(r => r.ok ? r.json() : [])
+          .then(rows => {
+            const hit = Array.isArray(rows) && rows[0];
+            if (!hit || hit.lat == null || hit.lon == null) throw new Error('no match');
+            g('lfLat').value = Number(hit.lat).toFixed(6);
+            g('lfLng').value = Number(hit.lon).toFixed(6);
+            if (note) note.textContent = 'Map pin found from the address.';
+            validate();
+          })
+          .catch(() => {
+            g('lfLat').value = ''; g('lfLng').value = '';
+            /* Says what it means for the listing, not what failed. The agency
+               can do nothing about a geocoder miss, so it is told the
+               consequence and left alone. */
+            if (note) note.textContent = 'No map pin for this address — the listing still works without one.';
+            validate();
+          });
+      }
+      ['lfAddr', 'lfCity', 'lfState'].forEach(id => g(id).addEventListener('blur', findPin));
+
       /* Probe on blur rather than per keystroke: one request when they have
          finished pasting, not one per character. */
       g('lfImg').addEventListener('blur', () => imgProbe(g('lfImg').value.trim()));
