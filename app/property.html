@@ -77,6 +77,17 @@
        the job. */
     .pvtrust-row { display: none; }
     .agency { display: flex; align-items: center; gap: 14px; }
+    /* The listing agent, under the agency inside the same card. The rule above
+       it is what makes the two read as one attribution — agency, then the
+       person answering for it — rather than two unrelated facts. */
+    .lagent { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(54,54,54,0.14); }
+    /* `display` on the class beats the hidden attribute's UA display:none, so
+       a listing with no named agent still drew the divider and an empty avatar
+       under the agency. The attribute has to be given the property back. */
+    .lagent[hidden] { display: none; }
+    .lagent .la-av { width: 40px; height: 40px; flex: none; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--brand); background-size: cover; background-position: center; }
+    .lagent .la-nm { font-weight: 600; font-size: 14px; }
+    .lagent .la-meta { font-size: 12px; margin-top: 1px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
     /* true cost */
@@ -626,6 +637,18 @@
           <div class="dim" style="font-size:12.5px" id="pvAgencyMeta"></div>
         </div>
       </div>
+      <!-- The agency brands the listing; a named person answers for it. Hidden
+           until one is actually assigned, so a listing without a named agent
+           falls back to exactly what this card showed before. No phone number
+           here by design — the view it reads does not even expose one, and
+           contact goes through the platform so the agency keeps the thread. -->
+      <div class="lagent" id="pvAgentWrap" hidden>
+        <div class="la-av" id="pvAgentAv">—</div>
+        <div style="flex:1;min-width:0">
+          <div class="la-nm" id="pvAgentName"></div>
+          <div class="dim la-meta" id="pvAgentMeta"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Was three hardcoded Lekki listings with invented "Confidence 91 ·
@@ -888,9 +911,16 @@
                 ).catch(() => {});
               }
             } catch (e) { /* storage blocked; the lead still stands */ }
+            /* Naming the person only where one is actually assigned. The
+               buyer just saw that name on the card; the confirmation closing
+               the loop with the same name is what makes the handover feel
+               like it went to someone rather than into a queue. */
+            const who = AGENT_NAME ? AGENT_NAME.split(' ')[0] : null;
             toast(d.delivery_status === 'delivered'
-              ? "Sent — the agent will reach out on WhatsApp shortly."
-              : "Sent — the agency has your request and will be in touch.");
+              ? (who ? 'Sent — ' + who + ' will reach out on WhatsApp shortly.'
+                     : 'Sent — the agent will reach out on WhatsApp shortly.')
+              : (who ? 'Sent — ' + who + ' has your request and will be in touch.'
+                     : 'Sent — the agency has your request and will be in touch.'));
             btn.textContent = '✓ Request sent';
             // stays disabled: the request is sent, re-sending helps nobody
           })
@@ -1085,6 +1115,48 @@
                           : 'Agency not yet verified');
       })();
 
+      /* The named agent. Second request rather than an embed: listing_agent_cards
+         is a view, so PostgREST has no foreign key to join it on.
+
+         The view exists because profiles RLS is own-or-colleague — a buyer can
+         read no profile row at all — and a row-level policy wide enough to fix
+         that would expose phone and whatsapp with it. The view returns identity
+         and track record only.
+
+         Nothing here invents a credential: each fact is appended only if the
+         column actually has a value, and a listing with no agent leaves the
+         block hidden. Areas covered is deliberately not shown — it describes
+         where the agent works, not this property, and reading "Central Lekki"
+         under an Ibadan listing would look like a claim about the home. */
+      (function paintAgent() {
+        const wrap = document.getElementById('pvAgentWrap');
+        if (!wrap || !p.listed_by_agent_id) return;
+        fetch(SUPABASE_URL + '/rest/v1/listing_agent_cards?agent_id=eq.'
+              + encodeURIComponent(p.listed_by_agent_id) + '&limit=1',
+              { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+          .then((r) => (r.ok ? r.json() : []))
+          .then((rows) => {
+            const a = rows && rows[0];
+            if (!a || !a.full_name) return;
+            const av = document.getElementById('pvAgentAv');
+            if (av) {
+              if (a.avatar_url) { av.style.backgroundImage = 'url("' + a.avatar_url + '")'; av.textContent = ''; }
+              else av.textContent = a.full_name.trim().split(/\s+/).slice(0, 2)
+                     .map((w) => w[0]).join('').toUpperCase();
+            }
+            document.getElementById('pvAgentName').textContent = a.full_name;
+            const bits = [];
+            if (a.years_experience != null) bits.push(a.years_experience + ' yr' + (a.years_experience === 1 ? '' : 's') + ' experience');
+            if (a.closed_deals != null) bits.push(a.closed_deals + ' deals closed');
+            if (a.response_rate_pct != null) bits.push(a.response_rate_pct + '% reply rate');
+            document.getElementById('pvAgentMeta').textContent =
+              bits.length ? bits.join(' · ') : 'Your agent for this listing';
+            wrap.hidden = false;
+            AGENT_NAME = a.full_name;
+          })
+          .catch(() => { /* the agency card above already stands on its own */ });
+      })();
+
       // More in this city. A real query, and the card stays hidden unless it
       // finds something.
       (function paintSimilar() {
@@ -1192,6 +1264,10 @@
        simply carries no negotiation, which is honest — it is not an offer of
        zero. */
     let NEGOTIATION = null;
+    /* The listing agent's name, once paintAgent has resolved one. Only used to
+       say who received the request — null on a listing with no named agent, and
+       every message below falls back to the agency wording. */
+    let AGENT_NAME = null;
     const negBtn = document.getElementById('negBtn');
     negBtn.addEventListener('click', async () => {
       // Nothing to negotiate over until the listing has loaded. Sending a null
