@@ -814,6 +814,22 @@
     .lf input:focus, .lf select:focus, .lf textarea:focus { border-color: rgba(54,54,54,0.5); }
     .lf input:focus-visible, .lf select:focus-visible, .lf textarea:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 1px; border-color: var(--brand-deep); }
     .lf .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* A field whose value needs a unit either side of it. The input gives up
+       its own chrome to the wrapper so the three parts read as one control;
+       :focus-within is what keeps the focus ring visible once it has. */
+    .lf .unit { display: flex; align-items: center; padding: 0 13px; border-radius: 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); }
+    /* Fixed width, value right-aligned, so the number always butts against the
+       suffix and "15k / day" reads as one phrase. The slack falls after the ₦
+       instead, where a currency symbol modifying the whole quantity can sit
+       without being misread. 4.5em holds a four-digit budget. */
+    .lf .unit input { flex: none; width: 4.5em; border: none; background: none; padding: 10px 0; text-align: right; }
+    .lf .unit input::-webkit-outer-spin-button,
+    .lf .unit input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .lf .unit input:focus, .lf .unit input:focus-visible { outline: none; border: none; }
+    .lf .unit:focus-within { border-color: var(--brand-deep); outline: 2px solid var(--brand-deep); outline-offset: 1px; }
+    .lf .u-fix { flex: none; font: 13.5px var(--f-sans); color: var(--ink-dim); }
+    .lf .u-fix:first-child { padding-right: 3px; }
+    .lf .u-fix:last-child { padding-left: 4px; margin-right: auto; }
     .lf-sec { border: none; border-top: 1px solid var(--border); padding: 15px 0 2px; margin: 0; }
     .lf-sec:first-of-type { border-top: none; padding-top: 4px; }
     .lf-sec legend { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--brand-text); padding: 0; margin-bottom: 11px; }
@@ -2083,7 +2099,6 @@
         <section class="pane" id="pane-crm">
           <div class="eyebrow" data-agency-eyebrow>Your agency</div>
           <div class="h1">CRM</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Your whole pipeline at a glance — every lead, its stage, and the next move.</p>
 
           <!-- toolbar -->
           <div class="crm-tools" data-pane-filters>
@@ -2125,7 +2140,6 @@
         <section class="pane" id="pane-subscription">
           <div class="eyebrow">Invest in growth</div>
           <div class="h1">Plans that pay for themselves</div>
-          <p class="muted" style="font-size:14px;margin-top:4px;max-width:560px">Synapse isn&#39;t software you pay for — it&#39;s the platform that brings you qualified buyers, closes deals faster, and shows you exactly which marketing earns its keep.</p>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
           <div class="pr-cards" id="pricingCards"></div>
@@ -2157,7 +2171,7 @@
             <div class="cmp-head">
               <div>
                 <div class="h2">Generate a campaign</div>
-                <p class="sub" style="margin:0">Pick a verified listing. Synapse writes every angle for every channel, then checks each one against that platform's limits.</p>
+                <p class="sub" style="margin:0">Each version is checked against that platform's limits before it can be queued.</p>
               </div>
             </div>
             <div class="cmp-controls">
@@ -2170,7 +2184,6 @@
           <div class="s-work-hd">
             <div>
               <div class="h2">Content pipeline</div>
-              <p class="sub" style="margin:0">Every verified listing flows through — upload triggers AI captioning, you approve once, Synapse publishes everywhere.</p>
             </div>
             <div class="seg" id="socialView" data-pane-filters>
               <button class="seg-b on" data-sv="pipeline"><span data-icon="boards"></span> Pipeline</button>
@@ -2200,7 +2213,6 @@
               <button class="tbtn" id="mkSort"><span data-icon="sliders"></span> Sort: CTR</button>
             </div>
           </div>
-          <p class="sub" id="mkBoardSub" style="margin:0 0 12px">Every creative across your campaigns, ranked by performance. Winners scale; the AI pauses the losers.</p>
           <div id="mkBoard"></div>
           <div id="campaigns" style="display:none"></div>
         </section>
@@ -2229,7 +2241,6 @@
               </div>
             </div>
           </div>
-          <p class="sub">Toju has already qualified, pitched and pre-negotiated these. You just close.</p>
           <div id="handoffs"></div>
         </section>
 
@@ -2237,7 +2248,7 @@
         <section class="pane" id="pane-listings">
           <div class="eyebrow">Inventory</div>
           <div class="h1">Listings</div>
-          <p class="muted" style="font-size:14px;margin-top:4px">Your inventory, its verification status, and its 14-day freshness. Expired listings are hidden from buyers until you re-list.</p>
+          <p class="muted" style="font-size:14px;margin-top:4px">Expired listings are hidden from buyers until you re-list.</p>
 
           <div class="crm-tools" data-pane-filters style="margin-top:18px">
             <div class="crm-tools-l">
@@ -4202,10 +4213,21 @@
           <div class="field"><label>Campaign name</label><input id="cfN" placeholder="e.g. Ikoyi penthouse push"></div>
           <div class="field"><label>Listing</label>
             <select id="cfL">${LISTINGS_DATA.map((l, k) => `<option value="${k}">${l.t} · ${nairaM(l.pr)}</option>`).join('')}</select></div>
-          <div class="row2">
-            <div class="field"><label>Audience</label>
-              <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${PERSONAS[p]}</option>`).join('')}</select></div>
-            <div class="field"><label>Daily budget (₦ thousands)</label><input id="cfB" type="number" min="1" value="15"></div>
+          <!-- These were a .row2 pair. At 375px that is 158px each: the audience
+               labels run to 178px of text so every one truncated, and "Daily
+               budget (₦ thousands)" wrapped mid-phrase. Audience carries the
+               longest strings in the form, so it gets a full line like Listing
+               above it, and the budget's unit moves out of the label and into
+               the field — where it reads as ₦15k / day, the same way the
+               campaign card already states it. -->
+          <div class="field"><label>Audience</label>
+            <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${PERSONAS[p]}</option>`).join('')}</select></div>
+          <div class="field"><label>Daily budget</label>
+            <div class="unit">
+              <span class="u-fix">₦</span>
+              <input id="cfB" type="number" min="1" value="15" aria-describedby="cfBu">
+              <span class="u-fix" id="cfBu">k / day</span>
+            </div>
           </div>
           <div class="field"><label>Channels</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap" id="cfC">
@@ -4464,8 +4486,7 @@
           + '<span class="ov-blank-i" data-icon="chart"></span>'
           + '<b>No creatives to rank yet</b>'
           + '<p>Launch a campaign from one of your listings and every creative it '
-          + 'generates appears here, ranked by click-through and leads. Synapse '
-          + 'scales the winners and pauses the rest.</p>'
+          + 'generates appears here, ranked by click-through and leads.</p>'
           + '<button class="btn btn-primary" type="button" data-mk-new>+ New campaign</button>'
           + '</div>';
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
@@ -4493,7 +4514,6 @@
       document.querySelectorAll('#mkView .seg-b').forEach(x => x.classList.toggle('on', x === b));
       const board = b.dataset.mv === 'board';
       document.getElementById('mkBoard').style.display = board ? 'block' : 'none';
-      document.getElementById('mkBoardSub').style.display = board ? 'block' : 'none';
       document.getElementById('mkSort').style.display = board ? '' : 'none';
       document.getElementById('campaigns').style.display = board ? 'none' : 'block';
     });
