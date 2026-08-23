@@ -31,11 +31,23 @@
   function money(n, currency) {
     n = Number(n) || 0;
     const code = /^[A-Za-z]{3}$/.test(currency || '') ? String(currency).toUpperCase() : CURRENCY_FALLBACK;
+    /* narrowSymbol is what turns NGN into ₦. Without it Intl prints the ISO
+       code for any currency the viewer's locale does not consider local — so a
+       Nigerian on a phone set to en-GB, which is most of them, was reading
+       "NGN 3.2M" on every card while the rest of the app said ₦. It stays
+       currency-aware: £, $ and R still come out right, and a currency with no
+       narrow symbol (KES) still falls back to its code rather than guessing.
+       Guarded because Safari below 14.1 throws on the option itself. */
     const fmt = (value, opts) => {
+      const base = Object.assign({
+        style: 'currency', currency: code, maximumFractionDigits: 0,
+      }, opts);
       try {
-        return new Intl.NumberFormat(undefined, Object.assign({
-          style: 'currency', currency: code, maximumFractionDigits: 0,
-        }, opts)).format(value);
+        return new Intl.NumberFormat(undefined,
+          Object.assign({ currencyDisplay: 'narrowSymbol' }, base)).format(value);
+      } catch (e) { /* fall through to the plain form */ }
+      try {
+        return new Intl.NumberFormat(undefined, base).format(value);
       } catch (e) {
         return code + ' ' + Math.round(value).toLocaleString();   // unknown code: never crash a price
       }
@@ -192,7 +204,13 @@
             ${cmpBox}
           </div>
           <div class="price">${money(l.priceN, l.currency)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
-          <div class="ttl">${esc(l.ttl)}</div>
+          <!-- A real link, not a div. The card carried its id in data-id and
+               opened from a click handler, so the only thing a keyboard could
+               reach inside a listing was the Save button: you could save a home
+               you had no way to open. An anchor also restores middle-click and
+               open-in-new-tab, which a handler silently swallows. The card-wide
+               click handler still works for everyone else. -->
+          <div class="ttl"><a class="ttl-a" href="${propertyHref(l.id)}">${esc(l.ttl)}</a></div>
           <div class="loc">${esc(l.loc)}</div>
           ${l.why ? `<div class="why">${l.why}</div>` : ''}
           ${score}

@@ -97,6 +97,13 @@
     .listing .cmpbox input { accent-color: #121212; }
     .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
+    /* The title is a link now, so it has to look exactly as it did — the card
+       is the affordance, not blue underlined text. Focus is the exception: a
+       keyboard user needs to see where they are, which is the whole point of
+       making it a link. */
+    .listing .ttl-a { color: inherit; text-decoration: none; }
+    .listing .ttl-a:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .listing .ttl-a:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 3px; border-radius: 4px; }
     .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
     .listing .why { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.7); }
     .listing .why b { color: #1C1C1E; font-weight: 700; }
@@ -785,6 +792,12 @@
         // this device really opened
         const viewed = shownItems.find((l) => l.id === id) || items.find((l) => l.id === id);
         if (viewed) SynMatches.recordView(viewed);
+        /* The title is a real link now, and a link navigates itself — including
+           cmd/ctrl-click, which fires a click event AND opens a new tab. Falling
+           through to location.href would send this tab to the listing at the
+           same moment the new one opened. The visit is still recorded above,
+           because it happened either way. */
+        if (e.target.closest('a[href]')) return;
         location.href = SynMatches.propertyHref(id);
       }
     }
@@ -986,7 +999,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,trust_score,expires_at,listed_at,currency,property_media(url,display_order),neighbourhoods(name,flood_risk,power_reliability)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,property_media(url,display_order),neighbourhoods(name,flood_risk,power_reliability)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1031,12 +1044,24 @@
            a third time. One card, one statement of a fact. The unverified copy
            below DOES stay long, because there it is carrying something the
            chip cannot -- what unverified actually means and what to do next. */
-        why: p.verification_status === 'verified'
-          ? '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · ask Toju if it fits your life'
-          /* "listed but not yet verified" is dropped for the same reason:
-             the chip above already reads Not verified. What the chip cannot
-             say is what to do about it, so that half stays. */
-          : '<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b> · Toju can run the 7 checks before you commit',
+        /* Was "<b>3 beds</b> · ask Toju if it fits your life" on every verified
+           card — the same sentence under every home, telling you nothing about
+           the one you are looking at. The card's job while you scan is to say
+           what this home IS, so it carries the facts: beds, baths, floor area.
+           Each part is dropped rather than guessed when the column is empty.
+
+           The unverified line keeps its prompt, because there the chip says
+           "Not verified" and cannot say what to do about it. */
+        why: (function () {
+          const bits = [];
+          if (p.bedrooms) bits.push('<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b>');
+          if (p.bathrooms) bits.push(p.bathrooms + ' bath' + (p.bathrooms > 1 ? 's' : ''));
+          if (p.area_sqm) bits.push(Math.round(Number(p.area_sqm)) + ' m²');
+          const facts = bits.join(' · ');
+          return p.verification_status === 'verified'
+            ? facts
+            : (facts ? facts + ' · ' : '') + 'Toju can run the 7 checks before you commit';
+        })(),
       }));
       const vCount = rows.filter((p) => p.verification_status === 'verified').length;
       setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');

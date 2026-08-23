@@ -376,7 +376,9 @@
     }
     // the three board modes — one board, a mode switch that reframes it
     const MODES = [
-      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Toju matches you to.' },
+      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Toju matches you to.',
+        /* Same mode, board Toju cannot see yet. */
+        hintUnadopted: 'Your concrete wishlist — homes & must-haves. Keep this board and Toju starts matching you to it.' },
       { id: 'mood',   lbl: 'Mood',   hint: 'The feeling — palettes, textures and interior vibe.' },
       { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
     ];
@@ -414,7 +416,12 @@
     }
     // migrate older boards forward: every board gets a mode, every pin a category
     state.boards.forEach((b) => {
-      if (!b.mode) b.mode = 'dream';
+      /* A starter board is décor and light to react to, and it deliberately
+         does not mirror to Toju until adopted. Defaulting it to Dream opened
+         it under "your concrete wishlist … this is what Toju matches you to",
+         which described neither what was on it nor what the code does with it.
+         Mood is the mode it actually is. */
+      if (!b.mode) b.mode = b.starter ? 'mood' : 'dream';
       (b.images || []).forEach((im) => { if (!im.cat) im.cat = inferCat(im.c); });
     });
     const saveState = () => localStorage.setItem(BKEY, JSON.stringify(state));
@@ -469,7 +476,7 @@
              <div class="bname">Saved homes</div><div class="bmeta">Your ♥ watchlist · open Your matches</div></a>`
         : '';
       const add = `<button class="bcard new" data-new><div class="bcover"><span class="plus">+</span></div>
-        <div class="bname">Create board</div><div class="bmeta">A new pod for a fresh idea</div></button>`;
+        <div class="bname">Create board</div><div class="bmeta">A fresh idea, kept separate</div></button>`;
       grid.innerHTML = cards + watch + add;
 
       /* Starter boards are seeded, not made. Counting them as "has boards"
@@ -533,7 +540,10 @@
         <button class="keep" id="keepBtn">Keep this board</button>`;
       document.getElementById('keepBtn').addEventListener('click', () => {
         delete b.starter; saveState(); mirror(); // now it's theirs — Toju may read it
-        renderStarterNote(); renderSignals(); updateToju();
+        /* renderMode() too: the Dream hint is worded off b.starter, so without
+           it the board stayed labelled "Keep this board and Toju starts
+           matching you to it" after you had already kept it. */
+        renderStarterNote(); renderMode(); renderSignals(); updateToju();
       });
     }
 
@@ -597,7 +607,13 @@
       const b = activeBoard(); const cur = b.mode || 'dream';
       document.getElementById('modeSwitch').innerHTML = MODES.map((m) =>
         `<button role="tab" class="ms ${m.id === cur ? 'on' : ''}" data-mode="${m.id}" aria-selected="${m.id === cur}">${m.lbl}</button>`).join('');
-      document.getElementById('modeHint').textContent = (MODES.find((m) => m.id === cur) || MODES[0]).hint;
+      /* The Dream hint ends "This is what Toju matches you to" — true only once
+         the board is theirs. mirror() skips starter boards on purpose, so on
+         one of those the sentence asserted the opposite of what the code does.
+         The starter note directly below already offers Keep this board. */
+      const hint = (MODES.find((m) => m.id === cur) || MODES[0]).hint;
+      document.getElementById('modeHint').textContent =
+        (b.starter && cur === 'dream') ? MODES[0].hintUnadopted : hint;
     }
     document.getElementById('modeSwitch').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-mode]'); if (!btn) return;
