@@ -130,7 +130,7 @@
   }
 
   // One .listing card. opts:
-  //   saves   — Set of ♥'d ids (localStorage `synapse_saved`)
+  //   saves   — Set of saved ids (localStorage `synapse_saved`)
   //   compare — include the compare checkbox (browse-only tool; the canvas
   //             deliberately omits it — on the canvas you just tell Toju)
   //   picked  — Set of ids ticked for compare
@@ -201,7 +201,9 @@
           ${img
             ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`
             : ''}
-          <div class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}">${saves.has(l.id) ? '♥' : '♡'}</div>
+          <button type="button" class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}"
+                  aria-pressed="${saves.has(l.id)}"
+                  aria-label="${saves.has(l.id) ? 'Remove' : 'Save'} ${esc(l.ttl)}">${icon('heart', saves.has(l.id) ? '♥' : '♡')}</button>
         </div>
       </div>`;
   }

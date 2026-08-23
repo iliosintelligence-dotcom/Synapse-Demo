@@ -629,6 +629,19 @@ a:focus-visible {
    screen. Two navigations at once would be worse than the row it replaced. */
 .cnav { display: none; }
 
+/* ── the save control on a listing card ────────────────────────────────────
+   The card renderer is shared between browse and the Toju canvas, so its icon
+   styling lives here rather than being copy-pasted into both pages the way
+   .save itself is.
+
+   State is carried by fill, not by swapping the mark. It used to be two
+   different characters -- an outline heart and a solid one -- which meant the
+   saved state was drawn in whatever heart the system font happened to have,
+   often a colour emoji on Android. Same path, filled when on, is what a
+   stroke icon set is for. */
+.listing .save .syn-i { width: 18px; height: 18px; }
+.listing .save.on .syn-i { fill: currentColor; }
+
 /* ── back ──────────────────────────────────────────────────────────────────
    Every width, not just phones. Sits at the top left of the page's own
    content, in the flow, so it takes up space instead of covering something.
