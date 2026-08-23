@@ -743,7 +743,12 @@
     .handoff .rp-verdict { display: flex; gap: 9px; margin-top: 14px; font: 500 13px var(--f-sans); color: var(--ink); line-height: 1.45; background: var(--success-tint); border-radius: 12px; padding: 11px 13px; }
     .handoff .rp-verdict .vi { color: var(--success); flex: none; }
     .handoff .rp-actions { display: flex; gap: 10px; margin-top: 14px; }
-    .handoff .rp-actions .btn-primary { background: var(--brand-deep); border-color: var(--brand-deep); flex: 1; }
+    /* Sets the colour too. .btn-primary pairs var(--action) with
+       var(--action-on) — dark text meant to sit on the orange. This rule
+       repainted the background near-black and left that foreground behind, so
+       the card's primary action rendered at 1.04:1: black on black. A rule that
+       changes one half of a colour pair has to change the other. */
+    .handoff .rp-actions .btn-primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; flex: 1; }
     .tr .stg { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin: 16px 0 8px; }
     .msg { max-width: 86%; padding: 9px 13px; border-radius: 14px; font-size: 12.5px; line-height: 1.5; margin-bottom: 8px; }
     .msg.toju { background: rgba(54,54,54,0.08); border: 1px solid rgba(54,54,54,0.18); border-bottom-left-radius: 4px; }
@@ -2576,10 +2581,23 @@
       if (mins < 1440) return Math.round(mins / 60) + 'h';
       return Math.round(mins / 1440) + 'd';
     }
+    /* Everything below ten million used to collapse to a whole number of
+       millions, which did not just lose precision -- it overstated. A 800,000
+       listing displayed as one million, a figure it is not, and on the handoff
+       card an ask of 1.45M and an agreed 1.32M both read the same, so a
+       successful negotiation looked like no negotiation at all.
+
+       Nigerian rentals live in exactly that range, so this is the common case
+       rather than the edge. A decimal where it carries meaning, thousands
+       below a million, and no rounding across the unit. */
     const nairaShort = n => {
       if (n == null) return '-';
       const v = Number(n);
-      return v >= 1e9 ? '\u20a6' + +(v / 1e9).toFixed(1) + 'B' : '\u20a6' + Math.round(v / 1e6) + 'M';
+      if (!isFinite(v)) return '-';
+      if (v >= 1e9) return '\u20a6' + +(v / 1e9).toFixed(1) + 'B';
+      if (v >= 1e6) return '\u20a6' + +(v / 1e6).toFixed(v % 1e6 ? 1 : 0) + 'M';
+      if (v >= 1e3) return '\u20a6' + Math.round(v / 1e3) + 'k';
+      return '\u20a6' + Math.round(v);
     };
     function mapLead(r){
       const prop = r.properties || {};
@@ -2608,6 +2626,10 @@
         /* What Toju settled with the buyer before they made contact, when they
            ran the negotiator. Absent on leads that did not. */
         neg: (r.preferences && r.preferences.negotiation) || null,
+        rawSource: r.source,
+        // what the home is listed at, distinct from `price` above, which is the
+        // buyer's budget whenever one is known
+        listPrice: prop.price != null ? prop.price : null,
       };
     }
     /* The agency's own people, fetched once. Both the Assign menu and the lead
@@ -2633,6 +2655,8 @@
         leads = rows.map(mapLead);
         CRM.loaded = true; CRM.error = null;
         renderCrm();
+        // the negotiator pane reads the same rows — no second fetch
+        buildHandoffs(leads); renderHandoffs();
       }).catch(err => {
         CRM.loaded = true;
         CRM.error = (err && err.message) || 'please refresh';
@@ -4642,7 +4666,34 @@
     // Toju-negotiated handoffs. Empty until Toju actually negotiates a real
     // lead on a real listing — this held five invented buyers with invented
     // transcripts, offers and agreed prices for properties that never existed.
-    const HANDOFFS = [];
+    /* Real ones only. This array held five invented buyers with invented
+       transcripts for properties that never existed, and was emptied for that
+       reason — but it was then left with no data path at all, so the pane
+       could never show anything however much the agency did.
+
+       It fills from leads now. A lead carries preferences.negotiation when the
+       buyer ran Toju's negotiator before making contact, which is exactly the
+       condition this pane describes: Toju qualified them and worked out a
+       price. No negotiation, no card. */
+    let HANDOFFS = [];
+    function buildHandoffs(rows) {
+      HANDOFFS = (rows || [])
+        .filter(function (l) { return l.neg && l.neg.offer != null; })
+        .map(function (l) {
+          const listed = l.listPrice != null ? nairaShort(l.listPrice) : l.price;
+          return {
+            buyer: l.nm,
+            prop: (l.pr || '').split(' · ')[0],
+            source: ({ toju_chat: 'Toju', contact_button: 'Contact button', browse: 'Browse' })[l.rawSource] || 'Direct',
+            price: listed,
+            agreed: nairaShort(l.neg.offer),
+            rating: l.temp === 'Hot' ? 'High intent' : l.temp === 'Warm' ? 'Worth a call' : 'Early',
+            rec: l.neg.advice || '',
+            draft: l.neg.draft || '',
+            signals: [l.stage, l.score != null ? l.score + '/100' : null].filter(Boolean),
+          };
+        });
+    }
     function renderHandoffs(){
       /* HANDOFFS is deliberately empty until Toju negotiates a real lead on a
          real listing. Without a message the pane just rendered a heading and
@@ -4662,7 +4713,12 @@
       }
       document.getElementById('handoffs').innerHTML = HANDOFFS.map((h, i) => `
         <div class="card handoff" role="group" aria-label="Toju deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
-          <img class="bg" src="${propImg(h.prop)}" alt="" loading="eager">
+          <!-- propImg() went with the invented handoffs and was never replaced,
+               so this line threw the moment the array had anything in it. It
+               never fired before because the array was permanently empty — the
+               pane could not fail because it could not render. The card's own
+               gradient is a dark ground built for white text, so there is
+               nothing to fall back to. -->
           <div class="veil"></div>
           <div class="top">
             <span class="stamp"><span class="o">T</span> Toju Deal Report</span>
@@ -4689,8 +4745,16 @@
       const h = HANDOFFS[i];
       drawer.innerHTML = `<button class="x" id="drawerX">×</button>
         <div style="display:flex;align-items:center;gap:10px"><span class="o" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#121212,#121212);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">T</span><div><div style="font-size:18px;font-weight:700">${h.buyer}</div><div class="ph">${h.prop} · ${h.price}</div></div></div>
-        <p class="muted" style="font-size:12px;margin-top:10px">Toju&#39;s full conversation — the five stages, verbatim. Every price exchange is logged to the deal room.</p>
-        <div class="tr">${h.transcript.map(t => t.stage ? `<div class="stg">${t.stage}</div>` : `<div class="msg ${t.who}">${t.text}</div>`).join('')}</div>`;
+        ${Array.isArray(h.transcript) && h.transcript.length
+          ? `<p class="muted" style="font-size:12px;margin-top:10px">Toju&#39;s full conversation — the five stages, verbatim. Every price exchange is logged to the deal room.</p>
+             <div class="tr">${h.transcript.map(t => t.stage ? `<div class="stg">${t.stage}</div>` : `<div class="msg ${t.who}">${t.text}</div>`).join('')}</div>`
+          /* No verbatim transcript exists for a lead negotiated on the property
+             page — what Toju produced there is the reasoning and the opening
+             message, and that is what gets shown. Inventing a conversation to
+             fill the panel would be worse than an honest, shorter one. */
+          : `<p class="muted" style="font-size:12px;margin-top:10px">What Toju worked out with this buyer before they made contact.</p>
+             ${h.rec ? `<div class="sec" style="margin-top:10px"><div class="k">Reasoning</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.rec)}</p></div>` : ''}
+             ${h.draft ? `<div class="sec" style="margin-top:10px"><div class="k">Message the buyer opened with</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.draft)}</p></div>` : ''}`}`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
     }
