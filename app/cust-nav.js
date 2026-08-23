@@ -366,6 +366,24 @@
       wrap.classList.toggle('fopen', which === 'filters');
       btn.setAttribute('aria-expanded', String(which === 'nav'));
       fbtn.setAttribute('aria-expanded', String(which === 'filters'));
+      syncIcons(which);
+    };
+
+    /* Each trigger's icon states whether its own sheet is open, travelling to
+       a cross and back rather than being swapped out underneath you. Driven
+       off `which` so one call keeps both honest — opening the filters has to
+       return the nav icon to a grid, not leave two crosses on the bar.
+
+       Guarded: SynMorph is a module and this file is a classic script, so on a
+       page where it has not loaded (or failed to) the icons simply sit still,
+       which is what they did before. */
+    var syncIcons = function (which) {
+      if (!window.SynMorph) return;
+      var pairs = [[btn, 'grid', which === 'nav'], [fbtn, 'sliders', which === 'filters']];
+      pairs.forEach(function (pair) {
+        var host = pair[0] && pair[0].querySelector('[data-icon]');
+        if (host) SynMorph.morphTo(host, pair[2] ? 'close' : pair[1]);
+      });
     };
     var openState = function () {
       return wrap.classList.contains('open') ? 'nav'

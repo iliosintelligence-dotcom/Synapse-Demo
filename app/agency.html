@@ -1556,8 +1556,6 @@
       .fn-n { font-size: 15px; }
       .fn-bar { grid-column: 1 / -1; height: 2px; }
       .fn-sep { display: none; }
-      .agd-funnelsec { padding: 0 6px 6px; }
-      .agd-funnelsec .agd-grp { opacity: .75; }
 
       /* The comparison table stops being a table. */
       .pr-table-wrap { display: none; }
@@ -2470,7 +2468,7 @@
     <span class="agd-div" aria-hidden="true"></span>
     <div class="agd agd-add" id="agdAdd">
       <div class="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
-      <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">+</button>
+      <button class="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create"><span data-icon="plus"></span></button>
     </div>
   </div>
 
@@ -2504,6 +2502,10 @@
        load and silently disabled the features behind those guards — the
        whole Brand pane among them, which is why it never filled or saved. -->
   <script src="icons.js"></script>
+  <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
+       deferred and runs after icons.js has hydrated. Everything it does is
+       optional: if it fails to load the icons simply swap as before. -->
+  <script type="module" src="icon-morph.js"></script>
   <script src="auth.js"></script>
   <script src="agency-listings.js"></script>
   <script>
@@ -6256,13 +6258,35 @@
         scrim.classList.remove('on');
         navFab.setAttribute('aria-expanded', 'false');
         addFab.setAttribute('aria-expanded', 'false');
+        if (typeof syncTaskbarIcons === 'function') syncTaskbarIcons();
       }
       function open(which) {
         closeAll();
         which.classList.add('open');
         scrim.classList.add('on');
         (which === nav ? navFab : addFab).setAttribute('aria-expanded', 'true');
+        syncTaskbarIcons();
       }
+
+      /* Each fab's icon states whether its sheet is open, by travelling to a
+         cross and back rather than being swapped underneath you.
+
+         State is read off the DOM every time instead of being tracked here, so
+         the icon stays truthful no matter what closed the sheet — the scrim,
+         Escape, picking an item, or another fab opening. Guarded throughout:
+         with no module loaded this is a no-op and the icons sit still, which is
+         exactly what they did before. */
+      function syncTaskbarIcons() {
+        if (!window.SynMorph) return;
+        [[nav, navFab, 'grid'], [filt, filtFab, 'filter'], [add, addFab, 'plus']]
+          .forEach(([wrap, fab, rest]) => {
+            if (!wrap || !fab) return;
+            const host = fab.querySelector('[data-icon]');
+            if (!host) return;
+            SynMorph.morphTo(host, wrap.classList.contains('open') ? 'close' : rest);
+          });
+      }
+      window.syncTaskbarIcons = syncTaskbarIcons;
 
       // ── nav menu, mirrored from the rail ──
       function buildNav() {
@@ -6302,34 +6326,17 @@
         }
         navSheet.innerHTML = html;
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
-        lendFunnel(current);
       }
 
-      /* ── the CRM stage filter lives here on a phone ──────────────────────
-         Five cards, 150px of screen, above a list where every row already
-         carries its own stage chip -- and on this account three of the five
-         read zero. The summary was physically larger than the thing it
-         summarised.
+      /* The CRM stage filter used to be moved into the NAV sheet from here,
+         which made sense when the nav sheet was the only sheet on the bar. It
+         is a filter, and there is a filter button now: #crmFunnel carries
+         data-pane-filters like every other pane control, so lendFilters claims
+         it and it opens under the funnel icon with the rest of the CRM's.
 
-         The node is MOVED, not rebuilt. Its click handler is bound to
-         #crmFunnel itself, so filtering keeps working from in here with no
-         second implementation to drift. It goes back to the pane the moment
-         you are not on CRM, and on desktop it never leaves. */
-      const funnelHome = document.getElementById('crmFunnel')?.parentElement || null;
-      function lendFunnel(pane) {
-        const fn = document.getElementById('crmFunnel');
-        if (!fn || !funnelHome) return;
-        const phone = window.matchMedia('(max-width: 1024px)').matches;
-        if (phone && pane === 'crm') {
-          const grp = document.createElement('div');
-          grp.className = 'agd-sec open agd-funnelsec';
-          grp.innerHTML = '<div class="agd-grp" style="pointer-events:none"><span>Filter by stage</span></div>';
-          grp.appendChild(fn);
-          navSheet.insertBefore(grp, navSheet.firstChild);
-        } else if (fn.parentElement !== funnelHome) {
-          funnelHome.insertBefore(fn, funnelHome.firstChild);
-        }
-      }
+         Both wanted the same node and the older one ran first, so the stage
+         cards sat above the navigation while the filter sheet opened empty.
+         One owner now. */
 
       // ── create fan, per pane ──
       function buildAdd() {
@@ -6363,6 +6370,7 @@
         filt.classList.add('open');
         scrim.classList.add('on');
         filtFab.setAttribute('aria-expanded', 'true');
+        syncTaskbarIcons();
       });
       scrim.addEventListener('click', closeAll);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
