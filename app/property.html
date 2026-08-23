@@ -855,7 +855,9 @@
             return fetch(SUPABASE_URL + '/functions/v1/create-lead', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
-              body: JSON.stringify({ property_id: PROP_ID, source: 'contact_button' }),
+              body: JSON.stringify(NEGOTIATION
+                ? { property_id: PROP_ID, source: 'contact_button', negotiation: NEGOTIATION }
+                : { property_id: PROP_ID, source: 'contact_button' }),
             });
           })
           .then((res) => res.json().then((d) => ({ ok: res.ok || res.status === 207, d })))
@@ -1180,6 +1182,10 @@
     })();
 
     /* ── 13 · AI negotiation assistant ── */
+    /* Null until Toju has actually run the numbers. A lead sent before that
+       simply carries no negotiation, which is honest — it is not an offer of
+       zero. */
+    let NEGOTIATION = null;
     const negBtn = document.getElementById('negBtn');
     negBtn.addEventListener('click', async () => {
       // Nothing to negotiate over until the listing has loaded. Sending a null
@@ -1205,6 +1211,15 @@
         document.getElementById('negAdvice').textContent = d.advice || '';
         document.getElementById('negDraft').textContent = d.draft || '';
         negBtn.hidden = true;
+        /* Hold on to it. Toju has just worked out an offer and written the
+           message to open with, and until now the only way that reached the
+           agency was the buyer copying it to a clipboard and finding them
+           somewhere else. Contact agent carries it instead. */
+        NEGOTIATION = {
+          offer: typeof d.openingOffer === 'number' ? d.openingOffer : null,
+          advice: String(d.advice || '').slice(0, 1200),
+          draft: String(d.draft || '').slice(0, 1200),
+        };
       } catch (e) {
         clearTimeout(timer);
         showNegError(!navigator.onLine ? 'offline' : (e && e.name === 'AbortError') ? 'timeout' : 'server');

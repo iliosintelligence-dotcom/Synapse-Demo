@@ -163,6 +163,7 @@
       return c1.from('leads')
         .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
                 'risk_level, next_action_recommendation, budget_min, budget_max, ' +
+                'preferences, ' +
                 'delivery_status, delivery_error, last_activity_at, created_at, ' +
                 'assigned_agent_id, properties(title, price, city)')
         .eq('agency_id', aid)

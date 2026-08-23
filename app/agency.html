@@ -2605,6 +2605,9 @@
         agentId: r.assigned_agent_id || null,
         nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
         attr: { channel: DB_CHANNEL[r.source] || 'direct' },
+        /* What Toju settled with the buyer before they made contact, when they
+           ran the negotiator. Absent on leads that did not. */
+        neg: (r.preferences && r.preferences.negotiation) || null,
       };
     }
     /* The agency's own people, fetched once. Both the Assign menu and the lead
@@ -2983,6 +2986,13 @@
         </div>
         ${l.failed ? `<div class="sec" style="border-color:var(--danger,#c0392b)"><div class="k">\u26a0 Not delivered</div><p style="margin-top:6px;font-size:13px;line-height:1.5">This lead reached you here, but the WhatsApp alert did not go out. Reach out from this screen.</p></div>` : ''}
         <div class="sec nba"><div class="k">\u2726 Next best action</div>${l.nba.text ? `<p style="margin-top:6px;font-size:13px;line-height:1.5">${l.nba.text}</p>` : ''}${doBtn(l)}</div>
+        ${l.neg ? `<div class="sec"><div class="k">✦ Toju already negotiated</div>${
+          l.neg.offer != null ? `<p style="margin-top:6px;font-size:19px;font-weight:700">${nairaShort(l.neg.offer)}<span class="muted" style="font-size:12px;font-weight:500"> opening offer</span></p>` : ''
+        }${
+          l.neg.advice ? `<p class="muted" style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(l.neg.advice)}</p>` : ''
+        }${
+          l.neg.draft ? `<p style="margin-top:10px;font-size:13px;line-height:1.6;padding:10px 12px;border-left:2px solid var(--border);background:rgba(0,0,0,0.02)">${esc2(l.neg.draft)}</p>` : ''
+        }</div>` : ''}
         <div class="sec"><div class="k">Assigned to</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${
           l.agentId ? (ROSTER_BY_ID[l.agentId] || 'A teammate') : 'Nobody yet'
         }</p></div>
