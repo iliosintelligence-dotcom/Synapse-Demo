@@ -347,21 +347,51 @@
      their owner, so this returned a list of blank names; migration 0045 lets
      members of the same agency see each other. Consumers are not agency
      members and stay invisible. */
+  /* The agency's people. This used to return only id/name/role, which was all
+     the Assign menu needed, so the Agents pane could not be built from it and
+     ran off a hard-coded empty array instead.
+
+     It now carries the agent's own profile too. agent_profiles is public-read
+     and joins profiles on profile_id, so the whole roster arrives in one
+     request. Every profile field stays null when the row does not exist -
+     never 0, never a placeholder - because "no rating recorded" and "rated
+     zero" are opposite claims about a person and the UI has to be able to
+     tell them apart. */
   function roster() {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return { data: [], error: null };
       return c1.from('agency_members')
-        .select('profile_id, role, profiles(full_name)')
+        .select('profile_id, role, joined_at, profiles(full_name, phone, whatsapp, avatar_url, ' +
+                'agent_profiles(bio, years_experience, languages, specializations, areas_covered, ' +
+                'response_rate_pct, closed_deals, avg_rating, certifications))')
         .eq('agency_id', aid)
         .is('deleted_at', null);
     }).then(function (r) {
       if (r.error) throw r.error;
       return (r.data || []).map(function (m) {
+        var p = m.profiles || {};
+        // PostgREST returns an object for a to-one embed and an array for
+        // to-many; agent_profiles.profile_id is the key, but accept both.
+        var ap = p.agent_profiles || {};
+        if (Array.isArray(ap)) ap = ap[0] || {};
+        var num = function (v) { return v == null ? null : Number(v); };
         return {
           id: m.profile_id,
-          name: (m.profiles && m.profiles.full_name) || 'Unnamed teammate',
+          name: p.full_name || 'Unnamed teammate',
           role: m.role,
+          joined: m.joined_at || null,
+          phone: p.phone || p.whatsapp || null,
+          avatar: p.avatar_url || null,
+          bio: ap.bio || null,
+          years: num(ap.years_experience),
+          languages: ap.languages || [],
+          specializations: ap.specializations || [],
+          areas: ap.areas_covered || [],
+          responseRate: num(ap.response_rate_pct),
+          closed: num(ap.closed_deals),
+          rating: num(ap.avg_rating),
+          certifications: ap.certifications || [],
         };
       }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     });

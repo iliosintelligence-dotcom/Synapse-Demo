@@ -449,6 +449,11 @@
     .lcard .ld b { color: var(--ink); font-size: 14px; }
 
     /* agents */
+    /* Profile facts that are lists — areas, specialisms, languages. Quiet by
+       design: they are reference, not controls, so they must not read as
+       tappable next to the real buttons in the same drawer. */
+    .ag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ag-chip { font: 500 12px var(--f-sans); color: var(--ink); background: var(--brand-tint); border-radius: 100px; padding: 5px 11px; }
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 18px; }
 
     /* Form fields — the foundational rule every .field wrapper in this file
@@ -2742,6 +2747,9 @@
         renderCrm();
         // the negotiator pane reads the same rows — no second fetch
         buildHandoffs(leads); renderHandoffs();
+        /* Whichever of the two requests lands second completes the picture:
+           the roster supplies the people, the leads supply their workload. */
+        if (AG.loaded && AGENTS.length) { tallyAgentLeads(); renderAgents(); }
       }).catch(err => {
         CRM.loaded = true;
         CRM.error = (err && err.message) || 'please refresh';
@@ -4628,34 +4636,133 @@
       `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0, { label: (leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0) + '%' })}</div></div>` +
       statTile(fmtB(salesValue()), 'Sales', null);
 
-    // ── agents — data-first cards + clickable profiles ──
-    // Your team. Empty until you invite real agents — this held five invented
-    // colleagues with invented win rates, response times and closed deals.
-    const AGENTS = [];
-    const first = n => n.split(' ')[0];
-    STATS.agents =
-      statTile(AGENTS.length, 'Agents', null) +
-      statTile(Math.round(AGENTS.reduce((s, a) => s + a.respM, 0) / AGENTS.length) + 'm', 'Avg first reply', [11, 10, 9, 9, 8, 8, 8, 8]) +
-      statTile(AGENTS.reduce((s, a) => s + a.active, 0), 'Active leads', [22, 25, 27, 26, 30, 32, 33, 34]) +
-      statTile(AGENTS.reduce((s, a) => s + a.closed, 0), 'Closed (qtr)', [1, 2, 1, 2, 2, 1, 2, 1]);
+    /* ── agents — the real roster ─────────────────────────────────────────
+       This was `const AGENTS = []` with a comment saying it would fill once
+       you invited someone. It never could: nothing ever wrote to it. Meanwhile
+       agency_members, profiles and agent_profiles already held the team, so an
+       agency with staff on the platform was shown "Just you so far".
+
+       It reads SynListings.roster() now. Numbers the database actually keeps
+       (career closed deals, rating, response rate, years, areas, languages)
+       are shown; numbers it does not keep are shown as "—" rather than
+       computed from nothing. Win rate and average first reply are the two that
+       went: agent_daily_snapshots is empty, so every value they had was
+       invented. Active leads is real — it is counted off the leads this portal
+       has already loaded, by assigned_agent_id. */
+    let AGENTS = [];
+    const first = n => String(n || '').split(' ')[0];
+    const AG = { loaded: false, error: null };
+
+    /* "—" for absent, the number for present. `|| '—'` would turn a real 0
+       closed deals into a dash, which is a different statement. */
+    const agNum = (v, suffix) => v == null ? '—' : (v + (suffix || ''));
+
+    /* Your own profile id, so the roster can tell you apart from your team.
+       Resolved once, best-effort: a card that cannot tell is a card that shows
+       the ordinary actions, which is the safe way to be wrong. */
+    let ME = null;
+    if (window.SynAuth && SynAuth.client) {
+      SynAuth.client().then((c) => c.auth.getSession()).then((r) => {
+        ME = (r && r.data && r.data.session && r.data.session.user && r.data.session.user.id) || null;
+        if (AG.loaded && AGENTS.length) renderAgents();
+      }).catch(() => {});
+    }
+
+    function loadAgents(){
+      if (!window.SynListings || !SynListings.roster) {
+        AG.loaded = true; AG.error = 'the data layer did not load'; renderAgents(); return;
+      }
+      SynListings.roster().then((people) => {
+        AGENTS = people.map((m) => ({
+          id: m.id,
+          nm: m.name,
+          rl: AG_ROLE[m.role] || m.role || 'Agent',
+          isOwner: m.role === 'agency_owner' || m.role === 'agency_admin',
+          phone: m.phone,
+          bio: m.bio,
+          years: m.years,
+          areas: m.areas,
+          specializations: m.specializations,
+          languages: m.languages,
+          certifications: m.certifications,
+          responseRate: m.responseRate,
+          closed: m.closed,
+          rating: m.rating,
+          active: 0,          // filled by tallyAgentLeads once leads are in
+          pending: false,
+        }));
+        AG.loaded = true; AG.error = null;
+        tallyAgentLeads();
+        renderAgents();
+      }).catch((err) => {
+        AG.loaded = true;
+        AG.error = (err && err.message) || 'please refresh';
+        AGENTS = [];
+        renderAgents();
+        console.error('roster load failed', err);
+      });
+    }
+
+    const AG_ROLE = {
+      agent: 'Agent', agency_admin: 'Admin', agency_owner: 'Owner',
+      platform_admin: 'Platform admin', consumer: 'Consumer',
+    };
+
+    /* Open leads per agent, off the rows the CRM already fetched. Runs after
+       either load finishes, because the two are independent requests and
+       whichever lands second is the one that can complete the picture. */
+    function tallyAgentLeads(){
+      if (!AGENTS.length) return;
+      const open = {};
+      (leads || []).forEach((l) => {
+        if (!l.agentId || l.stage === 'Won') return;
+        open[l.agentId] = (open[l.agentId] || 0) + 1;
+      });
+      AGENTS.forEach((a) => { a.active = open[a.id] || 0; });
+    }
+
+    STATS.agents = '';   // rebuilt from real numbers by renderAgentSummary
     /* The KPI strip and the two performance charts now live in the Ask-Toju
        side panel, so the Agents pane is just the roster. These render into the
        panel's markup, which only exists while that panel is open — hence the
        null checks rather than assuming the elements are on the page. */
     function renderAgentSummary() {
-      const real = AGENTS.filter(a => !a.pending);
+      /* Owners and admins are on the roster but are not carrying leads, so
+         they would drag every average down. The read here is about the people
+         actually working the floor. */
+      const real = AGENTS.filter(a => !a.pending && !a.isOwner);
+      const rated = real.filter(a => a.rating != null);
+      const withRate = real.filter(a => a.responseRate != null);
       const kpis = document.getElementById('agKpis');
       if (kpis) kpis.innerHTML = [
-        ['Headcount', real.length],
-        ['Avg first reply', (real.length ? Math.round(real.reduce((s, a) => s + a.respM, 0) / real.length) : 0) + 'm'],
-        ['Active leads', real.reduce((s, a) => s + a.active, 0)],
-        ['Closed · qtr', real.reduce((s, a) => s + a.closed, 0)],
+        ['Agents', real.length],
+        ['Active leads', real.reduce((s, a) => s + (a.active || 0), 0)],
+        /* Career totals, not "this quarter": closed_deals is a lifetime count
+           on the profile. Labelling it by a period we do not measure would be
+           a claim the data cannot support. */
+        ['Closed · career', real.reduce((s, a) => s + (a.closed || 0), 0) || '—'],
+        ['Avg rating', rated.length
+          ? (rated.reduce((s, a) => s + a.rating, 0) / rated.length).toFixed(1)
+          : '—'],
       ].map(k => `<div class="ag-kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
 
+      const blank = '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
+      const none  = '<p class="muted" style="font-size:13px;margin:0">Not recorded for anyone on this team yet.</p>';
       const closed = document.getElementById('agClosed');
-      if (closed) closed.innerHTML = real.length ? hbarsHTML(real.map(a => [first(a.nm), a.closed])) : '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
+      if (closed) {
+        const have = real.filter(a => a.closed != null);
+        closed.innerHTML = !real.length ? blank
+          : have.length ? hbarsHTML(have.map(a => [first(a.nm), a.closed])) : none;
+      }
+      /* Was average first reply in minutes, which nothing records. Response
+         rate is a real column on agent_profiles, so the panel shows that. */
       const reply = document.getElementById('agReply');
-      if (reply) reply.innerHTML = real.length ? hbarsHTML(real.map(a => [first(a.nm), a.respM]), 'm') : '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
+      if (reply) {
+        reply.innerHTML = !real.length ? blank
+          : withRate.length ? hbarsHTML(withRate.map(a => [first(a.nm), a.responseRate]), '%') : none;
+      }
+      const lbl = document.getElementById('agReplyLbl');
+      if (lbl) lbl.textContent = 'Response rate';
     }
 
     function renderAgents(){
@@ -4665,14 +4772,24 @@
       AGENTS.sort((a, b) => AGENT_SORT === 'leads'
         ? (b.active || 0) - (a.active || 0)
         : String(a.nm || '').localeCompare(String(b.nm || '')));
-      const real = AGENTS.filter(a => !a.pending);
-      const top = real.length ? real.reduce((b, a) => (a.closed > b.closed || (a.closed === b.closed && a.win > b.win)) ? a : b, real[0]) : null;
+      const real = AGENTS.filter(a => !a.pending && !a.isOwner);
+      /* Ranked on closed deals alone now. The tie-breaker used to be win rate,
+         which nothing records. Only agents with a recorded count can top the
+         list — an agent with no number is unranked, not last. */
+      const ranked = real.filter(a => a.closed != null);
+      const top = ranked.length ? ranked.reduce((b, a) => a.closed > b.closed ? a : b, ranked[0]) : null;
       const topIdx = top ? AGENTS.indexOf(top) : -1;
       renderAgentSummary();
+      const g = document.getElementById('agrid');
+      if (!AG.loaded) { g.innerHTML = '<p class="muted" style="font-size:13px">Loading your team…</p>'; return; }
+      if (AG.error) {
+        g.innerHTML = '<div class="ov-blank"><b>Could not load your team</b>'
+          + '<p>' + esc2(AG.error) + '</p></div>';
+        return;
+      }
       /* An agency with no teammates yet rendered an empty grid under the
          invite button. Say what this becomes instead. */
       if (!AGENTS.length) {
-        const g = document.getElementById('agrid');
         g.innerHTML =
           '<div class="ov-blank">'
           + '<span class="ov-blank-i" data-icon="user"></span>'
@@ -4688,53 +4805,74 @@
       document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
         if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
           <div class="ac-top"><span class="av">${initials(a.nm)}</span><div class="ac-id"><div class="ac-nm">${a.nm}</div><div class="ac-rl">${a.rl}</div></div></div>
-          <div class="ac-box"><div class="ac-col"><div class="ac-v">—</div><div class="ac-l">Active leads</div></div><div class="ac-col"><div class="ac-v">—</div><div class="ac-l">Win rate</div></div></div>
+          <div class="ac-box"><div class="ac-col"><div class="ac-v">—</div><div class="ac-l">Active leads</div></div><div class="ac-col"><div class="ac-v">—</div><div class="ac-l">Closed · career</div></div></div>
           <div class="ac-status pend">◷ Invite sent — awaiting response</div></div>`;
         const busy = a.active >= 10;
-        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${a.nm}'s profile — ${a.rl}" style="animation-delay:${i * 45}ms">
+        /* Second stat was win rate, invented. Career closed deals is a real
+           column; the owner row has no agent profile, so it says so. */
+        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${esc2(a.nm)}'s profile — ${esc2(a.rl)}" style="animation-delay:${i * 45}ms">
           <div class="ac-top">
             <span class="av">${initials(a.nm)}</span>
-            <div class="ac-id"><div class="ac-nm">${a.nm}${i === topIdx ? '<span class="ac-vf" title="Top performer this quarter">✓</span>' : ''}</div><div class="ac-rl">${a.rl}</div></div>
+            <div class="ac-id"><div class="ac-nm">${esc2(a.nm)}${i === topIdx ? '<span class="ac-vf" title="Most deals closed on this team">✓</span>' : ''}</div><div class="ac-rl">${esc2(a.rl)}${a.years != null ? ` · ${a.years} yr${a.years === 1 ? '' : 's'}` : ''}</div></div>
           </div>
           <div class="ac-box">
             <div class="ac-col"><div class="ac-v">${a.active}</div><div class="ac-l">Active leads</div></div>
-            <div class="ac-col"><div class="ac-v">${a.win}%</div><div class="ac-l">Win rate</div></div>
+            <div class="ac-col"><div class="ac-v">${agNum(a.closed)}</div><div class="ac-l">Closed · career</div></div>
           </div>
-          <div class="ac-acts">
+          ${a.id === ME ? '' : `<div class="ac-acts">
             <button class="ac-btn" data-msg="${i}">✉ Message</button>
             <button class="ac-btn" data-assign="${i}">✦ Assign lead</button>
-          </div>
-          <div class="ac-status ${busy ? 'busy' : 'free'}">${busy ? '◒ At capacity' : '● Available'}${a.closed ? ` · ${a.closed} closed this qtr` : ''}</div>
+          </div>`}
+          <div class="ac-status ${a.id === ME ? 'free' : (busy ? 'busy' : 'free')}">${a.id === ME ? '● This is you' : (busy ? '◒ At capacity' : '● Available')}${(a.areas && a.areas.length) ? ' · ' + esc2(a.areas.join(', ')) : ''}</div>
         </div>`;
       }).join('');
     }
     renderAgents();
+    loadAgents();
 
+    /* The agent's profile. Every chart in here used to be drawn from an array
+       that no longer exists: an 8-week sparkline of leads handled, a win-rate
+       ring, an 8-week reply-time trend, pipeline by stage, recent deals. Those
+       came from the five invented colleagues. agent_daily_snapshots is the
+       table that would feed them and it is empty, so drawing them at all would
+       be inventing a performance record for a named, real person.
+
+       What is left is what agent_profiles actually stores. This is also the
+       view a buyer will eventually see a version of, so it is written as a
+       profile rather than a dashboard. */
     function openAgent(i) {
       const a = AGENTS[i];
+      const chips = (list) => (list && list.length)
+        ? `<div class="ag-chips">${list.map(x => `<span class="ag-chip">${esc2(x)}</span>`).join('')}</div>`
+        : '<p class="muted" style="font-size:12.5px;margin:0">Not set yet.</p>';
+      const sec = (k, body) => `<div class="ap-sec"><div class="k">${k}</div>${body}</div>`;
+
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
         <div style="display:flex;align-items:center;gap:12px">
           <span class="av" style="width:52px;height:52px;font-size:16px">${initials(a.nm)}</span>
-          <div><div style="font-size:19px;font-weight:700">${a.nm}</div><div class="rl">${a.rl}</div></div>
+          <div><div style="font-size:19px;font-weight:700">${esc2(a.nm)}</div>
+            <div class="rl">${esc2(a.rl)}${a.years != null ? ` · ${a.years} year${a.years === 1 ? '' : 's'} experience` : ''}</div></div>
         </div>
         <div class="ap-hero">
           <div><div class="v">${a.active}</div><div class="l">Active leads</div></div>
-          <div><div class="v">${a.closed}</div><div class="l">Closed · qtr</div></div>
-          <div><div class="v">${a.respM}m</div><div class="l">Avg reply</div></div>
+          <div><div class="v">${agNum(a.closed)}</div><div class="l">Closed · career</div></div>
+          <div><div class="v">${a.rating == null ? '—' : a.rating.toFixed(1)}</div><div class="l">Rating</div></div>
         </div>
-        <div class="ap-sec"><div class="k">Leads handled · 8 weeks</div>${sparkSVG(a.weekly, { w: 356, h: 74, area: true })}</div>
-        <div class="ap-duo">
-          <div class="ap-sec"><div class="k">Win rate</div><div class="ringwrap">${ringSVG(a.win, { size: 84, sw: 9, fs: 16 })}</div><p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of closed conversations won</p></div>
-          <div class="ap-sec"><div class="k">First reply · minutes</div>${sparkSVG(a.respT, { w: 150, h: 56 })}<p class="muted" style="font-size:11px;margin-top:8px">${a.respT[0]}m → ${a.respT[7]}m over 8 weeks</p></div>
-        </div>
-        <div class="ap-sec"><div class="k">Pipeline by stage</div><div class="hbars">${hbarsHTML(a.stages)}</div></div>
-        <div class="ap-sec"><div class="k">Recent deals</div>${a.recent.map(r => `<div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin:7px 0"><span style="font-weight:600">${r[0]}</span><span class="muted" style="flex:none">${r[1]}</span></div>`).join('')}</div>`;
+        ${a.bio ? sec('About', `<p style="font-size:13px;line-height:1.55;margin:0">${esc2(a.bio)}</p>`) : ''}
+        ${sec('Areas covered', chips(a.areas))}
+        ${sec('Specialises in', chips(a.specializations))}
+        ${sec('Speaks', chips(a.languages))}
+        ${a.responseRate != null
+          ? sec('Response rate', `<div class="ringwrap">${ringSVG(a.responseRate, { size: 84, sw: 9, fs: 16 })}</div>`
+              + '<p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of buyer enquiries answered</p>')
+          : ''}
+        ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}
+        <p class="muted" style="font-size:11.5px;margin:16px 0 0;line-height:1.5">
+          Week-by-week performance history starts building once leads are assigned
+          to ${esc2(first(a.nm))} through the CRM.</p>`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
-      drawer.querySelectorAll('svg[data-pts]').forEach((svg, k) => {
-        wireSparkHover(svg, (idx, v) => `${v}${k === 1 ? ' min' : ' leads'}<small>${WKS[idx] || 'wk ' + (idx + 1)}</small>`);
-      });
     }
     document.getElementById('agrid').addEventListener('click', (e) => {
       const m = e.target.closest('[data-msg]'); if (m) { toast('Messaging ' + first(AGENTS[+m.dataset.msg].nm) + ' — opening the WhatsApp thread…'); return; }
@@ -4750,7 +4888,7 @@
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
         <div style="font-size:19px;font-weight:700">Invite a teammate</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 18px">They&#39;ll get a link to join this workspace. Set their role now.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">Sending invitation emails isn&#39;t connected yet, so nothing goes out from here. Agents already on Synapse appear on this roster automatically.</p>
         <div class="inv">
           <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr">⚠ Enter a valid email address</span></div>
           <div class="field"><label for="invRole">Role</label><select id="invRole"><option>Agent</option><option>Senior agent</option><option>Junior agent</option><option>Verification desk</option></select></div>
@@ -4766,10 +4904,22 @@
         send.disabled = !ok; send.setAttribute('aria-disabled', String(!ok));
       });
       email.focus();
+      /* This pushed a fake row onto AGENTS and toasted "Invite sent — they get
+         a link to join this workspace". Nothing was sent: no row was written,
+         no email left the browser, and the fake teammate disappeared on the
+         next refresh. Now that the roster is read from agency_members, a
+         fabricated row would also be sitting in a list of real people.
+
+         It cannot be finished from here. Adding someone means inserting into
+         agency_members with their profile_id, and an email address cannot be
+         resolved to a profile client-side — `profiles` has no email column and
+         auth.users is not readable from the browser. That needs an
+         agency_invites table and a function that emails the link. Until then
+         this says so instead of pretending. */
       send.addEventListener('click', () => {
         const v = email.value.trim(); if (!valid(v)) return;
-        AGENTS.push({ nm: v.split('@')[0], rl: document.getElementById('invRole').value, pending: true, active: 0, closed: 0, respM: 0, win: 0, weekly: [], respT: [], stages: [], recent: [] });
-        renderAgents(); closeLead(); toast('Invite sent — ' + v + ' gets a link to join this workspace.');
+        closeLead();
+        toast('Invites are not connected yet — nothing was sent to ' + v + '.');
       });
     }
     document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
@@ -5554,8 +5704,8 @@
         // The roster's summary lives here now, beside the cards rather than
         // stacked above them.
         + `<div class="tp-sec"><div class="tp-k">The floor</div><div class="ag-kpis" id="agKpis"></div></div>`
-        + `<div class="tp-sec"><div class="tp-k">Closed deals · this quarter</div><div class="hbars" id="agClosed"></div></div>`
-        + `<div class="tp-sec"><div class="tp-k">Avg first reply · minutes</div><div class="hbars" id="agReply"></div></div>`,
+        + `<div class="tp-sec"><div class="tp-k">Closed deals · career</div><div class="hbars" id="agClosed"></div></div>`
+        + `<div class="tp-sec"><div class="tp-k" id="agReplyLbl">Response rate</div><div class="hbars" id="agReply"></div></div>`,
         after: () => renderAgentSummary() },
       subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
         html: () => tpSummary('Your growth math', [
