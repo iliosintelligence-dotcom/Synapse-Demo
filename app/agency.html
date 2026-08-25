@@ -1247,7 +1247,12 @@
     .ovtab:hover:not(.on) { color: var(--ink); }
     .ov-grid { display: grid; grid-template-columns: 384px 1fr; gap: 18px; align-items: start; }
     .ov-list { display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 258px); overflow-y: auto; padding: 2px 6px 2px 2px; }
-    .ovi { display: flex; gap: 13px; padding: 12px; border-radius: 16px; background: var(--surface);
+    /* font: inherit is load-bearing — .ovi is a <button>, and a button does not
+       inherit font-family from the page: the UA gives it its own default. The
+       rule reset text-align and width but never the font, so every property
+       title and address in this list was rendering in Arial while the rest of
+       the portal is Josefin Sans. */
+    .ovi { font: inherit; display: flex; gap: 13px; padding: 12px; border-radius: 16px; background: var(--surface);
       border: 1px solid var(--border); cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; align-items: center; text-align: left; width: 100%; }
     .ovi:hover { border-color: rgba(54,54,54,0.35); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(20,26,38,0.07); }
     .ovi.on { border: 1.5px solid var(--brand-deep); box-shadow: 0 12px 28px rgba(54,54,54,0.15); }
@@ -1272,8 +1277,13 @@
        just as much to a dense card. Tracking is opened slightly at the small
        end for the same reason. */
     .ovi .rf { font: 700 10px var(--f-sans); letter-spacing: .08em; color: var(--ink-dim); text-transform: uppercase; }
-    .ovi .tt { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.3; margin: 3px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ovi .lc { font-size: 12.5px; letter-spacing: .005em; color: var(--ink-muted); }
+    /* Was one line with an ellipsis, which cut every single title in the list —
+       "Jericho Heights 4-Bedro…", "Haven Manor 2-Bedroo…". The title is how you
+       tell one listing from another, so it gets two lines before it clips. */
+    .ovi .tt { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.32; margin: 3px 0 2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .ovi .lc { font-size: 12.5px; letter-spacing: .005em; color: var(--ink-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ovi .rt { text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
     /* --f-serif is aliased to Josefin Sans, so this never rendered a serif --
        it just made the price a different weight and quietly promised a face
@@ -1332,8 +1342,11 @@
     .ov-dtab.on { background: var(--surface); color: var(--brand-text); box-shadow: 0 4px 12px rgba(20,26,38,0.09); }
     .ov-dtab:hover:not(.on) { color: var(--ink); }
     .ov-body { padding: 18px 16px 12px; }
-    .ovd-price { font: 500 34px var(--f-serif); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand-text); line-height: 1; }
-    .ovd-ttl { font-size: 15px; font-weight: 600; margin: 7px 0 14px; }
+    /* The detail led with a 34px price above a 15px title — smaller than the
+       same title in the list beside it, so opening a listing made its identity
+       shrink. The title leads now and the price supports it. */
+    .ovd-ttl { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; margin: 0 0 4px; }
+    .ovd-price { font: 500 24px var(--f-serif); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand-text); line-height: 1.1; margin: 0 0 12px; }
     .ovd-chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .ovd-chip { font-size: 12px; font-weight: 600; color: var(--ink-muted); background: rgba(0,0,0,0.04); border: 1px solid var(--border); border-radius: 100px; padding: 5px 12px; }
     .ovd-chip.warn { color: #8a6a18; background: rgba(156,122,30,0.1); border-color: rgba(156,122,30,0.28); }
@@ -6567,10 +6580,12 @@
       let body = '';
       if (OV.dtab === 'details') {
         body = `
+          <div class="ovd-ttl">${esc2(l.t)}</div>
           <div class="ovd-price">${nairaM(l.pr)}</div>
-          <div class="ovd-ttl">${l.t}</div>
           <div class="ovd-chips">
-            <span class="ovd-chip">${ovBeds(l.t)} beds</span>
+            <!-- ovBeds returns the regex capture, so it is a STRING: a strict
+                 === 1 was never true and every listing read "1 beds". -->
+            <span class="ovd-chip">${ovBeds(l.t)} bed${Number(ovBeds(l.t)) === 1 ? '' : 's'}</span>
             <span class="ovd-chip">◍ ${ovLoc(l)}</span>
             <span class="ovd-chip ${f.cls === 'ok' ? '' : f.cls}">${f.label}</span>
             <span class="ovd-chip">${l.leads} active ${l.leads === 1 ? 'lead' : 'leads'}</span>
