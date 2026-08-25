@@ -342,6 +342,15 @@
     .scrim.on { opacity: 1; pointer-events: auto; }
     .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform .28s cubic-bezier(.22,1,.36,1); overflow-y: auto; padding: 24px; }
     .drawer.on { transform: translateX(0); }
+    /* The drawer's own action row: same two controls as the card, sized for a
+       panel rather than a grid cell. */
+    .ap-do { display: flex; gap: 8px; margin-top: 16px; }
+    .ap-do .ac-btn { flex: 1; min-height: 44px; }
+    /* The invite link is the deliverable, so it is shown in full and is
+       selectable by hand — clipboard access can be refused and the agency must
+       still be able to get the link out. */
+    .inv-link { font: 12.5px/1.5 var(--f-mono, ui-monospace, monospace); word-break: break-all;
+      background: var(--brand-tint); border-radius: 12px; padding: 12px 14px; color: var(--ink); user-select: all; }
 
     /* ── tours ────────────────────────────────────────────────────────────
        A tour is a time, a place and a headcount. The headcount is the reason
@@ -4169,6 +4178,18 @@
       });
     }
 
+    /* Find a listing by id rather than by index: the Overview and the Listings
+       pane sort and filter independently, so a position in one is meaningless
+       in the other. Falls back to scrolling the card into view if the form is
+       not available for it. */
+    function openListingById(id) {
+      const i = LISTINGS_DATA.findIndex((x) => x.id === id);
+      if (i < 0) return;
+      const card = document.querySelector('#lgrid [data-edit="' + i + '"]');
+      if (card) card.scrollIntoView({ block: 'center' });
+      listingForm({ ...LISTINGS_DATA[i] }, i);
+    }
+
     document.getElementById('lgrid').addEventListener('click', (e) => {
       const ed = e.target.closest('[data-edit]');
       if (ed) { const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
@@ -4875,6 +4896,7 @@
        invented. Active leads is real — it is counted off the leads this portal
        has already loaded, by assigned_agent_id. */
     let AGENTS = [];
+    let PENDING = [];   // live invites, shown beside the people who have joined
     const first = n => String(n || '').split(' ')[0];
     const AG = { loaded: false, error: null };
 
@@ -4903,6 +4925,20 @@
            roster as a teammate, and a seeded profile named after the agency
            beside it. Filtered at the source so nothing downstream — sort,
            summary, top-performer — has to know about them. */
+        /* Pending invites ride on the roster as their own cards, so an agency
+           can see who has been asked and has not joined yet — otherwise an
+           invite disappears the moment the drawer closes. */
+        if (window.SynListings && SynListings.invites) {
+          SynListings.invites()
+            .then((rows) => {
+              PENDING = rows.map((r) => ({
+                inviteId: r.id, token: r.token, nm: r.email, pending: true,
+                rl: r.role === 'agency_admin' ? 'Admin' : 'Agent',
+              }));
+              renderAgents();
+            })
+            .catch(() => {});
+        }
         AGENTS = people.filter((m) => m.role === 'agent').map((m) => ({
           id: m.id,
           nm: m.name,
@@ -5035,16 +5071,20 @@
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(g);
         return;
       }
-      document.getElementById('agrid').innerHTML = AGENTS.map((a, i) => {
+      document.getElementById('agrid').innerHTML = AGENTS.concat(PENDING).map((a, i) => {
         const face = (x) => x.avatar
           ? `<img src="${esc2(x.avatar)}" alt="" loading="lazy">`
           : initials(x.nm);
         if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
-          <div class="ac-cover"><span class="ac-dot me">Invite sent</span></div>
+          <div class="ac-cover"><span class="ac-dot me">Invited</span></div>
           <div class="ac-body">
-            <div class="ac-face">${face(a)}</div>
-            <div class="ac-nm">${esc2(a.nm)}</div>
-            <div class="ac-rl">${esc2(a.rl)}</div>
+            <div class="ac-face">${initials(a.nm)}</div>
+            <div class="ac-nm" style="word-break:break-all">${esc2(a.nm)}</div>
+            <div class="ac-rl">${esc2(a.rl)} · hasn't joined yet</div>
+            <div class="ac-acts">
+              <button class="ac-btn solid" data-inv-copy="${esc2(a.token)}"><span data-icon="share"></span> Copy link</button>
+              <button class="ac-btn ghost" data-inv-revoke="${esc2(a.inviteId)}">Revoke</button>
+            </div>
           </div></div>`;
         const busy = a.active >= 10;
         const me = a.id === ME;
@@ -5082,6 +5122,34 @@
     renderAgents();
     loadAgents();
 
+    /* Arriving on an invite link. requireAuth has already sent an unauthenticated
+       visitor to sign in and back, so by here there is a session — the function
+       still checks that the invite belongs to THIS account's email address, so a
+       forwarded link cannot let the wrong person in. */
+    (function acceptInviteFromLink() {
+      const token = new URLSearchParams(location.search).get('invite');
+      if (!token || !window.SynListings || !SynListings.acceptInvite) return;
+      SynListings.acceptInvite(token)
+        .then((res) => {
+          const clean = location.pathname;
+          if (res.ok) {
+            toast('You have joined ' + (res.agency_name || 'the agency') + '.');
+            history.replaceState({}, '', clean);
+            setTimeout(() => location.reload(), 1200);
+            return;
+          }
+          const why = {
+            sign_in: 'Sign in first, then open the invite link again.',
+            wrong_account: 'That invite was sent to a different email address.',
+            invalid_or_expired: 'That invite has expired or has already been used.',
+            no_email: 'This account has no email address on it.',
+          }[res.reason] || 'That invite could not be used.';
+          toast(why);
+          history.replaceState({}, '', clean);
+        })
+        .catch(() => toast('That invite could not be checked just now.'));
+    })();
+
     /* The agent's profile. Every chart in here used to be drawn from an array
        that no longer exists: an 8-week sparkline of leads handled, a win-rate
        ring, an 8-week reply-time trend, pipeline by stage, recent deals. Those
@@ -5101,29 +5169,31 @@
 
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span class="av" style="width:52px;height:52px;font-size:16px">${initials(a.nm)}</span>
-          <div><div style="font-size:19px;font-weight:700">${esc2(a.nm)}</div>
+        <div class="dhead">
+          <span class="av" style="width:52px;height:52px;font-size:16px;flex:none">${initials(a.nm)}</span>
+          <div class="who"><div class="dnm">${esc2(a.nm)}</div>
             <div class="rl">${esc2(a.rl)}${a.years != null ? ` · ${a.years} year${a.years === 1 ? '' : 's'} experience` : ''}</div></div>
         </div>
+
+        <!-- The two things you open an agent to do, before anything you only
+             want to read. This drawer used to bury them under six sections. -->
+        ${a.id === ME ? '' : `<div class="ap-do">
+          <button class="ac-btn solid" data-msg="${i}"><span data-icon="chat"></span> Message</button>
+          <button class="ac-btn ghost" data-assign="${i}"><span data-icon="spark"></span> Assign lead</button>
+        </div>`}
+
         <div class="ap-hero">
           <div><div class="v">${a.active}</div><div class="l">Active leads</div></div>
           <div><div class="v">${agNum(a.closed)}</div><div class="l">Closed · career</div></div>
-          <div><div class="v">${a.rating == null ? '—' : a.rating.toFixed(1)}</div><div class="l">Rating</div></div>
+          <div><div class="v">${agNum(a.followers)}</div><div class="l">Followers</div></div>
         </div>
-        ${a.bio ? sec('About', `<p style="font-size:13px;line-height:1.55;margin:0">${esc2(a.bio)}</p>`) : ''}
-        ${sec('Areas covered', chips(a.areas))}
-        ${sec('Specialises in', chips(a.specializations))}
-        ${sec('Speaks', chips(a.languages))}
-        ${a.responseRate != null
-          ? sec('Response rate', `<div class="ringwrap">${ringSVG(a.responseRate, { size: 84, sw: 9, fs: 16 })}</div>`
-              + '<p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of buyer enquiries answered</p>')
-          : ''}
-        ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}
+
+        <!-- Availability sits high because it is the other thing an owner comes
+             here to change, and it is what makes this agent bookable at all. -->
         <div class="ap-sec"><div class="k">When ${esc2(first(a.nm))} can show</div>
           <p class="muted" style="font-size:11.5px;margin:0 0 10px;line-height:1.5">
-            Toju only ever offers buyers a time from this list \u2014 and only to buyers
-            it has already qualified. Several can share one visit.</p>
+            Toju only offers buyers a time from this list, and only buyers it has
+            already qualified. Several can share one visit.</p>
           <div id="avList"><p class="muted" style="font-size:12.5px">Loading…</p></div>
           <div class="av-add">
             <select id="avDay" aria-label="Day">
@@ -5141,9 +5211,17 @@
             <button class="btn btn-primary wide" id="avAdd" type="button">Add this window</button>
           </div>
         </div>
-        <p class="muted" style="font-size:11.5px;margin:16px 0 0;line-height:1.5">
-          Week-by-week performance history starts building once leads are assigned
-          to ${esc2(first(a.nm))} through the CRM.</p>`;
+
+        <!-- Everything below is the read, not the do. -->
+        ${a.bio ? sec('About', `<p style="font-size:13px;line-height:1.55;margin:0">${esc2(a.bio)}</p>`) : ''}
+        ${sec('Areas covered', chips(a.areas))}
+        ${sec('Specialises in', chips(a.specializations))}
+        ${sec('Speaks', chips(a.languages))}
+        ${a.responseRate != null
+          ? sec('Response rate', `<div class="ringwrap">${ringSVG(a.responseRate, { size: 84, sw: 9, fs: 16 })}</div>`
+              + '<p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of buyer enquiries answered</p>')
+          : ''}
+        ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
       wireAvailability(a);
@@ -5216,6 +5294,24 @@
       /* Both of these used to be toasts describing work you then had to go and
          do somewhere else — one sent you to WhatsApp, the other told you to
          find the lead in the CRM yourself. They open the drawer and do it. */
+      const cp = e.target.closest('[data-inv-copy]');
+      if (cp) {
+        e.stopPropagation();
+        const url = location.origin + location.pathname + '?invite=' + cp.dataset.invCopy;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(() => toast('Invite link copied.'))
+            .catch(() => toast(url));
+        } else toast(url);
+        return;
+      }
+      const rv = e.target.closest('[data-inv-revoke]');
+      if (rv) {
+        e.stopPropagation(); rv.disabled = true;
+        SynListings.revokeInvite(rv.dataset.invRevoke)
+          .then(() => { toast('Invite revoked — that link no longer works.'); loadAgents(); })
+          .catch(() => { rv.disabled = false; toast('Could not revoke that.'); });
+        return;
+      }
       const m = e.target.closest('[data-msg]'); if (m) { e.stopPropagation(); openAgentChat(+m.dataset.msg); return; }
       const s = e.target.closest('[data-assign]'); if (s) { e.stopPropagation(); openAssign(+s.dataset.assign); return; }
       const c = e.target.closest('[data-agent]'); if (c) openAgent(+c.dataset.agent);
@@ -5505,10 +5601,10 @@
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
         <div style="font-size:19px;font-weight:700">Invite a teammate</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 18px">Sending invitation emails isn&#39;t connected yet, so nothing goes out from here. Agents already on Synapse appear on this roster automatically.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">You&#39;ll get a link to send them yourself &mdash; we can&#39;t email it out yet. Only the address you invite can use it, and it lasts 14 days.</p>
         <div class="inv">
           <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr">⚠ Enter a valid email address</span></div>
-          <div class="field"><label for="invRole">Role</label><select id="invRole"><option>Agent</option><option>Senior agent</option><option>Junior agent</option><option>Verification desk</option></select></div>
+          <div class="field"><label for="invRole">Role</label><select id="invRole"><option value="agent">Agent &mdash; works leads and shows homes</option><option value="agency_admin">Admin &mdash; can also invite and manage</option></select></div>
           <button class="send" id="invSend" disabled aria-disabled="true">Send invite</button>
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
@@ -5535,8 +5631,41 @@
          this says so instead of pretending. */
       send.addEventListener('click', () => {
         const v = email.value.trim(); if (!valid(v)) return;
-        closeLead();
-        toast('Invites are not connected yet — nothing was sent to ' + v + '.');
+        send.disabled = true; send.textContent = 'Creating…';
+        SynListings.createInvite(v, document.getElementById('invRole').value)
+          .then((inv) => {
+            /* The link is the deliverable, since we cannot post it ourselves.
+               Shown, selectable, and copied for them where the browser allows. */
+            const url = location.origin + location.pathname + '?invite=' + inv.token;
+            drawer.innerHTML =
+              '<button class="x" id="drawerX">×</button>'
+              + '<div style="font-size:19px;font-weight:700">Invite ready</div>'
+              + '<p class="muted" style="font-size:12.5px;margin:8px 0 14px;line-height:1.55">'
+              + 'Send this to <b>' + esc2(inv.email) + '</b>. Only that address can use it, '
+              + 'and it expires in 14 days.</p>'
+              + '<div class="inv-link" id="invLink">' + esc2(url) + '</div>'
+              + '<button class="btn btn-primary btn-block" id="invCopy" style="margin-top:12px">Copy link</button>';
+            document.getElementById('drawerX').addEventListener('click', closeLead);
+            document.getElementById('invCopy').addEventListener('click', () => {
+              const done = () => toast('Link copied — send it to ' + inv.email + '.');
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(done).catch(() => selectLink());
+              } else selectLink();
+              function selectLink() {
+                /* Clipboard access can be refused; selecting the text means the
+                   agency can still copy it by hand rather than being stuck. */
+                const el = document.getElementById('invLink');
+                const rng = document.createRange(); rng.selectNodeContents(el);
+                const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(rng);
+                toast('Select and copy the link above.');
+              }
+            });
+            loadAgents();
+          })
+          .catch((err) => {
+            send.disabled = false; send.textContent = 'Send invite';
+            toast((err && err.message) || 'Could not create that invite.');
+          });
       });
     }
     document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
@@ -6447,7 +6576,7 @@
             <span class="ovd-chip">${l.leads} active ${l.leads === 1 ? 'lead' : 'leads'}</span>
           </div>
           <div class="ovd-actions">
-            <button class="ovd-btn primary" data-goto="listings">Open in Listings</button>
+            <button class="ovd-btn primary" data-goto="listings" data-goto-listing="${esc2(l.id || '')}">Open in Listings</button>
             <button class="ovd-btn" data-goto="crm">View leads</button>
           </div>`;
       } else if (OV.dtab === 'verification') {
@@ -6635,7 +6764,16 @@
       const dt = e.target.closest('[data-dt]');
       if (dt) { OV.dtab = dt.dataset.dt; renderOvDetail(ovFiltered()[OV.sel]); return; }
       const go = e.target.closest('[data-goto]');
-      if (go) { const a = document.querySelector(`#tabs a[data-pane="${go.dataset.goto}"]`); if (a) a.click(); }
+      if (go) {
+        const a = document.querySelector(`#tabs a[data-pane="${go.dataset.goto}"]`);
+        if (a) a.click();
+        /* "Open in Listings" used to land you on the pane and leave you to find
+           the listing again among all of them — which is the one thing you had
+           already told it. Carry the id across and open that property. The pane
+           renders on click, so this waits a frame for the card to exist. */
+        const lid = go.dataset.gotoListing;
+        if (lid) requestAnimationFrame(() => openListingById(lid));
+      }
     });
     document.getElementById('ovSearch').addEventListener('input', (e) => { OV.q = e.target.value; OV.sel = 0; renderOverview(); });
     let ovSortDesc = true;

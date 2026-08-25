@@ -357,6 +357,70 @@
      never 0, never a placeholder - because "no rating recorded" and "rated
      zero" are opposite claims about a person and the UI has to be able to
      tell them apart. */
+  /* ── inviting a teammate ─────────────────────────────────────────────────
+     The invite is a record with a token; the email is matched server-side when
+     the invitee accepts, because an address cannot be resolved to a profile
+     from the browser. Delivery is not configured, so the caller gets a link to
+     share — everything after that link is real. */
+  function invites() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('agency_invites')
+        .select('id, email, role, token, created_at, expires_at, accepted_at, revoked_at')
+        .eq('agency_id', aid)
+        .is('accepted_at', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  function createInvite(email, role) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) { me = u && u.data && u.data.user && u.data.user.id; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        return c1.from('agency_invites')
+          .insert({ agency_id: aid, email: String(email).trim().toLowerCase(),
+                    role: role || 'agent', invited_by: me })
+          .select('id, email, role, token, expires_at')
+          .single();
+      })
+      .then(function (r) {
+        if (r.error) {
+          /* The partial unique index is the real rule about duplicates, so its
+             violation is reported as the plain fact rather than as a crash. */
+          if (String(r.error.message || '').indexOf('agency_invites_live_idx') >= 0
+              || r.error.code === '23505') {
+            throw new Error('There is already a live invite for that address.');
+          }
+          throw r.error;
+        }
+        return r.data;
+      });
+  }
+
+  function revokeInvite(id) {
+    return client().then(function (c) {
+      return c.from('agency_invites').update({ revoked_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  function acceptInvite(token) {
+    return client().then(function (c) {
+      return c.rpc('accept_agency_invite', { p_token: token });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      return row || { ok: false, reason: 'unknown' };
+    });
+  }
+
   /* ── inspection availability + tours ─────────────────────────────────────
      Availability is what an agent has pre-cleared; Toju never proposes a time
      outside it. Tours are the concrete visits buyers have booked into.
@@ -1045,6 +1109,10 @@
     leads: leads,
     setLeadStage: setLeadStage,
     roster: roster,
+    invites: invites,
+    createInvite: createInvite,
+    revokeInvite: revokeInvite,
+    acceptInvite: acceptInvite,
     availability: availability,
     addAvailability: addAvailability,
     removeAvailability: removeAvailability,
