@@ -114,6 +114,42 @@
     .apc-follow[aria-pressed="true"] { background: var(--brand-deep); color: #fff; }
     .apc-follow[aria-pressed="true"] i { display: none; }
     .apc-follow:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+
+    /* ── booking an inspection ── */
+    .insp { margin-top: 13px; }
+    .insp-cta { width: 100%; min-height: 44px; border-radius: 100px; cursor: pointer; border: none;
+      background: var(--action); color: var(--action-on);
+      font: 600 14px var(--f-sans); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .insp-cta:hover { background: #FFA054; }
+    .insp-cta:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    .insp-cta[disabled] { background: var(--mist); color: var(--stone); cursor: default; }
+    .insp-panel { margin-top: 11px; }
+
+    /* One row per pre-cleared time. The headcount is the whole point of the
+       feature, so it is stated on every row rather than hidden behind a tap. */
+    .insp-slot { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      text-align: left; font: inherit; color: var(--ink); cursor: pointer; margin-bottom: 7px;
+      padding: 10px 13px; border-radius: 13px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.72); min-height: 44px; }
+    .insp-slot:hover:not([disabled]) { border-color: var(--brand-deep); }
+    .insp-slot[disabled] { cursor: default; opacity: .6; }
+    .insp-slot:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    /* Both are spans inside a span, so without display:block they ran together
+       on one line and wrapped through the middle of the agent's name. */
+    .insp-when { display: block; font-size: 13.5px; font-weight: 600; }
+    .insp-who { display: block; font-size: 11.5px; color: var(--ink-muted); margin-top: 2px; }
+    .insp-slot > span:first-child { min-width: 0; }
+    .insp-going { flex: none; font: 600 10.5px var(--f-sans); text-transform: uppercase; letter-spacing: .05em;
+      color: var(--ink-dim); background: var(--brand-tint); border-radius: 100px; padding: 4px 9px; }
+    .insp-going.joining { color: #1f6b45; background: var(--success-tint); }
+
+    .insp-note { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; }
+    .insp-note b { color: var(--ink); font-weight: 600; }
+    .insp-note .insp-act { display: inline-block; margin-top: 9px; font-weight: 600; color: var(--ink);
+      text-decoration: underline; text-underline-offset: 3px; cursor: pointer; background: none; border: none;
+      font-size: 12.5px; padding: 4px 0; }
+    .insp-ok { font-size: 12.5px; color: #1f6b45; background: var(--success-tint);
+      border-radius: 12px; padding: 11px 13px; line-height: 1.5; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
     /* true cost */
@@ -677,6 +713,14 @@
             <span class="apc-ag-nm" id="pvAgencyName">—</span>
             <span class="apc-ag-meta" id="pvAgencyMeta"></span>
           </div>
+          <!-- Inspection lives on the agent's card because the agent is who you
+               would be meeting. Hidden until we know a slot exists to offer. -->
+          <div class="insp" id="pvInsp" hidden>
+            <button type="button" class="insp-cta" id="pvInspBtn">
+              <span data-icon="calendar" aria-hidden="true"></span> See it in person
+            </button>
+            <div class="insp-panel" id="pvInspPanel" hidden></div>
+          </div>
           <div class="apc-foot" id="pvAgentSocial" hidden>
             <button type="button" class="apc-stat" id="pvLikeBtn" aria-pressed="false" aria-label="Like this agent">
               <span data-icon="heart" aria-hidden="true"></span><b id="pvLikeN">0</b>
@@ -1157,6 +1201,142 @@
                           : '\u00b7 Not yet verified');
       })();
 
+      /* ── booking an inspection ────────────────────────────────────────
+         The rules are all server-side (inspection_readiness / book_inspection
+         are SECURITY DEFINER), so this is presentation: it asks what is
+         missing and says so in words, or lists the times the agent actually
+         pre-cleared and books one.
+
+         Every slot row states how many people are already going, because
+         consolidating trips is the entire point — a buyer joining three others
+         should be able to see that they are. */
+      function wireInspection(a) {
+        const wrap = document.getElementById('pvInsp');
+        const btn  = document.getElementById('pvInspBtn');
+        const panel = document.getElementById('pvInspPanel');
+        if (!wrap || !btn || !window.SynAuth) return;
+
+        const fmtWhen = (iso) => {
+          const d = new Date(iso);
+          return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+            + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        };
+
+        /* Each reason names the one thing to do next. "Not qualified" on its
+           own tells a buyer nothing they can act on. */
+        const BLOCKED = {
+          sign_in:  ['Sign in to book a viewing.', 'Sign in', () => {
+            location.href = 'signin.html?reason=inspection&next=' + encodeURIComponent(location.pathname + location.search);
+          }],
+          contact:  ['Ask this agency about the home first — then you can book a viewing.', 'Contact agent', () => {
+            const c = document.getElementById('contactBtn'); if (c) c.click();
+          }],
+          qualification: ['Toju needs to understand what you are looking for before booking an agent\u2019s time.', 'Talk to Toju', () => {
+            location.href = 'toju.html';
+          }],
+          budget: ['Toju needs to know your budget for this one, so nobody\u2019s time is wasted.', 'Tell Toju', () => {
+            location.href = 'toju.html';
+          }],
+          budget_fit: ['This home is above the budget you gave Toju. Talk to Toju if that has changed.', 'Talk to Toju', () => {
+            location.href = 'toju.html';
+          }],
+          financial_readiness: ['Toju has a couple of questions about how you plan to pay before booking a viewing.', 'Talk to Toju', () => {
+            location.href = 'toju.html';
+          }],
+        };
+
+        const blocked = (missing) => {
+          const key = (missing || []).find((m) => BLOCKED[m]) || 'qualification';
+          const [text, label, act] = BLOCKED[key];
+          panel.innerHTML = '<p class="insp-note">' + esc(text) + '</p>';
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'insp-act'; b.textContent = label;
+          b.addEventListener('click', act);
+          panel.appendChild(b);
+          panel.hidden = false;
+        };
+
+        const listSlots = (client) => client.rpc('open_inspection_slots', { p_property_id: PROP_ID, p_days: 21 })
+          .then(({ data, error }) => {
+            if (error) throw error;
+            const slots = data || [];
+            if (!slots.length) {
+              panel.innerHTML = '<p class="insp-note">'
+                + esc(a.full_name ? a.full_name.split(' ')[0] : 'This agent')
+                + ' has no viewing times open in the next three weeks. Ask them directly and they can add one.</p>';
+              panel.hidden = false;
+              return;
+            }
+            panel.innerHTML = slots.map((s) => {
+              const left = Number(s.capacity) - Number(s.taken);
+              const going = Number(s.taken) === 0
+                ? 'Be first'
+                : Number(s.taken) + ' going';
+              return '<button type="button" class="insp-slot" data-at="' + esc(s.starts_at) + '">'
+                + '<span><span class="insp-when">' + esc(fmtWhen(s.starts_at)) + '</span>'
+                + '<span class="insp-who">' + esc(s.agent_name || 'Your agent') + ' \u00b7 ' + left + ' place' + (left === 1 ? '' : 's') + ' left</span></span>'
+                + '<span class="insp-going' + (Number(s.taken) > 0 ? ' joining' : '') + '">' + going + '</span>'
+                + '</button>';
+            }).join('');
+            panel.hidden = false;
+          });
+
+        const book = (client, startsAt, row) => {
+          row.disabled = true;
+          const tag = row.querySelector('.insp-going');
+          tag.textContent = 'Booking…';
+          return client.rpc('book_inspection', { p_property_id: PROP_ID, p_starts_at: startsAt })
+            .then(({ data, error }) => {
+              if (error) throw error;
+              const res = Array.isArray(data) ? data[0] : data;
+              if (!res || !res.ok) {
+                if (res && res.reason === 'slot_full') { tag.textContent = 'Full'; return; }
+                blocked((res && res.reason ? res.reason.split(',') : []));
+                return;
+              }
+              const n = Number(res.taken) || 1;
+              panel.innerHTML = '<div class="insp-ok"><b>You are booked in.</b><br>'
+                + esc(fmtWhen(startsAt)) + ' with ' + esc(a.full_name || 'your agent') + '. '
+                + (n > 1 ? n + ' people are going — you will get a reminder to confirm the day before.'
+                         : 'You will get a reminder to confirm the day before.')
+                + '</div>';
+              btn.disabled = true;
+              btn.innerHTML = 'Viewing booked';
+            })
+            .catch(() => { row.disabled = false; tag.textContent = 'Try again'; });
+        };
+
+        btn.addEventListener('click', () => {
+          if (!panel.hidden) { panel.hidden = true; return; }
+          panel.innerHTML = '<p class="insp-note">Checking…</p>';
+          panel.hidden = false;
+          SynAuth.client()
+            .then((client) => client.rpc('inspection_readiness', { p_property_id: PROP_ID })
+              .then(({ data, error }) => {
+                if (error) throw error;
+                const res = Array.isArray(data) ? data[0] : data;
+                if (!res || !res.ready) { blocked(res ? res.missing : ['sign_in']); return; }
+                return listSlots(client);
+              }))
+            .catch(() => {
+              panel.innerHTML = '<p class="insp-note">Could not check viewing times just now.</p>';
+            });
+        });
+
+        panel.addEventListener('click', (ev) => {
+          const row = ev.target.closest('[data-at]');
+          if (!row || row.disabled) return;
+          SynAuth.client().then((client) => book(client, row.dataset.at, row));
+        });
+
+        /* Only offer it when the agent has times to offer. Anonymous callers
+           can read slots, so this check works before sign-in too. */
+        SynAuth.client()
+          .then((client) => client.rpc('open_inspection_slots', { p_property_id: PROP_ID, p_days: 21 }))
+          .then(({ data }) => { if ((data || []).length) wrap.hidden = false; })
+          .catch(() => {});
+      }
+
       /* Follow and Like. Both are counted rows, one per person per agent, with
          the pair as the primary key — so tapping twice cannot inflate a count
          and the toggle is just an insert or a delete.
@@ -1281,6 +1461,7 @@
 
             AGENT_NAME = a.full_name;
             wireAgentSocial(a);
+            wireInspection(a);
           })
           .catch(() => { /* the agency identity on the card still stands */ });
       })();
