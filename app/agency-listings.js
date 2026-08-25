@@ -357,6 +357,155 @@
      never 0, never a placeholder - because "no rating recorded" and "rated
      zero" are opposite claims about a person and the UI has to be able to
      tell them apart. */
+  /* ── inspection availability + tours ─────────────────────────────────────
+     Availability is what an agent has pre-cleared; Toju never proposes a time
+     outside it. Tours are the concrete visits buyers have booked into.
+
+     RLS already scopes both to the agency (agent_availability is
+     is_agency_member, and viewings_select already allowed the agency), so
+     these queries only have to ask the right question. */
+  function availability(agentId) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      var q = c1.from('agent_availability')
+        .select('id, agent_id, property_id, weekday, specific_date, start_time, end_time, slot_minutes, capacity')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('weekday', { ascending: true });
+      return agentId ? q.eq('agent_id', agentId) : q;
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  function addAvailability(o) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('agent_availability').insert({
+        agency_id: aid,
+        agent_id: o.agentId || null,
+        property_id: o.propertyId || null,
+        weekday: o.weekday,
+        start_time: o.start,
+        end_time: o.end,
+        slot_minutes: o.slotMinutes || 60,
+        capacity: o.capacity || 4,
+      }).select('id').single();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data;
+    });
+  }
+
+  /* Soft delete: an availability rule that produced past tours is history, and
+     hard-deleting it would orphan the reason those visits existed. */
+  function removeAvailability(id) {
+    return client().then(function (c) {
+      return c.from('agent_availability').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /* Upcoming tours with who is coming. Two requests rather than one embed:
+     inspection_slots has no foreign key to viewings that PostgREST can follow
+     in this direction, and the attendee list needs the consumer name off the
+     lead. */
+  function tours(days) {
+    var c1, aid1, slots;
+    var from = new Date().toISOString();
+    var to = new Date(Date.now() + (days || 30) * 864e5).toISOString();
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      aid1 = aid;
+      return c1.from('inspection_slots')
+        .select('id, agent_id, property_id, starts_at, duration_minutes, capacity, status, agency_note, properties(title, city), profiles:agent_id(full_name)')
+        .eq('agency_id', aid)
+        /* Cancelled tours are kept, not hidden. A tour that was called off is
+           part of the record — who had booked, and that it did not happen —
+           and an agency that cannot see it cannot answer for it. Buyers are a
+           different matter: open_inspection_slots still excludes cancelled, so
+           nobody can join one. */
+        .gte('starts_at', from)
+        .lte('starts_at', to)
+        .order('starts_at', { ascending: true });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      slots = r.data || [];
+      if (!slots.length) return { data: [] };
+      return c1.from('viewings')
+        .select('id, slot_id, consumer_id, status, lead_id, leads:lead_id(consumer_name, consumer_phone)')
+        .in('slot_id', slots.map(function (s) { return s.id; }))
+        .is('deleted_at', null);
+    }).then(function (vr) {
+      if (vr && vr.error) throw vr.error;
+      var byslot = {};
+      ((vr && vr.data) || []).forEach(function (v) {
+        (byslot[v.slot_id] = byslot[v.slot_id] || []).push({
+          id: v.id,
+          /* Carried so a cancelled tour can message these buyers back through
+             the outbox, which addresses leads rather than viewings. */
+          leadId: v.lead_id || null,
+          status: v.status,
+          name: (v.leads && v.leads.consumer_name) || 'A Synapse buyer',
+          phone: (v.leads && v.leads.consumer_phone) || null,
+        });
+      });
+      return slots.map(function (s) {
+        /* On a live tour the head count is who is still coming. On a cancelled
+           one it is who HAD booked, because that is the thing worth seeing
+           afterwards. */
+        var all = byslot[s.id] || [];
+        var people = s.status === 'cancelled'
+          ? all
+          : all.filter(function (x) { return x.status !== 'cancelled'; });
+        return {
+          id: s.id,
+          at: s.starts_at,
+          minutes: s.duration_minutes,
+          capacity: s.capacity,
+          status: s.status,
+          note: s.agency_note,
+          agent: (s.profiles && s.profiles.full_name) || 'Unassigned',
+          property: (s.properties && s.properties.title) || 'Listing unavailable',
+          city: (s.properties && s.properties.city) || '',
+          people: people,
+          /* Confirmed attendance is what the agent should plan around: someone
+             who has not answered the reconfirmation is not a headcount yet. */
+          confirmed: people.filter(function (x) { return x.status === 'confirmed'; }).length,
+        };
+      });
+    });
+  }
+
+  /* One call, so a cancellation cannot half-happen: the slot, the attendance
+     rows and the affected leads all move together, and every buyer whose only
+     tour this was goes back to `qualified` so they can be offered a new time.
+     Nothing is deleted — cancelled rows stay as the record. */
+  function cancelTour(id) {
+    return client().then(function (c) {
+      return c.rpc('cancel_inspection_slot', { p_slot_id: id });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.ok) throw new Error('That tour could not be cancelled');
+      return { affected: row.affected, leadsReset: row.leads_reset };
+    });
+  }
+
+  function setSlotStatus(id, status) {
+    return client().then(function (c) {
+      return c.from('inspection_slots').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  function setViewingStatus(id, status) {
+    return client().then(function (c) {
+      return c.from('viewings').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
   /* ── team messaging ──────────────────────────────────────────────────────
      The agency's own thread with one of its people, in the app. RLS already
      restricts a row to its two participants inside an agency they share, so
@@ -896,6 +1045,13 @@
     leads: leads,
     setLeadStage: setLeadStage,
     roster: roster,
+    availability: availability,
+    addAvailability: addAvailability,
+    removeAvailability: removeAvailability,
+    tours: tours,
+    cancelTour: cancelTour,
+    setSlotStatus: setSlotStatus,
+    setViewingStatus: setViewingStatus,
     thread: thread,
     sendTeamMessage: sendTeamMessage,
     relationshipManager: relationshipManager,

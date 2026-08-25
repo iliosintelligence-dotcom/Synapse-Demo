@@ -343,6 +343,59 @@
     .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform .28s cubic-bezier(.22,1,.36,1); overflow-y: auto; padding: 24px; }
     .drawer.on { transform: translateX(0); }
 
+    /* ── tours ────────────────────────────────────────────────────────────
+       A tour is a time, a place and a headcount. The headcount is the reason
+       the feature exists, so it is the loudest thing on the row after the
+       time itself. */
+    .tour { padding: 15px 16px; margin-bottom: 10px; }
+    .tour-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .tour-when { font: 700 15px var(--f-sans); color: var(--ink); }
+    .tour-what { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; }
+    .tour-state { flex: none; font: 600 10.5px var(--f-sans); text-transform: uppercase; letter-spacing: .05em;
+      padding: 4px 10px; border-radius: 100px; }
+    .tour-state.open { color: #7a5410; background: var(--warn-tint); }
+    .tour-state.confirmed { color: #1f6b45; background: var(--success-tint); }
+    .tour-state.completed { color: var(--ink-dim); background: var(--brand-tint); }
+    .tour-state.cancelled { color: var(--danger); background: rgba(178,59,59,0.1); }
+    /* A cancelled tour stays legible but stops competing with live ones. */
+    .tour.is-cancelled { opacity: .72; }
+    .tour.is-cancelled .tour-when { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+    .tour-count { display: flex; align-items: baseline; gap: 7px; margin-top: 13px; }
+    .tour-count b { font: 600 22px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; }
+    .tour-count span { font-size: 12.5px; color: var(--ink-muted); }
+
+    .tour-people { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+    .tour-person { display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--f-sans);
+      background: var(--brand-tint); border-radius: 100px; padding: 5px 11px; color: var(--ink); }
+    /* Confirmed / unconfirmed is the no-show signal, so it is carried on the
+       person rather than summarised away. */
+    .tour-person i { font-style: normal; font-size: 10px; }
+    .tour-person.yes { background: var(--success-tint); color: #1f6b45; }
+    .tour-person.no { opacity: .6; }
+
+    .tour-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .tour-btn { border-radius: 100px; padding: 9px 15px; min-height: 40px; cursor: pointer;
+      font: 600 12.5px var(--f-sans); border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.7); color: var(--ink); }
+    .tour-btn.solid { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
+    .tour-btn:hover { border-color: var(--brand-deep); }
+    .tour-btn:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+
+    /* ── when an agent shows, inside their profile ── */
+    .av-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6); margin-bottom: 7px; }
+    .av-when { font: 600 13px var(--f-sans); }
+    .av-meta { font-size: 11.5px; color: var(--ink-muted); margin-top: 2px; }
+    .av-del { border: none; background: none; cursor: pointer; color: var(--ink-dim); font-size: 16px; line-height: 1; padding: 6px; }
+    .av-del:hover { color: var(--danger); }
+    .av-add { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .av-add select, .av-add input { height: 42px; padding: 0 12px; border-radius: 11px;
+      border: 1px solid var(--border-strong); background: rgba(255,255,255,0.75);
+      font: 14px var(--f-sans); color: var(--ink); outline: none; min-width: 0; }
+    .av-add .wide { grid-column: 1 / -1; }
+
     /* ── drawer: message a teammate ───────────────────────────────────────
        Lives here, beside .drawer, on purpose. These rules were originally
        written next to the agent-card block and a later rewrite of that block
@@ -2188,6 +2241,7 @@
         <button class="grp" aria-expanded="true" aria-controls="grp-team"><span>Team</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-team">
           <a data-pane="agents" title="Agents"><span data-icon="user"></span><span class="lbl-x">Agents</span></a>
+          <a data-pane="tours" title="Tours"><span data-icon="calendar"></span><span class="lbl-x">Tours</span></a>
           <a data-pane="brand" title="Brand"><span data-icon="spark"></span><span class="lbl-x">Brand</span></a>
         </div>
       </div>
@@ -2385,6 +2439,26 @@
             </div>
           </div>
           <div id="handoffs"></div>
+        </section>
+
+        <!-- ══ TOURS ══ -->
+        <section class="pane" id="pane-tours">
+          <div class="eyebrow" data-agency-eyebrow>Your team</div>
+          <div class="h1">Tours</div>
+          <p class="muted" style="font-size:14px;margin-top:4px">One trip, several buyers. Toju only ever offers times your agents have already cleared.</p>
+
+          <div class="crm-tools" data-pane-filters style="margin-top:18px">
+            <div class="crm-tools-l">
+              <div class="seg" id="tourFilter">
+                <button class="seg-b on" data-tf="all">All</button>
+                <button class="seg-b" data-tf="open">Needs confirming</button>
+                <button class="seg-b" data-tf="confirmed">Confirmed</button>
+                <button class="seg-b" data-tf="cancelled">Cancelled</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="toursList"><p class="muted" style="font-size:13px">Loading…</p></div>
         </section>
 
         <!-- ══ LISTINGS ══ -->
@@ -5046,12 +5120,98 @@
               + '<p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of buyer enquiries answered</p>')
           : ''}
         ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}
+        <div class="ap-sec"><div class="k">When ${esc2(first(a.nm))} can show</div>
+          <p class="muted" style="font-size:11.5px;margin:0 0 10px;line-height:1.5">
+            Toju only ever offers buyers a time from this list \u2014 and only to buyers
+            it has already qualified. Several can share one visit.</p>
+          <div id="avList"><p class="muted" style="font-size:12.5px">Loading…</p></div>
+          <div class="av-add">
+            <select id="avDay" aria-label="Day">
+              <option value="1">Monday</option><option value="2">Tuesday</option>
+              <option value="3">Wednesday</option><option value="4">Thursday</option>
+              <option value="5">Friday</option><option value="6" selected>Saturday</option>
+              <option value="0">Sunday</option>
+            </select>
+            <select id="avCap" aria-label="Buyers per visit">
+              <option value="2">2 buyers</option><option value="3">3 buyers</option>
+              <option value="4" selected>4 buyers</option><option value="6">6 buyers</option>
+            </select>
+            <input id="avFrom" type="time" value="10:00" aria-label="From">
+            <input id="avTo" type="time" value="13:00" aria-label="To">
+            <button class="btn btn-primary wide" id="avAdd" type="button">Add this window</button>
+          </div>
+        </div>
         <p class="muted" style="font-size:11.5px;margin:16px 0 0;line-height:1.5">
           Week-by-week performance history starts building once leads are assigned
           to ${esc2(first(a.nm))} through the CRM.</p>`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
+      wireAvailability(a);
     }
+
+    /* ── when an agent can show ───────────────────────────────────────────
+       The pool Toju draws from. Nothing here proposes a time; it records the
+       windows the agency has pre-cleared, and open_inspection_slots expands
+       them into the concrete times a buyer sees. */
+    const AV_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const avTime = (t) => String(t || '').slice(0, 5);
+
+    function wireAvailability(a) {
+      const list = document.getElementById('avList');
+      if (!list || !a || !a.id || !window.SynListings || !SynListings.availability) return;
+
+      const paint = (rows) => {
+        if (!rows.length) {
+          list.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0 0 4px">'
+            + 'No times set yet, so nothing can be booked with ' + esc2(first(a.nm)) + '.</p>';
+          return;
+        }
+        list.innerHTML = rows.map((r) => {
+          const when = r.specific_date
+            ? new Date(r.specific_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+            : AV_DAYS[r.weekday] + 's';
+          const perVisit = Math.max(1, Math.floor(
+            ((new Date('1970-01-01T' + r.end_time) - new Date('1970-01-01T' + r.start_time)) / 60000) / (r.slot_minutes || 60)));
+          return '<div class="av-row"><div>'
+            + '<div class="av-when">' + esc2(when) + ' \u00b7 ' + esc2(avTime(r.start_time)) + '\u2013' + esc2(avTime(r.end_time)) + '</div>'
+            + '<div class="av-meta">' + perVisit + ' visit' + (perVisit === 1 ? '' : 's')
+            + ' \u00b7 up to ' + r.capacity + ' buyers each</div>'
+            + '</div><button class="av-del" type="button" data-av-del="' + r.id + '" aria-label="Remove this window">\u00d7</button></div>';
+        }).join('');
+      };
+
+      const load = () => SynListings.availability(a.id).then(paint).catch(() => {
+        list.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load these times.</p>';
+      });
+      load();
+
+      list.addEventListener('click', (ev) => {
+        const del = ev.target.closest('[data-av-del]');
+        if (!del) return;
+        del.disabled = true;
+        SynListings.removeAvailability(del.dataset.avDel)
+          .then(() => { toast('Window removed.'); load(); })
+          .catch(() => { del.disabled = false; toast('Could not remove that.'); });
+      });
+
+      const add = document.getElementById('avAdd');
+      add.addEventListener('click', () => {
+        const from = document.getElementById('avFrom').value;
+        const to = document.getElementById('avTo').value;
+        if (!from || !to || to <= from) { toast('The end time has to be after the start.'); return; }
+        add.disabled = true;
+        SynListings.addAvailability({
+          agentId: a.id,
+          weekday: +document.getElementById('avDay').value,
+          start: from, end: to,
+          capacity: +document.getElementById('avCap').value,
+        })
+          .then(() => { toast(first(a.nm) + ' can now show at that time.'); load(); })
+          .catch((err) => toast((err && err.message) || 'Could not save that window.'))
+          .then(() => { add.disabled = false; });
+      });
+    }
+
     document.getElementById('agrid').addEventListener('click', (e) => {
       /* Both of these used to be toasts describing work you then had to go and
          do somewhere else — one sent you to WhatsApp, the other told you to
@@ -5064,6 +5224,169 @@
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const c = e.target.closest('[data-agent]'); if (c) { e.preventDefault(); openAgent(+c.dataset.agent); }
     });
+    /* ── tours ────────────────────────────────────────────────────────────
+       Upcoming group inspections. The agency confirms a slot it has already
+       pre-cleared — accept or adjust, not open-ended scheduling — and can see
+       exactly who is coming before the day.
+
+       Headcount is deliberately split into "booked" and "confirmed": someone
+       who has not answered the reconfirmation is not a body at the door, and
+       the whole point of reconfirming is that the agent learns that in advance
+       rather than standing outside a house waiting. */
+    let TOURS = [];
+    let TOUR_FILTER = 'all';
+    const TOUR_ST = { open: 'Needs confirming', confirmed: 'Confirmed', completed: 'Done', cancelled: 'Cancelled' };
+
+    function tourWhen(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+        + ' \u00b7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+    /* Reconfirmation is due inside 48h — that is the window where an accurate
+       headcount still changes what the agent does with their day. */
+    const tourDueSoon = (iso) => {
+      const h = (new Date(iso) - Date.now()) / 36e5;
+      return h > 0 && h <= 48;
+    };
+
+    function renderTours() {
+      const host = document.getElementById('toursList');
+      if (!host) return;
+      const rows = TOUR_FILTER === 'all' ? TOURS : TOURS.filter((t) => t.status === TOUR_FILTER);
+      if (!TOURS.length) {
+        host.innerHTML = '<div class="ov-blank">'
+          + '<span class="ov-blank-i" data-icon="calendar"></span>'
+          + '<b>No tours booked yet</b>'
+          + '<p>Set when an agent can show \u2014 open their profile on the Agents page \u2014 and Toju '
+          + 'offers those times to buyers it has already qualified. Several buyers on one visit '
+          + 'means one trip, not four.</p></div>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(host);
+        return;
+      }
+      if (!rows.length) {
+        host.innerHTML = '<div class="ov-blank"><b>Nothing at that status</b>'
+          + '<p>No tour is ' + esc2((TOUR_ST[TOUR_FILTER] || TOUR_FILTER).toLowerCase()) + ' right now.</p></div>';
+        return;
+      }
+      host.innerHTML = rows.map((t) => {
+        const soon = tourDueSoon(t.at);
+        const people = t.people.map((p) => {
+          const yes = p.status === 'confirmed';
+          return '<span class="tour-person ' + (yes ? 'yes' : 'no') + '">'
+            + '<i>' + (yes ? '\u2713' : '\u25cb') + '</i>' + esc2(p.name) + '</span>';
+        }).join('');
+        const dead = t.status === 'cancelled';
+        return '<div class="card tour' + (dead ? ' is-cancelled' : '') + '">'
+          + '<div class="tour-top"><div>'
+          +   '<div class="tour-when">' + esc2(tourWhen(t.at)) + '</div>'
+          +   '<div class="tour-what">' + esc2(t.property) + (t.city ? ' \u00b7 ' + esc2(t.city) : '')
+          +     ' \u00b7 ' + esc2(t.agent) + '</div>'
+          + '</div>'
+          + '<span class="tour-state ' + esc2(t.status) + '">' + esc2(TOUR_ST[t.status] || t.status) + '</span>'
+          + '</div>'
+          + '<div class="tour-count"><b>' + t.people.length + '</b>'
+          +   (dead
+                ? '<span>had booked · this tour was cancelled</span>'
+                : '<span>booked of ' + t.capacity + ' · <b style="font:inherit;color:inherit">'
+                  + t.confirmed + '</b> confirmed</span>')
+          + '</div>'
+          + (people ? '<div class="tour-people">' + people + '</div>' : '')
+          + (dead
+              /* The pathway back. Cancelling already returned these buyers to
+                 `qualified`, so the tour button is live again on the listing —
+                 this tells them so, through the same outbox every other message
+                 to a buyer uses. */
+              ? (t.people.length
+                  ? '<div class="tour-acts"><button class="tour-btn solid" data-tour-rebook="' + t.id + '">'
+                    + 'Invite ' + t.people.length + ' back to pick a new time</button></div>'
+                  : '')
+              : '<div class="tour-acts">'
+          +   (t.status === 'open'
+                ? '<button class="tour-btn solid" data-tour-confirm="' + t.id + '">Confirm this tour</button>'
+                : '')
+          +   (soon
+                ? '<button class="tour-btn" data-tour-remind="' + t.id + '">Ask everyone to reconfirm</button>'
+                : '')
+          +   '<button class="tour-btn" data-tour-cancel="' + t.id + '">Cancel</button>'
+          + '</div>')
+          + '</div>';
+      }).join('');
+    }
+
+    function loadTours() {
+      if (!window.SynListings || !SynListings.tours) return;
+      SynListings.tours(45)
+        .then((rows) => { TOURS = rows; renderTours(); })
+        .catch((err) => {
+          const host = document.getElementById('toursList');
+          if (host) host.innerHTML = '<div class="ov-blank"><b>Could not load tours</b><p>'
+            + esc2((err && err.message) || 'please refresh') + '</p></div>';
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+      const seg = e.target.closest('#tourFilter .seg-b');
+      if (seg) {
+        [...seg.parentNode.children].forEach((x) => x.classList.toggle('on', x === seg));
+        TOUR_FILTER = seg.dataset.tf; renderTours(); return;
+      }
+      const ok = e.target.closest('[data-tour-confirm]');
+      if (ok) {
+        ok.disabled = true; ok.textContent = 'Confirming…';
+        SynListings.setSlotStatus(ok.dataset.tourConfirm, 'confirmed')
+          .then(() => { toast('Tour confirmed \u2014 everyone booked in will be told.'); loadTours(); })
+          .catch(() => { ok.disabled = false; ok.textContent = 'Confirm this tour'; toast('Could not confirm that.'); });
+        return;
+      }
+      const no = e.target.closest('[data-tour-cancel]');
+      if (no) {
+        no.disabled = true;
+        /* One call: the slot, its attendance rows and the affected leads move
+           together, and anyone whose only tour this was goes back to
+           `qualified` so they can be offered a new time. */
+        SynListings.cancelTour(no.dataset.tourCancel)
+          .then((res) => {
+            toast('Tour cancelled — ' + res.affected + ' ' + (res.affected === 1 ? 'buyer' : 'buyers')
+              + ' affected' + (res.leadsReset ? ', ' + res.leadsReset + ' back in the pipeline' : '') + '.');
+            loadTours();
+          })
+          .catch(() => { no.disabled = false; toast('Could not cancel that.'); });
+        return;
+      }
+      const re = e.target.closest('[data-tour-rebook]');
+      if (re) {
+        const t = TOURS.find((x) => x.id === re.dataset.tourRebook);
+        if (!t) return;
+        const leadIds = t.people.map((p) => p.leadId).filter(Boolean);
+        if (!leadIds.length) { toast('These buyers have no lead to message on.'); return; }
+        re.disabled = true; re.textContent = 'Inviting…';
+        SynListings.queueMessages(leadIds,
+          'The viewing you booked has been cancelled, and we are sorry for the change. '
+          + 'New times are open on the listing now — you can pick one that suits you.')
+          .then((res) => { toast('Queued for ' + res.queued + ' ' + (res.queued === 1 ? 'buyer' : 'buyers') + ' in the outbox.'); })
+          .catch((err) => { re.disabled = false; re.textContent = 'Invite back to pick a new time';
+                            toast((err && err.message) || 'Could not queue that.'); });
+        return;
+      }
+
+      /* Reconfirmation is a real state change on each attendance row, not a
+         notification we cannot send: everyone still unanswered is put back to
+         `requested`, so the headcount above stops counting them as confirmed
+         until they say yes. Delivery rides on the same outbox as everything
+         else once Twilio is configured. */
+      const rem = e.target.closest('[data-tour-remind]');
+      if (rem) {
+        const t = TOURS.find((x) => x.id === rem.dataset.tourRemind);
+        if (!t) return;
+        const pending = t.people.filter((p) => p.status !== 'confirmed');
+        if (!pending.length) { toast('Everyone has already confirmed.'); return; }
+        rem.disabled = true; rem.textContent = 'Asking…';
+        Promise.all(pending.map((p) => SynListings.setViewingStatus(p.id, 'requested')))
+          .then(() => { toast('Asked ' + pending.length + ' ' + (pending.length === 1 ? 'buyer' : 'buyers') + ' to reconfirm.'); loadTours(); })
+          .catch(() => { rem.disabled = false; rem.textContent = 'Ask everyone to reconfirm'; toast('Could not send that.'); });
+      }
+    });
+
     /* ── message an agent, in the app ─────────────────────────────────────
        The old button toasted "opening the WhatsApp thread" and opened nothing.
        There is no reason for an agency to leave the product to talk to its own
@@ -6447,6 +6770,7 @@
        function is what stops a notification from highlighting a tab without
        actually switching the view, or vice versa. */
     function goToPane(pane) {
+      if (pane === 'tours' && typeof loadTours === 'function') loadTours();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
       const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
