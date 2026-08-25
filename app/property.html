@@ -77,30 +77,43 @@
        the job. */
     .pvtrust-row { display: none; }
     .agency { display: flex; align-items: center; gap: 14px; }
-    /* The listing agent, under the agency inside the same card. The rule above
-       it is what makes the two read as one attribution — agency, then the
-       person answering for it — rather than two unrelated facts. */
-    .lagent { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(54,54,54,0.14); }
-    /* `display` on the class beats the hidden attribute's UA display:none, so
-       a listing with no named agent still drew the divider and an empty avatar
-       under the agency. The attribute has to be given the property back. */
-    .lagent[hidden] { display: none; }
-    .lagent .la-av { width: 40px; height: 40px; flex: none; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--brand); background-size: cover; background-position: center; }
-    .lagent .la-nm { font-weight: 600; font-size: 14px; }
-    .lagent .la-meta { font-size: 12px; margin-top: 1px; }
-    /* Two counted actions, sitting under the agent rather than in a bordered
-       row of their own — the card is already one surface. */
-    .la-social { display: flex; gap: 8px; margin-top: 12px; }
-    .la-sbtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-      min-height: 40px; padding: 8px 12px; border-radius: 100px; cursor: pointer;
-      border: 1px solid rgba(54,54,54,0.22); background: rgba(255,255,255,0.66);
-      font: 600 12.5px var(--f-sans); color: var(--ink); }
-    .la-sbtn:hover { border-color: rgba(54,54,54,0.4); }
-    .la-sbtn:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
-    .la-sbtn b { font-variant-numeric: lining-nums tabular-nums; }
-    /* Pressed state carries colour on the fill, never on the label text. */
-    .la-sbtn[aria-pressed="true"] { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
-    .la-sbtn[disabled] { opacity: .55; cursor: default; }
+    /* ── the agent, as a portrait card ── */
+    .apc { border-radius: 18px; overflow: hidden; background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.75); box-shadow: 0 10px 30px rgba(122,62,22,0.09); }
+    .apc-photo { position: relative; width: 100%; aspect-ratio: 4 / 3; background: rgba(54,54,54,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font: 700 30px var(--f-sans); color: var(--brand); background-size: cover; background-position: 50% 28%; }
+    .apc-photo.has-photo span { display: none; }
+    .apc-body { padding: 13px 15px 15px; }
+    .apc-nm { display: flex; align-items: center; gap: 7px; font: 700 18px var(--f-sans); color: var(--ink); }
+    .apc-vf { width: 17px; height: 17px; flex: none; border-radius: 50%; background: var(--success);
+      color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+    .apc-role { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; }
+    /* The agency, directly under the agent's name and subordinate to it. */
+    .apc-agency { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 12.5px; color: var(--ink); }
+    .apc-ag-logo { width: 22px; height: 22px; flex: none; border-radius: 6px; background: rgba(54,54,54,0.12);
+      display: flex; align-items: center; justify-content: center; font: 700 10px var(--f-sans); color: var(--brand); }
+    .apc-ag-nm { font-weight: 600; }
+    .apc-ag-meta { color: var(--ink-dim); font-size: 11.5px; }
+
+    .apc-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+    .apc-stat { display: inline-flex; align-items: center; gap: 6px; font: 600 13.5px var(--f-sans);
+      color: var(--ink); background: none; border: none; padding: 6px 2px; cursor: pointer; }
+    .apc-stat.static { cursor: default; }
+    .apc-stat b { font-variant-numeric: lining-nums tabular-nums; }
+    .apc-stat .syn-i { color: var(--ink-muted); }
+    /* Liked: the heart fills. Colour lands on the icon, never on the number. */
+    .apc-stat[aria-pressed="true"] .syn-i { color: var(--danger); fill: var(--danger); }
+    .apc-stat:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; border-radius: 8px; }
+
+    .apc-follow { margin-left: auto; border: none; cursor: pointer; border-radius: 100px;
+      padding: 10px 20px; min-height: 40px; font: 600 13.5px var(--f-sans);
+      background: rgba(54,54,54,0.1); color: var(--ink); display: inline-flex; align-items: center; gap: 5px; }
+    .apc-follow i { font-style: normal; font-size: 15px; line-height: 1; }
+    .apc-follow:hover { background: rgba(54,54,54,0.16); }
+    .apc-follow[aria-pressed="true"] { background: var(--brand-deep); color: #fff; }
+    .apc-follow[aria-pressed="true"] i { display: none; }
+    .apc-follow:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
     /* true cost */
@@ -251,7 +264,11 @@
     .deckbar { justify-content: center; }
     .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .deck::-webkit-scrollbar { display: none; }
-    .deck > .card { flex: 0 0 100%; scroll-snap-align: center; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
+    /* scroll-snap-stop pins one gesture to one card. Snap decides where a
+       scroll LANDS, not how far it travels, so with momentum scrolling a single
+       flick was carrying past four or five cards before settling. `always`
+       makes the scroll stop at each snap point whatever the velocity. */
+    .deck > .card { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
     .deck > .card::-webkit-scrollbar { display: none; }
     .dots { display: flex; gap: 6px; justify-content: center; padding: 9px 0 8px; flex: none; }
     .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.16); transition: all .2s ease; cursor: pointer; }
@@ -643,40 +660,35 @@
            hardcoded on every listing. The real agency was already being
            fetched. The star rating and transaction count are not stored
            anywhere, so they are not shown rather than guessed. -->
-      <div class="agency">
-        <div class="logo" id="pvAgencyInitial">—</div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:14.5px" id="pvAgencyName">—</div>
-          <div class="dim" style="font-size:12.5px" id="pvAgencyMeta"></div>
+      <!-- The portrait card. The agent is the face of the listing and the
+           agency sits under their name, which is the agency-brand / named-agent
+           direction expressed in one object rather than two stacked rows.
+
+           Follow is the prominent action; the heart IS the like control, so
+           both counts double as the two things a buyer can do. Counts, never
+           stars — avg_rating is deliberately not read here. -->
+      <div class="apc" id="pvAgentCard">
+        <div class="apc-photo" id="pvAgentPhoto"><span id="pvAgentInitials">—</span></div>
+        <div class="apc-body">
+          <div class="apc-nm"><span id="pvAgentName">—</span><span class="apc-vf" id="pvAgentVf" hidden>✓</span></div>
+          <div class="apc-role" id="pvAgentMeta"></div>
+          <div class="apc-agency">
+            <span class="apc-ag-logo" id="pvAgencyInitial">—</span>
+            <span class="apc-ag-nm" id="pvAgencyName">—</span>
+            <span class="apc-ag-meta" id="pvAgencyMeta"></span>
+          </div>
+          <div class="apc-foot" id="pvAgentSocial" hidden>
+            <button type="button" class="apc-stat" id="pvLikeBtn" aria-pressed="false" aria-label="Like this agent">
+              <span data-icon="heart" aria-hidden="true"></span><b id="pvLikeN">0</b>
+            </button>
+            <span class="apc-stat static">
+              <span data-icon="users" aria-hidden="true"></span><b id="pvFollowN">0</b>
+            </span>
+            <button type="button" class="apc-follow" id="pvFollowBtn" aria-pressed="false">
+              <span id="pvFollowLbl">Follow</span> <i>+</i>
+            </button>
+          </div>
         </div>
-      </div>
-      <!-- The agency brands the listing; a named person answers for it. Hidden
-           until one is actually assigned, so a listing without a named agent
-           falls back to exactly what this card showed before. No phone number
-           here by design — the view it reads does not even expose one, and
-           contact goes through the platform so the agency keeps the thread. -->
-      <div class="lagent" id="pvAgentWrap" hidden>
-        <div class="la-av" id="pvAgentAv">—</div>
-        <div style="flex:1;min-width:0">
-          <div class="la-nm" id="pvAgentName"></div>
-          <div class="dim la-meta" id="pvAgentMeta"></div>
-        </div>
-      </div>
-      <!-- Social proof, counted rather than scored. No stars anywhere: a like
-           is one person saying this agent was good, and how many people said it
-           is the signal. Both numbers come from counted rows, so an agent
-           nobody has backed yet honestly reads 0. -->
-      <div class="la-social" id="pvAgentSocial" hidden>
-        <button type="button" class="la-sbtn" id="pvFollowBtn" aria-pressed="false">
-          <span data-icon="plus" aria-hidden="true"></span>
-          <span class="la-sl" id="pvFollowLbl">Follow</span>
-          <b id="pvFollowN">0</b>
-        </button>
-        <button type="button" class="la-sbtn" id="pvLikeBtn" aria-pressed="false">
-          <span data-icon="heart" aria-hidden="true"></span>
-          <span class="la-sl">Likes</span>
-          <b id="pvLikeN">0</b>
-        </button>
       </div>
     </div>
 
@@ -1139,9 +1151,10 @@
         const ini = document.getElementById('pvAgencyInitial');
         if (ini) ini.textContent = (nm[0] || '\u2014').toUpperCase();
         const tier = a && a.verification_tier;
-        set('pvAgencyMeta', tier === 'verified' ? 'Verified agency'
-                          : tier ? 'Agency tier: ' + tier
-                          : 'Agency not yet verified');
+        AGENCY_VERIFIED = tier === 'verified';
+        set('pvAgencyMeta', tier === 'verified' ? '\u00b7 Verified'
+                          : tier ? '\u00b7 ' + tier
+                          : '\u00b7 Not yet verified');
       })();
 
       /* Follow and Like. Both are counted rows, one per person per agent, with
@@ -1166,7 +1179,10 @@
 
         const paint = (btn, on, lbl) => {
           btn.setAttribute('aria-pressed', String(!!on));
-          if (lbl) document.getElementById('pvFollowLbl').textContent = on ? 'Following' : 'Follow';
+          if (lbl) {
+            const el = document.getElementById('pvFollowLbl');
+            if (el) el.textContent = on ? 'Following' : 'Follow';
+          }
         };
 
         const toggle = (btn, table, col, nEl, isFollow) => {
@@ -1229,8 +1245,10 @@
          where the agent works, not this property, and reading "Central Lekki"
          under an Ibadan listing would look like a claim about the home. */
       (function paintAgent() {
-        const wrap = document.getElementById('pvAgentWrap');
-        if (!wrap || !p.listed_by_agent_id) return;
+        const card = document.getElementById('pvAgentCard');
+        /* No named agent on this listing: the card keeps the agency identity it
+           was already painted with, and simply never grows an agent. */
+        if (!card || !p.listed_by_agent_id) return;
         fetch(SUPABASE_URL + '/rest/v1/listing_agent_cards?agent_id=eq.'
               + encodeURIComponent(p.listed_by_agent_id) + '&limit=1',
               { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
@@ -1238,24 +1256,33 @@
           .then((rows) => {
             const a = rows && rows[0];
             if (!a || !a.full_name) return;
-            const av = document.getElementById('pvAgentAv');
-            if (av) {
-              if (a.avatar_url) { av.style.backgroundImage = 'url("' + a.avatar_url + '")'; av.textContent = ''; }
-              else av.textContent = a.full_name.trim().split(/\s+/).slice(0, 2)
-                     .map((w) => w[0]).join('').toUpperCase();
+
+            const photo = document.getElementById('pvAgentPhoto');
+            const inits = a.full_name.trim().split(/\s+/).slice(0, 2)
+                            .map((w) => w[0]).join('').toUpperCase();
+            document.getElementById('pvAgentInitials').textContent = inits;
+            if (a.avatar_url) {
+              photo.style.backgroundImage = 'url("' + a.avatar_url + '")';
+              photo.classList.add('has-photo');
             }
+
             document.getElementById('pvAgentName').textContent = a.full_name;
+            /* The tick is the agency's verification standing, shown against the
+               person who answers for the listing. */
+            const vf = document.getElementById('pvAgentVf');
+            if (vf && AGENCY_VERIFIED) vf.hidden = false;
+
             const bits = [];
             if (a.years_experience != null) bits.push(a.years_experience + ' yr' + (a.years_experience === 1 ? '' : 's') + ' experience');
             if (a.closed_deals != null) bits.push(a.closed_deals + ' deals closed');
             if (a.response_rate_pct != null) bits.push(a.response_rate_pct + '% reply rate');
             document.getElementById('pvAgentMeta').textContent =
-              bits.length ? bits.join(' · ') : 'Your agent for this listing';
-            wrap.hidden = false;
+              bits.length ? bits.join(' \u00b7 ') : 'Your agent for this listing';
+
             AGENT_NAME = a.full_name;
             wireAgentSocial(a);
           })
-          .catch(() => { /* the agency card above already stands on its own */ });
+          .catch(() => { /* the agency identity on the card still stands */ });
       })();
 
       // More in this city. A real query, and the card stays hidden unless it
@@ -1369,6 +1396,9 @@
        say who received the request — null on a listing with no named agent, and
        every message below falls back to the agency wording. */
     let AGENT_NAME = null;
+    /* The agency's verification standing, read once when the agency is painted
+       and reused for the tick beside the agent who answers for the listing. */
+    let AGENCY_VERIFIED = false;
     const negBtn = document.getElementById('negBtn');
     negBtn.addEventListener('click', async () => {
       // Nothing to negotiate over until the listing has loaded. Sending a null

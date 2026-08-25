@@ -357,6 +357,61 @@
      never 0, never a placeholder - because "no rating recorded" and "rated
      zero" are opposite claims about a person and the UI has to be able to
      tell them apart. */
+  /* ── team messaging ──────────────────────────────────────────────────────
+     The agency's own thread with one of its people, in the app. RLS already
+     restricts a row to its two participants inside an agency they share, so
+     the query does not re-implement that — it only has to ask for the pair in
+     both directions, because a thread is what each said to the other. */
+  function thread(agentId) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) return { data: [], error: null };
+        return c1.from('team_messages')
+          .select('id, sender_id, recipient_id, body, created_at')
+          .eq('agency_id', aid)
+          .or('and(sender_id.eq.' + me + ',recipient_id.eq.' + agentId + '),' +
+              'and(sender_id.eq.' + agentId + ',recipient_id.eq.' + me + ')')
+          .order('created_at', { ascending: true })
+          .limit(200);
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return { me: me, messages: (r.data || []).map(function (m) {
+          return { id: m.id, body: m.body, at: m.created_at, mine: m.sender_id === me };
+        }) };
+      });
+  }
+
+  function sendTeamMessage(agentId, body) {
+    var text = String(body || '').trim();
+    if (!text) return Promise.reject(new Error('Nothing to send'));
+    if (text.length > 4000) text = text.slice(0, 4000);
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        return c1.from('team_messages')
+          .insert({ agency_id: aid, sender_id: me, recipient_id: agentId, body: text })
+          .select('id, body, created_at')
+          .single();
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return { id: r.data.id, body: r.data.body, at: r.data.created_at, mine: true };
+      });
+  }
+
   function roster() {
     var c1, aid1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -841,6 +896,8 @@
     leads: leads,
     setLeadStage: setLeadStage,
     roster: roster,
+    thread: thread,
+    sendTeamMessage: sendTeamMessage,
     relationshipManager: relationshipManager,
     assignLeads: assignLeads,
     deleteLeads: deleteLeads,
