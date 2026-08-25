@@ -934,12 +934,18 @@
        and says which is which. The old copy ("verified homes that fit", with a
        hardcoded "Good afternoon" that was wrong most of the day) promised the
        opposite of what Toju now does. */
+    /* The count substitutes as "the 6 " rather than "6 of ". The old form
+       read "a home from 6 of the homes agencies have listed" — ungrammatical,
+       and "6 of the homes" claims a subset when it is in fact all of them.
+       The token carries its own article so the sentence still stands when no
+       count is available. */
     const GREETING_TEMPLATE =
-      "I'm Toju. I'll find you a home from {{LISTING_COUNT}}the homes agencies have listed with us, "
+      "I'm Toju. I'll find you a home from {{LISTING_COUNT}}homes agencies have listed with us, "
       + "and tell you straight which ones we've actually checked.\n\n"
       + "What's prompting the move?";
     const greetingWith = (n) =>
-      GREETING_TEMPLATE.replace('{{LISTING_COUNT}}', Number.isFinite(n) && n > 0 ? n.toLocaleString() + ' of ' : '');
+      GREETING_TEMPLATE.replace('{{LISTING_COUNT}}',
+        Number.isFinite(n) && n > 0 ? 'the ' + n.toLocaleString() + ' ' : 'the ');
     const GREETING = greetingWith(null);
     function render() {
       convo.innerHTML = '';

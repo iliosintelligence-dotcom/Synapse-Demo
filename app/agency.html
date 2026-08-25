@@ -1673,7 +1673,10 @@
       .pipeline { gap: 10px; scroll-snap-type: x mandatory;
         scrollbar-width: none; -ms-overflow-style: none; }
       .pipeline::-webkit-scrollbar { display: none; }
-      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; }
+      /* Same fix the property deck needed: mandatory snap decides WHERE a
+         flick lands but not how far it travels, so momentum carried several
+         columns per gesture. scroll-snap-stop pins one swipe to one column. */
+      .pipeline > * { flex: 0 0 78%; scroll-snap-align: start; scroll-snap-stop: always; }
       .col-chv { display: none; }
       .col-body { display: block; }
 
@@ -2859,7 +2862,7 @@
           <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}</button><span class="nbax">→ ${l.nba.do}</span></td>
           <td class="c-time">${l.t}</td>
           <td class="c-score">${crmStars(l.score)}</td>
-          <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?'<span class="failx">⚠ Failed</span>':''}</td>
+          <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?`<span class="failx" title="${esc2(String(l.failReason || 'Could not notify the agency automatically').replace(/[.\s]+$/, ''))} — the lead itself is saved.">⚠ Not notified</span>`:''}</td>
           <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">${SynIcons.svg('phone')}</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">' + SynIcons.svg('phone') + '</span>'}<button class="crm-more" aria-label="Open ${l.nm}">${SynIcons.svg('more')}</button></td>
         </tr>`;
       }).join('');
@@ -2957,6 +2960,9 @@
         score: r.lead_score == null ? null : Math.round(Number(r.lead_score)),
         temp,
         failed: r.delivery_status === 'delivery_failed',
+        /* Why it failed, so the badge can say. Without this the CRM showed a
+           red "Failed" on every lead with nothing to explain it. */
+        failReason: r.delivery_error || null,
         agentId: r.assigned_agent_id || null,
         nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
         attr: { channel: DB_CHANNEL[r.source] || 'direct' },
