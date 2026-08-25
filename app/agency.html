@@ -342,6 +342,66 @@
     .scrim.on { opacity: 1; pointer-events: auto; }
     .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform .28s cubic-bezier(.22,1,.36,1); overflow-y: auto; padding: 24px; }
     .drawer.on { transform: translateX(0); }
+
+    /* ── drawer: message a teammate ───────────────────────────────────────
+       Lives here, beside .drawer, on purpose. These rules were originally
+       written next to the agent-card block and a later rewrite of that block
+       sliced them out, which left both panels rendering as unstyled buttons.
+       Kept with the surface they belong to so that cannot happen again.
+
+       The drawer is a full-width sheet on a phone, so everything below is
+       written for 375px first and simply has more room on desktop. */
+    .drawer .dhead { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .drawer .dhead .who { min-width: 0; }
+    .drawer .dhead .dnm { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* The thread fills the space between the header and the composer instead
+       of guessing a max-height: on a phone a wrong guess either clips the last
+       message or pushes the composer off the bottom of the screen. */
+    .tm-wrap { display: flex; flex-direction: column; height: calc(100dvh - 150px); margin-top: 14px; }
+    .tm-thread { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+      gap: 8px; padding: 2px 2px 8px; }
+    .tm-msg { max-width: 82%; padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.5;
+      word-break: break-word; overflow-wrap: anywhere; }
+    .tm-msg i { display: block; font-style: normal; font-size: 10.5px; opacity: .6; margin-top: 4px; }
+    /* Yours right and dark, theirs left and light — the oldest convention in
+       messaging, so it needs no label to be read correctly. */
+    .tm-msg.mine { align-self: flex-end; background: var(--brand-deep); color: #fff; border-bottom-right-radius: 5px; }
+    .tm-msg.theirs { align-self: flex-start; background: var(--brand-tint); color: var(--ink); border-bottom-left-radius: 5px; }
+    .tm-empty { font-size: 12.5px; color: var(--ink-muted); line-height: 1.55; padding: 20px 2px; }
+
+    .tm-compose { display: flex; gap: 8px; flex: none; padding-top: 12px; border-top: 1px solid var(--border); }
+    .tm-compose input { flex: 1; min-width: 0; height: 46px; padding: 0 16px; border-radius: 100px;
+      border: 1px solid var(--border-strong); background: rgba(255,255,255,0.8);
+      /* 16px keeps iOS from zooming the page when the field takes focus. */
+      font: 16px var(--f-sans); color: var(--ink); outline: none; }
+    .tm-compose input:focus { border-color: var(--brand-deep); }
+    .tm-send { flex: none; width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
+      background: var(--action); color: var(--action-on); display: flex; align-items: center; justify-content: center; }
+    .tm-send:disabled { opacity: .5; cursor: default; }
+    .tm-send:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+
+    /* ── drawer: assign a lead ────────────────────────────────────────────
+       Stacked, not a two-column row. Side by side, a real property title and a
+       holder name have nowhere to go at 375px and collapse into each other. */
+    .asg { display: block; width: 100%; text-align: left; font: inherit; color: var(--ink);
+      padding: 12px 14px; margin-bottom: 8px; border-radius: 14px; cursor: pointer;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.72); }
+    .asg:hover:not([disabled]) { border-color: var(--brand-deep); }
+    .asg[disabled] { cursor: default; opacity: .62; }
+    .asg:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    .asg-l { display: block; min-width: 0; }
+    .asg-l b { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; }
+    /* Two lines then ellipsis: enough to tell two listings apart without one
+       long title turning every row into a paragraph. */
+    .asg-l i { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      font-style: normal; font-size: 12px; color: var(--ink-muted); margin-top: 2px; line-height: 1.4; }
+    /* The holder becomes a chip on its own line, so it reads as a label about
+       the lead rather than colliding with the title beside it. */
+    .asg-r { display: inline-block; margin-top: 9px; font: 600 10.5px var(--f-sans);
+      text-transform: uppercase; letter-spacing: .05em; color: var(--ink-dim);
+      background: var(--brand-tint); border-radius: 100px; padding: 4px 10px; }
+    .asg-r.on { color: #1f6b45; background: var(--success-tint); }
     .drawer .x { float: right; border: none; background: none; font-size: 20px; color: var(--ink-dim); cursor: pointer; line-height: 1; }
     .chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
     .chain .step { border: 1px solid var(--border); background: rgba(255,255,255,0.72); border-radius: 100px; padding: 6px 11px; font-size: 11.5px; }
@@ -5005,16 +5065,18 @@
       const a = AGENTS[i]; if (!a || !a.id) return;
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span class="av" style="width:44px;height:44px;font-size:14px">${initials(a.nm)}</span>
-          <div><div style="font-size:17px;font-weight:700">${esc2(a.nm)}</div>
+        <div class="dhead">
+          <span class="av" style="width:44px;height:44px;font-size:14px;flex:none">${initials(a.nm)}</span>
+          <div class="who"><div class="dnm">${esc2(a.nm)}</div>
             <div class="rl">${esc2(a.rl)}</div></div>
         </div>
+        <div class="tm-wrap">
         <div class="tm-thread" id="tmThread"><p class="muted" style="font-size:12.5px">Loading…</p></div>
         <form class="tm-compose" id="tmForm" autocomplete="off">
           <input id="tmInput" placeholder="Message ${esc2(first(a.nm))}…" aria-label="Message ${esc2(a.nm)}" maxlength="4000">
           <button class="tm-send" id="tmSend" type="submit" aria-label="Send"><span data-icon="arrow-right"></span></button>
-        </form>`;
+        </form>
+        </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
       document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(drawer);
@@ -5067,7 +5129,7 @@
       drawer.innerHTML = `
         <button class="x" id="drawerX">×</button>
         <div style="font-size:19px;font-weight:700">Assign a lead</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it — whoever holds it now is shown beside it.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it — whoever holds it now is shown under each one.</p>
         <div id="asgList">${
           open.length
             ? open.map((l) => {
