@@ -358,9 +358,10 @@
      zero" are opposite claims about a person and the UI has to be able to
      tell them apart. */
   function roster() {
-    var c1;
+    var c1, aid1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return { data: [], error: null };
+      aid1 = aid;
       return c1.from('agency_members')
         .select('profile_id, role, joined_at, profiles(full_name, phone, whatsapp, avatar_url, ' +
                 'agent_profiles(bio, years_experience, languages, specializations, areas_covered, ' +
@@ -369,8 +370,27 @@
         .is('deleted_at', null);
     }).then(function (r) {
       if (r.error) throw r.error;
-      return (r.data || []).map(function (m) {
+      var rows = r.data || [];
+      /* Follower and like counts come from agent_social_counts, a definer-rights
+         view: the numbers are public, the people behind them are not, so nobody
+         can enumerate who follows an agent. Second request rather than an embed
+         because a view carries no foreign key to join on. Failure here degrades
+         to nulls — the card then prints "—" rather than a zero it cannot back. */
+      var ids = rows.map(function (m) { return m.profile_id; });
+      if (!ids.length) return { rows: rows, social: {} };
+      return c1.from('agent_social_counts').select('agent_id, followers, likes')
+        .in('agent_id', ids)
+        .then(function (sr) {
+          var by = {};
+          (sr.data || []).forEach(function (x) { by[x.agent_id] = x; });
+          return { rows: rows, social: by };
+        })
+        .catch(function () { return { rows: rows, social: {} }; });
+    }).then(function (bundle) {
+      var social = bundle.social || {};
+      return (bundle.rows || []).map(function (m) {
         var p = m.profiles || {};
+        var soc = social[m.profile_id] || {};
         // PostgREST returns an object for a to-one embed and an array for
         // to-many; agent_profiles.profile_id is the key, but accept both.
         var ap = p.agent_profiles || {};
@@ -392,6 +412,8 @@
           closed: num(ap.closed_deals),
           rating: num(ap.avg_rating),
           certifications: ap.certifications || [],
+          followers: soc.followers == null ? null : Number(soc.followers),
+          likes: soc.likes == null ? null : Number(soc.likes),
         };
       }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     });

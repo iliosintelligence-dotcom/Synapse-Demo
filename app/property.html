@@ -88,6 +88,19 @@
     .lagent .la-av { width: 40px; height: 40px; flex: none; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: var(--brand); background-size: cover; background-position: center; }
     .lagent .la-nm { font-weight: 600; font-size: 14px; }
     .lagent .la-meta { font-size: 12px; margin-top: 1px; }
+    /* Two counted actions, sitting under the agent rather than in a bordered
+       row of their own — the card is already one surface. */
+    .la-social { display: flex; gap: 8px; margin-top: 12px; }
+    .la-sbtn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 40px; padding: 8px 12px; border-radius: 100px; cursor: pointer;
+      border: 1px solid rgba(54,54,54,0.22); background: rgba(255,255,255,0.66);
+      font: 600 12.5px var(--f-sans); color: var(--ink); }
+    .la-sbtn:hover { border-color: rgba(54,54,54,0.4); }
+    .la-sbtn:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    .la-sbtn b { font-variant-numeric: lining-nums tabular-nums; }
+    /* Pressed state carries colour on the fill, never on the label text. */
+    .la-sbtn[aria-pressed="true"] { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
+    .la-sbtn[disabled] { opacity: .55; cursor: default; }
     .agency .logo { width: 50px; height: 50px; border-radius: 50%; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.25); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand); }
 
     /* true cost */
@@ -649,6 +662,22 @@
           <div class="dim la-meta" id="pvAgentMeta"></div>
         </div>
       </div>
+      <!-- Social proof, counted rather than scored. No stars anywhere: a like
+           is one person saying this agent was good, and how many people said it
+           is the signal. Both numbers come from counted rows, so an agent
+           nobody has backed yet honestly reads 0. -->
+      <div class="la-social" id="pvAgentSocial" hidden>
+        <button type="button" class="la-sbtn" id="pvFollowBtn" aria-pressed="false">
+          <span data-icon="plus" aria-hidden="true"></span>
+          <span class="la-sl" id="pvFollowLbl">Follow</span>
+          <b id="pvFollowN">0</b>
+        </button>
+        <button type="button" class="la-sbtn" id="pvLikeBtn" aria-pressed="false">
+          <span data-icon="heart" aria-hidden="true"></span>
+          <span class="la-sl">Likes</span>
+          <b id="pvLikeN">0</b>
+        </button>
+      </div>
     </div>
 
     <!-- Was three hardcoded Lekki listings with invented "Confidence 91 ·
@@ -1115,6 +1144,77 @@
                           : 'Agency not yet verified');
       })();
 
+      /* Follow and Like. Both are counted rows, one per person per agent, with
+         the pair as the primary key — so tapping twice cannot inflate a count
+         and the toggle is just an insert or a delete.
+
+         The count renders straight from the view; the pressed state comes from
+         the viewer's own row, which is the only row RLS lets them read. Signed
+         out, the numbers still show and the buttons route to sign-in, because
+         social proof is worth seeing before you have an account. */
+      function wireAgentSocial(a) {
+        const box = document.getElementById('pvAgentSocial');
+        if (!box || !a.agent_id) return;
+        const fN = document.getElementById('pvFollowN');
+        const lN = document.getElementById('pvLikeN');
+        const fB = document.getElementById('pvFollowBtn');
+        const lB = document.getElementById('pvLikeBtn');
+        fN.textContent = Number(a.followers || 0).toLocaleString();
+        lN.textContent = Number(a.likes || 0).toLocaleString();
+        box.hidden = false;
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(box);
+
+        const paint = (btn, on, lbl) => {
+          btn.setAttribute('aria-pressed', String(!!on));
+          if (lbl) document.getElementById('pvFollowLbl').textContent = on ? 'Following' : 'Follow';
+        };
+
+        const toggle = (btn, table, col, nEl, isFollow) => {
+          if (btn.dataset.busy) return;
+          btn.dataset.busy = '1';
+          const on = btn.getAttribute('aria-pressed') === 'true';
+          SynAuth.client()
+            .then((c) => c.auth.getUser().then((u) => ({ c, uid: u && u.data && u.data.user && u.data.user.id })))
+            .then(({ c, uid }) => {
+              if (!uid) { location.href = 'signin.html?reason=follow&next=' + encodeURIComponent(location.pathname + location.search); return null; }
+              const row = { agent_id: a.agent_id }; row[col] = uid;
+              return on
+                ? c.from(table).delete().eq('agent_id', a.agent_id).eq(col, uid)
+                : c.from(table).insert(row);
+            })
+            .then((res) => {
+              if (!res) return;
+              if (res.error) throw res.error;
+              /* Move the number by one rather than refetching: the row we just
+                 wrote is the only change, and the count must never drift below
+                 zero if the two ever disagree. */
+              nEl.textContent = Math.max(0, Number(String(nEl.textContent).replace(/[^0-9]/g, '')) + (on ? -1 : 1)).toLocaleString();
+              paint(btn, !on, isFollow);
+            })
+            .catch(() => toast('Could not save that just now — please try again.'))
+            .then(() => { delete btn.dataset.busy; });
+        };
+
+        fB.addEventListener('click', () => toggle(fB, 'agent_follows', 'follower_id', fN, true));
+        lB.addEventListener('click', () => toggle(lB, 'agent_likes', 'liker_id', lN, false));
+
+        /* Reflect what this viewer already did. Their own row is readable;
+           everyone else's is not, which is what keeps the follower LIST private
+           while the follower COUNT is public. */
+        if (window.SynAuth && SynAuth.client) {
+          SynAuth.client()
+            .then((c) => c.auth.getUser().then((u) => ({ c, uid: u && u.data && u.data.user && u.data.user.id })))
+            .then(({ c, uid }) => {
+              if (!uid) return;
+              c.from('agent_follows').select('agent_id').eq('agent_id', a.agent_id).eq('follower_id', uid).maybeSingle()
+                .then((r) => paint(fB, !!(r && r.data), true)).catch(() => {});
+              c.from('agent_likes').select('agent_id').eq('agent_id', a.agent_id).eq('liker_id', uid).maybeSingle()
+                .then((r) => paint(lB, !!(r && r.data), false)).catch(() => {});
+            })
+            .catch(() => {});
+        }
+      }
+
       /* The named agent. Second request rather than an embed: listing_agent_cards
          is a view, so PostgREST has no foreign key to join it on.
 
@@ -1153,6 +1253,7 @@
               bits.length ? bits.join(' · ') : 'Your agent for this listing';
             wrap.hidden = false;
             AGENT_NAME = a.full_name;
+            wireAgentSocial(a);
           })
           .catch(() => { /* the agency card above already stands on its own */ });
       })();
