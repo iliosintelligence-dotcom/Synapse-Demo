@@ -713,11 +713,13 @@
             <span class="apc-ag-nm" id="pvAgencyName">—</span>
             <span class="apc-ag-meta" id="pvAgencyMeta"></span>
           </div>
-          <!-- Inspection lives on the agent's card because the agent is who you
-               would be meeting. Hidden until we know a slot exists to offer. -->
+          <!-- Touring lives on the agent's card because the agent is who you
+               would be meeting, and it is the LAST step of priming: it appears
+               only once Toju has actually qualified this buyer for this home.
+               Before that the funnel is the conversation, not a booking. -->
           <div class="insp" id="pvInsp" hidden>
             <button type="button" class="insp-cta" id="pvInspBtn">
-              <span data-icon="calendar" aria-hidden="true"></span> See it in person
+              <span data-icon="calendar" aria-hidden="true"></span> Take a tour
             </button>
             <div class="insp-panel" id="pvInspPanel" hidden></div>
           </div>
@@ -1225,10 +1227,10 @@
         /* Each reason names the one thing to do next. "Not qualified" on its
            own tells a buyer nothing they can act on. */
         const BLOCKED = {
-          sign_in:  ['Sign in to book a viewing.', 'Sign in', () => {
+          sign_in:  ['Sign in to book a tour.', 'Sign in', () => {
             location.href = 'signin.html?reason=inspection&next=' + encodeURIComponent(location.pathname + location.search);
           }],
-          contact:  ['Ask this agency about the home first — then you can book a viewing.', 'Contact agent', () => {
+          contact:  ['Ask this agency about the home first — then you can book a tour.', 'Contact agent', () => {
             const c = document.getElementById('contactBtn'); if (c) c.click();
           }],
           qualification: ['Toju needs to understand what you are looking for before booking an agent\u2019s time.', 'Talk to Toju', () => {
@@ -1240,7 +1242,7 @@
           budget_fit: ['This home is above the budget you gave Toju. Talk to Toju if that has changed.', 'Talk to Toju', () => {
             location.href = 'toju.html';
           }],
-          financial_readiness: ['Toju has a couple of questions about how you plan to pay before booking a viewing.', 'Talk to Toju', () => {
+          financial_readiness: ['Toju has a couple of questions about how you plan to pay before booking a tour.', 'Talk to Toju', () => {
             location.href = 'toju.html';
           }],
         };
@@ -1263,7 +1265,7 @@
             if (!slots.length) {
               panel.innerHTML = '<p class="insp-note">'
                 + esc(a.full_name ? a.full_name.split(' ')[0] : 'This agent')
-                + ' has no viewing times open in the next three weeks. Ask them directly and they can add one.</p>';
+                + ' has no tour times open in the next three weeks. Ask them directly and they can add one.</p>';
               panel.hidden = false;
               return;
             }
@@ -1301,25 +1303,24 @@
                          : 'You will get a reminder to confirm the day before.')
                 + '</div>';
               btn.disabled = true;
-              btn.innerHTML = 'Viewing booked';
+              btn.innerHTML = 'Tour booked';
             })
             .catch(() => { row.disabled = false; tag.textContent = 'Try again'; });
         };
 
+        /* Opening the panel just lists times now. Readiness is settled BEFORE
+           the button is ever shown (see below), so by the time a buyer can tap
+           this they are already through priming. book_inspection still
+           re-checks server-side — the UI is not the gate, it only decides
+           whether to offer the step yet. */
         btn.addEventListener('click', () => {
           if (!panel.hidden) { panel.hidden = true; return; }
-          panel.innerHTML = '<p class="insp-note">Checking…</p>';
+          panel.innerHTML = '<p class="insp-note">Finding times…</p>';
           panel.hidden = false;
           SynAuth.client()
-            .then((client) => client.rpc('inspection_readiness', { p_property_id: PROP_ID })
-              .then(({ data, error }) => {
-                if (error) throw error;
-                const res = Array.isArray(data) ? data[0] : data;
-                if (!res || !res.ready) { blocked(res ? res.missing : ['sign_in']); return; }
-                return listSlots(client);
-              }))
+            .then((client) => listSlots(client))
             .catch(() => {
-              panel.innerHTML = '<p class="insp-note">Could not check viewing times just now.</p>';
+              panel.innerHTML = '<p class="insp-note">Could not check tour times just now.</p>';
             });
         });
 
@@ -1329,12 +1330,28 @@
           SynAuth.client().then((client) => book(client, row.dataset.at, row));
         });
 
-        /* Only offer it when the agent has times to offer. Anonymous callers
-           can read slots, so this check works before sign-in too. */
+        /* Two conditions, both required, and this is the "end of priming" rule:
+           the agent must have times to offer, AND Toju must already have
+           qualified this buyer for this home. A visitor who has not been primed
+           never sees a tour button at all — their next step is the
+           conversation, and offering a booking first would skip the very
+           qualification that stops an agent's day being wasted.
+
+           inspection_readiness needs a session, so an anonymous visitor simply
+           fails it, which is the correct answer for someone who has not
+           started. */
         SynAuth.client()
-          .then((client) => client.rpc('open_inspection_slots', { p_property_id: PROP_ID, p_days: 21 }))
-          .then(({ data }) => { if ((data || []).length) wrap.hidden = false; })
-          .catch(() => {});
+          .then((client) => Promise.all([
+            client.rpc('open_inspection_slots', { p_property_id: PROP_ID, p_days: 21 }),
+            client.rpc('inspection_readiness', { p_property_id: PROP_ID }),
+          ]))
+          .then(([slots, ready]) => {
+            const hasTimes = ((slots && slots.data) || []).length > 0;
+            const row = ready && Array.isArray(ready.data) ? ready.data[0] : (ready && ready.data);
+            const primed = !!(row && row.ready);
+            if (hasTimes && primed) wrap.hidden = false;
+          })
+          .catch(() => { /* no tour offered; the conversation is still the path */ });
       }
 
       /* Follow and Like. Both are counted rows, one per person per agent, with
