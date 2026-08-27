@@ -39,16 +39,16 @@
       backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
       border-right: 1px solid var(--border); overflow: hidden;
       z-index: 40;
-      transition: width .26s cubic-bezier(.22,1,.36,1);
+      transition: width var(--m-expanded) var(--m-ease-panel);
     }
     .side:hover, .side:focus-within {
       width: 236px; overflow-y: auto;
       box-shadow: 26px 0 60px rgba(20,20,20,0.10);
     }
     /* labels fade out when collapsed; icons stay put so nothing jumps */
-    .side .lbl-x { white-space: nowrap; opacity: 0; transition: opacity .18s ease; }
+    .side .lbl-x { white-space: nowrap; opacity: 0; transition: opacity var(--m-standard) var(--m-ease); }
     .side:hover .lbl-x, .side:focus-within .lbl-x { opacity: 1; }
-    .side .grp, .side .me .who { opacity: 0; transition: opacity .18s ease; pointer-events: none; }
+    .side .grp, .side .me .who { opacity: 0; transition: opacity var(--m-standard) var(--m-ease); pointer-events: none; }
     .side:hover .grp, .side:focus-within .grp,
     .side:hover .me .who, .side:focus-within .me .who { opacity: 1; pointer-events: auto; }
     /* collapsed, every group is open — there is no room for headers */
@@ -68,9 +68,9 @@
     .side .grp { width: 100%; background: none; border: none; cursor: pointer; text-align: left; font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); padding: 14px 12px 6px; display: flex; align-items: center; justify-content: space-between; }
     .side .grp-sec:first-child .grp { padding-top: 2px; }
     .side .grp:hover { color: var(--ink-muted); }
-    .side .grp-chv { font-size: 13px; line-height: 1; transition: transform .22s ease; transform: rotate(90deg); opacity: .55; }
+    .side .grp-chv { font-size: 13px; line-height: 1; transition: transform var(--m-standard) var(--m-ease); transform: rotate(90deg); opacity: .55; }
     .side .grp-sec:not(.open) .grp-chv { transform: rotate(0deg); }
-    .side .grp-items { display: flex; flex-direction: column; gap: 3px; overflow: hidden; max-height: 400px; opacity: 1; transition: max-height .26s ease, opacity .2s ease; }
+    .side .grp-items { display: flex; flex-direction: column; gap: 3px; overflow: hidden; max-height: 400px; opacity: 1; transition: max-height var(--m-expanded) var(--m-ease), opacity var(--m-standard) var(--m-ease); }
     .side .grp-sec:not(.open) .grp-items { max-height: 0; opacity: 0; }
     .side a { font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 12px; display: flex; align-items: center; gap: 9px; cursor: pointer; }
     .side a.on { background: rgba(54,54,54,0.1); color: #121212; font-weight: 600; }
@@ -155,7 +155,7 @@
     .addon .adesc { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; line-height: 1.5; }
     .addon .aprice { font-family: var(--f-serif); font-size: 17px; color: var(--brand); margin-top: 10px; }
     .addon .aprice small { font-size: 11px; color: var(--ink-dim); font-family: var(--f-sans); }
-    .addon .abtn { margin-top: 11px; width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,0.6); color: var(--ink); font: 600 12px var(--f-sans); border-radius: 100px; padding: 8px; cursor: pointer; }
+    .addon .abtn { margin-top: 11px; width: 100%; min-height: 44px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); color: var(--ink); font: 600 12px var(--f-sans); border-radius: 100px; padding: 8px; cursor: pointer; }
     .addon .abtn:hover { border-color: rgba(54,54,54,0.45); color: var(--brand); }
 
     /* ROI band */
@@ -222,18 +222,18 @@
 
     /* ══════ Social studio: bento overview · view switcher · kanban + calendar ══════ */
     .chan .st { font-size: 12px; }
-    .chan .tog { width: 42px; height: 24px; transition: background .2s; }
-    .chan .tog::after { top: 2px; left: 20px; right: auto; width: 20px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left .24s cubic-bezier(0.34,1.56,0.64,1); }
+    .chan .tog { width: 42px; height: 24px; transition: background var(--m-standard); }
+    .chan .tog::after { top: 2px; left: 20px; right: auto; width: 20px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left var(--m-standard) var(--m-ease-spring); }
     .chan .tog.off::after { left: 2px; right: auto; }
     .s-bento { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 18px 0 6px; }
     .s-tile { padding: 15px 18px; border-radius: 16px; background: linear-gradient(135deg,rgba(255,255,255,0.86),rgba(255,251,246,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.08); text-align: left; }
-    button.s-tile { cursor: pointer; transition: transform .16s, box-shadow .16s; display: block; width: 100%; }
+    button.s-tile { cursor: pointer; transition: transform var(--m-standard), box-shadow var(--m-standard); display: block; width: 100%; }
     button.s-tile:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(122,62,22,0.13); }
     .s-tile .k { font: 700 12px var(--f-sans); color: var(--ink-muted); }
     .s-tile .v { font: 600 32px var(--f-serif); color: var(--brand-deep); font-variant-numeric: lining-nums; line-height: 1.05; margin-top: 5px; }
     .s-tile .cap { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
     .s-tile .cbar { height: 3px; border-radius: 3px; background: rgba(0,0,0,0.06); margin-top: 9px; overflow: hidden; }
-    .s-tile .cbar i { display: block; height: 100%; background: linear-gradient(90deg,#121212,#121212); border-radius: 3px; transition: width .7s ease; }
+    .s-tile .cbar i { display: block; height: 100%; background: linear-gradient(90deg,#121212,#121212); border-radius: 3px; transition: width var(--m-expanded) var(--m-ease); }
     .s-tile .chdots { display: flex; gap: 5px; margin-top: 9px; }
     .s-tile .cd { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 8px var(--f-sans); color: #fff; }
     .s-tile .cd.off { opacity: .26; }
@@ -250,10 +250,10 @@
     .chavs .cav { width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 9px var(--f-sans); color: #fff; border: 2px solid var(--surface); margin-left: -6px; flex: none; }
     .chavs .cav:first-child { margin-left: 0; }
     .chavs .reach { font-size: 12px; color: var(--ink-muted); margin-left: 9px; }
-    .col { min-width: 214px; transition: background .16s, box-shadow .16s; }
+    .col { min-width: 214px; transition: background var(--m-standard), box-shadow var(--m-standard); }
     .col.drop { background: rgba(54,54,54,0.06); box-shadow: inset 0 0 0 2px var(--brand-deep); }
     .col .ch .w { font-size: 11px; }
-    .pcard { padding: 11px; cursor: grab; transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .pcard { padding: 11px; cursor: grab; transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .pcard:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(20,26,38,0.1); border-color: rgba(54,54,54,0.3); }
     .pcard.dragging { opacity: .5; cursor: grabbing; }
     .pcard.justpub { animation: pubPulse .6s ease-out; }
@@ -280,7 +280,7 @@
     .s-cal .dh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
     .s-cal .dh .dn { font: 700 12px var(--f-sans); color: var(--ink-muted); text-transform: uppercase; letter-spacing: .04em; }
     .s-cal .dh .dd { font: 600 15px var(--f-serif); color: var(--ink); }
-    .s-cal .cev { border-radius: 9px; padding: 8px; margin-bottom: 7px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(20,26,38,0.05); cursor: pointer; transition: transform .14s; }
+    .s-cal .cev { border-radius: 9px; padding: 8px; margin-bottom: 7px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(20,26,38,0.05); cursor: pointer; transition: transform var(--m-standard); }
     .s-cal .cev:hover { transform: translateY(-2px); border-color: rgba(54,54,54,0.3); }
     .s-cal .cet { font: 600 11.5px var(--f-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .s-cal .cem { display: flex; align-items: center; gap: 4px; margin-top: 5px; }
@@ -295,7 +295,7 @@
     /* property preview ("zoom to confirm") — from a pipeline card or a calendar event */
     .pprev-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(20,18,16,0.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 20px; }
     .pprev-scrim.on { display: flex; }
-    .pprev { width: 384px; max-width: 100%; background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: 0 40px 90px rgba(20,26,38,0.42); transform: translateY(10px) scale(.98); opacity: 0; transition: transform .2s, opacity .2s; }
+    .pprev { width: 384px; max-width: 100%; background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: 0 40px 90px rgba(20,26,38,0.42); transform: translateY(10px) scale(.98); opacity: 0; transition: transform var(--m-standard), opacity var(--m-standard); }
     .pprev-scrim.on .pprev { transform: none; opacity: 1; }
     .pprev .pimg { position: relative; height: 210px; }
     .pprev .pimg .lph { width: 100%; height: 100%; }
@@ -334,13 +334,16 @@
     .brk .barline span { border-radius: 3px; }
     .chn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; color: #fff; font-size: 9px; font-weight: 700; flex: none; }
     .score { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 2px solid; font-size: 11px; font-weight: 700; flex: none; }
-    .lead.click { cursor: pointer; transition: transform .12s; }
+    .lead.click { cursor: pointer; transition: transform var(--m-micro); }
     .lead.click:hover { transform: translateY(-1px); }
 
     /* lead drawer */
-    .scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.22); backdrop-filter: blur(2px); z-index: 80; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.22); backdrop-filter: blur(2px); z-index: 80; opacity: 0; pointer-events: none;
+      /* Matches the drawer it sits behind. At 200ms against the drawer's 280ms
+         the backdrop finished first and the panel was still visibly moving. */
+      transition: opacity var(--m-expanded) var(--m-ease-panel); }
     .scrim.on { opacity: 1; pointer-events: auto; }
-    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform .28s cubic-bezier(.22,1,.36,1); overflow-y: auto; padding: 24px; }
+    .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform var(--m-expanded) var(--m-ease-panel); overflow-y: auto; padding: 24px; }
     .drawer.on { transform: translateX(0); }
     /* The drawer's own action row: same two controls as the card, sized for a
        panel rather than a grid cell. */
@@ -384,7 +387,7 @@
     .tour-person.no { opacity: .6; }
 
     .tour-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-    .tour-btn { border-radius: 100px; padding: 9px 15px; min-height: 40px; cursor: pointer;
+    .tour-btn { border-radius: 100px; padding: 9px 15px; min-height: 44px; cursor: pointer;
       font: 600 12.5px var(--f-sans); border: 1px solid var(--border-strong);
       background: rgba(255,255,255,0.7); color: var(--ink); }
     .tour-btn.solid { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
@@ -489,7 +492,7 @@
     .feed .it .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
     .feed .it .tx { font-size: 13px; }
     .feed .it .tm { font-size: 11px; color: var(--ink-dim); margin-top: 1px; }
-    .attn { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 14px; margin-bottom: 4px; transition: background .14s; }
+    .attn { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 14px; margin-bottom: 4px; transition: background var(--m-standard); }
     .attn:hover { background: rgba(0,0,0,0.025); }
     .attn .ico { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex: none; }
     .attn .body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
@@ -517,12 +520,12 @@
     .pane-search .ps-i { flex: none; color: var(--ink-dim); display: flex; }
     /* The input gives up its own chrome to the pill around it, the same way
        the unit field in the campaign form does. */
-    .pane-search .lsearch { flex: 1; min-width: 0; height: auto; padding: 0;
+    .pane-search .lsearch { flex: 1; min-width: 0; height: auto; min-height: 44px; padding: 0;
       background: none; border: none; border-radius: 0; }
     .pane-search .lsearch:focus, .pane-search .lsearch:focus-visible { outline: none; }
     .pane-search:focus-within { border-color: var(--brand-deep); outline: 2px solid var(--brand-deep); outline-offset: 1px; }
 
-    .lsearch { height: 36px; background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 0 15px; font: 400 13px var(--f-sans); color: var(--ink); min-width: 170px; }
+    .lsearch { height: 44px; background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 0 15px; font: 400 13px var(--f-sans); color: var(--ink); min-width: 170px; }
     .lsearch::placeholder { color: var(--ink-dim); }
     /* Denser grid: the cards were 280px minimum with 168px of photo and 18px
        gutters, so a 1440px pane fitted four and a 1024px pane three. At 232px
@@ -531,7 +534,7 @@
        through it. Nothing is removed from the card -- it is the same
        information at a smaller pitch. */
     .lgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px,1fr)); gap: 12px; margin-top: 2px; }
-    .lcard { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .lcard { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .lcard:hover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.14); border-color: rgba(54,54,54,0.35); }
     /* ── LISTING PHOTOS, OR AN HONEST ABSENCE ──────────────────────────────
        Every listing picture in this portal renders through .lph.
@@ -605,9 +608,9 @@
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
     .field label { font: 700 12px var(--f-sans); color: var(--ink-muted); }
     .field input, .field textarea, .field select {
-      width: 100%; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border);
+      width: 100%; min-height: 44px; padding: 10px 13px; border-radius: 11px; border: 1px solid var(--border);
       background: rgba(255,255,255,0.75); font: 13.5px var(--f-sans); color: var(--ink);
-      outline: none; transition: border-color .15s, background .15s;
+      outline: none; transition: border-color var(--m-standard), background var(--m-standard);
     }
     .field textarea { resize: vertical; min-height: 66px; }
     .field input:focus, .field textarea:focus, .field select:focus { border-color: rgba(54,54,54,0.45); background: #fff; }
@@ -624,9 +627,9 @@
     .logo-tile .lt-preview img { max-width: 70%; max-height: 70%; object-fit: contain; }
     .logo-tile .lt-empty { font-size: 11px; color: var(--ink-dim); }
     .logo-tile label { display: block; font: 700 11px var(--f-sans); color: var(--ink-muted); margin-bottom: 5px; }
-    .logo-tile input { width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 12.5px var(--f-sans); color: var(--ink); outline: none; }
+    .logo-tile input { width: 100%; min-height: 44px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.75); font: 12.5px var(--f-sans); color: var(--ink); outline: none; }
     .logo-tile .lt-acts { display: flex; gap: 6px; }
-    .logo-tile .lt-btn { flex: 1; min-height: 34px; border-radius: 9px; cursor: pointer;
+    .logo-tile .lt-btn { flex: 1; min-height: 44px; border-radius: 9px; cursor: pointer;
       border: 1px solid var(--border-strong); background: rgba(255,255,255,0.8);
       font: 600 12px var(--f-sans); color: var(--ink); }
     .logo-tile .lt-btn:hover { background: #fff; }
@@ -658,14 +661,26 @@
       font: 500 10.5px var(--f-sans); color: var(--ink-dim); margin-top: -2px;
     }
     .swatch-card.unset .sw-hex { text-transform: none; font-style: italic; }
-    .sw-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    /* The swatch stays 22px because a colour chip that size reads correctly.
+       The TARGET is 44px: the button is padded out to the floor and the colour
+       is painted by an inner span, so a thumb gets a full-size hit area without
+       the palette turning into forty-four-pixel blocks. gap goes negative-free
+       by shrinking to 0 — the padding now provides the separation. */
+    .sw-presets { display: flex; flex-wrap: wrap; gap: 0; margin: -11px 0 0 -11px; }
     .sw-presets button {
-      width: 22px; height: 22px; padding: 0; border-radius: 6px; cursor: pointer;
-      border: 1px solid rgba(13,13,15,0.16);
-      transition: transform .12s ease, box-shadow .12s ease;
+      width: 44px; height: 44px; padding: 11px; margin: 0;
+      background: none; border: none; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
     }
-    .sw-presets button:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(13,13,15,0.18); }
-    .sw-presets button.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+    .sw-presets button i {
+      display: block; width: 22px; height: 22px; border-radius: 6px;
+      border: 1px solid rgba(13,13,15,0.16);
+      background: var(--sw);
+      transition: transform var(--m-micro) var(--m-ease), box-shadow var(--m-micro) var(--m-ease);
+    }
+    .sw-presets button:hover i { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(13,13,15,0.18); }
+    .sw-presets button[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+    .sw-presets button:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: -4px; border-radius: 10px; }
     .type-specimen { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin-top: 2px; }
     .ts-name { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
     .ts-glyphs { font-size: 40px; line-height: 1.2; margin: 6px 0 4px; }
@@ -702,7 +717,7 @@
     .bo-steps li.done { border-color: rgba(46,125,79,0.35); }
     .bo-steps li.done .tick { background: rgba(46,125,79,0.12); border-color: rgba(46,125,79,0.35); color: var(--success); }
     .bo-steps li.done span:last-child { color: var(--ink-muted); }
-    .acard { position: relative; cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .acard { position: relative; cursor: pointer; transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .acard:hover { transform: translateY(-3px); box-shadow: 0 18px 38px rgba(122,62,22,0.14); border-color: rgba(54,54,54,0.35); }
     .acard.enter { animation: acardIn .34s ease both; }
     @keyframes acardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -732,7 +747,7 @@
        actions, so they sit under the fold of the card as small figures with
        quiet labels. Nothing is boxed. */
     .acard { position: relative; cursor: pointer; overflow: hidden; padding: 0 !important;
-      transition: transform .16s, box-shadow .16s, border-color .16s; }
+      transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .acard:hover { transform: translateY(-3px); box-shadow: 0 18px 38px rgba(122,62,22,0.14); border-color: rgba(54,54,54,0.35); }
     .acard.enter { animation: acardIn .34s ease both; }
     .acard.pending { opacity: .9; }
@@ -779,7 +794,9 @@
 
     /* PRIMARY. What the agency came here to do. */
     .ac-acts { display: flex; gap: 8px; margin-top: 14px; }
-    .ac-btn { flex: 1; border-radius: 100px; padding: 10px; cursor: pointer; min-height: 42px;
+    /* 42px on Message and Assign lead — the two controls this card exists
+       for, and the ones singled out as mattering more than any figure on it. */
+    .ac-btn { flex: 1; border-radius: 100px; padding: 10px; cursor: pointer; min-height: 44px;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       font: 600 13px var(--f-sans); border: 1px solid transparent; }
     .ac-btn.solid { background: var(--brand-deep); color: #fff; }
@@ -819,7 +836,7 @@
     .hbars .hn { width: 44px; font-size: 12.5px; font-weight: 700; color: var(--ink); flex: none; }
     .statspark { display: block; margin: 8px auto 0; }
     .ringwrap { display: flex; align-items: center; justify-content: center; }
-    .ctip { position: fixed; z-index: 120; background: #17191d; color: #fff; font: 600 11.5px var(--f-sans); padding: 6px 10px; border-radius: 8px; pointer-events: none; opacity: 0; transition: opacity .12s; white-space: nowrap; }
+    .ctip { position: fixed; z-index: 120; background: #17191d; color: #fff; font: 600 11.5px var(--f-sans); padding: 6px 10px; border-radius: 8px; pointer-events: none; opacity: 0; transition: opacity var(--m-micro); white-space: nowrap; }
     .ctip small { display: block; font-weight: 400; color: rgba(255,255,255,0.65); }
 
     /* agent profile drawer */
@@ -872,7 +889,7 @@
     .advisor .top { display: flex; align-items: center; gap: 10px; }
     .advisor .orb { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#121212,#121212); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex: none; }
     .advisor .qs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
-    .advisor .qs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 8px 13px; cursor: pointer; transition: all .15s; }
+    .advisor .qs button { font: 600 12px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 8px 13px; cursor: pointer; transition: all var(--m-standard); }
     .advisor .qs button:hover, .advisor .qs button.on { border-color: rgba(54,54,54,0.45); color: var(--brand); background: rgba(54,54,54,0.06); }
     .advisor .ans { border-left: 2px solid var(--brand); padding: 4px 0 4px 14px; margin-top: 12px; }
     .advisor .ans .r { display: flex; gap: 8px; font-size: 13px; margin: 7px 0; line-height: 1.5; }
@@ -897,7 +914,7 @@
     .step5 b { color: var(--brand); }
     /* ── Negotiation authority: property-card language, price-setting content ── */
     .auth-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 14px; }
-    .auth { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s, border-color .18s; }
+    .auth { padding: 0; overflow: hidden; display: flex; flex-direction: column; transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .auth:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16); border-color: rgba(54,54,54,0.4); }
     .auth .media { position: relative; height: 150px; margin: 10px 10px 0; border-radius: 15px; overflow: hidden; }
     .auth .media img { width: 100%; height: 100%; object-fit: cover; }
@@ -960,15 +977,15 @@
     .msg.buyer { background: rgba(0,0,0,0.04); margin-left: auto; border-bottom-right-radius: 4px; }
 
     /* toast (button feedback) */
-    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 100; background: var(--ink); color: #fff; font-size: 13px; font-weight: 500; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 34px rgba(20,26,38,0.3); opacity: 0; pointer-events: none; transition: all .25s; max-width: 88vw; text-align: center; }
+    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 100; background: var(--ink); color: #fff; font-size: 13px; font-weight: 500; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 34px rgba(20,26,38,0.3); opacity: 0; pointer-events: none; transition: all var(--m-expanded); max-width: 88vw; text-align: center; }
     .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* social composer modal */
-    .modal-scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.3); backdrop-filter: blur(2px); z-index: 90; opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .modal-scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.3); backdrop-filter: blur(2px); z-index: 90; opacity: 0; pointer-events: none; transition: opacity var(--m-standard); }
     .modal-scrim.on { opacity: 1; pointer-events: auto; }
     .modal { position: fixed; z-index: 91; left: 50%; top: 50%; transform: translate(-50%,-47%) scale(.98); opacity: 0; pointer-events: none;
       width: min(93vw, 640px); max-height: 88vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
-      box-shadow: 0 30px 80px rgba(20,26,38,0.28); padding: 24px 26px; transition: opacity .22s, transform .22s; }
+      box-shadow: 0 30px 80px rgba(20,26,38,0.28); padding: 24px 26px; transition: opacity var(--m-standard), transform var(--m-standard); }
     .modal.on { opacity: 1; pointer-events: auto; transform: translate(-50%,-50%) scale(1); }
     .modal .x { float: right; border: none; background: none; font-size: 20px; color: var(--ink-dim); cursor: pointer; line-height: 1; }
     .cmp-step { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin: 18px 0 8px; }
@@ -1055,7 +1072,7 @@
     .lf-ro .k { color: var(--ink-dim); font-weight: 600; }
     .lf-ro .v { color: var(--ink); text-align: right; }
     .lf-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 600 13px var(--f-sans); color: var(--ink); margin-bottom: 4px; cursor: pointer; text-transform: none; letter-spacing: 0; }
-    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+    .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform var(--m-expanded) var(--m-ease-panel); }
     .toast.on { transform: translateX(-50%) translateY(0); }
 
     /* marketing — Omneky-style AI ad studio */
@@ -1104,7 +1121,7 @@
     .ad.gen .in { color: var(--brand-text); }
 
     /* ── creative leaderboard (Marketing) ── */
-    .lbrow { position: relative; display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px 12px 12px; margin-bottom: 10px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .lbrow { position: relative; display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px 12px 12px; margin-bottom: 10px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); }
     .lbrow:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(20,26,38,0.1); border-color: rgba(54,54,54,0.3); }
     .lbrow.win { border-color: rgba(201,162,39,0.5); box-shadow: 0 12px 30px rgba(201,162,39,0.16); }
     .lbrow.dim { opacity: .62; }
@@ -1129,7 +1146,7 @@
     .lbleads { text-align: center; flex: none; min-width: 46px; }
     .lbleads b { font: 600 17px var(--f-serif); color: var(--ink); display: block; font-variant-numeric: lining-nums; }
     .lbleads span { font-size: 11px; color: var(--ink-dim); }
-    .lbscale { flex: none; border: 1px solid var(--border-strong); background: rgba(255,255,255,0.7); color: var(--brand-deep); font: 700 12px var(--f-sans); border-radius: 100px; padding: 8px 14px; cursor: pointer; opacity: 0; transform: translateX(6px); transition: opacity .16s, transform .16s, background .16s, color .16s; }
+    .lbscale { flex: none; border: 1px solid var(--border-strong); background: rgba(255,255,255,0.7); color: var(--brand-deep); font: 700 12px var(--f-sans); border-radius: 100px; padding: 8px 14px; cursor: pointer; opacity: 0; transform: translateX(6px); transition: opacity var(--m-standard), transform var(--m-standard), background var(--m-standard), color var(--m-standard); }
     .lbrow:hover .lbscale, .lbrow:focus-within .lbscale { opacity: 1; transform: none; }
     .lbscale:hover { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
     @media (max-width: 760px){ .lbspark, .lbleads span { display: none; } .lbscale { opacity: 1; transform: none; } }
@@ -1137,17 +1154,17 @@
 
     /* ── persistent Ask-Toju button + context panel ── */
     .toju-fab { position: fixed; right: 26px; bottom: 26px; z-index: 78; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; cursor: pointer;
-      background: linear-gradient(135deg,#121212,#121212); color: #fff; font-size: 25px; line-height: 1; box-shadow: 0 16px 38px rgba(54,54,54,0.42); transition: transform .16s, box-shadow .16s; animation: fabGlow 2.8s ease-in-out infinite; }
+      background: linear-gradient(135deg,#121212,#121212); color: #fff; font-size: 25px; line-height: 1; box-shadow: 0 16px 38px rgba(54,54,54,0.42); transition: transform var(--m-standard), box-shadow var(--m-standard); animation: fabGlow 2.8s ease-in-out infinite; }
     .toju-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 22px 46px rgba(54,54,54,0.55); animation: none; }
     .toju-fab .sparkle { display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
     @keyframes fabGlow { 0%, 100% { box-shadow: 0 16px 38px rgba(54,54,54,0.42), 0 0 0 0 rgba(54,54,54,0.5); } 50% { box-shadow: 0 16px 38px rgba(54,54,54,0.42), 0 0 0 13px rgba(54,54,54,0); } }
     @media (prefers-reduced-motion: reduce) { .toju-fab { animation: none; } }
     body.tpanel-open .toju-fab { opacity: 0; pointer-events: none; }
 
-    .tpanel-scrim { position: fixed; inset: 0; z-index: 95; background: rgba(20,22,26,0.18); opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .tpanel-scrim { position: fixed; inset: 0; z-index: 95; background: rgba(20,22,26,0.18); opacity: 0; pointer-events: none; transition: opacity var(--m-standard); }
     .tpanel-scrim.on { opacity: 1; pointer-events: auto; }
     .tpanel { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 424px; z-index: 96; background: var(--surface); border-left: 1px solid var(--border);
-      box-shadow: -24px 0 64px rgba(20,26,38,0.22); transform: translateX(102%); transition: transform .32s cubic-bezier(.22,1,.36,1); display: flex; flex-direction: column; }
+      box-shadow: -24px 0 64px rgba(20,26,38,0.22); transform: translateX(102%); transition: transform var(--m-expanded) var(--m-ease-panel); display: flex; flex-direction: column; }
     .tpanel.on { transform: translateX(0); }
     .tpanel .thd { flex: none; display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(54,54,54,0.1), rgba(54,54,54,0.04)); }
     .tpanel .thd .o { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#121212,#121212); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex: none; }
@@ -1197,13 +1214,13 @@
 
     /* ── appbar right cluster: search · notifications · avatar ── */
     .topsearch { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.66);
-      border: 1px solid var(--border); border-radius: 100px; padding: 8px 15px; width: 250px; transition: border-color .18s, box-shadow .18s; }
+      border: 1px solid var(--border); border-radius: 100px; padding: 8px 15px; width: 250px; transition: border-color var(--m-standard), box-shadow var(--m-standard); }
     .topsearch:focus-within { border-color: rgba(54,54,54,0.4); box-shadow: 0 0 0 3px rgba(54,54,54,0.1); }
     .topsearch .ts-i { color: var(--ink-dim); font-size: 15px; line-height: 1; }
     .topsearch input { border: none; background: none; outline: none; font: 400 13px var(--f-sans); color: var(--ink); width: 100%; }
     .topsearch input::placeholder { color: var(--ink-dim); }
     .bell { position: relative; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
-      background: rgba(255,255,255,0.66); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-muted); transition: .18s; }
+      background: rgba(255,255,255,0.66); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-muted); transition: var(--m-standard); }
     .bell:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .bell svg { width: 18px; height: 18px; }
     .bell-badge { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px;
@@ -1219,7 +1236,7 @@
     .noti { position: fixed; top: 64px; right: 20px; z-index: 61; width: 366px; max-width: calc(100vw - 32px);
       background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
       border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 30px 70px rgba(20,26,38,0.22);
-      padding: 16px; transform: translateY(-8px); opacity: 0; pointer-events: none; transition: transform .18s, opacity .18s; }
+      padding: 16px; transform: translateY(-8px); opacity: 0; pointer-events: none; transition: transform var(--m-standard), opacity var(--m-standard); }
     .noti.on { transform: none; opacity: 1; pointer-events: auto; }
     .noti-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .noti-h .t { font-weight: 700; font-size: 14px; }
@@ -1238,11 +1255,11 @@
     .ov-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
     .ov-actions { display: flex; gap: 8px; }
     .btn-ghost { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.6);
-      border: 1px solid var(--border); border-radius: 100px; padding: 9px 16px; cursor: pointer; transition: .16s; }
+      border: 1px solid var(--border); border-radius: 100px; padding: 9px 16px; cursor: pointer; transition: var(--m-standard); }
     .btn-ghost:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .ov-tabs { display: flex; margin: 18px 0 16px; border-bottom: 1px solid var(--border); }
     .ovtab { font: 600 13px var(--f-sans); color: var(--ink-muted); background: none; border: none; cursor: pointer;
-      padding: 10px 2px; margin-right: 22px; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .16s; }
+      padding: 10px 2px; margin-right: 22px; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color var(--m-standard); }
     .ovtab.on { color: var(--brand-text); border-bottom-color: var(--brand-deep); }
     .ovtab:hover:not(.on) { color: var(--ink); }
     .ov-grid { display: grid; grid-template-columns: 384px 1fr; gap: 18px; align-items: start; }
@@ -1253,7 +1270,7 @@
        title and address in this list was rendering in Arial while the rest of
        the portal is Josefin Sans. */
     .ovi { font: inherit; display: flex; gap: 13px; padding: 12px; border-radius: 16px; background: var(--surface);
-      border: 1px solid var(--border); cursor: pointer; transition: transform .16s, box-shadow .16s, border-color .16s; align-items: center; text-align: left; width: 100%; }
+      border: 1px solid var(--border); cursor: pointer; transition: transform var(--m-standard), box-shadow var(--m-standard), border-color var(--m-standard); align-items: center; text-align: left; width: 100%; }
     .ovi:hover { border-color: rgba(54,54,54,0.35); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(20,26,38,0.07); }
     .ovi.on { border: 1.5px solid var(--brand-deep); box-shadow: 0 12px 28px rgba(54,54,54,0.15); }
     /* .lph, not .ph. Listing photos were renamed to .lph so they would stop
@@ -1327,7 +1344,7 @@
     .cmp-meta .no { color: #a8402b; font-weight: 700; }
     .cmp-run { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
     .cmp-bar { flex: 1; min-width: 160px; height: 8px; border-radius: 4px; background: rgba(0,0,0,0.07); overflow: hidden; }
-    .cmp-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .3s ease; }
+    .cmp-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width var(--m-expanded) var(--m-ease); }
     .cmp-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.55; }
 
     .ov-detail { position: sticky; top: 0; }
@@ -1338,7 +1355,7 @@
     .ov-map { height: 300px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 0; background: rgba(0,0,0,0.03); }
     .ov-card { margin-top: 14px; padding: 8px; }
     .ov-dtabs { display: flex; gap: 4px; padding: 5px; background: rgba(0,0,0,0.035); border-radius: 100px; }
-    .ov-dtab { flex: 1; font: 600 12px var(--f-sans); color: var(--ink-muted); background: none; border: none; padding: 9px 6px; border-radius: 100px; cursor: pointer; transition: .14s; }
+    .ov-dtab { flex: 1; font: 600 12px var(--f-sans); color: var(--ink-muted); background: none; border: none; min-height: 44px; padding: 9px 6px; border-radius: 100px; cursor: pointer; transition: var(--m-standard); }
     .ov-dtab.on { background: var(--surface); color: var(--brand-text); box-shadow: 0 4px 12px rgba(20,26,38,0.09); }
     .ov-dtab:hover:not(.on) { color: var(--ink); }
     .ov-body { padding: 18px 16px 12px; }
@@ -1352,7 +1369,7 @@
     .ovd-chip.warn { color: #8a6a18; background: rgba(156,122,30,0.1); border-color: rgba(156,122,30,0.28); }
     .ovd-chip.dead { color: #b23b3b; background: rgba(178,59,59,0.09); border-color: rgba(178,59,59,0.25); }
     .ovd-actions { display: flex; gap: 10px; margin-top: 20px; }
-    .ovd-btn { flex: 1; font: 600 13px var(--f-sans); border-radius: 100px; padding: 11px; cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink); transition: .16s; }
+    .ovd-btn { flex: 1; font: 600 13px var(--f-sans); border-radius: 100px; min-height: 44px; padding: 11px; cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink); transition: var(--m-standard); }
     .ovd-btn:hover { border-color: rgba(54,54,54,0.4); color: var(--brand-deep); }
     .ovd-btn.primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
     .ovd-btn.primary:hover { background: #a8481f; color: #fff; }
@@ -1378,12 +1395,12 @@
     .seg { display: flex; gap: 2px; padding: 3px; background: var(--brand-tint); border-radius: 100px; }
     .seg-b { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: none; border: none; padding: 6px 13px; border-radius: 100px; cursor: pointer; }
     .seg-b.on { background: var(--surface); color: var(--brand-text); box-shadow: 0 2px 8px rgba(20,26,38,0.1); }
-    .tbtn { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: .15s; }
+    .tbtn { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid var(--border-strong); border-radius: 100px; padding: 8px 15px; min-height: 44px; cursor: pointer; transition: var(--m-standard); }
     .tbtn:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .tbtn.primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
     .tbtn.primary:hover { background: #a8481f; color: #fff; }
     .crm-funnel { display: flex; align-items: stretch; gap: 4px; margin: 0 0 14px; flex-wrap: wrap; }
-    .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: .15s; display: flex; flex-direction: column; gap: 7px; }
+    .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: var(--m-standard); display: flex; flex-direction: column; gap: 7px; }
     .fn-card:hover { border-color: rgba(54,54,54,0.3); transform: translateY(-1px); }
     .fn-card.on { border-color: var(--brand-deep); box-shadow: 0 8px 20px rgba(54,54,54,0.14); }
     .fn-l { font: 700 10.5px var(--f-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-muted); }
@@ -1394,7 +1411,9 @@
     .fn-sep { align-self: center; color: var(--ink-dim); font-size: 15px; }
     /* Empty / loading / error row. Shares the table so the pane never
        collapses to a bare header when an agency has no leads yet. */
-    .stpill-btn { cursor: pointer; font-family: inherit; }
+    /* The stage pill is the fastest way to move a lead, so it is a control,
+       not a label. CRM rows are ~148px tall, so a 44px floor costs no density. */
+    .stpill-btn { cursor: pointer; font-family: inherit; min-height: 44px; }
     .stpill-btn:hover { filter: brightness(0.96); }
     .stpill-btn[disabled] { opacity: .5; cursor: progress; }
     .ob-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--border); }
@@ -1422,7 +1441,7 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 14px; box-shadow: var(--lift-2);
       opacity: 0; transform: translateY(-6px); pointer-events: none;
-      transition: opacity .16s ease, transform .18s ease;
+      transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease);
     }
     .rmw.open .rm-pop { opacity: 1; transform: none; pointer-events: auto; }
     .rm-card { padding: 4px 2px; min-width: 232px; }
@@ -1447,7 +1466,7 @@
     .crm-table th.sortable .crt { opacity: .35; margin-left: 4px; font-size: 10px; }
     .crm-table th.sortable.on { color: var(--brand-text); } .crm-table th.sortable.on .crt { opacity: 1; }
     .col-add { width: 22px; height: 22px; border-radius: 7px; border: 1px dashed var(--border-strong); background: none; color: var(--ink-dim); cursor: pointer; }
-    .crm-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .crm-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--m-micro); }
     .crm-row:last-child { border-bottom: none; }
     .crm-row:hover { background: var(--brand-tint); }
     .crm-row.sel { background: var(--brand-tint); box-shadow: inset 3px 0 0 var(--brand-deep); }
@@ -1488,28 +1507,39 @@
     .stat-w { font-size: 12.5px; color: var(--ink-muted); }
     .failx { font-size: 10.5px; color: var(--danger); margin-left: 7px; font-weight: 700; }
     .c-act { white-space: nowrap; text-align: right; }
-    .crm-wa, .crm-more { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink-muted); cursor: pointer; font-size: 14px; margin-left: 4px; }
+    .crm-wa, .crm-more { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink-muted); cursor: pointer; font-size: 14px; margin-left: 4px; }
     .crm-wa:hover { color: #1a9e4b; border-color: rgba(37,211,102,0.5); } .crm-more:hover { color: var(--brand-deep); }
-    .crm-pg { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border-top: 1px solid var(--border); }
+    /* Three groups that will not fit on one narrow line, so they wrap into
+       three 44px rows. The gap is tight because the rows are already tall —
+       the touch floor buys the height, spacing does not need to add to it. */
+    .crm-pg { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid var(--border); }
     .pg-l, .pg-go { font-size: 12.5px; color: var(--ink-muted); }
-    .crm-pg select, .crm-pg input { font: 600 12.5px var(--f-sans); border: 1px solid var(--border-strong); border-radius: 9px; padding: 5px 8px; background: var(--surface); color: var(--ink); }
+    .crm-pg select, .crm-pg input { font: 600 12.5px var(--f-sans); min-height: 44px; border: 1px solid var(--border-strong); border-radius: 9px; padding: 5px 8px; background: var(--surface); color: var(--ink); }
     .crm-pg #crmGo { width: 52px; }
     .pg-nav { display: flex; gap: 4px; }
-    .pg-n { min-width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font: 700 12.5px var(--f-sans); color: var(--ink-muted); cursor: pointer; }
+    /* Leaflet's own 30px zoom buttons. Same override as property.html —
+       both pages mount a map and neither should inherit a vendor default
+       that sits below the touch floor. */
+    .leaflet-touch .leaflet-bar a,
+    .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+
+    .pg-n { min-width: 44px; height: 44px; flex: none; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); font: 700 12.5px var(--f-sans); color: var(--ink-muted); cursor: pointer; }
     .pg-n.on { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
-    .crm-bulk { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%,14px); z-index: 55; display: flex; align-items: center; gap: 6px; padding: 9px 10px 9px 18px; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 100px; box-shadow: 0 24px 60px rgba(20,26,38,0.24); opacity: 0; pointer-events: none; transition: transform .3s cubic-bezier(.2,.9,.3,1.3), opacity .2s; }
+    .crm-bulk { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%,14px); z-index: 55; display: flex; align-items: center; gap: 6px; padding: 9px 10px 9px 18px; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 100px; box-shadow: 0 24px 60px rgba(20,26,38,0.24); opacity: 0; pointer-events: none; transition: transform var(--m-expanded) var(--m-ease-spring), opacity var(--m-standard); }
     .crm-bulk.on { transform: translate(-50%,0); opacity: 1; pointer-events: auto; }
     .crm-bulk .bk-n { font: 700 13px var(--f-sans); color: var(--ink); margin-right: 6px; }
-    .crm-bulk button { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 7px 14px; cursor: pointer; }
+    .crm-bulk button { font: 700 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.7); border: 1px solid var(--border); border-radius: 100px; padding: 7px 14px; min-height: 44px; cursor: pointer; }
     .crm-bulk button:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .crm-bulk button.dgr:hover { color: var(--danger); border-color: rgba(178,59,59,0.4); }
-    .crm-bulk .bk-x { width: 30px; height: 30px; padding: 0; border-radius: 50%; }
+    /* flex: none matters as much as the width here. In a flex row a plain
+       `width` is only a basis — this button was being shrunk to 20px. */
+    .crm-bulk .bk-x { width: 44px; height: 44px; flex: none; padding: 0; border-radius: 50%; }
     .crm-menu { position: fixed; z-index: 70; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 56px rgba(20,26,38,0.22); padding: 6px; min-width: 176px; }
     .cm-i { display: block; width: 100%; text-align: left; font: 600 13px var(--f-sans); color: var(--ink); background: none; border: none; padding: 9px 12px; border-radius: 9px; cursor: pointer; }
     .cm-i:hover { background: var(--brand-tint); color: var(--brand-text); }
     .cm-i.on { color: var(--brand-text); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-    @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity .2s; } }
+    @media (prefers-reduced-motion: reduce){ .crm-bulk { transition: opacity var(--m-standard); } }
     /* The `@media (max-width: 900px){ .crm-tablecard { overflow-x: auto } }`
        that used to sit here is gone. It was written when the row was a real
        table that had to scroll; the row is a grid card now, so the rule could
@@ -1574,7 +1604,7 @@
         flex-direction: column; align-items: flex-start; gap: 12px;
       }
       .crm-tools { flex-wrap: wrap; }
-      .tbtn { min-height: 40px; }
+      .tbtn { min-height: 44px; }
       /* Sort and Filter were a plain flex row, so at 375px they wrapped or
          sat at whatever width their labels happened to need — one ragged
          row instead of a deliberate pair. They're the only two controls
@@ -1641,7 +1671,10 @@
          taskbar opens openComposer(), which picks a listing, chooses channels
          and calls social-generate — everything this card does and more. Two
          routes to one job is a phone screen wasted. Desktop keeps both. */
-      #pane-social #cmpGen { display: none; }
+      /* The inline generator this hides was superseded by the composer modal;
+         its markup and its IIFE are both still here. Renamed from #cmpGen so it
+         no longer shares an id with the composer's own Generate button. */
+      #pane-social #cmpGenPanel { display: none; }
 
       /* the listing picker was 495px of option text in a 297px control */
       .cmp-gen select, #pane-social select, #pane-marketing select {
@@ -1735,7 +1768,7 @@
          chrome before the first lead. Packing them puts the same controls in
          two short rows and gets the data above the fold. */
       .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: 0 1 auto; }
-      .crm-tools .tbtn { min-height: 40px; }
+      .crm-tools .tbtn { min-height: 44px; }
 
       /* A segmented control with five options (Listings: All/Verified/
          Pending/Expiring/Expired) cannot be one pill row at 375px. It keeps
@@ -1876,7 +1909,10 @@
       /* pager: three rows, not three columns squeezed onto one */
       #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
       .pg-nav { flex-wrap: wrap; }
-      .pg-n { min-width: 38px; min-height: 38px; }
+      /* This used to drop pagination to 38px — on the one platform where
+         the target actually has to survive a thumb. The wrap above is what
+         mobile needed; the shrink was never the point. */
+      .pg-n { min-width: 44px; min-height: 44px; }
 
       /* the bulk bar clears the taskbar instead of sitting on top of it */
       .crm-bulk { left: 12px; right: 12px; bottom: calc(88px + env(safe-area-inset-bottom));
@@ -1913,7 +1949,7 @@
         position: fixed; inset: 0; z-index: 97;
         background: var(--surface);
         transform: translateX(100%);
-        transition: transform .32s cubic-bezier(.22,1,.36,1);
+        transition: transform var(--m-expanded) var(--m-ease-panel);
         overflow-y: auto; overscroll-behavior: contain;
         padding: 0 16px 24px;
       }
@@ -1933,7 +1969,7 @@
         display: flex; align-items: center; justify-content: center;
         width: 44px; height: 44px; flex: none; margin-left: -10px;
         border: none; background: none; border-radius: 50%;
-        font-size: 19px; color: var(--ink); cursor: pointer; transition: background .15s;
+        font-size: 19px; color: var(--ink); cursor: pointer; transition: background var(--m-standard);
       }
       .ov-sheet-back:hover { background: rgba(0,0,0,0.05); }
       .ov-sheet-tt {
@@ -2089,7 +2125,7 @@
       .agd-scrim{
         display: block; position: fixed; inset: 0; z-index: 58;
         background: rgba(15,15,15,0.34); backdrop-filter: blur(2px);
-        opacity: 0; pointer-events: none; transition: opacity .22s ease;
+        opacity: 0; pointer-events: none; transition: opacity var(--m-standard) var(--m-ease);
       }
       .agd-scrim.on{ opacity: 1; pointer-events: auto; }
 
@@ -2111,7 +2147,7 @@
         width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         background: none; color: var(--ink); font-size: 21px;
-        transition: transform .2s cubic-bezier(.22,1,.36,1), background .15s ease;
+        transition: transform var(--m-standard) var(--m-ease-panel), background var(--m-standard) var(--m-ease);
       }
       .agd-btn:active{ transform: scale(0.9); }
 
@@ -2150,7 +2186,11 @@
         padding: 6px; overflow: hidden;
         transform-origin: bottom left;
         opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
-        transition: opacity .2s ease, transform .22s cubic-bezier(.22,1,.36,1);
+        /* One easing for both halves — the fade and the rise are one gesture,
+           and running them on different curves made the sheet's opacity arrive
+           on a different schedule from its position. */
+        transition: opacity var(--m-standard) var(--m-ease-panel),
+                    transform var(--m-standard) var(--m-ease-panel);
         max-height: 68dvh; overflow-y: auto;
       }
       .agd-add .agd-sheet{ left: -52px; transform-origin: bottom left; }
@@ -2169,7 +2209,7 @@
         font: 700 10.5px var(--f-sans); letter-spacing: .12em; text-transform: uppercase;
         color: var(--ink-dim);
       }
-      .agd-grp .chv{ font-size: 13px; transition: transform .2s ease; }
+      .agd-grp .chv{ font-size: 13px; transition: transform var(--m-standard) var(--m-ease); }
       .agd-sec.open .agd-grp .chv{ transform: rotate(90deg); }
       .agd-items{ display: none; padding-bottom: 4px; }
       .agd-sec.open .agd-items{ display: block; }
@@ -2389,7 +2429,7 @@
                validated against that platform's real limits before it can
                be queued. Channels + this-week stats now live in the
                Ask-Toju panel, same as every other pane. -->
-          <div class="card cmp-gen" id="cmpGen">
+          <div class="card cmp-gen" id="cmpGenPanel">
             <div class="cmp-head">
               <div>
                 <div class="h2">Generate a campaign</div>
@@ -3134,7 +3174,7 @@
         if (!withPhone.length) { toast('None of those leads has a phone number yet'); return; }
 
         drawer.innerHTML = `
-          <button class="x" id="drawerX">\u00d7</button>
+          <button class="x" aria-label="Close">\u00d7</button>
           <div style="font-size:19px;font-weight:700">Message ${withPhone.length} lead${withPhone.length !== 1 ? 's' : ''}</div>
           <p class="muted" style="font-size:12px;margin:6px 0 16px">${
             without
@@ -3149,7 +3189,6 @@
             <button class="btn btn-block" id="obOpen" style="margin-top:8px">View outbox</button>
           </div>`;
         scrim.classList.add('on'); drawer.classList.add('on');
-        document.getElementById('drawerX').addEventListener('click', closeLead);
         const ta = document.getElementById('obBody');
         const count = document.getElementById('obCount');
         ta.addEventListener('input', () => { count.textContent = ta.value.length; });
@@ -3179,7 +3218,7 @@
       const OB_LABEL = { queued: 'Waiting', sending: 'Sending', sent: 'Sent', failed: 'Failed', cancelled: 'Cancelled' };
       function openOutbox() {
         drawer.innerHTML = `
-          <button class="x" id="drawerX">\u00d7</button>
+          <button class="x" aria-label="Close">\u00d7</button>
           <div style="font-size:19px;font-weight:700">Outbox</div>
           <p class="muted" style="font-size:12px;margin:6px 0 14px">Messages are held here until you send them. Nothing goes out on its own.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -3188,7 +3227,6 @@
           </div>
           <div id="obList"><p class="muted" style="font-size:12.5px">Loading…</p></div>`;
         scrim.classList.add('on'); drawer.classList.add('on');
-        document.getElementById('drawerX').addEventListener('click', closeLead);
         document.getElementById('obRefresh').addEventListener('click', paintOutbox);
         document.getElementById('obSend').addEventListener('click', function () {
           const btn = this;
@@ -3333,7 +3371,7 @@
       const won = l.stage === 'Won'
         ? `<div class="sec won"><div class="k">Revenue attributed</div><p style="margin-top:6px;font-size:13px;font-weight:600;line-height:1.5">This ${l.price} sale originated from ${/^[aeiou]/i.test(m.label)?'an':'a'} ${m.label} post${a.post ? ' (' + a.post + ')' : ''}${a.posted ? ' \u2014 posted ' + a.posted : ''}.</p></div>` : '';
       drawer.innerHTML = `
-        <button class="x" id="drawerX">\u00d7</button>
+        <button class="x" aria-label="Close">\u00d7</button>
         <div style="display:flex;align-items:center;gap:10px">${
           l.score == null ? '' : `<span class="score" style="${scoreTone(l.score)}">${l.score}</span>`
         }<div><div style="font-size:19px;font-weight:700">${l.nm}</div><div class="ph">${
@@ -3373,11 +3411,16 @@
         ${sec('Relationship graph', Array.isArray(l.graph) && l.graph.length ? graphHtml(l.graph) : '')}
         ${l.brief ? `<div class="sec brief"><div class="k">\u2726 Brief from Toju</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>` : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.synMotion) synMotion.refresh();
     }
     function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
     scrim.addEventListener('click', closeLead);
+    /* One listener on the container instead of one per render. The drawer's
+       innerHTML is replaced by eleven different templates and each used to
+       re-query the close button by id and bind again — eleven copies of the
+       same line, and eleven elements sharing one id. The container outlives
+       every template, so delegation is the honest shape for this. */
+    drawer.addEventListener('click', (e) => { if (e.target.closest('.x')) closeLead(); });
 
     // ── content pipeline (Phase A) ──
     const IMG = {
@@ -3834,7 +3877,7 @@
       const vLabel = d.verification_status === 'verified' ? '✓ Verified'
         : d.verification_status === 'in_progress' ? '◷ In progress' : 'Unverified · enters the 7-check queue';
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">${isNew ? 'New listing' : 'Edit listing'}</div>
         <p class="muted" style="font-size:12px;margin:6px 0 12px">Complete every required field (<b style="color:var(--brand-text)">*</b>) so Toju can match this property accurately. ${isNew ? 'New listings enter the 7-check verification queue.' : 'Edits must keep the listing complete.'}</p>
         <div class="lf">
@@ -3917,7 +3960,6 @@
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
       const g = id => document.getElementById(id);
-      g('drawerX').addEventListener('click', closeLead);
       // active toggle
       const actSw = g('lfActive');
       const toggleAct = () => { const on = actSw.classList.toggle('on'); actSw.setAttribute('aria-checked', String(on)); };
@@ -4479,7 +4521,7 @@
     }
     function campaignForm() {
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">New campaign</div>
         <p class="muted" style="font-size:12px;margin:6px 0 18px">Pick a listing and an audience — the AI generates the first three ad creatives and starts learning.</p>
         <div class="lf">
@@ -4510,7 +4552,6 @@
           <button class="btn btn-primary btn-block" id="cfSave" style="margin-top:6px">✦ Generate creatives &amp; launch</button>
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
       document.getElementById('cfSave').addEventListener('click', () => {
         const nm = document.getElementById('cfN').value.trim();
         if (!nm) { toast('Name the campaign first'); return; }
@@ -4572,116 +4613,11 @@
        tel: rather than anything platform-mediated. Twilio is not configured,
        so Synapse cannot place or route a call today -- and a dialler link
        needs no provider at all, on any phone. */
-    (function relationshipManagerControl() {
-      /* Its own escaper. The one used by the CRM lives inside that pane's
-         IIFE, so it is not in scope here -- referencing it would have thrown
-         the moment anyone opened this sheet, and nothing about the syntax
-         would have shown it. */
-      const esc = (t) => String(t == null ? '' : t)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      const wrap = document.getElementById('agdCall');
-      const fab = document.getElementById('agdCallFab');
-      const sheet = document.getElementById('agdCallSheet');
-      if (!wrap || !fab || !sheet) return;
-      let cached = null;
-
-      const paint = (rm) => {
-        if (!rm.assigned) {
-          sheet.innerHTML = '<div class="rm-card">'
-            + '<div class="rm-role">Your relationship manager</div>'
-            + '<div class="rm-none">Nobody is assigned to your agency yet. '
-            + 'Email <b>ilios.intelligence@gmail.com</b> and we will put a name and a number here.</div>'
-            + '</div>';
-          return;
-        }
-        const head = '<div class="rm-card">'
-          + '<div class="rm-role">Your relationship manager</div>'
-          + '<div class="rm-name">' + esc(rm.name) + '</div>'
-          + (rm.hours ? '<div class="rm-hours">' + esc(rm.hours) + '</div>' : '');
-        sheet.innerHTML = rm.phone
-          ? head + '<a class="rm-call" href="tel:' + esc(rm.phone.replace(/[^\d+]/g, '')) + '">'
-                 + '\u2706 Call ' + esc(rm.phone) + '</a></div>'
-          : head + '<div class="rm-none">We do not have a phone number on file for them yet — '
-                 + 'email <b>ilios.intelligence@gmail.com</b> and we will add one.</div></div>';
-      };
-
-      const open = () => {
-        // Same 'open' class and same scrim the nav and create sheets use --
-        // the CSS only reveals .agd.open .agd-sheet, so toggling any other
-        // class would have left this sheet permanently invisible.
-        const wasOpen = wrap.classList.contains('open');
-        document.getElementById('agdNav')?.classList.remove('open');
-        document.getElementById('agdAdd')?.classList.remove('open');
-        const scrim = document.getElementById('agdScrim');
-        wrap.classList.toggle('open', !wasOpen);
-        if (scrim) scrim.classList.toggle('on', !wasOpen);
-        fab.setAttribute('aria-expanded', String(!wasOpen));
-        if (wasOpen) return;
-        if (cached) { paint(cached); return; }
-        sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Looking that up…</div></div>';
-        if (!window.SynListings || !SynListings.relationshipManager) {
-          sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that just now.</div></div>';
-          return;
-        }
-        SynListings.relationshipManager()
-          .then((rm) => { cached = rm; paint(rm); })
-          .catch((err) => {
-            sheet.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that — '
-              + esc((err && err.message) || 'please try again') + '</div></div>';
-          });
-      };
-
-      fab.addEventListener('click', (e) => { e.stopPropagation(); open(); });
-
-      /* The desktop control. Same data, same three states, same escaper --
-         only the surface differs, because the taskbar is phone-only. The
-         fetch is shared through `cached`, so opening one then the other does
-         not hit the database twice. */
-      const dWrap = document.getElementById('rmDeskWrap');
-      const dBtn = document.getElementById('rmDeskBtn');
-      const dPop = document.getElementById('rmDeskPop');
-      if (dWrap && dBtn && dPop) {
-        const paintInto = (el, rm) => {
-          const keep = sheet.innerHTML;
-          paint(rm);                 // paint() writes into `sheet`
-          el.innerHTML = sheet.innerHTML;
-          sheet.innerHTML = keep;    // leave the phone sheet as it was
-        };
-        dBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const wasOpen = dWrap.classList.contains('open');
-          dWrap.classList.toggle('open', !wasOpen);
-          dBtn.setAttribute('aria-expanded', String(!wasOpen));
-          if (wasOpen) return;
-          if (cached) { paintInto(dPop, cached); return; }
-          dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Looking that up…</div></div>';
-          if (!window.SynListings || !SynListings.relationshipManager) {
-            dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that just now.</div></div>';
-            return;
-          }
-          SynListings.relationshipManager()
-            .then((rm) => { cached = rm; paintInto(dPop, rm); })
-            .catch((err) => {
-              dPop.innerHTML = '<div class="rm-card"><div class="rm-none">Could not load that — '
-                + esc((err && err.message) || 'please try again') + '</div></div>';
-            });
-        });
-        document.addEventListener('click', (e) => {
-          if (dWrap.classList.contains('open') && !dWrap.contains(e.target)) {
-            dWrap.classList.remove('open');
-            dBtn.setAttribute('aria-expanded', 'false');
-          }
-        });
-      }
-      document.addEventListener('click', (e) => {
-        if (wrap.classList.contains('open') && !wrap.contains(e.target)) {
-          wrap.classList.remove('open');
-          const scrim = document.getElementById('agdScrim');
-          if (scrim) scrim.classList.remove('on');
-          fab.setAttribute('aria-expanded', 'false');
-        }
-      });
-    })();
+    /* The relationship-manager control lived here: a fab, a sheet and a
+       scrim driven by #agdCall / #agdCallFab / #agdCallSheet. None of those
+       elements exist in the markup any more, so the block guarded on them,
+       returned immediately, and had done nothing for some time. Removed
+       rather than left to read as a working feature. */
 
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
@@ -4859,26 +4795,10 @@
 
     // shared chart tooltip (hover layer for the profile spark)
     const ctip = document.createElement('div'); ctip.className = 'ctip'; document.body.appendChild(ctip);
-    function wireSparkHover(svg, labelFn) {
-      const pts = svg.getAttribute('data-pts').split(',').map(Number);
-      const pad = +svg.getAttribute('data-pad') || 4;
-      let mark = null;
-      svg.style.pointerEvents = 'all';
-      svg.addEventListener('mousemove', (e) => {
-        const r = svg.getBoundingClientRect();
-        const vw = svg.viewBox.baseVal.width || r.width, vh = svg.viewBox.baseVal.height || r.height;
-        const x = (e.clientX - r.left) / r.width * vw;
-        const i = Math.max(0, Math.min(pts.length - 1, Math.round((x - pad) / ((vw - pad * 2) / (pts.length - 1)))));
-        const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
-        const cx = pad + (i / (pts.length - 1)) * (vw - pad * 2);
-        const cy = max === min ? vh / 2 : (vh - pad) - ((pts[i] - min) / (max - min)) * (vh - pad * 2);
-        if (!mark) { mark = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); mark.setAttribute('r', '4'); mark.setAttribute('fill', '#fff'); mark.setAttribute('stroke', C_BRAND); mark.setAttribute('stroke-width', '2.5'); svg.appendChild(mark); }
-        mark.setAttribute('cx', cx); mark.setAttribute('cy', cy);
-        ctip.innerHTML = labelFn(i, pts[i]);
-        ctip.style.left = (e.clientX + 12) + 'px'; ctip.style.top = (e.clientY - 34) + 'px'; ctip.style.opacity = '1';
-      });
-      svg.addEventListener('mouseleave', () => { ctip.style.opacity = '0'; if (mark) { mark.remove(); mark = null; } });
-    }
+    /* wireSparkHover lived here: a hover readout for the 8-week sparklines,
+       drawing a marker on the line and following the cursor with .ctip. It
+       was declared and never called from anywhere in the repo. Removed; the
+       sparklines render their trend without it. */
     const WKS = ['7 wks ago', '6 wks ago', '5 wks ago', '4 wks ago', '3 wks ago', '2 wks ago', 'Last week', 'This week'];
 
     // ── overview + CRM stat tiles (hero number + 8-week trend) ──
@@ -5187,7 +5107,7 @@
       const sec = (k, body) => `<div class="ap-sec"><div class="k">${k}</div>${body}</div>`;
 
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div class="dhead">
           <span class="av" style="width:52px;height:52px;font-size:16px;flex:none">${initials(a.nm)}</span>
           <div class="who"><div class="dnm">${esc2(a.nm)}</div>
@@ -5242,7 +5162,6 @@
           : ''}
         ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
       wireAvailability(a);
     }
 
@@ -5510,7 +5429,7 @@
     function openAgentChat(i) {
       const a = AGENTS[i]; if (!a || !a.id) return;
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div class="dhead">
           <span class="av" style="width:44px;height:44px;font-size:14px;flex:none">${initials(a.nm)}</span>
           <div class="who"><div class="dnm">${esc2(a.nm)}</div>
@@ -5524,7 +5443,6 @@
         </form>
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(drawer);
 
       const box = document.getElementById('tmThread');
@@ -5573,7 +5491,7 @@
       const a = AGENTS[i]; if (!a || !a.id) return;
       const open = (leads || []).filter((l) => l.stage !== 'Won');
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">Assign a lead</div>
         <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it — whoever holds it now is shown under each one.</p>
         <div id="asgList">${
@@ -5589,7 +5507,6 @@
             : '<div class="tm-empty">No open leads to assign yet.</div>'
         }</div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
 
       document.getElementById('asgList').addEventListener('click', (ev) => {
         const row = ev.target.closest('[data-lead]'); if (!row || row.disabled) return;
@@ -5618,7 +5535,7 @@
     // ── Invite a teammate: a real form in the side pane ──
     function openInvite(){
       drawer.innerHTML = `
-        <button class="x" id="drawerX">×</button>
+        <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">Invite a teammate</div>
         <p class="muted" style="font-size:12px;margin:6px 0 18px">You&#39;ll get a link to send them yourself &mdash; we can&#39;t email it out yet. Only the address you invite can use it, and it lasts 14 days.</p>
         <div class="inv">
@@ -5627,7 +5544,6 @@
           <button class="send" id="invSend" disabled aria-disabled="true">Send invite</button>
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
       const email = document.getElementById('invEmail'), err = document.getElementById('invErr'), send = document.getElementById('invSend');
       const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       email.addEventListener('input', () => {
@@ -5657,14 +5573,13 @@
                Shown, selectable, and copied for them where the browser allows. */
             const url = location.origin + location.pathname + '?invite=' + inv.token;
             drawer.innerHTML =
-              '<button class="x" id="drawerX">×</button>'
+              '<button class="x" aria-label="Close">×</button>'
               + '<div style="font-size:19px;font-weight:700">Invite ready</div>'
               + '<p class="muted" style="font-size:12.5px;margin:8px 0 14px;line-height:1.55">'
               + 'Send this to <b>' + esc2(inv.email) + '</b>. Only that address can use it, '
               + 'and it expires in 14 days.</p>'
               + '<div class="inv-link" id="invLink">' + esc2(url) + '</div>'
               + '<button class="btn btn-primary btn-block" id="invCopy" style="margin-top:12px">Copy link</button>';
-            document.getElementById('drawerX').addEventListener('click', closeLead);
             document.getElementById('invCopy').addEventListener('click', () => {
               const done = () => toast('Link copied — send it to ' + inv.email + '.');
               if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -5836,7 +5751,7 @@
     }
     function openTranscript(i){
       const h = HANDOFFS[i];
-      drawer.innerHTML = `<button class="x" id="drawerX">×</button>
+      drawer.innerHTML = `<button class="x" aria-label="Close">×</button>
         <div style="display:flex;align-items:center;gap:10px"><span class="o" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#121212,#121212);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">T</span><div><div style="font-size:18px;font-weight:700">${h.buyer}</div><div class="ph">${h.prop} · ${h.price}</div></div></div>
         ${Array.isArray(h.transcript) && h.transcript.length
           ? `<p class="muted" style="font-size:12px;margin-top:10px">Toju&#39;s full conversation — the five stages, verbatim. Every price exchange is logged to the deal room.</p>
@@ -5849,7 +5764,6 @@
              ${h.rec ? `<div class="sec" style="margin-top:10px"><div class="k">Reasoning</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.rec)}</p></div>` : ''}
              ${h.draft ? `<div class="sec" style="margin-top:10px"><div class="k">Message the buyer opened with</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.draft)}</p></div>` : ''}`}`;
       scrim.classList.add('on'); drawer.classList.add('on');
-      document.getElementById('drawerX').addEventListener('click', closeLead);
     }
     document.getElementById('handoffs').addEventListener('click', (e) => {
       if (e.target.closest('[data-go-listings]')) { goToPane('listings'); return; }
@@ -7022,14 +6936,6 @@
         if (filt) filt.classList.remove('open');
         if (filtFab) filtFab.setAttribute('aria-expanded', 'false');
         nav.classList.remove('open'); add.classList.remove('open');
-        // The call control is a third sheet on the same bar; without this it
-        // stays open behind the scrim when the nav or create menu opens.
-        const call = document.getElementById('agdCall');
-        if (call) {
-          call.classList.remove('open');
-          const cf = document.getElementById('agdCallFab');
-          if (cf) cf.setAttribute('aria-expanded', 'false');
-        }
         scrim.classList.remove('on');
         navFab.setAttribute('aria-expanded', 'false');
         addFab.setAttribute('aria-expanded', 'false');
@@ -7206,12 +7112,47 @@
       const SWATCHES = ['#1F4E5F', '#2E7D4F', '#7A3E9D', '#B8860B', '#C2552B',
                         '#1D4ED8', '#B91C4C', '#0F766E', '#334155', '#121212'];
 
+      /* Nearest common colour name for a hex, so the button announces
+         "Deep teal" rather than "#1F4E5F". Distance in plain RGB is enough at
+         this palette size — these are twenty well-separated brand colours, not
+         a continuous picker. */
+      const SW_NAMES = [
+        ['#000000','Black'], ['#FFFFFF','White'], ['#6E6E73','Grey'],
+        ['#B23B3B','Red'], ['#C76A1A','Burnt orange'], ['#FF8A2D','Orange'],
+        ['#E0B64A','Gold'], ['#9C7A1E','Ochre'], ['#2E7D4F','Green'],
+        ['#1F4E5F','Deep teal'], ['#2F6DBD','Blue'], ['#3B2F6E','Indigo'],
+        ['#6B3FA0','Purple'], ['#A0446E','Plum'], ['#121212','Near black'],
+      ];
+      function swatchName(hex) {
+        const h = String(hex).replace('#','');
+        const to = (i) => parseInt(h.slice(i, i+2), 16);
+        const r = to(0), g = to(2), b = to(4);
+        let best = null, bestD = Infinity;
+        SW_NAMES.forEach(([hx, nm]) => {
+          const q = hx.replace('#','');
+          const d = Math.pow(r - parseInt(q.slice(0,2),16), 2)
+                  + Math.pow(g - parseInt(q.slice(2,4),16), 2)
+                  + Math.pow(b - parseInt(q.slice(4,6),16), 2);
+          if (d < bestD) { bestD = d; best = nm; }
+        });
+        /* The hex stays in the name: an agency picking a brand colour does care
+           which exact one it is, and it is the only way to tell two near
+           neighbours apart by ear. */
+        return best + ' ' + String(hex).toUpperCase();
+      }
+
       function buildPresets() {
         document.querySelectorAll('.sw-presets').forEach((host) => {
           const target = f(host.dataset.for);
           if (!target || host.childElementCount) return;
+          /* Named, not just tinted. A hex code in a `title` is not an accessible
+             name — title is not reliably announced, and "#1F4E5F" is not a
+             colour anyone recognises. aria-pressed carries the selected state,
+             which was previously conveyed by a ring and nothing else. */
           host.innerHTML = SWATCHES.map((c) =>
-            `<button type="button" data-c="${c}" title="${c}" style="background:${c}"></button>`).join('');
+            `<button type="button" data-c="${c}" aria-pressed="false"
+               aria-label="${esc2(swatchName(c))}" title="${esc2(swatchName(c))}"
+               style="--sw:${c}"><i></i></button>`).join('');
           host.addEventListener('click', (e) => {
             const b = e.target.closest('button[data-c]'); if (!b) return;
             target.value = b.dataset.c;
@@ -7239,8 +7180,11 @@
           const chosen = inp.dataset.stored === '1';
           card.classList.toggle('unset', !chosen);
           if (hex) hex.textContent = chosen ? inp.value.toUpperCase() : 'Not set';
-          card.querySelectorAll('.sw-presets button').forEach((b) =>
-            b.classList.toggle('on', chosen && b.dataset.c.toLowerCase() === inp.value.toLowerCase()));
+          card.querySelectorAll('.sw-presets button').forEach((b) => {
+            const on = chosen && b.dataset.c.toLowerCase() === inp.value.toLowerCase();
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-pressed', String(on));
+          });
         });
         const nm = f('bkName').value.trim() || 'Your agency';
         const tag = f('bkTagline').value.trim() || 'Your tagline appears here';

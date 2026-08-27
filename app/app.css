@@ -137,6 +137,15 @@
   --f-accent: 'Josefin Sans', system-ui, sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Form controls do not inherit font-family. Every <button>, <input> and
+   <select> that does not say otherwise renders in the UA's own font — which
+   on Windows is Arial, next to the Lato everything else uses. This shipped
+   live: every property title in the agency Overview was a <button>, so the
+   whole column was Arial while the address beside it was not.
+   font-family only, deliberately: `font: inherit` would also reset size and
+   weight, and controls that set their own 12px labels would jump to 16px. */
+button, input, select, textarea, optgroup { font-family: inherit; }
 body {
   font-family: var(--f-sans);
   font-size: 15px;
@@ -170,7 +179,7 @@ a { color: inherit; text-decoration: none; }
 .appbar nav { display: flex; gap: 4px; margin-left: 8px; }
 .appbar nav a {
   font-size: 13px; color: var(--ink-muted); padding: 7px 13px; border-radius: 100px;
-  transition: all .2s;
+  transition: all var(--m-standard);
 }
 .appbar nav a:hover { color: var(--ink); background: rgba(0,0,0,0.04); }
 /* The active item is marked by its filled pill alone. An orange dot under the
@@ -207,7 +216,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-family: var(--f-sans); font-weight: 700; font-size: 14px;
   padding: 13px 22px; border-radius: 100px; border: none; cursor: pointer;
-  transition: all .25s;
+  transition: all var(--m-expanded);
   /* A floor, not a height. The padding above already clears 44px, but several
      call sites tighten it with an inline style -- the negotiator's "Get my
      opening offer" came out at 35px that way. Fixing them one at a time only
@@ -268,8 +277,10 @@ a { color: inherit; text-decoration: none; }
 .prox-txt span { display: block; font-size: 13px; line-height: 1.6; color: var(--ink-muted); margin-top: 3px; }
 .prox-txt .prox-note { font-size: 12px; color: var(--ink-dim); margin-top: 7px; font-style: italic; }
 .prox-btn { flex: none; align-self: center; font: 600 12.5px var(--f-sans); border-radius: 100px;
-  padding: 9px 16px; cursor: pointer; border: 1px solid var(--border);
-  background: #121212; color: #f5f5f5; transition: opacity .2s, transform .15s; }
+  /* padding alone left this at 40px. min-height sets the floor without
+     changing the shape of the pill. */
+  padding: 9px 16px; min-height: 44px; cursor: pointer; border: 1px solid var(--border);
+  background: #121212; color: #f5f5f5; transition: opacity var(--m-standard), transform var(--m-standard); }
 .prox-card.on .prox-btn { background: none; color: var(--ink-muted); }
 .prox-btn:hover:not(:disabled) { transform: translateY(-1px); }
 .prox-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
@@ -302,7 +313,7 @@ a { color: inherit; text-decoration: none; }
   padding: 6px 10px; border-radius: 100px;
   border: 1.5px solid #fff;
   box-shadow: 0 5px 14px rgba(20,20,20,0.38);
-  transition: transform .16s cubic-bezier(.22,1,.36,1), background .16s;
+  transition: transform var(--m-standard) var(--m-ease-panel), background var(--m-standard);
 }
 .price-pin .pv { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
 /* the verified dot */
@@ -353,7 +364,7 @@ a { color: inherit; text-decoration: none; }
   position: relative; z-index: 2;
 }
 /* press feedback — hover lifts, active settles */
-:where(.btn, .btn-primary, .btn-ghost):not(:disabled) { transition: transform .16s cubic-bezier(.22,1,.36,1), background .2s, box-shadow .2s, opacity .2s; }
+:where(.btn, .btn-primary, .btn-ghost):not(:disabled) { transition: transform var(--m-standard) var(--m-ease-panel), background var(--m-standard), box-shadow var(--m-standard), opacity var(--m-standard); }
 :where(.btn, .btn-primary, .btn-ghost):not(:disabled):active { transform: translateY(0) scale(.985); }
 
 /* inert states read as inert */
@@ -367,7 +378,7 @@ a { color: inherit; text-decoration: none; }
 [data-busy="true"] { cursor: progress; opacity: .75; }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(.btn, .btn-primary, .btn-ghost) { transition: background .2s, box-shadow .2s; }
+  :where(.btn, .btn-primary, .btn-ghost) { transition: background var(--m-standard), box-shadow var(--m-standard); }
   :where(.btn, .btn-primary, .btn-ghost):not(:disabled):active { transform: none; }
 }
 
@@ -384,11 +395,11 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--f-sans); font-size: 13.5px; font-weight: 500; line-height: 1.5;
   padding: 13px 18px; border-radius: 12px;
   box-shadow: 0 18px 44px rgba(20,20,20,0.32);
-  opacity: 0; pointer-events: none; transition: opacity .28s, transform .28s cubic-bezier(.22,1,.36,1);
+  opacity: 0; pointer-events: none; transition: opacity var(--m-expanded), transform var(--m-expanded) var(--m-ease-panel);
 }
 #synToast.show { opacity: 1; transform: translate(-50%, 0); }
 #synToast.err { background: #7a271a; }
-@media (prefers-reduced-motion: reduce){ #synToast { transition: opacity .2s; transform: translate(-50%,0); } }
+@media (prefers-reduced-motion: reduce){ #synToast { transition: opacity var(--m-standard); transform: translate(-50%,0); } }
 
 /* Trust chip */
 .chip {
@@ -649,13 +660,13 @@ a:focus-visible {
    hovering above it, so it does not need the lift a shadow gives. */
 .cnav-back {
   display: inline-flex;
-  width: 42px; height: 42px; border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   align-items: center; justify-content: center;
   margin-bottom: 12px;
   background: rgba(255,255,255,0.7); color: var(--ink);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: transform .18s cubic-bezier(.22,1,.36,1), background .18s ease;
+  transition: transform var(--m-standard) var(--m-ease-panel), background var(--m-standard) var(--m-ease);
 }
 .cnav-back:hover { background: rgba(255,255,255,0.95); }
 .cnav-back:active { transform: scale(0.92); }
@@ -680,12 +691,22 @@ a:focus-visible {
   display: block;
   position: fixed; z-index: 70;
   left: 16px;
+  /* Spans the width now, so the search control can sit at the far end from the
+     navigation triggers and the open field has the whole bar to grow into.
+     The wrapper itself must not swallow taps: it is a full-width invisible box
+     over the bottom of the page, and every card behind it would stop being
+     tappable. Events are handed back to the children that actually paint. */
+  right: 16px;
+  pointer-events: none;
   /* Pages with their own fixed bottom furniture raise this: toju.html has a
      composer pinned to the bottom edge, and a nav sitting on top of the text
      box would be worse than no nav at all. */
   bottom: calc(var(--cnav-bottom, 18px) + env(safe-area-inset-bottom));
 }
+.cnav > * { pointer-events: auto; }
 .cnav-triggers { display: flex; align-items: center; gap: 9px; }
+/* Pushed to the opposite end of the bar from the nav and filter triggers. */
+.cnav-sbtn { margin-left: auto; }
 
 .cnav-btn {
   width: 46px; height: 46px; border-radius: 50%;
@@ -695,7 +716,7 @@ a:focus-visible {
   box-shadow: 0 12px 30px rgba(15,15,15,0.22);
   backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
   cursor: pointer; font-size: 19px; line-height: 1;
-  transition: transform .18s cubic-bezier(.22,1,.36,1);
+  transition: transform var(--m-standard) var(--m-ease-panel);
 }
 .cnav-btn:active { transform: scale(0.92); }
 .cnav-btn .syn-i { width: 20px; height: 20px; }
@@ -711,7 +732,7 @@ a:focus-visible {
   box-shadow: 0 12px 30px rgba(15,15,15,0.22);
   backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
   cursor: pointer; font: 600 14px var(--f-sans); line-height: 1;
-  transition: transform .18s cubic-bezier(.22,1,.36,1);
+  transition: transform var(--m-standard) var(--m-ease-panel);
   max-width: 58vw;
 }
 .cnav-fbtn[hidden] { display: none; }
@@ -720,6 +741,78 @@ a:focus-visible {
 .cnav-flabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Filled only while something is actually narrowing the list. */
 .cnav-fbtn.on { background: #121212; color: #f5f5f5; border-color: transparent; }
+
+/* ── search: closed is a button, open is the bar ───────────────────────────
+   Modelled on the pattern the reference uses: nothing but a circle until you
+   want it, then the whole bottom strip becomes the field. The point is the top
+   of the screen — a sticky search bar up there costs ~60px of the first
+   screenful, which on a phone is most of the first card. Down here it costs
+   nothing until it is asked for.
+
+   The field is the page's own search input, moved here rather than duplicated.
+   A second input would need its value, its clear button and its listeners kept
+   in step with the original, and the two would drift the first time either
+   changed. See adopt() in cust-nav.js. */
+.cnav-search {
+  display: none;
+  align-items: center; gap: 9px;
+}
+.cnav.sopen .cnav-search { display: flex; }
+.cnav.sopen .cnav-triggers { display: none; }
+
+/* The pill that holds the field. Same surface as the triggers so the bar reads
+   as one piece of furniture in both states. */
+.cnav-sfield {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 9px;
+  height: 46px; padding: 0 6px 0 16px; border-radius: 100px;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+}
+.cnav-sfield:focus-within { border-color: var(--brand-deep); }
+.cnav-sfield svg { flex: none; color: var(--ink); }
+
+/* The adopted input. It arrives styled for a wide sticky bar, so it is re-set
+   for a 46px pill here. 16px is a floor, not a preference: below it iOS zooms
+   the page the moment the field takes focus, and the bar leaves the screen. */
+.cnav-sfield input {
+  flex: 1; min-width: 0; align-self: stretch;
+  border: none; outline: none; background: none;
+  font: 400 16px var(--f-sans); color: var(--ink);
+}
+/* The full placeholder is a sentence long — it fits a full-width sticky bar and
+   not a pill with two buttons in it. Truncation would leave "Search by area,
+   city, ty…", which teaches nothing. */
+.cnav-sfield input::placeholder { color: var(--ink-dim); }
+
+/* Clear. The page owns this button and toggles its `hidden` while typing. */
+.cnav-sfield button {
+  flex: none; width: 34px; height: 34px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,0.06); color: var(--ink-muted);
+  font-size: 13px; line-height: 1; cursor: pointer;
+}
+.cnav-sfield button[hidden] { display: none; }
+
+/* Close, drawn as its own circle outside the pill — the same shape language as
+   the triggers it replaced, so the way out is where the way in was. */
+.cnav-sclose {
+  flex: none;
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.94); color: var(--ink);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(15,15,15,0.22);
+  backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  cursor: pointer; font-size: 19px; line-height: 1;
+  transition: transform var(--m-standard) var(--m-ease-panel);
+}
+.cnav-sclose:active { transform: scale(0.92); }
+
+/* A search that is narrowing the list has to say so from the closed state, or
+   closing the field hides the fact that the list is filtered. */
+.cnav-sbtn.on { background: #121212; color: #f5f5f5; border-color: transparent; }
 
 .cnav-sheet {
   position: absolute; bottom: 58px; left: 0; min-width: 226px;
@@ -735,7 +828,7 @@ a:focus-visible {
   overscroll-behavior: contain;
   transform-origin: bottom left;
   opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
-  transition: opacity .2s ease, transform .22s cubic-bezier(.22,1,.36,1);
+  transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease-panel);
 }
 .cnav.open  > #cnavSheet,
 .cnav.fopen > #cnavFSheet { opacity: 1; transform: none; pointer-events: auto; }
@@ -837,7 +930,7 @@ a:focus-visible {
    display:none above it. */
 .cnav-group .prox-txt span { display: block; font: 500 12px/1.5 var(--f-sans); color: var(--ink-muted); margin-top: 3px; }
 .cnav-group .prox-btn {
-  margin-top: 9px; min-height: 40px; width: 100%;
+  margin-top: 9px; min-height: 44px; width: 100%;
   border-radius: 11px; border: 1px solid var(--border); background: rgba(0,0,0,0.03);
   font: 600 13px var(--f-sans); color: var(--ink); cursor: pointer;
 }
@@ -864,7 +957,7 @@ a:focus-visible {
   background: rgba(255,255,255,0.6); color: var(--ink);
   border: 1px solid var(--border);
   font: 600 13px var(--f-sans); cursor: pointer;
-  transition: background .15s ease;
+  transition: background var(--m-standard) var(--m-ease);
 }
 .cnav-dbtn:hover { background: rgba(255,255,255,0.95); }
 .cnav-dbtn .syn-i { width: 15px; height: 15px; }
@@ -880,7 +973,7 @@ a:focus-visible {
   box-shadow: 0 20px 52px rgba(15,15,15,0.24);
   padding: 4px; z-index: 80;
   opacity: 0; transform: translateY(-6px) scale(0.98); pointer-events: none;
-  transition: opacity .18s ease, transform .2s cubic-bezier(.22,1,.36,1);
+  transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease-panel);
 }
 .cnav-desk.open .cnav-dpop { opacity: 1; transform: none; pointer-events: auto; }
 
@@ -893,7 +986,7 @@ a:focus-visible {
 .cnav-dpop .prox-txt b { display: block; font: 600 14px var(--f-sans); color: var(--ink); }
 .cnav-dpop .prox-txt span { display: block; font: 500 12px/1.55 var(--f-sans); color: var(--ink-muted); margin-top: 4px; }
 .cnav-dpop .prox-btn {
-  margin-top: 11px; min-height: 38px; width: 100%;
+  margin-top: 11px; min-height: 44px; width: 100%;
   border-radius: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.03);
   font: 600 13px var(--f-sans); color: var(--ink); cursor: pointer;
 }
@@ -905,7 +998,8 @@ a:focus-visible {
    to be taken out of the flow while its contents are in the taskbar. Two
    classes deep to beat the page's own .toolbar rule. */
 [data-cnav-filters].cnav-lent,
-[data-cnav-actions].cnav-lent { display: none; }
+[data-cnav-actions].cnav-lent,
+[data-cnav-search].cnav-lent { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .cnav-sheet, .cnav-btn, .cnav-fbtn, .cnav-back { transition: none; }

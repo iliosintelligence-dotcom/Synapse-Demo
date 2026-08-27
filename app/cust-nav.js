@@ -187,6 +187,58 @@
      reads out the deal you are filtering to, and marks itself active whenever
      anything is narrowing the list. Otherwise "no homes match" and "you left
      Rent switched on" look identical. */
+  /* Borrow the page's search field into the bar.
+
+     A sticky search bar at the top of a phone screen costs about sixty pixels
+     of the first screenful, permanently, for something used occasionally. Down
+     here it costs a 46px circle until it is wanted, and the homes start at the
+     top of the page where they belong.
+
+     The field is MOVED, not copied. The page binds `input` and `click` on its
+     own search elements and holds `searchQ` off them; a duplicate would need
+     value, clear-button state and listeners mirrored, and the two would
+     disagree the first time either side changed. adopt() hands the same nodes
+     back above 1024px, where the sticky bar is the right answer again.
+
+     The trigger only appears if the page actually has a search to lend. */
+  function adoptSearch(field, sbtn) {
+    var src = document.querySelector('[data-cnav-search]');
+    if (!src || !field || !sbtn) return;
+
+    adopt(src, field, null, function (onPhone) {
+      sbtn.hidden = !onPhone;
+      /* Handing the field back to the page while the bar is open would leave
+         the bar open around an empty pill. */
+      if (!onPhone) field.closest('.cnav').classList.remove('sopen');
+
+      /* The page's placeholder is a full sentence of examples -- right for a
+         full-width sticky bar, impossible in a pill with two buttons in it,
+         where it would clip to "Search by area, city, ty...". Swapped for the
+         short form down here and handed back on the way out, so neither
+         version has to be maintained in two places. */
+      var el = field.querySelector('input') || src.querySelector('input');
+      if (!el) return;
+      if (onPhone) {
+        if (!el.dataset.fullPlaceholder) el.dataset.fullPlaceholder = el.placeholder || '';
+        el.placeholder = 'Search homes';
+      } else if (el.dataset.fullPlaceholder) {
+        el.placeholder = el.dataset.fullPlaceholder;
+      }
+    });
+
+    /* The closed button has to report that a search is narrowing the list --
+       otherwise closing the field hides the reason the list is short. Read off
+       the input itself rather than tracking a second copy of the state. */
+    var input = function () { return field.querySelector('input'); };
+    var reflect = function () {
+      var el = input();
+      sbtn.classList.toggle('on', !!(el && el.value.trim()));
+    };
+    field.addEventListener('input', reflect);
+    field.addEventListener('click', function () { setTimeout(reflect, 0); });
+    reflect();
+  }
+
   function adoptFilters(fsheet, fbtn) {
     var src = document.querySelector('[data-cnav-filters]');
     if (!src) return;
@@ -334,6 +386,15 @@
          are looking at. */
       + '<button class="cnav-fbtn" id="cnavFBtn" type="button" aria-expanded="false" hidden>'
       + iconSpan('sliders') + '<span class="cnav-flabel">Filters</span></button>'
+      /* Opposite end of the bar. Hidden until a page turns out to have a
+         search to lend -- most do not, and an empty search on the dream board
+         would be a button that opens onto nothing. */
+      + '<button class="cnav-sbtn cnav-btn" id="cnavSBtn" type="button"'
+      + ' aria-expanded="false" aria-label="Search" hidden>' + iconSpan('search') + '</button>'
+      + '</div>'
+      + '<div class="cnav-search" id="cnavSearch">'
+      + '<div class="cnav-sfield" id="cnavSField"></div>'
+      + '<button class="cnav-sclose" id="cnavSClose" type="button" aria-label="Close search">&#215;</button>'
       + '</div>';
 
     var sheet = wrap.querySelector('#cnavSheet');
@@ -356,7 +417,9 @@
 
     var btn  = wrap.querySelector('#cnavBtn');
     var fbtn = wrap.querySelector('#cnavFBtn');
+    var sbtn = wrap.querySelector('#cnavSBtn');
     adoptFilters(wrap.querySelector('#cnavFSheet'), fbtn);
+    adoptSearch(wrap.querySelector('#cnavSField'), sbtn);
     clearBottomFurniture(wrap);
 
     /* One at a time. Two sheets open at once would overlap, and the second one
@@ -364,8 +427,19 @@
     var open = function (which) {
       wrap.classList.toggle('open', which === 'nav');
       wrap.classList.toggle('fopen', which === 'filters');
+      /* Search replaces the trigger row rather than sitting above a sheet, so
+         it belongs in the same mutual exclusion: opening it has to put the
+         other two away, and opening either of those has to close it. */
+      wrap.classList.toggle('sopen', which === 'search');
       btn.setAttribute('aria-expanded', String(which === 'nav'));
       fbtn.setAttribute('aria-expanded', String(which === 'filters'));
+      if (sbtn) sbtn.setAttribute('aria-expanded', String(which === 'search'));
+      if (which === 'search') {
+        var el = wrap.querySelector('#cnavSField input');
+        /* Focus after the class lands, or the field is still display:none and
+           the caret goes nowhere. */
+        if (el) setTimeout(function () { el.focus(); }, 0);
+      }
       syncIcons(which);
     };
 
@@ -387,7 +461,8 @@
     };
     var openState = function () {
       return wrap.classList.contains('open') ? 'nav'
-           : wrap.classList.contains('fopen') ? 'filters' : null;
+           : wrap.classList.contains('fopen') ? 'filters'
+           : wrap.classList.contains('sopen') ? 'search' : null;
     };
 
     btn.addEventListener('click', function (e) {
@@ -398,6 +473,23 @@
       e.stopPropagation();
       open(openState() === 'filters' ? null : 'filters');
     });
+    if (sbtn) {
+      sbtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        open(openState() === 'search' ? null : 'search');
+      });
+    }
+    var sclose = wrap.querySelector('#cnavSClose');
+    if (sclose) {
+      sclose.addEventListener('click', function (e) {
+        e.stopPropagation();
+        open(null);
+        /* Closing is not clearing: the list stays filtered and the trigger
+           stays marked, so reopening shows the query that produced what is on
+           screen. Clearing is the other button, inside the pill. */
+        sbtn.focus();
+      });
+    }
 
     /* Tapping anywhere else closes it. Without this the sheet stays over the
        page and the next tap goes to the sheet's backdrop instead of what the
@@ -410,7 +502,7 @@
       if (e.key === 'Escape' && openState()) {
         var was = openState();
         open(null);
-        (was === 'filters' ? fbtn : btn).focus();
+        (was === 'filters' ? fbtn : was === 'search' ? sbtn : btn).focus();
       }
     });
 

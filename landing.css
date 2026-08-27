@@ -5,6 +5,12 @@
 /* ─── RESET ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Form controls do not inherit font-family — without this a styled <button>
+   silently falls back to the UA font (Arial on Windows) next to the Josefin
+   Sans everything around it uses. font-family only: `font: inherit` would
+   also reset size and weight and undo the controls' own labels. */
+button, input, select, textarea, optgroup { font-family: inherit; }
+
 /* ─── BRAND FONTS ───
    EB Garamond (display/headings/prices) + Lato (body, UI, all-caps accents).
    Both load from Google Fonts (see <head>). The "accent" role is a recipe —
@@ -604,10 +610,16 @@ section { padding: 120px 0; }
   margin-top: 18px;
 }
 
-/* reveal */
-.reveal { opacity: 0; transform: translateY(44px); }
-.reveal-l { opacity: 0; transform: translateX(-52px); }
-.reveal-r { opacity: 0; transform: translateX(52px); }
+/* reveal
+   Gated on .anim-ready, which the page adds to <html> only after confirming
+   GSAP and ScrollTrigger actually loaded. These rules hide 27 elements across
+   the two marketing pages, and every path that un-hides them runs through
+   GSAP — including the "fail-safe" reveal, which calls gsap.to() itself. So a
+   cdnjs outage did not degrade the animation, it left the whole lower page
+   invisible. Unhidden by default now: no library, no hiding. */
+.anim-ready .reveal { opacity: 0; transform: translateY(44px); }
+.anim-ready .reveal-l { opacity: 0; transform: translateX(-52px); }
+.anim-ready .reveal-r { opacity: 0; transform: translateX(52px); }
 
 /* ─── FOR EVERYONE — numbered editorial list ─── */
 #for-everyone {

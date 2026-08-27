@@ -97,8 +97,11 @@
     .apc-ag-meta { color: var(--ink-dim); font-size: 11.5px; }
 
     .apc-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+    /* Like is a real control, so it gets a real target. The figures stay the
+       same size — the padding grows around them to reach the 44px floor. */
     .apc-stat { display: inline-flex; align-items: center; gap: 6px; font: 600 13.5px var(--f-sans);
-      color: var(--ink); background: none; border: none; padding: 6px 2px; cursor: pointer; }
+      color: var(--ink); background: none; border: none; padding: 6px 2px; cursor: pointer;
+      min-height: 44px; min-width: 44px; justify-content: center; }
     .apc-stat.static { cursor: default; }
     .apc-stat b { font-variant-numeric: lining-nums tabular-nums; }
     .apc-stat .syn-i { color: var(--ink-muted); }
@@ -107,7 +110,7 @@
     .apc-stat:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; border-radius: 8px; }
 
     .apc-follow { margin-left: auto; border: none; cursor: pointer; border-radius: 100px;
-      padding: 10px 20px; min-height: 40px; font: 600 13.5px var(--f-sans);
+      padding: 10px 20px; min-height: 44px; font: 600 13.5px var(--f-sans);
       background: rgba(54,54,54,0.1); color: var(--ink); display: inline-flex; align-items: center; gap: 5px; }
     .apc-follow i { font-style: normal; font-size: 15px; line-height: 1; }
     .apc-follow:hover { background: rgba(54,54,54,0.16); }
@@ -274,7 +277,14 @@
 
     /* viewing assistant */
     .vcheck { display: flex; flex-direction: column; gap: 7px; }
-    .vcheck label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
+    /* Leaflet ships its zoom buttons at 30px. That is a vendor default, not a
+       decision we made, and it is the one control on the map a thumb has to
+       hit. Overridden here rather than in app.css because this is the only
+       page that mounts a map. */
+    .leaflet-touch .leaflet-bar a,
+    .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+
+    .vcheck label { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
     .vcheck input { accent-color: #121212; }
     .vcheck label.done { text-decoration: line-through; opacity: .65; }
     .vnotes { width: 100%; margin-top: 12px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font: 13.5px var(--f-sans); color: var(--ink); outline: none; resize: vertical; min-height: 64px; }
@@ -406,13 +416,13 @@
         border-bottom: 1px solid var(--border);
       }
       .pvm-back {
-        width: 40px; height: 40px; flex: none; margin-left: -4px;
+        width: 44px; height: 44px; flex: none; margin-left: -4px;
         display: flex; align-items: center; justify-content: center;
         font-size: 20px; color: var(--ink); text-decoration: none;
       }
       .pvm-gap { flex: 1; }
       .pvm-mapbtn {
-        flex: none; min-height: 40px; padding: 0 14px; border-radius: 100px;
+        flex: none; min-height: 44px; padding: 0 14px; border-radius: 100px;
         display: inline-flex; align-items: center; gap: 6px;
         font: 600 12.5px var(--f-sans); color: var(--ink);
         background: rgba(255,255,255,0.8); border: 1px solid var(--border); cursor: pointer;
@@ -431,7 +441,7 @@
          flex column, so a phone scrolls the page rather than each card */
       .deck { overflow-y: visible; }
       .deck > .card { max-height: none; overflow-y: visible; }
-      .deckbar .arrow { width: 40px; height: 40px; }
+      .deckbar .arrow { width: 44px; height: 44px; }
       .dots i { width: 7px; height: 7px; }
       .dots i.on { width: 20px; }
 
@@ -2763,6 +2773,14 @@
 
     /* ── "connect to this amenity": a real walking route via OSRM ────────── */
     var OSRM_URL = 'https://router.project-osrm.org/route/v1/foot/';
+    /* One button, written by both the routed and the failed-routing branch.
+       It used to carry id="pvPoiBack" in each, which read as a duplicate id
+       even though only ever one is in the document. Scoped to the overlay by
+       class instead, so there is one definition and no id to collide. */
+    var POI_BACK = '<button class="pv-back" style="margin-top:10px;background:none;border:1px solid var(--border);'
+      + 'border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">'
+      + '← All nearby places</button>';
+
     function showRoute(poi) {
       if (routeLine) { layer.removeLayer(routeLine); routeLine = null; }
       overlay.className = 'pvc-overlay';
@@ -2780,16 +2798,16 @@
           overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
             + '<div class="pvo-eta"><span>' + (AMENITY_LABEL[poi.t] || '') + ' · ' + poi.d + ' away</span></div>'
             + '<div class="pvo-eta">Walking <b>' + mins + ' min</b> · ' + (route.distance / 1000).toFixed(1) + ' km on foot</div>'
-            + '<button class="pv-back" id="pvPoiBack" style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">← All nearby places</button>';
+            + POI_BACK;
           fit([PROP, poi.c]);
-          var back = document.getElementById('pvPoiBack');
+          var back = overlay.querySelector('.pv-back');
           if (back) back.addEventListener('click', function () { if (routeLine) { layer.removeLayer(routeLine); routeLine = null; } renderPOI(); });
         })
         .catch(function () {
           overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
             + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Couldn’t reach the routing service just now — straight-line distance is <b>' + poi.d + '</b>. Try again in a moment.</p>'
-            + '<button class="pv-back" id="pvPoiBack" style="margin-top:10px;background:none;border:1px solid var(--border);border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">← All nearby places</button>';
-          var back = document.getElementById('pvPoiBack');
+            + POI_BACK;
+          var back = overlay.querySelector('.pv-back');
           if (back) back.addEventListener('click', function () { renderPOI(); });
         });
     }

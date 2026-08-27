@@ -131,9 +131,11 @@
     .chatbox { width: 100%; max-width: 480px; border-radius: 24px; padding: 6px 6px 8px;
       backdrop-filter: blur(36px) saturate(1.6); -webkit-backdrop-filter: blur(36px) saturate(1.6); }
     .pillrow { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 15px; }
-    .pillrow input { flex: 1; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: var(--ink); }
+    /* The field fills the pill. It was a 16px strip inside a 50px row: the
+       obvious place to tap to start typing was not the field. */
+    .pillrow input { flex: 1; align-self: stretch; min-height: 44px; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: var(--ink); }
     .pillrow input::placeholder { color: rgba(21,23,26,0.45); }
-    .mic, .send { width: 38px; height: 38px; border-radius: 13px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
+    .mic, .send { width: 44px; height: 44px; border-radius: 13px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: none; }
     .mic { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); color: var(--ink-muted); }
     .mic.listening { background: var(--brand); color: #fff; animation: micpulse 1.3s infinite; }
     @keyframes micpulse { 0%{ box-shadow: 0 0 0 0 rgba(54,54,54,0.5);} 70%{ box-shadow: 0 0 0 10px rgba(54,54,54,0);} 100%{ box-shadow: 0 0 0 0 rgba(54,54,54,0);} }
@@ -307,7 +309,7 @@
         border-bottom: 1px solid rgba(255,255,255,0.6);
       }
       .tjm-back {
-        width: 40px; height: 40px; flex: none; margin-left: -6px;
+        width: 44px; height: 44px; flex: none; margin-left: -6px;
         display: flex; align-items: center; justify-content: center;
         font-size: 21px; color: var(--ink); text-decoration: none;
       }
@@ -316,7 +318,7 @@
       .tjm-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
       .tjm-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--success, #2e7d4f); flex: none; }
       .tjm-act {
-        width: 42px; height: 42px; flex: none; border-radius: 12px;
+        width: 44px; height: 44px; flex: none; border-radius: 12px;
         border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.55);
         color: var(--ink-muted); font-size: 16px; cursor: pointer;
         display: flex; align-items: center; justify-content: center;
@@ -342,9 +344,11 @@
       /* 16px floor: anything smaller and iOS zooms the page on focus */
       .pillrow { padding: 4px 4px 4px 14px; }
       .pillrow input { font-size: 16px; }
-      .mic, .send { width: 42px; height: 42px; }
+      .mic, .send { width: 44px; height: 44px; }
       .chatbox .suggest { padding: 9px 5px 3px; scrollbar-width: none; }
-      .chatbox .suggest button { font-size: 12.5px; padding: 8px 13px; }
+      /* These are the quickest route into a conversation, and they sat at
+         30px. The chip keeps its shape; min-height does the work. */
+      .chatbox .suggest button { font-size: 12.5px; padding: 8px 13px; min-height: 44px; }
 
       /* inline property cards carry the matches on mobile */
       .tj-chat .pcard { margin-left: 0; margin-right: 0; }

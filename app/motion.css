@@ -8,6 +8,11 @@
   --m-expanded: 250ms;  /* card expansion, sheet, AI workflow transition */
   --m-ease: cubic-bezier(0.3, 0, 0.2, 1);      /* standard out */
   --m-ease-spring: cubic-bezier(0.34, 1.4, 0.44, 1); /* gentle overshoot */
+  /* Strong decelerate, for something large sliding into place: fast away from
+     the edge, long settle. It was already in wide use on the drawer and the
+     Toju panel as a literal, named nowhere — the other two curves do not do
+     this job, so it is a token rather than a value to be replaced. */
+  --m-ease-panel: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Scroll reveal — elements marked [data-reveal] (cards are tagged by motion.js)
@@ -50,8 +55,30 @@
 
 /* Accessibility — the whole system stands down for reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .m-enter { animation: none; }
+  /* The catch-all comes first, so anything below can still opt back in.
+     Enumerating selectors per page was never going to hold: every new
+     animation had to remember to add itself to a list, and the pages drifted
+     apart (agency 9 rules, toju 1) not because they animate differently but
+     because someone remembered in one file and not the other.
+
+     Near-zero duration rather than `animation: none` on purpose. It ends the
+     motion in the same frame, but the animation still *runs*: fill-mode still
+     resolves, so an entrance that starts at opacity 0 lands on its end state
+     instead of reverting, and transitionend/animationend still fire for any
+     script that later comes to depend on them. Nothing does today — that was
+     checked — and this way nothing breaks when something does.
+
+     iteration-count caps the infinite ones: typing dots, the mic ring, the
+     spinners. Each stops at its resting state, which still reads as "typing"
+     and "listening" because those states carry colour and fill as well. */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal] { opacity: 1; transform: none; }
   .m-press:active { transform: none; }
   [data-lottie] { display: none; }
   [data-lottie][data-essential] { display: inline-block; }
