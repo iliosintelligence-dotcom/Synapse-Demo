@@ -2794,3 +2794,59 @@ textarea:focus-visible {
    out of `auto`, which is the one condition `align-self: stretch` needs. With
    the height set, every card sized to its own content and the stretch did
    nothing; without it, they all take the height of the tallest. */
+
+/* ── brand colour, applied as structure ───────────────────────────────────
+   The palette was doing one job on these pages: a wash in a corner. It is now
+   carrying the section markers, the emphasis inside the promise band and the
+   active state on both carousels, so the orange reads as the product's colour
+   rather than as decoration on one screen.
+
+   It still never touches a word. Every use here is a rule, a fill, a dot or a
+   border -- the same constraint app.css sets out, and the reason for it is
+   measured: #FF8A2D is 2.20:1 on the light ground, where body text needs 4.5. */
+
+/* Section kickers get a short leading rule. Cheap, and it turns six identical
+   uppercase labels into six marked entrances. */
+.s-kicker, .promise-kicker { position: relative; }
+.s-kicker::before {
+  content: '';
+  display: inline-block;
+  width: 20px; height: 2px;
+  margin-right: 10px;
+  vertical-align: 3px;
+  background: rgb(var(--tint));
+}
+
+/* ── the promise band: centred, but not flat ──────────────────────────────
+   Everything was centred at one weight, which reads as evenly unimportant.
+   The middle promise is the one that sells the product -- no ghost listings --
+   so it is the one that carries size and the filled rule, and its neighbours
+   step back. Centre alignment stays; the hierarchy comes from weight. */
+.promise-item { position: relative; padding-top: 26px; }
+.promise-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 26px; height: 2px;
+  background: rgba(var(--tint), 0.4);
+}
+.promise-item:nth-child(2)::before {
+  width: 44px;
+  background: rgb(var(--tint));
+}
+.promise-item:nth-child(2) .promise-fig { font-size: clamp(40px, 4.6vw, 58px); }
+.promise-item:nth-child(2) .promise-name { font-size: 17.5px; }
+.promise-item:nth-child(2) .promise-why { color: rgba(245,245,245,0.78); }
+
+/* The dividing hairlines pick up the tint on the middle column's edges, so the
+   emphasised promise is framed rather than just enlarged. */
+.promise-item:nth-child(2) { border-left: 1px solid rgba(var(--tint), 0.34); }
+.promise-item:nth-child(3) { border-left: 1px solid rgba(var(--tint), 0.34); }
+
+/* Carousel: the active dot is the brand, not another grey. */
+.car-dot.on, .m-car-dot.on { background: rgb(var(--tint)); }
+
+/* The answer half of a problem card already had a brand rule; the problem half
+   gets the same treatment on its number, so the pair is colour-coded. */
+.prob-n { color: rgba(var(--tint), 0.55); }

@@ -965,3 +965,37 @@
    lands on whichever won the stacking order. 24px puts the centres 46px
    apart, which clears it. */
 .m-car-dots { gap: 24px; }
+
+/* ── brand colour on the mobile pages ─────────────────────────────────────
+   Same treatment as desktop: the tint carries the markers and the emphasis,
+   never a word. */
+.m-kicker, .m-promise-kicker { position: relative; }
+.m-kicker::before {
+  content: '';
+  display: inline-block;
+  width: 16px; height: 2px;
+  margin-right: 8px;
+  vertical-align: 3px;
+  background: rgb(var(--tint));
+}
+
+/* Centred, with the middle promise carrying the weight -- it is the one that
+   sells the product, and three items at one size read as a list of equals. */
+.m-promise-item { position: relative; padding-top: 26px; }
+.m-promise-item::before {
+  content: '';
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 22px; height: 2px;
+  background: rgba(var(--tint), 0.4);
+}
+.m-promise-item:nth-of-type(2)::before {
+  width: 38px;
+  background: rgb(var(--tint));
+}
+.m-promise-item:nth-of-type(2) .m-promise-fig { font-size: 34px; }
+.m-promise-item:nth-of-type(2) .m-promise-name { font-size: 17px; }
+.m-promise-item:nth-of-type(2) .m-promise-why { color: rgba(245,245,245,0.78); }
+
+.m-car-dot.on { background: rgb(var(--tint)); }
