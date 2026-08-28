@@ -2658,6 +2658,11 @@ textarea:focus-visible {
 
 /* The track carries one card per view; the cards are wide, so they get the
    container rather than a slice of it. */
+/* Edge to edge. The track's own 4px side padding was leaving 8px of the next
+   card visible at rest, which is the sliver that made it read as a row of
+   cards rather than one card at a time. The gap stays -- it is only seen
+   mid-swipe, which is where a gap belongs. */
+#probCar .car-track { padding-left: 0; padding-right: 0; margin-left: 0; margin-right: 0; }
 #probCar .car-slide { flex: 0 0 100%; }
 .car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
@@ -2677,16 +2682,19 @@ textarea:focus-visible {
   padding: clamp(72px, 9vw, 116px) 0 clamp(80px, 10vw, 128px);
 }
 
-.promise-lede { max-width: 760px; margin: 0 auto clamp(48px, 6vw, 76px); text-align: center; }
+.promise-lede { max-width: 900px; margin: 0 auto clamp(52px, 6.5vw, 84px); text-align: center; }
 .promise-kicker {
   font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
   color: rgba(245,245,245,0.44);
 }
+/* The heading is the section, so it is sized like one. It was clamping to
+   52px against a 58px figure below it, which made the three numbers louder
+   than the promise they were illustrating. */
 .promise-h2 {
   font-family: var(--f-serif);
-  font-size: clamp(30px, 4.4vw, 52px);
-  font-weight: 500; line-height: 1.12; letter-spacing: -0.015em;
-  margin-top: 18px; text-wrap: balance;
+  font-size: clamp(38px, 6vw, 76px);
+  font-weight: 500; line-height: 1.06; letter-spacing: -0.02em;
+  margin-top: 20px; text-wrap: balance;
 }
 /* The emphasis is weight and italic, not colour. Orange never carries a word,
    and on this ground a second colour would be the loudest thing on the page. */
@@ -2699,12 +2707,12 @@ textarea:focus-visible {
   grid-template-columns: repeat(3, 1fr);
   gap: 0;
 }
-.promise-item { padding: 0 clamp(18px, 2.6vw, 38px); }
+.promise-item { padding: 0 clamp(18px, 2.6vw, 38px); text-align: center; }
 .promise-item + .promise-item { border-left: 1px solid rgba(245,245,245,0.14); }
 
 .promise-fig {
   font-family: var(--f-serif);
-  font-size: clamp(38px, 4.6vw, 58px);
+  font-size: clamp(32px, 3.6vw, 44px);
   font-weight: 500; line-height: 1; letter-spacing: -0.02em;
   color: #fff;
   font-variant-numeric: lining-nums tabular-nums;
@@ -2714,6 +2722,7 @@ textarea:focus-visible {
   margin-top: 18px; color: #f5f5f5;
 }
 .promise-why {
+  max-width: 34ch; margin-left: auto; margin-right: auto;
   font-size: 15px; line-height: 1.72; font-weight: 500;
   margin-top: 12px; color: rgba(245,245,245,0.62);
 }
@@ -2771,3 +2780,17 @@ textarea:focus-visible {
   .turn-band::before { transform: none; }
   .reality-band { filter: none; }
 }
+
+/* ── the problem cards, made symmetrical ───────────────────────────────────
+   Heights ran 451 / 451 / 475 / 499 and the black-to-white line landed at
+   208 / 232 / 208 / 256, so swiping shifted the partition under the reader's
+   eye every time. Two rules fix it: the slides stretch so every card is the
+   height of the tallest, and the halves are 1fr 1fr so the line sits at the
+   middle of that height on all four. */
+.car-track, .m-car-track { align-items: stretch; }
+.car-slide, .m-car-slide { align-self: stretch; }
+/* Deliberately no `height: 100%` on the card. The card IS the slide -- one
+   element carrying both classes -- and a declared height takes the cross-size
+   out of `auto`, which is the one condition `align-self: stretch` needs. With
+   the height set, every card sized to its own content and the stretch did
+   nothing; without it, they all take the height of the tallest. */
