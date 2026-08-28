@@ -2661,37 +2661,75 @@ textarea:focus-visible {
 #probCar .car-slide { flex: 0 0 100%; }
 .car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
-/* ── the buyer page's black band, as its own section ───────────────────────
-   It used to live inside .hero-section and fake full width from in there with
-   `box-shadow: 0 0 0 100vmax` plus a clip-path, because a child cannot break
-   out of its container. As a section it is simply a black strip the width of
-   the page, so both hacks go and the hero stops carrying furniture that was
-   never really its own. */
-.stat-band {
+/* ── the buyer page's three promises ───────────────────────────────────────
+   This replaced a thin strip carrying "24/7  14  Free" and a caption each. A
+   figure on its own is trivia; what makes it worth printing is the sentence
+   underneath saying what it buys you. So each one is a figure, the promise,
+   and the reason.
+
+   It is a full section rather than a band because black needs room to read as
+   a deliberate change of ground. In the hero it also had to fake full width
+   with box-shadow and a clip-path, since a child cannot escape its container;
+   out here it is simply a black section as wide as the page. */
+.promise {
   background: #0e0e0e;
-  padding: 54px 0;
-}
-.stat-band .hero-statline {
-  margin-top: 0;
-  padding: 0;
-  background: none;
-  box-shadow: none;
-  clip-path: none;
-  border-top: none;
+  color: #f5f5f5;
+  padding: clamp(72px, 9vw, 116px) 0 clamp(80px, 10vw, 128px);
 }
 
-/* ── the one closing ask ───────────────────────────────────────────────────
-   Replaces a full-height CTA section. The page is a hero, the numbers, and
-   this; anything longer belongs to the agency page now. */
-.buyer-cta { background: var(--bg); padding: 84px 0 96px; text-align: center; }
-.buyer-cta .container { display: flex; flex-direction: column; align-items: center; gap: 22px; }
-.buyer-cta-line {
+.promise-lede { max-width: 760px; margin: 0 auto clamp(48px, 6vw, 76px); text-align: center; }
+.promise-kicker {
+  font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: rgba(245,245,245,0.44);
+}
+.promise-h2 {
   font-family: var(--f-serif);
-  font-size: clamp(22px, 3vw, 30px);
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  max-width: 620px;
-  text-wrap: balance;
+  font-size: clamp(30px, 4.4vw, 52px);
+  font-weight: 500; line-height: 1.12; letter-spacing: -0.015em;
+  margin-top: 18px; text-wrap: balance;
+}
+/* The emphasis is weight and italic, not colour. Orange never carries a word,
+   and on this ground a second colour would be the loudest thing on the page. */
+.promise-h2 em { font-style: italic; color: #fff; }
+
+/* Hairlines between the three rather than boxes around them: they are three
+   facets of one offer, and three cards would read as three products. */
+.promise-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.promise-item { padding: 0 clamp(18px, 2.6vw, 38px); }
+.promise-item + .promise-item { border-left: 1px solid rgba(245,245,245,0.14); }
+
+.promise-fig {
+  font-family: var(--f-serif);
+  font-size: clamp(38px, 4.6vw, 58px);
+  font-weight: 500; line-height: 1; letter-spacing: -0.02em;
+  color: #fff;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.promise-name {
+  font-size: 16px; font-weight: 600; line-height: 1.35;
+  margin-top: 18px; color: #f5f5f5;
+}
+.promise-why {
+  font-size: 15px; line-height: 1.72; font-weight: 500;
+  margin-top: 12px; color: rgba(245,245,245,0.62);
+}
+
+@media (max-width: 900px) {
+  .promise-grid { grid-template-columns: 1fr; gap: 0; }
+  .promise-item { padding: 30px 0; }
+  .promise-item + .promise-item {
+    border-left: none;
+    border-top: 1px solid rgba(245,245,245,0.14);
+  }
+}
+
+/* The floating ask is a phone control. On a desktop this page is short enough
+   that the hero's own button never leaves the screen, and a second floating
+   copy of it is just another thing to dismiss. */
+@media (min-width: 721px) {
+  .sticky-cta { display: none; }
 }
