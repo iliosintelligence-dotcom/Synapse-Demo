@@ -258,10 +258,8 @@ else {
 gsap.registerPlugin(ScrollTrigger);
 
 /* ─── The floating ask ──────────────────────────────────────────────────
-   Shown on phones only. This page is a hero and a black section now, so on
-   a desktop the hero's own button never leaves the screen and a second
-   floating copy of it would be noise. On a phone the hero scrolls away, and
-   the ask has to travel with the reader.
+   Shown at every width. It is the standing action on the page and travels
+   with the reader once the hero has scrolled away.
 
    Shown immediately rather than after a scroll threshold: it is the only
    action on the page, and there is nothing to earn. Dismissal sticks for
@@ -270,12 +268,11 @@ gsap.registerPlugin(ScrollTrigger);
 (function () {
   var bar = document.getElementById('stickyCta');
   if (!bar) return;
-  var phone = window.matchMedia('(max-width: 720px)');
   var KEY = 'syn-sticky-cta-dismissed';
   var dismissed = false;
   try { dismissed = !!sessionStorage.getItem(KEY); } catch (e) {}
 
-  function update() { bar.classList.toggle('show', phone.matches && !dismissed); }
+  function update() { bar.classList.toggle('show', !dismissed); }
 
   bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
     dismissed = true;
@@ -283,8 +280,6 @@ gsap.registerPlugin(ScrollTrigger);
     try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
   });
 
-  if (phone.addEventListener) phone.addEventListener('change', update);
-  else if (phone.addListener) phone.addListener(update);
   update();
 })();
 

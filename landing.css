@@ -2727,9 +2727,47 @@ textarea:focus-visible {
   }
 }
 
-/* The floating ask is a phone control. On a desktop this page is short enough
-   that the hero's own button never leaves the screen, and a second floating
-   copy of it is just another thing to dismiss. */
-@media (min-width: 721px) {
-  .sticky-cta { display: none; }
+/* The floating ask stays at every width. Scoping it to phones was my call and
+   the wrong one: it is the standing action on the page, and on a long agency
+   page the hero's button is gone by the second section. */
+
+/* ── the reality section, and the turn out of it ───────────────────────────
+   The problem is told in black and white on purpose: it is the part of the
+   page the reader is meant to recognise as their own week, and colour would
+   soften it. Everything Synapse does about it then arrives in colour, so the
+   page changes temperature exactly where the argument does.
+
+   The turn is a real transition rather than another section that fades in:
+   the colour wipes upward as the reality section leaves the viewport, so
+   finishing the problem is what opens the answer. */
+.reality-band {
+  background: #f7f7f7;
+  filter: saturate(0);
+}
+.reality-band .prob-half.is-answer { border-left-color: rgba(20,20,20,0.28); }
+
+.turn-band {
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+}
+/* The wipe. A pseudo-element rather than animating the section's own
+   background, so nothing inside it repaints while the colour arrives. */
+.turn-band::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(178deg, #fff6ee 0%, #fdf1e6 46%, var(--bg) 100%);
+  transform: scaleY(var(--turn, 0));
+  transform-origin: bottom;
+  will-change: transform;
+}
+
+/* Reduced motion gets the destination, not the journey: the colour is simply
+   there. motion.css already neutralises durations globally, but this one is
+   driven by scroll position rather than by a transition, so it needs saying. */
+@media (prefers-reduced-motion: reduce) {
+  .turn-band::before { transform: none; }
+  .reality-band { filter: none; }
 }

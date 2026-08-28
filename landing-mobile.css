@@ -21,11 +21,17 @@
 
 @media (max-width: 1024px) {
   .m-page { display: block; }
-  /* Structural selectors, not a list of ids: index.html and agencies.html
-     don't share section ids, and a page added later shouldn't have to
-     remember to register itself here. */
-  #navbar, .hero-section, .s-band, .ag-final, #final-cta,
-  .legal, body > footer { display: none !important; }
+  /* Genuinely structural this time. The previous version claimed to be, but
+     was a list of classes -- .hero-section, .s-band, .ag-final, #final-cta --
+     and the moment a section arrived that was none of those (.promise, on the
+     buyer page) it rendered on mobile underneath its own mobile equivalent,
+     so the page carried the same block twice.
+     Every desktop section is a direct child of <body>; the mobile page is a
+     <div>, and so is the floating CTA, so both survive. A section added later
+     is covered without anyone remembering this rule exists. */
+  body > section, body > footer, body > nav, #navbar, .legal {
+    display: none !important;
+  }
   body { padding-top: 0; }
 }
 
