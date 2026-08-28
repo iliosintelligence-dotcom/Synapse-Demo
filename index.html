@@ -85,12 +85,17 @@
   <!-- ── THE PROBLEM ── the same paired cards, stacked. A horizontal swipe
        inside a vertical scroll is a fight on a phone, so these do not slide;
        each card still carries its own answer, which is the part that matters. -->
-  <section class="m-section m-wrap">
+  <section class="m-section m-wrap m-reality">
     <div class="m-kicker">The reality</div>
     <h2 class="m-h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
     <p class="m-body">Both ways to grow are expensive: do the marketing and chasing yourself, or split the property with other agencies and pay for reach out of the fee.</p>
-    <div class="m-probs">
-      <article class="prob-card">
+    <!-- A swipe, not a stack. Four separate complaints read one at a time,
+         the way a carousel works everywhere else on a phone; stacked, the
+         fourth sat two screens down and nobody reached it. Native scroll-snap
+         does the sliding, the dots only report where you are. -->
+    <div class="m-car" id="mProbCar">
+      <div class="m-car-track" id="mProbTrack">
+      <article class="m-car-slide prob-card">
         <div class="prob-half is-problem">
           <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">01</span></div>
           <h3 class="prob-q">Are you working 97 dead ends to reach 3 live ones?</h3>
@@ -102,7 +107,7 @@
           <p class="prob-b">Every enquiry answered the moment it lands, at any hour, and taken as far as it will go &mdash; budget, timeline, whether they can actually buy. Your agents open the day on what survived that.</p>
         </div>
       </article>
-      <article class="prob-card">
+      <article class="m-car-slide prob-card">
         <div class="prob-half is-problem">
           <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">02</span></div>
           <h3 class="prob-q">Are your evenings going on captions?</h3>
@@ -114,7 +119,7 @@
           <p class="prob-b">Send one listing with photographs. Synapse writes the copy, cuts the creative and publishes to 6 channels &mdash; without anyone opening a design tool at 11pm.</p>
         </div>
       </article>
-      <article class="prob-card">
+      <article class="m-car-slide prob-card">
         <div class="prob-half is-problem">
           <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">03</span></div>
           <h3 class="prob-q">Are you splitting the fee to get reach?</h3>
@@ -126,7 +131,7 @@
           <p class="prob-b">The reach you were splitting the property to get, you now get on your own. Synapse syndicates everywhere and brings the buyer back to you. No third agency in the middle, no stacked fee.</p>
         </div>
       </article>
-      <article class="prob-card">
+      <article class="m-car-slide prob-card">
         <div class="prob-half is-problem">
           <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">04</span></div>
           <h3 class="prob-q">Is your best negotiator one person?</h3>
@@ -138,7 +143,13 @@
           <p class="prob-b">Before your agent picks up the phone, price expectations are set, budget is confirmed and the obvious objections are met. Your closer starts where they are strongest.</p>
         </div>
       </article>
+      </div>
+      <div class="m-car-foot">
+        <div class="m-car-dots" id="mProbDots" role="tablist" aria-label="Choose a problem"></div>
+        <span class="m-car-count" id="mProbCount">1 / 4</span>
+      </div>
     </div>
+
     <p class="m-body" style="margin-top:18px">The customer pays more, or you earn less on the same work. Often both.</p>
   </section>
 
@@ -164,10 +175,10 @@
   <!-- ── TOJU ANSWERS FIRST ── dark band -->
   <section class="m-proximity m-section">
     <div class="m-wrap">
-      <div class="m-kicker">Two · CRM</div>
+      <div class="m-kicker">CRM</div>
       <h2 class="m-h2">Every enquiry arrives <em>already worked.</em></h2>
       <p class="m-body">A reply in seconds, day or night. The lead reaches your pipeline with the city, the budget and the brief attached — then five stages, assignment across your agents, and an outbox that only sends when somebody presses send.</p>
-      <p class="m-body" style="margin-top:14px">The other 97 stay with Toju. You meet a customer when they are ready to pay, and not before.</p>
+      <p class="m-body" style="margin-top:14px">The other 97% stay with Toju. You meet a customer when they are ready to pay, and not before.</p>
       <div class="m-mock m-mock-dark">
         <div class="m-demo-head"><span>Enquiry · 2:14 am</span><span>Toju</span></div>
         <div data-agency-chat></div>
@@ -197,7 +208,6 @@
   <!-- ── ONE PORTAL ── -->
   <section class="m-fresh m-section">
     <div class="m-wrap">
-      <div class="m-kicker">One place</div>
       <h2 class="m-h2">Built to make small teams <em>do big work.</em></h2>
       <p class="m-body">Every listing, lead and verification in a single view.</p>
       <div class="m-steps">
@@ -477,11 +487,11 @@
   <div class="container">
     <div class="s-split flip">
       <div class="s-lede reveal">
-        <div class="s-kicker">Two · CRM</div>
+        <div class="s-kicker">CRM</div>
         <h2 class="s-h2">Every enquiry arrives <em>already worked.</em></h2>
         <p class="s-sub">Toju answers in seconds, day or night, and establishes budget, timeline and how soon they can move. The lead reaches your pipeline with the city, the budget and the brief already attached — and if the buyer made an offer, Toju’s opening position comes attached too.</p>
         <p class="s-sub" style="margin-top:16px">From there it is a pipeline your team actually runs: five stages, assignment across your agents, bulk actions on a whole selection, and an outbox that queues messages and sends only when somebody presses send. Nothing goes out behind your back.</p>
-        <p class="s-sub" style="margin-top:16px">The other 97 stay with Toju. Every enquiry that was never going to buy is answered, asked the questions your agent would have asked, and closed out — without costing your team a Saturday. You meet a customer when they are ready to pay, and not before.</p>
+        <p class="s-sub" style="margin-top:16px">The other 97% stay with Toju. Every enquiry that was never going to buy is answered, asked the questions your agent would have asked, and closed out — without costing your team a Saturday. You meet a customer when they are ready to pay, and not before.</p>
         <p class="s-sub" style="margin-top:16px">Book several buyers into one viewing trip instead of four separate Saturdays, and cancel a slot in one move — everyone booked on it is told, and the leads go back to qualified rather than quietly disappearing.</p>
         <div style="margin-top:26px" class="pip"><i></i> Handed over with the full transcript, not a summary you have to trust.</div>
       </div>
@@ -519,7 +529,6 @@
 <section class="s-band tinted" data-aud="agency">
   <div class="container">
     <div class="s-lede reveal">
-      <div class="s-kicker">One place</div>
       <h2 class="s-h2">Built to make small teams <em>do big work.</em></h2>
       <p class="s-sub">Every listing, lead and verification in a single view — with the next action already decided for each one.</p>
     </div>
@@ -769,6 +778,57 @@
 if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP unavailable — page renders without scroll animation.'); }
 else {
 gsap.registerPlugin(ScrollTrigger);
+
+/* ─── The problem carousel, on a phone ──────────────────────────────────
+   Its own instance, not shared with the desktop track: a swipe is the only
+   input here, so this just reads scroll position back into the dots. Scroll
+   stays the source of truth, so a flick, a dot and a momentum scroll agree. */
+(function () {
+  var track = document.getElementById('mProbTrack');
+  if (!track) return;
+  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
+  var dotsBox = document.getElementById('mProbDots');
+  var count = document.getElementById('mProbCount');
+  if (!slides.length || !dotsBox) return;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+
+  slides.forEach(function (sl, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
+    b.setAttribute('role', 'tab');
+    var q = sl.querySelector('.prob-q');
+    b.setAttribute('aria-label', q ? q.textContent.trim() : 'Problem ' + (i + 1));
+    b.addEventListener('click', function () {
+      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
+    });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  function sync() {
+    var best = 0, bestD = Infinity;
+    slides.forEach(function (sl, i) {
+      var d = Math.abs(offset(i) - track.scrollLeft);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    dots.forEach(function (d, i) {
+      d.classList.toggle('on', i === best);
+      d.setAttribute('aria-selected', String(i === best));
+    });
+    if (count) count.textContent = (best + 1) + ' / ' + slides.length;
+  }
+
+  var raf = null;
+  track.addEventListener('scroll', function () {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = null; sync(); });
+  }, { passive: true });
+
+  sync();
+})();
 
 /* ─── The turn from problem to answer ───────────────────────────────────
    Drives --turn on the marketing section from 0 to 1 as the reality section

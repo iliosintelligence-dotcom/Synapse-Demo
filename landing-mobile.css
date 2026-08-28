@@ -866,11 +866,6 @@
   .m-hero-band { position: relative; z-index: 1; }
 }
 
-/* The agency problem cards, stacked. They share .prob-card with the desktop
-   slider -- the card's own media query already collapses it to one column
-   below 860px, so all this has to do is space them apart. */
-.m-probs { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
-.m-probs .prob-card { min-height: 0; }
 
 /* ── buyer page: the three promises ────────────────────────────────────────
    Same content as desktop, stacked, with the figure and its promise on one
@@ -911,3 +906,48 @@
   font-size: 14.5px; line-height: 1.7; font-weight: 500;
   margin-top: 9px; color: rgba(245,245,245,0.62);
 }
+
+/* ── the problem carousel on a phone ───────────────────────────────────────
+   These were stacked. Four separate complaints read better one at a time,
+   swiped, the way a carousel works everywhere else on a phone -- and stacking
+   them buried the fourth under two screens of scrolling.
+
+   The track is the existing .m-car-* machinery; these rules only stop the
+   generic slide chrome from fighting the card, which paints its own two
+   halves and does not want a white box drawn behind them. */
+#mProbCar .m-car-slide {
+  background: none;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  flex: 0 0 86vw;
+  max-width: 400px;
+  align-self: stretch;
+}
+#mProbCar .m-car-track { align-items: stretch; }
+#mProbCar .prob-card { height: 100%; min-height: 0; }
+
+/* Black and white, like the desktop band. The problem is the part the reader
+   is meant to recognise as their own week; colour softens it, and the colour
+   belongs to the answer. */
+.m-reality { filter: saturate(0); }
+@media (prefers-reduced-motion: reduce) { .m-reality { filter: none; } }
+
+/* The dot rail keeps its 22x4 mark and gains a 44px target underneath it.
+   A 4px-tall button is a thumb's worth of missing, and the same trick is
+   already used on the save heart: the visible shape stays, a pseudo-element
+   carries the hit area. */
+.m-car-dot { position: relative; }
+.m-car-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 44px; height: 44px;
+  transform: translate(-50%, -50%);
+}
+/* The gap has to clear the hit areas, not just the marks. A 22px dot with a
+   44px target reaches 11px past itself on each side, so anything under a 22px
+   gap leaves neighbouring targets overlapping and a tap between two dots
+   lands on whichever won the stacking order. 24px puts the centres 46px
+   apart, which clears it. */
+.m-car-dots { gap: 24px; }
