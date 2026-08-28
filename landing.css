@@ -2658,12 +2658,38 @@ textarea:focus-visible {
 
 /* The track carries one card per view; the cards are wide, so they get the
    container rather than a slice of it. */
-/* Edge to edge. The track's own 4px side padding was leaving 8px of the next
-   card visible at rest, which is the sliver that made it read as a row of
-   cards rather than one card at a time. The gap stays -- it is only seen
-   mid-swipe, which is where a gap belongs. */
-#probCar .car-track { padding-left: 0; padding-right: 0; margin-left: 0; margin-right: 0; }
-#probCar .car-slide { flex: 0 0 100%; }
+/* ── the cards cascade rather than sit in a row ────────────────────────────
+   Side by side, each card was a separate thing that happened to be next to
+   another. Overlapped, they are one deck: the card you are on sits on top and
+   the next one shows a hand's width of itself underneath, so the gesture has
+   somewhere to go and the section reads as four views of one argument.
+
+   The overlap is negative margin against a slide that is that much wider than
+   the track, so the top card still fills the width and the snap points are
+   unchanged. Paint order is reversed with z-index -- later siblings paint on
+   top by default, and here the earlier card has to be the one in front. */
+#probCar .car-track {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+  gap: 0;
+}
+#probCar .car-slide {
+  flex: 0 0 100%;
+  position: relative;
+  margin-right: -46px;
+  border-radius: 20px;
+  /* Thrown rightward, onto the card beneath. Without it the two edges meet as
+     a seam and the cascade reads as a rendering mistake. */
+  box-shadow: 18px 0 40px rgba(20, 20, 20, 0.17);
+}
+#probCar .car-slide:nth-child(1) { z-index: 4; }
+#probCar .car-slide:nth-child(2) { z-index: 3; }
+#probCar .car-slide:nth-child(3) { z-index: 2; }
+#probCar .car-slide:nth-child(4) { z-index: 1; box-shadow: none; }
+/* The last card has nothing behind it, so the deck ends flush rather than
+   suggesting a fifth. */
 .car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 /* ── the buyer page's three promises ───────────────────────────────────────
