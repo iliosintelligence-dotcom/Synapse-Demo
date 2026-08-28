@@ -299,7 +299,10 @@
     } catch (e) { /* malformed referrer: treat as external */ }
 
     if (sameOrigin) window.history.back();
-    else window.location.href = '../index.html';
+    /* The buyer page, not the homepage. This nav only ever mounts on the
+       consumer app, and the homepage is the agency pitch now -- somebody who
+       walked in on a listing should not be handed a CRM on the way out. */
+    else window.location.href = '../buyers.html';
   }
 
   function installBack() {

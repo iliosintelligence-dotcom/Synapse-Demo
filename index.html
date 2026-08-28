@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synapse · Find a home that's actually right for you</title>
+  <title>Synapse for agencies · Grow your agency, not your workload</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -41,9 +41,8 @@
 <div id="syn-load" aria-hidden="true"><svg class="syn-load-mark" viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg></div>
 <!-- ══════════════════════════════════════════════════════════════════════
      MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
-     the desktop markup below. Every element is m- prefixed and owns its own
-     layout; landing.css's desktop rules are untouched and simply hidden at
-     this breakpoint. Styles live in landing-mobile.css.
+     the desktop markup below. Shares the m- primitives in landing-mobile.css
+     with the customer landing so both pages read as one product.
      ══════════════════════════════════════════════════════════════════════ -->
 <div class="m-page">
 
@@ -54,35 +53,29 @@
       </svg>
       <span class="m-logo-word">Synapse</span>
     </a>
-    <a class="m-agencies-link" href="agencies.html">For agencies →</a>
+    <a class="m-agencies-link" href="buyers.html">For buyers →</a>
   </nav>
 
-  <!-- ── HERO ── the composer IS the primary action; no competing pill -->
+  <!-- ── HERO ── the portal filling with qualified leads is the pitch -->
   <header class="m-hero m-wrap">
-    <div class="m-hero-eyebrow">For buyers &amp; renters</div>
-    <h1 class="m-hero-headline">The property adviser who works <em>for you.</em></h1>
-    <p class="m-hero-sub">Toju learns how you actually live, finds the homes that fit, and tells you why each one made the list.</p>
+    <div class="m-hero-eyebrow">For agencies &amp; developers</div>
+    <h1 class="m-hero-headline">Grow your agency.<br><em>Not your workload.</em></h1>
+    <p class="m-hero-sub">Toju does the reaching, the answering and the qualifying. Your agents do the closing.</p>
 
     <div class="m-peek">
       <div class="m-peek-bar">
         <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Agency portal</span>
       </div>
-      <div class="m-peek-body" id="peekCustomerM" data-peek-customer></div>
-      <div class="m-hero-chips">
-        <a class="m-hero-chip" href="app/toju.html?ask=3-bed%20in%20Lekki%20under%20%E2%82%A6180M">3-bed in Lekki</a>
+      <div class="m-peek-head">
+        <span>Leads · today</span>
+        <span class="m-peek-live"><i></i> Live</span>
       </div>
-      <form class="m-hero-composer" action="app/toju.html" method="get">
-        <input class="m-hero-field" name="ask" autocomplete="off" maxlength="300"
-               placeholder="Tell Toju what you're looking for…"
-               aria-label="Tell Toju what you're looking for" />
-        <button class="m-hero-send" type="submit" aria-label="Ask Toju">↑</button>
-      </form>
+      <div class="m-peek-body" data-peek-agency></div>
     </div>
-    <a class="m-hero-ask-link" href="app/toju.html">Or just talk to Toju →</a>
 
     <div class="m-hero-trust">
-      <span class="m-hero-pip"><i></i> Free. No sign-up to start.</span>
+      <span class="m-hero-pip"><i></i> Warm leads on WhatsApp · live in minutes</span>
       <!-- The dark band. Desktop puts these same facts on near-black
            (.hero-statline); mobile left them on the light ground with no
            grouping, so the page had two treatments of one idea. Wrapped so
@@ -90,99 +83,219 @@
            glued together for the background not to break. -->
       <div class="m-hero-band">
         <div class="m-hero-stat-lead">
-          <div class="val hero-stat-val">24/7</div>
-          <div class="label">Toju answers whenever you are looking, not in office hours</div>
+          <div class="val hero-stat-val">1</div>
+          <div class="label">Upload — marketed across every channel automatically</div>
         </div>
-        <p class="m-hero-stat-secondary">Re-confirmed every <b>14 days</b>, or it disappears · Always <b>free</b> for buyers</p>
+        <p class="m-hero-stat-secondary"><b>No</b> commission on your deals · Toju qualifies <b>24/7</b></p>
       </div>
     </div>
   </header>
 
-  <!-- ── WHAT YOU GET ── swipeable, demo-first, no arrows (native swipe + peek) -->
-  <!-- ── HOW IT WORKS ── vertical sequence with a connector rail -->
-  <section class="m-section m-wrap">
-    <div class="m-kicker">How it works</div>
-    <h2 class="m-h2">From "I need somewhere" to <em>keys in hand.</em></h2>
-    <p class="m-body">One adviser, the whole way through.</p>
-    <div class="m-steps">
-      <div class="m-step">
-        <div class="n">01</div>
-        <div class="t">Tell Toju what you need</div>
-        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school."</div>
-      </div>
-      <div class="m-step">
-        <div class="n">02</div>
-        <div class="t">And how you live</div>
-        <div class="d">Where you work, how you get there, what you will not compromise on.</div>
-      </div>
-      <div class="m-step">
-        <div class="n">03</div>
-        <div class="t">Or just show us</div>
-        <div class="d">Pin the rooms, colours and pieces you want. Your board searches alongside you.</div>
-      </div>
-      <div class="m-step">
-        <div class="n">04</div>
-        <div class="t">We find what fits</div>
-        <div class="d">And say why each home made the list, not just that it matched.</div>
-      </div>
-      <div class="m-step">
-        <div class="n">05</div>
-        <div class="t">We stay until the keys</div>
-        <div class="d">Comparing, viewing, negotiating. You decide at every point.</div>
-      </div>
+  <!-- ── the promise, one hard beat ── -->
+  <section class="m-statement">
+    <div class="m-wrap">
+      <p>Reach more people. Build more trust. <em>Close more deals.</em></p>
     </div>
-    <a class="m-cta-link" href="app/toju.html">Talk to Toju, it's free →</a>
   </section>
 
-  <!-- ── DREAM BOARDS ── the same numbered list, carrying what you can pin
-       rather than what we check. Kept as an <ol> because the order is the
-       order a board actually fills up in: the house, then the street, then
-       the rooms, then the things in them. -->
-  <section class="m-trust m-section m-wrap">
-    <div class="m-kicker">Dream Boards</div>
-    <h2 class="m-h2">Show us the home you <em>want.</em></h2>
-    <p class="m-body">Describing a home is hard. Showing one is easy. Pin what you love and Toju searches against your board &mdash; then finds who sells the chair, or who can make it.</p>
-    <ol class="m-checks">
-      <li><span class="n">01</span><span class="c">Facades and floor plans</span></li>
-      <li><span class="n">02</span><span class="c">Streets and views</span></li>
-      <li><span class="n">03</span><span class="c">Kitchens and bathrooms</span></li>
-      <li><span class="n">04</span><span class="c">Furniture and finishes</span></li>
-      <li><span class="n">05</span><span class="c">Paint and palettes</span></li>
-      <li><span class="n">06</span><span class="c">Anything you photograph</span></li>
-      <li><span class="n">07</span><span class="c">Or anything anyone else pinned</span></li>
-    </ol>
+  <!-- ── THE PROBLEM ── the same paired cards, stacked. A horizontal swipe
+       inside a vertical scroll is a fight on a phone, so these do not slide;
+       each card still carries its own answer, which is the part that matters. -->
+  <section class="m-section m-wrap">
+    <div class="m-kicker">The reality</div>
+    <h2 class="m-h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
+    <p class="m-body">Both ways to grow are expensive: do the marketing and chasing yourself, or split the property with other agencies and pay for reach out of the fee.</p>
+    <div class="m-probs">
+      <article class="prob-card">
+        <div class="prob-half is-problem">
+          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">01</span></div>
+          <h3 class="prob-q">Are you working 97 dead ends to reach 3 live ones?</h3>
+          <p class="prob-b">Every &ldquo;is it still available?&rdquo; answered by hand.</p>
+        </div>
+        <div class="prob-half is-answer">
+          <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+          <p class="prob-a">Toju works the 97.</p>
+          <p class="prob-b">Every enquiry answered the moment it lands, at any hour, and taken as far as it will go &mdash; budget, timeline, whether they can actually buy. Your agents open the day on what survived that.</p>
+        </div>
+      </article>
+      <article class="prob-card">
+        <div class="prob-half is-problem">
+          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">02</span></div>
+          <h3 class="prob-q">Are your evenings going on captions?</h3>
+          <p class="prob-b">Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in.</p>
+        </div>
+        <div class="prob-half is-answer">
+          <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+          <p class="prob-a">Upload once. It markets itself.</p>
+          <p class="prob-b">Send one listing with photographs. Synapse writes the copy, cuts the creative and publishes to 6 channels &mdash; without anyone opening a design tool at 11pm.</p>
+        </div>
+      </article>
+      <article class="prob-card">
+        <div class="prob-half is-problem">
+          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">03</span></div>
+          <h3 class="prob-q">Are you splitting the fee to get reach?</h3>
+          <p class="prob-b">The usual way to reach more buyers is to hand the property to 3 other agencies.</p>
+        </div>
+        <div class="prob-half is-answer">
+          <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+          <p class="prob-a">Reach without giving the fee away.</p>
+          <p class="prob-b">The reach you were splitting the property to get, you now get on your own. Synapse syndicates everywhere and brings the buyer back to you. No third agency in the middle, no stacked fee.</p>
+        </div>
+      </article>
+      <article class="prob-card">
+        <div class="prob-half is-problem">
+          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">04</span></div>
+          <h3 class="prob-q">Is your best negotiator one person?</h3>
+          <p class="prob-b">Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them.</p>
+        </div>
+        <div class="prob-half is-answer">
+          <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+          <p class="prob-a">The first round, already done.</p>
+          <p class="prob-b">Before your agent picks up the phone, price expectations are set, budget is confirmed and the obvious objections are met. Your closer starts where they are strongest.</p>
+        </div>
+      </article>
+    </div>
+    <p class="m-body" style="margin-top:18px">The customer pays more, or you earn less on the same work. Often both.</p>
+  </section>
+
+  <!-- ── UPLOAD ONCE ── -->
+  <section class="m-section m-wrap">
+    <div class="m-kicker">One · Marketing</div>
+    <h2 class="m-h2">One listing. <em>Every channel.</em></h2>
+    <p class="m-body">Upload once. Synapse writes the copy in your voice, sizes it for each platform, checks it against that platform’s real limits, and publishes it everywhere your buyers already are.</p>
+    <div class="m-mock">
+      <div class="m-demo-head"><span>Publishing · 3-Bed, Lekki</span><span>Auto</span></div>
+      <div class="m-d-row" style="margin-bottom:10px">
+        <div class="m-d-thumb"></div>
+        <div style="flex:1;min-width:0">
+          <div class="m-d-price">₦165M</div>
+          <div class="m-d-meta">Uploaded 12 seconds ago</div>
+        </div>
+      </div>
+      <div data-fan-list></div>
+    </div>
+    <a class="m-cta-link" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Open the agency portal →</a>
+  </section>
+
+  <!-- ── TOJU ANSWERS FIRST ── dark band -->
+  <section class="m-proximity m-section">
+    <div class="m-wrap">
+      <div class="m-kicker">Two · CRM</div>
+      <h2 class="m-h2">Every enquiry arrives <em>already worked.</em></h2>
+      <p class="m-body">A reply in seconds, day or night. The lead reaches your pipeline with the city, the budget and the brief attached — then five stages, assignment across your agents, and an outbox that only sends when somebody presses send.</p>
+      <div class="m-mock m-mock-dark">
+        <div class="m-demo-head"><span>Enquiry · 2:14 am</span><span>Toju</span></div>
+        <div data-agency-chat></div>
+      </div>
+      <div class="m-hero-pip" style="margin-top:20px"><i></i> Handed over with a full transcript.</div>
+    </div>
+  </section>
+
+  <!-- ── ONE PORTAL ── -->
+  <section class="m-fresh m-section">
+    <div class="m-wrap">
+      <div class="m-kicker">One place</div>
+      <h2 class="m-h2">Your whole team, <em>one portal.</em></h2>
+      <p class="m-body">Every listing, lead and verification in a single view.</p>
+      <div class="m-steps">
+        <div class="m-step">
+          <div class="n">CRM</div>
+          <div class="t">Nothing gets dropped</div>
+          <div class="d">Every lead ranked hot to cold, with the next action written for whoever picks it up.</div>
+        </div>
+        <div class="m-step">
+          <div class="n">TRUST</div>
+          <div class="t">Verification, tracked</div>
+          <div class="d">Where each property stands in verification, and what is still outstanding.</div>
+        </div>
+        <div class="m-step">
+          <div class="n">GROWTH</div>
+          <div class="t">Know what worked</div>
+          <div class="d">Every closed deal traced back to the post that started it.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PRICING ── stacked, popular plan first on a phone -->
+  <section class="m-section m-wrap" id="m-pricing">
+    <div class="m-kicker">Pricing</div>
+    <h2 class="m-h2">Start free. Pay when it <em>pays you back.</em></h2>
+    <p class="m-body">No setup fee, no lock-in, no commission on your deals.</p>
+
+    <div class="pr-toggle m-pr-toggle" role="group" aria-label="Billing period">
+      <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
+      <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save"></span></button>
+    </div>
+
+    <div class="m-pr-stack">
+      <div class="m-pr-card feature">
+        <span class="m-pr-badge">Most popular</span>
+        <div class="m-pr-name">Accelerate</div>
+        <div class="pr-price m-pr-price" data-monthly="75000">₦75,000<span>per month</span></div>
+        <p class="m-pr-best">The plan almost every serious agency wants.</p>
+        <ul class="m-pr-list">
+          <li>Unlimited listings &amp; syndication</li>
+          <li>Toju qualifies every enquiry</li>
+          <li>Full CRM with WhatsApp handoff</li>
+          <li>48-hour review</li>
+        </ul>
+        <a class="m-btn-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Start with Accelerate</a>
+      </div>
+
+      <div class="m-pr-card">
+        <div class="m-pr-name">Free</div>
+        <div class="m-pr-price">₦0<span>forever</span></div>
+        <p class="m-pr-best">New or small agencies getting started.</p>
+        <ul class="m-pr-list">
+          <li>Up to 10 active listings</li>
+          <li>Leads in your inbox</li>
+          <li>Standard verification queue</li>
+        </ul>
+        <a class="m-btn-ghost" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Start free</a>
+      </div>
+
+      <div class="m-pr-card">
+        <div class="m-pr-name">Leader</div>
+        <div class="pr-price m-pr-price" data-monthly="250000">₦250,000<span>per month</span></div>
+        <p class="m-pr-best">Established agencies going for the top.</p>
+        <ul class="m-pr-list">
+          <li>Everything in Accelerate</li>
+          <li>Proximity marketing</li>
+          <li>Dedicated verification desk</li>
+        </ul>
+        <a class="m-btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Talk to sales</a>
+      </div>
+    </div>
+    <p class="m-pr-note">Toju always ranks on buyer fit — never on what you pay.</p>
   </section>
 
   <!-- ── FINAL CTA ── -->
   <section class="m-final-cta m-wrap">
-    <h2 class="m-h2">Your search ends <em>here.</em></h2>
-    <p class="m-body">Free to talk. Free to browse. Free to pin.</p>
+    <h2 class="m-h2">Every listing is an <em>opportunity.</em></h2>
+    <p class="m-body">Make sure yours reaches the right buyer.</p>
     <div class="m-final-btns">
-      <a class="m-btn-primary" href="app/toju.html">Talk to Toju, it's free</a>
-      <!-- same agency gate the desktop CTA routes through — the portal has
-           no anonymous mode, so landing on agencies.html would dead-end -->
-      <a class="m-btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Partner with us</a>
+      <a class="m-btn-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Register your agency</a>
+      <a class="m-btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
     </div>
     <p class="m-final-email">ilios.intelligence@gmail.com</p>
   </section>
 
-  <!-- ── FOOTER ── two useful columns, legal folded inline -->
+  <!-- ── FOOTER ── -->
   <footer class="m-footer m-wrap">
-    <!-- no brand mark down here: the wordmark is already fixed in the nav
-         all the way down the page, so repeating it only added weight -->
     <p class="m-footer-tagline">Every recommendation backed by verified data, verified agencies, and AI.</p>
     <div class="m-footer-links">
       <div>
-        <div class="m-footer-col-title">Platform</div>
-        <a href="app/toju.html">Chat with Toju</a>
-        <a href="app/browse.html">Browse properties</a>
-        <a href="app/browse.html">Shared living</a>
+        <div class="m-footer-col-title">Agencies</div>
+        <a href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Agency portal</a>
+        <a href="#m-pricing">Pricing &amp; plans</a>
+        <a href="index.html">Proximity marketing</a>
       </div>
       <div>
-        <div class="m-footer-col-title">Agencies</div>
-        <a href="agencies.html">List properties</a>
-        <a href="agencies.html">Agency CRM</a>
-        <a href="agencies.html#pricing">Pricing &amp; plans</a>
+        <div class="m-footer-col-title">Buyers</div>
+        <a href="buyers.html">For buyers</a>
+        <a href="app/toju.html">Chat with Toju</a>
+        <a href="app/browse.html">Browse properties</a>
       </div>
     </div>
     <div class="m-footer-legal-row">
@@ -195,6 +308,18 @@
 </div>
 <!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
 
+<!-- ══ STICKY CTA — the agency equivalent of the customer page's floating
+     "Talk to Toju" pill. Appears after the first meaningful scroll, yields
+     to the whole end zone so it never covers the pricing CTAs or the footer,
+     and a dismissal sticks for the session. -->
+<div class="sticky-cta" id="stickyCta">
+  <a class="sticky-cta-btn" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Sign in
+  </a>
+  <button class="sticky-cta-x" type="button" aria-label="Dismiss">✕</button>
+</div>
+
 <nav id="navbar">
   <a href="index.html" class="nav-logo">
     <div class="nav-logo-mark">
@@ -204,162 +329,412 @@
     </div>
     <span class="nav-logo-word">Synapse</span>
   </a>
-  <!-- The familiar segmented control. Now that the two audiences live on
-       separate pages it navigates rather than filtering in place — same
-       control, same muscle memory, one page per journey. -->
   <div class="aud-toggle" role="tablist" aria-label="Audience">
-    <a class="aud-seg active" href="index.html" role="tab" aria-selected="true" aria-current="page">For Customers</a>
-    <a class="aud-seg" href="agencies.html" role="tab" aria-selected="false">For Agencies</a>
+    <a class="aud-seg" href="buyers.html" role="tab" aria-selected="false">For Customers</a>
+    <a class="aud-seg active" href="index.html" role="tab" aria-selected="true" aria-current="page">For Agencies</a>
   </div>
   <div class="nav-actions">
-    <a class="btn-ghost" id="nav-secondary" href="app/browse.html">Browse</a>
-    <a class="btn-brand" id="nav-primary" href="app/toju.html">Talk to Toju</a>
+    <!-- Both of these used to point at the identical sign-in URL, so "Book a
+         demo" and "Agency portal" were the same dead end. They are now the two
+         things an agency actually wants: create an account, or sign in. -->
+    <a class="btn-ghost" id="nav-secondary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+    <a class="btn-brand" id="nav-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Register your agency</a>
   </div>
 </nav>
 
 <!-- ══ HERO · CUSTOMERS ══ -->
 
-<section id="hero" class="hero-section" data-aud="customer">
+<section id="hero-agency" class="hero-section" data-aud="agency">
   <div class="container">
     <div class="hero-grid">
       <!-- Left — editorial typography -->
       <div class="hero-copy">
-        <div class="hero-eyebrow">For buyers &amp; renters</div>
+        <div class="hero-eyebrow">For agencies &amp; developers</div>
         <h1 class="hero-headline">
-          Find the home you have been <em>picturing.</em>
+          Grow your agency.<br><em>Not your workload.</em>
         </h1>
         <p class="hero-sub">
-          Tell Toju how you actually live &mdash; where you work, how you get there, what you will not compromise on &mdash; and it finds the homes that fit, and says why each one made the list. Or skip the describing and show it: pin the rooms, colours and furniture you love, and let your taste do the searching.
+          Post a listing once. It markets itself everywhere your buyers already are, answers every enquiry the moment it lands, and reaches your agents already qualified.
         </p>
-        <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
+        <p class="hero-pull">
+          <b>Toju does the reaching, qualifying and pre-negotiating.</b> Your team does what it does best — closing.
+        </p>
+        <!-- ONE decision here too (Hick's Law) -->
         <div class="hero-ctas">
           <button class="panel-btn-primary">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Talk to Toju, it's free
+            Open agency portal
           </button>
         </div>
         <div class="hero-trust">
-          <span class="pip"><i></i> Free. No sign-up to start.</span>
+          <span class="pip"><i></i> Warm leads on WhatsApp · live in minutes</span>
         </div>
       </div>
 
-      <!-- Right — the product itself, working. A real conversation types out
-           so a first-time visitor sees exactly what using Synapse looks like
-           before deciding anything. -->
+      <!-- Right — the portal itself: leads arriving, already qualified. -->
       <div class="hero-media hero-peek">
-        <div class="peek" data-peek="customer">
+        <div class="peek" data-peek="agency">
           <div class="peek-bar">
             <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Agency portal</span>
           </div>
-          <div class="peek-body" id="peekCustomer"></div>
-          <!-- This was a mock: a <span> that looked like an input and did
-               nothing. It is now the real front door — whatever is typed here
-               is handed to Toju already sent, so the first thing a visitor
-               does is the product working, not a sign-up. -->
-          <form class="peek-composer" id="heroAsk" action="app/toju.html" method="get">
-            <input class="peek-field" id="heroAskInput" name="ask" autocomplete="off"
-                   maxlength="300" placeholder="Tell Toju what you're looking for…"
-                   aria-label="Tell Toju what you're looking for" />
-            <button class="peek-send" type="submit" aria-label="Ask Toju">↑</button>
-          </form>
+          <div class="peek-portal">
+            <div class="pp-head">
+              <span class="pp-title">Leads · today</span>
+              <span class="pp-live"><i></i> Live</span>
+            </div>
+            <div class="peek-body pp-leads" id="peekAgency"></div>
+          </div>
         </div>
         <div class="peek-shadow" aria-hidden="true"></div>
       </div>
     </div>
 
-    <!-- Stats — what trust means to a buyer -->
+    <!-- Stats — what value means to an agency -->
     <div class="hero-statline">
-      <!-- Three figures that are true by definition — the rules we run, not
-           measurements we would have to invent. -->
+      <div class="hero-stat">
+        <div class="hero-stat-val">1</div>
+        <div class="hero-stat-label">Upload — marketed across every channel automatically</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">0</div>
+        <div class="hero-stat-label">Commission taken from your deals. No setup fee, no lock-in</div>
+      </div>
       <div class="hero-stat">
         <div class="hero-stat-val">24/7</div>
-        <div class="hero-stat-label">Toju answers whenever you are looking, not in office hours</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">14</div>
-        <div class="hero-stat-label">Days before a listing must be re-confirmed, or it disappears</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">Free</div>
-        <div class="hero-stat-label">For buyers and renters. Always.</div>
+        <div class="hero-stat-label">Toju qualifies and books viewings — always on</div>
       </div>
     </div>
   </div>
 </section>
-<section id="how" class="s-band" data-aud="customer">
+<section class="s-band dark" data-aud="agency" style="padding:76px 0">
+  <div class="container">
+    <p class="s-h2" style="text-align:center;max-width:900px;margin:0 auto">Reach more people. Build more trust. <em>Close more deals.</em></p>
+  </div>
+</section>
+<!-- ══ AGENCY · THE PROBLEM ══════════════════════════════════
+     Each card carries the problem and its answer side by side, one at a time.
+     A grid of four problems followed by a separate grid of four solutions
+     makes the reader hold both lists in mind and pair them up; here the
+     pairing is the card. The dark half is the one they are meant to recognise
+     as their own week. -->
+<section class="s-band" data-aud="agency">
   <div class="container">
     <div class="s-lede reveal">
-      <div class="s-kicker">How it works</div>
-      <h2 class="s-h2">From "I need somewhere" to <em>keys in hand.</em></h2>
-      <p class="s-sub">One adviser, the whole way through.</p>
+      <div class="s-kicker">The reality</div>
+      <h2 class="s-h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
+      <p class="s-sub">A conversion rate that low leaves an agency two ways to grow, and both are expensive: spend the week marketing, chasing and negotiating yourself &mdash; or hand the property to other agencies for reach and pay for it out of the fee.</p>
+    </div>
+
+    <div class="car reveal" id="probCar">
+      <div class="car-track" id="probTrack" role="group" aria-label="The problem, and what Synapse does about it">
+        <article class="car-slide prob-card">
+          <div class="prob-half is-problem">
+            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">01</span></div>
+            <h3 class="prob-q">Are you working 97 dead ends to reach 3 live ones?</h3>
+            <p class="prob-b">Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
+          </div>
+          <div class="prob-half is-answer">
+            <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+            <p class="prob-a">Toju works the 97.</p>
+            <p class="prob-b">Every enquiry answered the moment it lands, at any hour, and taken as far as it will go &mdash; budget, timeline, whether they can actually buy. Your agents open the day on what survived that.</p>
+          </div>
+        </article>
+        <article class="car-slide prob-card">
+          <div class="prob-half is-problem">
+            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">02</span></div>
+            <h3 class="prob-q">Are your evenings going on captions?</h3>
+            <p class="prob-b">Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
+          </div>
+          <div class="prob-half is-answer">
+            <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+            <p class="prob-a">Upload once. It markets itself.</p>
+            <p class="prob-b">Send one listing with photographs. Synapse writes the copy, cuts the creative and publishes to 6 channels &mdash; without anyone opening a design tool at 11pm.</p>
+          </div>
+        </article>
+        <article class="car-slide prob-card">
+          <div class="prob-half is-problem">
+            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">03</span></div>
+            <h3 class="prob-q">Are you splitting the fee to get reach?</h3>
+            <p class="prob-b">The usual way to reach more buyers is to hand the property to 3 other agencies. Then either the customer pays a fee with everyone&rsquo;s cut stacked into it, or you take a fraction of what the work was worth.</p>
+          </div>
+          <div class="prob-half is-answer">
+            <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+            <p class="prob-a">Reach without giving the fee away.</p>
+            <p class="prob-b">The reach you were splitting the property to get, you now get on your own. Synapse syndicates everywhere and brings the buyer back to you. No third agency in the middle, no stacked fee.</p>
+          </div>
+        </article>
+        <article class="car-slide prob-card">
+          <div class="prob-half is-problem">
+            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">04</span></div>
+            <h3 class="prob-q">Is your best negotiator one person?</h3>
+            <p class="prob-b">Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
+          </div>
+          <div class="prob-half is-answer">
+            <div class="prob-top"><span class="prob-tag">What Synapse does</span></div>
+            <p class="prob-a">The first round, already done.</p>
+            <p class="prob-b">Before your agent picks up the phone, price expectations are set, budget is confirmed and the obvious objections are met. Your closer starts where they are strongest.</p>
+          </div>
+        </article>
+      </div>
+      <div class="car-foot">
+        <div class="car-dots" id="probDots" role="tablist" aria-label="Choose a problem"></div>
+        <span class="car-count" id="probCount">1 / 4</span>
+      </div>
+    </div>
+
+    <p class="s-sub reveal" style="text-align:center;max-width:760px;margin:38px auto 0"><b style="color:var(--text)">The result is the same either way:</b> the customer pays more in stacked fees, or your agency earns less on the same work. Often both.</p>
+  </div>
+</section>
+<section class="s-band" data-aud="agency">
+  <div class="container">
+    <div class="s-split">
+      <div class="s-lede reveal">
+        <div class="s-kicker">One · Marketing</div>
+        <h2 class="s-h2">One listing. <em>Every channel.</em></h2>
+        <p class="s-sub">Upload a property once. Synapse writes the copy in your agency’s own voice, cuts the creative, sizes it for each platform, and publishes it everywhere your buyers already are — Instagram, Facebook, WhatsApp, TikTok, X and the Synapse marketplace.</p>
+        <p class="s-sub" style="margin-top:16px">Every version is checked against that platform’s real limits before it goes: caption length, aspect ratio, video duration. And it will not run a “verified” angle on a listing that has not passed verification — the one claim you cannot afford to get wrong.</p>
+        <p class="s-sub" style="margin-top:16px">No agency retainer. No social media manager. No waiting on a designer.</p>
+      </div>
+      <div class="demo reveal" id="demoSyndicate">
+        <div class="demo-head"><span class="demo-ttl">Publishing · 3-Bed, Lekki</span><span class="demo-live"><i></i> Auto</span></div>
+        <div class="demo-body">
+          <div class="d-row" style="margin-bottom:4px">
+            <div class="d-thumb"></div>
+            <div class="d-main"><div class="d-p">₦165M</div><div class="d-t">Uploaded 12 seconds ago</div></div>
+          </div>
+          <div class="d-fan" id="fanList"></div>
+        </div>
+      </div>
+    </div>
+      <a class="s-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Open the agency portal →</a>
+  </div>
+</section>
+<section class="s-band dark" data-aud="agency">
+  <div class="container">
+    <div class="s-split flip">
+      <div class="s-lede reveal">
+        <div class="s-kicker">Two · CRM</div>
+        <h2 class="s-h2">Every enquiry arrives <em>already worked.</em></h2>
+        <p class="s-sub">Toju answers in seconds, day or night, and establishes budget, timeline and how soon they can move. The lead reaches your pipeline with the city, the budget and the brief already attached — and if the buyer made an offer, Toju’s opening position comes attached too.</p>
+        <p class="s-sub" style="margin-top:16px">From there it is a pipeline your team actually runs: five stages, assignment across your agents, bulk actions on a whole selection, and an outbox that queues messages and sends only when somebody presses send. Nothing goes out behind your back.</p>
+        <p class="s-sub" style="margin-top:16px">Book several buyers into one viewing trip instead of four separate Saturdays, and cancel a slot in one move — everyone booked on it is told, and the leads go back to qualified rather than quietly disappearing.</p>
+        <div style="margin-top:26px" class="pip"><i></i> Handed over with the full transcript, not a summary you have to trust.</div>
+      </div>
+      <div class="demo reveal">
+        <div class="demo-head"><span class="demo-ttl">Enquiry · 2:14 am</span><span class="demo-live"><i></i> Toju</span></div>
+        <div class="demo-body" id="agencyChat"></div>
+      </div>
+    </div>
+      <a class="s-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Open the agency portal →</a>
+  </div>
+</section>
+<section class="s-band tinted" data-aud="agency">
+  <div class="container">
+    <div class="s-lede reveal">
+      <div class="s-kicker">One place</div>
+      <h2 class="s-h2">Your whole team, <em>one portal.</em></h2>
+      <p class="s-sub">Every listing, lead and verification in a single view — with the next action already decided for each one.</p>
     </div>
     <div class="s-steps">
       <div class="s-step reveal">
-        <div class="n">01</div>
-        <div class="t">Tell us what you need</div>
-        <div class="d">"Three bedrooms in Lekki, under ₦180M, near a good school."</div>
+        <div class="n">CRM</div>
+        <div class="t">Nothing gets dropped</div>
+        <div class="d">Every lead ranked hot to cold, with the next best action written for whoever picks it up.</div>
       </div>
       <div class="s-step reveal">
-        <div class="n">02</div>
-        <div class="t">Tell us how you live</div>
-        <div class="d">Where you work, how you get there, what you will not compromise on.</div>
+        <div class="n">TRUST</div>
+        <div class="t">Verification, tracked</div>
+        <div class="d">See where each property stands in verification, and what is still outstanding.</div>
       </div>
       <div class="s-step reveal">
-        <div class="n">03</div>
-        <div class="t">Or just show us</div>
-        <div class="d">Pin the rooms, colours and pieces you want. Your board searches alongside you.</div>
-      </div>
-      <div class="s-step reveal">
-        <div class="n">04</div>
-        <div class="t">We find what fits</div>
-        <div class="d">And say why each home made the list, not just that it matched.</div>
-      </div>
-      <div class="s-step reveal">
-        <div class="n">05</div>
-        <div class="t">We stay until the keys</div>
-        <div class="d">Comparing, viewing, negotiating. You decide at every point.</div>
+        <div class="n">GROWTH</div>
+        <div class="t">Know what worked</div>
+        <div class="d">Every closed deal traced back to the post that started it — so you spend on what actually sells.</div>
       </div>
     </div>
-      <a class="s-cta" href="app/toju.html">Talk to Toju, it's free →</a>
-
+      <a class="s-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Open the agency portal →</a>
   </div>
 </section>
-<section id="boards" class="s-band" data-aud="customer">
+
+<!-- ══ AGENCY · PRICING ════════════════════════════════════════════════════
+     Agencies will not start a conversation without knowing the number. These
+     are the real tiers from the portal (PRICING in agency.html) — keep the two
+     in step if either changes. -->
+<section id="pricing" class="s-band" data-aud="agency">
   <div class="container">
-    <div class="s-split">
-      <!-- Pins landing on a board, then what the board turns into. Same
-           grammar as the demo it replaced: items arriving one at a time, so
-           the visitor watches a thing happen rather than reading a claim. -->
-      <div class="demo reveal" id="demoBoard">
-        <div class="demo-head"><span class="demo-ttl">Dream board · Warm and green</span><span class="demo-live"><i></i> Pinning</span></div>
-        <div class="demo-body" id="boardList"></div>
-      </div>
-      <div class="s-lede reveal">
-        <div class="s-kicker">Dream Boards</div>
-        <h2 class="s-h2">Show us the home you <em>want.</em></h2>
-        <p class="s-sub">Describing a home is hard. Showing one is easy. Pin a facade, a kitchen, a chair &mdash; and Toju searches against your board.</p>
-        <p class="s-sub" style="margin-top:18px"><b style="color:var(--text)">And for what goes inside it.</b> Photograph anything you love and we find who sells it, or a maker who can build it. Or take what someone else has pinned.</p>
-      </div>
+    <div class="s-lede reveal">
+      <div class="s-kicker">Pricing</div>
+      <h2 class="s-h2">Start free. Pay when it <em>pays you back.</em></h2>
+      <p class="s-sub">No setup fee, no lock-in, and no commission on your deals. Move up or down a tier whenever you like.</p>
     </div>
-      <a class="s-cta" href="app/toju.html">Talk to Toju, it's free →</a>
 
-  </div>
-</section>
-<section id="final-cta" data-aud="customer">
-  <div class="cta-ambient"></div>
-  <div class="cta-dark"></div>
-  <div class="cta-content container">
-    <div class="reveal"><span class="chip">Get Started</span></div>
-    <h2 class="cta-headline reveal">Your search ends <em>here.</em></h2>
-    <p class="cta-sub reveal">Free to talk. Free to browse. Free to pin.</p>
-    <div class="cta-btns reveal">
-      <button class="btn-cta-primary">Talk to Toju, it's free</button>
-      <button class="btn-cta-ghost">Partner with us</button>
+    <!-- Billing period. Prices are written into the cards as monthly; the
+         toggle rewrites them, so there is one source of truth per plan. -->
+    <div class="pr-toggle" role="group" aria-label="Billing period">
+      <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
+      <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save" id="prSave"></span></button>
     </div>
-    <p class="reveal" style="margin-top:32px;font-size:13px;color:var(--text-dim)">ilios.intelligence@gmail.com</p>
+
+    <div class="pr-grid">
+      <div class="pr-card reveal">
+        <div class="pr-name">Free</div>
+        <div class="pr-price">₦0<span>forever</span></div>
+        <p class="pr-best">New or small agencies getting started.</p>
+        <ul class="pr-list">
+          <li>Up to 20 active listings</li>
+          <li>2 team members</li>
+          <li>CRM with WhatsApp handoff</li>
+          <li>Toju AI referrals</li>
+          <li>Standard verification queue</li>
+        </ul>
+        <p class="pr-not">No marketing automation or syndication.</p>
+        <a class="btn-ghost pr-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Start free</a>
+      </div>
+
+      <div class="pr-card feature reveal">
+        <span class="pr-badge">Most popular</span>
+        <div class="pr-name">Accelerate</div>
+        <div class="pr-price" data-monthly="75000">₦75,000<span>per month</span></div>
+        <p class="pr-best">The plan almost every serious agency wants.</p>
+        <ul class="pr-list">
+          <li>Up to 100 listings · 5 agent seats</li>
+          <li>Reviewed within 48 hours</li>
+          <li>Publish once, reach every channel</li>
+          <li>AI writes and schedules your posts</li>
+          <li>See which channels actually make buyers</li>
+        </ul>
+        <a class="btn-brand pr-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Start with Accelerate</a>
+      </div>
+
+      <div class="pr-card reveal">
+        <div class="pr-name">Leader</div>
+        <div class="pr-price" data-monthly="250000">₦250,000<span>per month</span></div>
+        <p class="pr-best">Established agencies going for the top.</p>
+        <ul class="pr-list">
+          <li>Unlimited listings and seats</li>
+          <li>AI-generated campaigns, every channel</li>
+          <li>Proximity marketing</li>
+          <li>Dedicated verification desk</li>
+        </ul>
+        <p class="pr-not">Toju still ranks purely on buyer fit — never on payment.</p>
+        <a class="btn-ghost pr-cta" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Talk to sales</a>
+      </div>
+    </div>
+
+    <!-- Side-by-side comparison. Three cards with different feature lists force
+         the reader to hold all three in their head and diff them; a table does
+         that work for them. Every row restates a claim already made on the
+         cards above — this introduces no new promise. -->
+    <details class="pr-compare">
+      <summary>Compare the three plans side by side</summary>
+      <div class="pr-tablewrap">
+        <table class="pr-table">
+          <caption class="sr-only">Feature comparison across the Free, Accelerate and Leader plans</caption>
+          <thead>
+            <tr>
+              <th scope="col">What you get</th>
+              <th scope="col">Free</th>
+              <th scope="col" class="hi">Accelerate</th>
+              <th scope="col">Leader</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Active listings</th><td>20</td><td class="hi">100</td><td>Unlimited</td></tr>
+            <tr><th scope="row">Team seats</th><td>2</td><td class="hi">5</td><td>Unlimited</td></tr>
+            <tr><th scope="row">CRM with WhatsApp handoff</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Toju AI referrals</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Verification queue</th><td>Standard</td><td class="hi">48 hours</td><td>Dedicated desk</td></tr>
+            <tr><th scope="row">Social syndication</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">AI writes &amp; schedules posts</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Channel attribution</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Verification standard</th><td colspan="3" style="text-align:center">Identical on every plan — verification is never for sale</td></tr>
+            <tr><th scope="row">Proximity marketing</th><td class="no" aria-label="Not included">—</td><td class="hi no" aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
+            <tr><th scope="row">Commission on your deals</th><td>None</td><td class="hi">None</td><td>None</td></tr>
+            <tr><th scope="row">Toju ranking</th><td colspan="3" class="pr-neutral">Always on buyer fit — never on what you pay</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
   </div>
 </section>
+
+<section class="ag-final" data-aud="agency">
+  <div class="container">
+    <h2>Every listing is an opportunity.<br>Make sure yours reaches the <em>right buyer.</em></h2>
+    <p>Get your agency live on Synapse and let every property start working harder today.</p>
+    <div class="hero-ctas" style="justify-content:center;margin-top:26px">
+      <!-- These were <button>s with no handler — the page's closing call to
+           action did nothing at all when clicked. Same two destinations as the
+           nav: register, or sign in. -->
+      <a class="panel-btn-primary" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Register your agency</a>
+      <a class="panel-btn-secondary" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+    </div>
+  </div>
+</section>
+<script>
+/* ── Pricing: monthly ⇄ annual (item 43) ─────────────────────────────────
+   COMMERCIAL DECISION — confirm before this goes in front of agencies.
+   ANNUAL_MONTHS_FREE is the offer: pay for (12 − n) months, get 12. It is one
+   number in one place precisely so it is Eden's to set, not a rate buried in
+   markup. Set it to 0 and the toggle disappears rather than advertising a
+   discount that does not exist.
+
+   Monthly prices live in the cards' data-monthly attributes, so there is one
+   source of truth per plan and the toggle only ever re-renders it. */
+(function () {
+  var ANNUAL_MONTHS_FREE = 2;
+
+  /* Desktop and mobile each render their own toggle; both must drive the
+     same paint(), or whichever block is live gets a dead switch. */
+  var wraps = [].slice.call(document.querySelectorAll('.pr-toggle'));
+  var prices = [].slice.call(document.querySelectorAll('.pr-price[data-monthly]'));
+  if (!wraps.length || !prices.length) return;
+
+  if (!ANNUAL_MONTHS_FREE) {                                  // no offer, no toggle
+    wraps.forEach(function (w) { w.hidden = true; });
+    return;
+  }
+
+  var paidMonths = 12 - ANNUAL_MONTHS_FREE;
+  [].slice.call(document.querySelectorAll('.pr-save')).forEach(function (el) {
+    el.textContent = ANNUAL_MONTHS_FREE + ' months free';
+  });
+
+  var naira = function (n) { return '₦' + Math.round(n).toLocaleString('en-NG'); };
+
+  function paint(period) {
+    prices.forEach(function (el) {
+      var monthly = Number(el.getAttribute('data-monthly')) || 0;
+      if (period === 'annual') {
+        // Shown as the effective monthly rate, with the real yearly total
+        // underneath — an agency budgets per month but pays per year, and
+        // hiding the total is how pricing pages mislead.
+        var perMonth = (monthly * paidMonths) / 12;
+        el.innerHTML = naira(perMonth) + '<span>per month, billed yearly ('
+          + naira(monthly * paidMonths) + ')</span>';
+      } else {
+        el.innerHTML = naira(monthly) + '<span>per month</span>';
+      }
+    });
+    wraps.forEach(function (wrap) {
+      wrap.querySelectorAll('.pr-per').forEach(function (b) {
+        var on = b.dataset.per === period;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    });
+  }
+
+  wraps.forEach(function (wrap) {
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-per]');
+      if (b) paint(b.dataset.per);
+    });
+  });
+  paint('monthly');
+})();
+</script>
 
 <!-- ══ HERO · AGENCIES ══ -->
 
@@ -397,18 +772,6 @@
 
 <!-- ══ FINAL CTA ══ -->
 
-<!-- ══ STICKY CTA — one floating pill, same funnel as every other customer
-     CTA. Appears after the first meaningful scroll, hides whenever the footer
-     is on screen (so it never covers end-of-page content), dismissible for
-     the session. -->
-<div class="sticky-cta" id="stickyCta">
-  <a class="sticky-cta-btn" href="app/toju.html">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Talk to Toju, free
-  </a>
-  <button class="sticky-cta-x" type="button" aria-label="Dismiss">✕</button>
-</div>
-
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="container">
@@ -425,10 +788,10 @@
       </div>
       <div><div class="footer-col-title">Platform</div><ul class="footer-links"><li><a href="app/toju.html">Chat with Toju</a></li><li><a href="app/browse.html">Browse properties</a></li><li><a href="app/browse.html">Shared living</a></li><li><a href="app/toju.html?ask=Tell%20me%20about%20flexible%20payment%20plans">Flex plans</a></li></ul></div>
       <div><div class="footer-col-title">Agencies</div><ul class="footer-links"><li><a href="agencies.html">List properties</a></li><li><a href="agencies.html">Agency CRM</a></li><li><a href="agencies.html#pricing">Proximity marketing</a></li><li><a href="agencies.html#pricing">Pricing &amp; plans</a></li></ul></div>
-      <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="index.html">About Synapse</a></li><li><a href="index.html#boards">Dream Boards</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms</a></li></ul></div>
+      <div><div class="footer-col-title">Company</div><ul class="footer-links"><li><a href="index.html">About Synapse</a></li><li><a href="index.html#trust">How verification works</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms</a></li></ul></div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-tagline">The infrastructure layer for real estate. Every recommendation backed by verified data, verified agencies, and AI.</p>
+      <p class="footer-tagline">The infrastructure layer for Nigerian real estate — every recommendation backed by verified data, verified agencies, and AI.</p>
       <div class="footer-legal"><span>© 2026 Synapse · Lagos, Nigeria</span><span>ilios.intelligence@gmail.com</span></div>
     </div>
   </div>
@@ -444,27 +807,28 @@ else {
 gsap.registerPlugin(ScrollTrigger);
 
 /* ─── Sticky CTA bar ────────────────────────────────────────────────────
-   This markup shipped with no script at all. .sticky-cta is opacity:0 and
-   visibility:hidden until something adds .show, and nothing ever did -- so
-   the floating "Talk to Toju" pill has never appeared on this page. The
-   agencies page had the behaviour; this one only had the div.
-
-   Shown immediately rather than after half a viewport of scroll: it is the
-   standing action on the page, and there is no reason to make someone earn
-   it. It still yields to the end zone, so it never covers the footer's own
-   call to action, and a dismissal still sticks for the session. */
+   Same behaviour as the customer landing: appears after about half a
+   viewport of scroll, yields to the end zone (pricing CTAs, final CTA and
+   footer) so it never sits on top of the very buttons it duplicates, and a
+   dismissal sticks for the session. Motion lives in CSS. */
 (function () {
   var bar = document.getElementById('stickyCta');
   if (!bar) return;
-  var KEY = 'syn-sticky-cta-dismissed';
+  var KEY = 'syn-sticky-cta-agency-dismissed';
   try { if (sessionStorage.getItem(KEY)) { bar.remove(); return; } } catch (e) {}
 
+  /* Was gated behind half a viewport of scroll, so the one persistent way to
+     sign in did not exist until you had already gone looking. It is the
+     standing action on the page -- there is no reason to make someone earn it.
+     Shown immediately; the dismiss button and the end-zone rule still apply,
+     so it can still be got rid of and still gets out of the way of the
+     footer's own call to action. */
   var endVisible = false, dismissed = false;
   function update() { bar.classList.toggle('show', !endVisible && !dismissed); }
 
   var visible = function (el) { return el && el.offsetParent !== null; };
   var endZone = [].slice.call(
-    document.querySelectorAll('footer, #final-cta, .m-final-cta')
+    document.querySelectorAll('footer, .ag-final, #pricing, #m-pricing, .m-final-cta')
   ).filter(visible);
   if (endZone.length && 'IntersectionObserver' in window) {
     var seen = new Set();
@@ -483,12 +847,21 @@ gsap.registerPlugin(ScrollTrigger);
     try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
   });
 
+  /* Explicit, because the scroll listener that used to make the first call is
+     gone. Without this the bar depends on the IntersectionObserver callback
+     firing, which does not happen when there is no end zone on the page or no
+     observer support -- and then it would never appear at all. */
   update();
 })();
 
 // ─── NAV solid on scroll ───
+// Both bars are toggled: whichever is live needs its own backdrop, or page
+// content scrolls visibly underneath a transparent fixed bar.
 window.addEventListener('scroll', () => {
-  document.getElementById('navbar').classList.toggle('solid', window.scrollY > 10);
+  var solid = window.scrollY > 10;
+  document.querySelectorAll('#navbar, #mNavbar').forEach(function (b) {
+    b.classList.toggle('solid', solid);
+  });
 });
 
 // ─── GSAP hero entrance ───
@@ -579,19 +952,9 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     box.appendChild(d); show(d); return d;
   }
 
-  /* Desktop and mobile each own a peek box and only one is ever visible, so
-     this plays into whichever exist rather than the first id it finds. */
   function playCustomer() {
-    [].slice.call(document.querySelectorAll('#peekCustomer, [data-peek-customer]'))
-      .forEach(playCustomerIn);
-  }
-  function playCustomerIn(box) {
+    var box = document.getElementById('peekCustomer');
     if (!box) return;
-    /* Mobile's peek card is a shorter, fixed-height box (m-peek-body,
-       max-height:220px) — it gets the same visual language but a shorter
-       transcript (3 beats: ask → dots → answer+card) so nothing clips.
-       Desktop's taller card plays the fuller exchange. */
-    var compact = box.hasAttribute('data-peek-customer');
     box.innerHTML = '';
     at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
     at(750,  function () { box.__t = dots(box); });
@@ -608,12 +971,16 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
         + '<div class="c-v">✓ Verified 2 days ago</div></div>';
       box.appendChild(c); show(c);
     });
-    if (compact) return;
     at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
   }
 
+  /* Desktop and mobile each own a copy of these panels and only one is ever
+     displayed, so each play() drives every instance it finds rather than the
+     first id it hits. */
   function playAgency() {
-    var box = document.getElementById('peekAgency');
+    [].slice.call(document.querySelectorAll('#peekAgency, [data-peek-agency]')).forEach(playAgencyIn);
+  }
+  function playAgencyIn(box) {
     if (!box) return;
     box.innerHTML = '';
     var leads = [
@@ -640,50 +1007,34 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     });
   }
 
-  /* pins landing on a board, then what the board turns into (customer)
-
-     Reuses .d-check rather than inventing a row style: the shape on screen is
-     the same -- items arriving one after another -- and the section it sits in
-     was built for exactly that rhythm. The last two rows are the point of the
-     section, so they land after a beat rather than in the same run. */
-  function playBoard() {
-    var box = document.getElementById('boardList');
+  /* pins landing on a board, one at a time (customer · boards section) */
+  function playVerify() {
+    var box = document.getElementById('verifyList');
     if (!box) return;
     box.innerHTML = '';
-    var pins = ['Low white bungalow, deep eaves', 'Quiet street, big trees',
-                'Green kitchen, brass taps', 'Rattan lounge chair',
-                'Warm oak floor'];
-    pins.forEach(function (c, i) {
+    var checks = ['Title documents', 'Ground survey', 'Structure', 'Flood risk',
+                  'Legal status', 'Ownership confirmed', 'Photos match the house'];
+    checks.forEach(function (c, i) {
       var d = document.createElement('div');
       d.className = 'd-check';
-      d.innerHTML = '<span class="b">+</span>' + c;
+      d.innerHTML = '<span class="b">✓</span>' + c;
       box.appendChild(d);
       at(160 + i * 190, function () { d.classList.add('in'); });
     });
-    var tail = [
-      'Toju is matching homes to this board',
-      'And finding who sells the chair'
-    ];
-    tail.forEach(function (t, i) {
-      var base = 160 + pins.length * 190 + 260 + i * 320;
-      at(base, function () {
-        var d = document.createElement('div');
-        d.className = 'd-check';
-        d.innerHTML = '<span class="b wait">·</span>' + t;
-        box.appendChild(d);
-        /* A timer rather than requestAnimationFrame, which is what the five
-           rows above already use. rAF does not run while the tab is hidden, so
-           these two -- the point of the whole section -- would sit at opacity 0
-           until the visitor came back to the tab. 20ms is enough for the row to
-           be in the document before the class starts its transition. */
-        at(20, function () { d.classList.add('in'); });
-      });
+    at(160 + checks.length * 190 + 120, function () {
+      var d = document.createElement('div');
+      d.className = 'd-check';
+      d.innerHTML = '<span class="b wait">·</span>Still available — re-checked every 14 days';
+      box.appendChild(d);
+      requestAnimationFrame(function () { d.classList.add('in'); });
     });
   }
 
   /* one upload fanning out to every channel (agency) */
   function playSyndicate() {
-    var box = document.getElementById('fanList');
+    [].slice.call(document.querySelectorAll('#fanList, [data-fan-list]')).forEach(playSyndicateIn);
+  }
+  function playSyndicateIn(box) {
     if (!box) return;
     box.innerHTML = '';
     var chans = [['IG','Instagram'],['FB','Facebook'],['WA','WhatsApp'],['X','X'],['TT','TikTok'],['SY','Synapse']];
@@ -698,7 +1049,9 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
 
   /* a 2am enquiry Toju handles alone (agency) */
   function playAgencyChat() {
-    var box = document.getElementById('agencyChat');
+    [].slice.call(document.querySelectorAll('#agencyChat, [data-agency-chat]')).forEach(playAgencyChatIn);
+  }
+  function playAgencyChatIn(box) {
     if (!box) return;
     box.innerHTML = '';
     at(150,  function () { bubble(box, 'me', 'Is the Lekki duplex still available?'); });
@@ -720,16 +1073,16 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
 
   /* a proximity alert arriving on a phone (agency) */
   function playPush() {
-    var card = document.getElementById('pushCard');
-    if (!card) return;
-    card.classList.remove('in');
-    at(400, function () { card.classList.add('in'); });
+    [].slice.call(document.querySelectorAll('#pushCard, [data-push-card]')).forEach(function (card) {
+      card.classList.remove('in');
+      at(400, function () { card.classList.add('in'); });
+    });
   }
 
   window.synPeek = function (aud) {
     clear();
     if (aud === 'agency') { playAgency(); playSyndicate(); playAgencyChat(); playPush(); }
-    else { playCustomer(); playBoard(); }
+    else { playCustomer(); playVerify(); }
   };
   // one audience per page now — play whichever glimpse this page contains
   function whichPeek() { return document.getElementById('peekAgency') ? 'agency' : 'customer'; }
@@ -737,79 +1090,122 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
   else window.synPeek(whichPeek());
 })();
 
-/* ─── Mobile carousel ───────────────────────────────────────────────────────
-   Its own instance, not a fork of the desktop one: native swipe is the only
-   input (no prev/next buttons, no auto-advance), so this is just "read the
-   scroll position back into the dots". Scroll stays the source of truth. */
+/* ─── Benefit carousel ──────────────────────────────────────────────────────
+   Scroll position is the single source of truth — the buttons, dots and keys
+   all just scroll, and the UI reads back from the scroll. That way a native
+   swipe and a button press can never disagree about which slide is showing. */
 (function () {
-  var track = document.getElementById('mCarTrack');
+  var track = document.getElementById('carTrack');
   if (!track) return;
-  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
-  var dotsBox = document.getElementById('mCarDots');
-  var count = document.getElementById('mCarCount');
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var slides = [].slice.call(track.querySelectorAll('.car-slide'));
+  var dotsBox = document.getElementById('carDots');
+  var count = document.getElementById('carCount');
+  var prev = document.getElementById('carPrev');
+  var next = document.getElementById('carNext');
   var idx = 0;
 
   slides.forEach(function (s, i) {
     var b = document.createElement('button');
-    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
+    b.className = 'car-dot' + (i === 0 ? ' on' : '');
     b.type = 'button';
     b.setAttribute('role', 'tab');
     b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
-    b.addEventListener('click', function () {
-      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
-    });
+    b.addEventListener('click', function () { go(i); });
     dotsBox.appendChild(b);
   });
   var dots = [].slice.call(dotsBox.children);
 
+  // measure from the first slide, not the track: offsetLeft is relative to
+  // each element's own offsetParent, which is not necessarily the track
   function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
 
+  function go(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.scrollTo({ left: offset(idx), behavior: 'smooth' });
+  }
   function sync() {
+    // nearest slide to the current scroll position wins
     var best = 0, bestD = Infinity;
     slides.forEach(function (s, i) {
       var d = Math.abs(offset(i) - track.scrollLeft);
       if (d < bestD) { bestD = d; best = i; }
     });
     idx = best;
-    dots.forEach(function (d, i) {
-      d.classList.toggle('on', i === idx);
-      d.setAttribute('aria-selected', i === idx);
-    });
+    dots.forEach(function (d, i) { d.classList.toggle('on', i === idx); d.setAttribute('aria-selected', i === idx); });
     count.textContent = (idx + 1) + ' / ' + slides.length;
-    slides[idx].querySelectorAll('.m-d-bar i[data-fill]').forEach(function (el) {
+    prev.disabled = idx === 0;
+    next.disabled = idx === slides.length - 1;
+    // fill any progress bars on the slide that just became visible
+    slides[idx].querySelectorAll('.d-bar i[data-fill]').forEach(function (el) {
       el.style.width = el.getAttribute('data-fill') + '%';
     });
   }
 
+  prev.addEventListener('click', function () { go(idx - 1); });
+  next.addEventListener('click', function () { go(idx + 1); });
+  track.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
+  });
+  /* ── Scroll drives the slides ──────────────────────────────────────────
+     Bounded scroll-jacking, same design as the customer landing page's
+     carousel: engages only while the carousel is genuinely centred in the
+     viewport, RELEASES at both ends so the page can never get stuck inside
+     it, ignores horizontal gestures (native two-finger swipe already does
+     that better), and a cooldown means one flick of trackpad momentum
+     advances one slide, not five. An earlier, simpler version of this
+     (raw scrollLeft += deltaY, boundary check only on the "away" side)
+     could swallow a normal downward page-scroll the moment the section
+     scrolled into view — page appeared frozen. This one only ever
+     preventDefault()s a wheel tick that will actually move a slide. */
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var LOCK_MS = 520, lastAdvance = 0;
+  var car = track.closest('.car') || track;
+  function carouselCentred() {
+    var r = car.getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    if (visible < Math.min(r.height, vh) * 0.7) return false;
+    var mid = r.top + r.height / 2;
+    return mid > vh * 0.2 && mid < vh * 0.8;
+  }
+  car.addEventListener('wheel', function (e) {
+    if (reduced.matches) return;
+    if (e.ctrlKey) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    if (!carouselCentred()) return;
+    var dir = e.deltaY > 0 ? 1 : -1;
+    var atEnd = (dir > 0 && idx >= slides.length - 1) || (dir < 0 && idx <= 0);
+    if (atEnd) return;
+    e.preventDefault();
+    var now = Date.now();
+    if (now - lastAdvance < LOCK_MS) return;
+    lastAdvance = now;
+    go(idx + dir);
+  }, { passive: false });
   var t;
   track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
   window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
   sync();
 })();
 
-/* ─── Mobile navbar solidifies on scroll ─────────────────────────────────── */
-(function () {
-  var bar = document.getElementById('mNavbar');
-  if (!bar) return;
-  function upd() { bar.classList.toggle('solid', window.scrollY > 10); }
-  window.addEventListener('scroll', upd, { passive: true });
-  upd();
-})();
+// ─── FAQ accordion — one open at a time ───
+document.querySelectorAll('.faq-item').forEach(item => {
+  const btn = item.querySelector('.faq-q');
+  const ans = item.querySelector('.faq-a');
+  btn.addEventListener('click', () => {
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(o => {
+      o.classList.remove('open');
+      o.querySelector('.faq-a').style.maxHeight = '0px';
+    });
+    if (!isOpen) {
+      item.classList.add('open');
+      ans.style.maxHeight = ans.scrollHeight + 'px';
+    }
+  });
+});
 
-// RESTORED TWICE, for two different reasons, both worth recording.
-//
-// First: this block was collateral damage when the freshness-demo driver was
-// removed. That cut ran from a comment marker to the closing script tag, and
-// this router happened to sit between them, so every orange CTA on the page
-// silently stopped navigating. A range delete between two markers has to be
-// told what it is allowed to swallow.
-//
-// Then the restoration itself broke it again: the comment explaining the
-// above contained a literal closing script tag. The HTML parser does not care
-// that it sits inside a JS comment -- it ends the script element right there,
-// and everything below became inert text. Never write that sequence inside an
-// inline script, not even in prose.
 // ─── Wire the CTA buttons to the application ───
 // CTAs open the actual app screens (clickable prototypes of the real
 // @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
@@ -839,6 +1235,75 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
       } else window.location.href = 'app/toju.html';
     });
   });
+})();
+
+
+
+/* ─── The problem slider ────────────────────────────────────────────────────
+   Native scroll-snap does the sliding; this only reads the scroll position
+   back into the dots and the counter, so a swipe, a dot, an arrow key and a
+   trackpad all end up in the same place. Scroll stays the source of truth --
+   there is no separate index to fall out of step with what is on screen. */
+(function () {
+  var track = document.getElementById('probTrack');
+  if (!track) return;
+  var slides = [].slice.call(track.querySelectorAll('.car-slide'));
+  var dotsBox = document.getElementById('probDots');
+  var count = document.getElementById('probCount');
+  if (!slides.length || !dotsBox) return;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+  function go(i) {
+    track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
+  }
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'car-dot' + (i === 0 ? ' on' : '');
+    b.setAttribute('role', 'tab');
+    /* Named, not numbered: "Problem 2 of 4" tells a screen-reader user where
+       they are; the question itself tells them what they are moving to. */
+    var q = s.querySelector('.prob-q');
+    b.setAttribute('aria-label', (q ? q.textContent.trim() : 'Problem ' + (i + 1)));
+    b.addEventListener('click', function () { go(i); });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  function sync() {
+    var best = 0, bestD = Infinity;
+    slides.forEach(function (s, i) {
+      var d = Math.abs(offset(i) - track.scrollLeft);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    dots.forEach(function (d, i) {
+      d.classList.toggle('on', i === best);
+      d.setAttribute('aria-selected', String(i === best));
+    });
+    if (count) count.textContent = (best + 1) + ' / ' + slides.length;
+    return best;
+  }
+
+  var raf = null;
+  track.addEventListener('scroll', function () {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = null; sync(); });
+  }, { passive: true });
+
+  /* The track is focusable and takes arrow keys, so the slider is operable
+     without a pointer. Left and right only -- up and down still scroll the
+     page, which is what someone reading expects them to do. */
+  track.setAttribute('tabindex', '0');
+  track.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    var i = sync() + (e.key === 'ArrowRight' ? 1 : -1);
+    go(Math.max(0, Math.min(slides.length - 1, i)));
+  });
+
+  sync();
 })();
 
 </script>

@@ -5,6 +5,19 @@
 /* ─── RESET ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* An <a> styled as a button still carries the UA's underline unless something
+   clears it, and none of these rules did -- five controls on the buyer page
+   alone were rendering underlined, including both hero CTAs. Same shape of bug
+   as the Arial fallback: a browser default nobody switched off. Cleared here in
+   one place rather than per class. Matched on the class *containing* "btn"
+   rather than by listing them: enumerating missed panel-btn-primary and
+   panel-btn-secondary on the agency page, which is the exact failure an
+   enumeration invites. Any future button-shaped link is covered too. */
+a[class*="btn"], a.s-cta, a.aud-seg, a.m-cta-link, a.nav-cta, a.legal-back,
+a.m-agencies-link {
+  text-decoration: none;
+}
+
 /* Form controls do not inherit font-family — without this a styled <button>
    silently falls back to the UA font (Arial on Windows) next to the Josefin
    Sans everything around it uses. font-family only: `font: inherit` would
@@ -2317,7 +2330,9 @@ footer {
 }
 .sticky-cta-btn:hover { background: var(--brand-dim); }
 .sticky-cta-x {
-  width: 38px; height: 38px; flex: none;
+  /* 44, not 38. It is the one control on the pill that dismisses it, and the
+     pill floats over the page -- missing it means tapping whatever is behind. */
+  width: 44px; height: 44px; flex: none;
   display: flex; align-items: center; justify-content: center;
   border: none; border-radius: 50%;
   background: transparent; color: var(--text-muted);
@@ -2645,3 +2660,38 @@ textarea:focus-visible {
    container rather than a slice of it. */
 #probCar .car-slide { flex: 0 0 100%; }
 .car-count { font-size: 12.5px; font-weight: 600; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+/* ── the buyer page's black band, as its own section ───────────────────────
+   It used to live inside .hero-section and fake full width from in there with
+   `box-shadow: 0 0 0 100vmax` plus a clip-path, because a child cannot break
+   out of its container. As a section it is simply a black strip the width of
+   the page, so both hacks go and the hero stops carrying furniture that was
+   never really its own. */
+.stat-band {
+  background: #0e0e0e;
+  padding: 54px 0;
+}
+.stat-band .hero-statline {
+  margin-top: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+  border-top: none;
+}
+
+/* ── the one closing ask ───────────────────────────────────────────────────
+   Replaces a full-height CTA section. The page is a hero, the numbers, and
+   this; anything longer belongs to the agency page now. */
+.buyer-cta { background: var(--bg); padding: 84px 0 96px; text-align: center; }
+.buyer-cta .container { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.buyer-cta-line {
+  font-family: var(--f-serif);
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  max-width: 620px;
+  text-wrap: balance;
+}

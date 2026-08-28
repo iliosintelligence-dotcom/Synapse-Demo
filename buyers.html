@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synapse · Find a home that's actually right for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- Both of the above come off a CDN we do not control. This runs after them
+       and marks the document only when they actually arrived; the reveal rules
+       in landing.css hide nothing without it. Placed inline in <head> so it
+       cannot itself fail to load, and so the class is set before first paint. -->
+  <script>if (window.gsap && window.ScrollTrigger) document.documentElement.classList.add('anim-ready');</script>
+
+<link rel="stylesheet" href="landing.css" />
+<link rel="stylesheet" href="landing-mobile.css" />
+<link rel="stylesheet" href="app/motion.css" />
+</head>
+<body>
+<script>
+  /* Always open the landing at the very top — never a restored mid-page
+     position (fixes returning from an app page landing you halfway down).
+     Handles first load, reloads, and bfcache back/forward. */
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  (function () {
+    function toTop() {
+      var b = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+      document.documentElement.style.scrollBehavior = b;
+    }
+    window.addEventListener('load', toTop);
+    window.addEventListener('pageshow', function (e) { if (e.persisted) toTop(); });
+  })();
+</script>
+
+<!-- ══ NAV ══ -->
+<div id="syn-load" aria-hidden="true"><svg class="syn-load-mark" viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg></div>
+<!-- ══════════════════════════════════════════════════════════════════════
+     MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
+     the desktop markup below. Every element is m- prefixed and owns its own
+     layout; landing.css's desktop rules are untouched and simply hidden at
+     this breakpoint. Styles live in landing-mobile.css.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="m-page">
+
+  <nav class="m-navbar" id="mNavbar">
+    <a href="buyers.html" class="m-logo">
+      <svg viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/>
+      </svg>
+      <span class="m-logo-word">Synapse</span>
+    </a>
+    <a class="m-agencies-link" href="index.html">For agencies →</a>
+  </nav>
+
+  <!-- ── HERO ── the composer IS the primary action; no competing pill -->
+  <header class="m-hero m-wrap">
+    <div class="m-hero-eyebrow">For buyers &amp; renters</div>
+    <h1 class="m-hero-headline">The property adviser who works <em>for you.</em></h1>
+    <p class="m-hero-sub">Toju learns how you actually live, finds the homes that fit, and tells you why each one made the list.</p>
+
+    <div class="m-peek">
+      <div class="m-peek-bar">
+        <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+      </div>
+      <div class="m-peek-body" id="peekCustomerM" data-peek-customer></div>
+      <div class="m-hero-chips">
+        <a class="m-hero-chip" href="app/toju.html?ask=3-bed%20in%20Lekki%20under%20%E2%82%A6180M">3-bed in Lekki</a>
+      </div>
+      <form class="m-hero-composer" action="app/toju.html" method="get">
+        <input class="m-hero-field" name="ask" autocomplete="off" maxlength="300"
+               placeholder="Tell Toju what you're looking for…"
+               aria-label="Tell Toju what you're looking for" />
+        <button class="m-hero-send" type="submit" aria-label="Ask Toju">↑</button>
+      </form>
+    </div>
+    <a class="m-hero-ask-link" href="app/toju.html">Or just talk to Toju →</a>
+
+    <div class="m-hero-trust">
+      <span class="m-hero-pip"><i></i> Free. No sign-up to start.</span>
+    </div>
+  </header>
+
+  <!-- ── THE NUMBERS ── its own section now rather than a band tacked to the
+       bottom of the hero, so the black runs the full width of the page on its
+       own terms instead of being faked from inside a light section. -->
+  <section class="m-band-section">
+      <div class="m-hero-band">
+        <div class="m-hero-stat-lead">
+          <div class="val hero-stat-val">24/7</div>
+          <div class="label">Toju answers whenever you are looking, not in office hours</div>
+        </div>
+        <p class="m-hero-stat-secondary">Re-confirmed every <b>14 days</b>, or it disappears · Always <b>free</b> for buyers</p>
+      </div>
+  </section>
+
+  <!-- ── ONE SHORT CTA ── the page is a hero and an ask now; everything that
+       used to sit between them belongs to the agency page. -->
+  <section class="m-buyer-cta m-wrap">
+    <p>Tell Toju what you are looking for. It is free, and there is nothing to sign up to.</p>
+    <a class="m-cta-btn" href="app/toju.html">Talk to Toju &rarr;</a>
+  </section>
+
+
+</div>
+<!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
+
+<nav id="navbar">
+  <a href="buyers.html" class="nav-logo">
+    <div class="nav-logo-mark">
+      <svg viewBox="0 0 64 92" fill="#15171a" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/>
+      </svg>
+    </div>
+    <span class="nav-logo-word">Synapse</span>
+  </a>
+  <!-- The familiar segmented control. Now that the two audiences live on
+       separate pages it navigates rather than filtering in place — same
+       control, same muscle memory, one page per journey. -->
+  <div class="aud-toggle" role="tablist" aria-label="Audience">
+    <a class="aud-seg active" href="buyers.html" role="tab" aria-selected="true" aria-current="page">For Customers</a>
+    <a class="aud-seg" href="index.html" role="tab" aria-selected="false">For Agencies</a>
+  </div>
+  <div class="nav-actions">
+    <a class="btn-ghost" id="nav-secondary" href="app/browse.html">Browse</a>
+    <a class="btn-brand" id="nav-primary" href="app/toju.html">Talk to Toju</a>
+  </div>
+</nav>
+
+<!-- ══ HERO · CUSTOMERS ══ -->
+
+<section id="hero" class="hero-section" data-aud="customer">
+  <div class="container">
+    <div class="hero-grid">
+      <!-- Left — editorial typography -->
+      <div class="hero-copy">
+        <div class="hero-eyebrow">For buyers &amp; renters</div>
+        <h1 class="hero-headline">
+          Find the home you have been <em>picturing.</em>
+        </h1>
+        <p class="hero-sub">
+          Tell Toju how you actually live &mdash; where you work, how you get there, what you will not compromise on &mdash; and it finds the homes that fit, and says why each one made the list. Or skip the describing and show it: pin the rooms, colours and furniture you love, and let your taste do the searching.
+        </p>
+        <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
+        <div class="hero-ctas">
+          <button class="panel-btn-primary">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Talk to Toju, it's free
+          </button>
+        </div>
+        <div class="hero-trust">
+          <span class="pip"><i></i> Free. No sign-up to start.</span>
+        </div>
+      </div>
+
+      <!-- Right — the product itself, working. A real conversation types out
+           so a first-time visitor sees exactly what using Synapse looks like
+           before deciding anything. -->
+      <div class="hero-media hero-peek">
+        <div class="peek" data-peek="customer">
+          <div class="peek-bar">
+            <span class="pd"></span><span class="pd"></span><span class="pd"></span>
+            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Toju</span>
+          </div>
+          <div class="peek-body" id="peekCustomer"></div>
+          <!-- This was a mock: a <span> that looked like an input and did
+               nothing. It is now the real front door — whatever is typed here
+               is handed to Toju already sent, so the first thing a visitor
+               does is the product working, not a sign-up. -->
+          <form class="peek-composer" id="heroAsk" action="app/toju.html" method="get">
+            <input class="peek-field" id="heroAskInput" name="ask" autocomplete="off"
+                   maxlength="300" placeholder="Tell Toju what you're looking for…"
+                   aria-label="Tell Toju what you're looking for" />
+            <button class="peek-send" type="submit" aria-label="Ask Toju">↑</button>
+          </form>
+        </div>
+        <div class="peek-shadow" aria-hidden="true"></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<!-- ══ THE NUMBERS ════════════════════════════════════════
+     Its own section rather than a band inside the hero. In there it had to
+     fake full width with `box-shadow: 0 0 0 100vmax` and a clip-path, because
+     a child cannot escape its container; out here it is simply a black section
+     that is as wide as the page. Three figures that are true by definition,
+     not measurements we would have to invent. -->
+<section class="stat-band" data-aud="customer">
+  <div class="container">
+    <div class="hero-statline">
+      <div class="hero-stat">
+        <div class="hero-stat-val">24/7</div>
+        <div class="hero-stat-label">Toju answers whenever you are looking, not in office hours</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">14</div>
+        <div class="hero-stat-label">Days before a listing must be re-confirmed, or it disappears</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">Free</div>
+        <div class="hero-stat-label">For buyers and renters. Always.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ONE SHORT CTA ══════════════════════════════════════
+     Replaces the full-height closing CTA. The page is a hero and an ask now. -->
+<section class="buyer-cta" data-aud="customer">
+  <div class="container">
+    <p class="buyer-cta-line">Tell Toju what you are looking for. It is free, and there is nothing to sign up to.</p>
+    <a class="btn-cta-primary" href="app/toju.html">Talk to Toju &rarr;</a>
+  </div>
+</section>
+
+
+
+<script>
+/* Everything below this line animates with GSAP. Bailing out here rather
+   than throwing on line one keeps the rest of the page's scripts running —
+   this used to be the first statement in a 380-line block, so a CDN failure
+   took the whole block with it, including the fail-safe meant to catch it. */
+if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP unavailable — page renders without scroll animation.'); }
+else {
+gsap.registerPlugin(ScrollTrigger);
+
+
+// ─── NAV solid on scroll ───
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('solid', window.scrollY > 10);
+});
+
+// ─── GSAP hero entrance ───
+gsap.timeline({ delay: 0.1 })
+  .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
+  .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
+  .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
+  .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
+  .from('.hero-trust', { opacity: 0, duration: 0.5 }, '-=0.3')
+  .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
+  .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
+// ─── GSAP scroll reveals ───
+document.querySelectorAll('.reveal').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, y: 48 }, {
+    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+document.querySelectorAll('.reveal-l').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: -56 }, {
+    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+document.querySelectorAll('.reveal-r').forEach(el => {
+  gsap.fromTo(el, { opacity: 0, x: 56 }, {
+    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
+    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+  });
+});
+
+// ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
+// Guarantees content is never left invisible if ScrollTrigger cannot detect
+// the scroller (e.g. embedded preview/iframe contexts) — which would leave
+// the lower page blank. Uses native scroll events + getBoundingClientRect,
+// which work everywhere, to reveal each element once it enters the viewport.
+// No-op when ScrollTrigger already revealed an element (opacity already 1).
+(function () {
+  var sel = '.reveal, .reveal-l, .reveal-r';
+  function revealInView() {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    document.querySelectorAll(sel).forEach(function (el) {
+      if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
+      var r = el.getBoundingClientRect();
+      if (r.top < vh * 0.92 && r.bottom > 0) {
+        gsap.to(el, { opacity: 1, x: 0, y: 0, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
+      }
+    });
+  }
+  window.addEventListener('scroll', revealInView, { passive: true });
+  window.addEventListener('resize', revealInView);
+  window.addEventListener('load', revealInView);
+  [100, 600, 1500, 3000].forEach(function (t) { setTimeout(revealInView, t); });
+  revealInView();
+})();
+
+// Hero image parallax — subtle, per hero so it works for either audience.
+document.querySelectorAll('.hero-section').forEach(function (sec) {
+  var img = sec.querySelector('.hero-media img');
+  if (img) gsap.to(img, {
+    y: 40, ease: 'none',
+    scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
+  });
+});
+} // end GSAP-dependent section — everything below runs with or without it
+/* ─── App glimpse — the product working, in the hero ────────────────────────
+   Plays a real interaction so a first-time visitor learns the interaction
+   model before committing to anything. Replays whenever the audience toggle
+   switches, so both landing pages demo themselves. Respects reduced-motion by
+   rendering the finished state immediately. */
+(function () {
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var timers = [];
+  function clear() { timers.forEach(clearTimeout); timers = []; }
+  function at(ms, fn) { timers.push(setTimeout(fn, REDUCED ? 0 : ms)); }
+  function show(el) { requestAnimationFrame(function () { el.classList.add('in'); }); }
+
+  function bubble(box, who, text) {
+    var d = document.createElement('div');
+    d.className = 'pk-msg ' + who;
+    d.innerHTML = '<div class="pk-bub">' + text + '</div>';
+    box.appendChild(d); show(d); return d;
+  }
+  function dots(box) {
+    var d = document.createElement('div');
+    d.className = 'pk-msg you';
+    d.innerHTML = '<div class="pk-bub pk-dots"><i></i><i></i><i></i></div>';
+    box.appendChild(d); show(d); return d;
+  }
+
+  /* Desktop and mobile each own a peek box and only one is ever visible, so
+     this plays into whichever exist rather than the first id it finds. */
+  function playCustomer() {
+    [].slice.call(document.querySelectorAll('#peekCustomer, [data-peek-customer]'))
+      .forEach(playCustomerIn);
+  }
+  function playCustomerIn(box) {
+    if (!box) return;
+    /* Mobile's peek card is a shorter, fixed-height box (m-peek-body,
+       max-height:220px) — it gets the same visual language but a shorter
+       transcript (3 beats: ask → dots → answer+card) so nothing clips.
+       Desktop's taller card plays the fuller exchange. */
+    var compact = box.hasAttribute('data-peek-customer');
+    box.innerHTML = '';
+    at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
+    at(750,  function () { box.__t = dots(box); });
+    at(1900, function () {
+      if (box.__t) box.__t.remove();
+      bubble(box, 'you', 'Two fit. Both verified this week — here is the stronger one:');
+    });
+    at(2350, function () {
+      var c = document.createElement('div');
+      c.className = 'pk-card';
+      c.innerHTML = '<span class="d-thumb" style="width:54px;height:54px"></span>'
+        + '<div class="c1"><div class="c-p">₦165M</div>'
+        + '<div class="c-t">3-Bed Apartment · Lekki Phase 1</div>'
+        + '<div class="c-v">✓ Verified 2 days ago</div></div>';
+      box.appendChild(c); show(c);
+    });
+    if (compact) return;
+    at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
+  }
+
+  function playAgency() {
+    var box = document.getElementById('peekAgency');
+    if (!box) return;
+    box.innerHTML = '';
+    var leads = [
+      { i: 'BA', n: 'Bola A.', m: '₦150–180M · Lekki · ready to view', s: 'Hot', c: '' },
+      { i: 'CO', n: 'Chidi O.', m: 'Rent · ₦8M/yr · Ikeja', s: 'Qualified', c: 'warm' },
+      { i: 'FM', n: 'Funke M.', m: 'Investment · 8%+ yield', s: 'Qualified', c: 'warm' },
+    ];
+    leads.forEach(function (l, i) {
+      at(250 + i * 620, function () {
+        var d = document.createElement('div');
+        d.className = 'pk-lead';
+        d.innerHTML = '<div class="av">' + l.i + '</div>'
+          + '<div class="l1"><div class="l-n">' + l.n + '</div><div class="l-m">' + l.m + '</div></div>'
+          + '<span class="l-s ' + l.c + '">' + l.s + '</span>';
+        box.appendChild(d); show(d);
+      });
+    });
+    at(2350, function () {
+      var d = document.createElement('div');
+      d.className = 'pk-lead';
+      d.style.borderStyle = 'dashed';
+      d.innerHTML = '<div class="l1"><div class="l-m">Toju qualified all three before your team opened the app.</div></div>';
+      box.appendChild(d); show(d);
+    });
+  }
+
+
+  /* one upload fanning out to every channel (agency) */
+  function playSyndicate() {
+    var box = document.getElementById('fanList');
+    if (!box) return;
+    box.innerHTML = '';
+    var chans = [['IG','Instagram'],['FB','Facebook'],['WA','WhatsApp'],['X','X'],['TT','TikTok'],['SY','Synapse']];
+    chans.forEach(function (c, i) {
+      var d = document.createElement('div');
+      d.className = 'd-chan';
+      d.innerHTML = '<span class="k">' + c[0] + '</span>' + c[1] + '<span class="ok">✓</span>';
+      box.appendChild(d);
+      at(200 + i * 210, function () { d.classList.add('in'); });
+    });
+  }
+
+  /* a 2am enquiry Toju handles alone (agency) */
+  function playAgencyChat() {
+    var box = document.getElementById('agencyChat');
+    if (!box) return;
+    box.innerHTML = '';
+    at(150,  function () { bubble(box, 'me', 'Is the Lekki duplex still available?'); });
+    at(700,  function () { box.__t = dots(box); });
+    at(1700, function () {
+      if (box.__t) box.__t.remove();
+      bubble(box, 'you', 'It is — verified 3 days ago. What is your budget range?');
+    });
+    at(2500, function () { bubble(box, 'me', 'Up to ₦190M, buying outright.'); });
+    at(3300, function () {
+      var c = document.createElement('div');
+      c.className = 'pk-card';
+      c.innerHTML = '<div class="c1"><div class="c-p">Qualified lead → your CRM</div>'
+        + '<div class="c-t">Cash buyer · ₦190M · viewing booked Sat 11am</div></div>'
+        + '<span class="d-tag">Hot</span>';
+      box.appendChild(c); show(c);
+    });
+  }
+
+  /* a proximity alert arriving on a phone (agency) */
+  function playPush() {
+    var card = document.getElementById('pushCard');
+    if (!card) return;
+    card.classList.remove('in');
+    at(400, function () { card.classList.add('in'); });
+  }
+
+  window.synPeek = function (aud) {
+    clear();
+    if (aud === 'agency') { playAgency(); playSyndicate(); playAgencyChat(); playPush(); }
+    else { playCustomer(); }
+  };
+  // one audience per page now — play whichever glimpse this page contains
+  function whichPeek() { return document.getElementById('peekAgency') ? 'agency' : 'customer'; }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek(whichPeek()); });
+  else window.synPeek(whichPeek());
+})();
+
+/* ─── Mobile carousel ───────────────────────────────────────────────────────
+   Its own instance, not a fork of the desktop one: native swipe is the only
+   input (no prev/next buttons, no auto-advance), so this is just "read the
+   scroll position back into the dots". Scroll stays the source of truth. */
+(function () {
+  var track = document.getElementById('mCarTrack');
+  if (!track) return;
+  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
+  var dotsBox = document.getElementById('mCarDots');
+  var count = document.getElementById('mCarCount');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var idx = 0;
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
+    b.addEventListener('click', function () {
+      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
+    });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
+
+  function sync() {
+    var best = 0, bestD = Infinity;
+    slides.forEach(function (s, i) {
+      var d = Math.abs(offset(i) - track.scrollLeft);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    idx = best;
+    dots.forEach(function (d, i) {
+      d.classList.toggle('on', i === idx);
+      d.setAttribute('aria-selected', i === idx);
+    });
+    count.textContent = (idx + 1) + ' / ' + slides.length;
+    slides[idx].querySelectorAll('.m-d-bar i[data-fill]').forEach(function (el) {
+      el.style.width = el.getAttribute('data-fill') + '%';
+    });
+  }
+
+  var t;
+  track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
+  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
+  sync();
+})();
+
+/* ─── Mobile navbar solidifies on scroll ─────────────────────────────────── */
+(function () {
+  var bar = document.getElementById('mNavbar');
+  if (!bar) return;
+  function upd() { bar.classList.toggle('solid', window.scrollY > 10); }
+  window.addEventListener('scroll', upd, { passive: true });
+  upd();
+})();
+
+// RESTORED TWICE, for two different reasons, both worth recording.
+//
+// First: this block was collateral damage when the freshness-demo driver was
+// removed. That cut ran from a comment marker to the closing script tag, and
+// this router happened to sit between them, so every orange CTA on the page
+// silently stopped navigating. A range delete between two markers has to be
+// told what it is allowed to swallow.
+//
+// Then the restoration itself broke it again: the comment explaining the
+// above contained a literal closing script tag. The HTML parser does not care
+// that it sits inside a JS comment -- it ends the script element right there,
+// and everything below became inert text. Never write that sequence inside an
+// inline script, not even in prose.
+// ─── Wire the CTA buttons to the application ───
+// CTAs open the actual app screens (clickable prototypes of the real
+// @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
+// primary/secondary buttons are handled by the audience toggle below.
+(function () {
+  // Every customer CTA funnels to Toju. Only agency-audience actions and the
+  // explicit "Browse verified homes" button route elsewhere.
+  // Agency CTAs land on sign-in first — the portal has no anonymous mode.
+  var AGENCY_GATE = 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html');
+  var routes = [
+    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: AGENCY_GATE },
+    { match: /browse verified homes/i, target: 'app/browse.html' },
+  ];
+  var ctas = document.querySelectorAll(
+    '.panel-btn-primary, .panel-btn-secondary, ' +
+    '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
+  );
+  ctas.forEach(function (btn) {
+    var label = (btn.textContent || '').trim();
+    var route = routes.find(function (r) { return r.match.test(label); });
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', function () {
+      if (route && route.target) window.location.href = route.target;
+      else if (route && route.scroll) {
+        var el = document.querySelector(route.scroll);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else window.location.href = 'app/toju.html';
+    });
+  });
+})();
+
+</script>
+<script src="app/icons.js"></script>
+<script src="app/motion.js" data-motion-base="app/motion/"></script>
+</body>
+</html>
