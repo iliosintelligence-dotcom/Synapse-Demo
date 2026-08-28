@@ -2893,3 +2893,82 @@ textarea:focus-visible {
   font-style: normal;
   color: rgb(var(--tint));
 }
+
+/* ── the syndication rail ──────────────────────────────────────────────────
+   A quiet band directly under the hero: the channels one upload reaches,
+   moving slowly so the row reads as continuous rather than as a fixed list
+   that happens to be cut off at both edges.
+
+   Two identical groups translated by exactly -50% is what makes the loop
+   seamless -- at the halfway point the second group sits precisely where the
+   first began, so the reset is invisible and there is no snap. Any other
+   distance shows a jump.
+
+   Marks are monochrome and sit at 62% ink. In their own brand colours they
+   would put more colour on this page than the entire rest of the site, and
+   the palette rests on having one accent. */
+.logorail {
+  background: var(--bg);
+  border-top: 1px solid rgba(var(--tint), 0.14);
+  border-bottom: 1px solid rgba(var(--tint), 0.14);
+  padding: 26px 0 28px;
+  overflow: hidden;
+}
+.lr-label {
+  font: 700 11px/1 var(--f-sans);
+  letter-spacing: .19em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* The viewport masks the row at both ends, so logos arrive and leave rather
+   than appearing and vanishing at a hard edge. */
+.lr-viewport {
+  position: relative;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+.lr-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: max-content;
+  animation: lrScroll 38s linear infinite;
+}
+.lr-viewport:hover .lr-track { animation-play-state: paused; }
+
+.lr-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 34px;
+  color: var(--text);
+  opacity: .62;
+  white-space: nowrap;
+  transition: opacity var(--m-standard, .18s) ease;
+}
+.lr-item:hover { opacity: 1; }
+.lr-item span {
+  font: 600 14.5px var(--f-sans);
+  letter-spacing: -0.005em;
+}
+.lr-item svg { flex: none; }
+
+@keyframes lrScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Stopped, and centred rather than left-aligned mid-scroll -- a paused
+   marquee parked at an arbitrary offset looks broken rather than still. */
+@media (prefers-reduced-motion: reduce) {
+  .lr-track { animation: none; width: 100%; justify-content: center; flex-wrap: wrap; gap: 10px 0; }
+  .lr-track > .lr-item:nth-child(n+7) { display: none; }
+  .lr-viewport { -webkit-mask-image: none; mask-image: none; }
+}
