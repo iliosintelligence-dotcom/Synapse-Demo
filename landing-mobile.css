@@ -1027,3 +1027,44 @@
 .m-logorail .lr-item { padding: 0 20px; gap: 9px; }
 .m-logorail .lr-item span { font-size: 13.5px; }
 .m-logorail .lr-item svg { width: 22px; height: 22px; }
+
+/* ── the audience toggle on a phone ───────────────────────────────────────
+   Replaces a single "For buyers" link. A one-way link tells you where you can
+   go but never where you are, and there was no way back from the other side
+   without hunting for its mirror. The segmented control names both audiences
+   and marks the one you are on, which is what the desktop bar has always
+   done -- this is that control at phone size, not a different idea. */
+.m-aud-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 100px;
+  background: rgba(20,20,20,0.05);
+  border: 1px solid var(--crystal-border, rgba(20,20,20,0.08));
+}
+.m-aud-seg {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 100px;
+  font: 600 11.5px var(--f-sans);
+  letter-spacing: -0.005em;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.m-aud-seg.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(20,20,20,0.10);
+}
+
+/* At the narrowest widths the wordmark and both labels cannot share a line.
+   The toggle is the more useful of the two, so the word goes and the mark
+   stays. */
+@media (max-width: 390px) {
+  .m-logo-word { display: none; }
+  .m-aud-seg { padding: 0 9px; font-size: 11px; }
+}
