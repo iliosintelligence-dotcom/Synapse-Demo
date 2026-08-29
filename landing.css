@@ -2769,7 +2769,6 @@ textarea:focus-visible {
    finishing the problem is what opens the answer. */
 .reality-band {
   background: #f7f7f7;
-  filter: saturate(0);
 }
 .reality-band .prob-half.is-answer { border-left-color: rgba(20,20,20,0.28); }
 
@@ -2785,7 +2784,7 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(178deg, #fff6ee 0%, #fdf1e6 46%, var(--bg) 100%);
+  background: #ededed;
   transform: scaleY(var(--turn, 0));
   transform-origin: bottom;
   will-change: transform;
@@ -2832,7 +2831,7 @@ textarea:focus-visible {
   width: 20px; height: 2px;
   margin-right: 10px;
   vertical-align: 3px;
-  background: rgb(var(--tint));
+  background: var(--text);
 }
 
 /* ── the promise band: centred, but not flat ──────────────────────────────
@@ -2847,11 +2846,11 @@ textarea:focus-visible {
   top: 0; left: 50%;
   transform: translateX(-50%);
   width: 26px; height: 2px;
-  background: rgba(var(--tint), 0.4);
+  background: rgba(245,245,245,0.34);
 }
 .promise-item:nth-child(2)::before {
   width: 44px;
-  background: rgb(var(--tint));
+  background: #f5f5f5;
 }
 .promise-item:nth-child(2) .promise-fig { font-size: clamp(40px, 4.6vw, 58px); }
 .promise-item:nth-child(2) .promise-name { font-size: 17.5px; }
@@ -2859,31 +2858,23 @@ textarea:focus-visible {
 
 /* The dividing hairlines pick up the tint on the middle column's edges, so the
    emphasised promise is framed rather than just enlarged. */
-.promise-item:nth-child(2) { border-left: 1px solid rgba(var(--tint), 0.34); }
-.promise-item:nth-child(3) { border-left: 1px solid rgba(var(--tint), 0.34); }
+.promise-item:nth-child(2) { border-left: 1px solid rgba(245,245,245,0.20); }
+.promise-item:nth-child(3) { border-left: 1px solid rgba(245,245,245,0.20); }
 
 /* Carousel: the active dot is the brand, not another grey. */
-.car-dot.on, .m-car-dot.on { background: rgb(var(--tint)); }
+.car-dot.on, .m-car-dot.on { background: var(--text); }
 
 /* The answer half of a problem card already had a brand rule; the problem half
    gets the same treatment on its number, so the pair is colour-coded. */
-.prob-n { color: rgba(var(--tint), 0.55); }
+.prob-n { color: rgba(20,20,20,0.42); }
 
-/* ── orange as type, on charcoal only ─────────────────────────────────────
-   The rule that orange never carries a word comes from the light ground,
-   where #FF8A2D measures 2.16:1 against body text's 4.5 requirement. That is
-   correct and it stays. But it had been applied everywhere, including the
-   dark bands, and those are a different measurement: against #0e0e0e the same
-   orange is 6.91:1 -- past AA for body text and past AAA for large.
-
-   So the prohibition splits by ground rather than being global. Light pages
-   keep it; the charcoal bands may use orange for the one word that carries
-   the emphasis. Nowhere else, and never for a run of text. */
+/* Emphasis on the charcoal bands is white, not another grey. The page has
+   one ink and one ground; the em is simply the ground colour used as type. */
 .promise em,
 .prob-half.is-problem .prob-q em,
 .s-band.dark .s-h2 em {
   font-style: normal;
-  color: rgb(var(--tint));
+  color: #f5f5f5;
 }
 
 /* ── the syndication rail ──────────────────────────────────────────────────
@@ -2901,8 +2892,8 @@ textarea:focus-visible {
    the palette rests on having one accent. */
 .logorail {
   background: var(--bg);
-  border-top: 1px solid rgba(var(--tint), 0.14);
-  border-bottom: 1px solid rgba(var(--tint), 0.14);
+  border-top: 1px solid var(--crystal-border);
+  border-bottom: 1px solid var(--crystal-border);
   padding: 26px 0 28px;
   overflow: hidden;
 }
