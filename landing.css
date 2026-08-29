@@ -2605,27 +2605,27 @@ textarea:focus-visible {
 
    Built on the .car track that was already in this stylesheet, so the snap,
    the dots and the dark-band variants come for free. */
+/* One panel. The card carried the problem and the answer side by side; the
+   answers now live in the sections that earn them further down the page, so
+   what is left is a single statement and the card is half the height it was --
+   which is most of what a phone needed from this section. */
 .prob-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+  display: block;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid var(--line, rgba(20,20,20,0.10));
-  background: #fff;
-  min-height: 268px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: #141414;
+  min-height: 0;
 }
 .prob-half { padding: 30px 32px 32px; display: flex; flex-direction: column; }
 /* The problem side is the dark one: it is the half the reader is meant to
    recognise, and it should feel like the weather they are already in. */
 .prob-half.is-problem { background: #141414; color: rgba(245,245,245,0.78); }
-.prob-half.is-answer  { background: #fff; color: var(--text-muted); }
 
 .prob-tag {
   font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
 }
 .prob-half.is-problem .prob-tag { color: rgba(245,245,245,0.5); }
-.prob-half.is-answer  .prob-tag { color: var(--text-dim); }
 
 .prob-n {
   font-family: var(--f-serif); font-size: 30px; line-height: 1;
@@ -2643,17 +2643,9 @@ textarea:focus-visible {
 }
 .prob-b { font-size: 14.5px; line-height: 1.66; margin-top: 12px; font-weight: 500; }
 
-/* A single rule between the halves, and the only place the accent appears in
-   this card -- it marks the turn from the problem to the answer without
-   putting colour on any word. */
-.prob-half.is-answer { border-left: 2px solid var(--brand); }
-
 @media (max-width: 860px) {
-  .prob-card { grid-template-columns: 1fr; min-height: 0; }
-  .prob-half.is-answer { border-left: none; border-top: 2px solid var(--brand); }
   .prob-half { padding: 24px 24px 26px; }
   .prob-q { font-size: 19px; }
-  .prob-a { font-size: 18px; }
 }
 
 /* The track carries one card per view; the cards are wide, so they get the
@@ -2996,4 +2988,52 @@ textarea:focus-visible {
 @media (max-width: 700px) { .shadowcast { margin-top: 26px; } }
 @media (prefers-reduced-motion: reduce) {
   .sc-rank { opacity: 1; transform: none; transition: none; }
+}
+
+/* ── the problem card, now that it carries one statement ──────────────────
+   With the answer half gone the card is a single panel 1325px wide holding a
+   question and a line, which set the text about 120 characters to the line --
+   nearly double a comfortable measure, and the width read as empty rather
+   than generous.
+
+   The number takes the left and the text a fixed column beside it, and the
+   pair is centred. The width is now doing something: it is what lets the
+   figure be big enough to register as a count rather than as a label. */
+#probCar .prob-half {
+  display: grid;
+  grid-template-columns: auto minmax(0, 58ch);
+  grid-template-areas:
+    "num tag"
+    "num q"
+    "num b";
+  align-items: start;
+  justify-content: center;
+  gap: 0 46px;
+  padding: 46px 48px;
+}
+#probCar .prob-top {
+  grid-area: num;
+  display: block;
+  align-self: center;
+  text-align: right;
+}
+#probCar .prob-tag { grid-area: tag; align-self: end; margin-bottom: 10px; }
+#probCar .prob-q   { grid-area: q; margin-top: 0; }
+#probCar .prob-b   { grid-area: b; }
+/* The count is the point of the card, so it is sized like one. */
+#probCar .prob-n { font-size: 76px; line-height: .9; display: block; }
+#probCar .prob-top .prob-tag { display: none; }
+
+/* Stacked below the point where two columns stop fitting. */
+@media (max-width: 860px) {
+  #probCar .prob-half {
+    grid-template-columns: 1fr;
+    grid-template-areas: "num" "tag" "q" "b";
+    justify-content: stretch;
+    gap: 0;
+    padding: 26px 24px 28px;
+  }
+  #probCar .prob-top { text-align: left; align-self: start; }
+  #probCar .prob-n { font-size: 40px; }
+  #probCar .prob-tag { margin-bottom: 6px; }
 }
