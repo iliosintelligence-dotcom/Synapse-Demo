@@ -5886,9 +5886,8 @@
          the other two in its own words. Nothing here ever sees a token --
          social-connect puts it in Vault and this page only ever learns that a
          row exists. */
-      var CONNECTABLE = { instagram: 'Instagram' };
+      var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook' };
       var SOON = {
-        facebook: ['Facebook', 'sign-in coming'],   // adapter written; the connect flow is not
         tiktok: ['TikTok', 'not built yet'],
         linkedin: ['LinkedIn', 'not built yet'],
         x: ['X', 'not built yet'],
@@ -5981,7 +5980,8 @@
         btn.disabled = true; btn.textContent = 'Opening…';
         token().then(function (t) {
           if (!t) throw new Error('Sign in again to connect an account.');
-          return fetch(SB_URL + '/functions/v1/social-connect?action=start', {
+          return fetch(SB_URL + '/functions/v1/social-connect?action=start&platform='
+              + encodeURIComponent(platform), {
             headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
           }).then(function (r) {
             return r.json().then(function (j) {
