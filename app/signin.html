@@ -79,6 +79,16 @@
     .au-legal { font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 22px; text-align: center; }
 
     /* a whole-form message (sent-confirmation, hard failure) */
+    /* A button that reads as a link. It is a <button> because it performs an
+       action rather than going somewhere; the 44px hit area is carried by a
+       pseudo-element so the text keeps its size. */
+    .au-linkbtn { position: relative; background: none; border: 0; padding: 0;
+      font: inherit; color: inherit; text-decoration: underline;
+      text-underline-offset: 2px; cursor: pointer; }
+    .au-linkbtn::before { content: ''; position: absolute; left: -4px; right: -4px;
+      top: 50%; transform: translateY(-50%); height: 44px; }
+    .au-linkbtn:disabled { opacity: .55; cursor: default; }
+
     .au-note { padding: 14px 16px; border-radius: 13px; font-size: 13.5px; line-height: 1.6;
       margin-top: 18px; font-weight: 500; }
     .au-note.ok { background: rgba(46,125,79,0.09); border: 1px solid rgba(46,125,79,0.28); color: #1f6340; }
@@ -373,20 +383,51 @@
         return 'Something went wrong. Please try again.';
       }
 
-      /* ── DEMO MODE ────────────────────────────────────────────────────────
-         Explicit product decision for this prototype: sign-in succeeds no
-         matter what's typed. Rather than faking the UI, this authenticates a
-         real fixed demo account behind the scenes — one per side — so every
-         real dependent (RLS, the agency-portal role gate, notify.js reading
-         SynAuth.user().id, and so on) keeps working exactly as it would for a
-         genuine account. Nothing downstream had to change. Set DEMO_MODE to
-         false to fall back to real credential checking. */
-      var DEMO_MODE = true;
+      /* ── THE DEMO ACCOUNTS ────────────────────────────────────
+         This used to be unconditional. Whatever anybody typed, both tabs
+         signed them into one of two shared accounts — which made the whole
+         page a facade: nobody could create a real account, Create account
+         provisioned nothing, and any two visitors were writing into the same
+         agency at once.
+
+         The demo still earns its place: it shows the product without asking
+         for a signup first. So it stays, as a deliberate choice rather than
+         the only outcome. It runs when the URL asks for it (?demo=1), or when
+         the visitor presses the demo button. Everything else is now a real
+         credential check against a real account.
+
+         It signs into a genuine fixed account rather than faking the UI, so
+         every real dependent — RLS, the agency-portal role gate, notify.js
+         reading SynAuth.user().id — behaves exactly as it does for anybody
+         else. */
       var DEMO_ACCOUNTS = {
         customer: { email: 'demo-customer@synapse.ng', password: 'SynDemo-Cust-9f42x' },
         agency:   { email: 'demo-agency@synapse.ng',   password: 'SynDemo-Agcy-7k18q' },
       };
-      if (DEMO_MODE) el('demoNote').textContent = 'Prototype mode — any email and password gets you in.';
+      var demoRequested = params.get('demo') === '1';
+
+      /* The note has to describe the page the visitor is actually on. Leaving
+         "any email and password gets you in" beside a form that now checks
+         credentials would send somebody with a typo'd password round in
+         circles — the page would be telling them it cannot fail. */
+      if (demoRequested) {
+        el('demoNote').textContent = 'Demo mode — this opens a shared example account.';
+      } else {
+        el('demoNote').innerHTML = 'Just looking? <button type="button" class="au-linkbtn" '
+          + 'id="demoBtn">Open a demo ' + (role === 'agency' ? 'agency' : 'account')
+          + '</button> instead — no signup.';
+        el('demoBtn').addEventListener('click', function () {
+          if (busy) return;
+          /* Routed through the form's own submit rather than duplicating the
+             redirect, the error mapping and the busy handling. Switching to
+             the sign-in tab first keeps `mode` truthful, so the button label
+             and the destination afterwards are the ones for signing in. */
+          demoRequested = true;
+          setMode('in');
+          if (form.requestSubmit) form.requestSubmit();
+          else form.dispatchEvent(new Event('submit', { cancelable: true }));
+        });
+      }
 
       /* ── submit ──────────────────────────────────────────────────────── */
 
@@ -400,7 +441,7 @@
         var name  = el('auName').value.trim();
         var agencyName = el('auAgencyName').value.trim();
 
-        if (!DEMO_MODE) {
+        if (!demoRequested) {
           var ok = true;
           if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
             fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
@@ -414,9 +455,13 @@
         busy = true; go.disabled = true;
         go.textContent = mode === 'up' ? 'Creating your account…' : 'Signing you in…';
 
-        // Demo mode: whatever was typed (or left blank) is ignored — always
-        // authenticate the fixed account for the current side.
-        var work = DEMO_MODE
+        /* The demo short-circuits to the shared account, so a link in a deck
+           or an email opens the product with nothing to type. Everything else
+           is the real thing: Create account provisions the profile, and for an
+           agency the agencies row and the owner membership with it — all three
+           atomically inside the handle_new_user trigger, so closing the tab
+           can never leave an account half-made. */
+        var work = demoRequested
           ? SynAuth.signIn(DEMO_ACCOUNTS[role].email, DEMO_ACCOUNTS[role].password)
           : (mode === 'up'
               ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName })
