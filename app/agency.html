@@ -1347,6 +1347,48 @@
     .cmp-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width var(--m-expanded) var(--m-ease); }
     .cmp-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.55; }
 
+    /* ── connected channels ──────────────────────────────────────────────
+       The strip has to be readable at a glance as a list of states, so the
+       connected ones carry the ink border and the rest stay quiet. A channel
+       with no adapter written is greyed rather than hidden: an agency looking
+       for TikTok should find out it is coming, not wonder if they missed it. */
+    .cmp-channels { margin-top: 16px; }
+    .cmp-ch-hd { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-dim); margin-bottom: 9px; }
+    .cmp-ch-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cmp-ch { display: flex; align-items: center; gap: 9px; padding: 8px 10px 8px 12px;
+      border: 1px solid rgba(54,54,54,0.16); border-radius: 10px; background: var(--surface, #fff); }
+    .cmp-ch.on { border-color: rgba(54,54,54,0.42); }
+    .cmp-ch.soon { opacity: .55; }
+    .cmp-ch-nm { font: 600 13px/1 var(--f-sans); color: var(--ink); }
+    .cmp-ch-at { font-size: 12px; color: var(--ink-muted); }
+    /* 44px of hit area on a 30px-tall control, carried by the pseudo-element so
+       the button keeps its size. Same floor the rest of the portal holds. */
+    .cmp-ch-btn { position: relative; border: 1px solid rgba(54,54,54,0.22); background: transparent;
+      color: var(--ink); font: 600 12px/1 var(--f-sans); padding: 8px 11px; border-radius: 8px;
+      cursor: pointer; text-decoration: none; }
+    .cmp-ch-btn::before { content: ''; position: absolute; left: 0; right: 0; top: 50%;
+      transform: translateY(-50%); height: 44px; }
+    .cmp-ch-btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .cmp-ch-btn:disabled { opacity: .55; cursor: default; }
+
+    /* ── what actually happened ──────────────────────────────────────────
+       One row per post, carrying the provider's own message on failure. */
+    #cmpResults:empty { display: none; }
+    .cmp-res-hd { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-dim); margin: 16px 0 8px; }
+    .cmp-res { display: flex; align-items: baseline; gap: 10px; padding: 7px 0;
+      border-top: 1px solid rgba(54,54,54,0.1); font-size: 12.5px; }
+    .cmp-res-pl { font-weight: 700; text-transform: capitalize; min-width: 78px; color: var(--ink); }
+    .cmp-res-st { min-width: 76px; color: var(--ink-muted); }
+    .cmp-res.no .cmp-res-st { color: #a8402b; }
+    .cmp-res-tx { flex: 1; min-width: 0; color: var(--ink-muted); word-break: break-word; }
+
+    @media (max-width: 560px) {
+      .cmp-ch { flex: 1 1 100%; justify-content: space-between; }
+      .cmp-res { flex-wrap: wrap; gap: 4px 10px; }
+    }
+
     .ov-detail { position: sticky; top: 0; }
     /* Sheet-only header (back button + selected listing's name). Hidden here
        so desktop — where .ov-detail never leaves the grid — never shows a
@@ -2440,6 +2482,10 @@
               <select id="cmpProp" aria-label="Listing"></select>
               <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px"><span data-icon="spark"></span> Generate</button>
             </div>
+            <!-- Which accounts this agency can actually post to. Until one is
+                 connected, everything below is a rehearsal, and the strip is
+                 the only place that says so honestly. -->
+            <div class="cmp-channels" id="cmpChannels" aria-live="polite"></div>
             <div class="cmp-out" id="cmpOut" hidden></div>
           </div>
 
@@ -5833,6 +5879,278 @@
           .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
+      /* ── connected channels ────────────────────────────────────────────
+         Publishing has three separate failure modes and they are not
+         interchangeable: no account connected, no adapter written, or the
+         provider refused. The strip reports the first; social-publish reports
+         the other two in its own words. Nothing here ever sees a token --
+         social-connect puts it in Vault and this page only ever learns that a
+         row exists. */
+      var CONNECTABLE = { instagram: 'Instagram' };
+      var SOON = {
+        facebook: ['Facebook', 'sign-in coming'],   // adapter written; the connect flow is not
+        tiktok: ['TikTok', 'not built yet'],
+        linkedin: ['LinkedIn', 'not built yet'],
+        x: ['X', 'not built yet'],
+      };
+      var accounts = [];
+
+      function token() {
+        if (!window.SynAuth) return Promise.resolve(null);
+        return SynAuth.client().then(function (c) { return c.auth.getSession(); })
+          .then(function (r) {
+            return (r && r.data && r.data.session && r.data.session.access_token) || null;
+          })
+          .catch(function () { return null; });
+      }
+
+      function loadChannels() {
+        var box = document.getElementById('cmpChannels');
+        if (!box) return Promise.resolve();
+        return token().then(function (t) {
+          if (!t) { accounts = []; renderChannels(); return; }
+          return fetch(SB_URL + '/rest/v1/social_accounts'
+              + '?select=id,platform,platform_username,is_active,token_expires_at'
+              + '&is_active=eq.true&deleted_at=is.null', {
+              headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
+            })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (rowsIn) { accounts = rowsIn || []; renderChannels(); })
+            .catch(function () { accounts = []; renderChannels(); });
+        });
+      }
+
+      function connectedTo(platform) {
+        for (var i = 0; i < accounts.length; i++) {
+          if (accounts[i].platform === platform) return accounts[i];
+        }
+        return null;
+      }
+
+      function expired(a) {
+        return !!(a && a.token_expires_at && new Date(a.token_expires_at) < new Date());
+      }
+
+      /** Usable connections only. An expired token is a row, not a channel. */
+      function liveCount() {
+        return Object.keys(CONNECTABLE).filter(function (pl) {
+          var a = connectedTo(pl);
+          return a && !expired(a);
+        }).length;
+      }
+
+      function renderChannels() {
+        var box = document.getElementById('cmpChannels');
+        if (!box) return;
+        var html = '<div class="cmp-ch-hd">Channels</div><div class="cmp-ch-row">';
+
+        Object.keys(CONNECTABLE).forEach(function (pl) {
+          var a = connectedTo(pl);
+          /* A token with an expiry in the past is worse than no token: the
+             publish attempt fails at the provider, which reads as our bug. */
+          var stale = expired(a);
+          html += '<div class="cmp-ch' + (a && !stale ? ' on' : '') + '">'
+            + '<span class="cmp-ch-nm">' + esc(CONNECTABLE[pl]) + '</span>'
+            + (a
+                ? '<span class="cmp-ch-at">' + esc(stale ? 'session expired' : '@' + (a.platform_username || 'connected')) + '</span>'
+                  + '<button class="cmp-ch-btn" data-disconnect="' + esc(a.id) + '">'
+                  + (stale ? 'Reconnect' : 'Disconnect') + '</button>'
+                : '<button class="cmp-ch-btn primary" data-connect="' + pl + '">Connect</button>')
+            + '</div>';
+        });
+
+        Object.keys(SOON).forEach(function (pl) {
+          html += '<div class="cmp-ch soon"><span class="cmp-ch-nm">' + esc(SOON[pl][0]) + '</span>'
+            + '<span class="cmp-ch-at">' + esc(SOON[pl][1]) + '</span></div>';
+        });
+
+        html += '</div>';
+        box.innerHTML = html;
+      }
+
+      document.addEventListener('click', function (e) {
+        var c = e.target.closest && e.target.closest('[data-connect]');
+        if (c) { e.preventDefault(); startConnect(c.dataset.connect, c); return; }
+        var d = e.target.closest && e.target.closest('[data-disconnect]');
+        if (d) { e.preventDefault(); disconnect(d.dataset.disconnect, d); }
+      });
+
+      function startConnect(platform, btn) {
+        if (!CONNECTABLE[platform]) return;
+        var was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Opening…';
+        token().then(function (t) {
+          if (!t) throw new Error('Sign in again to connect an account.');
+          return fetch(SB_URL + '/functions/v1/social-connect?action=start', {
+            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok) throw new Error(j.error || ('Could not start the connection (' + r.status + ').'));
+              return j;
+            });
+          });
+        }).then(function (j) {
+          if (!j.url) throw new Error('The connect flow returned no URL.');
+          /* Full navigation, not a popup: the OAuth callback comes back as a
+             302 to this portal, and a popup that a blocker kills leaves the
+             agency staring at a button that did nothing. */
+          window.location.href = j.url;
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = was;
+          toastOrAlert(err.message || 'Could not open the connection.');
+        });
+      }
+
+      function disconnect(id, btn) {
+        var was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Working…';
+        token().then(function (t) {
+          if (!t) throw new Error('Sign in again.');
+          return fetch(SB_URL + '/rest/v1/rpc/disconnect_social_account', {
+            method: 'POST',
+            headers: {
+              apikey: SB_KEY, Authorization: 'Bearer ' + t,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ p_account_id: id }),
+          });
+        }).then(function (r) {
+          if (!r.ok) throw new Error('Could not disconnect (' + r.status + ').');
+          return loadChannels();
+        }).then(function () {
+          if (campaign) render();
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = was;
+          toastOrAlert(err.message || 'Could not disconnect.');
+        });
+      }
+
+      function toastOrAlert(msg) {
+        if (typeof toast === 'function') toast(msg); else alert(msg);
+      }
+
+      /* The portal returns from OAuth with ?connected= or ?connect_error= on
+         the URL. Read it once, tell the agency what happened, and strip it --
+         a reload should not replay a stale outcome. */
+      (function readConnectResult() {
+        var q = new URLSearchParams(location.search);
+        var outcome = q.get('connected');
+        if (!outcome) return;
+        var detail = q.get('detail') || '';
+        q.delete('connected'); q.delete('detail');
+        history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+        var msg = outcome === 'cancelled'
+          ? 'Connection cancelled' + (detail ? ': ' + detail : '.')
+          : outcome === 'error'
+            ? 'Could not connect' + (detail ? ': ' + detail : '.')
+            : (CONNECTABLE[outcome] || outcome) + ' connected'
+              + (detail ? ' as ' + detail : '') + '. Posts to it are real from now on.';
+        setTimeout(function () { toastOrAlert(msg); }, 400);
+      })();
+
+      /* ── the live path ─────────────────────────────────────────────────
+         A rehearsal runs entirely in the browser. A real send does not: every
+         variant becomes a durable row first (queue_social_post), and only then
+         is the queue drained. Written-then-sent, so a provider outage costs the
+         attempt and never the intent -- the same order message_outbox uses. */
+      function publishLive() {
+        if (running || !campaign) return;
+        var ready = campaign.variants.filter(function (v) {
+          return !v.issues.length && CONNECTABLE[v.platform] && connectedTo(v.platform)
+            && !expired(connectedTo(v.platform));
+        });
+        if (!ready.length) {
+          toastOrAlert('Nothing to publish: connect Instagram or Facebook first.');
+          return;
+        }
+        if (!confirm('Publish ' + ready.length + ' post' + (ready.length === 1 ? '' : 's')
+            + ' for real, to your connected accounts? This is public and cannot be undone from here.')) return;
+
+        running = true;
+        var btn = document.getElementById('cmpLive');
+        var bar = document.getElementById('cmpBar');
+        var stat = document.getElementById('cmpStat');
+        btn.disabled = true; btn.textContent = 'Queueing…';
+        bar.style.width = '8%';
+
+        token().then(function (t) {
+          if (!t) throw new Error('Sign in again to publish.');
+          var head = {
+            apikey: SB_KEY, Authorization: 'Bearer ' + t,
+            'Content-Type': 'application/json',
+          };
+          var queued = 0;
+          /* Sequential on purpose. queue_social_post is one insert; the reason
+             not to fan out is that a partial failure halfway through a parallel
+             batch leaves an unknown number of rows queued, and the agency
+             cannot tell what is about to go out. */
+          return ready.reduce(function (chain, v) {
+            return chain.then(function () {
+              return fetch(SB_URL + '/rest/v1/rpc/queue_social_post', {
+                method: 'POST', headers: head,
+                body: JSON.stringify({
+                  p_property_id: campaign.property && campaign.property.id,
+                  p_platform: v.platform,
+                  p_caption: v.caption,
+                  p_media_urls: v.media && v.media.url ? [v.media.url] : [],
+                  p_dry_run: false,
+                }),
+              }).then(function (r) {
+                if (!r.ok) return r.text().then(function (tx) { throw new Error(tx.slice(0, 160)); });
+                queued++;
+                bar.style.width = (8 + Math.round((queued / ready.length) * 52)) + '%';
+                stat.textContent = queued + ' of ' + ready.length + ' queued';
+              });
+            });
+          }, Promise.resolve()).then(function () {
+            btn.textContent = 'Publishing…';
+            return fetch(SB_URL + '/functions/v1/social-publish', {
+              method: 'POST', headers: head,
+              body: JSON.stringify({ live: true, limit: Math.min(50, ready.length) }),
+            }).then(function (r) {
+              return r.json().then(function (j) {
+                if (!r.ok) throw new Error(j.error || ('Publish failed (' + r.status + ').'));
+                return j;
+              });
+            });
+          });
+        }).then(function (sum) {
+          running = false;
+          btn.disabled = false; btn.textContent = 'Publish for real';
+          bar.style.width = '100%';
+          stat.textContent = sum.published + ' published'
+            + (sum.failed ? ' · ' + sum.failed + ' failed' : '');
+          showResults(sum);
+        }).catch(function (err) {
+          running = false;
+          btn.disabled = false; btn.textContent = 'Publish for real';
+          bar.style.width = '0%';
+          stat.textContent = '';
+          toastOrAlert(err.message || 'Could not publish.');
+        });
+      }
+
+      /* Per-post outcomes, in the provider's own words. A failure that says
+         "The account is not a professional account" is actionable; "failed" is
+         not, and this is exactly where an agency goes looking. */
+      function showResults(sum) {
+        var box = document.getElementById('cmpResults');
+        if (!box) return;
+        var list = (sum.results || []);
+        if (!list.length) { box.innerHTML = ''; return; }
+        box.innerHTML = '<div class="cmp-res-hd">' + list.length + ' post'
+          + (list.length === 1 ? '' : 's') + ' dispatched</div>'
+          + list.map(function (r) {
+              var good = r.status === 'published';
+              return '<div class="cmp-res' + (good ? ' ok' : ' no') + '">'
+                + '<span class="cmp-res-pl">' + esc(r.platform) + '</span>'
+                + '<span class="cmp-res-st">' + esc(good ? (r.dryRun ? 'rehearsal' : 'published') : r.status) + '</span>'
+                + '<span class="cmp-res-tx">' + esc(good ? (r.postId || '') : (r.error || '')) + '</span>'
+                + '</div>';
+            }).join('');
+      }
+
+
       function ownListings() {
         // guarded exactly like the social pane does: this block runs in a later
         // script than the declaration, so tolerate it not existing yet.
@@ -5878,6 +6196,8 @@
       // Listings change (hydrate from the database, create, edit, delete,
       // re-list) republishes this list so the two panes can never disagree.
       document.addEventListener('syn:listings', buildPicker);
+
+      loadChannels();
 
       go.addEventListener('click', function () {
         if (running || !rows.length) return;
@@ -5949,16 +6269,40 @@
             + '</div></div>';
         });
 
+        /* Two buttons, never one that changes meaning. A rehearsal and a real
+           send are different acts, and a single button whose behaviour depends
+           on state elsewhere on the page is how someone publishes by accident. */
+        var live = liveCount();
+        var sendable = campaign.variants.filter(function (v) {
+          return !v.issues.length && CONNECTABLE[v.platform] && connectedTo(v.platform)
+            && !expired(connectedTo(v.platform));
+        }).length;
+
         html += '<div class="cmp-run">'
-          + '<button class="btn btn-primary" id="cmpRun" style="padding:11px 18px;font-size:13.5px">Run syndication (' + ok.length + ')</button>'
+          + '<button class="btn" id="cmpRun" style="padding:11px 18px;font-size:13.5px">Rehearse (' + ok.length + ')</button>'
+          + (live
+              ? '<button class="btn btn-primary" id="cmpLive" style="padding:11px 18px;font-size:13.5px"'
+                + (sendable ? '' : ' disabled') + '>Publish for real'
+                + (sendable ? ' (' + sendable + ')' : '') + '</button>'
+              : '')
           + '<div class="cmp-bar"><i id="cmpBar"></i></div>'
           + '<span id="cmpStat" style="font-size:12.5px;color:var(--ink-muted);min-width:120px"></span>'
           + '</div>'
-          + '<p class="cmp-note"><b>Rehearsal mode.</b> This runs the full pipeline — validation, idempotency keys, bounded concurrency — and shows exactly what would be sent, without touching a real account. Connecting live accounts needs the <code>social-publish</code> endpoint and platform tokens in Supabase secrets, never in this page.</p>';
+          + '<div id="cmpResults"></div>'
+          + (live
+              ? '<p class="cmp-note"><b>' + live + ' channel' + (live === 1 ? '' : 's') + ' connected.</b> '
+                + '<b>Publish for real</b> writes each post to the queue and then sends it — it is public and cannot be undone from here. '
+                + '<b>Rehearse</b> runs the same validation and shows what would go, without touching an account.'
+                + (sendable ? '' : ' Nothing in this campaign targets a connected channel yet.')
+                + '</p>'
+              : '<p class="cmp-note"><b>Rehearsal only.</b> No account is connected, so this validates and shows exactly what would be sent without touching a real one. '
+                + 'Connect Instagram or Facebook above to publish for real. Tokens live in Supabase Vault, never in this page.</p>');
 
         out.hidden = false;
         out.innerHTML = html;
         document.getElementById('cmpRun').addEventListener('click', run);
+        var liveBtn = document.getElementById('cmpLive');
+        if (liveBtn) liveBtn.addEventListener('click', publishLive);
       }
 
       function run() {
@@ -5967,7 +6311,7 @@
         var btn = document.getElementById('cmpRun');
         var bar = document.getElementById('cmpBar');
         var stat = document.getElementById('cmpStat');
-        btn.disabled = true; btn.textContent = 'Publishing…';
+        btn.disabled = true; btn.textContent = 'Rehearsing…';
 
         var q = S.createQueue({ mode: 'dry', concurrency: 3 });
         q.add(campaign.variants);
@@ -5980,7 +6324,7 @@
         q.run().then(function (sum) {
           running = false;
           btn.disabled = false;
-          btn.textContent = 'Run again';
+          btn.textContent = 'Rehearse again';
           stat.textContent = sum.published + ' would publish · ' + sum.skipped + ' skipped'
             + (sum.failed ? ' · ' + sum.failed + ' failed' : '');
         });
