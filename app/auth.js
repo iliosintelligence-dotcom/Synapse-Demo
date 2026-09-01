@@ -126,13 +126,15 @@
      No callback page is needed: the client is created with
      detectSessionInUrl, so the session in the returning fragment is consumed
      wherever the person lands. */
-  /* Empty on purpose. Google sign-in was removed from the sign-in page:
-     the button only ever appeared when the provider was enabled on the
-     project, and while it was not, the flow left half-finished PKCE
-     code-verifier keys behind in storage. Email and password is the one
-     way in. Re-add a provider name here and build its button to bring it
-     back -- enabledProviders() and signInWithProvider() still work. */
-  var OAUTH_PROVIDERS = [];
+  /* Google is back, and the reason it was removed is handled rather than
+     re-introduced: the button is rendered ONLY after enabledProviders() says
+     the project has the provider switched on. While it is off, no button is
+     drawn and no PKCE verifier is ever written, which is what used to leave
+     half-finished keys in storage.
+
+     Anything added here must also be enabled on the Supabase project or it
+     stays invisible -- that is the intended behaviour, not a bug. */
+  var OAUTH_PROVIDERS = ['google'];
 
   /* Which providers this project actually has switched on.
      GoTrue publishes this at /auth/v1/settings, and asking is the difference
@@ -214,6 +216,60 @@
       });
     });
   }
+  /* ── phone ──────────────────────────────────────────────────────────────
+     Nigerian numbers get typed every way there is: 0803..., 234803...,
+     +234803..., with spaces and dashes. GoTrue wants strict E.164 and rejects
+     anything else with a message about the format rather than about the
+     number, so the normalising happens here rather than being asked of the
+     person typing. Same rules as send-outbox, deliberately -- a number that
+     reaches somebody by WhatsApp should be the same number that signs them in. */
+  function normalisePhone(raw) {
+    var d = String(raw || '').replace(/[^\d+]/g, '');
+    if (!d) return '';
+    if (d.charAt(0) === '+') return d;
+    if (d.indexOf('234') === 0) return '+' + d;
+    if (d.charAt(0) === '0') return '+234' + d.slice(1);
+    // A bare 10-digit local number, which is how most people write it.
+    if (d.length === 10) return '+234' + d;
+    return '+' + d;
+  }
+
+  /** Sends the six-digit code. Creates the account if there is not one yet,
+   *  carrying the same metadata the email path sends so handle_new_user
+   *  provisions the profile -- and, for an agency, the agencies row and owner
+   *  membership -- identically whichever way somebody signed up. */
+  function sendPhoneCode(phone, opts) {
+    opts = opts || {};
+    var to = normalisePhone(phone);
+    if (!to || to.length < 10) {
+      return Promise.resolve({ error: { message: 'Enter a phone number, including the network code.' } });
+    }
+    var meta = {
+      role: opts.role === 'agency' ? 'agency_owner' : 'consumer',
+      full_name: opts.name || null,
+    };
+    if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+    return client().then(function (c) {
+      return c.auth.signInWithOtp({
+        phone: to,
+        options: { data: meta, shouldCreateUser: opts.createIfMissing !== false },
+      });
+    }).then(function (r) { r.phone = to; return r; });
+  }
+
+  /** Exchanges the code for a session. `type: 'sms'` covers both a first-time
+   *  signup and a returning sign-in -- GoTrue does not distinguish, and neither
+   *  should the caller. */
+  function verifyPhoneCode(phone, code) {
+    return client().then(function (c) {
+      return c.auth.verifyOtp({
+        phone: normalisePhone(phone),
+        token: String(code || '').replace(/\D/g, ''),
+        type: 'sms',
+      });
+    });
+  }
+
   function signIn(email, password) {
     return client().then(function (c) { return c.auth.signInWithPassword({ email: email, password: password }); });
   }
@@ -288,6 +344,8 @@
     client: client, ready: ready, user: function () { return cachedUser; },
     getUser: getUser, roleOf: roleOf, safeNext: safeNext,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
+    sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
+    normalisePhone: normalisePhone,
     signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
     enabledProviders: enabledProviders,
     requireAuth: requireAuth, paint: paintAll,

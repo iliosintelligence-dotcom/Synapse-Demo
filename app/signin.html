@@ -79,6 +79,29 @@
     .au-legal { font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 22px; text-align: center; }
 
     /* a whole-form message (sent-confirmation, hard failure) */
+    /* Google, and the rule that separates it from the form. */
+    .au-oauth { width: 100%; display: flex; align-items: center; justify-content: center;
+      gap: 10px; min-height: 48px; padding: 13px 16px; border-radius: 13px;
+      border: 1px solid rgba(20,20,20,0.18); background: #fff; cursor: pointer;
+      font: 600 14.5px/1 var(--f-sans, inherit); color: #1a1a1a; }
+    .au-oauth:hover { background: #fafafa; }
+    .au-oauth:disabled { opacity: .6; cursor: default; }
+    .au-or { display: flex; align-items: center; gap: 12px; margin: 18px 0;
+      color: var(--ink-dim, #6b6b6b); font-size: 12px; text-transform: uppercase;
+      letter-spacing: .14em; }
+    .au-or::before, .au-or::after { content: ''; flex: 1; height: 1px;
+      background: rgba(20,20,20,0.12); }
+
+    /* Email / Phone. A segmented control rather than two links, because it
+       switches what this form IS rather than navigating anywhere. */
+    .au-methods { display: flex; gap: 6px; padding: 4px; margin-bottom: 18px;
+      background: rgba(20,20,20,0.05); border-radius: 12px; }
+    .au-method { flex: 1; min-height: 40px; border: 0; border-radius: 9px;
+      background: transparent; cursor: pointer; color: var(--ink-muted, #545454);
+      font: 600 13.5px/1 var(--f-sans, inherit); }
+    .au-method.on { background: #fff; color: #1a1a1a;
+      box-shadow: 0 1px 3px rgba(20,20,20,0.10); }
+
     /* A button that reads as a link. It is a <button> because it performs an
        action rather than going somewhere; the 44px hit area is carried by a
        pseudo-element so the text keeps its size. */
@@ -190,6 +213,31 @@
           <button class="au-tab"    id="tabUp"  type="button" role="tab" aria-selected="false">Create account</button>
         </div>
 
+        <!-- Google sits above the form, not below it. Someone who has a Google
+             account and no password here should not have to read past two
+             fields to find that out. Rendered only once the project reports
+             the provider is actually on — see OAUTH_PROVIDERS in auth.js. -->
+        <div id="auOauth" hidden>
+          <button class="au-oauth" id="auGoogle" type="button">
+            <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.82a4.12 4.12 0 0 1-1.79 2.7v2.26h2.9c1.7-1.56 2.67-3.87 2.67-6.6z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.81.54-1.84.86-3.06.86-2.35 0-4.34-1.58-5.05-3.71H.93v2.33A9 9 0 0 0 9 18z"/>
+              <path fill="#FBBC05" d="M3.95 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.93a9 9 0 0 0 0 8.08l3.02-2.33z"/>
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .93 4.96l3.02 2.33C4.66 5.16 6.65 3.58 9 3.58z"/>
+            </svg>
+            <span id="auGoogleLabel">Continue with Google</span>
+          </button>
+          <div class="au-or"><span>or</span></div>
+        </div>
+
+        <!-- Email or phone. A phone number is the identifier most people here
+             actually have and remember; an email address is the one they are
+             usually asked for. Offering both, rather than choosing for them. -->
+        <div class="au-methods" role="tablist" aria-label="How to sign in">
+          <button class="au-method on" id="methodEmail" type="button" role="tab" aria-selected="true">Email</button>
+          <button class="au-method" id="methodPhone" type="button" role="tab" aria-selected="false">Phone</button>
+        </div>
+
         <form id="auForm" novalidate>
           <div class="au-field" id="nameField" hidden>
             <label class="au-label" for="auName">Your name</label>
@@ -203,18 +251,37 @@
             <input class="au-input" id="auAgencyName" name="agencyName" type="text" autocomplete="organization" />
             <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
           </div>
-          <div class="au-field">
+          <div class="au-field" id="emailField">
             <label class="au-label" for="auEmail">Email</label>
             <input class="au-input" id="auEmail" name="email" type="email" autocomplete="email"
                    required inputmode="email" />
             <div class="au-err" id="errEmail" hidden></div>
           </div>
-          <div class="au-field">
+          <div class="au-field" id="passField">
             <label class="au-label" for="auPass">Password</label>
             <input class="au-input" id="auPass" name="password" type="password"
                    autocomplete="current-password" required minlength="8" />
             <div class="au-hint" id="passHint" hidden>At least 8 characters. Longer is better than complicated.</div>
             <div class="au-err" id="errPass" hidden></div>
+          </div>
+
+          <!-- Phone. Two steps in one panel: the number, then the code that
+               was just sent to it. The number stays on screen at step two so
+               somebody who mistyped it can see that they did. -->
+          <div class="au-field" id="phoneField" hidden>
+            <label class="au-label" for="auPhone">Phone number</label>
+            <input class="au-input" id="auPhone" name="phone" type="tel" autocomplete="tel"
+                   inputmode="tel" placeholder="0803 123 4567" />
+            <div class="au-hint">Nigerian numbers welcome in any format — 08…, 234… or +234…</div>
+            <div class="au-err" id="errPhone" hidden></div>
+          </div>
+          <div class="au-field" id="codeField" hidden>
+            <label class="au-label" for="auCode">The 6-digit code</label>
+            <input class="au-input" id="auCode" name="code" type="text" autocomplete="one-time-code"
+                   inputmode="numeric" maxlength="6" placeholder="123456" />
+            <div class="au-hint" id="codeHint"></div>
+            <div class="au-err" id="errCode" hidden></div>
+            <button type="button" class="au-linkbtn" id="codeBack" style="margin-top:10px">Use a different number</button>
           </div>
 
           <button class="au-submit" id="auGo" type="submit">Sign in</button>
@@ -380,6 +447,26 @@
           return 'That is your current password — choose a different one.';
         if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
           return 'This reset link has expired — request a new one and use it within a few minutes.';
+        /* Phone and OTP. "Unsupported phone provider" is what GoTrue says
+           when phone sign-in is not switched on for the project -- retrying
+           can never help, so telling somebody to try again is worse than
+           saying nothing. The code is matched rather than the wording: the
+           message is theirs to change, the code is a contract. */
+        var code = (err && (err.code || err.error_code)) || '';
+        if (code === 'phone_provider_disabled' || m.indexOf('unsupported phone provider') > -1)
+          return 'Signing in by phone is not switched on yet. Use your email address for now.';
+        if (code === 'otp_expired' || (m.indexOf('token') > -1 && m.indexOf('expired') > -1))
+          return 'That code has expired. Ask for a new one.';
+        if (code === 'otp_disabled')
+          return 'One-time codes are not switched on for this project yet.';
+        if (m.indexOf('invalid') > -1 && (m.indexOf('otp') > -1 || m.indexOf('token') > -1))
+          return 'That code is not right. Check it and try again.';
+        if (m.indexOf('sms') > -1 && m.indexOf('rate') > -1)
+          return 'Too many codes requested. Wait a minute, then ask for another.';
+        if (code === 'over_email_send_rate_limit' || (m.indexOf('email rate limit') > -1))
+          return 'Too many emails have gone out from this project just now. Wait a few minutes and try again.';
+        if (m.indexOf('provider is not enabled') > -1)
+          return 'That sign-in method is not switched on for this project yet.';
         return 'Something went wrong. Please try again.';
       }
 
@@ -431,6 +518,76 @@
 
       /* ── submit ──────────────────────────────────────────────────────── */
 
+
+      /* -- how they are signing in --------------------------------------
+         'email' or 'phone'. The phone path has two steps and `codeSent` says
+         which one we are on; it resets whenever the number changes, because a
+         code sent to a different number is not a code for this one. */
+      var method = 'email';
+      var codeSent = false;
+      var pendingPhone = '';
+
+      function setMethod(m) {
+        method = m === 'phone' ? 'phone' : 'email';
+        el('methodEmail').classList.toggle('on', method === 'email');
+        el('methodPhone').classList.toggle('on', method === 'phone');
+        el('methodEmail').setAttribute('aria-selected', String(method === 'email'));
+        el('methodPhone').setAttribute('aria-selected', String(method === 'phone'));
+
+        el('emailField').hidden = method !== 'email';
+        el('passField').hidden  = method !== 'email';
+        el('phoneField').hidden = method !== 'phone' || codeSent;
+        el('codeField').hidden  = method !== 'phone' || !codeSent;
+
+        /* Required-ness follows visibility. A browser refuses to submit a form
+           whose invalid field is hidden, and says nothing visible about why --
+           which reads as a dead button. */
+        el('auEmail').required = method === 'email';
+        el('auPass').required  = method === 'email';
+
+        el('forgotBtn').hidden = method === 'phone';
+        clearErrors();
+        syncSubmitLabel();
+      }
+
+      function syncSubmitLabel() {
+        if (method === 'phone') go.textContent = codeSent ? 'Confirm code' : 'Send me a code';
+        else go.textContent = mode === 'up' ? 'Create account' : 'Sign in';
+      }
+
+      el('methodEmail').addEventListener('click', function () { if (!busy) setMethod('email'); });
+      el('methodPhone').addEventListener('click', function () { if (!busy) setMethod('phone'); });
+
+      el('codeBack').addEventListener('click', function () {
+        if (busy) return;
+        codeSent = false; pendingPhone = '';
+        el('auCode').value = '';
+        setMethod('phone');
+      });
+
+      /* -- Google -------------------------------------------------------
+         Asked, not assumed. signInWithOAuth navigates the browser itself, so a
+         .catch() around it never runs -- by the time it would, the tab is
+         gone. Knowing beforehand is the only way to fail gracefully, and it is
+         what stops a dead button writing a PKCE verifier into storage that
+         nothing ever comes back to consume. */
+      SynAuth.enabledProviders().then(function (list) {
+        if (list.indexOf('google') === -1) return;      // off on the project: draw nothing
+        el('auOauth').hidden = false;
+        el('auGoogle').addEventListener('click', function () {
+          if (busy) return;
+          busy = true;
+          el('auGoogle').disabled = true;
+          el('auGoogleLabel').textContent = 'Taking you to Google...';
+          SynAuth.signInWithProvider('google', next).catch(function (err) {
+            busy = false;
+            el('auGoogle').disabled = false;
+            el('auGoogleLabel').textContent = 'Continue with Google';
+            showNote('bad', friendly(err));
+          });
+        });
+      });
+
       form.addEventListener('submit', function (e) {
         e.preventDefault();
         if (busy) return;                     // concurrency: one in flight only
@@ -441,7 +598,10 @@
         var name  = el('auName').value.trim();
         var agencyName = el('auAgencyName').value.trim();
 
-        if (!demoRequested) {
+        var phone = el('auPhone').value.trim();
+        var code  = el('auCode').value.trim();
+
+        if (!demoRequested && method === 'email') {
           var ok = true;
           if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
             fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
@@ -450,6 +610,17 @@
             fieldError('auPass', 'errPass', 'Use at least 8 characters.'); ok = false;
           }
           if (!ok) return;
+        }
+        if (!demoRequested && method === 'phone') {
+          if (!codeSent) {
+            if (!phone || SynAuth.normalisePhone(phone).length < 11) {
+              fieldError('auPhone', 'errPhone', 'Enter your number, including the network code.');
+              return;
+            }
+          } else if (code.replace(/[^0-9]/g, '').length !== 6) {
+            fieldError('auCode', 'errCode', 'The code is six digits.');
+            return;
+          }
         }
 
         busy = true; go.disabled = true;
@@ -461,14 +632,36 @@
            agency the agencies row and the owner membership with it — all three
            atomically inside the handle_new_user trigger, so closing the tab
            can never leave an account half-made. */
+        /* Four entrances, one completion path below. The phone flow's first
+           step is the odd one out: it finishes without a session, because the
+           person still has to read the code we just sent them. */
+        var sendingCode = method === 'phone' && !codeSent && !demoRequested;
+
         var work = demoRequested
           ? SynAuth.signIn(DEMO_ACCOUNTS[role].email, DEMO_ACCOUNTS[role].password)
-          : (mode === 'up'
-              ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName })
-              : SynAuth.signIn(email, pass));
+          : method === 'phone'
+            ? (codeSent
+                ? SynAuth.verifyPhoneCode(pendingPhone, code)
+                : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName }))
+            : (mode === 'up'
+                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName })
+                : SynAuth.signIn(email, pass));
 
         work.then(function (res) {
           if (res && res.error) throw res.error;
+
+          /* Step one of two. No session yet and none expected: move the panel
+             on to the code, and name the number it went to, so a mistyped one
+             is obvious before they sit waiting for an SMS that cannot arrive. */
+          if (sendingCode) {
+            pendingPhone = res.phone || SynAuth.normalisePhone(phone);
+            codeSent = true;
+            setMethod('phone');
+            el('codeHint').textContent = 'Sent to ' + pendingPhone + '. It expires in a few minutes.';
+            el('auCode').focus();
+            showNote('ok', 'Code sent. Enter it above.');
+            return;
+          }
           // Sign-up with email confirmation returns a user but no session.
           var session = res && res.data && res.data.session;
           if (mode === 'up' && !session) {
@@ -509,7 +702,7 @@
           showNote('bad', friendly(err));
         }).then(function () {
           busy = false; go.disabled = false;
-          go.textContent = mode === 'up' ? 'Create account' : 'Sign in';
+          syncSubmitLabel();
         });
       });
 
