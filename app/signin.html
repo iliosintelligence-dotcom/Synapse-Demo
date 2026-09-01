@@ -644,7 +644,7 @@
                 ? SynAuth.verifyPhoneCode(pendingPhone, code)
                 : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName }))
             : (mode === 'up'
-                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName })
+                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, next: next })
                 : SynAuth.signIn(email, pass));
 
         work.then(function (res) {

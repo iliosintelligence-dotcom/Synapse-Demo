@@ -206,12 +206,27 @@
       // The agency's display name, typed by the person signing up. Only the
       // trigger reads this; it is never invented on their behalf.
       if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+      /* The confirmation link has to come back to the page the person left,
+         WITH the context they left it in. This was origin + pathname only, so
+         `role` and `next` were dropped: an agency owner confirming their email
+         landed on a page that had defaulted back to role=customer, saw its
+         session was the wrong role for that page, and was told to "sign in
+         with a customer account to switch" -- on the account they had just
+         created. Every agency signup by email would have hit it the moment
+         confirmations started arriving reliably.
+
+         Built from opts rather than from the current URL: signUp is callable
+         from anywhere, and the caller knows which role it just asked for. */
+      var back = window.location.origin + window.location.pathname
+        + '?role=' + (opts.role === 'agency' ? 'agency' : 'customer')
+        + (opts.next ? '&next=' + encodeURIComponent(opts.next) : '');
+
       return c.auth.signUp({
         email: email,
         password: password,
         options: {
           data: meta,
-          emailRedirectTo: window.location.origin + window.location.pathname,
+          emailRedirectTo: back,
         },
       });
     });
