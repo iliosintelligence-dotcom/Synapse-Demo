@@ -433,7 +433,13 @@
         var m = String((err && err.message) || '').toLowerCase();
         if (m.indexOf('invalid login') > -1 || m.indexOf('invalid credentials') > -1)
           return 'That email and password do not match. Try again, or reset your password.';
-        if (m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1)
+        /* With email confirmation OFF, a duplicate signup comes back as a real
+           error rather than the empty-identities 200 that the confirm-on flow
+           returns. Both routes are handled -- here, and in the !session branch
+           below -- because which one fires depends on a dashboard setting that
+           can change without this page changing. */
+        if (m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1
+            || (err && (err.code || err.error_code)) === 'user_already_exists')
           return 'There is already an account with that email — try signing in instead.';
         if (m.indexOf('rate') > -1 || m.indexOf('too many') > -1)
           return 'Too many attempts just now. Wait a minute and try again.';
