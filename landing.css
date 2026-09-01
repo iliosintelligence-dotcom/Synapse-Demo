@@ -3028,3 +3028,27 @@ textarea:focus-visible {
   #probCar .prob-n { font-size: 40px; }
   #probCar .prob-tag { margin-bottom: 6px; }
 }
+
+
+/* ── sign in, in the bar ───────────────────────────────────────────────────
+   A word, not a button. The page's real calls to action are further down and
+   they are the ones that should carry weight; this only has to be findable by
+   somebody who already knows they have an account. The 44px hit area sits on
+   a pseudo-element so the text keeps its size. */
+.nav-signin {
+  position: relative;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--m-standard) var(--m-ease);
+}
+.nav-signin::before {
+  content: '';
+  position: absolute;
+  left: -10px; right: -10px; top: 50%;
+  transform: translateY(-50%);
+  height: 44px;
+}
+.nav-signin:hover, .nav-signin:focus-visible { color: var(--text); }

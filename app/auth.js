@@ -258,7 +258,23 @@
           signOut().then(function () { window.location.reload(); });
         });
       } else {
-        slot.innerHTML = '<a class="auth-in" href="signin.html">Sign in</a>';
+        /* Two things were wrong with a bare "Sign in" link.
+
+           It dropped the visitor back on toju.html afterwards, because no
+           `next` was carried -- so signing in from a dream board or a property
+           page silently lost the thing they were looking at, which is the
+           moment they were most likely to want an account for.
+
+           And it never offered to CREATE one. The tab exists on the sign-in
+           page, but a first-time buyer had to guess it was there. Every
+           entrance on the agency side offers both; the customer side offered
+           neither. */
+        var here = window.location.pathname.slice(window.location.pathname.lastIndexOf('/') + 1)
+          + window.location.search;
+        var back = encodeURIComponent(here || 'toju.html');
+        slot.innerHTML =
+          '<a class="auth-in" href="signin.html?next=' + back + '">Sign in</a>'
+          + '<a class="auth-up" href="signin.html?mode=up&next=' + back + '">Create account</a>';
       }
     });
   }

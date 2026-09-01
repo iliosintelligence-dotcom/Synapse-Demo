@@ -1068,3 +1068,27 @@
   .m-logo-word { display: none; }
   .m-aud-seg { padding: 0 9px; font-size: 11px; }
 }
+
+
+/* Same link on a phone. The bar already holds a wordmark and the audience
+   toggle, so this drops the tracking and sits tight against the edge; below
+   390px the wordmark is already hidden, which is what buys the room. */
+.m-nav-signin {
+  position: relative;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted, #545454);
+  text-decoration: none;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+.m-nav-signin::before {
+  content: '';
+  position: absolute;
+  left: -8px; right: -8px; top: 50%;
+  transform: translateY(-50%);
+  height: 44px;
+}
+@media (max-width: 360px) {
+  .m-nav-signin { font-size: 12px; margin-left: 6px; }
+}
