@@ -431,48 +431,66 @@
       // oracle. Sign-in failures are always the same sentence.
       function friendly(err) {
         var m = String((err && err.message) || '').toLowerCase();
+        /* ORDER MATTERS, and it was wrong. The specific mappings were appended
+           BELOW a broad `indexOf('rate')` test, which meant the email-send
+           limit could never reach its own message: everybody saw "Too many
+           attempts just now. Wait a minute" -- about attempts they had not
+           made, on a wait that is nearer an hour. Codes first, then narrow
+           message tests, then the broad ones. */
+        var code = (err && (err.code || err.error_code)) || '';
+
+        /* Supabase's built-in email sender allows only a handful of messages
+           an hour and is not meant for production. Signing up three or four
+           times is enough to hit it single-handed, which is why this reads as
+           a mystery: nothing the person did was wrong, and no one else was
+           using the app. Name the real cause. */
+        if (code === 'over_email_send_rate_limit' || m.indexOf('email rate limit') > -1)
+          return 'The project has sent as many emails as it is allowed this hour — this is our sending limit, not anything you did. Wait an hour, or turn off email confirmation while testing.';
+        if (code === 'over_request_rate_limit')
+          return 'Too many requests from this device just now. Wait a minute and try again.';
+        if (code === 'over_sms_send_rate_limit' || (m.indexOf('sms') > -1 && m.indexOf('rate') > -1))
+          return 'Too many codes requested. Wait a minute, then ask for another.';
+        if (code === 'phone_provider_disabled' || m.indexOf('unsupported phone provider') > -1)
+          return 'Signing in by phone is not switched on yet. Use your email address for now.';
+        if (code === 'otp_disabled')
+          return 'One-time codes are not switched on for this project yet.';
+        if (code === 'otp_expired')
+          return 'That code has expired. Ask for a new one.';
+        if (code === 'user_already_exists'
+            || m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1)
+          return 'There is already an account with that email — try signing in instead.';
+        if (code === 'email_not_confirmed')
+          return 'That account still needs confirming. Check your email for the link we sent.';
+
         if (m.indexOf('invalid login') > -1 || m.indexOf('invalid credentials') > -1)
           return 'That email and password do not match. Try again, or reset your password.';
-        /* With email confirmation OFF, a duplicate signup comes back as a real
-           error rather than the empty-identities 200 that the confirm-on flow
-           returns. Both routes are handled -- here, and in the !session branch
-           below -- because which one fires depends on a dashboard setting that
-           can change without this page changing. */
-        if (m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1
-            || (err && (err.code || err.error_code)) === 'user_already_exists')
-          return 'There is already an account with that email — try signing in instead.';
-        if (m.indexOf('rate') > -1 || m.indexOf('too many') > -1)
-          return 'Too many attempts just now. Wait a minute and try again.';
+        if (m.indexOf('invalid') > -1 && (m.indexOf('otp') > -1 || m.indexOf('token') > -1))
+          return 'That code is not right. Check it and try again.';
         if (m.indexOf('password') > -1 && m.indexOf('short') > -1)
           return 'That password is too short — use at least 8 characters.';
         if (m.indexOf('weak') > -1 || m.indexOf('pwned') > -1 || m.indexOf('compromised') > -1)
           return 'That password has appeared in a known breach. Please choose a different one.';
-        if (m.indexOf('fetch') > -1 || m.indexOf('network') > -1 || m.indexOf('unreachable') > -1)
-          return 'We could not reach the sign-in service. Check your connection and try again.';
         if (m.indexOf('same') > -1 && m.indexOf('password') > -1)
           return 'That is your current password — choose a different one.';
-        if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
-          return 'This reset link has expired — request a new one and use it within a few minutes.';
-        /* Phone and OTP. "Unsupported phone provider" is what GoTrue says
-           when phone sign-in is not switched on for the project -- retrying
-           can never help, so telling somebody to try again is worse than
-           saying nothing. The code is matched rather than the wording: the
-           message is theirs to change, the code is a contract. */
-        var code = (err && (err.code || err.error_code)) || '';
-        if (code === 'phone_provider_disabled' || m.indexOf('unsupported phone provider') > -1)
-          return 'Signing in by phone is not switched on yet. Use your email address for now.';
-        if (code === 'otp_expired' || (m.indexOf('token') > -1 && m.indexOf('expired') > -1))
-          return 'That code has expired. Ask for a new one.';
-        if (code === 'otp_disabled')
-          return 'One-time codes are not switched on for this project yet.';
-        if (m.indexOf('invalid') > -1 && (m.indexOf('otp') > -1 || m.indexOf('token') > -1))
-          return 'That code is not right. Check it and try again.';
-        if (m.indexOf('sms') > -1 && m.indexOf('rate') > -1)
-          return 'Too many codes requested. Wait a minute, then ask for another.';
-        if (code === 'over_email_send_rate_limit' || (m.indexOf('email rate limit') > -1))
-          return 'Too many emails have gone out from this project just now. Wait a few minutes and try again.';
         if (m.indexOf('provider is not enabled') > -1)
           return 'That sign-in method is not switched on for this project yet.';
+        if (m.indexOf('fetch') > -1 || m.indexOf('network') > -1 || m.indexOf('unreachable') > -1)
+          return 'We could not reach the sign-in service. Check your connection and try again.';
+        if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
+          return 'This reset link has expired — request a new one and use it within a few minutes.';
+
+        /* Broad, and last, so it can never shadow a specific one again.
+           "For security purposes, you can only request this after N seconds"
+           is the throttle GoTrue actually returns most of the time, and it
+           contains neither "rate" nor "too many" -- it was falling through to
+           "Something went wrong", which tells nobody to simply wait. The
+           number is pulled out so the message says how long. */
+        var wait = /after (\d+) seconds?/i.exec(m);
+        if (wait) return 'Please wait ' + wait[1] + (wait[1] === '1' ? ' second' : ' seconds') + ' before trying that again.';
+        if (m.indexOf('for security purposes') > -1)
+          return 'Please wait a few seconds before trying that again.';
+        if (m.indexOf('rate') > -1 || m.indexOf('too many') > -1)
+          return 'Too many attempts just now. Wait a minute and try again.';
         return 'Something went wrong. Please try again.';
       }
 
