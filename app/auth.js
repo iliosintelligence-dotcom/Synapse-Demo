@@ -99,6 +99,31 @@
   // Only ever navigate to a same-origin path. Anything absolute, protocol-
   // relative or cross-origin is discarded rather than "cleaned" — rejecting is
   // safer than trying to sanitise a hostile URL.
+  /* Where a link that travels through EMAIL must point.
+
+     A password reset or a confirmation link is read in a mail client, and
+     very often on a different device from the one that asked for it. A
+     localhost URL is the one address guaranteed not to work there: the phone
+     resolves localhost to itself, finds nothing on port 3000, and the person
+     is told the site cannot be reached. That is the whole bug -- requesting a
+     reset while developing produced an email nobody could use.
+
+     So an emailed link never carries a loopback origin. Any real origin is
+     used as-is, which keeps preview deployments working; only localhost is
+     rewritten, because only localhost is meaningless to another machine.
+
+     OAuth's redirectTo is deliberately NOT routed through this: that one
+     returns to the same browser on the same device, where localhost is
+     exactly right during development. */
+  var CANONICAL_ORIGIN = 'https://synapsecore.dev';
+
+  function mailOrigin() {
+    var o = window.location.origin;
+    return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|$)/i.test(o)
+      ? CANONICAL_ORIGIN
+      : o;
+  }
+
   function safeNext(raw, fallback) {
     fallback = fallback || 'toju.html';
     if (!raw) return fallback;
@@ -217,7 +242,7 @@
 
          Built from opts rather than from the current URL: signUp is callable
          from anywhere, and the caller knows which role it just asked for. */
-      var back = window.location.origin + window.location.pathname
+      var back = mailOrigin() + window.location.pathname
         + '?role=' + (opts.role === 'agency' ? 'agency' : 'customer')
         + (opts.next ? '&next=' + encodeURIComponent(opts.next) : '');
 
@@ -294,7 +319,7 @@
   }
   function resetPassword(email) {
     return client().then(function (c) {
-      return c.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/app/signin.html' });
+      return c.auth.resetPasswordForEmail(email, { redirectTo: mailOrigin() + '/app/signin.html' });
     });
   }
 
@@ -362,6 +387,7 @@
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     normalisePhone: normalisePhone,
     signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
+    mailOrigin: mailOrigin,
     enabledProviders: enabledProviders,
     requireAuth: requireAuth, paint: paintAll,
   };
