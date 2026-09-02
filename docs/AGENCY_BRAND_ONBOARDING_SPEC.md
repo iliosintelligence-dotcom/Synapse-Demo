@@ -99,7 +99,7 @@ Writes on Continue: `city`, `whatsapp_number`.
 ### Step 2 — Your look (skippable)
 
 - Heading: **"Add your look"** (26px).
-- Support line: "Toju paints your ad creatives in these colours and stamps your logo on
+- Support line: "Tayo paints your ad creatives in these colours and stamps your logo on
   them. Without them, creatives go out in plain ink."
 
 Fields:
@@ -142,8 +142,8 @@ teammate may set later, no defaults).
 
 ### Step 3 — Your sign-off (skippable)
 
-- Heading: **"How should Toju sign off?"**
-- Support line: "Captions end with your name and tagline, and Toju writes replies in
+- Heading: **"How should Tayo sign off?"**
+- Support line: "Captions end with your name and tagline, and Tayo writes replies in
   your voice. Specific beats polished — 'warm and plain-spoken, never salesy' beats
   'professional'."
 

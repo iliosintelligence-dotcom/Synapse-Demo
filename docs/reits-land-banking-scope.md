@@ -5,7 +5,7 @@
 ## The decision, as given
 
 Build REITs and land banking as **a browse category in the app** — new asset types alongside
-sale and rent, with filtering and card treatment — **and extend Toju's advisory scope** to cover
+sale and rent, with filtering and card treatment — **and extend Tayo's advisory scope** to cover
 them. Synapse will **list real offerings from partners**, not merely explain the instruments.
 
 That last clause is the one that changes everything downstream. Explaining an asset class is
@@ -19,14 +19,14 @@ investment schemes. The build is not primarily a UI problem.
 
 Memo: `docs/R-00-regulatory-constraints-investment-offerings.md`. Not against the category —
 against the specific combination Eden scoped. **"List real offerings from partners" + "extend
-Toju's advisory scope" = regulated securities distribution plus regulated robo-advisory, and
+Tayo's advisory scope" = regulated securities distribution plus regulated robo-advisory, and
 neither is curable by disclaimer.** This escalates to Eden; I am not overriding it.
 
 The findings that change the decision:
 
-1. **Toju's existing loop is already the regulated activity.** Nigeria's SEC has *Rules on Digital
+1. **Tayo's existing loop is already the regulated activity.** Nigeria's SEC has *Rules on Digital
    (Robo) Advisory Services* (Aug 2021), and the regulated process they describe — elicit
-   circumstances, analyse algorithmically, recommend — is precisely what Toju already does.
+   circumstances, analyse algorithmically, recommend — is precisely what Tayo already does.
    Pointing that loop at securities is not a doctrine extension; it is entry into a licensed
    activity. Legal also warns that **doctrine text is not a compliance control** for a boundary
    with criminal consequences behind it.
@@ -78,7 +78,7 @@ The findings that change the decision:
 
 ### The alternative v1 legal proposes
 
-Education, a **"check it yourself on the SEC register" tool**, a fraud-pattern explainer, Toju
+Education, a **"check it yourself on the SEC register" tool**, a fraud-pattern explainer, Tayo
 confined to explanation-only with a refusal boundary, and a waitlist. No registration, no partner
 risk, no contact with the verification brand. It makes Synapse the place people go to *avoid being
 defrauded* — which is a stronger version of our actual proposition than a thin listing directory,
@@ -103,7 +103,7 @@ inverts. **Treat R-00 as incomplete until that returns.**
 
 ### 1.1 Legal is a blocking input, not a parallel track
 
-Nothing about schema, surfaces, or Toju's behaviour may be committed before legal answers. This
+Nothing about schema, surfaces, or Tayo's behaviour may be committed before legal answers. This
 is a reversal of the usual pattern where legal reviews a proposal — here legal defines the
 envelope the proposal must fit inside. Backend must not design tables, frontend must not design
 surfaces, and toju-ai must not extend the doctrine until **R-00** lands.
@@ -162,7 +162,7 @@ them as decisions rather than options so the argument happens explicitly.
 
 The onboarding roadmap lists **investment recommendations** under "future capabilities — not yet
 in scope, don't build prematurely," and sequences the flywheel as: exceptional buyer experience →
-agency value → richer data → better Toju. This workstream pulls a future capability forward, ahead
+agency value → richer data → better Tayo. This workstream pulls a future capability forward, ahead
 of Phase 1 buyer-trust work that is still open (AC1b is not met; E-1 is undecided).
 
 Eden has made the call and I am not relitigating it. But two things follow, and I am acting on them:
@@ -185,11 +185,11 @@ Eden has made the call and I am not relitigating it. But two things follow, and 
 | **R-02** | Sample-data policy: the concrete rule for what fictional offerings may look like, and the marker that makes them unmistakable | PM + LG | R-00 | S | Blocked |
 | **R-03** | Partner/issuer onboarding and due-diligence process — what we check before any real offering is listed, who signs off, what we retain | LG + PM | R-00 | L | Blocked |
 | **R-04** | Data model: asset types, per-class verification fields, issuer records, offering lifecycle | BE | R-00, R-01 | L | Blocked |
-| **R-05** | Risk-disclosure and AI-disclosure copy for investment surfaces and for Toju | LG | R-00 | M | Blocked |
+| **R-05** | Risk-disclosure and AI-disclosure copy for investment surfaces and for Tayo | LG | R-00 | M | Blocked |
 | **R-06** | Browse category design spec: asset-type filtering, per-class card treatment, distinct verification chips | UI | R-01, R-05 | M | Blocked |
-| **R-07** | Toju advisory scope: what Toju may explain, filter, compare — and the hard line at suitability advice, return forecasting and recommendation | TJ | R-00, R-05 | M | Blocked |
+| **R-07** | Tayo advisory scope: what Tayo may explain, filter, compare — and the hard line at suitability advice, return forecasting and recommendation | TJ | R-00, R-05 | M | Blocked |
 | **R-08** | Browse implementation: asset types, filters, cards | FE | R-04, R-06 | L | Blocked |
-| **R-09** | Toju doctrine extension | TJ | R-07 | M | Blocked |
+| **R-09** | Tayo doctrine extension | TJ | R-07 | M | Blocked |
 
 Everything except R-00 is blocked. That is the intended shape of this workstream, not a bottleneck
 to route around.
@@ -205,7 +205,7 @@ The questions that determine whether this is buildable at all:
 2. **Collective investment schemes.** Many Nigerian land-banking products are structured as
    collective investment schemes, which carry their own SEC registration requirement. Can Synapse
    list one that is unregistered? Must we verify registration before listing?
-3. **Toju and investment advice.** Does an AI that filters, compares or recommends investment
+3. **Tayo and investment advice.** Does an AI that filters, compares or recommends investment
    offerings to a specific user constitute regulated investment advice or suitability advice? This
    determines R-07 entirely.
 4. **Promotion and advertising.** What risk warnings, disclaimers and approvals attach to
@@ -227,7 +227,7 @@ R-00 (legal)  ──►  R-01 verification semantics  ──►  R-04 schema  �
      ├──► R-02 sample-data policy ─────────────────────┘
      ├──► R-03 partner due diligence
      └──► R-05 risk copy ──► R-06 design spec ──► R-08
-                          └─► R-07 Toju scope ──► R-09
+                          └─► R-07 Tayo scope ──► R-09
 ```
 
 **Critical path:** R-00 → R-01 → R-04 → R-08. Legal sits at the head of it, which is the point.

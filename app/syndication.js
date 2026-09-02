@@ -81,7 +81,7 @@
           + (p.verified ? 'Verified this month. ' : '')
           + 'Power reliability in this corridor sits around ' + p.power + '%.';
       },
-      cta: 'Ask Toju if it fits your budget →',
+      cta: 'Ask Tayo if it fits your budget →',
     },
     {
       id: 'life', name: 'Lifestyle',
@@ -116,7 +116,7 @@
           + (p.verified ? ' Verified, checked on the ground, live right now.' : ' Live right now.') + '\n\n'
           + 'Honest answers only.';
       },
-      cta: 'Tell Toju what you think →',
+      cta: 'Tell Tayo what you think →',
     },
   ];
 

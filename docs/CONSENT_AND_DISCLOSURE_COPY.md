@@ -23,7 +23,7 @@ because a founder decision is outstanding.
 |---|---|---|---|
 | §2 | Contact-agency flow — **Variant A, demo-honest** | `app/property.html` | **Primary deliverable. Ready for counsel review, then implementation.** |
 | §3 | Contact-agency flow — **Variant B, real transmission** | `app/property.html` | **CONTINGENT — NOT APPROVED FOR USE.** Blocked on a founder decision *and* on four unmet prerequisites listed in §3.0. Do not ship. |
-| §4 | Toju first-visit greeting + AI disclosure | `app/toju.html` | Ready for counsel review, then implementation. Variant-independent — applies either way. |
+| §4 | Tayo first-visit greeting + AI disclosure | `app/toju.html` | Ready for counsel review, then implementation. Variant-independent — applies either way. |
 | §5 | Truthfulness / disclosure gap register | app-wide | Findings, not copy. Several are higher priority than the copy itself. |
 
 **Exactly one of Variant A or Variant B may exist in the product at a time.** Shipping A while the
@@ -80,9 +80,9 @@ carrying the honest limit, and a single action.
 >
 > In the finished product, this is the point where your details leave Synapse. Prestige Realty
 > Ltd. would receive your name, your phone number, the home you are asking about, and the budget
-> range you gave Toju — enough for them to call you back about this specific home.
+> range you gave Tayo — enough for them to call you back about this specific home.
 >
-> They would not receive your conversation with Toju, your saved homes, your Dream Board, your
+> They would not receive your conversation with Tayo, your saved homes, your Dream Board, your
 > location, or your email address. No other agency would receive anything.
 >
 > **This is a prototype, so none of that happens yet.** Nothing is sent, no agency is contacted,
@@ -155,7 +155,7 @@ Each of these makes the Variant B copy untrue as of this writing.
 | B-1 | **A phone number is collected from the buyer.** | `app/signin.html` collects name, email, password only. `create-lead` reads `profiles.phone`, finds null, and sends the agency `*Phone:* (in app)` — pointing at an in-app messaging channel that does not exist. The agency would have no way to reach the buyer, while the UI promises a WhatsApp callback. |
 | B-2 | **A way for the user to stop replies exists.** | There is none. No withdrawal control, no "stop contacting me", no lead-revocation path. Copy cannot describe a stop mechanism that is not built, and the third part of the house structure ("how to stop") cannot be honestly written without one. |
 | B-3 | **The privacy policy discloses the delivery chain.** | `privacy.html` §"Who we share it with" names Supabase and the AI provider. `create-lead` also transmits buyer name, phone and budget through **Twilio** (US) to **WhatsApp/Meta**. Two undisclosed sub-processors and a cross-border transfer. |
-| B-4 | **The privacy policy discloses what is actually shared.** | `privacy.html` says an agency receives "only your name and contact details." `create-lead` also sends the buyer's **budget range** from their Toju session. Financial information about the user, disclosed to a third party, contradicted by the published policy. |
+| B-4 | **The privacy policy discloses what is actually shared.** | `privacy.html` says an agency receives "only your name and contact details." `create-lead` also sends the buyer's **budget range** from their Tayo session. Financial information about the user, disclosed to a third party, contradicted by the published policy. |
 
 Also required before Variant B: remove the auth fall-through in §2.4, and confirm with counsel
 whether a lead handoff needs its own unbundled consent under NDPA rather than riding on account
@@ -166,9 +166,9 @@ creation.
 > **Contacting Prestige Realty Ltd.**
 >
 > Prestige Realty Ltd. will receive your name, your phone number, the home you are asking about,
-> and the budget range you gave Toju. They will contact you on WhatsApp about this home.
+> and the budget range you gave Tayo. They will contact you on WhatsApp about this home.
 >
-> They will not receive your conversation with Toju, your saved homes, your Dream Board, your
+> They will not receive your conversation with Tayo, your saved homes, your Dream Board, your
 > location, or your email address. No other agency receives anything, and Synapse does not pass
 > your details on again.
 >
@@ -202,26 +202,26 @@ sent to the agency." (`app/property.html` line 529). That sentence is honest and
 
 ---
 
-## 4. Toju's first-visit greeting and AI disclosure
+## 4. Tayo's first-visit greeting and AI disclosure
 
 **Applies to:** `app/toju.html` — the `GREETING` constant (line ~681), the `.tj-eyebrow` /
 `.tj-trust` header block (lines ~261-263), and the composer area.
 
 ### 4.0 What is wrong with the current state
 
-The greeting reads: _"Good afternoon. I'm Toju — your consultant at Synapse. Tell me what you're
+The greeting reads: _"Good afternoon. I'm Tayo — your consultant at Synapse. Tell me what you're
 looking for and I'll find verified homes that fit. No forms, no endless scrolling."_
 
-Three problems. **Toju never says it is an AI** anywhere in the chat UI. **"Consultant"** is the
+Three problems. **Tayo never says it is an AI** anywhere in the chat UI. **"Consultant"** is the
 wrong word — in a property and money context it implies a human professional, and it sits closer
 to regulated advice than "advisor" does. And the page header says "Your property advisor" with no
-AI qualifier. `terms.html` §Toju already commits to "Toju is an AI advisor... not financial,
+AI qualifier. `terms.html` §Tayo already commits to "Tayo is an AI advisor... not financial,
 investment, or legal advice" — the chat UI simply does not carry it, and **no page under `app/`
 links to `terms.html` or `privacy.html` at all** (see §5, finding **T-1**).
 
 ### 4.1 Greeting — replacement for the `GREETING` constant
 
-> Hello. I'm Toju, Synapse's AI property advisor — not a person. I work from Synapse's verified
+> Hello. I'm Tayo, Synapse's AI property advisor — not a person. I work from Synapse's verified
 > listings, so I recommend homes that have passed our checks rather than anything I find. Tell me
 > what you are looking for.
 >
@@ -248,7 +248,7 @@ Replace `.tj-trust` "Verified homes only. No need to sign up." with:
 
 ### 4.3 Persistent line near the composer
 
-> Toju is an AI. Its estimates — prices, yields, affordability, commute times — are guidance, not
+> Tayo is an AI. Its estimates — prices, yields, affordability, commute times — are guidance, not
 > a valuation, a guarantee, or professional advice. Confirm anything that affects your money with
 > a qualified professional.
 
@@ -256,7 +256,7 @@ Replace `.tj-trust` "Verified homes only. No need to sign up." with:
 
 Required for NDPA transparency at the point of capture, and currently absent entirely.
 
-> Your messages are stored so Toju can remember your conversation, and are processed by our AI
+> Your messages are stored so Tayo can remember your conversation, and are processed by our AI
 > provider to generate replies. Please do not share bank details, ID numbers or passwords here.
 > [Privacy Policy]
 
@@ -264,7 +264,7 @@ _The second sentence is data minimisation doing real work: it reduces how much s
 lands in `demo_chat_sessions` in the first place. The `[Privacy Policy]` link must point at
 `../privacy.html` — that link does not exist anywhere in the app today._
 
-### 4.5 Boundary line for Toju itself (hand to toju-ai)
+### 4.5 Boundary line for Tayo itself (hand to toju-ai)
 
 For when a user pushes for a guarantee. Consistent with the existing `DOCTRINE`:
 
@@ -283,7 +283,7 @@ Ordered by severity. Findings, not copy — several of these outrank the copy in
 (line 341) footers. No file under `app/` links to either — including `app/toju.html`, where
 personal data capture begins, and `app/signin.html`, where accounts are created. Account creation
 therefore happens with no presented terms and no privacy notice. Under NDPA, transparency is owed
-at the point of capture. **Fix: link both from the Toju composer, the sign-in form, and the
+at the point of capture. **Fix: link both from the Tayo composer, the sign-in form, and the
 contact sheet.**
 
 ### T-2 — The contact button asserts a transmission that does not occur. **High.**
@@ -302,7 +302,7 @@ That is detriment caused by the interface, not merely an inaccuracy.
 ### T-4 — The privacy policy understates what `create-lead` shares. **High (activates on wiring).**
 `privacy.html` line 82 says an agency receives "only your name and contact details." The function
 also sends the buyer's **budget range** (`preferences.budget_min` / `budget_max`, read from their
-Toju session). Financial information about the user, transmitted to a third party, contradicting
+Tayo session). Financial information about the user, transmitted to a third party, contradicting
 the published policy. Fix the policy or narrow the payload — the two must agree before the send
 goes live.
 
@@ -357,11 +357,11 @@ service exists on the platform today.** The product's own terms contradict its m
 Flagged in `LEGAL_TRUST_MEMO.md` §6 and not yet actioned. For digital-marketer and
 social-media-manager.
 
-### T-12 — Toju's property-page "take" presents modelled figures as fact. **Medium.**
+### T-12 — Tayo's property-page "take" presents modelled figures as fact. **Medium.**
 `app/property.html` line 228 asserts a 14-minute commute advantage, "₦12M below the area median",
 and "8.4% rental yield... beats the Lagos average of 6.1%" with no estimate qualifier. Line 254's
 cost note does carry "(est.)" markers and is the better model. Yield and return figures shade
-toward regulated financial promotion. Attach the §4.3 qualifier wherever Toju's numbers appear
+toward regulated financial promotion. Attach the §4.3 qualifier wherever Tayo's numbers appear
 outside the chat.
 
 ### T-13 — Malformed markup in the proximity consent card. **Low, but it is in the trust-critical control.**
@@ -385,7 +385,7 @@ window on `demo_chat_sessions` from backend-developer.
    of a real user today. Both are fixable with copy alone plus two links.
 2. **T-7's "Creating your account…" string**, and a backend answer on what persists under the
    shared demo account.
-3. **§4 Toju disclosure** — the AI disclosure is a Gate 1 item in `LEGAL_TRUST_MEMO.md` and is
+3. **§4 Tayo disclosure** — the AI disclosure is a Gate 1 item in `LEGAL_TRUST_MEMO.md` and is
    currently entirely absent from the chat surface.
 4. **§2 Variant A** once the founder confirms the demo reading.
 5. **T-8, T-9, T-10** before any public traffic — they concern the verification promise, which is
@@ -401,7 +401,7 @@ window on `demo_chat_sessions` from backend-developer.
   account (T-7)? Is there a retention or purge job on `demo_chat_sessions` (T-14)? If the send is
   wired, confirm the Twilio/Meta processing chain and data region for T-5.
 - **toju-ai:** §4.1, §4.3 and §4.5 need to sit consistently with the `DOCTRINE` constant. The word
-  "consultant" should leave Toju's self-description in favour of "AI advisor".
+  "consultant" should leave Tayo's self-description in favour of "AI advisor".
 - **digital-marketer / social-media-manager:** T-11 and T-9 are yours. The escrow claims in
   particular are contradicted by the platform's own published terms.
 - **Everyone:** loop me in on new features at design time, not before launch. T-4 and T-5 exist

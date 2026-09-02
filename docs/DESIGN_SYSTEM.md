@@ -267,10 +267,10 @@ Pill button, glass card, trust chip (pass/pending/gold), price display, search i
 ### P2 — keyboard & semantics
 
 - **F5. Property swipe deck:** ArrowLeft/Right handler exists on `document`, but cards aren't focusable and card changes aren't announced. Add `tabindex="0"` + `role="group"` + `aria-roledescription="carousel"` on the deck, `aria-live="polite"` label "Card 2 of 5 — Neighbourhood", and visible prev/next buttons (also serves mouse users; the deck currently implies swipe-only).
-- **F6. Agency nav rail + panes:** should be `role="tablist"`/`tab`/`tabpanel` with `aria-selected` and Left/Right roving tabindex; the Ask-Toju drawer needs `aria-expanded` on its trigger, focus moved into the drawer on open, `Esc` to close, focus returned to trigger.
+- **F6. Agency nav rail + panes:** should be `role="tablist"`/`tab`/`tabpanel` with `aria-selected` and Left/Right roving tabindex; the Ask-Tayo drawer needs `aria-expanded` on its trigger, focus moved into the drawer on open, `Esc` to close, focus returned to trigger.
 - **F7. Sub-12px functional text.** 11–11.5px buttons/chips (`font: 600 11.5px`, `700 11px` etc., widespread in agency/browse) — raise functional text to 12px minimum (`--fs-label`); tracked-caps eyebrows exempt.
 - **F8. Landmarks & skip link.** Verify every page has exactly one `<h1>`, `<main>` around content, `<nav>` on the appbar, and add a skip-to-content link (glass appbar + long agency rail make keyboard traversal expensive).
-- **F9. Toju chat log:** message container needs `role="log"` + `aria-live="polite"` so Toju's replies are announced; the typing indicator should be `aria-hidden`. (Hand to the agent currently in toju.html.)
+- **F9. Tayo chat log:** message container needs `role="log"` + `aria-live="polite"` so Tayo's replies are announced; the typing indicator should be `aria-hidden`. (Hand to the agent currently in toju.html.)
 - **F10. Leaflet maps (toju canvas, browse):** ensure map containers aren't keyboard traps; give markers/popups accessible names (property title + price), and provide the list view as the canonical accessible path (it already exists — just don't hide it at mobile widths).
 
 ### P3 — robustness
@@ -464,4 +464,4 @@ With the 6-lead demo array + STATS.crm's 128 claimed leads: paginate the *render
 
 ### 5.11 What this section deliberately does NOT change
 
-`.lead-banner` position (text color fix only), the `openLead()` drawer (gains nothing, loses nothing — numeric score stays there), the Ask-Toju Snapshot stat tiles (`STATS.crm` markup may be retired from the drawer *only if* the PM confirms the pane-level stat cards supersede it — flag, don't decide), other panes, property.html.
+`.lead-banner` position (text color fix only), the `openLead()` drawer (gains nothing, loses nothing — numeric score stays there), the Ask-Tayo Snapshot stat tiles (`STATS.crm` markup may be retired from the drawer *only if* the PM confirms the pane-level stat cards supersede it — flag, don't decide), other panes, property.html.

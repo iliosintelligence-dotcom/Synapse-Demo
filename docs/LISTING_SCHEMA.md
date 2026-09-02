@@ -1,7 +1,7 @@
 # Listing form → `properties` schema mapping
 
 The agency Listings form (`app/agency.html` → `listingForm()`) captures the full property
-dataset Toju needs to match. Today the portal is a **demo on localStorage** (`synapse_agency_listings_v3`);
+dataset Tayo needs to match. Today the portal is a **demo on localStorage** (`synapse_agency_listings_v3`);
 actual DB persistence is a **backend task gated on the auth decision** (see [AGENT_BRIEF](AGENT_BRIEF.md)).
 The form is shaped so the future insert is a clean mapping — see `toPropertyRow(item)` in agency.html.
 
@@ -16,7 +16,7 @@ Schema source of truth: `synapse-platform/supabase/migrations/0002_schema.sql` (
 | Listing type | `lfListing` | ✅ | sale·rent·shortlet | `listing_type` |
 | Description | `lfDesc` | ✅ (≥30 chars) | text | `description` |
 | Address | `lfAddr` | ✅ | text | `address` |
-| City | `lfCity` | ✅ | text (city-is-law for Toju) | `city` |
+| City | `lfCity` | ✅ | text (city-is-law for Tayo) | `city` |
 | State | `lfState` | ✅ | text (default Lagos) | `state` |
 | Country | `lfCountry` | ✅ | text (default Nigeria) | `country` |
 | Neighbourhood | `lfHood` | ⭘ recommended | text | (enrichment join key; not a direct column) |

@@ -1,8 +1,8 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse — shared match module
    Single source of truth for everything the "Your matches" page (browse.html)
-   and the Toju canvas (toju.html) render from a Toju match payload:
-     · shapeTojuMatch()  — Toju API match  →  card item (one shape, both pages)
+   and the Tayo canvas (toju.html) render from a Tayo match payload:
+     · shapeTojuMatch()  — Tayo API match  →  card item (one shape, both pages)
      · listingCardHtml() — the .listing card markup (identical on both pages)
      · drawMatchMap()    — the Leaflet price-pin map
      · naira / esc / verifyChip / coords / IMG_POOL — shared helpers
@@ -107,7 +107,7 @@
     return '<span class="chip chip-pass">' + icon('verified', '✓') + ' Verified</span>';
   }
 
-  // Toju API match (toju-demo `chat` / `matches` actions) → the card item both
+  // Tayo API match (toju-demo `chat` / `matches` actions) → the card item both
   // pages render. ONE shape — if you need a new field, add it here, not inline.
   function shapeTojuMatch(m, i) {
     return {
@@ -115,7 +115,7 @@
       img: null, // renderer falls back to IMG_POOL[i % IMG_POOL.length]
       kind: m.room != null ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
       per: m.listingType === 'rent',
-      // Toju shows every matching home and labels each one. This MUST come from
+      // Tayo shows every matching home and labels each one. This MUST come from
       // the row — hardcoding 'verified' here would stamp the badge on listings
       // nobody has checked, which is the single worst thing this UI could do.
       vstatus: m.verificationStatus || (m.verified ? 'verified' : 'unverified'),
@@ -144,13 +144,13 @@
   // One .listing card. opts:
   //   saves   — Set of saved ids (localStorage `synapse_saved`)
   //   compare — include the compare checkbox (browse-only tool; the canvas
-  //             deliberately omits it — on the canvas you just tell Toju)
+  //             deliberately omits it — on the canvas you just tell Tayo)
   //   picked  — Set of ids ticked for compare
   /* Expiry chip — real scarcity, not manufactured.
      It says "expires", never "re-confirmation due": `expires_at` is the
      listing's own visibility window, and a re-confirmation claim would assert a
      verification re-check that nothing performs. The date is enforced, not
-     decorative — properties_select_public hides the row past it and Toju's
+     decorative — properties_select_public hides the row past it and Tayo's
      matcher uses the same clock — so a buyer acting on this chip is acting on
      something true. Shown only inside the last 3 days; a fortnight-long
      countdown is just pressure. */

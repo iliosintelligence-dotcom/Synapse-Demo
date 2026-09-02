@@ -28,18 +28,18 @@ The three clauses that break it, in order of severity:
    registration with the SEC in some capacity, or operating under a registered operator that
    accepts regulatory responsibility for us. Either way it is a licence question, a capital
    question and a several-month question — not a schema question.
-2. **"Extend Toju's advisory scope."** Nigeria has an express robo-advisory regime. It has
-   already decided that algorithmic advice is advice. Toju's existing architecture — extract
+2. **"Extend Tayo's advisory scope."** Nigeria has an express robo-advisory regime. It has
+   already decided that algorithmic advice is advice. Tayo's existing architecture — extract
    the user's budget, household and circumstances, then surface matches — *is* the
    profile-then-recommend loop that regime regulates. Pointing that loop at investment
-   offerings does not extend Toju's doctrine; it moves Toju into a licensed activity.
+   offerings does not extend Tayo's doctrine; it moves Tayo into a licensed activity.
 3. **Land banking specifically.** The three fraud patterns the scope doc names are correct, and
    there is a fourth it misses (the guaranteed-buyback wrapper) that is the most dangerous of
    all because it converts a land listing into an unregistered collective investment scheme,
    with criminal liability attaching to promoters — which would include us.
 
 **What I can green-light today, with no registration and no counsel gate:** education about the
-asset classes, with no specific offerings, no partner listings, no fee, and Toju hard-blocked
+asset classes, with no specific offerings, no partner listings, no fee, and Tayo hard-blocked
 from personalisation. Plus one genuinely on-brand feature: a tool that teaches a user to check a
 scheme *themselves* on the Commission's public register. That is differentiated, it is honest,
 it carries near-zero regulatory load, and it builds the demand evidence that would justify a
@@ -52,13 +52,13 @@ licence application later. Detail at §10.
 | Explain REITs / land banking as asset classes (generic, symmetric, non-personalised) | **GREEN** | Editorial content. Not regulated. |
 | "How to check a scheme on the SEC register yourself" tool | **GREEN** | Teaches verification instead of asserting it. Strongest available posture. |
 | Glossary, risk explainers, fraud-pattern education | **GREEN** | Consumer-protective, on-brand. |
-| Toju answers "what is a REIT / what is excision?" | **GREEN** | Zone A, §3. |
+| Tayo answers "what is a REIT / what is excision?" | **GREEN** | Zone A, §3. |
 | Display a specific live third-party REIT offering | **RED without counsel + likely registration** | §1. Regulated distribution. |
 | Display a land-banking product with pooled money or promised return | **RED — hard stop** | §2. Presumptively an unregistered CIS. Criminal exposure. |
 | Display an individual land parcel for sale (no return promise) | **AMBER — heavy preconditions** | §7. Buildable, but only against a documented title file including a lawyer's opinion. |
 | Take a fee/commission on any investment listing | **RED for v1** | §6. Converts an uncertain regulatory position into a near-certain one. Also contradicts `terms.html:75`. |
-| Toju filters / compares / ranks / recommends specific offerings | **RED** | §3. Robo-advisory. Licensed activity. |
-| Toju forecasts, annualises or projects any return | **RED — permanent** | §3. Not curable by registration in our shape. |
+| Tayo filters / compares / ranks / recommends specific offerings | **RED** | §3. Robo-advisory. Licensed activity. |
+| Tayo forecasts, annualises or projects any return | **RED — permanent** | §3. Not curable by registration in our shape. |
 | Any "Verified" chip, tick or shield on an investment card | **RED — permanent** | §5. Single most dangerous word in the workstream. |
 | Sample/demo investment offerings in the product | **RED — recommend none at all** | §9. |
 
@@ -102,7 +102,7 @@ depends on facts we have not fixed.** The candidates:
   existing fit for "platform that puts retail users in front of third-party offerings."
 - **Investment Adviser (corporate).** If our value-add is selection, comparison or guidance rather
   than pure execution routing.
-- **Robo-Adviser** on top of the above, if Toju is involved at all in a personalised way (§3).
+- **Robo-Adviser** on top of the above, if Tayo is involved at all in a personalised way (§3).
 - **Operating as the agent of a registered operator** — contractually under a sponsoring
   broker/fund manager whose licence covers the activity and who accepts regulatory responsibility.
   Note this is *not* a free pass: the sub-broker regime itself requires the sub-broker to register.
@@ -187,7 +187,7 @@ a negative screen, and re-run it on the same schedule.
 
 ---
 
-## 3. Toju and investment advice — the boundary
+## 3. Tayo and investment advice — the boundary
 
 This is the answer that determines the AI workstream, so I am being maximally concrete.
 
@@ -208,9 +208,9 @@ The regime describes the regulated process directly: *the client answers questio
 tolerance, objectives and horizon, inputs an amount, the inputs are analysed algorithmically, and
 a portfolio is recommended.*
 
-**Read that description against what Toju already does.** Toju elicits budget, household
+**Read that description against what Tayo already does.** Tayo elicits budget, household
 composition, work location, lifestyle and affordability; stores it; and returns matches. That is
-the same loop. The only thing currently keeping Toju outside the securities perimeter is that the
+the same loop. The only thing currently keeping Tayo outside the securities perimeter is that the
 matches are homes, not securities. Pointing that same loop at investment offerings is not a
 doctrine extension — **it is entry into a licensed activity.**
 
@@ -258,7 +258,7 @@ position: do not attempt Zone B without registration and deterministic controls.
 5. **Allocation or timing** — "put some of your deposit into", "now is a good time", "before prices
    rise", "instead of renting".
 6. **Cross-asset decision framing** — comparing an investment offering against a home purchase or a
-   rental as a decision for this user. This one will feel natural to Toju and it is Zone C.
+   rental as a decision for this user. This one will feel natural to Tayo and it is Zone C.
 
 ### The four-trigger operational test — hand this to toju-ai verbatim
 
@@ -311,7 +311,7 @@ involved). The practical consequence for our product design is sharp:
 > specific offering is unapproved advertising material for a security. We may reproduce the
 > issuer's approved text verbatim and unedited, attributed and dated — nothing else.
 
-That includes summaries, "what this means in plain English", highlights, tags, and anything Toju
+That includes summaries, "what this means in plain English", highlights, tags, and anything Tayo
 generates about a named offering. Paraphrase is authorship.
 
 **(2) ARCON.** Under the Advertising Regulatory Council of Nigeria Act 2022, advertisements
@@ -357,7 +357,7 @@ Persistent block on any investment surface:
 Interstitial, on first entry to the category:
 
 > Before you continue — Synapse shows investment offerings as information, not as recommendations.
-> We do not assess whether an investment is right for you, and Toju will not either. Anything you
+> We do not assess whether an investment is right for you, and Tayo will not either. Anything you
 > see here is the issuer's own material. Take independent advice before you commit money.
 
 Land-specific block: see §7.
@@ -406,11 +406,11 @@ Four independent reasons:
 
 - the same browse grid rendering a homes "Verified" chip two cards away;
 - any site-wide marketing claim of the form "every listing on Synapse is verified";
-- Toju saying "everything I recommend is verified" while investment offerings are in scope;
+- Tayo saying "everything I recommend is verified" while investment offerings are in scope;
 - the homepage trust section, if it does not scope itself to homes.
 
 **Therefore, before a single investment card exists anywhere in the product, every site-wide
-verification claim — in `terms.html`, in marketing copy, in Toju's doctrine, on the landing page —
+verification claim — in `terms.html`, in marketing copy, in Tayo's doctrine, on the landing page —
 must be explicitly scoped to homes.** That is a prerequisite, not a follow-up. It is also, note,
 work that is worth doing on its own merits.
 
@@ -434,12 +434,12 @@ Ranked by risk:
 
 ### The conflict problem, and a live contradiction in our own Terms
 
-If Synapse is paid by an issuer *and* Toju surfaces or orders offerings, we have unlicensed advice
+If Synapse is paid by an issuer *and* Tayo surfaces or orders offerings, we have unlicensed advice
 and conflicted advice at the same time. Worse, `terms.html:75` currently states, as a published
 promise to users and agencies:
 
 > Verification status ... is not for sale, and cannot be purchased, expedited by payment, or
-> influenced by your subscription tier. Toju's recommendations rank purely on fit to a buyer's
+> influenced by your subscription tier. Tayo's recommendations rank purely on fit to a buyer's
 > needs — never on payment.
 
 A paid-placement investment category **contradicts a live published commitment.** If we ever
@@ -548,7 +548,7 @@ Two amendments, both prerequisites rather than follow-ups:
 - Typing the field in the database is not sufficient. The **published definition** at
   `terms.html:59` must be scoped to homes *before* any other asset type ships, or the Terms
   themselves make a false claim (§5, reason 2).
-- Any **site-wide** verification claim — marketing, landing page, Toju's own self-description —
+- Any **site-wide** verification claim — marketing, landing page, Tayo's own self-description —
   must be scoped to homes too. Proximity contaminates (§5).
 
 ### (b) REITs: factual passthrough rather than verification
@@ -662,10 +662,10 @@ load:
 3. **A fraud-pattern explainer** — the three patterns in the scope doc plus the guaranteed-buyback
    wrapper, in plain language, with the questions to ask. This is a consumer-protection asset and
    a marketing asset simultaneously.
-4. **Toju Zone A + refusal behaviour.** Toju explains, and declines warmly and usefully when asked
+4. **Tayo Zone A + refusal behaviour.** Tayo explains, and declines warmly and usefully when asked
    to recommend. Draft refusal copy:
 
-   > **DRAFT — requires counsel review; align with the Toju doctrine constant.**
+   > **DRAFT — requires counsel review; align with the Tayo doctrine constant.**
    > "I can explain how these work, and I can show you exactly what to check — but I can't tell you
    > which investment to put your money in, or whether one suits your situation. That's regulated
    > advice, and I'm not licensed to give it; anyone who gives it to you casually isn't either.
@@ -692,7 +692,7 @@ All ten, no partial credit:
 4. SEC-register verification pipeline built, with staleness expiry and auto-hide (§2).
 5. No issuer fee, or a counsel-cleared fee structure **and** the `terms.html:75` clause updated
    publicly first (§6).
-6. Deterministic Toju controls in place — routing, allowlists, output classifier, logging, kill
+6. Deterministic Tayo controls in place — routing, allowlists, output classifier, logging, kill
    switch — not doctrine alone (§3).
 7. ARCON pre-exposure posture established for all marketing (§4).
 8. FCCPA-reviewed consumer risk copy published (§4).
@@ -726,7 +726,7 @@ relitigating the founder's call on the category. I am recording that the Gate 1 
 1. On the fixed fact pattern (answers to §1's six questions), what SEC registration category does
    Synapse fall into, if any? Is a sponsoring-operator route available and what does it cost us in
    liability?
-2. Does Toju's Zone B — mechanical, non-evaluative retrieval about a named offering — sit inside
+2. Does Tayo's Zone B — mechanical, non-evaluative retrieval about a named offering — sit inside
    or outside the Digital (Robo) Advisory Services rules? Is there a defensible narrow carve-out,
    and what conditions would it need?
 3. Confirm the CIS characterisation test we should apply to land products, and confirm that the
@@ -841,7 +841,7 @@ should action it.)
 
 ### A.1.2 `index.html:70` — the in-person claim
 
-> "Toju only ever recommends homes someone has checked in person — and confirmed still available in
+> "Tayo only ever recommends homes someone has checked in person — and confirmed still available in
 > the last 14 days."
 
 "Only ever" plus "in person" is unconditional and, on the A.0 findings, unevidenced. Already
@@ -1057,7 +1057,7 @@ sequencing objection at §12, and I am upgrading §12 from an objection to a con
 
 ## A.7 What this does not change
 
-The memo body's securities analysis is unaffected: §1 (intermediary status), §2 (CIS), §3 (Toju and
+The memo body's securities analysis is unaffected: §1 (intermediary status), §2 (CIS), §3 (Tayo and
 the robo-advisory regime), §4 (approvals), §6 (commission), §7 (land preconditions) and §13
 (counsel brief) all stand as written. The recommendation against the workstream in its current
 shape stands, and is now stronger, for an additional and independent reason: **the practice being

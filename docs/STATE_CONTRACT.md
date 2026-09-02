@@ -2,16 +2,16 @@
 
 _Scope: the static prototype in `Synapse/` (localhost:3000). Last updated 2026-07-17._
 
-## 1. Toju match payload → card item (browse.html ⇄ toju.html canvas)
+## 1. Tayo match payload → card item (browse.html ⇄ toju.html canvas)
 
-The Toju canvas in `app/toju.html` is an **exact live preview** of the Your-matches
+The Tayo canvas in `app/toju.html` is an **exact live preview** of the Your-matches
 page (`app/browse.html`). Both render from the same code in **`app/matches-shared.js`**
 (`window.SynMatches`):
 
-- `shapeTojuMatch(m, i)` — the ONLY place a Toju API match becomes a card item.
+- `shapeTojuMatch(m, i)` — the ONLY place a Tayo API match becomes a card item.
 - `listingCardHtml(l, i, {saves, picked, compare})` — the ONLY `.listing` card markup.
   `compare: true` adds the compare checkbox (a browse-page tool; the canvas omits it —
-  on the canvas you refine by telling Toju).
+  on the canvas you refine by telling Tayo).
 - `drawMatchMap(state, elId, items)` — the Leaflet price-pin map (same tiles, pins,
   popups, fit behavior on both pages).
 - `naira`, `esc`, `verifyChip`, `coords`, `IMG_POOL` — shared helpers.
@@ -20,7 +20,7 @@ Card **markup** lives in `matches-shared.js`; card **CSS** (`.listing`, `.price-
 `.chip-*`, `.grid`) is duplicated in the `<style>` of both pages — keep those blocks
 in sync if you touch one.
 
-### Toju API match (`toju-demo` edge fn, actions `chat` / `matches`)
+### Tayo API match (`toju-demo` edge fn, actions `chat` / `matches`)
 ```jsonc
 {
   "id": "uuid",              // DB property id (may be absent in old sessions)
@@ -51,7 +51,7 @@ its browse-all / demo rows)
   "img": null,               // null → renderer uses IMG_POOL[i % 5]
   "kind": "sale" | "rent" | "shared",
   "per": false,              // true → price renders with /yr
-  "vstatus": "verified" | "unverified" | "in_progress",  // Toju matches: always verified
+  "vstatus": "verified" | "unverified" | "in_progress",  // Tayo matches: always verified
   "deal": "For sale" | "For rent" | "Shared room",       // chip when match is null
   "priceN": 148000000,
   "ttl": "…", "loc": "…",
@@ -67,12 +67,12 @@ its browse-all / demo rows)
 | Key | Written by | Read by | Shape |
 |---|---|---|---|
 | `toju_visitor_v1` | toju.html | toju.html, browse.html | uuid string → server memory (`demo_chat_sessions`); rotated on "New chat" |
-| `toju_chat_v1` | toju.html | toju.html | `[{role, content, matches?[]}]` — assistant turns carry the raw Toju matches; the canvas rebuilds from these |
+| `toju_chat_v1` | toju.html | toju.html | `[{role, content, matches?[]}]` — assistant turns carry the raw Tayo matches; the canvas rebuilds from these |
 | `synapse_saved` | browse.html, toju.html canvas | both + dream.html (watchlist count) | `["propertyId", …]` — the ♥ set, shared so a save on either page shows on the other |
 | `synapse_dream_boards_v1` | dream.html | dream.html | `{ boards: [{id, name, vibe[], images:[{u, c}]}], activeId }` |
 | `synapse_moodboard_v1` | dream.html (mirror of the active board) | toju.html | `{ name, vibe[], images:[{u, c}] }` |
 
-## 3. Dream Board → Toju loop
+## 3. Dream Board → Tayo loop
 
 - `dream.html` mirrors the **active board** into `synapse_moodboard_v1` on every
   mutation: open, rename (each keystroke), vibe add/remove, pin/unpin (palette,
@@ -85,7 +85,7 @@ its browse-all / demo rows)
 
 ## 4. Invariants
 
-- Toju only recommends verified homes → shaped Toju matches are `vstatus: "verified"`.
+- Tayo only recommends verified homes → shaped Tayo matches are `vstatus: "verified"`.
 - `property.html` stays a 460px swipe-card deck (do not full-width it).
 - No build step: `matches-shared.js` is a plain script; load it **before** the
   page's inline script (after Leaflet).

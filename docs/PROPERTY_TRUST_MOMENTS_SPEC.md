@@ -114,7 +114,7 @@ Rendered as literal field rows, not prose — a table reads as a receipt, and re
 | 2 | CONTACT | phone/WhatsApp or email from account |
 | 3 | PROPERTY | `3-Bed Apartment, Lekki Phase 1 · ₦165M` (title + price only — no budget, no search history) |
 | 4 | YOUR MESSAGE | optional, §below |
-| — | *(closing line, 12.5px `--ink-dim`, full width)* | `Nothing else. Not your budget, not your other saved homes, not your Toju conversations.` |
+| — | *(closing line, 12.5px `--ink-dim`, full width)* | `Nothing else. Not your budget, not your other saved homes, not your Tayo conversations.` |
 
 Row height 40px min; 1px `--border` hairline between rows; no zebra striping. The closing line is the `.prox-card` "what it won't do" instinct applied to data — it is product copy and shippable, distinct from the legal slots.
 

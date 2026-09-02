@@ -62,7 +62,7 @@ legal — different capacity. They run in parallel. Everything that touches a tr
 | 24 | Sort/filter state persists | Local |
 | 26 | Inline photo swipe on cards | Photos already on the listing record |
 | 20 | Map toggle | Leaflet + `drawMatchMap` already exist |
-| 33 | Hero chat input drops into Toju pre-sent | Pure handoff; makes no claim |
+| 33 | Hero chat input drops into Tayo pre-sent | Pure handoff; makes no claim |
 | 34 | Carousel auto-advance + deep-link panels | Deep-link targets must exist; pause-on-scroll required |
 | 38 | Sticky CTA bar after first scroll | Makes no claim |
 
@@ -76,7 +76,7 @@ legal — different capacity. They run in parallel. Everything that touches a tr
 | 15 | Match percentage on every card | No real scoring function. Landing's "Lifestyle match 91%" is a marketing mock | **Use the criteria-echo `why` line we already built.** A true sentence beats a fabricated number |
 | 29 | Board match-strength meter | Same — no scoring basis | Show what was pinned and what it maps to; no % |
 | 42 | Verification leaderboard | Trust scores across a real agency population; we have one demo agency | Do not build at current scale |
-| 47 | Toju's daily pick, "gone tomorrow" | Curation mechanism, and **the DB has one property** | Defer. "Gone tomorrow" may never be said unless it genuinely expires |
+| 47 | Tayo's daily pick, "gone tomorrow" | Curation mechanism, and **the DB has one property** | Defer. "Gone tomorrow" may never be said unless it genuinely expires |
 | 14 | New since your last visit | Last-visit is local (fine); needs inventory | Safe to build; will render empty until inventory returns, which is correct |
 | 49 | Journey tracker | "Viewing booked" and "Negotiating" have **no source** — the contact flow is E-1-fenced and sends nothing | Only render stages backed by real state |
 | 48 | Notifications on real events | Only expiry is real today; price-drop has no source | Ship expiry only |
@@ -85,7 +85,7 @@ legal — different capacity. They run in parallel. Everything that touches a tr
 
 ### Tier C — blocked on the undeployed edge function or an Eden decision
 
-Items 1, 5, 6, 7, 8, 9, 10, 21, 28 all touch Toju's function, which is written but **uncommitted
+Items 1, 5, 6, 7, 8, 9, 10, 21, 28 all touch Tayo's function, which is written but **uncommitted
 and undeployed** (E-7). None are spawnable.
 
 - **1 (streaming) is architecturally impossible as built** — correction C-4. Pass 1 returns strict
@@ -95,7 +95,7 @@ and undeployed** (E-7). None are spawnable.
   substitute. Streaming needs a re-architecture decision from Eden, not a ticket.
 - **6 folds into 8.** A counter that ticks independently of real progress is a fabricated
   animation. If it ticks, it ticks against actual candidates examined.
-- **7 (❤️/👎 with Toju adapting) is P1-07** — the "Not right?" override already scoped. Same
+- **7 (❤️/👎 with Tayo adapting) is P1-07** — the "Not right?" override already scoped. Same
   mechanic, better framing in Eden's version. Merged; do not build twice.
 - 44 (Google/WhatsApp OTP) needs an auth-provider decision from Eden and a privacy review.
 - 25 (gate second watch-area behind sign-up) is a monetization gate; the flywheel puts buyer trust
@@ -106,10 +106,10 @@ and undeployed** (E-7). None are spawnable.
 | # | Status |
 |---|---|
 | 2 | **Largely built.** Contextual suggestions are returned every turn with a non-empty guarantee and a fallback. The improved version is undeployed, not unbuilt |
-| 3 | **Largely built.** Visitor memory, server-side restore and a history drawer exist. The gap is only the visible "Toju remembers your search" affordance |
+| 3 | **Largely built.** Visitor memory, server-side restore and a history drawer exist. The gap is only the visible "Tayo remembers your search" affordance |
 | 4 | Mic input already exists in the composer. Gap is transcription quality, not the control |
 | 11 | **Already decided against for web** — design plan §6.4: the Vibration API is unreliable and permission-noisy. Applies to the React Native app only |
-| 21 | **Conflicts with a standing decision.** "Never unsolicited popups on browse/property pages" is an explicit rejection in the design plan. Infinite scroll is fine; Toju interjecting into it is not |
+| 21 | **Conflicts with a standing decision.** "Never unsolicited popups on browse/property pages" is an explicit rejection in the design plan. Infinite scroll is fine; Tayo interjecting into it is not |
 | 27 | Acceptable **only** as clearly-curated inspiration content, never as listings. Empty stays neutral — no sad-face framing |
 
 ---
@@ -126,7 +126,7 @@ to read before writing any of these tickets.**
 | 16 | "Price dropped ₦8M" with no price history is invention | Nothing, until a price-history table exists |
 | 47 | "Gone tomorrow" is manufactured scarcity; "hand-chosen" implies curation that does not exist | Defer entirely |
 | 42 | A leaderboard over one demo agency is fabricated ranking | Defer |
-| 41 | Animating a leads mock ("Toju replying at 2:14am") is **the same pattern as the 200 lines just deleted**, on the marketing page | Label unmistakably as illustration, or animate real aggregates only |
+| 41 | Animating a leads mock ("Tayo replying at 2:14am") is **the same pattern as the 200 lines just deleted**, on the marketing page | Label unmistakably as illustration, or animate real aggregates only |
 | 9 | "I'll keep watching Lekki for you" promises a watch mechanism and a notification that do not exist | Only say it if a watch record is created and notifications actually fire |
 | 5 | "Two new verified 3-beds since Tuesday" must be a real diff | Real diff or no line |
 | 35 | Animating "Day 15 — removed" asserts we enforce removal | **Verify expiry is actually enforced before animating it.** If it isn't, this animation is a promise, not a demo |
@@ -166,13 +166,13 @@ E-8 / R-00 P0-P1 (verification remediation)  ── outranks everything below �
 Tier A bundle (13,18,19,22,24) ──► second-wave Tier A (20,26,33,34,38)      │ parallel,
 P-A1 provisioning ──► P-A2 brand-kit onboarding ──► P-A3 consumption, 39    │ no claim risk
                                                                             │
-E-7 deploy ──► Tier C Toju items (5,6/8,9,10,28) ─────────────────────────┘
+E-7 deploy ──► Tier C Tayo items (5,6/8,9,10,28) ─────────────────────────┘
 E-8 resolved ──► 17 (honest label), 36, 42, 47
 Schema work ──► 16 (price history), 15 (if ever)
 Legal + privacy ──► 50 instrumentation, 44 auth, 30 shared boards
 ```
 
-**Critical path to any Toju engagement work: E-7 (deploy).** Nothing in the chat loop moves until
+**Critical path to any Tayo engagement work: E-7 (deploy).** Nothing in the chat loop moves until
 the function is live, and it is the cheapest blocker on the board to clear.
 
 ---

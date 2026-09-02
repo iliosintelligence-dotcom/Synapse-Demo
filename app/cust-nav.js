@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse — the customer taskbar.
 
-   Toju, Your matches and Dream Home are one product, and until now each page
+   Tayo, Your matches and Dream Home are one product, and until now each page
    carried its own copy of the links between them as a row of pills under the
    top bar. Two problems with that. It was permanent chrome for something people
    touch a handful of times a session, costing a row of vertical space on every
@@ -28,7 +28,7 @@
   /* The three consumer surfaces, in the order someone meets them: talk first,
      then what that produced, then what they are saving toward. */
   var PAGES = [
-    { file: 'toju.html',   label: 'Toju',         sub: 'Ask about anything',  icon: 'chat'   },
+    { file: 'toju.html',   label: 'Tayo',         sub: 'Ask about anything',  icon: 'chat'   },
     { file: 'browse.html', label: 'Your matches', sub: 'Homes that fit',      icon: 'home'   },
     { file: 'dream.html',  label: 'Dream boards', sub: 'What you are saving', icon: 'boards' },
   ];

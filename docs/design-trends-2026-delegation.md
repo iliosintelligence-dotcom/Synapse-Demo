@@ -12,7 +12,7 @@ Two logistical facts that govern everything below:
 - **The static app is THE product.** All frontend work lands in
   `index.html`, `agencies.html`, `app/*.html`, `landing.css`, `app/app.css`,
   `app/motion.css`, `app/motion.js`, `app/matches-shared.js`, `app/icons.js`, `app/notify.js`.
-- **Toju's runtime is in a different repo.** The doctrine (system prompt) and response shape
+- **Tayo's runtime is in a different repo.** The doctrine (system prompt) and response shape
   live in `../synapse-platform/supabase/functions/toju-demo/index.ts` — a sibling repo, not
   this one. Any `toju-ai` or `backend-developer` item touches that file and requires an edge
   function redeploy. Frontend agents must not be told to "just change the prompt."
@@ -69,10 +69,10 @@ is a trust and legal exposure, not a design improvement.
 **E-1**), and the legal copy item cannot be finalised until that decision lands. This is the
 single biggest thing the source plan missed.
 
-### C-3 — The 12s Toju timeout in §2.4 is wrong for this runtime. Keeping 25s.
+### C-3 — The 12s Tayo timeout in §2.4 is wrong for this runtime. Keeping 25s.
 
 The plan calls for a "hard timeout at 12s." The code uses 25s
-(`setTimeout(() => ctrl.abort('timeout'), 25000)` in `app/toju.html`), and correctly so: Toju is
+(`setTimeout(() => ctrl.abort('timeout'), 25000)` in `app/toju.html`), and correctly so: Tayo is
 a **two-pass** system — one Anthropic call to reason and shape criteria, a second to ground the
 matches and write the per-match `why`. Twelve seconds would routinely abort successful requests
 and manufacture `.tj-error` surfaces on healthy traffic. That is a trust regression dressed as a
@@ -101,7 +101,7 @@ logged as **E-2** for Eden.
 id. `app/property.html` confirms it with an in-file comment: *"This demo page represents one
 listing; a real app passes the id in the URL"* and a hardcoded `PROP = { id: 'lekki-ph1-3bed', ... }`.
 
-So Toju can give a buyer a perfectly reasoned "why this match" line, and tapping it opens a
+So Tayo can give a buyer a perfectly reasoned "why this match" line, and tapping it opens a
 different property. Phase 1's entire thesis is *visible reasoning builds trust*. Reasoning that
 leads to the wrong home destroys more trust than no reasoning at all.
 
@@ -168,7 +168,7 @@ is logged here as a peer of those, not as a footnote.
    verification timestamp this cannot be recorded, evidenced or enforced, and the history table
    that would prove it is empty. The 14-day rule is currently implemented against `listed_at` — a
    *listing* date, not a verification date, because the correct column does not exist. This is
-   also why Toju's new greeting will say "104 verified listings" while the browse banner says
+   also why Tayo's new greeting will say "104 verified listings" while the browse banner says
    560: both are honest reads of different filters, and the discrepancy is visible to any user who
    looks at both pages.
 3. **Legal's T-8 is confirmed at the data layer.** Stored check names (Title, Survey, Structure,
@@ -231,7 +231,7 @@ verified in a browser rather than from agent self-report. The corrected record:
 P1-03's plumbing is correct — a real card now navigates to `property.html?id=095832dd-…` and the
 id resolves. But `app/property.html` still renders the demo scaffold, so a user who clicks
 "4-Bed Terrace, Lekki Phase 1, ₦10M/yr, for rent" still lands on "3-Bed Apartment, Lekki Phase 1,
-₦165M, for sale". The id is a **prerequisite** for the fix, not the fix. The symptom — Toju
+₦165M, for sale". The id is a **prerequisite** for the fix, not the fix. The symptom — Tayo
 reasoning about one home and opening another — is untouched. A follow-up item to render the
 listing the id points to is required before AC1b can be claimed.
 
@@ -243,7 +243,7 @@ listing would have saved it as the Lekki flat. Now derived from the URL with the
 - Legal's T-9 was partly wrong. The "checked in person" claim is *supported* — `terms.html:59`'s
   seven-point check includes a ground survey and structural assessment. The real defect was
   absolutism: "you will only ever be shown" conflicts with browse showing 629 homes of which 560
-  are verified. Now scoped to Toju, which does filter to verified only.
+  are verified. Now scoped to Tayo, which does filter to verified only.
 - The escrow issue was worse than reported. The strings sat in `app/agency.html`'s `HEADLINES`
   generator — i.e. ad copy Synapse *suggests to agencies*. The platform was handing agencies false
   advertising to run at customers. Removed.
@@ -259,7 +259,7 @@ enrichment coverage slips.
 
 **The deployed function is stale.** Live probes show it predates both the toju-ai doctrine change
 and these handler edits — old prose `why` format, ~120-word replies, no `verifiedListingCount`. All
-Phase 1 Toju work is uncommitted and undeployed. **None of it is live.** AC1a is recorded as not
+Phase 1 Tayo work is uncommitted and undeployed. **None of it is live.** AC1a is recorded as not
 met and blocked on deployment. See **E-7**.
 
 **E-1 remains undecided.** Nothing about the contact flow is approved; it stays fenced.
@@ -275,20 +275,20 @@ met and blocked on deployment. See **E-7**.
 
 | AC | Phase | Statement |
 |---|---|---|
-| AC1a | 1 | A first-time visitor can state what Toju can and can't do after the greeting |
+| AC1a | 1 | A first-time visitor can state what Tayo can and can't do after the greeting |
 | AC1b | 1 | Every match card shows its reasoning |
 | AC1c | 1 | The contact flow shows recipient + payload + expectation before anything sends |
 | AC2a | 2 | Zero "Loading…"/"Oops" strings remain |
 | AC2b | 2 | Every waiting state names what's happening |
 | AC2c | 2 | Every destructive/committing action states its consequence |
 | AC3a | 3 | Landing scrolls with visible wayfinding on a mid-range Android at 60fps |
-| AC3b | 3 | Toju stays ≤3 painting backdrop-filters per viewport |
+| AC3b | 3 | Tayo stays ≤3 painting backdrop-filters per viewport |
 | AC3c | 3 | No-backdrop-filter browsers get readable solids |
 | AC4a | 4 | All four empty states use in-family illustrations that read at 200px |
-| AC4b | 4 | Toju has a distinct hand-drawn identity |
+| AC4b | 4 | Tayo has a distinct hand-drawn identity |
 | AC4c | 4 | The style sheet exists so the next asset needs no re-litigation |
 
-### Phase 1 — Trust & Toju transparency
+### Phase 1 — Trust & Tayo transparency
 
 | ID | Work | Files | Owner | Depends on | Size | AC |
 |---|---|---|---|---|---|---|
@@ -296,7 +296,7 @@ met and blocked on deployment. See **E-7**.
 | **P1-02** | Return a live verified-listing count on the `restore` action so the greeting never hardcodes "120"; confirm the `why` passthrough survives the P1-01 prompt change (regression check on `salvageWhys`) | same file (handler, not prompts) | BE | — | S | AC1a |
 | **P1-03** | Trust-hygiene bundle: deep-link match cards to the correct listing (`property.html?id=`), read the id in `property.html`, add `aria-live="polite"` to `.convo-scroll`, add the `@supports not (backdrop-filter)` solid-fill fallback | `app/toju.html`, `app/matches-shared.js`, `app/property.html`, `app/app.css` | FE | — | M | AC1b, AC3c |
 | **P1-04** | Design spec (no code): contact-agency preview sheet + verification-narrative disclosure on the property page — layout, glass recipe reuse, the `<details>` pattern, focus order, mobile sheet behaviour | writes spec into `docs/`; references `app/app.css` `.card`/`.prox-card`, `app/property.html` | UI | — | M | AC1c |
-| **P1-05** | Consent, AI-disclosure and data-sharing copy for the contact flow and the capability greeting: what is shared, with whom, what is not shared, how to stop, and the disclosure that Toju is an AI system | copy deliverable in `docs/`; consumed by P1-08, P1-01 | LG | E-1 decision | M | AC1c, AC1a |
+| **P1-05** | Consent, AI-disclosure and data-sharing copy for the contact flow and the capability greeting: what is shared, with whom, what is not shared, how to stop, and the disclosure that Tayo is an AI system | copy deliverable in `docs/`; consumed by P1-08, P1-01 | LG | E-1 decision | M | AC1c, AC1a |
 | **P1-06** | Render the one-time capability greeting, keyed in the existing `toju_visitor_v1` visitor-memory store; returning visitors get the short welcome-back path | `app/toju.html` | FE | P1-01, P1-02 | S | AC1a |
 | **P1-07** | "Not right?" override affordance on each match card — quiet link that feeds a structured rejection back into the conversation | `app/toju.html`, `app/matches-shared.js` | FE | P1-01 (rejection phrasing), UI sign-off | M | AC1b |
 | **P1-08** | Build the contact-agency preview sheet: recipient + verification chip + payload + response-time expectation + reversibility line + quiet post-send confirmation | `app/property.html`, `app/app.css` | FE | P1-04, P1-05, P1-09 | M | AC1c |
@@ -317,7 +317,7 @@ met and blocked on deployment. See **E-7**.
 | **P2-05** | Render the price-context line | `app/property.html` | FE | P2-04 | S | AC2c |
 | **P2-06** | Empty-state copy pass (pre-illustration) across browse / toju / dream, using the "name what would fill it" rule | `app/browse.html`, `app/dream.html`, `app/toju.html` | FE | P2-01 | S | AC2a |
 | **P2-07** | Rage-click orientation hint via the existing `#synToast`, throttled once per session per zone | `app/motion.js` | FE | P2-01 | S | AC2b |
-| **P2-08** | Repeated-Toju-failure escape hatch: after 2 consecutive `.tj-error` events, offer the browse-with-current-filters exit instead of a third silent retry | `app/toju.html` | FE | P1-01 (framing) | S | AC2b |
+| **P2-08** | Repeated-Tayo-failure escape hatch: after 2 consecutive `.tj-error` events, offer the browse-with-current-filters exit instead of a third silent retry | `app/toju.html` | FE | P1-01 (framing) | S | AC2b |
 | **P2-09** | Consent formula applied to notifications, matching the `.prox-card` does/won't/stop structure | `app/notify.js` | FE | P1-05, P2-01 | S | AC2c |
 | **P2-10** | State-change confirmations: save-to-favourites heart pulse + toast, filter-apply count crossfade, send-from-composer origin shift, stagger cap | `app/motion.css`, `app/browse.html`, `app/toju.html`, `app/matches-shared.js` | FE | UI sign-off (P3-01) | M | AC2c |
 
@@ -332,9 +332,9 @@ met and blocked on deployment. See **E-7**.
 | **P3-05** | One sticky chapter reveal on the "how it works" section — exactly one per page, no scroll-jacking | `index.html`, `landing.css` | FE | P3-01 | M | AC3a |
 | **P3-06** | Appbar hardening in the existing `.scrolled` state (blur 20→28px, stronger bottom hairline) | `app/app.css`, `landing.css` | FE | P3-01 | S | AC3a |
 | **P3-07** | Liquid-glass pass: scroll-responsive specular edge on `.card`, hover refraction on `.pcard` | `app/app.css`, `app/motion.js` | FE | P3-01 | M | AC3a |
-| **P3-08** | Backdrop-filter budget fix on the Toju page — swap blurred fills for pre-baked solids on off-screen bubbles, `content-visibility: auto` on `.msg`, hold to ≤3 painting surfaces | `app/toju.html`, `app/app.css` | FE | P3-01 | M | AC3b |
+| **P3-08** | Backdrop-filter budget fix on the Tayo page — swap blurred fills for pre-baked solids on off-screen bubbles, `content-visibility: auto` on `.msg`, hold to ≤3 painting surfaces | `app/toju.html`, `app/app.css` | FE | P3-01 | M | AC3b |
 | **P3-09** | Adaptive intensity tier: `html.familiar` after 5 visits, shorter reveal distance/stagger/splash | `app/motion.css`, `app/motion.js` | FE | P3-01 | S | AC3a |
-| **P3-10** | Mobile spec for the Toju two-pane canvas below 720px (bottom sheet, grabber, chat reachable) + `env(safe-area-inset-bottom)` on the composer | UI spec → `app/toju.html` | UI → FE | P3-01 | M | AC3a |
+| **P3-10** | Mobile spec for the Tayo two-pane canvas below 720px (bottom sheet, grabber, chat reachable) + `env(safe-area-inset-bottom)` on the composer | UI spec → `app/toju.html` | UI → FE | P3-01 | M | AC3a |
 | **P3-11** | Performance verification on a real mid-range Android over throttled 3G: 60fps landing scroll, ≤3 painting blurs, no LCP regression | all | FE | P3-02..P3-09, **E-3 (Eden)** | M | AC3a, AC3b |
 
 ### Phase 4 — Illustration identity (parallel track)
@@ -343,10 +343,10 @@ met and blocked on deployment. See **E-7**.
 |---|---|---|---|---|---|---|
 | **P4-01** | "Lagos, drawn by hand" style sheet: line weight, wobble tolerance, the one-accent rule, subject-matter guidance, do/don't examples — the artefact that stops every future asset being re-argued | `docs/` | UI | — | M | AC4c |
 | **P4-02** | Four empty-state illustrations as inline SVG (no saved homes, no matches, no conversations, offline), ≤12KB each | `app/browse.html`, `app/toju.html`, `app/dream.html` | UI → FE | P4-01, P2-06, **E-4 (Eden)** | M | AC4a |
-| **P4-03** | Toju identity mark — a distinct hand-drawn face/sigil replacing the `✦` in `.av-toju` | `app/toju.html`, `app/app.css` | UI → FE | P4-01, **E-4** | M | AC4b |
-| **P4-04** | Three landing narrative spots ("describe it" / "Toju finds it" / "agency verified") + diaspora slide art | `index.html`, `landing.css` | UI → FE | P4-01, **E-4** | L | AC4c |
+| **P4-03** | Tayo identity mark — a distinct hand-drawn face/sigil replacing the `✦` in `.av-toju` | `app/toju.html`, `app/app.css` | UI → FE | P4-01, **E-4** | M | AC4b |
+| **P4-04** | Three landing narrative spots ("describe it" / "Tayo finds it" / "agency verified") + diaspora slide art | `index.html`, `landing.css` | UI → FE | P4-01, **E-4** | L | AC4c |
 | **P4-05** | Verification explainer spot on the property page (C-of-O / documents moment) | `app/property.html` | UI → FE | P4-01, P1-11, **E-4** | M | AC4c |
-| **P4-06** | Two Lottie loops (Toju "thinking", landing hero accent) mounted on the existing `[data-lottie]` infra — last, and only after the static set is in family | `app/motion/`, `app/toju.html`, `index.html` | UI → FE | P4-02, P4-03, **E-4** | M | AC4b |
+| **P4-06** | Two Lottie loops (Tayo "thinking", landing hero accent) mounted on the existing `[data-lottie]` infra — last, and only after the static set is in family | `app/motion/`, `app/toju.html`, `index.html` | UI → FE | P4-02, P4-03, **E-4** | M | AC4b |
 
 ---
 
@@ -355,7 +355,7 @@ met and blocked on deployment. See **E-7**.
 ### Why each agent owns what
 
 **`toju-ai` — P1-01 only, and it is deliberately one item.**
-Everything the plan wants from Toju's behaviour (§2.1 greeting, §2.2 reasoning structure, §2.3
+Everything the plan wants from Tayo's behaviour (§2.1 greeting, §2.2 reasoning structure, §2.3
 message shape, §1.5 recovery framing) is an edit to the **same user-authored system prompt** in
 one file. Splitting these into four items would put four agents into the same prompt with
 conflicting edits and no way to reconcile tone. One agent, one pass, one coherent doctrine.
@@ -408,7 +408,7 @@ critical path.
 
 | Item | Owner |
 |---|---|
-| P1-01 Toju doctrine pass | toju-ai |
+| P1-01 Tayo doctrine pass | toju-ai |
 | P1-02 Live listing count + `why` regression check | backend-developer |
 | P1-03 Trust-hygiene bundle (deep-link, aria-live, glass fallback) | frontend-developer |
 | P1-04 Contact-sheet + verification-narrative design spec | ui-designer |
@@ -483,7 +483,7 @@ request has been sent. Three options, and I recommend the first:
 Option 2 is acceptable short-term; the current state — a confident false claim — is not, on
 either the Trust or Transparency principle. **This is the one decision that should be made today.**
 
-**E-2 — Do we re-architect Toju's edge function for streaming?**
+**E-2 — Do we re-architect Tayo's edge function for streaming?**
 Per **C-4**, streaming is impossible against the current strict-JSON two-pass design. Making it
 possible means a text-first pass with side-channel structure — a meaningful backend redesign with
 regression risk to the grounding and the `why` line. My recommendation: **no, not now.** Staged
@@ -502,7 +502,7 @@ The plan explicitly rejects AI-generated illustration as self-defeating (§4 —
 the anti-AI-slop signal). That means Phase 4's twelve assets are either commissioned from a human
 illustrator or they don't exist. My recommendation is a **split**: the four empty states (P4-02)
 are simple enough to be authored as hand-tuned inline SVG in-house without betraying the
-direction; the **Toju identity mark and the landing narrative spots must be commissioned** —
+direction; the **Tayo identity mark and the landing narrative spots must be commissioned** —
 they are the brand's face and the place where "drawn by a person who knows Lagos" either reads or
 doesn't. Needs a number and a decision on who.
 
@@ -520,14 +520,14 @@ work to light monochrome, confirm this is a decision and not an accident. Low ur
 if wrong.
 
 **E-7 — Who deploys the edge function, and is anyone authorised to? (BLOCKS AC1a)**
-All Phase 1 Toju work — the doctrine pass and the handler changes — is written, esbuild-clean, and
+All Phase 1 Tayo work — the doctrine pass and the handler changes — is written, esbuild-clean, and
 **uncommitted and undeployed**. Live probes confirm the deployed function is stale. None of it is
 live, so AC1a cannot be met no matter how good the copy is.
 
 One observation that may make this cheaper than it looks: the `backend-developer` agent type does
 have `mcp__supabase__deploy_edge_function` available, so a deploy may be possible without issuing
 new credentials. **I have not used it and am not going to without an explicit instruction.**
-Deploying to the live project changes Toju's behaviour for real users on a product whose central
+Deploying to the live project changes Tayo's behaviour for real users on a product whose central
 claim is trust, and doing that on my own initiative is exactly the wrong instinct on this codebase
 this week. Eden needs to say: deploy via the agent, deploy manually, or hold.
 
@@ -565,14 +565,14 @@ listings live to users today versus a category not yet built.
 
 ## 5. Recommended starting point
 
-**Start with P1-01 — the Toju doctrine pass (`toju-ai`).**
+**Start with P1-01 — the Tayo doctrine pass (`toju-ai`).**
 
 Reasoning:
 
 1. **It is the widest unblock in the plan.** P1-06, P1-07, P1-10 and P2-08 all wait on wording it
    produces. Nothing else in Phase 1 unblocks four downstream items.
-2. **It is the only Phase 1 item that changes what a user actually experiences of Toju**, and
-   Toju is the product. Per **C-1**, the match-reasoning rendering is already built — so the
+2. **It is the only Phase 1 item that changes what a user actually experiences of Tayo**, and
+   Tayo is the product. Per **C-1**, the match-reasoning rendering is already built — so the
    quality of the reasoning line is now purely a doctrine question. That means one prompt pass
    converts already-shipped plumbing into a visibly better product, at zero implementation cost.
    That is the highest value-to-effort ratio available anywhere in this plan.
@@ -591,12 +591,12 @@ Phase 1 *good*, but only E-1 makes Phase 1 *finishable*.
 
 Each brief below is self-contained and can be pasted directly as the agent's task prompt.
 
-### → `toju-ai` · P1-01 · Toju doctrine pass
+### → `toju-ai` · P1-01 · Tayo doctrine pass
 
-> Make one consolidated pass over Toju's user-authored doctrine (the system prompts in
+> Make one consolidated pass over Tayo's user-authored doctrine (the system prompts in
 > `C:\Users\Eden David\OneDrive\Desktop\Business Folder\ILIOS Digital\Synapses\synapse-platform\supabase\functions\toju-demo\index.ts`
 > — prompts only, do not touch the request handler or the JSON contract). Four changes: (1) a
-> first-visit capability-transparency greeting that states plainly what Toju knows (Synapse's
+> first-visit capability-transparency greeting that states plainly what Tayo knows (Synapse's
 > verified listings), what it can do, and what it cannot — never hardcode a listing count, use a
 > placeholder the frontend will fill from a live value; (2) restructure the per-match `why` line
 > so it echoes the user's own stated criteria as a compact list ("3 beds · within your ₦80m
@@ -628,14 +628,14 @@ Each brief below is self-contained and can be pasted directly as the agent's tas
 
 > Four small fixes in the static app at
 > `C:\Users\Eden David\OneDrive\Desktop\Business Folder\ILIOS Digital\Synapses\Synapse`. (1) The
-> real bug: every Toju match card links to a bare `property.html` with no listing id
+> real bug: every Tayo match card links to a bare `property.html` with no listing id
 > (`'<a class="pcard" href="property.html">'` in `app/toju.html`, and the same issue via
 > `app/matches-shared.js`), so every recommendation opens the same hardcoded Lekki listing —
 > pass the match id in the URL and have `app/property.html` read it, replacing the hardcoded
 > `PROP` constant where an id is present. (2) Add `aria-live="polite"` to the `.convo-scroll`
-> region in `app/toju.html` so appended Toju messages are announced. (3) Add an
+> region in `app/toju.html` so appended Tayo messages are announced. (3) Add an
 > `@supports not (backdrop-filter: blur(1px))` block in `app/app.css` falling back to solid
-> `rgba(255,255,255,0.92)` fills for `.card`, `.appbar`, `.chatbox` and the Toju bubbles — older
+> `rgba(255,255,255,0.92)` fills for `.card`, `.appbar`, `.chatbox` and the Tayo bubbles — older
 > Android WebViews currently get unreadable transparency. (4) Leave all visual values otherwise
 > untouched; this is a correctness pass, not a design pass. Do not change copy, and do not change
 > the burnt-orange `#b0521f` text you will see on `.pcard .watch b` — that is a known guardrail
@@ -663,7 +663,7 @@ Each brief below is self-contained and can be pasted directly as the agent's tas
 > speaks as an AI. First, the contact-agency flow in `app/property.html`: what is shared, with
 > whom, what is explicitly *not* shared, and how the user stops replies — in the plain register of
 > the existing `.prox-card` component in `app/app.css` (does / won't / stop), which is the house
-> standard. Second, the AI-disclosure element of Toju's first-visit greeting: the user should
+> standard. Second, the AI-disclosure element of Tayo's first-visit greeting: the user should
 > understand they are talking to an AI advisor working from Synapse's verified listings, and that
 > nothing reaches an agency until they choose it. Two constraints: no exclamation marks, no
 > reassurance that outruns the facts. And one open item you must account for — the contact button
