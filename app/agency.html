@@ -689,7 +689,17 @@
       padding: 16px 18px; display: flex; align-items: center; gap: 14px; min-height: 64px; }
     .brand-preview .bp-mark { width: 46px; height: 46px; border-radius: 10px; flex: none; display: flex;
       align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; }
-    .brand-preview img { width: 46px; height: 46px; border-radius: 10px; object-fit: contain; background: #fff; flex: none; border: 1px solid var(--border); }
+    /* A logo is whatever shape the agency's designer made it, and most are
+       wide wordmarks. Forced into a 46px SQUARE, a 4:1 wordmark drew at
+       46x11 -- a sliver of artwork adrift in a bordered box, while the row
+       had 900px of width going spare. Height is what should be fixed, since
+       that is what makes a row of brand elements line up; width follows the
+       artwork and is only capped so a very wide banner cannot push the name
+       off the end. min-width keeps a tall or square mark from collapsing to
+       a stripe. */
+    .brand-preview img { width: auto; height: 46px; min-width: 46px; max-width: 190px;
+      border-radius: 10px; object-fit: contain; background: #fff; flex: none;
+      border: 1px solid var(--border); padding: 2px; }
     .brand-preview .bp-nm { font-weight: 700; font-size: 18px; }
     .brand-preview .bp-tag { font-size: 12.5px; color: var(--ink-muted); margin-top: 1px; }
     .brand-preview .bp-chip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px;
@@ -698,7 +708,10 @@
     .cmp-brandbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       border: 1px solid var(--border); border-left: 4px solid var(--brand);
       border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
-    .cmp-brandbar img { width: 26px; height: 26px; border-radius: 6px; object-fit: contain; background: #fff; }
+    /* Same rule, smaller: the campaign bar is a single line, so the logo is
+       sized by height and allowed to be as wide as it really is. */
+    .cmp-brandbar img { width: auto; height: 26px; min-width: 26px; max-width: 110px;
+      border-radius: 6px; object-fit: contain; background: #fff; flex: none; }
     .cmp-brandbar .bb-nm { font-weight: 700; font-size: 13.5px; }
     .cmp-brandbar .bb-tag { font-size: 12.5px; color: var(--ink-muted); }
     .cmp-brandbar .bb-dot { width: 12px; height: 12px; border-radius: 50%; }
