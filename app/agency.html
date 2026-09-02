@@ -343,6 +343,30 @@
          the backdrop finished first and the panel was still visibly moving. */
       transition: opacity var(--m-expanded) var(--m-ease-panel); }
     .scrim.on { opacity: 1; pointer-events: auto; }
+    /* ── OFF-SCREEN PANELS MUST NOT PAINT ────────────────────────────────
+       The lead drawer and the Tayo panel are parked off the right edge with
+       translateX(100%). Their box-shadows point INWARD -- -20px 0 60px -- so
+       from a panel sitting exactly on the viewport edge, sixty pixels of soft
+       grey fell across the right margin of every page, on every pane, all the
+       time. On a phone, where the panel is the full width of the screen, that
+       reads as a gradient down the side of the app.
+
+       visibility rather than box-shadow: none, because it also takes the
+       parked panel out of the focus order -- tabbing into a drawer nobody has
+       opened is the same bug wearing different clothes. It flips to visible
+       instantly on open and is held until the slide-out has finished, so the
+       animation is unchanged in both directions. */
+    .drawer, .tpanel { visibility: hidden; }
+    .drawer.on, .tpanel.on { visibility: visible; }
+    .drawer { transition: transform var(--m-expanded) var(--m-ease-panel),
+                          visibility 0s linear var(--m-expanded); }
+    .drawer.on { transition: transform var(--m-expanded) var(--m-ease-panel),
+                             visibility 0s linear 0s; }
+    .tpanel { transition: transform var(--m-expanded) var(--m-ease-panel),
+                          visibility 0s linear var(--m-expanded); }
+    .tpanel.on { transition: transform var(--m-expanded) var(--m-ease-panel),
+                             visibility 0s linear 0s; }
+
     .drawer { position: fixed; top: 0; right: 0; height: 100%; width: 100%; max-width: 430px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -20px 0 60px rgba(20,26,38,0.18); z-index: 81; transform: translateX(100%); transition: transform var(--m-expanded) var(--m-ease-panel); overflow-y: auto; padding: 24px; }
     .drawer.on { transform: translateX(0); }
     /* The drawer's own action row: same two controls as the card, sized for a
@@ -1533,6 +1557,38 @@
     /* ── listing photo gallery ───────────────────────────────────────────
        Small tiles, because the job here is order and removal rather than
        admiring the photograph. */
+    /* ── combobox ───────────────────────────────────────────────────────
+       <datalist> was doing this job and does it differently in every mobile
+       browser -- on some it opens a panel pinned to the wrong part of the
+       screen, on others nothing at all. This is a plain positioned list, so
+       it behaves the same everywhere and can be styled for a thumb.
+
+       The wrapper is the positioning context, so the list is anchored to the
+       FIELD rather than to the page -- which is what "it pops up somewhere
+       else" was. */
+    .combo { position: relative; }
+    .combo > input { width: 100%; padding-right: 38px; }
+    .combo-toggle { position: absolute; top: 0; right: 0; height: 100%; width: 36px;
+      border: 0; background: none; cursor: pointer; color: var(--ink-dim);
+      font-size: 12px; line-height: 1; display: flex; align-items: center;
+      justify-content: center; }
+    .combo-list {
+      position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 40;
+      background: var(--surface, #fff); border: 1px solid rgba(54,54,54,0.22);
+      border-radius: 12px; box-shadow: 0 12px 32px rgba(20,20,20,0.14);
+      max-height: 244px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 5px;
+    }
+    .combo-opt {
+      display: block; width: 100%; text-align: left; border: 0; background: none;
+      /* 44px, because this is filled on a phone more often than not. */
+      min-height: 44px; padding: 11px 12px; border-radius: 8px; cursor: pointer;
+      font: 400 14px/1.35 var(--f-sans); color: var(--ink);
+    }
+    .combo-opt:hover, .combo-opt.on { background: rgba(20,20,20,0.06); }
+    .combo-opt mark { background: none; color: inherit; font-weight: 700; }
+    .combo-empty { padding: 11px 12px; font-size: 13px; color: var(--ink-dim); }
+
     .lf-hint { font-size: 11.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.45; }
     .lf-hint:empty { display: none; }
 
@@ -3877,7 +3933,7 @@
       if (!post) return;
       const L = (typeof LISTINGS_DATA !== 'undefined') ? LISTINGS_DATA.find(l => (l.title || l.t) === post.listing) : null;
       const img = post.img || (L && L.img) || '';
-      const price = post.price || (L && nairaM(L.pr)) || '';
+      const price = post.price || (L && nairaShort(L.price)) || '';
       const vs = L ? L.verification_status : null;
       const vb = vs === 'verified' ? '<span class="pvb" style="background:var(--success)">✓ Verified</span>'
         : vs === 'in_progress' ? '<span class="pvb" style="background:#7a5410">Verifying</span>'
@@ -4124,9 +4180,16 @@
     const announceListings = () => document.dispatchEvent(new CustomEvent('syn:listings'));
     const saveListings = () => { localStorage.setItem(L_KEY, JSON.stringify(LISTINGS_DATA)); announceListings(); };
     const ST_LABEL = { verified: 'Verified', pending: 'Pending review', inactive: 'Inactive' };
-    const nairaM = v => '₦' + v + 'M';
+    /* WAS nairaM(l.pr), AND l.pr IS THE PRICE ROUNDED TO MILLIONS.
+       Every rental under a million therefore displayed as "₦0M" -- and rent is
+       most of what a Nigerian agency lists. A ₦450,000 flat showed a price of
+       zero, on the card, to the agency that had just typed 450000.
+
+       nairaShort already handles the whole range and is used elsewhere on this
+       page; the card simply never reached for it. l.pr is left alone because
+       other code still reads it, but nothing should format money from it. */
     const nairaFull = v => '₦' + (Number(v) || 0).toLocaleString('en-NG');
-    const priceLabel = l => nairaM(l.pr) + (PERIOD_SUFFIX[l.price_period] || '');
+    const priceLabel = l => nairaShort(l.price) + (PERIOD_SUFFIX[l.price_period] || '');
 
     // Per-pane snapshot stats now live in the Ask-Tayo panel, not on the pages.
     const STATS = {};
@@ -4235,16 +4298,24 @@
                 <select id="lfState"><option value="">— Select a state —</option></select>
                 <span class="ferr" id="e_state"></span></div>
               <div class="field"><label>City *</label>
-                <input id="lfCity" value="${esc(d.city)}" list="lfCityList" autocomplete="off"
-                       placeholder="Start typing…">
-                <datalist id="lfCityList"></datalist>
+                <div class="combo" id="lfCityCombo">
+                  <input id="lfCity" value="${esc(d.city)}" autocomplete="off"
+                         role="combobox" aria-expanded="false" aria-autocomplete="list"
+                         placeholder="Start typing or tap…">
+                  <button type="button" class="combo-toggle" tabindex="-1" aria-label="Show cities">▾</button>
+                  <div class="combo-list" role="listbox" hidden></div>
+                </div>
                 <span class="ferr" id="e_city"></span></div>
             </div>
             <div class="row2">
               <div class="field"><label>Neighbourhood</label>
-                <input id="lfHood" value="${esc(d.neighbourhood)}" list="lfHoodList" autocomplete="off"
-                       placeholder="Start typing…">
-                <datalist id="lfHoodList"></datalist>
+                <div class="combo" id="lfHoodCombo">
+                  <input id="lfHood" value="${esc(d.neighbourhood)}" autocomplete="off"
+                         role="combobox" aria-expanded="false" aria-autocomplete="list"
+                         placeholder="Start typing or tap…">
+                  <button type="button" class="combo-toggle" tabindex="-1" aria-label="Show areas">▾</button>
+                  <div class="combo-list" role="listbox" hidden></div>
+                </div>
                 <div class="lf-hint" id="lfHoodHint"></div></div>
               <div class="field"><label>Country *</label><select id="lfCountry"><option ${d.country === 'Nigeria' ? 'selected' : ''}>Nigeria</option></select></div>
             </div>
@@ -4332,7 +4403,13 @@
       // listing type → default price period
       g('lfListing').addEventListener('change', function () { g('lfPeriod').value = { sale: 'total', rent: 'per_year', shortlet: 'per_night' }[this.value] || 'total'; });
       // price echo
-      const priceEcho = () => { const v = parseFloat(g('lfPrice').value); g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaM(Math.round(v / 1e6)) + ')' : ''; };
+      /* The echo under the price box said "(₦0M)" for anything under a
+         million -- telling an agency its ₦450,000 rent was worth nothing while
+         it was still typing. */
+      const priceEcho = () => {
+        const v = parseFloat(g('lfPrice').value);
+        g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaShort(v) + ')' : '';
+      };
       // validation
       const setErr = (id, msg) => { const el = g(id); if (el) { el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none'; } };
 
@@ -4475,6 +4552,15 @@
          Uploads to the property-photos bucket and puts the resulting public URL
          into the same field a pasted link would fill, so everything downstream
          -- validation, preview, save -- has exactly one thing to read. */
+      /* DECLARED OUT HERE, NOT INSIDE THE UPLOADER.
+         `let` is block-scoped, so declaring this inside wirePhotoUpload() put
+         it out of reach of the save handler below -- which threw
+         "photos is not defined" the moment anybody pressed Save changes, and
+         the drawer just sat there. The gallery is shared state between the
+         uploader that fills it and the save that writes it, so it belongs to
+         the form, not to one of its widgets. */
+      let photos = [];
+
       (function wirePhotoUpload() {
         const pick = g('lfImgPick'), fileEl = g('lfImgFile'), prev = g('lfImgPrev'), urlEl = g('lfImg');
         if (!pick || !fileEl || !urlEl) return;
@@ -4485,6 +4571,101 @@
             + (note ? `<div class="st${isErr ? ' err' : ''}">${esc2(note)}</div>` : '');
         }
 
+
+      /* A combobox that behaves the same on every phone. Returns a handle so
+         the cascade can refill it when the state or city changes.
+
+         Free text is always allowed: the list narrows what you see, it never
+         decides what you may enter. Choosing from it is a shortcut, not a
+         gate -- which is the whole reason city and area are not selects. */
+      function makeCombo(wrapId, onPick) {
+        const wrap = g(wrapId);
+        if (!wrap) return null;
+        const input = wrap.querySelector('input');
+        const list = wrap.querySelector('.combo-list');
+        const toggle = wrap.querySelector('.combo-toggle');
+        let items = [];
+        let active = -1;
+
+        const close = () => {
+          list.hidden = true; active = -1;
+          input.setAttribute('aria-expanded', 'false');
+        };
+
+        function paint(filter) {
+          const q = String(filter || '').trim().toLowerCase();
+          const hits = q ? items.filter((v) => v.toLowerCase().indexOf(q) > -1) : items.slice();
+          if (!hits.length) {
+            /* Not an error state. Somewhere we have no list for is a place an
+               agency may still legitimately be selling a house. */
+            list.innerHTML = '<div class="combo-empty">No match — type it in and carry on.</div>';
+          } else {
+            list.innerHTML = hits.slice(0, 60).map((v, i) => {
+              let label = esc(v);
+              if (q) {
+                const at = v.toLowerCase().indexOf(q);
+                label = esc(v.slice(0, at)) + '<mark>' + esc(v.slice(at, at + q.length))
+                      + '</mark>' + esc(v.slice(at + q.length));
+              }
+              return '<button type="button" class="combo-opt" role="option" data-v="'
+                + esc(v) + '" data-i="' + i + '">' + label + '</button>';
+            }).join('');
+          }
+          list.hidden = false;
+          input.setAttribute('aria-expanded', 'true');
+          active = -1;
+        }
+
+        function choose(v) {
+          input.value = v;
+          close();
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+          if (onPick) onPick(v);
+        }
+
+        input.addEventListener('focus', () => paint(''));      // tap shows everything
+        input.addEventListener('input', () => paint(input.value));
+        toggle.addEventListener('click', () => {
+          if (list.hidden) { input.focus(); paint(''); } else { close(); }
+        });
+
+        /* mousedown, not click: blurring the input first would close the list
+           and the tap would land on nothing -- the classic dropdown that
+           "does not select". */
+        list.addEventListener('mousedown', (e) => {
+          const b = e.target.closest('.combo-opt');
+          if (!b) return;
+          e.preventDefault();
+          choose(b.dataset.v);
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (list.hidden) return;
+          const opts = [...list.querySelectorAll('.combo-opt')];
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!opts.length) return;
+            active = e.key === 'ArrowDown'
+              ? (active + 1) % opts.length
+              : (active <= 0 ? opts.length - 1 : active - 1);
+            opts.forEach((o, i) => o.classList.toggle('on', i === active));
+            opts[active].scrollIntoView({ block: 'nearest' });
+          } else if (e.key === 'Enter' && active > -1) {
+            e.preventDefault(); choose(opts[active].dataset.v);
+          } else if (e.key === 'Escape') { close(); }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+          if (!wrap.contains(e.target)) close();
+        });
+
+        return {
+          input: input,
+          setItems: (arr) => { items = arr || []; if (!list.hidden) paint(input.value); },
+          close: close,
+        };
+      }
 
       /* ── state → city → area ───────────────────────────────────────────
          Three free-text boxes meant "Lagos", "lagos" and "Lagos State" were
@@ -4498,11 +4679,11 @@
       (function places() {
         if (!window.SynPlaces) return;                 // form still works unaided
         const stateEl = g('lfState'), cityEl = g('lfCity'), hoodEl = g('lfHood');
-        const cityList = g('lfCityList'), hoodList = g('lfHoodList');
         if (!stateEl || !cityEl) return;
 
-        const opts = (arr) => arr.map((v) =>
-          '<option value="' + esc(v) + '"></option>').join('');
+        const cityCombo = makeCombo('lfCityCombo');
+        const hoodCombo = makeCombo('lfHoodCombo');
+        if (!cityCombo || !hoodCombo) return;
 
         /* Areas we already have listings in, so a city we serve suggests the
            places this agency actually works rather than only our fixed list. */
@@ -4525,13 +4706,13 @@
           const st = stateEl.value;
           /* No state chosen yet: offer every city we know rather than nothing,
              so typing the town first still works. */
-          cityList.innerHTML = opts(st ? SynPlaces.citiesIn(st) : SynPlaces.allCities());
+          cityCombo.setItems(st ? SynPlaces.citiesIn(st) : SynPlaces.allCities());
         }
 
         function fillAreas() {
           const city = cityEl.value.trim();
           const list = SynPlaces.areasIn(city, knownAreas(city));
-          hoodList.innerHTML = opts(list);
+          hoodCombo.setItems(list);
           const hint = g('lfHoodHint');
           if (hint) {
             hint.textContent = list.length
@@ -4574,7 +4755,7 @@
            all still read a single cover URL from it. Two representations of
            one thing is a drift risk, so the mirror is written in exactly one
            place -- syncPhotos(). */
-        let photos = (l.media || []).map(m => m.url).filter(Boolean);
+        photos = (l.media || []).map(m => m.url).filter(Boolean);
         if (!photos.length && (l.img || '').trim()) photos = [(l.img || '').trim()];
         const galEl = g('lfGal');
 
@@ -4729,6 +4910,9 @@
             SynListings.create(data).then((id) => {
               item.id = id;
               toast('Listing created — saved, and unverified until the desk checks it');
+              /* The row now has its server id; anything keyed by id (the
+                 campaign picker, the archive) needs to see that. */
+              announceListings();
             }).catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
           } else {
             toast('Listing created here only — sign in as an agency to save it');
@@ -4738,8 +4922,12 @@
           deriveLegacy(LISTINGS_DATA[idx]);
           const id = LISTINGS_DATA[idx].id;
           if (dbBacked && id) {
+            /* Said before the request, not after. An edit over a slow
+               connection was silent until it finished, which reads as a dead
+               button -- the same reason the create branch already did this. */
+            toast('Saving…');
             SynListings.update(id, data)
-              .then(() => toast('Listing updated'))
+              .then(() => { toast('Listing updated'); announceListings(); })
               .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
           } else {
             toast(dbBacked ? 'Updated here only — this listing has no server record' : 'Listing updated');
@@ -4918,8 +5106,20 @@
     /* mkStats runs once at init, before the listings fetch has landed, so the
        listing tile read 0 on a page that had one. Recount whenever the
        Listings pane republishes -- the same event the campaign picker uses. */
+    /* EVERYTHING THAT READS LISTINGS_DATA REPAINTS HERE.
+       Saving a listing called renderListings() and nothing else, so the grid
+       updated and Overview -- the pane the portal opens on -- kept whatever it
+       had rendered at load. An agency added a property, looked at its own
+       dashboard, saw no change, and reloaded to find out whether the save had
+       worked. The hydrate path already repainted both; the save path had a
+       shorter copy of that list, which is how the two drifted.
+
+       Announcing once and letting each pane subscribe means the next pane that
+       reads this array cannot be forgotten in a third place. */
     document.addEventListener('syn:listings', function () {
       if (typeof mkStats === 'function') mkStats();
+      if (typeof renderOverview === 'function') renderOverview();
+      if (typeof renderListings === 'function') renderListings();
     });
     /* ── channel insight, from attribution ──────────────────────────────────
        WAS three hardcoded claims dressed as measurements: "+41% creatives with
@@ -5060,7 +5260,7 @@
         <div class="lf">
           <div class="field"><label>Campaign name</label><input id="cfN" placeholder="e.g. Ikoyi penthouse push"></div>
           <div class="field"><label>Listing</label>
-            <select id="cfL">${LISTINGS_DATA.map((l, k) => `<option value="${k}">${l.t} · ${nairaM(l.pr)}</option>`).join('')}</select></div>
+            <select id="cfL">${LISTINGS_DATA.map((l, k) => `<option value="${k}">${l.t} · ${nairaShort(l.price)}</option>`).join('')}</select></div>
           <!-- These were a .row2 pair. At 375px that is 158px each: the audience
                labels run to 178px of text so every one truncated, and "Daily
                budget (₦ thousands)" wrapped mid-phrase. Audience carries the
@@ -7233,7 +7433,7 @@
       let html = `<button class="x" id="cmpX">×</button><h2 style="font-size:19px;font-weight:700">New post</h2>
         <p class="muted" style="font-size:12.5px;margin-top:2px">Pick a verified listing, choose channels, and Synapse writes the captions.</p>
         <div class="cmp-step">1 · Verified listing</div>
-        <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}">${photoHtml(l.img, { small: true })}<div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">₦${Math.round(l.price / 1e6)}M</div></div></button>`).join('')}</div>
+        <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}">${photoHtml(l.img, { small: true })}<div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">${nairaShort(l.price)}</div></div></button>`).join('')}</div>
         <div class="cmp-step">2 · Channels</div>
         <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
         <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '<span data-icon="spark"></span> Generate captions with AI'}</button>`;
@@ -7284,7 +7484,7 @@
       cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
       const chans = [...cmp.chans];
       const primary = cmp.captions[cmp.rec] || cmp.captions[chans[0]] || Object.values(cmp.captions)[0] || '';
-      posts.unshift({ id: 'np' + Date.now(), listing: l.title, price: '₦' + Math.round(l.price / 1e6) + 'M', img: l.img, stage: 'scheduled', channels: chans, caption: primary, when: 'Today 5:00 PM', reach: estReach(chans) });
+      posts.unshift({ id: 'np' + Date.now(), listing: l.title, price: nairaShort(l.price), img: l.img, stage: 'scheduled', channels: chans, caption: primary, when: 'Today 5:00 PM', reach: estReach(chans) });
       renderPipeline();
       closeComposer();
     }
@@ -7883,7 +8083,7 @@
       if (OV.dtab === 'details') {
         body = `
           <div class="ovd-ttl">${esc2(l.t)}</div>
-          <div class="ovd-price">${nairaM(l.pr)}</div>
+          <div class="ovd-price">${nairaShort(l.price)}</div>
           <div class="ovd-chips">
             <!-- ovBeds returns the regex capture, so it is a STRING: a strict
                  === 1 was never true and every listing read "1 beds". -->
@@ -7969,7 +8169,7 @@
             <div class="lc">◍ ${ovLoc(l)}</div>
           </div>
           <div class="rt">
-            <div class="pr">${nairaM(l.pr)}</div>
+            <div class="pr">${nairaShort(l.price)}</div>
             <span class="ovs ${l.st === 'verified' ? 'verified' : 'pending'}">${l.st === 'verified' ? '✓ Verified' : '◷ Pending'}</span>
             <div class="rf">SYN-${1000 + LISTINGS_DATA.indexOf(l)}</div>
           </div>
