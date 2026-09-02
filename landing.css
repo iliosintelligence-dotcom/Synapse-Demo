@@ -3052,3 +3052,27 @@ textarea:focus-visible {
   height: 44px;
 }
 .nav-signin:hover, .nav-signin:focus-visible { color: var(--text); }
+
+
+/* ── the agency hero is as tall as its content, not as tall as the screen ──
+   .hero-section forces min-height: 100vh, which both landing pages share. On
+   the agency page the copy and the portal peek come to about 490px, so a
+   900px window left roughly 410px of empty space under them -- the reader had
+   to scroll past nothing to reach the syndication rail, and on a laptop the
+   rail never appeared at all without scrolling.
+
+   Scoped to this hero rather than changed in the shared rule: the buyer hero
+   carries the ask box and is a different shape, and nobody asked for that one
+   to move. Padding still clears the 68px fixed nav with room to spare. */
+#hero-agency {
+  min-height: 0;
+  padding: 116px 0 76px;
+}
+
+/* Below the fold is where the 100vh hero was really costing something: on a
+   short laptop window the whole section was taller than the screen and the
+   rail beneath it was invisible. Tightened further so the next section always
+   shows an edge. */
+@media (max-height: 820px) and (min-width: 861px) {
+  #hero-agency { padding: 100px 0 60px; }
+}
