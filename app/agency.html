@@ -4478,18 +4478,31 @@
     const AD_ST = { scaling: 'Scaling', learning: 'Learning', pausedai: 'Paused by AI' };
 
     function mkStats() {
-      const ads = CAMPAIGNS.flatMap(c => c.ads);
+      /* THREE OF THESE FOUR TILES REPORTED THINGS NOTHING MEASURES.
+         Ad spend, cost per lead and best-creative CTR were read from
+         CAMPAIGNS[].spend and .ctr -- columns no code path ever writes. They
+         rendered as "₦0k", "—" and "0.0%", which does not read as "not
+         built"; it reads as "measured, and the answer is zero". An agency
+         would reasonably conclude its campaigns were reaching nobody.
+
+         What is left is counted from rows that exist. Ad spend and CTR come
+         back the day something actually records them. */
       const live = CAMPAIGNS.filter(c => c.live).length;
-      const spend = CAMPAIGNS.reduce((s, c) => s + c.spend, 0);
-      const leads = ads.reduce((s, a) => s + a.leads, 0);
-      const best = ads.length ? Math.max(...ads.map(a => a.ctr)) : 0;
+      const listings = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA))
+        ? LISTINGS_DATA : [];
+      const marketable = listings.filter(l => l.is_active !== false && l.status === 'live').length;
       STATS.marketing = [
-        [live, 'Active campaigns'], ['₦' + spend + 'k', 'Ad spend this month'],
-        [leads ? '₦' + Math.round(spend * 1000 / leads).toLocaleString() : '—', 'Cost per lead'],
-        [best.toFixed(1) + '%', 'Best creative CTR'],
+        [live, 'Active campaigns'],
+        [marketable, marketable === 1 ? 'Listing you can market' : 'Listings you can market'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('marketing');
     }
+    /* mkStats runs once at init, before the listings fetch has landed, so the
+       listing tile read 0 on a page that had one. Recount whenever the
+       Listings pane republishes -- the same event the campaign picker uses. */
+    document.addEventListener('syn:listings', function () {
+      if (typeof mkStats === 'function') mkStats();
+    });
     /* ── channel insight, from attribution ──────────────────────────────────
        WAS three hardcoded claims dressed as measurements: "+41% creatives with
        the Verified badge earn 41% higher CTR", "3.1x video outperforms photo on
@@ -5714,28 +5727,15 @@
     // so there is no standalone Verification pane.
 
     // ── AI business advisor (overview) — prescriptive, not just dashboards ──
-    const ADVISOR = [
-      { q: 'Why are sales down this month?', points: [
-          'Toju compares response times, inventory levels, follow-up rates and cost-per-lead by channel.',
-          'It needs a month of real activity before any of that means anything.' ],
-        reco: 'Once leads are flowing, this answer names the specific bottleneck rather than a general one.' },
-      { q: 'Where should I focus today?', points: [
-          'Toju reads your live leads, SLAs and verification queue to answer this.',
-          'There is nothing to prioritise until real leads and listings exist.' ],
-        reco: 'Add a listing and connect a channel — this answer is built from your own pipeline, not a sample one.' },
-      { q: 'Which listings are underperforming?', points: [
-          'Measured from real reach, leads and freshness per listing.',
-          'No published campaigns yet, so there is no performance to compare.' ],
-        reco: 'Publish a campaign from a live listing, then Toju can tell you which creative and channel is actually working.' },
-    ];
-    function renderAdvisor(idx){
-      const qsEl = document.getElementById('advQs'); if (!qsEl) return;
-      qsEl.innerHTML = ADVISOR.map((a, i) => `<button data-i="${i}" class="${i === idx ? 'on' : ''}">${a.q}</button>`).join('');
-      const a = ADVISOR[idx];
-      document.getElementById('advAns').innerHTML =
-        `<div class="ans">${a.points.map(p => `<div class="r"><span class="d">→</span><span>${p}</span></div>`).join('')}</div>` +
-        `<div class="reco"><b>Toju’s fix:</b> ${a.reco}</div>`;
-    }
+    /* The ADVISOR array and renderAdvisor() lived here: three fixed questions
+       -- "Why are sales down this month?", "Where should I focus today?",
+       "Which listings are underperforming?" -- rendered as buttons with
+       pre-written answers, identical for every agency forever.
+
+       They are gone rather than reworded. The panel now carries live,
+       stage-aware suggestions and a composer above the fold of the text box,
+       and two competing question lists in one panel -- one dead, one live,
+       with the dead one on top -- is worse than either alone. */
     // advisor now lives in the Ask-Toju panel; it renders when the panel opens.
 
     // ── Toju Negotiator (Phase C) ──
@@ -6722,9 +6722,11 @@
       `<div class="tp-sec"><div class="tp-k">${k}</div>${lines.map(l => `<div class="tp-line"><span class="d">→</span><span>${l}</span></div>`).join('')}${reco ? `<div class="tp-reco"><b>Toju’s fix:</b> ${reco}</div>` : ''}</div>`;
 
     const PANEL = {
-      overview: { title: 'Business advisor', sub: 'What’s happening — and what to do',
-        html: () => `<div class="advisor"><div class="qs" id="advQs"></div><div id="advAns"></div></div>`,
-        after: () => { renderAdvisor(0); document.getElementById('advQs').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) renderAdvisor(+b.dataset.i); }); } },
+      /* No canned body. The snapshot above is real, and everything else worth
+         saying here is now a live answer to a question the agency actually
+         asked, in the composer below. */
+      overview: { title: 'Business advisor', sub: 'Your numbers, and what to do next',
+        html: () => '' },
       negotiator: { title: 'How Toju negotiates', sub: 'The funnel, the rules, the 5 stages',
         html: () => `
           <div class="tp-sec"><div class="tp-k">The rule</div>
@@ -6787,11 +6789,15 @@
         + `<div class="tp-sec"><div class="tp-k" id="agReplyLbl">Response rate</div><div class="hbars" id="agReply"></div></div>`,
         after: () => renderAgentSummary() },
       subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
-        html: () => tpSummary('Your growth math', [
-          'You’re on Free, but marketing automation is off — you’re posting manually.',
-          'One extra closed sale a month more than covers Accelerate.',
-          'Accelerate unlocks 48h verification + auto-syndication.',
-        ], 'Upgrade to Accelerate — the marketing automation alone should return the fee in one sale.') },
+        /* "One extra closed sale a month more than covers Accelerate" was a
+           claim about this agency's economics that nothing here can know --
+           we hold no sale values and no fee. What a plan includes is a fact;
+           what it would earn them is not. */
+        html: () => tpSummary('What each plan includes', [
+          'Free: list, generate campaigns, and rehearse them.',
+          'Accelerate: publish for real to your connected channels.',
+          'Leader: unlimited listings and syndication.',
+        ], 'Ask below what your own numbers would look like on another plan — the answer uses your listings and leads, not an example.') },
     };
     const snapshotHTML = (pane) => STATS[pane]
       ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
