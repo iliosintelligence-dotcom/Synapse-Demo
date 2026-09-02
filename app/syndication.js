@@ -120,6 +120,151 @@
     },
   ];
 
+
+  /* ── patterns ───────────────────────────────────────────────────────────
+     The angles above are the fallback. The real catalogue is rows in
+     content_templates, which carry text rather than functions, so an agency
+     can write its own. A pattern is plain prose with two constructs:
+
+       {area}                     substitute
+       {verified?yes|no}          pick a branch on a truthy field
+
+     The conditional is not decoration. "Verified this month." must never
+     appear on an unverified listing, and half the seeded angles turn on
+     exactly that -- a substitution-only language would have quietly changed
+     what this product claims about a property.
+
+     UNKNOWN TOKENS THROW. The alternative is a buyer reading "{bedroms}" in a
+     caption on Instagram, which is unrecoverable and looks like nobody is
+     home. Failing here means the variant is dropped and the agency is told. */
+  var TOKENS = {
+    /* Everything shape() produces that is safe to print, plus two derived
+       forms the seeded angles need. Adding a token is adding a line here. */
+    title:      function (p) { return p.title; },
+    kind:       function (p) { return p.kind; },
+    area:       function (p) { return p.area; },
+    city:       function (p) { return p.city; },
+    bedrooms:   function (p) { return p.bedrooms; },
+    price:      function (p) { return p.price; },
+    priceShort: function (p) { return p.priceShort; },
+    priceLine:  function (p) { return p.priceLine; },
+    trust:      function (p) { return p.trust; },
+    power:      function (p) { return p.power; },
+    flood:      function (p) { return p.flood; },
+    verified:   function (p) { return p.verified; },
+    /* "3 days" / "1 day" / "14 days" when nothing is known. The plural and the
+       null case lived inside the old scarcity angle; a pattern cannot express
+       them, so they belong here where every template gets them right. */
+    days: function (p) {
+      if (p.daysLeft == null) return '14 days';
+      return p.daysLeft + (p.daysLeft === 1 ? ' day' : ' days');
+    },
+    daysLeft: function (p) { return p.daysLeft; },
+  };
+
+  function tokenRaw(name, p) {
+    if (!Object.prototype.hasOwnProperty.call(TOKENS, name)) {
+      throw new Error('Unknown token {' + name + '}');
+    }
+    return TOKENS[name](p);
+  }
+
+  function tokenValue(name, p) {
+    var v = tokenRaw(name, p);
+    return v == null ? '' : String(v);
+  }
+
+  /* A CONDITIONAL MUST TEST THE VALUE, NOT ITS PRINTED FORM.
+     This read tokenValue() first, which stringifies -- and String(false) is
+     "false", which is truthy. Every {verified?...|...} therefore took the yes
+     branch, so an UNVERIFIED listing was captioned "Verified this month." That
+     is a false claim about a property, published under the agency's own name,
+     produced by the one part of the system whose job is to refuse exactly
+     that. Caught by diffing rendered output against the hardcoded angles on a
+     verified and an unverified listing; the verified case passed and would
+     have shipped it. */
+  function tokenTruthy(name, p) {
+    var v = tokenRaw(name, p);
+    if (v == null || v === false) return false;
+    if (v === 0) return false;
+    return String(v).trim() !== '';
+  }
+
+  /** Renders one pattern against a shaped listing. Throws on an unknown token. */
+  function renderPattern(pattern, p) {
+    return String(pattern == null ? '' : pattern).replace(
+      /\{([a-zA-Z]+)(\?([^|}]*)\|([^}]*))?\}/g,
+      function (_all, name, hasBranch, yes, no) {
+        if (hasBranch) {
+          /* Presence of the token is still checked on the branch form: a
+             conditional on a field that does not exist is a silent always-no. */
+          return tokenTruthy(name, p) ? yes : no;
+        }
+        return tokenValue(name, p);
+      },
+    );
+  }
+
+  /** Every token a pattern uses, for validation before anything is saved. */
+  function patternTokens(pattern) {
+    var out = [], m, re = /\{([a-zA-Z]+)(\?[^}]*)?\}/g;
+    while ((m = re.exec(String(pattern || '')))) if (out.indexOf(m[1]) === -1) out.push(m[1]);
+    return out;
+  }
+
+  /** Which tokens in a pattern we cannot resolve. Empty means it is safe. */
+  function unknownTokens(pattern) {
+    return patternTokens(pattern).filter(function (t) {
+      return !Object.prototype.hasOwnProperty.call(TOKENS, t);
+    });
+  }
+
+  /**
+   * Turns a content_templates row into the shape buildVariant already expects,
+   * so the rest of the pipeline -- validation, media, sign-off, hashtags --
+   * does not know or care that angles stopped being code.
+   */
+  function angleFromTemplate(row) {
+    return {
+      id: row.id,
+      templateId: row.id,
+      angleKey: row.angle_key || 'custom',
+      name: row.name,
+      why: row.why || '',
+      requiresVerified: !!row.requires_verified,
+      platforms: Array.isArray(row.platforms) ? row.platforms : [],
+      isSeed: !row.agency_id,
+      hook: function (p) { return renderPattern(row.hook_pattern, p); },
+      body: function (p) { return renderPattern(row.body_pattern, p); },
+      cta: row.cta || '',
+    };
+  }
+
+  /* The catalogue in use. Starts as the built-ins so a page that never loads
+     templates -- or loads them and fails -- behaves exactly as it did before. */
+  /* The built-ins are their own key -- 'trust' is both the id and the kind,
+     which is what made the uuid switch silent in the first place. */
+  ANGLES.forEach(function (a) { a.angleKey = a.id; a.templateId = null; });
+
+  var activeAngles = ANGLES;
+
+  /**
+   * Installs the rows as the catalogue. A row whose pattern uses a token we
+   * cannot resolve is REFUSED, not repaired: it would render braces to a
+   * buyer. Returns what was taken and what was not, so the caller can say so.
+   */
+  function setTemplates(rows) {
+    if (!rows || !rows.length) { activeAngles = ANGLES; return { used: 0, rejected: [] }; }
+    var good = [], rejected = [];
+    rows.forEach(function (r) {
+      var bad = unknownTokens(r.hook_pattern).concat(unknownTokens(r.body_pattern));
+      if (bad.length) { rejected.push({ name: r.name, tokens: bad }); return; }
+      good.push(angleFromTemplate(r));
+    });
+    activeAngles = good.length ? good : ANGLES;
+    return { used: good.length, rejected: rejected };
+  }
+
   /* ── Stock media pool ───────────────────────────────────────────────────
      Placeholder creative so a campaign can be built and reviewed before a
      photographer has been anywhere near the property. Each entry declares the
@@ -236,6 +381,12 @@
       id: platform + '_' + angle.id + '_' + (media ? media.id : 'none'),
       platform: platform,
       angle: angle.id,
+      /* The KIND of angle, stable across the move from code to data. angle.id
+         used to be this; as a template row it is a uuid, and anything keying
+         off it (the archive's narrative_angle, for one) silently stopped
+         matching. Carried explicitly now so it cannot drift again. */
+      angleKey: angle.angleKey || angle.id,
+      templateId: angle.templateId || null,
       angleName: angle.name,
       angleWhy: angle.why,
       propertyId: p.id,
@@ -264,9 +415,11 @@
     var b = brandBits(opts.brand);
     var p = shape(propertyRow);
     var platforms = opts.platforms && opts.platforms.length ? opts.platforms : Object.keys(PLATFORMS);
+    /* activeAngles, not ANGLES: the catalogue is rows once setTemplates has
+       run, and the built-ins only when it has not. */
     var angles = opts.angles && opts.angles.length
-      ? ANGLES.filter(function (a) { return opts.angles.indexOf(a.id) > -1; })
-      : ANGLES;
+      ? activeAngles.filter(function (a) { return opts.angles.indexOf(a.id) > -1; })
+      : activeAngles;
 
     /* An angle whose premise is the verification cannot run on a listing that
        has not been verified. Dropping it is deliberate: the alternative is
@@ -287,6 +440,9 @@
       if (!PLATFORMS[pl]) return;
       var pool = mediaFor(pl);
       angles.forEach(function (a, i) {
+        /* A template may name the platforms it is for. Empty means all, which
+           is what every seeded angle says and what an agency gets by default. */
+        if (a.platforms && a.platforms.length && a.platforms.indexOf(pl) === -1) return;
         var media = pool.length ? pool[i % pool.length] : null;
         var v = buildVariant(p, pl, a, media, b);
         v.issues = validate(v);
@@ -457,6 +613,8 @@
   window.SynSyndicate = {
     PLATFORMS: PLATFORMS, ANGLES: ANGLES, STOCK: STOCK,
     shape: shape, generate: generate, validate: validate,
+    setTemplates: setTemplates, renderPattern: renderPattern,
+    unknownTokens: unknownTokens, tokenNames: function () { return Object.keys(TOKENS); },
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
     trackedLink: trackedLink, CHANNEL_FOR: CHANNEL_FOR,

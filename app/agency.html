@@ -6435,6 +6435,23 @@
         loadPast(row && row.id);
       });
 
+      /* Install the catalogue before anything can be generated. Until this
+         resolves, syndication.js uses its built-in angles -- so a slow or
+         failed load produces the old behaviour rather than no behaviour. */
+      if (window.SynListings && SynListings.listTemplates) {
+        SynListings.listTemplates().then(function (rows) {
+          var res = S.setTemplates(rows);
+          if (res.rejected.length) {
+            /* A template referring to a token we cannot resolve is dropped
+               rather than rendered -- braces in a live caption are worse than
+               one missing angle. Said out loud so it can be fixed. */
+            console.warn('templates skipped (unknown tokens):', res.rejected);
+          }
+        }).catch(function (err) {
+          console.error('could not load caption templates; using the built-in angles', err);
+        });
+      }
+
       loadChannels();
       /* Whatever the picker starts on. Without this the archive only appears
          after you change listing, which reads as it being empty. */
@@ -6461,7 +6478,11 @@
         if (window.SynListings && SynListings.saveGeneration) {
           SynListings.saveGeneration(row.id, campaign.variants)
             .then(function (res) {
+              /* Report zero too. A silent nothing is how the uuid regression
+                 hid: twenty captions generated, none kept, and the line that
+                 should have said so simply did not appear. */
               if (res && res.saved) markSaved(res.saved);
+              else markSaved(0, 'nothing could be filed');
               loadPast(row.id);          // the list must include what just happened
             })
             .catch(function (err) {

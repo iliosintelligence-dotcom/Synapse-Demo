@@ -1119,7 +1119,11 @@
     facebook: 'facebook_post',
     whatsapp: 'whatsapp_message',
   };
-  var ANGLE_IDS = { trust: 1, value: 1, life: 1, scarcity: 1, question: 1 };
+  /* narrative_angle values a generation may be filed under. 'custom' is what
+     an agency's own template files as -- it has no enum value it could
+     honestly claim, and inventing one per template would mean a migration
+     every time somebody writes a caption. */
+  var ANGLE_KEYS = { trust: 1, value: 1, life: 1, scarcity: 1, question: 1, custom: 1 };
 
   /**
    * Files every variant of one generation. Called right after Generate, so
@@ -1138,12 +1142,16 @@
       var rows = [];
       variants.forEach(function (v) {
         var ct = CONTENT_TYPE[v.platform];
-        if (!ct || !ANGLE_IDS[v.angle]) return;   // unknown: skip, never guess
+        /* angleKey, not angle: since templates became rows, `angle` is a uuid.
+           Reading it here skipped every variant and wrote nothing, quietly. */
+        var key = ANGLE_KEYS[v.angleKey] ? v.angleKey : 'custom';
+        if (!ct) return;                       // unknown platform: skip, never guess
         rows.push({
           property_id: propertyId,
           agency_id: aid,
           content_type: ct,
-          narrative_angle: v.angle,
+          narrative_angle: key,
+          template_id: v.templateId || null,
           /* The caption as generated, hashtags and all -- this is the artefact
              worth keeping, not a summary of it. */
           generated_text: String(v.caption || ''),
@@ -1171,6 +1179,25 @@
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(200);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+
+  /* ── caption templates ────────────────────────────────────────────────
+     Ours (agency_id null) plus this agency's own, in one list. RLS decides
+     which rows come back; this asks for both and sorts them together, so an
+     agency's own angle can sit above a seeded one. */
+  function listTemplates() {
+    return client().then(function (c) {
+      return c.from('content_templates')
+        .select('id, agency_id, name, why, hook_pattern, body_pattern, cta, platforms, requires_verified, sort_order, angle_key')
+        .is('deleted_at', null)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
     }).then(function (r) {
       if (r.error) throw r.error;
       return r.data || [];
@@ -1213,6 +1240,7 @@
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,
+    listTemplates: listTemplates,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,
     addCreatives: addCreatives,
