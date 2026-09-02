@@ -240,6 +240,98 @@
     };
   }
 
+
+  /* ── turning a caption back into a pattern ──────────────────────────────
+     "Save as template" starts from text that has already been rendered: the
+     area, the price and the bedroom count are baked into it. Saved verbatim,
+     the agency would get a template that says "Bodija" on every listing it
+     ever writes.
+
+     So the substitution is run backwards. Each token is rendered against the
+     listing this caption came from, and wherever that exact string appears it
+     becomes the token again. Longest values first: '2' would otherwise match
+     inside '₦1,200,000' and turn a price into nonsense.
+
+     Values that cannot be found stay literal, which is correct and visible --
+     an agency that typed a neighbourhood by hand gets a template mentioning
+     that neighbourhood, and the editor shows them exactly that. */
+  var DERENDER_TOKENS = ['priceLine', 'priceShort', 'title', 'area', 'city', 'kind', 'bedrooms', 'days'];
+
+  function derenderPattern(text, p) {
+    if (!text) return '';
+    var out = String(text);
+    var pairs = [];
+    DERENDER_TOKENS.forEach(function (name) {
+      var v = TOKENS[name](p);
+      if (v == null) return;
+      v = String(v);
+      /* One and two character values are not safe to reverse: a bedroom count
+         of 2 appears inside dates, prices and the word "2-bed" everywhere. It
+         is left literal rather than corrupting the rest of the sentence. */
+      if (v.length < 3) return;
+      pairs.push({ token: name, value: v });
+    });
+    pairs.sort(function (a, b) { return b.value.length - a.value.length; });
+    pairs.forEach(function (pair) {
+      out = out.split(pair.value).join('{' + pair.token + '}');
+    });
+    return out;
+  }
+
+  /**
+   * A template, recovered from one generated variant. The agency edits it from
+   * here rather than starting at a blank box -- the caption they liked is
+   * already the shape of the thing they want to keep.
+   */
+  /* Values too short to reverse safely, that are nonetheless sitting in the
+     text. The agency is told about these rather than left to discover on a
+     later listing that its template insists every home has two bedrooms. */
+  function bakedLiterals(text, p) {
+    var out = [];
+    ['bedrooms', 'power', 'flood', 'trust', 'daysLeft'].forEach(function (name) {
+      var v = TOKENS[name](p);
+      if (v == null) return;
+      v = String(v);
+      if (v.length >= 3) return;                    // long enough: already a token
+      if (String(text).indexOf(v) === -1) return;   // not in the text at all
+      out.push({ token: name, value: v });
+    });
+    return out;
+  }
+
+  function templateFromVariant(v, propertyRow) {
+    var p = shape(propertyRow);
+    var hook = derenderPattern(v.hook, p);
+    var body = derenderPattern(v.body, p);
+
+    /* A CONDITIONAL THAT WAS TRUE ONCE IS NOT A CONDITIONAL ANY MORE.
+       {verified?Verified this month. |} renders to "Verified this month. " on a
+       verified listing, and reversing the substitution cannot know a branch was
+       ever there -- so the claim comes back unconditional and would appear on
+       an unverified home the next time this template runs.
+
+       Saving it as requires_verified is the honest repair: the template keeps
+       the sentence and can only ever run where the sentence is true. Same rule
+       the seeded Verified-first angle lives under, arrived at from the other
+       direction. */
+    var claimsVerification = /verif/i.test(hook + ' ' + body);
+
+    return {
+      name: v.angleName ? (v.angleName + ' (yours)') : 'My angle',
+      why: '',
+      hook_pattern: hook,
+      body_pattern: body,
+      cta: v.cta || '',
+      platforms: [],
+      requires_verified: claimsVerification,
+      angle_key: 'custom',
+      /* Advisory, for the editor. Not columns -- these describe this one
+         recovery, not the template. */
+      _claimsVerification: claimsVerification,
+      _literals: bakedLiterals(hook + ' ' + body, p),
+    };
+  }
+
   /* The catalogue in use. Starts as the built-ins so a page that never loads
      templates -- or loads them and fails -- behaves exactly as it did before. */
   /* The built-ins are their own key -- 'trust' is both the id and the kind,
@@ -392,6 +484,12 @@
       propertyId: p.id,
       title: spec.needsTitle ? (p.bedrooms + '-Bed ' + p.kind + ' in ' + p.area + ' · ' + p.priceShort).slice(0, spec.titleMax) : null,
       hook: hook,
+      /* Kept apart as well as joined. A caption is hook + body + cta welded
+         together with a sign-off and hashtags; recovering a template from one
+         means knowing where the seams were, and guessing at them by splitting
+         on blank lines breaks the moment a body contains one. */
+      body: body,
+      cta: angle.cta,
       caption: caption,
       hashtags: tags,
       media: media,
@@ -614,6 +712,7 @@
     PLATFORMS: PLATFORMS, ANGLES: ANGLES, STOCK: STOCK,
     shape: shape, generate: generate, validate: validate,
     setTemplates: setTemplates, renderPattern: renderPattern,
+    templateFromVariant: templateFromVariant, derenderPattern: derenderPattern,
     unknownTokens: unknownTokens, tokenNames: function () { return Object.keys(TOKENS); },
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,

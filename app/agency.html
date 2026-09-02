@@ -1451,6 +1451,63 @@
        still be there when you look for it. */
     /* Earlier versions. A list, not a grid: these are read one at a time
        when somebody is looking for a line they wrote before. */
+    /* ── template editor ────────────────────────────────────────────────
+       Two columns: what you are writing, and what a buyer would read. They
+       stack on a narrow screen because the preview is the half worth keeping
+       visible, so it goes second and stays in view as you type. */
+    .tpl-modal { max-width: 940px; width: calc(100vw - 40px); }
+    .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 860px) { .tpl-grid { grid-template-columns: 1fr; } }
+    .tpl-field { margin-bottom: 13px; }
+    .tpl-field label { display: block; font: 700 11px/1 var(--f-sans); letter-spacing: .12em;
+      text-transform: uppercase; color: var(--ink-dim); margin-bottom: 6px; }
+    .tpl-field input, .tpl-field textarea, .tpl-field select {
+      width: 100%; border: 1px solid rgba(54,54,54,0.22); border-radius: 10px;
+      padding: 10px 12px; font: 400 13.5px/1.55 var(--f-sans); background: #fff;
+      color: var(--ink); resize: vertical; }
+    .tpl-field textarea { min-height: 92px; }
+    .tpl-hint { font-size: 11.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.5; }
+    .tpl-toks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+    .tpl-tok { border: 1px solid rgba(54,54,54,0.2); background: transparent; border-radius: 100px;
+      padding: 4px 9px; font: 500 11.5px/1 ui-monospace, Menlo, monospace; cursor: pointer;
+      color: var(--ink-muted); }
+    .tpl-tok:hover { border-color: rgba(54,54,54,0.5); color: var(--ink); }
+
+    .tpl-prev { background: var(--sunken, rgba(20,20,20,0.04)); border: 1px solid var(--border);
+      border-radius: 12px; padding: 15px 16px; position: sticky; top: 0; }
+    .tpl-prev-h { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 10px; }
+    .tpl-prev-h .k { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em;
+      text-transform: uppercase; color: var(--ink-dim); }
+    .tpl-prev-h select { max-width: 58%; font-size: 12px; padding: 5px 8px;
+      border-radius: 8px; border: 1px solid rgba(54,54,54,0.22); background: #fff; color: var(--ink); }
+    .tpl-out { font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+      color: var(--ink); min-height: 120px; }
+    .tpl-warn { margin-top: 11px; font-size: 12px; line-height: 1.5; padding: 9px 11px;
+      border-radius: 9px; background: rgba(168,64,43,0.07); color: #a8402b; }
+    .tpl-note { margin-top: 11px; font-size: 12px; line-height: 1.5; padding: 9px 11px;
+      border-radius: 9px; background: rgba(20,20,20,0.05); color: var(--ink-muted); }
+    .tpl-warn:empty, .tpl-note:empty { display: none; }
+    .tpl-actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    .tpl-actions .grow { flex: 1; }
+
+    /* Your own templates, listed where campaigns are made. */
+    .tpl-mine { margin-top: 20px; }
+    .tpl-mine:empty { display: none; }
+    .tpl-row { display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-top: 1px solid var(--border); font-size: 13.5px; flex-wrap: wrap; }
+    .tpl-row .nm { font-weight: 700; }
+    .tpl-row .hk { color: var(--ink-muted); flex: 1; min-width: 160px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tpl-row .vf { font-size: 11px; padding: 3px 7px; border-radius: 100px;
+      background: rgba(20,20,20,0.06); color: var(--ink-muted); }
+
+    /* Save-as-template sits on the card it would copy. */
+    .cmp-keep { margin-top: 8px; border: 0; background: none; padding: 0; cursor: pointer;
+      font: 600 11.5px var(--f-sans); color: var(--ink-muted);
+      text-decoration: underline; text-underline-offset: 2px; }
+    .cmp-keep:hover { color: var(--ink); }
+
     .cmp-past { margin-top: 22px; }
     .cmp-past:empty { display: none; }
     .cmp-past-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
@@ -2628,6 +2685,9 @@
                  without somewhere to read it back would be a filing cabinet
                  nobody can open. -->
             <div class="cmp-past" id="cmpPast"></div>
+
+            <!-- Their own angles, where campaigns are made. -->
+            <div class="tpl-mine" id="tplMine"></div>
           </div>
 
           <div class="s-work-hd">
@@ -2993,6 +3053,13 @@
   <!-- lead workspace drawer -->
   <div class="scrim" id="scrim"></div>
   <aside class="drawer" id="drawer"></aside>
+
+  <!-- Template editor. A pattern is unreadable as text -- {priceLine} in
+       {area} tells you nothing about what a buyer sees -- so the preview is
+       not a nicety here, it is the only way to judge the thing you are
+       writing. Rendered against a real listing of the agency's own. -->
+  <div class="modal-scrim" id="tplScrim"></div>
+  <div class="modal tpl-modal" id="tplModal" role="dialog" aria-modal="true" aria-label="Caption template" hidden></div>
 
   <!-- social composer: pick a listing → AI captions per channel → schedule -->
   <div class="modal-scrim" id="cmpScrim"></div>
@@ -6441,6 +6508,7 @@
       if (window.SynListings && SynListings.listTemplates) {
         SynListings.listTemplates().then(function (rows) {
           var res = S.setTemplates(rows);
+          renderMyTemplates(rows);
           if (res.rejected.length) {
             /* A template referring to a token we cannot resolve is dropped
                rather than rendered -- braces in a live caption are worse than
@@ -6451,6 +6519,261 @@
           console.error('could not load caption templates; using the built-in angles', err);
         });
       }
+
+
+      /* ═══════════ template editor ═══════════
+         A pattern cannot be judged as text: "{priceLine} in {area}" tells you
+         nothing about what a buyer reads. So this is two panes -- the pattern,
+         and the same pattern rendered against a real listing of theirs -- and
+         the preview updates on every keystroke. */
+      var tplModal = document.getElementById('tplModal');
+      var tplScrim = document.getElementById('tplScrim');
+      var tplDraft = null;
+
+      function tplClose() {
+        tplModal.hidden = true; tplScrim.classList.remove('on');
+        document.body.style.overflow = '';
+      }
+      tplScrim.addEventListener('click', tplClose);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !tplModal.hidden) tplClose();
+      });
+
+      function tplOpen(draft) {
+        tplDraft = Object.assign({
+          id: null, name: '', why: '', hook_pattern: '', body_pattern: '',
+          cta: '', platforms: [], requires_verified: false,
+        }, draft || {});
+
+        var tokens = S.tokenNames();
+        var listingOpts = rows.map(function (r, i) {
+          return '<option value="' + i + '">' + esc(r.title || 'Listing ' + (i + 1)) + '</option>';
+        }).join('');
+
+        tplModal.innerHTML =
+          '<div class="modal-head"><div><div class="h2" style="margin:0">'
+          + (tplDraft.id ? 'Edit template' : 'New template') + '</div>'
+          + '<p class="muted" style="font-size:13px;margin:4px 0 0">Write it once. Every listing fills in its own details.</p>'
+          + '</div><button class="modal-x" type="button" id="tplX" aria-label="Close">\u00d7</button></div>'
+
+          + '<div class="tpl-grid">'
+          +   '<div>'
+          +     '<div class="tpl-field"><label for="tplName">Name</label>'
+          +       '<input id="tplName" type="text" maxlength="60" placeholder="Weekend viewings"></div>'
+          +     '<div class="tpl-field"><label for="tplWhy">When to use it <span style="text-transform:none;letter-spacing:0">(optional)</span></label>'
+          +       '<input id="tplWhy" type="text" maxlength="160" placeholder="Best for warm audiences already following us"></div>'
+          +     '<div class="tpl-field"><label for="tplHook">Opening line</label>'
+          +       '<textarea id="tplHook" style="min-height:64px"></textarea>'
+          +       '<div class="tpl-toks" data-into="tplHook">'
+          +         tokens.map(function (t) { return '<button type="button" class="tpl-tok">{' + t + '}</button>'; }).join('')
+          +       '</div></div>'
+          +     '<div class="tpl-field"><label for="tplBody">Body</label>'
+          +       '<textarea id="tplBody"></textarea>'
+          +       '<div class="tpl-toks" data-into="tplBody">'
+          +         tokens.map(function (t) { return '<button type="button" class="tpl-tok">{' + t + '}</button>'; }).join('')
+          +       '</div>'
+          +       '<div class="tpl-hint">Use <code>{area}</code> to drop in a value, or '
+          +         '<code>{verified?yes|no}</code> to say one thing when a listing is verified and another when it is not.</div>'
+          +     '</div>'
+          +     '<div class="tpl-field"><label for="tplCta">Closing line</label>'
+          +       '<input id="tplCta" type="text" maxlength="120" placeholder="Take a look \u2192"></div>'
+          +     '<div class="tpl-field"><label style="display:flex;align-items:center;gap:9px;text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:400">'
+          +       '<input type="checkbox" id="tplVerified" style="width:auto"> Only use on verified listings</label>'
+          +       '<div class="tpl-hint">Tick this if the wording claims anything about verification. A listing cannot self-certify, so the claim has to be true wherever it appears.</div></div>'
+          +   '</div>'
+
+          +   '<div><div class="tpl-prev">'
+          +     '<div class="tpl-prev-h"><span class="k">What a buyer reads</span>'
+          +       '<select id="tplAgainst">' + listingOpts + '</select></div>'
+          +     '<div class="tpl-out" id="tplOut"></div>'
+          +     '<div class="tpl-warn" id="tplWarn"></div>'
+          +     '<div class="tpl-note" id="tplNote"></div>'
+          +   '</div></div>'
+          + '</div>'
+
+          + '<div class="tpl-actions"><span class="grow"></span>'
+          +   '<button class="btn" type="button" id="tplCancel">Cancel</button>'
+          +   '<button class="btn btn-primary" type="button" id="tplSave">'
+          +     (tplDraft.id ? 'Save changes' : 'Save template') + '</button>'
+          + '</div>';
+
+        document.getElementById('tplName').value = tplDraft.name;
+        document.getElementById('tplWhy').value = tplDraft.why;
+        document.getElementById('tplHook').value = tplDraft.hook_pattern;
+        document.getElementById('tplBody').value = tplDraft.body_pattern;
+        document.getElementById('tplCta').value = tplDraft.cta;
+        document.getElementById('tplVerified').checked = !!tplDraft.requires_verified;
+
+        ['tplName', 'tplWhy', 'tplHook', 'tplBody', 'tplCta'].forEach(function (id) {
+          document.getElementById(id).addEventListener('input', tplPreview);
+        });
+        document.getElementById('tplVerified').addEventListener('change', tplPreview);
+        document.getElementById('tplAgainst').addEventListener('change', tplPreview);
+        document.getElementById('tplX').addEventListener('click', tplClose);
+        document.getElementById('tplCancel').addEventListener('click', tplClose);
+        document.getElementById('tplSave').addEventListener('click', tplSave);
+
+        /* Clicking a token puts it where the cursor was, which is the only
+           reason a token list beats a paragraph explaining the syntax. */
+        tplModal.querySelectorAll('.tpl-toks').forEach(function (box) {
+          box.addEventListener('click', function (e) {
+            var b = e.target.closest('.tpl-tok');
+            if (!b) return;
+            var into = document.getElementById(box.dataset.into);
+            var at = into.selectionStart == null ? into.value.length : into.selectionStart;
+            var end = into.selectionEnd == null ? at : into.selectionEnd;
+            into.value = into.value.slice(0, at) + b.textContent + into.value.slice(end);
+            into.focus();
+            into.selectionStart = into.selectionEnd = at + b.textContent.length;
+            tplPreview();
+          });
+        });
+
+        tplModal.hidden = false;
+        tplScrim.classList.add('on');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('tplName').focus();
+        tplPreview();
+      }
+
+      function tplCollect() {
+        return {
+          id: tplDraft && tplDraft.id,
+          name: document.getElementById('tplName').value.trim(),
+          why: document.getElementById('tplWhy').value.trim(),
+          hook_pattern: document.getElementById('tplHook').value,
+          body_pattern: document.getElementById('tplBody').value,
+          cta: document.getElementById('tplCta').value.trim(),
+          platforms: [],
+          requires_verified: document.getElementById('tplVerified').checked,
+        };
+      }
+
+      function tplPreview() {
+        var t = tplCollect();
+        var row = rows[+document.getElementById('tplAgainst').value || 0];
+        var out = document.getElementById('tplOut');
+        var warn = document.getElementById('tplWarn');
+        var note = document.getElementById('tplNote');
+        warn.textContent = ''; note.textContent = '';
+        if (!row) { out.textContent = 'Add a listing to preview against.'; return; }
+
+        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
+        if (bad.length) {
+          /* Shown before saving rather than after: an unknown token is the one
+             mistake that would reach a buyer as literal braces. */
+          out.textContent = '';
+          warn.textContent = 'Not a token: ' + bad.map(function (x) { return '{' + x + '}'; }).join(', ')
+            + '. Pick one from the list, or the template cannot be saved.';
+          return;
+        }
+
+        var p = S.shape(row);
+        try {
+          out.textContent = [S.renderPattern(t.hook_pattern, p), S.renderPattern(t.body_pattern, p), t.cta]
+            .filter(Boolean).join('\n\n');
+        } catch (err) { warn.textContent = err.message; return; }
+
+        /* The two things an agency cannot see by reading its own pattern. */
+        var msgs = [];
+        if (!p.verified && /verif/i.test(t.hook_pattern + ' ' + t.body_pattern) && !t.requires_verified) {
+          warn.textContent = 'This wording mentions verification, and the listing you are previewing '
+            + 'against is not verified. Tick "only use on verified listings", or the claim will run where it is not true.';
+        }
+        if (t.requires_verified) msgs.push('Skipped on listings that are not verified.');
+        var lit = (S.derenderPattern ? [] : []);
+        if (msgs.length) note.textContent = msgs.join(' ');
+      }
+
+      function tplSave() {
+        var t = tplCollect();
+        var btn = document.getElementById('tplSave');
+        var warn = document.getElementById('tplWarn');
+        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
+        if (bad.length) { warn.textContent = 'Fix the tokens first.'; return; }
+        if (!t.name) { warn.textContent = 'Give the template a name.'; return; }
+        if (!t.hook_pattern.trim()) { warn.textContent = 'A template needs an opening line.'; return; }
+
+        btn.disabled = true; btn.textContent = 'Saving\u2026';
+        SynListings.saveTemplate(t).then(function () {
+          return SynListings.listTemplates();
+        }).then(function (list) {
+          S.setTemplates(list);        // in use immediately, no reload
+          renderMyTemplates(list);
+          tplClose();
+          toast(t.id ? 'Template updated' : 'Template saved \u2014 it is in your next campaign');
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = t.id ? 'Save changes' : 'Save template';
+          warn.textContent = (err && err.message) || 'Could not save that.';
+        });
+      }
+
+      /* Their own templates, listed where campaigns are made. Seeds are not
+         listed: they cannot be edited, and a row with no controls is furniture. */
+      function renderMyTemplates(list) {
+        var box = document.getElementById('tplMine');
+        if (!box) return;
+        var mine = (list || []).filter(function (t) { return t.agency_id; });
+        if (!mine.length) {
+          box.innerHTML = '<div class="tpl-row" style="border-top:1px solid var(--border)">'
+            + '<span class="hk">No templates of your own yet \u2014 press <b>Save as template</b> '
+            + 'on a caption you like, or start one from scratch.</span>'
+            + '<button class="btn" type="button" id="tplNew">New template</button></div>';
+        } else {
+          box.innerHTML = '<div class="cmp-past-h"><span class="k">Your templates</span>'
+            + '<span class="n">' + mine.length + ' of your own, alongside the five built in</span></div>'
+            + mine.map(function (t) {
+                return '<div class="tpl-row" data-tid="' + esc(t.id) + '">'
+                  + '<span class="nm">' + esc(t.name) + '</span>'
+                  + '<span class="hk">' + esc(t.hook_pattern) + '</span>'
+                  + (t.requires_verified ? '<span class="vf">verified only</span>' : '')
+                  + '<button class="btn" type="button" data-edit-tpl>Edit</button>'
+                  + '<button class="btn" type="button" data-del-tpl>Delete</button></div>';
+              }).join('')
+            + '<div class="tpl-row"><span class="hk"></span>'
+            + '<button class="btn" type="button" id="tplNew">New template</button></div>';
+        }
+      }
+
+      document.getElementById('tplMine').addEventListener('click', function (e) {
+        if (e.target.id === 'tplNew') { tplOpen(null); return; }
+        var row = e.target.closest('[data-tid]');
+        if (!row) return;
+        var id = row.dataset.tid;
+        if (e.target.closest('[data-edit-tpl]')) {
+          SynListings.listTemplates().then(function (list) {
+            var t = list.filter(function (x) { return x.id === id; })[0];
+            if (t) tplOpen(t);
+          });
+          return;
+        }
+        if (e.target.closest('[data-del-tpl]')) {
+          if (!confirm('Delete this template? Captions it already wrote are kept.')) return;
+          SynListings.deleteTemplate(id)
+            .then(function () { return SynListings.listTemplates(); })
+            .then(function (list) { S.setTemplates(list); renderMyTemplates(list); toast('Template deleted'); })
+            .catch(function (err) { toast((err && err.message) || 'Could not delete that.'); });
+        }
+      });
+
+      /* Save as template, from a card. */
+      out.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-keep]');
+        if (!b || !campaign) return;
+        var v = campaign.variants.filter(function (x) { return x.id === b.dataset.keep; })[0];
+        var row = rows[+sel.value || 0];
+        if (!v || !row) return;
+        var draft = S.templateFromVariant(v, row);
+        tplOpen(draft);
+        /* Say what could not be turned back into a token. An agency that never
+           learns "2 bedrooms" is fixed will find out on a four-bedroom house. */
+        if (draft._literals && draft._literals.length) {
+          document.getElementById('tplNote').textContent =
+            'Kept as written, because they are too short to swap safely: '
+            + draft._literals.map(function (l) { return l.value; }).join(', ')
+            + '. Replace them with a token if they should change per listing.';
+        }
+      });
 
       loadChannels();
       /* Whatever the picker starts on. Without this the archive only appears
@@ -6549,7 +6872,13 @@
                   + ' · ' + (v.issues.length
                       ? '<span class="no">' + esc(v.issues[0]) + '</span>'
                       : '<span class="ok">passes</span>')
-                  + '</div></div>';
+                  + '</div>'
+                  /* Keep the SHAPE of this one. The caption is already
+                     rendered, so saving it verbatim would bake this listing's
+                     area and price into every future post -- the editor opens
+                     on the recovered pattern instead. */
+                  + '<button type="button" class="cmp-keep" data-keep="' + esc(v.id) + '">Save as template</button>'
+                  + '</div>';
               }).join('')
             + '</div></div>';
         });
