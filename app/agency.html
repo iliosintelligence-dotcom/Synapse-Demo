@@ -705,6 +705,34 @@
     .brand-preview .bp-chip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px;
       border-radius: 100px; color: #fff; }
     @media (max-width: 560px){ .look-logos, .swatch-row { grid-template-columns: 1fr; } }
+    /* The ask area is pinned under the panel body so it is reachable without
+       scrolling past whatever the pane happened to render. */
+    .tp-ask { border-top: 1px solid var(--border); padding: 10px 14px 12px;
+      background: var(--surface, #fff); display: flex; flex-direction: column; gap: 8px; }
+    .tp-thread { display: flex; flex-direction: column; gap: 8px; max-height: 42vh;
+      overflow-y: auto; }
+    .tp-thread:empty { display: none; }
+    .tp-msg { font-size: 13px; line-height: 1.55; border-radius: 12px; padding: 9px 12px;
+      white-space: pre-wrap; word-break: break-word; }
+    .tp-msg.you { align-self: flex-end; max-width: 88%; background: var(--brand); color: #fff; }
+    .tp-msg.toju { align-self: flex-start; background: rgba(20,20,20,0.05); color: var(--ink); }
+    .tp-msg.bad { align-self: flex-start; background: rgba(168,64,43,0.08); color: #a8402b; }
+    .tp-msg b { font-weight: 700; }
+    .tp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tp-chips:empty { display: none; }
+    /* Suggestions are buttons, not decoration -- pressing one asks it. */
+    .tp-chip { border: 1px solid rgba(54,54,54,0.2); background: transparent; cursor: pointer;
+      border-radius: 100px; padding: 7px 11px; font: 500 12px/1.25 var(--f-sans, inherit);
+      color: var(--ink-muted); text-align: left; }
+    .tp-chip:hover { border-color: rgba(54,54,54,0.45); color: var(--ink); }
+    .tp-composer { display: flex; gap: 8px; align-items: center; }
+    .tp-composer input { flex: 1; min-width: 0; min-height: 42px; border-radius: 11px;
+      border: 1px solid rgba(54,54,54,0.22); padding: 10px 12px; font-size: 13.5px;
+      background: #fff; color: var(--ink); font-family: inherit; }
+    .tp-composer button { width: 42px; height: 42px; flex: none; border-radius: 11px; border: 0;
+      background: var(--brand); color: #fff; font-size: 16px; cursor: pointer; }
+    .tp-composer button:disabled { opacity: .5; cursor: default; }
+
     .cmp-brandbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       border: 1px solid var(--border); border-left: 4px solid var(--brand);
       border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
@@ -2833,6 +2861,21 @@
       <button class="x" id="tpClose" aria-label="Close">×</button>
     </div>
     <div class="tbody" id="tpBody"></div>
+
+    <!-- Every pane gets this, not just Overview. The panel used to be
+         read-only: it showed what it had decided to show and there was no way
+         to ask it anything, which is the wrong shape for something called an
+         advisor. -->
+    <div class="tp-ask">
+      <div class="tp-thread" id="tpThread"></div>
+      <div class="tp-chips" id="tpChips"></div>
+      <form class="tp-composer" id="tpForm">
+        <input id="tpInput" type="text" autocomplete="off"
+               placeholder="Ask about your numbers, or how to do something…"
+               aria-label="Ask the advisor" />
+        <button type="submit" id="tpSend" aria-label="Send">↑</button>
+      </form>
+    </div>
   </aside>
 
   <!-- lead workspace drawer -->
@@ -6760,6 +6803,7 @@
       tpBody.innerHTML = snapshotHTML(pane) + cfg.html();
       if (cfg.after) cfg.after();
       tpScrim.classList.add('on'); tpanel.classList.add('on'); document.body.classList.add('tpanel-open');
+      advChips();
     }
     // keep the open panel's snapshot fresh when listings/marketing stats change
     function refreshTojuPanel(pane) {
@@ -6768,6 +6812,144 @@
       const a = document.querySelector('#tabs a.on');
       if (a && a.dataset.pane === pane) openToju();
     }
+
+    /* ═══════════ the advisor you can actually talk to ═══════════
+       The panel offered the same three questions to every agency in every
+       state -- "Why are sales down this month?" to somebody who signed up four
+       minutes ago and has no sales, no listings and nothing to focus on. The
+       suggestions now follow where the agency actually IS, and anything can be
+       asked directly. */
+
+    /* Read from what the portal already knows, so the chips are right the
+       instant the panel opens rather than after a round trip. The server
+       recomputes the same thing from the database before it answers -- this
+       copy decides what to SUGGEST, never what is true. */
+    function advisorStage() {
+      const listings = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA))
+        ? LISTINGS_DATA : [];
+      const brand = window.BRAND || null;
+      const brandThin = !brand || !(brand.name || '').trim() || !(brand.logo_url || '').trim();
+      /* `leads` is the portal's own array, replaced wholesale when the fetch
+         lands, so this reads whatever the CRM currently has. */
+      const leadCount = (typeof leads !== 'undefined' && Array.isArray(leads)) ? leads.length : 0;
+      if (!listings.length) return brandThin ? 'new' : 'no-listings';
+      if (!leadCount) return 'no-leads';
+      return 'running';
+    }
+
+    /* One set per stage, plus a pane-specific question so the panel still
+       knows which screen you are on. Written as things an agency would
+       actually say, not as report titles. */
+    const STAGE_QS = {
+      new: [
+        'I just signed up — what should I do first?',
+        'How do I add my first listing?',
+        'What does Synapse do for me once a listing is up?',
+      ],
+      'no-listings': [
+        'How do I add my first listing?',
+        'What makes a listing get verified?',
+        'How do I set up my brand so posts sign off as us?',
+      ],
+      'no-leads': [
+        'How do I publish this listing to Instagram?',
+        'Why has nothing reached buyers yet?',
+        'What happens when a buyer contacts us?',
+      ],
+      running: [
+        'Where should I focus today?',
+        'Which of my listings need attention?',
+        'How is my pipeline looking?',
+      ],
+    };
+    const PANE_Q = {
+      overview:   'Which of my listings are not verified, and why does that matter?',
+      listings:   'Which listings are about to expire?',
+      marketing:  'How do I publish for real instead of rehearsing?',
+      crm:        'How do I move a lead through the five stages?',
+      social:     'What should I post next?',
+      negotiator: 'How does Toju negotiate on my behalf?',
+      team:       'How do I invite an agent to my team?',
+      brand:      'How do I set up my brand properly?',
+      plan:       'Which plan am I on, and what does it include?',
+    };
+
+    let ADV_HISTORY = [];      // the panel's own conversation, this session
+    let advBusy = false;
+
+    function advChips() {
+      const box = document.getElementById('tpChips');
+      if (!box) return;
+      const qs = (STAGE_QS[advisorStage()] || STAGE_QS.running).slice();
+      const pq = PANE_Q[currentPane()];
+      if (pq && qs.indexOf(pq) === -1) qs.push(pq);
+      box.innerHTML = qs.map(function (q) {
+        return '<button type="button" class="tp-chip">' + escT(q) + '</button>';
+      }).join('');
+    }
+
+    function advSay(who, text) {
+      const th = document.getElementById('tpThread');
+      if (!th) return null;
+      const d = document.createElement('div');
+      d.className = 'tp-msg ' + who;
+      /* **bold** only. The advisor writes plain prose and the odd bold label;
+         anything else is shown as typed rather than parsed as markup. */
+      d.innerHTML = escT(text).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+      th.appendChild(d);
+      th.scrollTop = th.scrollHeight;
+      return d;
+    }
+
+    function advAsk(q) {
+      if (advBusy || !q) return;
+      advBusy = true;
+      const input = document.getElementById('tpInput');
+      const send = document.getElementById('tpSend');
+      input.value = ''; send.disabled = true;
+      document.getElementById('tpChips').innerHTML = '';
+      advSay('you', q);
+      const pending = advSay('toju', 'Thinking…');
+
+      SynAuth.client()
+        .then(function (c) { return c.auth.getSession(); })
+        .then(function (r) {
+          const tok = r && r.data && r.data.session && r.data.session.access_token;
+          if (!tok) throw new Error('Sign in again to ask.');
+          return fetch(SB_URL + '/functions/v1/agency-advisor', {
+            method: 'POST',
+            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: q, history: ADV_HISTORY.slice(-10) }),
+          });
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (d) {
+          if (d.error && !d.answer) throw new Error(d.error);
+          pending.textContent = '';
+          pending.innerHTML = escT(d.answer).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+          ADV_HISTORY.push({ role: 'user', content: q });
+          ADV_HISTORY.push({ role: 'assistant', content: d.answer });
+        })
+        .catch(function (err) {
+          pending.className = 'tp-msg bad';
+          pending.textContent = err.message || 'Could not reach the advisor just now.';
+        })
+        .then(function () {
+          advBusy = false; send.disabled = false;
+          advChips();
+          document.getElementById('tpThread').scrollTop = 1e6;
+        });
+    }
+
+    document.getElementById('tpForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      advAsk(document.getElementById('tpInput').value.trim());
+    });
+    document.getElementById('tpChips').addEventListener('click', function (e) {
+      const b = e.target.closest('.tp-chip');
+      if (b) advAsk(b.textContent.trim());
+    });
+
     function closeToju() { tpScrim.classList.remove('on'); tpanel.classList.remove('on'); document.body.classList.remove('tpanel-open'); }
     document.getElementById('tojuFab').addEventListener('click', openToju);
     document.getElementById('tpClose').addEventListener('click', closeToju);
