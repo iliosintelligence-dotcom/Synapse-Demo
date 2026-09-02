@@ -301,6 +301,25 @@
              page just redirected them into the app — they were never actually
              asked for a new password, so the thing they came here to fix never
              got fixed. See the recovery handling below. -->
+        <!-- Google returns a name and an email and nothing else. A business
+             signing in that way arrives with no agency behind it, so this is
+             where it is asked -- once, and only when there is genuinely
+             nothing to attach the account to. -->
+        <form id="agencyForm" novalidate hidden>
+          <div class="au-field">
+            <label class="au-label" for="agName">What is your agency called?</label>
+            <input class="au-input" id="agName" type="text" autocomplete="organization" required />
+            <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
+            <div class="au-err" id="errAgName" hidden></div>
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="agCity">City (optional)</label>
+            <input class="au-input" id="agCity" type="text" autocomplete="address-level2" placeholder="Lagos" />
+          </div>
+          <button class="au-submit" id="agGo" type="submit">Finish setting up</button>
+          <div id="agNote"></div>
+        </form>
+
         <form id="recoverForm" novalidate hidden>
           <div class="au-field">
             <label class="au-label" for="rpPass1">New password</label>
@@ -603,7 +622,10 @@
           busy = true;
           el('auGoogle').disabled = true;
           el('auGoogleLabel').textContent = 'Taking you to Google...';
-          SynAuth.signInWithProvider('google', next).catch(function (err) {
+          /* The role goes WITH them. Without it the return is
+             indistinguishable from a buyer's, and a business would be
+             provisioned as a consumer with no way back. */
+          SynAuth.signInWithProvider('google', next, role).catch(function (err) {
             busy = false;
             el('auGoogle').disabled = false;
             el('auGoogleLabel').textContent = 'Continue with Google';
@@ -816,10 +838,83 @@
       // load, and PASSWORD_RECOVERY fires instead of it when the visitor
       // arrived via a recovery link. Whichever one arrives is authoritative;
       // `decided` stops any late/duplicate event from acting twice.
+      /* Coming back from Google. This has to be settled BEFORE the ordinary
+         INITIAL_SESSION redirect runs, because that one compares the session's
+         role against the page's and an agency returning from OAuth fails that
+         comparison by definition: the trigger made them a consumer, since
+         signInWithOAuth had no way to say otherwise. Left alone it would tell
+         a business to "sign in with a customer account", about the account
+         they had just made. */
+      var oauthReturn = params.get('oauth') === '1';
+
+      function enterAgencyMode(suggestedName) {
+        ['.au-tabs', '.au-methods'].forEach(function (sel) {
+          var n = document.querySelector(sel);
+          if (n) n.hidden = true;
+        });
+        form.hidden = true;
+        if (el('auOauth')) el('auOauth').hidden = true;
+        if (el('forgotWrap')) el('forgotWrap').hidden = true;
+        el('demoNote').textContent = '';
+        el('agencyForm').hidden = false;
+        el('auH').textContent = 'One more thing';
+        el('auP').textContent = 'Your account is ready. Tell us the agency it belongs to.';
+        if (suggestedName) el('agName').value = suggestedName;
+        el('agName').focus();
+      }
+
+      function finishOauth(session) {
+        var dest = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+        if (role !== 'agency') { window.location.href = dest; return; }
+
+        /* Ask the database, do not infer. A business that signed in with
+           Google twice already HAS an agency the second time, and must not be
+           asked to name a new one. */
+        SynAuth.hasAgency().then(function (has) {
+          if (has) { window.location.href = dest; return; }
+          var meta = (session && session.user && session.user.user_metadata) || {};
+          enterAgencyMode(meta.name || meta.full_name || '');
+        });
+      }
+
+      el('agencyForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (busy) return;
+        var name = el('agName').value.trim();
+        el('errAgName').hidden = true;
+        if (!name) {
+          fieldError('agName', 'errAgName', 'Enter the name your agency trades under.');
+          return;
+        }
+        busy = true;
+        var b = el('agGo');
+        b.disabled = true; b.textContent = 'Setting up\u2026';
+        SynAuth.provisionAgency(name, el('agCity').value.trim()).then(function (res) {
+          if (res && res.error) throw res.error;
+          window.location.href = SynAuth.safeNext(next, 'agency.html?welcome=agency');
+        }).catch(function (err) {
+          busy = false; b.disabled = false; b.textContent = 'Finish setting up';
+          /* "already belongs to an agency" means the server refused a second
+             one -- which is the guard working. They simply go in. */
+          var m = String((err && err.message) || '').toLowerCase();
+          if (m.indexOf('already') > -1) {
+            window.location.href = SynAuth.safeNext(next, 'agency.html');
+            return;
+          }
+          el('agNote').innerHTML = '<div class="au-note bad" role="status">'
+            + friendly(err) + '</div>';
+        });
+      });
+
       var decided = false;
       SynAuth.client().then(function (c) {
         c.auth.onAuthStateChange(function (event, session) {
           if (decided) return;
+          if (oauthReturn && session && event !== 'PASSWORD_RECOVERY') {
+            decided = true;
+            finishOauth(session);
+            return;
+          }
           if (event === 'PASSWORD_RECOVERY') {
             decided = true; recovering = true;
             enterRecoverMode();

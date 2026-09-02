@@ -185,9 +185,66 @@
     return providersPromise;
   }
 
-  function signInWithProvider(provider, next) {
+  /* Whether this account has an agency behind it. OAuth cannot carry the
+     role at signup, so after a Google return we have to ASK the database
+     rather than trust the token: a business that signed in with Google is
+     indistinguishable from a buyer until this answers. */
+  function hasAgency() {
+    return client().then(function (c) {
+      return c.auth.getUser().then(function (r) {
+        var u = r && r.data && r.data.user;
+        if (!u) return false;
+        return c.from('agency_members').select('agency_id')
+          .eq('profile_id', u.id).is('deleted_at', null).limit(1)
+          .then(function (res) { return !!(res.data && res.data.length); });
+      });
+    }).catch(function () { return false; });
+  }
+
+  /** Gives the signed-in account its first agency. Refused server-side if they
+   *  already have one, so this cannot mint a second. */
+  function provisionAgency(name, city) {
+    return client().then(function (c) {
+      return c.rpc('provision_agency_for_current_user', {
+        p_agency_name: name,
+        p_city: city || null,
+      }).then(function (res) {
+        if (res && res.error) return res;
+
+        /* The RPC writes profiles, agencies and agency_members -- everything
+           the SERVER uses. It does not write user_metadata, and roleOf() reads
+           exactly that, so without this the browser still believes the person
+           is a customer: agency.html's role gate turns them away and sends
+           them back to sign-in, which sends them to agency.html, and nobody
+           ever gets in. The email path avoids it only because signUp sets the
+           metadata at creation.
+
+           This is not a privilege grant. Every server-side check goes through
+           agency_members and agency_role(); user_metadata is a client-side hint
+           about which UI to show, and setting it alone gains nothing. */
+        return c.auth.updateUser({ data: { role: 'agency_owner' } })
+          .then(function () { return getUser(); })
+          .then(function () { return res; })
+          .catch(function () { return res; });   // provisioned either way
+      });
+    });
+  }
+
+  function signInWithProvider(provider, next, role) {
     if (OAUTH_PROVIDERS.indexOf(provider) === -1) {
       return Promise.reject(new Error('Unsupported sign-in provider: ' + provider));
+    }
+    /* THE ROLE HAS TO SURVIVE THE ROUND TRIP.
+       signInWithOAuth cannot pass user metadata, so handle_new_user sees no
+       role and makes every Google signup a consumer -- including a business.
+       The intent therefore travels in the return URL and is settled when the
+       browser comes back, by asking the database what this account actually
+       has. Coming back through the sign-in page rather than straight to the
+       destination is deliberate: an agency with no agency row needs to be
+       asked its name before the portal will let it in at all. */
+    if (role) {
+      next = 'signin.html?oauth=1&role=' + encodeURIComponent(role)
+        + (next ? '&next=' + encodeURIComponent(next) : '');
     }
     // Resolve to an absolute same-origin URL: safeNext() returns a path, and
     // Supabase needs a full URL to hand to the provider.
@@ -387,6 +444,7 @@
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     normalisePhone: normalisePhone,
     signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
+    hasAgency: hasAgency, provisionAgency: provisionAgency,
     mailOrigin: mailOrigin,
     enabledProviders: enabledProviders,
     requireAuth: requireAuth, paint: paintAll,
