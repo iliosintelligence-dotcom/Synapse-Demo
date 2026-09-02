@@ -2,6 +2,22 @@
    White VisionOS surfaces, brand orange accent, EB Garamond + Lato (Google
    Fonts, loaded per-page <link>). These mirror the real @synapse/ui screens
    so the flow can be clicked through. */
+
+/* ── the hidden attribute means hidden ──────────────────────────────────────
+   `[hidden]` is a UA rule at the lowest possible precedence, so ANY class that
+   sets `display` beats it. Every component here that sets display -- .btn,
+   .cnav-fbtn, .cn-count -- therefore renders its own hidden elements anyway,
+   and the bug looks like "the button did not go away" rather than like a
+   specificity problem.
+
+   This codebase had already patched it four separate times, one selector at a
+   time (.cnav-fbtn[hidden], .cnav-sfield button[hidden], .cn-count[hidden],
+   .cnav-desk[hidden]) -- four fixes for one cause, and a fifth waiting for the
+   next component. Said once, here. Those four are now redundant and harmless.
+
+   !important is right for this one: `hidden` is semantic, not stylistic, and
+   nothing should ever be showing an element the markup says is hidden. */
+[hidden] { display: none !important; }
 :root {
   /* ── GRAIN ────────────────────────────────────────────────────────────────
      Replaces the blurred radial washes that sat behind most of this site. A
@@ -292,11 +308,28 @@ a { color: inherit; text-decoration: none; }
 .auth-chip { display: inline-flex; align-items: center; gap: 9px; }
 .auth-av { width: 27px; height: 27px; border-radius: 50%; background: #121212; color: #f5f5f5;
   font: 700 12px var(--f-sans); display: flex; align-items: center; justify-content: center; flex: none; }
+/* THESE WERE 12 PIXELS TALL. padding:0 on a 12.5px line gives a control the
+   height of its own text -- it worked when clicked, but you had to hit a
+   48x12 strip to do it, which reads as a dead button rather than a small one.
+   Reported as "the sign out button is unresponsive"; it was never
+   unresponsive, it was unhittable.
+
+   The visible text keeps its size and the hit area is carried by a
+   pseudo-element, the same way the rest of this codebase holds the 44px
+   floor. */
+.auth-out, .auth-in { position: relative; }
+.auth-out::before, .auth-in::before {
+  content: ''; position: absolute; left: -8px; right: -8px;
+  top: 50%; transform: translateY(-50%); height: 44px;
+}
 .auth-out { background: none; border: none; cursor: pointer; font: 600 12.5px var(--f-sans);
   color: var(--ink-dim); padding: 0; }
 .auth-out:hover { color: var(--ink); }
 .auth-in { font-size: 12.5px; font-weight: 600; color: var(--ink-muted); }
 .auth-in:hover { color: var(--ink); }
+/* Two links sit side by side when signed out; without a gap their 44px areas
+   overlap and the wrong one takes the tap. */
+[data-auth-slot] { display: inline-flex; align-items: center; gap: 18px; }
 
 /* ── Map pins ──────────────────────────────────────────────────────────────
    A price pill on a pointer tail, so the pin points AT the property instead of

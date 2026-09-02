@@ -685,6 +685,70 @@
     .ts-name { font: 700 10.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
     .ts-glyphs { font-size: 40px; line-height: 1.2; margin: 6px 0 4px; }
     .ts-sample { font-size: 14px; color: var(--ink-muted); }
+    /* ── the brand kit ──────────────────────────────────────────────────
+       A page you look at, not a form you fill. Sections are cards on a grid
+       so a partly-filled brand still reads as a layout rather than as gaps. */
+    .bk-actions { display: flex; gap: 8px; align-items: center; }
+    .bk-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .bk-card { grid-column: span 12; border: 1px solid var(--border); border-radius: 14px;
+      background: var(--surface, #fff); padding: 18px; }
+    .bk-card.half { grid-column: span 6; }
+    .bk-card.third { grid-column: span 4; }
+    @media (max-width: 900px) { .bk-card.half, .bk-card.third { grid-column: span 12; } }
+    .bk-k { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-dim); margin-bottom: 12px; }
+
+    /* The identity line: the mark, the name, the line under it. */
+    .bk-id { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .bk-id img { width: auto; height: 56px; min-width: 56px; max-width: 220px;
+      object-fit: contain; border-radius: 12px; background: #fff;
+      border: 1px solid var(--border); padding: 3px; }
+    .bk-id .bk-mark { width: 56px; height: 56px; border-radius: 12px; flex: none;
+      display: flex; align-items: center; justify-content: center;
+      font: 700 20px var(--f-sans); color: #fff; }
+    .bk-nm { font-size: 24px; font-weight: 700; line-height: 1.15; }
+    .bk-tag { font-size: 14px; color: var(--ink-muted); margin-top: 3px; }
+
+    /* Logos on the two grounds they will really sit on. */
+    .bk-logos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .bk-logo { border-radius: 12px; height: 108px; display: flex; align-items: center;
+      justify-content: center; border: 1px solid var(--border); overflow: hidden; }
+    .bk-logo.light { background: #f4f2ee; }
+    .bk-logo.dark  { background: #17181a; }
+    .bk-logo img { max-width: 72%; max-height: 66%; object-fit: contain; }
+    .bk-logo .bk-none { font-size: 12.5px; color: var(--ink-dim); }
+    .bk-logo.dark .bk-none { color: rgba(255,255,255,0.42); }
+    .bk-cap { font-size: 11.5px; color: var(--ink-dim); margin-top: 7px; text-align: center; }
+
+    /* Colours big enough to judge, and copyable -- the two things a brand
+       page is actually used for. */
+    .bk-colours { display: flex; gap: 12px; flex-wrap: wrap; }
+    .bk-swatch { border: 0; padding: 0; background: none; cursor: pointer; text-align: left; }
+    .bk-swatch i { display: block; width: 108px; height: 76px; border-radius: 12px;
+      border: 1px solid rgba(20,20,20,0.12); }
+    .bk-swatch .bk-hex { display: block; font: 600 12px var(--f-sans); margin-top: 7px;
+      color: var(--ink); font-variant-numeric: tabular-nums; }
+    .bk-swatch .bk-role { display: block; font-size: 11.5px; color: var(--ink-dim); }
+    .bk-swatch:hover .bk-hex { text-decoration: underline; }
+
+    /* The typeface, set in itself. */
+    .bk-type-name { font-size: 15px; font-weight: 700; }
+    .bk-glyphs { font-size: 34px; line-height: 1.25; margin: 8px 0 4px; word-break: break-word; }
+    .bk-sample { font-size: 14px; color: var(--ink-muted); }
+
+    .bk-rows { display: flex; flex-direction: column; gap: 10px; }
+    .bk-row { display: flex; gap: 12px; font-size: 13.5px; align-items: baseline; }
+    .bk-row .bk-lab { min-width: 96px; color: var(--ink-dim); flex: none; }
+    .bk-row .bk-val { color: var(--ink); word-break: break-word; }
+    .bk-row a.bk-val { color: var(--ink); }
+    .bk-none { color: var(--ink-dim); font-style: normal; }
+
+    /* An empty brand should invite the one action that fixes it, not show
+       eight empty cards. */
+    .bk-empty { border: 1px dashed rgba(54,54,54,0.28); border-radius: 14px; padding: 30px 22px;
+      text-align: center; }
+    .bk-empty .h2 { margin: 0 0 6px; }
+
     .brand-preview { border-radius: 12px; border: 1px solid var(--border); background: #fff;
       padding: 16px 18px; display: flex; align-items: center; gap: 14px; min-height: 64px; }
     .brand-preview .bp-mark { width: 46px; height: 46px; border-radius: 10px; flex: none; display: flex;
@@ -2686,7 +2750,11 @@
               <div class="h1">Brand</div>
               <p class="muted" style="font-size:14px;margin-top:4px">Your logo, colours, voice and links. Toju uses these when it writes and designs anything on your behalf.</p>
             </div>
-            <button class="btn btn-primary" id="brandSave">Save brand</button>
+            <div class="bk-actions">
+              <button class="btn btn-primary" id="brandEdit" type="button">Edit brand</button>
+              <button class="btn" id="brandCancel" type="button" hidden>Cancel</button>
+              <button class="btn btn-primary" id="brandSave" hidden>Save brand</button>
+            </div>
           </div>
 
           <!-- First-run onboarding. Shown when the agency arrives from signup,
@@ -2707,7 +2775,15 @@
 
           <div id="brandGate" class="noti-empty" style="margin-top:20px" hidden></div>
 
-          <div id="brandForm" style="margin-top:20px">
+          <!-- WHAT THIS PAGE IS WHEN YOU ARE NOT CHANGING IT.
+               It used to be a column of text inputs and nothing else: arriving
+               at your own brand page showed you a settings screen rather than
+               your brand. This is the brand -- logo on both grounds, the
+               colours at a size you can actually judge, the typeface set in
+               itself -- and the inputs are one button away. -->
+          <div id="brandView" style="margin-top:20px"></div>
+
+          <div id="brandForm" style="margin-top:20px" hidden>
             <div class="card brand-hero">
               <div class="bh-label">How Toju introduces you</div>
               <div class="brand-preview" id="bkPreview" aria-live="polite"></div>
@@ -7715,6 +7791,175 @@
         if (el) el.addEventListener('input', () => { el.dataset.stored = '1'; preview(); });
       });
 
+
+      /* ── the brand kit: what this page is when you are not editing ──────
+         Rendered from the same inputs the form writes, so it cannot drift
+         from what is stored -- preview() calls it on every keystroke and
+         after every load, which means the view is correct the moment you
+         come back from editing without a second read. */
+      const view = f('brandView');
+      const editBtn = f('brandEdit'), cancelBtn = f('brandCancel');
+      let brandMode = 'view';
+
+      const bkVal = (id) => (f(id) ? f(id).value.trim() : '');
+      const bkNone = (what) => '<span class="bk-none">' + what + '</span>';
+
+      function brandIsEmpty() {
+        return !['bkName', 'bkTagline', 'bkDesc', 'bkLogo', 'bkLogoDark',
+                 'bkVoice', 'bkWebsite', 'bkInstagram', 'bkWhatsapp']
+          .some((id) => bkVal(id))
+          && f('bkColor') && f('bkColor').dataset.stored !== '1';
+      }
+
+      function renderKit() {
+        if (!view) return;
+        if (brandIsEmpty()) {
+          view.innerHTML =
+            '<div class="bk-empty"><div class="h2">Your brand is not set up yet</div>'
+            + '<p class="muted" style="font-size:13.5px;max-width:460px;margin:0 auto 16px">'
+            + 'Your logo, colours and voice are what make Toju\u2019s captions sound like your '
+            + 'agency instead of a generic listing site. It takes about two minutes.</p>'
+            + '<button class="btn btn-primary" type="button" data-bk-edit>Set up your brand</button></div>';
+          return;
+        }
+
+        const name = bkVal('bkName') || 'Your agency';
+        const tagline = bkVal('bkTagline');
+        const logo = bkVal('bkLogo'), logoDark = bkVal('bkLogoDark');
+        const font = bkVal('bkFont');
+        const colourSet = f('bkColor') && f('bkColor').dataset.stored === '1';
+        const colour2Set = f('bkColor2') && f('bkColor2').dataset.stored === '1';
+        const c1 = bkVal('bkColor') || '#121212';
+        const c2 = bkVal('bkColor2') || '#c76a1a';
+        const initials = name.split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '\u2014';
+
+        const link = (v, href) => v
+          ? '<a class="bk-val" href="' + esc2(href || v) + '" target="_blank" rel="noopener noreferrer">' + esc2(v) + '</a>'
+          : bkNone('Not added');
+        const row = (lab, val) => '<div class="bk-row"><span class="bk-lab">' + lab + '</span>'
+          + (val && val.indexOf('<') === 0 ? val : '<span class="bk-val">' + (val || bkNone('Not set')) + '</span>') + '</div>';
+
+        const ig = bkVal('bkInstagram');
+        const igHref = ig ? (/^https?:/i.test(ig) ? ig : 'https://instagram.com/' + ig.replace(/^@/, '')) : '';
+        const wa = bkVal('bkWhatsapp');
+
+        view.innerHTML =
+          '<div class="bk-grid">'
+
+          /* identity */
+          + '<div class="bk-card">'
+          +   '<div class="bk-k">Identity</div>'
+          +   '<div class="bk-id">'
+          +     (logo
+                  ? '<img src="' + esc2(logo) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'bk-mark\',textContent:' + JSON.stringify(initials) + ',style:\'background:' + esc2(c1) + '\'}))">'
+                  : '<div class="bk-mark" style="background:' + esc2(c1) + '">' + esc2(initials) + '</div>')
+          +     '<div style="min-width:0">'
+          +       '<div class="bk-nm"' + (font ? ' style="font-family:' + esc2(font) + '"' : '') + '>' + esc2(name) + '</div>'
+          +       '<div class="bk-tag">' + (tagline ? esc2(tagline) : bkNone('No tagline yet')) + '</div>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>'
+
+          /* logos on both grounds */
+          + '<div class="bk-card half"><div class="bk-k">Logo</div><div class="bk-logos">'
+          +   '<div><div class="bk-logo light">'
+          +     (logo ? '<img src="' + esc2(logo) + '" alt="">' : '<span class="bk-none">No logo</span>')
+          +   '</div><div class="bk-cap">On light</div></div>'
+          +   '<div><div class="bk-logo dark">'
+          +     ((logoDark || logo) ? '<img src="' + esc2(logoDark || logo) + '" alt="">' : '<span class="bk-none">No logo</span>')
+          +   '</div><div class="bk-cap">' + (logoDark ? 'On dark' : 'On dark (same file)') + '</div></div>'
+          + '</div></div>'
+
+          /* colours */
+          + '<div class="bk-card half"><div class="bk-k">Colours</div><div class="bk-colours">'
+          +   '<button type="button" class="bk-swatch" data-copy="' + esc2(c1.toUpperCase()) + '">'
+          +     '<i style="background:' + esc2(c1) + '"></i>'
+          +     '<span class="bk-hex">' + (colourSet ? esc2(c1.toUpperCase()) : 'Not set') + '</span>'
+          +     '<span class="bk-role">Primary</span></button>'
+          +   '<button type="button" class="bk-swatch" data-copy="' + esc2(c2.toUpperCase()) + '">'
+          +     '<i style="background:' + esc2(c2) + '"></i>'
+          +     '<span class="bk-hex">' + (colour2Set ? esc2(c2.toUpperCase()) : 'Not set') + '</span>'
+          +     '<span class="bk-role">Accent</span></button>'
+          + '</div></div>'
+
+          /* typeface, set in itself */
+          + '<div class="bk-card half"><div class="bk-k">Typeface</div>'
+          +   (font
+                ? '<div class="bk-type-name">' + esc2(font) + '</div>'
+                  + '<div class="bk-glyphs" style="font-family:' + esc2(font) + '">Aa Bb Cc 123</div>'
+                  + '<div class="bk-sample" style="font-family:' + esc2(font) + '">'
+                  + esc2(tagline || 'A three-bedroom in Lekki, priced to move.') + '</div>'
+                : bkNone('No typeface chosen \u2014 captions use the default.'))
+          + '</div>'
+
+          /* voice */
+          + '<div class="bk-card half"><div class="bk-k">Voice</div>'
+          +   (bkVal('bkVoice')
+                ? '<div style="font-size:13.5px;line-height:1.6">' + esc2(bkVal('bkVoice')) + '</div>'
+                : bkNone('Not set \u2014 Toju writes in a neutral voice.'))
+          + '</div>'
+
+          /* about */
+          + '<div class="bk-card half"><div class="bk-k">About</div>'
+          +   (bkVal('bkDesc')
+                ? '<div style="font-size:13.5px;line-height:1.6">' + esc2(bkVal('bkDesc')) + '</div>'
+                : bkNone('No description yet.'))
+          + '</div>'
+
+          /* where to find you */
+          + '<div class="bk-card half"><div class="bk-k">Where to find you</div><div class="bk-rows">'
+          +   row('Website', link(bkVal('bkWebsite'), bkVal('bkWebsite')))
+          +   row('Instagram', ig ? link(ig, igHref) : bkNone('Not added'))
+          +   row('WhatsApp', wa ? esc2(wa) : bkNone('Not added'))
+          +   row('City', bkVal('bkCity') ? esc2(bkVal('bkCity')) : bkNone('Not set'))
+          + '</div></div>'
+
+          + '</div>';
+      }
+
+      /* Copying a hex is the single most common thing anyone does with a brand
+         page -- it is why the colour is written next to the swatch at all. */
+      view && view.addEventListener('click', (e) => {
+        const ed = e.target.closest('[data-bk-edit]');
+        if (ed) { setBrandMode('edit'); return; }
+        const sw = e.target.closest('.bk-swatch');
+        if (!sw) return;
+        const hex = sw.dataset.copy || '';
+        if (navigator.clipboard && hex) {
+          navigator.clipboard.writeText(hex)
+            .then(() => toast('Copied ' + hex))
+            .catch(() => toast(hex));
+        } else { toast(hex); }
+      });
+
+      /* One switch, so the buttons and the two panels can never disagree. */
+      function setBrandMode(mode) {
+        brandMode = mode === 'edit' ? 'edit' : 'view';
+        const editing = brandMode === 'edit';
+        if (form) form.hidden = !editing;
+        if (view) view.hidden = editing;
+        if (editBtn) editBtn.hidden = editing;
+        if (saveBtn) saveBtn.hidden = !editing;
+        if (cancelBtn) cancelBtn.hidden = !editing;
+        if (editing) {
+          preview();
+          const first = f('bkName');
+          if (first) first.focus();
+        } else {
+          renderKit();
+        }
+      }
+
+      editBtn && editBtn.addEventListener('click', () => setBrandMode('edit'));
+      cancelBtn && cancelBtn.addEventListener('click', () => {
+        /* Reload from storage rather than keeping half-typed edits: Cancel has
+           to actually discard, or it is just another way to leave the page. */
+        if (window.SynListings && SynListings.loadBrand) {
+          SynListings.loadBrand().then((b) => { fill(b || {}); preview(); setBrandMode('view'); })
+            .catch(() => setBrandMode('view'));
+        } else { setBrandMode('view'); }
+      });
+
       function preview() {
         buildPresets();
         const c1 = f('bkColor').value || '#121212', c2 = f('bkColor2').value || '#c76a1a';
@@ -7749,6 +7994,10 @@
         const lp = f('bkLogoPrevLight'), dp = f('bkLogoPrevDark');
         if (lp) lp.innerHTML = logo ? `<img src="${esc2(logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty">No logo yet</span>';
         if (dp) dp.innerHTML = (logoDark || logo) ? `<img src="${esc2(logoDark || logo)}" alt="" onerror="this.parentElement.innerHTML='<span class=&quot;lt-empty&quot; style=&quot;color:rgba(255,255,255,0.4)&quot;>Couldn’t load that image</span>'">` : '<span class="lt-empty" style="color:rgba(255,255,255,0.4)">No logo yet</span>';
+
+        /* The kit reads the same inputs, so repainting it here means the view
+           is already correct when Save returns to it. */
+        if (typeof renderKit === 'function') renderKit();
 
         // (hex readouts are handled above, where chosen-vs-default is known)
 
@@ -7866,6 +8115,8 @@
       SynListings.loadBrand().then((b) => {
         if (!b) {
           form.hidden = true; saveBtn.disabled = true;
+          if (view) view.hidden = true;
+          if (editBtn) editBtn.hidden = true;
           gate.hidden = false;
           gate.textContent = 'Sign in as an agency to set up your brand.';
           return;
@@ -7873,8 +8124,12 @@
         fill(b);
         paintLogo('light'); paintLogo('dark');
         refreshOnboard(b);
+        /* Land on the brand, not on the settings for it. */
+        setBrandMode('view');
       }).catch(() => {
         form.hidden = true; saveBtn.disabled = true;
+        if (view) view.hidden = true;
+        if (editBtn) editBtn.hidden = true;
         gate.hidden = false;
         gate.textContent = 'Could not load your brand details — check your connection and reload.';
       });
