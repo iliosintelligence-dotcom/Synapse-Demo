@@ -1096,6 +1096,87 @@
       .catch(function () { return false; });
   }
 
+
+  /* ── generated captions, kept ─────────────────────────────────────────
+     Pressing Generate used to produce a screen of captions that existed only
+     in the tab: close it and ten minutes of work was gone. Nothing wrote to
+     `generated_content` at all -- the table shipped with the schema and had
+     never held a row.
+
+     The two enums on it described a different product (narrative_angle was
+     luxury|investment|rental|..., which are property categories, not the
+     approaches syndication.js writes in), so the app's own values could not
+     have been stored even if something had tried. Migration
+     0071 added them. */
+
+  /* syndication.js platform -> the content_type enum. A platform with no
+     mapping is skipped rather than guessed at: writing the wrong enum value
+     would file a TikTok script under Instagram forever. */
+  var CONTENT_TYPE = {
+    instagram: 'instagram_post',
+    tiktok: 'tiktok_script',
+    youtube: 'youtube_short',
+    facebook: 'facebook_post',
+    whatsapp: 'whatsapp_message',
+  };
+  var ANGLE_IDS = { trust: 1, value: 1, life: 1, scarcity: 1, question: 1 };
+
+  /**
+   * Files every variant of one generation. Called right after Generate, so
+   * what is on screen is already saved before the agency decides anything.
+   *
+   * One insert for the batch, not one per variant: twenty-five round trips
+   * would make a fast action feel broken, and a partial save is worse than
+   * none -- you could not tell which half you were looking at.
+   */
+  function saveGeneration(propertyId, variants, promptVersion) {
+    if (!propertyId || !variants || !variants.length) return Promise.resolve({ saved: 0 });
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { saved: 0 };
+
+      var rows = [];
+      variants.forEach(function (v) {
+        var ct = CONTENT_TYPE[v.platform];
+        if (!ct || !ANGLE_IDS[v.angle]) return;   // unknown: skip, never guess
+        rows.push({
+          property_id: propertyId,
+          agency_id: aid,
+          content_type: ct,
+          narrative_angle: v.angle,
+          /* The caption as generated, hashtags and all -- this is the artefact
+             worth keeping, not a summary of it. */
+          generated_text: String(v.caption || ''),
+          status: 'draft',
+          generated_by: 'syndication.js',
+          generation_prompt_version: String(promptVersion || 'angles-v1'),
+        });
+      });
+      if (!rows.length) return { saved: 0 };
+
+      return c1.from('generated_content').insert(rows).then(function (r) {
+        if (r.error) throw r.error;
+        return { saved: rows.length };
+      });
+    });
+  }
+
+  /** Everything generated for one listing, newest first. */
+  function listGenerations(propertyId) {
+    if (!propertyId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('generated_content')
+        .select('id, content_type, narrative_angle, generated_text, status, created_at')
+        .eq('property_id', propertyId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
   window.SynListings = {
     uploadPropertyPhoto: uploadPropertyPhoto,
     agencyId: agencyId,
@@ -1130,6 +1211,8 @@
     cancelMessage: cancelMessage,
     sendOutbox: sendOutbox,
     listCampaigns: listCampaigns,
+    saveGeneration: saveGeneration,
+    listGenerations: listGenerations,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,
     addCreatives: addCreatives,
