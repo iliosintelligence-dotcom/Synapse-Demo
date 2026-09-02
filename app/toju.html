@@ -442,10 +442,16 @@
               </button>
               <button class="send" id="tjSend" title="Send" aria-label="Send">↑</button>
             </div>
+            <!-- Filled from live inventory. The first of these used to read
+                 "3-bed in Lekki under ₦180M" while every listing on the platform
+                 was in Ibadan, so the first thing a buyer tapped came back
+                 "nothing fits that brief yet" — a dead end we wrote ourselves,
+                 on the opening screen. Anything place-specific now comes from
+                 what is actually listed. -->
             <div class="suggest" id="tjSuggest">
-              <button data-send="3-bed in Lekki under ₦180M">3-bed in Lekki under ₦180M</button>
+              <button data-send="What is available right now?">What is available right now?</button>
               <button data-send="What can I afford on ₦250,000 a month?">What can I afford monthly?</button>
-              <button data-send="Best areas for raising kids">Best areas for raising kids</button>
+              <button data-send="What should I check before paying?">What should I check before paying?</button>
             </div>
           </div>
         </div>
@@ -697,10 +703,57 @@
        the response object in place. Mutates `data` so every downstream reader
        (reply, matches, suggestions) sees the unwrapped values. Tolerates a
        ```json fence, and leaves anything it cannot parse untouched. */
+    /* Keys that only ever appear in the control envelope. Used to recognise a
+       tail of JSON that the model appended AFTER its prose -- the case that
+       put `{"showMatches": false, "criteria": {...` on screen in front of a
+       buyer, because the unwrapper below only ever looked at replies that
+       STARTED with a brace. Matching on these rather than on any `{` keeps a
+       sentence that legitimately contains one intact. */
+    const ENVELOPE_KEYS = /"(showMatches|criteria|suggestions|matches)"\s*:/;
+
+    /* Prose first, envelope appended. Cut at the brace that opens the tail and
+       keep what the buyer was actually being told. If that tail happens to
+       parse and carries matches or suggestions, they are lifted out too rather
+       than thrown away with it. */
+    function splitTrailingEnvelope(data) {
+      const text = data.reply;
+      let i = -1;
+      /* The LAST brace that opens something envelope-shaped: an earlier one
+         may belong to the sentence. */
+      for (let at = text.indexOf('{'); at !== -1; at = text.indexOf('{', at + 1)) {
+        if (ENVELOPE_KEYS.test(text.slice(at, at + 400))) i = at;
+      }
+      if (i <= 0) return false;
+
+      const prose = text.slice(0, i).trim();
+      if (!prose) return false;               // nothing left to say: leave it alone
+
+      const tail = text.slice(i);
+      data.reply = prose;
+      try {
+        const inner = JSON.parse(tail);
+        if (!Array.isArray(data.matches) || !data.matches.length) {
+          if (Array.isArray(inner.matches)) data.matches = inner.matches;
+        }
+        if (!Array.isArray(data.suggestions) || !data.suggestions.length) {
+          if (Array.isArray(inner.suggestions)) data.suggestions = inner.suggestions;
+        }
+      } catch (e) {
+        /* Truncated tails are common and are exactly why this leaked. The
+           prose is already saved; the rest is not worth salvaging. */
+      }
+      return true;
+    }
+
     function unwrapEnvelope(data) {
       if (typeof data.reply !== 'string') return;
       let raw = data.reply.trim();
-      if (!raw.startsWith('{') && !raw.startsWith('```')) return;
+      if (!raw.startsWith('{') && !raw.startsWith('```')) {
+        /* Not envelope-first -- but it may still be prose with an envelope
+           welded onto the end. */
+        if (ENVELOPE_KEYS.test(raw)) splitTrailingEnvelope(data);
+        return;
+      }
       raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
       if (!raw.startsWith('{')) return;
       let inner;
@@ -833,7 +886,14 @@
     // suggestions are DYNAMIC — Toju sends tap-to-answer options for the
     // question it just asked ("Married with kids", "Just me", …)
     const suggestEl = document.getElementById('tjSuggest');
-    const DEFAULT_SUGGEST = suggestEl.innerHTML;
+    /* `let`, because the grounded set replaces this once inventory has been
+       read. As a const captured at load it held the STATIC markup forever, so
+       Toju offering its own dynamic options and then falling back -- which is
+       what New chat does -- put the placeholder suggestions back, naming a
+       city we may have nothing in. The fallback has to be the good set, not
+       the one that shipped in the HTML. */
+    let DEFAULT_SUGGEST = suggestEl.innerHTML;
+    function setDefaultSuggest(html) { DEFAULT_SUGGEST = html; }
     function renderSuggest(list) {
       if (Array.isArray(list) && list.length) {
         suggestEl.innerHTML = list.map((s) =>
@@ -951,6 +1011,72 @@
       GREETING_TEMPLATE.replace('{{LISTING_COUNT}}',
         Number.isFinite(n) && n > 0 ? 'the ' + n.toLocaleString() + ' ' : 'the ');
     const GREETING = greetingWith(null);
+
+    /* ── suggestions, from what is actually listed ──────────────────────────
+       A suggested brief has to be answerable, or the opening move of the whole
+       product is a dead end. These are built from live inventory: the city we
+       actually have most homes in, a real neighbourhood, and a ceiling above a
+       real asking price. If the read fails the static three stay, because they
+       name no place and cannot be contradicted. */
+    (function groundSuggestions() {
+      var box = document.getElementById('tjSuggest');
+      if (!box) return;
+
+      /* Only columns that exist. The first attempt asked for `neighbourhood`,
+         which is `neighbourhood_id` here -- PostgREST answered 400 and the
+         chips silently stayed static, which is the failure mode this whole fix
+         is about. The join to neighbourhoods is not used either: every row's
+         FK is null, so an area chip would have nothing behind it. */
+      fetch(SUPABASE_URL + '/rest/v1/properties'
+            + '?select=city,bedrooms,price,listing_type'
+            + '&status=eq.live&is_active=eq.true&limit=200',
+            { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          if (!rows || !rows.length) return;
+
+          /* Most-listed city, so the suggestion points at the thickest part of
+             the inventory rather than a one-off. */
+          var byCity = {};
+          rows.forEach(function (r) { if (r.city) byCity[r.city] = (byCity[r.city] || 0) + 1; });
+          var city = Object.keys(byCity).sort(function (a, b) { return byCity[b] - byCity[a]; })[0];
+          if (!city) return;
+
+          var inCity = rows.filter(function (r) { return r.city === city && r.price > 0; });
+          if (!inCity.length) return;
+
+          /* The smallest size actually listed, and a ceiling ABOVE the cheapest
+             home at that size. A suggestion that excludes everything is the bug
+             being fixed, not a stricter version of it. */
+          var beds = inCity.map(function (r) { return r.bedrooms; })
+                           .filter(function (b) { return b > 0; })
+                           .sort(function (a, b) { return a - b; })[0];
+          var sized = beds ? inCity.filter(function (r) { return r.bedrooms === beds; }) : inCity;
+          var cheapest = Math.min.apply(null, sized.map(function (r) { return r.price; }));
+
+          var ceiling = cheapest >= 1e6
+            ? Math.ceil(cheapest / 1e6 / 5) * 5 + 'M'
+            : Math.ceil(cheapest / 1e5) * 100 + 'k';
+
+          var chips = [];
+          if (beds) chips.push(beds + '-bed in ' + city + ' under ₦' + ceiling);
+          else chips.push('What is available in ' + city + '?');
+          chips.push('What can I afford on ₦250,000 a month?');
+          chips.push('What should I check before paying?');
+
+          var html = chips.map(function (q) {
+            var safe = String(q).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+            return '<button data-send="' + safe + '">' + safe + '</button>';
+          }).join('');
+          box.innerHTML = html;
+          /* And make it the fallback, so New chat and every "no dynamic
+             suggestions this turn" comes back to these rather than to the
+             placeholder markup. */
+          if (typeof setDefaultSuggest === 'function') setDefaultSuggest(html);
+        })
+        .catch(function () { /* the static three are already correct */ });
+    })();
+
     function render() {
       convo.innerHTML = '';
       saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])); });
