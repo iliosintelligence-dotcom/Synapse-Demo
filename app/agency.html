@@ -1530,6 +1530,32 @@
       text-decoration: underline; text-underline-offset: 2px; }
     .cmp-keep:hover { color: var(--ink); }
 
+    /* ── listing photo gallery ───────────────────────────────────────────
+       Small tiles, because the job here is order and removal rather than
+       admiring the photograph. */
+    .lf-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px; margin-top: 10px; }
+    .lf-gal:empty { display: none; }
+    .lf-ph { position: relative; aspect-ratio: 4/3; border-radius: 9px; overflow: hidden;
+      border: 1px solid var(--border); background: rgba(20,20,20,0.05); }
+    .lf-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lf-ph .cover { position: absolute; left: 0; bottom: 0; right: 0; font: 700 9.5px/1 var(--f-sans);
+      letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,0.62);
+      padding: 4px 6px; text-align: center; }
+    /* 28px visible, 44px reachable -- the same floor the rest of the app holds. */
+    .lf-ph .x { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px;
+      border-radius: 50%; border: 0; background: rgba(0,0,0,0.62); color: #fff;
+      font-size: 14px; line-height: 1; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; }
+    .lf-ph .x::before { content: ''; position: absolute; inset: -10px; }
+    .lf-ph .mv { position: absolute; top: 4px; left: 4px; border: 0; border-radius: 6px;
+      background: rgba(0,0,0,0.62); color: #fff; font: 700 11px/1 var(--f-sans);
+      padding: 5px 6px; cursor: pointer; }
+    .lf-ph .mv::before { content: ''; position: absolute; inset: -10px; }
+    .lf-ph.pending { opacity: .55; }
+    .lf-galnote { font-size: 12px; color: var(--ink-dim); margin-top: 7px; line-height: 1.5; }
+    .lf-galnote.bad { color: #a8402b; }
+
     .cmp-past { margin-top: 22px; }
     .cmp-past:empty { display: none; }
     .cmp-past-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
@@ -4247,13 +4273,24 @@
                  as its picture. Choosing a file is the primary path now; the
                  URL box stays for anyone whose photos already live somewhere. -->
             <div class="field">
-              <label>Photo of the property *</label>
+              <label>Photos of the property *</label>
               <div class="lfimg-row">
-                <button type="button" class="btn-ghost" id="lfImgPick">Choose a photo</button>
-                <input id="lfImgFile" type="file" accept="image/png,image/jpeg,image/webp,image/avif" hidden>
+                <button type="button" class="btn-ghost" id="lfImgPick">Choose photos</button>
+                <!-- multiple: buyers judge a home on a gallery, and an agency
+                     photographing a flat comes away with a dozen shots, not
+                     one. The write path already stored an ordered list; only
+                     this input was singular. (No backticks in here -- this
+                     markup lives inside a template literal, and one would end
+                     the string.) -->
+                <input id="lfImgFile" type="file" multiple
+                       accept="image/png,image/jpeg,image/webp,image/avif" hidden>
                 <span class="lfimg-or">or paste a link</span>
               </div>
               <input id="lfImg" value="${esc(primary)}" placeholder="https://… (a direct link to the image itself)">
+              <!-- The gallery, in the order buyers will see it. First is the
+                   cover, which is why it says so on the tile rather than in a
+                   caption nobody reads. -->
+              <div class="lf-gal" id="lfGal"></div>
               <div class="lfimg-prev" id="lfImgPrev"></div>
               <span class="ferr" id="e_img"></span>
             </div>
@@ -4430,37 +4467,113 @@
 
         pick.addEventListener('click', () => fileEl.click());
 
-        fileEl.addEventListener('change', () => {
-          const file = fileEl.files && fileEl.files[0];
-          if (!file) return;
-          if (!window.SynListings || !SynListings.uploadPropertyPhoto) {
-            showPreview('', 'Uploads are unavailable on this page.', true); return;
-          }
-          /* Show it immediately from the local file. The upload may take a
-             while on a Nigerian mobile connection, and staring at nothing is
-             how people conclude it did not work and press the button again. */
-          const localUrl = URL.createObjectURL(file);
-          showPreview(localUrl, 'Uploading…');
-          pick.disabled = true; pick.textContent = 'Uploading…';
+        /* ── the gallery ────────────────────────────────────────────────────
+           `photos` is the ordered truth for this drawer; #lfImg mirrors the
+           first one because validation, the card grid and the campaign picker
+           all still read a single cover URL from it. Two representations of
+           one thing is a drift risk, so the mirror is written in exactly one
+           place -- syncPhotos(). */
+        let photos = (l.media || []).map(m => m.url).filter(Boolean);
+        if (!photos.length && (l.img || '').trim()) photos = [(l.img || '').trim()];
+        const galEl = g('lfGal');
 
-          SynListings.uploadPropertyPhoto(file)
-            .then((publicUrl) => {
-              urlEl.value = publicUrl;
-              imgProbeCache[publicUrl] = 'ok';   // we just uploaded it; it is an image
-              showPreview(localUrl, 'Photo attached.');
-              validate();
+        function galNote(msg, bad) {
+          let n = galEl.parentElement.querySelector('.lf-galnote');
+          if (!n) {
+            n = document.createElement('div');
+            galEl.insertAdjacentElement('afterend', n);
+          }
+          n.className = 'lf-galnote' + (bad ? ' bad' : '');
+          n.textContent = msg || '';
+        }
+
+        function syncPhotos() {
+          /* display_order 0 is the cover, and #lfImg is that same photo. */
+          urlEl.value = photos[0] || '';
+          galEl.innerHTML = photos.map((u, i) =>
+            `<div class="lf-ph" data-i="${i}">`
+            + `<img src="${esc2(u)}" alt="" loading="lazy"`
+            + ` onerror="this.closest('.lf-ph').classList.add('pending')">`
+            + (i === 0 ? '<span class="cover">Cover</span>'
+                       : `<button type="button" class="mv" data-up="${i}" aria-label="Make this the cover">↑</button>`)
+            + `<button type="button" class="x" data-rm="${i}" aria-label="Remove photo">×</button>`
+            + '</div>').join('');
+          if (photos.length) imgProbeCache[photos[0]] = 'ok';
+          validate();
+        }
+
+        galEl.addEventListener('click', (e) => {
+          const up = e.target.closest('[data-up]');
+          if (up) {
+            /* One press promotes to cover rather than nudging one place. An
+               agency picking the cover does not want to press ↑ four times,
+               and the order of the rest is preserved. */
+            const i = +up.dataset.up;
+            photos = [photos[i]].concat(photos.filter((_, n) => n !== i));
+            syncPhotos(); galNote('Cover updated.');
+            return;
+          }
+          const rm = e.target.closest('[data-rm]');
+          if (rm) {
+            const i = +rm.dataset.rm;
+            photos = photos.filter((_, n) => n !== i);
+            syncPhotos();
+            galNote(photos.length ? '' : 'A listing needs at least one photo.', !photos.length);
+          }
+        });
+
+        fileEl.addEventListener('change', () => {
+          const files = Array.prototype.slice.call(fileEl.files || []);
+          if (!files.length) return;
+          if (!window.SynListings || !SynListings.uploadPropertyPhotos) {
+            galNote('Uploads are unavailable on this page.', true); return;
+          }
+
+          pick.disabled = true;
+          const label = files.length === 1 ? 'photo' : 'photos';
+          galNote(`Uploading ${files.length} ${label}…`);
+
+          SynListings.uploadPropertyPhotos(files, (done, total, name) => {
+            pick.textContent = done >= total ? 'Finishing…' : `Uploading ${done + 1} of ${total}…`;
+            if (name) galNote(`Uploading ${done + 1} of ${total} — ${name}`);
+          })
+            .then(({ urls, failed }) => {
+              /* Appended, not replaced: an agency adding three more photos to
+                 six has not asked to lose the six. */
+              photos = photos.concat(urls);
+              syncPhotos();
+              if (failed.length && urls.length) {
+                galNote(`${urls.length} added. ${failed.length} could not be used: `
+                  + failed.map(f => f.name + ' (' + f.reason + ')').join(', '), true);
+              } else if (failed.length) {
+                galNote('None of those could be used: '
+                  + failed.map(f => f.name + ' (' + f.reason + ')').join(', '), true);
+              } else {
+                galNote(`${urls.length} ${urls.length === 1 ? 'photo' : 'photos'} added.`);
+              }
             })
             .catch((err) => {
-              // The listing is not saved yet, so nothing is lost -- but say what
-              // happened rather than silently leaving the field empty.
-              showPreview('', (err && err.message) || 'That upload did not go through.', true);
-              fileEl.value = '';
-              validate();
+              galNote((err && err.message) || 'That upload did not go through.', true);
             })
             .finally(() => {
-              pick.disabled = false; pick.textContent = 'Choose a photo';
-              URL.revokeObjectURL(localUrl);
+              pick.disabled = false; pick.textContent = 'Choose photos';
+              /* Cleared so choosing the same file again still fires change. */
+              fileEl.value = '';
             });
+        });
+
+        syncPhotos();
+
+        /* A pasted link is another photo, not a replacement for the set. It
+           becomes the cover because that is what typing into the cover field
+           means, and the rest keep their order behind it. */
+        urlEl.addEventListener('change', () => {
+          const v = urlEl.value.trim();
+          if (!v || photos[0] === v) return;
+          if (imgUrlError(v)) return;                 // the blur handler reports it
+          photos = [v].concat(photos.filter((u) => u !== v));
+          syncPhotos();
+          galNote('Link added as the cover.');
         });
 
         // A pasted link previews too, once it is known to load.
@@ -4502,7 +4615,10 @@
           amenities: g('lfAmen').value.split(/[|,\n;]+/).map(s => s.trim()).filter(Boolean),
           title_type: g('lfTitleType').value || null, yield_pct: num(g('lfYield').value),
           is_active: actSw.classList.contains('on'),
-          media: [{ url: g('lfImg').value.trim(), is_primary: true, display_order: 0 }],
+          /* Every photo, in gallery order. This sent only the cover, so an
+             agency that added eight had seven silently dropped on save --
+             writeMedia has always accepted a list. */
+          media: photos.map((u, i) => ({ url: u, is_primary: i === 0, display_order: i })),
         };
         if (isNew) {
           const item = deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 }));

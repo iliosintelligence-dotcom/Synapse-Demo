@@ -1248,8 +1248,38 @@
     });
   }
 
+
+  /* Several photos at once. Sequential rather than Promise.all: a phone on a
+     Nigerian mobile connection uploading eight files in parallel is how you get
+     eight timeouts instead of eight photos, and the progress callback would
+     have nothing meaningful to report. One at a time, in the order chosen, so
+     the first file picked becomes display_order 0 -- the cover.
+
+     A file that fails does not stop the rest. The caller is handed both lists
+     and decides what to say; losing seven good photos because the eighth was a
+     screenshot of a PDF would be its own bug. */
+  function uploadPropertyPhotos(files, onProgress) {
+    var list = Array.prototype.slice.call(files || []);
+    if (!list.length) return Promise.resolve({ urls: [], failed: [] });
+    var urls = [], failed = [];
+    return list.reduce(function (chain, file, i) {
+      return chain.then(function () {
+        if (typeof onProgress === 'function') onProgress(i, list.length, file.name);
+        return uploadPropertyPhoto(file)
+          .then(function (url) { urls.push(url); })
+          .catch(function (err) {
+            failed.push({ name: file.name, reason: (err && err.message) || 'upload failed' });
+          });
+      });
+    }, Promise.resolve()).then(function () {
+      if (typeof onProgress === 'function') onProgress(list.length, list.length, null);
+      return { urls: urls, failed: failed };
+    });
+  }
+
   window.SynListings = {
     uploadPropertyPhoto: uploadPropertyPhoto,
+    uploadPropertyPhotos: uploadPropertyPhotos,
     agencyId: agencyId,
     agency: agency,
     paintAgency: paintAgency,
