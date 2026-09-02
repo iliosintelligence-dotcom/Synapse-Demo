@@ -749,6 +749,28 @@
       text-align: center; }
     .bk-empty .h2 { margin: 0 0 6px; }
 
+    /* ── post templates, on the brand page ──────────────────────────────
+       The angles that write your captions belong next to the logo and the
+       colours: they are as much your voice as the typeface is. Each is shown
+       as the post it would produce, not as the pattern it is stored as. */
+    .bk-tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 12px; }
+    .bk-tpl { border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: var(--surface, #fff); display: flex; flex-direction: column; text-align: left;
+      padding: 0; cursor: default; }
+    .bk-tpl.mine { cursor: pointer; }
+    .bk-tpl.mine:hover { border-color: rgba(54,54,54,0.4); }
+    .bk-tpl-top { display: flex; align-items: center; gap: 7px; padding: 10px 12px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .bk-tpl-nm { font: 700 12.5px/1.3 var(--f-sans); color: var(--ink); }
+    .bk-tpl-tag { font-size: 10.5px; padding: 2px 7px; border-radius: 100px;
+      background: rgba(20,20,20,0.06); color: var(--ink-dim); margin-left: auto; }
+    .bk-tpl-body { padding: 12px; font-size: 12.5px; line-height: 1.55; color: var(--ink-muted);
+      white-space: pre-wrap; word-break: break-word; flex: 1;
+      display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
+    .bk-tpl-foot { padding: 8px 12px 11px; font-size: 11px; color: var(--ink-dim);
+      border-top: 1px dashed var(--rule-soft, rgba(20,20,20,0.08)); }
+    .bk-tpl-against { font-size: 11.5px; color: var(--ink-dim); margin-bottom: 10px; }
+
     .brand-preview { border-radius: 12px; border: 1px solid var(--border); background: #fff;
       padding: 16px 18px; display: flex; align-items: center; gap: 14px; min-height: 64px; }
     .brand-preview .bp-mark { width: 46px; height: 46px; border-radius: 10px; flex: none; display: flex;
@@ -6539,6 +6561,28 @@
         if (e.key === 'Escape' && !tplModal.hidden) tplClose();
       });
 
+      /* The editor lives here because this is where campaigns are made, but
+         the brand page shows the same templates and clicking one should open
+         it. Published rather than duplicated -- two editors would drift, and
+         the second one would be the one with the stale token list. */
+      window.SynTemplateEditor = {
+        open: function (draft) { goToPane('social'); setTimeout(function () { tplOpen(draft); }, 260); },
+        reload: function () {
+          return SynListings.listTemplates().then(function (list) {
+            S.setTemplates(list); renderMyTemplates(list); announceTemplates(list); return list;
+          });
+        },
+      };
+
+      /* Anything holding its own copy of the catalogue hears about a change
+         here. The brand gallery caches its rows -- without this it kept
+         showing a template's old name after the edit had already been saved,
+         and calling its refresh by hand from the save path is the kind of
+         wiring the next feature forgets. */
+      function announceTemplates(list) {
+        document.dispatchEvent(new CustomEvent('syn:templates', { detail: list }));
+      }
+
       function tplOpen(draft) {
         tplDraft = Object.assign({
           id: null, name: '', why: '', hook_pattern: '', body_pattern: '',
@@ -6700,6 +6744,7 @@
         }).then(function (list) {
           S.setTemplates(list);        // in use immediately, no reload
           renderMyTemplates(list);
+          announceTemplates(list);
           tplClose();
           toast(t.id ? 'Template updated' : 'Template saved \u2014 it is in your next campaign');
         }).catch(function (err) {
@@ -6751,7 +6796,10 @@
           if (!confirm('Delete this template? Captions it already wrote are kept.')) return;
           SynListings.deleteTemplate(id)
             .then(function () { return SynListings.listTemplates(); })
-            .then(function (list) { S.setTemplates(list); renderMyTemplates(list); toast('Template deleted'); })
+            .then(function (list) {
+              S.setTemplates(list); renderMyTemplates(list); announceTemplates(list);
+              toast('Template deleted');
+            })
             .catch(function (err) { toast((err && err.message) || 'Could not delete that.'); });
         }
       });
@@ -8307,6 +8355,111 @@
           && f('bkColor') && f('bkColor').dataset.stored !== '1';
       }
 
+
+      /* ── the templates, as posts ────────────────────────────────────────
+         Shown the way a buyer would see them: rendered against a real listing,
+         set in the agency's own typeface, signed off with its name. A wall of
+         {priceLine} would be the storage format, not the brand. */
+      var bkTpl = { rows: null, loading: false };
+
+      function bkPreviewListing() {
+        var all = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+        /* A verified listing if there is one: it is the only way the
+           verified-only angles can be shown at all, and showing them greyed
+           out with no example is worse than showing them working. */
+        return all.filter(function (l) { return l.verification_status === 'verified'; })[0] || all[0] || null;
+      }
+
+      function renderTemplateGallery() {
+        var host = document.getElementById('bkTplHost');
+        if (!host) return;
+
+        if (!window.SynSyndicate || !window.SynListings || !SynListings.listTemplates) {
+          host.innerHTML = '<div class="bk-none">Templates are unavailable right now.</div>';
+          return;
+        }
+        if (bkTpl.rows === null) {
+          if (bkTpl.loading) return;
+          bkTpl.loading = true;
+          SynListings.listTemplates().then(function (list) {
+            bkTpl.rows = list; bkTpl.loading = false; renderTemplateGallery();
+          }).catch(function () {
+            bkTpl.loading = false;
+            host.innerHTML = '<div class="bk-none">Could not load your templates \u2014 reload to try again.</div>';
+          });
+          return;
+        }
+
+        var S = window.SynSyndicate;
+        var row = bkPreviewListing();
+        if (!row) {
+          host.innerHTML = '<div class="bk-none">Add a listing and these will preview against it. '
+            + 'They are the angles Toju writes your captions from.</div>';
+          return;
+        }
+
+        var p = S.shape(row);
+        var brand = S.brandBits(window.BRAND);
+        var font = (window.BRAND && window.BRAND.brand_font) || '';
+
+        var cards = bkTpl.rows.map(function (t) {
+          var mine = !!t.agency_id;
+          var body;
+          if (t.requires_verified && !p.verified) {
+            body = 'Only runs on a verified listing. ' + esc2(row.title || 'This listing')
+              + ' is not verified, so there is nothing to preview.';
+          } else {
+            try {
+              body = [S.renderPattern(t.hook_pattern, p), S.renderPattern(t.body_pattern, p), t.cta]
+                .filter(Boolean).join('\n\n') + S.signOff(brand);
+            } catch (err) {
+              body = 'This template refers to something we cannot fill in: ' + err.message;
+            }
+          }
+          return '<' + (mine ? 'button type="button"' : 'div') + ' class="bk-tpl' + (mine ? ' mine' : '') + '"'
+            + (mine ? ' data-tpl="' + esc2(t.id) + '"' : '') + '>'
+            + '<div class="bk-tpl-top"><span class="bk-tpl-nm">' + esc2(t.name) + '</span>'
+            +   (t.requires_verified ? '<span class="bk-tpl-tag">verified only</span>'
+                                     : '<span class="bk-tpl-tag">' + (mine ? 'yours' : 'built in') + '</span>')
+            + '</div>'
+            + '<div class="bk-tpl-body"' + (font ? ' style="font-family:' + esc2(font) + '"' : '') + '>'
+            +   esc2(body) + '</div>'
+            + (t.why ? '<div class="bk-tpl-foot">' + esc2(t.why) + '</div>' : '')
+            + '</' + (mine ? 'button' : 'div') + '>';
+        }).join('');
+
+        host.innerHTML =
+          '<div class="bk-tpl-against">Previewed against <b>' + esc2(row.title || 'your listing') + '</b>'
+          + (font ? ', set in ' + esc2(font) : '') + '.</div>'
+          + '<div class="bk-tpl-grid">' + cards + '</div>'
+          + '<div style="margin-top:12px"><button class="btn" type="button" id="bkTplNew">New template</button></div>';
+      }
+
+      document.addEventListener('click', function (e) {
+        if (e.target.id === 'bkTplNew') {
+          if (window.SynTemplateEditor) SynTemplateEditor.open(null);
+          return;
+        }
+        var card = e.target.closest && e.target.closest('.bk-tpl.mine');
+        if (!card || !bkTpl.rows) return;
+        var t = bkTpl.rows.filter(function (x) { return x.id === card.dataset.tpl; })[0];
+        /* Only your own open: a seed has nothing editable, and a modal that
+           refuses to save is a worse answer than not opening. */
+        if (t && window.SynTemplateEditor) SynTemplateEditor.open(t);
+      });
+
+      /* Listings arriving changes what these preview against. */
+      document.addEventListener('syn:listings', function () {
+        if (document.getElementById('bkTplHost')) renderTemplateGallery();
+      });
+
+      /* And a template being written, edited or deleted changes the templates
+         themselves -- the cache is dropped so the next draw re-reads. */
+      document.addEventListener('syn:templates', function (e) {
+        bkTpl.rows = (e && e.detail) || null;
+        if (document.getElementById('bkTplHost')) renderTemplateGallery();
+      });
+
       function renderKit() {
         if (!view) return;
         if (brandIsEmpty()) {
@@ -8402,6 +8555,11 @@
                 : bkNone('No description yet.'))
           + '</div>'
 
+          /* the angles that write in this voice */
+          + '<div class="bk-card"><div class="bk-k">Post templates</div>'
+          +   '<div id="bkTplHost"><div class="bk-none">Loading\u2026</div></div>'
+          + '</div>'
+
           /* where to find you */
           + '<div class="bk-card half"><div class="bk-k">Where to find you</div><div class="bk-rows">'
           +   row('Website', link(bkVal('bkWebsite'), bkVal('bkWebsite')))
@@ -8411,6 +8569,10 @@
           + '</div></div>'
 
           + '</div>';
+
+        /* The gallery is async, so it fills the placeholder the kit just drew
+           rather than blocking the rest of the page on a fetch. */
+        renderTemplateGallery();
       }
 
       /* Copying a hex is the single most common thing anyone does with a brand
