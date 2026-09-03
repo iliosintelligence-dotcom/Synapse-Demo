@@ -1338,6 +1338,162 @@
   }
 
 
+
+  /* ── the person, not the agency ───────────────────────────────────────────
+     An agent who accepted an invite arrived as a name and nothing else. Not
+     because nobody wrote the form -- because agent_profiles carried a single
+     policy, public_read, so the table was readable by the world and writable
+     by no one. A form would have failed silently. The policies exist now
+     (see the an_agent_can_write_their_own_profile migration) and these are
+     the calls that use them.
+
+     Two tables, because the split is real: `profiles` is who you are on
+     Synapse at all -- name, phone, WhatsApp, face -- and `agent_profiles` is
+     how you work: what you cover, what you speak, what you have been doing
+     and for how long. A buyer eventually reads the second one. */
+
+  var AVATAR_BUCKET = 'avatars';
+  var AVATAR_MAX_BYTES = 3 * 1024 * 1024;
+
+  /** Everything the signed-in person can edit about themselves, plus the role
+   *  that decides which editor they should be shown at all. */
+  function myProfile() {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return c1.from('profiles')
+          .select('id, full_name, phone, whatsapp, avatar_url, '
+                + 'agent_profiles(bio, years_experience, languages, specializations, '
+                + 'areas_covered, certifications, response_rate_pct, closed_deals, avg_rating)')
+          .eq('id', me).maybeSingle();
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        var row = r.data || {};
+        /* PostgREST gives a to-one embed as an object and a to-many as an
+           array. agent_profiles.profile_id is the key so it is to-one, but the
+           roster already accepts both and so does this. */
+        var ap = row.agent_profiles || {};
+        if (Array.isArray(ap)) ap = ap[0] || {};
+        return {
+          id: me,
+          name: row.full_name || '',
+          phone: row.phone || '',
+          whatsapp: row.whatsapp || '',
+          avatar: row.avatar_url || '',
+          bio: ap.bio || '',
+          years: ap.years_experience == null ? '' : ap.years_experience,
+          languages: ap.languages || [],
+          specializations: ap.specializations || [],
+          areas: ap.areas_covered || [],
+          certifications: ap.certifications || [],
+          /* Read-only, and shown as such. The database refuses a write to
+             these from the portal -- see agent_profiles_guard. */
+          closed: ap.closed_deals,
+          rating: ap.avg_rating,
+          responseRate: ap.response_rate_pct,
+          /* Enough of a profile to appear as a colleague rather than a blank.
+             Used to decide whether to prompt, never to block anything. */
+          complete: !!(row.full_name && row.avatar_url && ap.bio),
+        };
+      });
+  }
+
+  /** The signed-in person's role in their agency, so the portal can send an
+   *  owner to the brand and an agent to their own profile. */
+  function myRole() {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!me || !aid) return null;
+        return c1.from('agency_members').select('role')
+          .eq('agency_id', aid).eq('profile_id', me).maybeSingle()
+          .then(function (r) { return (r.data && r.data.role) || null; });
+      })
+      .catch(function () { return null; });
+  }
+
+  /** Save both halves. The two tables are written separately because they are
+   *  governed separately: profiles by profiles_update_own, agent_profiles by
+   *  the policies added alongside this. A failure on one is reported rather
+   *  than silently leaving the other half saved. */
+  function saveMyProfile(patch) {
+    var c1, me;
+    var p = patch || {};
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+
+        var who = {};
+        if (p.name != null) who.full_name = String(p.name).trim();
+        if (p.phone != null) who.phone = String(p.phone).trim() || null;
+        if (p.whatsapp != null) who.whatsapp = String(p.whatsapp).trim() || null;
+        if (p.avatar != null) who.avatar_url = String(p.avatar).trim() || null;
+        /* A name is the one field with no sensible empty state: it is what a
+           colleague and a buyer both see first. */
+        if (who.full_name === '') throw new Error('Your name cannot be blank');
+        who.updated_at = new Date().toISOString();
+
+        return Object.keys(who).length > 1
+          ? c1.from('profiles').update(who).eq('id', me)
+          : { error: null };
+      })
+      .then(function (r) {
+        if (r && r.error) throw r.error;
+        var work = { profile_id: me };
+        var list = function (v) {
+          return (Array.isArray(v) ? v : String(v || '').split(','))
+            .map(function (x) { return String(x).trim(); })
+            .filter(Boolean);
+        };
+        if (p.bio != null) work.bio = String(p.bio).trim() || null;
+        if (p.years != null) {
+          var y = parseInt(p.years, 10);
+          work.years_experience = Number.isFinite(y) && y >= 0 && y <= 70 ? y : null;
+        }
+        if (p.languages != null) work.languages = list(p.languages);
+        if (p.specializations != null) work.specializations = list(p.specializations);
+        if (p.areas != null) work.areas_covered = list(p.areas);
+        if (p.certifications != null) work.certifications = list(p.certifications);
+        if (Object.keys(work).length === 1) return { error: null };
+        /* Upsert: an agent who has never opened this has no row at all, and
+           making them save twice to get one would be a bug they cannot see. */
+        return c1.from('agent_profiles').upsert(work, { onConflict: 'profile_id' });
+      })
+      .then(function (r) { if (r && r.error) throw r.error; return true; });
+  }
+
+  /** A face, in the person's own folder. Returns the public URL; the caller
+   *  passes it back through saveMyProfile so nothing is stored until they
+   *  actually save. */
+  function uploadAvatar(file) {
+    if (!file) return Promise.reject(new Error('No file'));
+    if (!/^image\//.test(file.type || '')) return Promise.reject(new Error('That is not an image'));
+    if (file.size > AVATAR_MAX_BYTES) {
+      return Promise.reject(new Error('That photo is ' + Math.ceil(file.size / 1024 / 1024) + 'MB \u2014 keep it under 3MB'));
+    }
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        var path = me + '/avatar-' + Date.now() + '.' + extFor(file);
+        return c1.storage.from(AVATAR_BUCKET).upload(path, file, {
+          cacheControl: '31536000', upsert: false, contentType: file.type,
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          return c1.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+        });
+      });
+  }
+
   /* ── caption templates ────────────────────────────────────────────────
      Ours (agency_id null) plus this agency's own, in one list. RLS decides
      which rows come back; this asks for both and sorts them together, so an
@@ -1466,6 +1622,10 @@
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,
+    myProfile: myProfile,
+    myRole: myRole,
+    saveMyProfile: saveMyProfile,
+    uploadAvatar: uploadAvatar,
     listPendingContent: listPendingContent,
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
