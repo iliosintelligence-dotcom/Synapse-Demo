@@ -552,7 +552,7 @@
       <div class="s-lede reveal">
         <div class="s-kicker">2× your reach</div>
         <h2 class="s-h2">One listing. <em>Every channel.</em></h2>
-        <p class="s-sub">Upload a property once. Synapse writes the copy in your agency’s own voice, cuts the creative, sizes it for each platform, and publishes it everywhere your buyers already are — Instagram, Facebook, WhatsApp, TikTok, X and the Synapse marketplace.</p>
+        <p class="s-sub">Upload a property once. Synapse writes the copy in your agency’s own voice, cuts the creative, sizes it for each platform, and publishes it everywhere your buyers already are — Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.</p>
         <p class="s-sub" style="margin-top:16px">Every version is checked against that platform’s real limits before it goes: caption length, aspect ratio, video duration. And it will not run a “verified” angle on a listing that has not passed verification — the one claim you cannot afford to get wrong.</p>
         <p class="s-sub" style="margin-top:16px">No agency retainer. No social media manager. No waiting on a designer.</p>
       </div>
@@ -1145,12 +1145,38 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     box.innerHTML = '';
     /* Matches PLATFORMS in syndication.js. X was in this list and is not in
        the engine, so the demo was fanning out to a channel nothing could be
-       validated against. */
-    var chans = [['IG','Instagram'],['TT','TikTok'],['YT','YouTube'],['FB','Facebook'],['WA','WhatsApp'],['SY','Synapse']];
-    chans.forEach(function (c, i) {
+       validated against.
+
+       These are the SAME drawings as the logo rail further down the page --
+       monochrome, stroked, inheriting the chip's colour. Two-letter chips
+       stood here before (IG / TT / YT), which is the look of a mock somebody
+       meant to finish, on the one section whose whole job is to convince an
+       agency we really do publish to these places. They are deliberately not
+       the portal's full-colour brand marks: the rail's note applies here too,
+       six logos in their own colours would put more colour on this page than
+       the rest of the site has together. Keep these in step with the rail. */
+    var MARK = {
+      Instagram: '<rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/>',
+      TikTok:    '<path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/>',
+      YouTube:   '<rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/>',
+      Facebook:  '<path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/>',
+      WhatsApp:  '<path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/>',
+      Synapse:   '<circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/>'
+    };
+    function markFor(name) {
+      var inner = MARK[name];
+      /* No mark rather than a stray letter: a channel we forgot to draw should
+         look like a channel with no icon, not like a broken one. */
+      if (!inner) return '';
+      return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"'
+        + ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + inner + '</svg>';
+    }
+    var chans = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'WhatsApp', 'Synapse'];
+    chans.forEach(function (name, i) {
       var d = document.createElement('div');
       d.className = 'd-chan';
-      d.innerHTML = '<span class="k">' + c[0] + '</span>' + c[1] + '<span class="ok">✓</span>';
+      d.innerHTML = '<span class="k">' + markFor(name) + '</span>' + name + '<span class="ok">✓</span>';
       box.appendChild(d);
       at(200 + i * 210, function () { d.classList.add('in'); });
     });
