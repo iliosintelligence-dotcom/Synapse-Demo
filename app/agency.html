@@ -209,6 +209,46 @@
     .pcard .pmeta { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
     .pcard .reach { font-size: 10px; color: var(--ink-dim); margin-left: 2px; }
     .pcard .cap { font-size: 11px; color: var(--ink-muted); line-height: 1.4; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    /* Three small verbs under the main one. A stacked column of four
+       full-width buttons made every scheduled card taller than the photo it
+       was about. */
+    .pcard .actrow { display: flex; gap: 6px; }
+    .pcard .actrow .act { margin-top: 6px; padding: 6px 4px; font-size: 11px; }
+
+    /* ── the scheduler, in the side drawer ─────────────────────────────── */
+    .sch-listing { display: flex; gap: 10px; align-items: center; padding: 10px;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    /* .lph carries no size of its own -- the pipeline card sizes it via
+       `.pcard .ptop .lph`. Without the same here the listing photo rendered at
+       its natural width and filled the drawer. */
+    .sch-listing .lph { width: 44px; height: 44px; border-radius: 10px; flex: none; overflow: hidden; }
+    .sch-listing .lph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sch-listing .t { font: 700 13px var(--f-sans); color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sch-listing .p { font-size: 12px; color: var(--ink-muted); }
+    .sch-cap { margin-top: 10px; padding: 11px 12px; border-radius: 12px;
+      background: rgba(0,0,0,0.035); font-size: 12.5px; line-height: 1.5;
+      color: var(--ink-muted); max-height: 132px; overflow-y: auto;
+      white-space: pre-wrap; }
+    .sch-slots { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    /* Channel wide, then date, then time, then the remove button. Below 420px
+       the three inputs stack rather than shrink to unusable widths -- a date
+       field at 90px is a field nobody can read. */
+    .slot { display: grid; grid-template-columns: minmax(96px,1.1fr) minmax(120px,1.2fr) 88px 30px;
+      gap: 6px; align-items: center; }
+    .slot select, .slot input { width: 100%; min-height: 40px; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+      font: 400 13px var(--f-sans); color: var(--ink); }
+    .slot-x { min-height: 40px; border: 1px solid var(--border); border-radius: 10px;
+      background: none; color: var(--ink-dim); font-size: 16px; line-height: 1; cursor: pointer; }
+    .slot-x:hover { color: var(--danger, #c0392b); }
+    @media (max-width: 420px) {
+      .slot { grid-template-columns: 1fr 30px; grid-template-areas: 'p x' 'd d' 't t'; }
+      .slot-p { grid-area: p; } .slot-d { grid-area: d; } .slot-t { grid-area: t; }
+      .slot-x { grid-area: x; }
+    }
+    .sch-note:not(:empty) { margin-top: 10px; font-size: 12.5px; color: var(--danger, #c0392b); }
+
     .pcard .act { width: 100%; margin-top: 9px; border: none; border-radius: 100px; padding: 7px; font: 600 11.5px var(--f-sans); cursor: pointer; }
     .pcard .act.pri { background: var(--brand); color: #fff; }
     .pcard .act.ok { background: rgba(46,125,79,0.1); color: var(--success); border: 1px solid rgba(46,125,79,0.3); }
@@ -3880,11 +3920,109 @@
       generating: 'Nothing generating right now.',
       approval: 'Nothing waiting on your review.',
       scheduled: 'Nothing scheduled yet.',
-      published: 'Nothing published yet.',
+      published: 'Nothing published yet — this fills in once a channel is connected and a post actually goes out.',
       underperforming: 'Nothing flagged — performance looks fine.',
     };
-    // Demo social posts removed — every one advertised an invented property.
+    /* ── THE PIPELINE, FROM THE DATABASE ───────────────────────────────
+       `posts` was declared here as [] and never assigned by anything, so every
+       column was permanently empty and the demo posts that used to fill it had
+       been deleted. That is why generating captions appeared to work and then
+       Approve and Publish did nothing: there was no post to act on, and the
+       stage a card sat in lived only in this array until the tab closed.
+
+       It is now built from three real sources, and every action writes back:
+         uploaded  - listings with nothing generated and nothing queued
+         approval  - generated_content rows still at status 'draft'
+         scheduled - social_posts at 'scheduled'
+         published - social_posts at 'published'
+       'generating' stays a client-side moment while the composer runs; it has
+       no database state because nothing is persisted until a caption exists. */
     let posts = [];
+    const PIPE = { loaded: false, error: null, drafts: [], social: [] };
+
+    /* content_type is per-format; a platform can have more than one (a post and
+       a reel are both Instagram). Scheduling only cares about the platform. */
+    const PLAT_OF_CT = {
+      instagram_post: 'instagram', instagram_reel: 'instagram',
+      tiktok_script: 'tiktok', youtube_short: 'youtube',
+      facebook_post: 'facebook', whatsapp_message: 'whatsapp',
+      linkedin_post: 'linkedin',
+    };
+
+    /** "Today 5:00 PM" near at hand, a real date further out. */
+    function fmtWhen(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const t = d.toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit' });
+      const now = new Date(), tom = new Date(); tom.setDate(now.getDate() + 1);
+      if (d.toDateString() === now.toDateString()) return 'Today ' + t;
+      if (d.toDateString() === tom.toDateString()) return 'Tomorrow ' + t;
+      return d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + t;
+    }
+    const listingById = (id) => (LISTINGS_DATA || []).find(l => l.id === id) || null;
+    const listingTitle = (l) => (l && (l.title || l.t)) || 'This listing';
+
+    function buildPosts() {
+      const out = [];
+      /* A listing is "waiting on content" only until it has some. Once a
+         caption exists it is represented by that caption, not twice. */
+      const busy = {};
+      PIPE.drafts.forEach(d => { if (d.property_id) busy[d.property_id] = 1; });
+      PIPE.social.forEach(r => { if (r.property_id) busy[r.property_id] = 1; });
+      (LISTINGS_DATA || []).forEach(l => {
+        if (!l.id || busy[l.id]) return;
+        out.push({ id: 'l:' + l.id, propertyId: l.id, stage: 'uploaded',
+          listing: listingTitle(l), price: priceLabel(l), img: l.img,
+          channels: [], caption: '', scheduledAt: null, when: '', reach: 0 });
+      });
+      PIPE.drafts.forEach(d => {
+        const l = listingById(d.property_id);
+        const plat = PLAT_OF_CT[d.content_type];
+        const chans = plat ? [plat] : [];
+        out.push({ id: 'c:' + d.id, contentId: d.id, propertyId: d.property_id,
+          stage: 'approval', listing: listingTitle(l), price: l ? priceLabel(l) : '',
+          img: l ? l.img : '', channels: chans, caption: d.generated_text || '',
+          scheduledAt: null, when: '', reach: estReach(chans) });
+      });
+      PIPE.social.forEach(r => {
+        const l = listingById(r.property_id);
+        const chans = r.platform ? [r.platform] : [];
+        const stage = r.status === 'published' ? 'published' : 'scheduled';
+        out.push({ id: 'p:' + r.id, postId: r.id, contentId: r.content_id,
+          propertyId: r.property_id, stage,
+          listing: listingTitle(l), price: l ? priceLabel(l) : '',
+          img: l ? l.img : '', channels: chans, caption: r.caption || '',
+          scheduledAt: r.scheduled_at, publishedAt: r.published_at,
+          when: fmtWhen(r.published_at || r.scheduled_at), reach: estReach(chans) });
+      });
+      posts = out;
+    }
+
+    function repaintSocial() {
+      if (typeof renderPipeline === 'function') renderPipeline();
+      if (typeof renderBento === 'function') renderBento();
+      if (typeof renderCalendar === 'function') renderCalendar();
+    }
+
+    function loadPipeline() {
+      if (!window.SynListings || !SynListings.listSocialPosts) {
+        PIPE.loaded = true; PIPE.error = 'the data layer did not load';
+        buildPosts(); repaintSocial(); return;
+      }
+      Promise.all([
+        SynListings.listPendingContent ? SynListings.listPendingContent() : Promise.resolve([]),
+        SynListings.listSocialPosts(),
+      ]).then(([drafts, social]) => {
+        PIPE.drafts = drafts || []; PIPE.social = social || [];
+        PIPE.loaded = true; PIPE.error = null;
+      }).catch((err) => {
+        PIPE.loaded = true;
+        PIPE.error = (err && err.message) || 'could not be loaded';
+        console.error('pipeline load failed', err);
+      }).then(() => { buildPosts(); repaintSocial(); });
+    }
+
     const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
     const CHR = { instagram: 3200, tiktok: 8600, youtube: 4200, facebook: 1500, whatsapp: 900 };
     const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
@@ -3905,11 +4043,25 @@
     function pcard(p, stage){
       let body = '';
       if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
-      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> GPT-4o writing…</div><div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>`;
-      else if (stage === 'approval') body = `<div class="cap">${p.caption || ''}</div><button class="act pri" data-act="approve" data-id="${p.id}">Approve &amp; schedule</button>`;
-      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:8px">🕑 ${p.when || ''}</div><button class="act ok" data-act="publish" data-id="${p.id}">Publish now</button>`;
-      else if (stage === 'published') body = `<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">✓</span> Live</div>${p.metrics ? `<div class="m"><span><b>${fmt(p.metrics.views)}</b> views</span><span><b>${p.metrics.dms}</b> DMs</span><span><b>${p.metrics.leads}</b> leads</span></div>` : ''}`;
-      else if (stage === 'underperforming') body = `<div class="rsn">${p.rsn || ''}</div><button class="act gh" data-act="approve" data-id="${p.id}">Regenerate variation</button>`;
+      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> Writing captions…</div><div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>`;
+      /* Keep or discard — the two answers a review actually has. Approving
+         opens the scheduler rather than silently picking a time, because "when"
+         is the decision the agency was asking to make. */
+      else if (stage === 'approval') body = `<div class="cap">${esc2((p.caption || '').slice(0, 260))}</div>
+        <button class="act pri" data-act="approve" data-id="${p.id}">Keep &amp; schedule</button>
+        <button class="act gh" data-act="discard" data-id="${p.id}">Discard</button>`;
+      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:8px">🕑 ${esc2(p.when || 'no time set')}</div>
+        <button class="act ok" data-act="sendnow" data-id="${p.id}">Send now</button>
+        <div class="actrow">
+          <button class="act gh" data-act="reschedule" data-id="${p.id}">Move</button>
+          <button class="act gh" data-act="duplicate" data-id="${p.id}">Copy</button>
+          <button class="act gh" data-act="remove" data-id="${p.id}">Remove</button>
+        </div>`;
+      /* No invented metrics. Nothing is connected to a platform yet, so views
+         and DMs would be numbers we made up about posts nobody has seen. */
+      else if (stage === 'published') body = `<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">✓</span> ${esc2(p.when || 'Published')}</div>
+        <div class="w" style="margin-top:4px;color:var(--ink-dim)">Metrics arrive once a channel is connected.</div>`;
+      else if (stage === 'underperforming') body = `<div class="rsn">${esc2(p.rsn || '')}</div>`;
       return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
     }
     function renderPipeline(){
@@ -3945,7 +4097,16 @@
       const conn = chState.filter(s => s.on).length;
       const ti = (new Date().getDay() + 6) % 7, days = ['M','T','W','T','F','S','S'];
       const perDay = [0,0,0,0,0,0,0];
-      posts.forEach(p => { if (p.stage === 'scheduled' || p.stage === 'published') { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; perDay[di]++; } });
+      const bDay = [];
+      for (let i = 0; i < 7; i++) { const dt = new Date(); dt.setDate(dt.getDate() - ti + i); bDay.push(dt.toDateString()); }
+      posts.forEach(p => {
+        const iso = p.publishedAt || p.scheduledAt;
+        if (!iso) return;
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return;
+        const di = bDay.indexOf(d.toDateString());
+        if (di > -1) perDay[di]++;
+      });
       el.innerHTML =
         `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
          <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${chMark(s.c, 10)}</span>`).join('')}</div></div>
@@ -3959,7 +4120,22 @@
       const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], base = new Date(), ti = (base.getDay() + 6) % 7;
       const nums = [], buckets = [[],[],[],[],[],[],[]];
       for (let i = 0; i < 7; i++) { const dt = new Date(base); dt.setDate(base.getDate() - ti + i); nums.push(dt.getDate()); }
-      posts.forEach(p => { if (['scheduled','published','underperforming'].includes(p.stage)) { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; buckets[di].push(p); } });
+      /* Was: read the word "tomorrow" out of a label, and otherwise hash the
+         post's id to pick a column -- so the week's schedule was a shuffle,
+         and the same post could land on a different day on a re-render. Posts
+         now carry a real scheduled_at and sit on the day it names. */
+      const dayOf = [];
+      for (let i = 0; i < 7; i++) { const dt = new Date(base); dt.setDate(base.getDate() - ti + i); dayOf.push(dt.toDateString()); }
+      posts.forEach(p => {
+        const iso = p.publishedAt || p.scheduledAt;
+        if (!iso) return;
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return;
+        const di = dayOf.indexOf(d.toDateString());
+        if (di > -1) buckets[di].push(p);
+      });
+      buckets.forEach(b => b.sort((a, z) =>
+        new Date(a.publishedAt || a.scheduledAt) - new Date(z.publishedAt || z.scheduledAt)));
       // `empty` drives the mobile agenda list: days with nothing scheduled
       // are omitted there (Google Calendar's mobile Schedule view does the
       // same), except `today`, which stays as the "you are here" anchor even
@@ -3970,7 +4146,138 @@
           ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${chMark(c, 9)}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : `<div class="cempty">${i === ti ? 'Nothing scheduled today.' : 'Nothing scheduled.'}</div>`}
         </div>`).join('');
     }
-    // pipeline actions
+
+    /* ── THE SCHEDULER ─────────────────────────────────────────────────────
+       There was none. Approving a post set its time to the string "Today 5:00
+       PM" and the calendar placed it by hashing the post's id, so a week's
+       schedule was a shuffle rather than a plan.
+
+       A slot is one channel at one moment, and one slot becomes one row in
+       social_posts. Several slots is how the same caption goes out to
+       Instagram at nine and Facebook at six, which is the thing an agency
+       wants and had no way to ask for. */
+    const SCHED_PLATS = ['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'];
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const dateVal = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    const timeVal = (d) => pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+
+    function slotRow(plat, d) {
+      return '<div class="slot" data-slot>'
+        + '<select class="slot-p" aria-label="Channel">'
+        + SCHED_PLATS.map(c => '<option value="' + c + '"' + (c === plat ? ' selected' : '') + '>'
+            + esc2(CH[c] ? CH[c].label : c) + '</option>').join('')
+        + '</select>'
+        + '<input type="date" class="slot-d" value="' + dateVal(d) + '" aria-label="Date">'
+        + '<input type="time" class="slot-t" value="' + timeVal(d) + '" aria-label="Time">'
+        + '<button type="button" class="slot-x" aria-label="Remove this time">\u00d7</button>'
+        + '</div>';
+    }
+
+    function openScheduler(p, mode) {
+      /* Default to the next round hour rather than "now": nobody means to
+         publish at 14:37, and a sane default is the difference between a date
+         picker you accept and one you have to fight. */
+      const base = p.scheduledAt ? new Date(p.scheduledAt) : new Date(Date.now() + 60 * 60 * 1000);
+      if (!p.scheduledAt) { base.setMinutes(0, 0, 0); }
+      const plat = (p.channels && p.channels[0]) || 'instagram';
+      const heading = mode === 'reschedule' ? 'Move this post'
+        : mode === 'duplicate' ? 'Copy this post' : 'Schedule this post';
+      const blurb = mode === 'reschedule'
+        ? 'Change the channel or the time. Add another row to send the same post out again elsewhere.'
+        : mode === 'duplicate'
+          ? 'Same caption, new slots. The post you copied stays where it is.'
+          : 'Pick when this goes out, and where. Add a row for each extra channel or time.';
+
+      drawer.innerHTML =
+        '<button class="x" aria-label="Close">\u00d7</button>'
+        + '<div style="font-size:19px;font-weight:700">' + esc2(heading) + '</div>'
+        + '<p class="muted" style="font-size:12px;margin:6px 0 14px">' + esc2(blurb) + '</p>'
+        + '<div class="sch-listing">' + photoHtml(p.img, { small: true })
+        +   '<div style="min-width:0"><div class="t">' + esc2(p.listing) + '</div>'
+        +   '<div class="p">' + esc2(p.price || '') + '</div></div></div>'
+        + (p.caption ? '<div class="sch-cap">' + esc2(p.caption) + '</div>' : '')
+        + '<div class="sch-slots" id="schSlots">' + slotRow(plat, base) + '</div>'
+        + '<button type="button" class="btn" id="schAdd" style="margin-top:8px">+ Add another time</button>'
+        + '<div class="sch-note" id="schNote"></div>'
+        + '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">'
+        +   esc2(mode === 'reschedule' ? 'Save' : 'Add to schedule') + '</button>';
+      scrim.classList.add('on'); drawer.classList.add('on');
+
+      const slots = document.getElementById('schSlots');
+      document.getElementById('schAdd').addEventListener('click', () => {
+        const last = slots.lastElementChild;
+        const d = new Date(base);
+        /* A copy defaults three hours after the previous slot: the point of a
+           second slot is a different moment, so starting them on the same one
+           makes every agency edit both. */
+        if (last) {
+          const dv = last.querySelector('.slot-d').value, tv = last.querySelector('.slot-t').value;
+          const prev = new Date(dv + 'T' + (tv || '09:00'));
+          if (!isNaN(prev.getTime())) { prev.setHours(prev.getHours() + 3); d.setTime(prev.getTime()); }
+        }
+        slots.insertAdjacentHTML('beforeend', slotRow(plat, d));
+      });
+      slots.addEventListener('click', (e) => {
+        const x = e.target.closest('.slot-x');
+        if (!x) return;
+        if (slots.children.length === 1) { toast('A post needs at least one time'); return; }
+        x.closest('.slot').remove();
+      });
+
+      document.getElementById('schSave').addEventListener('click', () => {
+        const rows = [...slots.querySelectorAll('[data-slot]')].map(r => ({
+          platform: r.querySelector('.slot-p').value,
+          at: r.querySelector('.slot-d').value + 'T' + r.querySelector('.slot-t').value,
+        })).filter(r => r.at && r.at.indexOf('undefined') < 0);
+
+        const bad = rows.find(r => isNaN(new Date(r.at).getTime()));
+        const note = document.getElementById('schNote');
+        if (!rows.length || bad) { note.textContent = 'Give every row a date and a time.'; return; }
+        note.textContent = '';
+
+        const btn = document.getElementById('schSave');
+        btn.disabled = true; btn.textContent = 'Saving\u2026';
+
+        /* Rescheduling reuses the row that already exists and only creates
+           rows for the extra slots, so moving a post does not leave the old
+           one behind next to the new one. */
+        const extra = mode === 'reschedule' ? rows.slice(1) : rows;
+        const first = mode === 'reschedule'
+          ? SynListings.updateSocialPost(p.postId, { at: rows[0].at, platform: rows[0].platform })
+          : Promise.resolve();
+
+        first
+          .then(() => extra.length
+            ? SynListings.schedulePost({
+                propertyId: p.propertyId, contentId: p.contentId || null,
+                caption: p.caption || '', mediaUrls: p.img ? [p.img] : null, slots: extra,
+              })
+            : null)
+          .then(() => {
+            /* A caption that has been scheduled is no longer awaiting review,
+               so it leaves the approval column. Failing to move it would show
+               the same caption in two places forever. */
+            if (mode === 'approve' && p.contentId) {
+              return SynListings.setContentStatus(p.contentId, 'scheduled').catch(() => {});
+            }
+          })
+          .then(() => {
+            closeLead();
+            const n = mode === 'reschedule' ? rows.length - 1 + 1 : rows.length;
+            toast(mode === 'reschedule'
+              ? 'Moved to ' + fmtWhen(rows[0].at)
+              : n + (n === 1 ? ' post scheduled' : ' posts scheduled'));
+            loadPipeline();
+          })
+          .catch((err) => {
+            btn.disabled = false;
+            btn.textContent = mode === 'reschedule' ? 'Save' : 'Add to schedule';
+            note.textContent = (err && err.message) || 'Could not save that.';
+            console.error('schedule failed', err);
+          });
+      });
+    }
+
     // ── property preview ("zoom to confirm the right property") ──
     function openPropPreview(post){
       if (!post) return;
@@ -4011,26 +4318,65 @@
     function closePropPreview(){ document.getElementById('pprevScrim').classList.remove('on'); }
     document.getElementById('pprevScrim').addEventListener('click', e => { if (e.target.id === 'pprevScrim') closePropPreview(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closePropPreview(); });
-    document.getElementById('calendar').addEventListener('click', e => { const c = e.target.closest('.cev'); if (c) openPropPreview(posts.find(x => x.id === c.dataset.pid)); });
+    /* A calendar entry is the thing you want to move, so clicking one opens
+       the scheduler on it. Published posts have nowhere to move to, so those
+       still open the property preview. */
+    document.getElementById('calendar').addEventListener('click', e => {
+      const c = e.target.closest('.cev'); if (!c) return;
+      const p = posts.find(x => x.id === c.dataset.pid);
+      if (!p) return;
+      if (p.stage === 'scheduled' && p.postId) openScheduler(p, 'reschedule');
+      else openPropPreview(p);
+    });
 
     document.getElementById('pipeline').addEventListener('click', (e) => {
       const b = e.target.closest('[data-act]');
       if (!b) { const card = e.target.closest('.pcard'); if (card) openPropPreview(posts.find(x => x.id === card.dataset.pid)); return; }
       const p = posts.find(x => x.id === b.dataset.id); if (!p) return;
-      if (b.dataset.act === 'gen') {
-        p.stage = 'generating'; renderPipeline();
-        setTimeout(() => {
-          p.stage = 'approval';
-          if (!p.channels.length) p.channels = ['instagram','tiktok','facebook'];
-          p.caption = 'Verified ' + p.listing.split(',')[0] + ' · ' + p.price + '. Seven checks, zero surprises — DM ‘REPORT’ for the full verification ✦';
-          p.reach = estReach(p.channels); renderPipeline(); renderBento();
-        }, 1400);
-      } else if (b.dataset.act === 'approve') { p.stage = 'scheduled'; p.when = p.when || 'Today 5:00 PM'; renderPipeline(); renderBento(); }
-      else if (b.dataset.act === 'publish') {
-        p.stage = 'published'; const r = p.reach || estReach(p.channels);
-        p.metrics = p.metrics || { views: r, dms: Math.round(r * 0.0022), leads: Math.round(r * 0.0007) };
-        p.when = 'Just now'; p._justpub = true; renderPipeline(); renderBento();
-        setTimeout(() => { delete p._justpub; }, 700);
+      const act = b.dataset.act;
+
+      /* Every branch below either opens something the agency drives or writes
+         to the database and reloads. None of them move a card by setting a
+         property on an array, which is what this did before. */
+      if (act === 'gen') {
+        const idx = (LISTINGS_DATA || []).findIndex(l => l.id === p.propertyId);
+        if (idx < 0) { toast('That listing is no longer here — reload and try again'); return; }
+        if (typeof openComposer === 'function') openComposer(idx);
+        else toast('The composer did not load');
+      } else if (act === 'approve') {
+        openScheduler(p, 'approve');
+      } else if (act === 'reschedule') {
+        openScheduler(p, 'reschedule');
+      } else if (act === 'duplicate') {
+        openScheduler(p, 'duplicate');
+      } else if (act === 'discard') {
+        if (!p.contentId) return;
+        b.disabled = true;
+        SynListings.setContentStatus(p.contentId, 'archived')
+          .then(() => { toast('Discarded — it is out of your review queue'); loadPipeline(); })
+          .catch((err) => { b.disabled = false; toast((err && err.message) || 'Could not discard that'); });
+      } else if (act === 'remove') {
+        if (!p.postId) return;
+        b.disabled = true;
+        SynListings.deleteSocialPost(p.postId)
+          .then(() => { toast('Taken off the schedule'); loadPipeline(); })
+          .catch((err) => { b.disabled = false; toast((err && err.message) || 'Could not remove that'); });
+      } else if (act === 'sendnow') {
+        if (!p.postId) return;
+        /* NOT "mark it published". The database refuses that from a browser --
+           social_posts_guard reserves published/publishing/failed for the
+           publisher running as the service role -- and it is right to: whether
+           something reached an audience is a fact about the outside world, and
+           this tab has no way of knowing it. Moving the time to now is the
+           honest version of "go now": it is at the front of the queue, and it
+           goes out when a channel is connected. */
+        b.disabled = true; b.textContent = 'Queueing…';
+        SynListings.updateSocialPost(p.postId, { at: new Date().toISOString() })
+          .then(() => {
+            toast('Moved to the front of the queue — it goes out once a channel is connected');
+            loadPipeline();
+          })
+          .catch((err) => { b.disabled = false; b.textContent = 'Send now'; toast((err && err.message) || 'Could not do that'); });
       }
       if (window.synMotion) synMotion.refresh();
     });
@@ -5205,7 +5551,13 @@
       if (typeof mkStats === 'function') mkStats();
       if (typeof renderOverview === 'function') renderOverview();
       if (typeof renderListings === 'function') renderListings();
+      /* A new listing is a new card in "Listing uploaded", so the pipeline is
+         part of what a listing change means. */
+      if (typeof buildPosts === 'function') { buildPosts(); repaintSocial(); }
     });
+    /* Nothing called this. The pipeline is read once on load and again after
+       anything writes to it. */
+    if (typeof loadPipeline === 'function') loadPipeline();
     /* ── channel insight, from attribution ──────────────────────────────────
        WAS three hardcoded claims dressed as measurements: "+41% creatives with
        the Verified badge earn 41% higher CTR", "3.1x video outperforms photo on
@@ -7378,6 +7730,11 @@
               if (res && res.saved) markSaved(res.saved);
               else markSaved(0, 'nothing could be filed');
               loadPast(row.id);          // the list must include what just happened
+              /* Those rows are the review queue. Without this the captions are
+                 filed and the pipeline still says nothing is awaiting review
+                 until the page is reloaded -- which is exactly the "I clicked
+                 approve and nothing happened" report. */
+              if (typeof loadPipeline === 'function') loadPipeline();
             })
             .catch(function (err) {
               console.error('could not archive this generation', err);
@@ -7557,7 +7914,15 @@
       }
       cmpModal.innerHTML = html;
     }
-    function openComposer(){ cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' }; renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on'); }
+    /* Takes the listing to open on. The pipeline's "Generate content" button
+       sits on a specific card, and opening the composer on whichever listing
+       happened to be first would have generated captions for the wrong
+       property -- silently, since the composer names the listing only once. */
+    function openComposer(li){
+      const idx = Number.isInteger(li) && li >= 0 && li < (LISTINGS_DATA || []).length ? li : 0;
+      cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
+      renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on');
+    }
     function closeComposer(){ cmpScrim.classList.remove('on'); cmpModal.classList.remove('on'); }
     async function generateCaptions(){
       if (cmp.chans.size === 0) return;

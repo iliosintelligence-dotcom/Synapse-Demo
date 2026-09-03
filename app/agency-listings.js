@@ -1186,6 +1186,151 @@
   }
 
 
+  /* ── the social pipeline ──────────────────────────────────────────────
+     social_posts has existed since the first schema and nothing ever wrote a
+     row to it. The portal's pipeline read from a `posts` array that was
+     initialised to [] and never assigned, so every column was permanently
+     empty and Approve, Schedule and Publish had nothing to act on -- which is
+     exactly what an agency reported: captions generate, then the buttons do
+     nothing.
+
+     These are the reads and writes that stage needs. Everything is scoped by
+     agency_id and RLS (social_posts_rw = is_agency_member) enforces the same
+     rule server-side, so a caller cannot reach another agency's schedule. */
+
+  /** Platforms we can honestly schedule to: the syndication engine validates
+   *  against these five, and social_platform now carries all five. linkedin
+   *  and x exist in the enum but nothing generates or checks content for them,
+   *  so they are deliberately not offered. */
+  var SCHEDULABLE = { instagram: 1, tiktok: 1, youtube: 1, facebook: 1, whatsapp: 1 };
+
+  /** Everything this agency has queued, publishing or published. */
+  function listSocialPosts() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_posts')
+        .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
+              + 'caption, media_urls, failure_reason, created_at')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('scheduled_at', { ascending: true, nullsFirst: false })
+        .limit(500);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Captions generated but not yet approved -- the review queue.
+   *  Joins the property so a card can show what it is advertising. */
+  function listPendingContent() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('generated_content')
+        .select('id, property_id, content_type, narrative_angle, generated_text, status, created_at')
+        .eq('agency_id', aid)
+        .eq('status', 'draft')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Approve or discard a caption. 'approved' moves it out of the review
+   *  queue; 'archived' is the discard, and is a soft state rather than a
+   *  delete because an agency asking "what did we reject and why" is a fair
+   *  question and a deleted row cannot answer it. */
+  function setContentStatus(id, status) {
+    if (!id || (status !== 'approved' && status !== 'archived' && status !== 'scheduled')) {
+      return Promise.reject(new Error('bad status'));
+    }
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); }).then(function (u) {
+      me = u && u.data && u.data.user && u.data.user.id;
+      var patch = { status: status, updated_at: new Date().toISOString() };
+      if (status === 'approved') { patch.approved_by = me || null; patch.approved_at = new Date().toISOString(); }
+      return c1.from('generated_content').update(patch).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /**
+   * Queue one caption across platforms and times.
+   *
+   * `slots` is a list of { platform, at } -- so "post this to Instagram at 9am
+   * and to Facebook at 6pm" is one call producing two rows, which is how the
+   * same post gets copies at different times on different channels rather than
+   * an agency retyping it. One row per slot is what the publisher will read.
+   *
+   * dry_run stays true: nothing is connected to a platform yet, and a row that
+   * claimed otherwise would be a lie the publisher would later act on.
+   */
+  function schedulePost(opts) {
+    var o = opts || {};
+    var slots = (o.slots || []).filter(function (sl) {
+      return sl && SCHEDULABLE[sl.platform] && sl.at;
+    });
+    if (!o.propertyId) return Promise.reject(new Error('No listing on that post'));
+    if (!slots.length) return Promise.reject(new Error('Pick at least one channel and time'));
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) { me = u && u.data && u.data.user && u.data.user.id; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        return c1.from('social_posts').insert(slots.map(function (sl) {
+          return {
+            property_id: o.propertyId,
+            content_id: o.contentId || null,
+            agency_id: aid,
+            platform: sl.platform,
+            status: 'scheduled',
+            scheduled_at: new Date(sl.at).toISOString(),
+            caption: String(o.caption || ''),
+            media_urls: o.mediaUrls || null,
+            dry_run: true,
+            created_by: me || null,
+          };
+        })).select('id, platform, scheduled_at');
+      })
+      .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+  }
+
+  /** Move a queued post to another time, another channel, or mark it done.
+   *  Used by the calendar when a post is dragged to a different day. */
+  function updateSocialPost(id, patch) {
+    if (!id || !patch) return Promise.reject(new Error('nothing to update'));
+    var row = { updated_at: new Date().toISOString() };
+    if (patch.at) row.scheduled_at = new Date(patch.at).toISOString();
+    if (patch.platform) {
+      if (!SCHEDULABLE[patch.platform]) return Promise.reject(new Error('We do not publish to that yet'));
+      row.platform = patch.platform;
+    }
+    if (patch.caption != null) row.caption = String(patch.caption);
+    if (patch.status) {
+      row.status = patch.status;
+      /* published_at is what the calendar and the metrics read; setting the
+         status without it leaves a post that is published on one screen and
+         unpublished on the next. */
+      if (patch.status === 'published') row.published_at = new Date().toISOString();
+    }
+    return client().then(function (c) {
+      return c.from('social_posts').update(row).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Take a post off the schedule. Soft, like everything else here. */
+  function deleteSocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.from('social_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+
   /* ── caption templates ────────────────────────────────────────────────
      Ours (agency_id null) plus this agency's own, in one list. RLS decides
      which rows come back; this asks for both and sorts them together, so an
@@ -1314,6 +1459,12 @@
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,
+    listPendingContent: listPendingContent,
+    setContentStatus: setContentStatus,
+    listSocialPosts: listSocialPosts,
+    schedulePost: schedulePost,
+    updateSocialPost: updateSocialPost,
+    deleteSocialPost: deleteSocialPost,
     listTemplates: listTemplates,
     saveTemplate: saveTemplate,
     deleteTemplate: deleteTemplate,
