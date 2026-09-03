@@ -86,7 +86,21 @@
     }
     .tile .catdot { position: absolute; top: 9px; left: 9px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); }
     @keyframes pinPop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    /* Eight tiles opening a board all carried animation-delay: 0s, so the whole
+       board popped on one frame -- a repaint rather than a gallery filling. 45ms
+       apart puts it in the 30-80ms band, and the delay is capped at the eighth
+       tile so a big board never turns the cascade into a wait. nth-child rather
+       than a JS index: the tiles are re-rendered on every filter change and CSS
+       does not need telling twice. */
     .masonry .tile { animation: pinPop .28s cubic-bezier(.22,1,.36,1) both; }
+    .masonry .tile:nth-child(1) { animation-delay: 0ms; }
+    .masonry .tile:nth-child(2) { animation-delay: 45ms; }
+    .masonry .tile:nth-child(3) { animation-delay: 90ms; }
+    .masonry .tile:nth-child(4) { animation-delay: 135ms; }
+    .masonry .tile:nth-child(5) { animation-delay: 180ms; }
+    .masonry .tile:nth-child(6) { animation-delay: 225ms; }
+    .masonry .tile:nth-child(7) { animation-delay: 270ms; }
+    .masonry .tile:nth-child(n+8) { animation-delay: 315ms; }
 
     /* mode switch — Dream / Mood / Vision */
     .mode-switch { display: inline-flex; gap: 3px; margin: 14px 0 4px; padding: 4px; background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: 100px; }

@@ -19,6 +19,33 @@
     body { background: var(--bg); }
     .tj-bg { position: fixed; inset: 0; z-index: 0;
       background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
+    /* A GROUND FOR THE WORDS THAT ARE NOT ON GLASS.
+       The note below is right and stays: the photo is clear and the glass does
+       the frosting. But that only covers text sitting ON glass. The eyebrow
+       and the title do not -- they are near-black type laid directly on an
+       unmodified photograph, so their contrast is whatever happens to be
+       behind them, and behind them here is a bright window. They were close to
+       unreadable.
+
+       So the scrim is confined to the band the header occupies and fades to
+       nothing well before the chat: the photo still reads through the middle
+       and bottom of the page exactly as intended, and only the words that had
+       no ground get one. This is the scroll-edge idea -- veil where floating
+       type overlaps an image, not across the whole image. */
+    .tj-bg::after {
+      content: ''; position: absolute; inset: 0 0 auto 0; height: 42vh;
+      background: linear-gradient(180deg,
+        rgba(250,250,248,0.94) 0%,
+        rgba(250,250,248,0.78) 38%,
+        rgba(250,250,248,0.34) 72%,
+        rgba(250,250,248,0) 100%);
+      pointer-events: none;
+    }
+    /* Asked for less transparency: give them a solid band rather than a wash
+       that still lets the window through. */
+    @media (prefers-reduced-transparency: reduce) {
+      .tj-bg::after { background: var(--bg, #f7f7f8); height: 46vh; }
+    }
     /* whisper of a warm wash — the photo stays CLEAR; glass does the frosting */
     .tj-wash { position: fixed; inset: 0; z-index: 0;
       background-image: var(--grain);
@@ -38,7 +65,13 @@
     .tj-head { padding-top: 8px; }
     .tj-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #121212; }
     .tj-title { font-family: var(--f-serif); font-weight: 500; font-size: 40px; letter-spacing: -0.01em; color: var(--ink); display: flex; align-items: center; gap: 10px; margin-top: 2px; }
-    .tj-trust { font-size: 12.5px; font-weight: 500; color: var(--ink-muted); margin-top: 6px; }
+    /* Sits lowest in the header, so it gets the weakest part of the scrim --
+       around a 45% wash rather than the 94% the eyebrow gets. Flat --ink-muted
+       grey is the wrong ink for a ground that varies with the photograph
+       behind it: this is the one line here that keeps changing contrast as the
+       image changes. A darker ink and one more weight step buy that back
+       without promoting it above the title. */
+    .tj-trust { font-size: 12.5px; font-weight: 600; color: #45454B; margin-top: 6px; }
     .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(46,125,79,0.14); }
 
     .convo { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
