@@ -233,8 +233,26 @@
     if (!window.L) return st;
     if (!st.map) {
       st.map = L.map(elId, { scrollWheelZoom: false });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18,
+      /* CARTO NOW WATERMARKS ITS KEYLESS TILES.
+         Nothing here broke -- the provider changed terms. basemaps.cartocdn.com
+         still answers 200 with a real PNG, and that PNG has "API KEY REQUIRED /
+         carto.com/basemaps/apikey" printed diagonally across it. Every map in
+         the product was serving that to buyers and agencies alike.
+
+         OSM's standard tiles are the keyless replacement that works today, and
+         they carry the labels this map needs. Attribution is not decoration
+         here: ODbL requires it and the tile policy requires it.
+
+         READ THIS BEFORE REAL TRAFFIC. The OSMF tile policy covers modest use
+         and explicitly does not cover heavy or commercial consumption. This is
+         the right fix for a product that is not live yet; it is not the right
+         fix for one that is. Before launch this wants a real tile account --
+         CARTO with a key, MapTiler, Stadia, or self-hosted -- and the only
+         thing that has to change is the URL and the attribution string. No
+         subdomain rotation: OSM retired {s} and asks for the single host. */
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
       }).addTo(st.map);
       st.layer = L.layerGroup().addTo(st.map);
     }
