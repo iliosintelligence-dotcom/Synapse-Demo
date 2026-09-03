@@ -976,10 +976,35 @@ gsap.timeline({ delay: 0.1 })
   .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
   .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
 // ─── GSAP scroll reveals ───
+/* Siblings cascade instead of arriving as a block.
+   Every .reveal got its own ScrollTrigger at `top 87%`, so a row of elements
+   sitting at the same height crossed that line on the same frame and appeared
+   together -- the three pricing cards, the three CRM/TRUST/GROWTH columns. A
+   group that lands all at once reads as a repaint; the same group 60ms apart
+   reads as a list arriving. 60ms is inside the 30-80ms band, and the index is
+   capped so a long row never turns the cascade into a wait.
+
+   Grouped by parent rather than by measured Y: it survives a reflow, and it
+   is the same thing the eye is reading as "a row". */
+const revealSibs = new Map();
 document.querySelectorAll('.reveal').forEach(el => {
+  const key = el.parentElement;
+  if (!revealSibs.has(key)) revealSibs.set(key, []);
+  revealSibs.get(key).push(el);
+});
+document.querySelectorAll('.reveal').forEach(el => {
+  const group = revealSibs.get(el.parentElement) || [el];
+  const stagger = group.length > 1 ? Math.min(group.indexOf(el), 4) * 0.06 : 0;
   gsap.fromTo(el, { opacity: 0, y: 48 }, {
-    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
+    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', delay: stagger,
+    scrollTrigger: {
+      trigger: el, start: 'top 87%', toggleActions: 'play none none none',
+      /* Claims the element the moment it is scheduled. The fail-safe below
+         reveals anything still at opacity 0, and a staggered element is
+         legitimately at 0 during its delay -- without this flag the fail-safe
+         would overwrite the tween and cancel the cascade it is waiting out. */
+      onEnter: () => { el.dataset.rv = '1'; }
+    }
   });
 });
 document.querySelectorAll('.reveal-l').forEach(el => {
@@ -1006,6 +1031,7 @@ document.querySelectorAll('.reveal-r').forEach(el => {
   function revealInView() {
     var vh = window.innerHeight || document.documentElement.clientHeight;
     document.querySelectorAll(sel).forEach(function (el) {
+      if (el.dataset.rv) return;                 // ScrollTrigger has it
       if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
       var r = el.getBoundingClientRect();
       if (r.top < vh * 0.92 && r.bottom > 0) {

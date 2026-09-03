@@ -46,10 +46,22 @@
    so there is nothing for this to clobber; the only base transforms on
    button selectors are the disabled `transform: none` resets, which outrank
    it anyway. */
-:where(button, .btn, [role="button"]):not(:disabled):not([aria-disabled="true"]) {
-  transition: transform var(--m-micro) var(--m-ease);
-}
-:where(button, .btn, [role="button"]):not(:disabled):not([aria-disabled="true"]):active {
+/* NO `transition` DECLARATION HERE, DELIBERATELY.
+
+   The first version of this rule set one, and it silently replaced the
+   bespoke transition on every button-ish element it matched -- `transition`
+   is a single property, so winning it at all means winning it outright. The
+   pricing period toggle lost its background and colour fade and was left with
+   nothing but this transform. (`:not()` carries the specificity of its
+   argument, so the original `:where(button):not(:disabled)` scored (0,2,0),
+   not the (0,0,0) it looked like. The :where() chaining below fixes that, but
+   the safer lesson is not to declare a shared `transition` at all.)
+
+   So this only sets the pressed state. Elements whose own transition already
+   covers transform ease into it; the rest snap, which is honest press
+   feedback rather than a regression -- and the codebase's own `.m-press`
+   hook below is still the way to opt a specific element into a timed press. */
+:where(button, .btn, [role="button"]):where(:not(:disabled)):where(:not([aria-disabled="true"])):active {
   transform: scale(0.97);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -83,8 +95,21 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* Press feedback — micro scale on anything tappable (motion.js adds .m-press) */
-.m-press { transition: transform var(--m-micro) var(--m-ease); }
+/* Press feedback — micro scale on anything tappable (motion.js adds .m-press)
+
+   THE `transition` DECLARATION THAT USED TO LIVE HERE IS GONE, AND THAT IS
+   THE POINT. motion.js adds this class to every `button, .btn, .f, .wa,
+   .chip, nav a` on every page, and `transition` is a single property: winning
+   it means replacing it. So this class was silently deleting the bespoke
+   transition of nearly every interactive element in the product -- the
+   pricing period toggle's background and colour fade, the audience tabs',
+   every chip's -- and substituting a transform-only one. The elements looked
+   styled and simply never animated the thing they were written to animate.
+
+   Press still scales. Elements whose own transition names transform ease into
+   it; the rest snap, which is honest feedback and not a regression. An
+   element that wants a timed press now says so in its own transition, next to
+   the other properties it animates, where it can be read. */
 .m-press:active { transform: scale(0.97); }
 
 /* Lottie mount points */
