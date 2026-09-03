@@ -3196,6 +3196,16 @@
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
     };
+    /* A channel's badge content. The platforms get their own logo; proximity
+       and the direct app are ours and have no mark, so they keep the glyph
+       they always had rather than rendering an empty badge. Size is passed by
+       the caller because these badges run 16px to 22px and a logo scaled by
+       the parent's font-size would not sit right in any of them. */
+    const chMark = (c, px) => {
+      const m = (window.SynIcons && SynIcons.brand) ? SynIcons.brand(c, { size: px }) : '';
+      return m || esc2(CH[c].short);
+    };
+
     // Demo leads removed: each referenced a property that does not exist.
     // Leads arrive from real buyer activity against real listings, and are
     // loaded from the `leads` table by loadLeads() below. `let`, not `const`:
@@ -3205,7 +3215,7 @@
     const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2);
     const wa = (ph,pr) => 'https://wa.me/' + ph.replace(/[^\d]/g,'') + '?text=' + encodeURIComponent('Hello, thank you for your interest in ' + pr.split(' · ')[0] + ' via Synapse.');
     const scoreTone = s => s >= 80 ? 'color:var(--success);border-color:var(--success)' : s >= 60 ? 'color:var(--brand);border-color:var(--brand)' : 'color:var(--ink-dim);border-color:var(--ink-dim)';
-    const chnBadge = c => `<span class="chn" style="background:${CH[c].color}" title="Attributed to ${CH[c].label}">${CH[c].short}</span>`;
+    const chnBadge = c => `<span class="chn" style="background:${CH[c].color}" title="Attributed to ${CH[c].label}">${chMark(c, 12)}</span>`;
 
     // ══════════ CRM — pipeline table ══════════
     const STAGE_ORDER = ['New','Contacted','Viewing','Negotiation','Won'];
@@ -3857,7 +3867,7 @@
       setTimeout(() => { el.textContent = fmt(to); }, dur + 140); // guarantee the final value even if rAF is throttled
     }
     const chavRow = p => p.channels.length
-      ? `<div class="chavs">${p.channels.map(c => `<span class="cav" style="background:${CH[c].color}">${CH[c].short}</span>`).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>`
+      ? `<div class="chavs">${p.channels.map(c => `<span class="cav" style="background:${CH[c].color}">${chMark(c, 12)}</span>`).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>`
       : '';
     function pcard(p, stage){
       let body = '';
@@ -3905,7 +3915,7 @@
       posts.forEach(p => { if (p.stage === 'scheduled' || p.stage === 'published') { const di = /tomorrow/i.test(p.when || '') ? (ti + 1) % 7 : /today|just now/i.test(p.when || '') ? ti : sHash(p.id) % 7; perDay[di]++; } });
       el.innerHTML =
         `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
-         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${CH[s.c].short}</span>`).join('')}</div></div>
+         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${chMark(s.c, 10)}</span>`).join('')}</div></div>
          <div class="s-tile"><div class="k">This week</div><div class="s-mini">${days.map((d, i) => `<div class="d ${i === ti ? 'today' : ''}"><div class="lbl">${d}</div><div class="cell">${'<span class="pd"></span>'.repeat(Math.min(3, perDay[i]))}</div></div>`).join('')}</div></div>
          <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} posts awaiting approval"><div class="k">Needs approval</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
       const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
@@ -3924,7 +3934,7 @@
       el.innerHTML = names.map((dn, i) => `
         <div class="cday ${i === ti ? 'today' : ''}${!buckets[i].length ? ' empty' : ''}">
           <div class="dh"><span class="dn">${dn}</span><span class="dd">${nums[i]}</span></div>
-          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${CH[c].short}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : `<div class="cempty">${i === ti ? 'Nothing scheduled today.' : 'Nothing scheduled.'}</div>`}
+          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${chMark(c, 9)}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : `<div class="cempty">${i === ti ? 'Nothing scheduled today.' : 'Nothing scheduled.'}</div>`}
         </div>`).join('');
     }
     // pipeline actions
@@ -3947,7 +3957,7 @@
         if (L.property_type) meta.push((typeof TYPE_LABEL !== 'undefined' && TYPE_LABEL[L.property_type]) || L.property_type);
       }
       const chans = (post.channels && post.channels.length)
-        ? post.channels.map(c => `<span class="cav" style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 9px var(--f-sans);color:#fff;background:${CH[c].color}">${CH[c].short}</span>`).join('')
+        ? post.channels.map(c => `<span class="cav" style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 9px var(--f-sans);color:#fff;background:${CH[c].color}">${chMark(c, 13)}</span>`).join('')
         : '<span style="font-size:12.5px;color:var(--ink-dim)">Not yet on any channel</span>';
       const stg = (PSTAGES.find(s => s.id === post.stage) || {}).label || post.stage;
       document.getElementById('pprevModal').innerHTML = `
@@ -5730,7 +5740,13 @@
       }
       /* An agency with no teammates yet rendered an empty grid under the
          invite button. Say what this becomes instead. */
-      if (!AGENTS.length) {
+      /* PENDING counts as team here. This read `!AGENTS.length`, so an agency
+         that had invited people but had nobody accept yet -- the normal state
+         for a first invite -- got "Just you so far" and returned, and the
+         invite cards further down never rendered. The invite was in the
+         database the whole time; this screen simply stopped before it could
+         say so, which looked exactly like the invite had failed. */
+      if (!AGENTS.length && !PENDING.length) {
         g.innerHTML =
           '<div class="ov-blank">'
           + '<span class="ov-blank-i" data-icon="user"></span>'
@@ -7324,7 +7340,9 @@
           var vs = campaign.variants.filter(function (v) { return v.platform === pl; });
           if (!vs.length) return;
           html += '<div class="cmp-plat"><div class="cmp-plat-h">'
-            + '<span class="k" style="background:' + spec.colour + '">' + esc(spec.short) + '</span>'
+            + '<span class="k" style="background:' + spec.colour + '">'
+            + ((window.SynIcons && SynIcons.brand && SynIcons.brand(pl, { size: 12 })) || esc(spec.short))
+            + '</span>'
             + esc(spec.label) + '</div><div class="cmp-grid">'
             + vs.map(function (v) {
                 var bodyOnly = v.caption.split('\n\n').slice(1).join('\n\n');

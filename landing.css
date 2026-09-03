@@ -2758,15 +2758,21 @@ textarea:focus-visible {
    the wrong one: it is the standing action on the page, and on a long agency
    page the hero's button is gone by the second section. */
 
-/* ── the reality section, and the turn out of it ───────────────────────────
+/* ── the reality section ───────────────────────────────────────────────────
    The problem is told in black and white on purpose: it is the part of the
    page the reader is meant to recognise as their own week, and colour would
-   soften it. Everything Synapse does about it then arrives in colour, so the
-   page changes temperature exactly where the argument does.
+   soften it.
 
-   The turn is a real transition rather than another section that fades in:
-   the colour wipes upward as the reality section leaves the viewport, so
-   finishing the problem is what opens the answer. */
+   THE WIPE THAT USED TO LIVE HERE IS GONE. A pseudo-element scaled up this
+   section on scroll to wipe a new colour in, and it earned its keep while the
+   page turned from monochrome to colour at exactly this point. When the page
+   went black and white throughout, the wipe kept running but its destination
+   became #ededed against a #f5f5f5 page -- eight values of grey apart. What
+   was left was a hard horizontal edge sliding up the screen with a marginally
+   different grey behind it: no longer a transition between two states, just a
+   rectangle moving at its own speed behind the words. An effect whose reason
+   has been removed does not become subtle, it becomes a rendering fault, and
+   that is what it looked like. The section keeps the page background. */
 .reality-band {
   background: #f7f7f7;
 }
@@ -2774,28 +2780,7 @@ textarea:focus-visible {
 
 .turn-band {
   position: relative;
-  isolation: isolate;
   background: var(--bg);
-}
-/* The wipe. A pseudo-element rather than animating the section's own
-   background, so nothing inside it repaints while the colour arrives. */
-.turn-band::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: #ededed;
-  transform: scaleY(var(--turn, 0));
-  transform-origin: bottom;
-  will-change: transform;
-}
-
-/* Reduced motion gets the destination, not the journey: the colour is simply
-   there. motion.css already neutralises durations globally, but this one is
-   driven by scroll position rather than by a transition, so it needs saying. */
-@media (prefers-reduced-motion: reduce) {
-  .turn-band::before { transform: none; }
-  .reality-band { filter: none; }
 }
 
 /* ── the problem cards, made symmetrical ───────────────────────────────────

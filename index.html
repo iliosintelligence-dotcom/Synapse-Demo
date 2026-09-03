@@ -907,36 +907,11 @@ gsap.registerPlugin(ScrollTrigger);
   sync();
 })();
 
-/* ─── The turn from problem to answer ───────────────────────────────────
-   Drives --turn on the marketing section from 0 to 1 as the reality section
-   above it leaves the viewport, so the colour arrives exactly as the reader
-   finishes the problem. Scrubbed to scroll position rather than played on
-   entry: scrolling back up should take the colour with it, or the transition
-   only tells the truth the first time.
-
-   Written against the element's own style rather than a class toggle so the
-   wipe is continuous instead of a step, and guarded so a page without the
-   section (or without GSAP) simply keeps its normal background. */
-(function () {
-  var turn = document.getElementById('theTurn');
-  var reality = document.querySelector('.reality-band');
-  if (!turn || !reality) return;
-
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    turn.style.setProperty('--turn', '1');
-    return;
-  }
-
-  ScrollTrigger.create({
-    trigger: reality,
-    start: 'bottom 92%',
-    end: 'bottom 20%',
-    scrub: 0.5,
-    onUpdate: function (self) {
-      turn.style.setProperty('--turn', self.progress.toFixed(3));
-    }
-  });
-})();
+/* The scrubbed colour wipe that used to drive --turn on #theTurn is gone --
+   see landing.css. It animated a panel from #ededed up over a #f5f5f5 page,
+   which after the page went black and white read as a grey edge travelling up
+   the screen on its own rather than as a transition. Nothing replaces it: the
+   section simply keeps the page background. */
 
 /* ─── Sticky CTA bar ────────────────────────────────────────────────────
    Same behaviour as the customer landing: appears after about half a
