@@ -248,7 +248,7 @@
     });
   }
 
-  /* data: { name, persona, budgetNaira, channels[], audience, creatives[] }
+  /* data: { name, persona, endDate, channels[], audience, creatives[] }
      where each creative is { headline, imageUrl, channel }. The campaign and
      its first creatives are written in two steps; if the creatives fail the
      campaign is removed again, so a campaign with no ads never survives. */
@@ -258,7 +258,11 @@
       if (!a) throw new Error('No agency on this account');
       aid = a;
       var today = new Date();
-      var end = new Date(today.getTime() + 30 * 86400000);
+      /* The caller now picks this. It used to be today + 30 days for every
+         campaign ever created, which is a date nobody chose being written down
+         as though they had. */
+      var end = data.endDate ? new Date(data.endDate) : new Date(today.getTime() + 30 * 86400000);
+      if (isNaN(end.getTime()) || end < today) end = new Date(today.getTime() + 30 * 86400000);
       return c1.from('campaigns').insert({
         agency_id: aid,
         name: data.name,
@@ -269,7 +273,10 @@
         end_date: end.toISOString().slice(0, 10),
         target_platforms: data.channels || [],
         target_audience_description: data.audience || null,
-        budget_naira: data.budgetNaira || 0,
+        /* Synapse buys no advertising, so this stays 0 rather than carrying
+           a number an agency was asked to invent. The column stays for the day
+           there is a real media buy behind it. */
+        budget_naira: 0,
         persona: data.persona || null,
       }).select('id').maybeSingle();
     }).then(function (r) {

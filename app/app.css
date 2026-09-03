@@ -277,20 +277,16 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg);
   animation: synLoadOut .55s ease .82s forwards;
 }
-#syn-load .syn-load-mark { width: 46px; height: 66px; color: #15171a; }
-#syn-load rect {
-  opacity: 0; transform-box: fill-box; transform-origin: center;
-  animation: synBar .5s cubic-bezier(.22,1,.36,1) forwards;
-}
-#syn-load rect:nth-child(1) { animation-delay: .02s; }
-#syn-load rect:nth-child(2) { animation-delay: .06s; }
-#syn-load rect:nth-child(3) { animation-delay: .10s; }
-#syn-load rect:nth-child(4) { animation-delay: .14s; }
-#syn-load rect:nth-child(5) { animation-delay: .18s; }
-#syn-load rect:nth-child(6) { animation-delay: .22s; }
-#syn-load rect:nth-child(7) { animation-delay: .26s; }
-#syn-load rect:nth-child(8) { animation-delay: .30s; }
-@keyframes synBar { from { opacity: 0; transform: scale(.35) translateY(4px); } to { opacity: 1; transform: none; } }
+#syn-load .syn-load-mark { width: 46px; height: 66px; 
+  /* THE REAL MARK. This was the eight-rect drawing, and the drawing is not the
+     logo -- its bars float apart where the real monogram interlocks. The bars
+     used to build one at a time, which was the nicest thing about it and is
+     not possible with a flat file; a single considered entrance is better than
+     a staged assembly of the wrong shape. multiply drops the JPEG's white
+     ground onto the splash colour exactly, the same way the nav does it. */
+  mix-blend-mode: multiply; opacity: 0;
+  animation: synMarkIn .58s cubic-bezier(.22,1,.36,1) .04s forwards; }
+@keyframes synMarkIn { from { opacity: 0; transform: scale(.88) translateY(7px); } to { opacity: 1; transform: none; } }
 @keyframes synLoadOut { to { opacity: 0; visibility: hidden; } }
 @media (prefers-reduced-motion: reduce){ #syn-load { display: none; } }
 
