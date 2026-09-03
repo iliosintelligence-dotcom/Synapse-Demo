@@ -331,6 +331,29 @@
     return capped;
   }
 
-  window.SynMatches = { esc, money, naira, IMG_POOL, GEO, coords, propertyHref, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
+
+  /* ── focus that does not summon a keyboard ────────────────────────────────
+     Opening a panel used to focus its input, which on a phone throws the
+     keyboard up over the thing you just opened. You came to read the
+     conversation; instead half the screen is a keyboard and the messages and
+     the composer are both behind it.
+
+     The distinction is who asked. Focus in response to a tap -- you pressed
+     Rename, you pressed the clear button, a code was just sent to you -- is
+     the user asking to type, and those keep their focus() calls. Focus because
+     a panel appeared is the interface deciding for them, and that is the one
+     this replaces.
+
+     A fine pointer keeps the old behaviour: on a desktop, opening a compose
+     box and finding the cursor already in it costs nothing and saves a click. */
+  function focusUnlessTouch(el) {
+    if (!el) return;
+    try {
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
+    } catch (e) { /* no matchMedia: fall through and focus, as before */ }
+    el.focus();
+  }
+
+  window.SynMatches = { focusUnlessTouch, esc, money, naira, IMG_POOL, GEO, coords, propertyHref, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
     readSaves, toggleSave, onSavesChanged, SAVES_KEY, readViews, recordView, VIEWS_KEY };
 })();

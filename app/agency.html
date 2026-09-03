@@ -3772,7 +3772,7 @@
         const ta = document.getElementById('obBody');
         const count = document.getElementById('obCount');
         ta.addEventListener('input', () => { count.textContent = ta.value.length; });
-        ta.focus();
+        SynMatches.focusUnlessTouch(ta);
         document.getElementById('obOpen').addEventListener('click', openOutbox);
         document.getElementById('obQueue').addEventListener('click', function () {
           const body = ta.value.trim();
@@ -6990,7 +6990,7 @@
           .catch((err) => toast('Not sent — ' + ((err && err.message) || 'please try again')))
           .then(() => { send.disabled = false; input.disabled = false; input.focus(); });
       });
-      setTimeout(() => { const el = document.getElementById('tmInput'); if (el) el.focus(); }, 60);
+      setTimeout(() => { SynMatches.focusUnlessTouch(document.getElementById('tmInput')); }, 60);
     }
 
     /* ── assign a lead ────────────────────────────────────────────────────
