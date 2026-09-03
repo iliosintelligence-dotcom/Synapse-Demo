@@ -34,7 +34,28 @@
     .au-marks span { display: inline-flex; align-items: center; gap: 7px; }
     .au-marks i { width: 6px; height: 6px; border-radius: 50%; background: #5fd08a; }
     .au-brand { position: absolute; top: 34px; left: 52px; z-index: 1; display: flex; align-items: center; gap: 11px; color: #fff; }
-    .au-brand svg { width: 19px; height: 27px; }
+    /* THE ONE PLACE A FLAT LOGO FILE COULD NOT GO.
+       This mark sits directly on a photograph, and every file in
+       images/brand is an opaque JPEG -- any of them would have laid a solid
+       white or orange rectangle across the picture. So the artwork is carried
+       as alpha instead: mark-white-transparent.png is derived from the
+       agency's own mark-black-on-white artwork, with the ink turned white (the
+       same white mark their white-on-orange lockups use) and the ground turned
+       transparent. The JPEG's compression haze across the white ground is
+       pinned to fully clear on the way, or the "transparent" background would
+       carry a grey film visible over the photo.
+
+       White is baked in and cannot be recoloured, which is fine for the one
+       place it is used and the reason it is not the nav's asset. */
+    .au-brand svg,
+    .au-brand img { width: 19px; height: 27px; }
+    /* `.au-art img` above makes every image in this panel the full-bleed
+       background photograph -- absolute, inset 0, object-fit cover. The mark
+       is an <img> inside that panel now, so it was caught by that rule and
+       stacked on top of the wordmark at the panel's origin: the logo read
+       "NAPSE". It has to be put back into the flex row explicitly. contain,
+       not cover, because 164x227 into 19x27 would otherwise shave the mark. */
+    .au-brand img { position: static; inset: auto; flex: none; object-fit: contain; }
     .au-brand span { font-weight: 700; letter-spacing: .34em; text-transform: uppercase; font-size: 12px; }
 
     /* ── form side ── */
@@ -185,7 +206,7 @@
     <div class="au-art">
       <img src="../images/estate.jpg" alt="" aria-hidden="true" />
       <a class="au-brand" href="../index.html">
-        <svg viewBox="0 0 64 92" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="11" height="55" rx="4"/><rect x="18" y="2" width="44" height="11" rx="4"/><rect x="51" y="2" width="11" height="27" rx="4"/><rect x="22" y="18" width="40" height="11" rx="4"/><rect x="2" y="63" width="40" height="11" rx="4"/><rect x="2" y="63" width="11" height="27" rx="4"/><rect x="2" y="79" width="44" height="11" rx="4"/><rect x="51" y="35" width="11" height="55" rx="4"/></svg>
+        <img class="au-mark" src="../images/brand/mark-white-transparent.png" alt="" aria-hidden="true">
         <span>Synapse</span>
       </a>
       <div class="au-art-in">
