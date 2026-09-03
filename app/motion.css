@@ -6,13 +6,57 @@
   --m-micro: 100ms;     /* button press, icon react, selection tap */
   --m-standard: 180ms;  /* card transition, nav change, search interaction */
   --m-expanded: 250ms;  /* card expansion, sheet, AI workflow transition */
-  --m-ease: cubic-bezier(0.3, 0, 0.2, 1);      /* standard out */
+  /* WAS cubic-bezier(0.3, 0, 0.2, 1), labelled "standard out" -- but it was
+     not an ease-out. Its first control point (0.3, 0) holds the value flat at
+     the start, so motion begins slowly: the ease-in shape, in the one place it
+     hurts most. The opening frames are exactly what a user watches after
+     clicking, so a slow start reads as lag no matter how short the duration.
+     An ease-out at 200ms feels faster than an ease-in at 200ms.
+
+     It is now the same strong decelerate the panel curve below already used,
+     and the same value landing.css calls --ease. One product, one ease-out. */
+  --m-ease: cubic-bezier(0.22, 1, 0.36, 1);    /* strong ease-out */
   --m-ease-spring: cubic-bezier(0.34, 1.4, 0.44, 1); /* gentle overshoot */
+  /* On-screen movement -- something travelling between two points rather than
+     entering or leaving. Entrances want ease-out; a thing already on screen
+     moving to a new position wants acceleration at both ends. */
+  --m-ease-inout: cubic-bezier(0.77, 0, 0.175, 1);
   /* Strong decelerate, for something large sliding into place: fast away from
-     the edge, long settle. It was already in wide use on the drawer and the
-     Tayo panel as a literal, named nowhere — the other two curves do not do
-     this job, so it is a token rather than a value to be replaced. */
+     the edge, long settle. Kept as a name, though it now holds the same value
+     as --m-ease: it reads at its call sites (the drawer, the Tayo panel) and
+     the distinction it used to draw -- that the other curves did not
+     decelerate -- stopped being true when --m-ease was fixed above. */
   --m-ease-panel: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+
+/* ── PRESS FEEDBACK, EVERYWHERE ────────────────────────────────────────────
+   The main button classes already scaled on press; the rest of the app's
+   pressable vocabulary did not -- pipeline card actions, agent-card buttons,
+   toolbar chips, filter pills, calendar entries. A control that does not move
+   when pressed leaves the user unsure the interface heard them, and the fix is
+   the cheapest in UI: a scale small enough to feel rather than see.
+
+   :where() so this carries ZERO specificity. Anything with its own :active
+   rule -- the nav buttons at scale(.92), the disabled resets -- still wins
+   without needing !important. 0.97 sits in the 0.95-0.98 range that reads as
+   a press rather than as a lurch, and --m-micro (100ms) is the press budget.
+
+   Verified first that no button anywhere sets a transform in its BASE state,
+   so there is nothing for this to clobber; the only base transforms on
+   button selectors are the disabled `transform: none` resets, which outrank
+   it anyway. */
+:where(button, .btn, [role="button"]):not(:disabled):not([aria-disabled="true"]) {
+  transition: transform var(--m-micro) var(--m-ease);
+}
+:where(button, .btn, [role="button"]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Reduced motion means gentler, not none -- but a press scale is movement,
+     and it is the one kind this setting is asking us to drop. The button still
+     changes colour on :active wherever it did before. */
+  :where(button, .btn, [role="button"]):active { transform: none; }
 }
 
 /* Scroll reveal — elements marked [data-reveal] (cards are tagged by motion.js)

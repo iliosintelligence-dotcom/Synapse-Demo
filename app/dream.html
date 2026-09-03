@@ -25,7 +25,9 @@
     .bcard { cursor: pointer; text-align: left; border: none; background: none; padding: 0; }
     .bcover { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 3px; height: 168px; border-radius: 18px; overflow: hidden; background: rgba(0,0,0,0.05);
       box-shadow: 0 14px 34px rgba(20,26,38,0.10); transition: transform .2s, box-shadow .2s; }
-    .bcard:hover .bcover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.16); }
+    @media (hover: hover) and (pointer: fine) {
+      .bcard:hover .bcover { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(122,62,22,0.16); }
+    }
     .bcover img { width: 100%; height: 100%; object-fit: cover; }
     .bcover img:first-child { grid-row: 1 / 3; }
     /* An empty board held a sparkle. It now holds nothing but a faint hatch,
@@ -145,7 +147,9 @@
     .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
     .pal { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; border: none; padding: 0; box-shadow: 0 6px 16px rgba(20,26,38,0.08); }
     .pal img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
-    .pal:hover img { transform: scale(1.06); }
+    @media (hover: hover) and (pointer: fine) {
+      .pal:hover img { transform: scale(1.06); }
+    }
     .pal.added::after { content: '✓ pinned'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(54,54,54,0.75); color: #fff; font: 700 12px var(--f-sans); }
     .pal .catdot { position: absolute; top: 6px; left: 6px; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.85); z-index: 1; }
 
