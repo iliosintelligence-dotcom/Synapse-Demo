@@ -3255,6 +3255,10 @@
         : '<p class="muted" style="font-size:13px;margin:0">No leads yet — attribution fills in once one arrives.</p>';
     }
     function renderCrmFunnel(){
+      /* Five stages reading zero, above an empty table, is a row of furniture
+         telling you nothing. It comes back with the first lead. */
+      const fEl = document.getElementById('crmFunnel');
+      if (fEl) fEl.hidden = !leads.length;
       const counts = STAGE_ORDER.map(s => leads.filter(l => l.stage===s).length);
       const max = Math.max(...counts, 1);
       document.getElementById('crmFunnel').innerHTML = STAGE_ORDER.map((s,i) =>
@@ -3275,20 +3279,49 @@
       if(CRM.page>pages) CRM.page = pages;
       const start = (CRM.page-1)*CRM.per;
       const body = document.getElementById('leads');
+      const head = document.getElementById('crmHead');
       if (!all.length) {
+        /* A COLUMN HEADER OVER NOTHING LOOKS BROKEN, NOT EMPTY.
+           This rendered one thin line of grey text under a full row of
+           sortable headings -- Lead, Source, Budget, Stage, Last activity,
+           Score, Status -- so the pane read as a table that had failed to
+           load rather than as an agency that has not had a lead yet. Sorting
+           and filtering controls for zero rows are also just noise.
+
+           Filtered-empty is the exception and keeps the header: there the
+           columns are how you get back to the rows you were looking at. */
+        const filtered = !!(CRM.fStage || CRM.fSrc);
+        const bare = !CRM.loaded || CRM.error || !filtered;
+        if (head) head.hidden = bare;
         body.innerHTML = '<tr class="crm-empty"><td colspan="9">' + (
           CRM.error
-            ? 'Could not load your leads - ' + CRM.error
+            ? '<div class="ov-blank"><b>Could not load your leads</b><p>' + esc2(CRM.error) + '</p></div>'
             : !CRM.loaded
-              ? 'Loading your leads...'
-              : (CRM.fStage || CRM.fSrc)
+              ? '<div class="ov-blank"><p>Loading your leads\u2026</p></div>'
+              : filtered
                 ? 'No leads match this filter.'
-                : 'No leads yet. They arrive when a buyer taps Contact agent on one of your listings.'
+                : '<div class="ov-blank">'
+                  + '<span class="ov-blank-i" data-icon="users"></span>'
+                  + '<b>No leads yet</b>'
+                  + '<p>A lead lands here the moment a buyer taps Contact agent on one '
+                  + 'of your listings \u2014 with what they told Tayo, the listing they '
+                  + 'asked about, and where they came from already filled in.</p>'
+                  + '<button class="btn btn-primary" type="button" id="crmBlankAdd">See your listings</button>'
+                  + '</div>'
         ) + '</td></tr>';
+        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(body);
+        /* Sends them to Listings, not to #crmAdd. That button is labelled
+           "+ Add lead" but its handler only refetches the list, so wiring an
+           empty state's call to action to it would promise an action that
+           does not happen. Listings is where a lead actually starts. */
+        const ba = document.getElementById('crmBlankAdd');
+        const toListings = document.querySelector('a[data-pane="listings"]');
+        if (ba && toListings) ba.addEventListener('click', () => toListings.click());
         document.getElementById('crmPager').innerHTML = '';
         renderBulk();
         return;
       }
+      if (head) head.hidden = false;
       body.innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
         const sel = CRM.sel.has(oi);
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
@@ -5047,17 +5080,59 @@
     // Campaigns own their creatives; each creative is measured on its own
     // (CTR, leads) and the AI scales winners / pauses losers.
     const MK_KEY = 'synapse_agency_campaigns_v1';
+/* WHO, AND WHERE THE PROPERTY ACTUALLY IS.
+       These read "Family buyers - Lekki corridor", "Yield investors - Lagos
+       Island", "First-home buyers - mainland" no matter which listing was
+       selected, and every live listing on this platform is in Ibadan. An
+       agency picking its Bodija flat was offered an audience on the wrong
+       side of the country, and the campaign was then filed with that as its
+       stated audience -- a wrong fact, written down, from a form the agency
+       had filled in correctly.
+
+       The audience is the half we can genuinely name; the place comes from
+       the listing. Diaspora keeps its own geography because that one IS
+       about where the buyers are, not where the house is. */
     const PERSONAS = {
-      family: 'Family buyers · Lekki corridor',
-      investor: 'Yield investors · Lagos Island',
-      diaspora: 'Diaspora buyers · UK & Canada',
-      firsthome: 'First-home buyers · mainland',
+      family: 'Family buyers',
+      investor: 'Yield investors',
+      diaspora: 'Diaspora buyers, UK & Canada',
+      firsthome: 'First-home buyers',
+    };
+    /** "Old Bodija, Ibadan" -- as much of the listing's location as it really
+     *  carries, never a placeholder for the part it does not.
+     *
+     *  The area has to be dug out of `address`, because `neighbourhood` is
+     *  undefined on every row the portal actually holds. Address is written by
+     *  hand and arrives three different ways: a bare area ("Akobo"), a street
+     *  ("13 Aafin Iyanu, Ologuneru") and one that already names the city
+     *  ("Ikolaba GRA, Ibadan"). So: drop any segment that is just the city or
+     *  state, drop a segment that opens with a house number, and take what is
+     *  left. An audience reading "13 Aafin Iyanu" would be a street address
+     *  standing in for a neighbourhood. */
+    const listingArea = (l) => {
+      const parts = String((l && l.address) || '').split(',')
+        .map(v => v.trim())
+        .filter(Boolean)
+        .filter(v => v.toLowerCase() !== String((l && l.city) || '').trim().toLowerCase())
+        .filter(v => v.toLowerCase() !== String((l && l.state) || '').trim().toLowerCase())
+        .filter(v => !/^\d/.test(v));
+      const hood = (l && typeof l.neighbourhood === 'string' && l.neighbourhood.trim())
+        || (l && l.neighbourhood && l.neighbourhood.name) || '';
+      return hood || parts[parts.length - 1] || '';
+    };
+    const listingWhere = (l) => !l ? ''
+      : [listingArea(l), (l.city || '').trim()].filter(Boolean).join(', ');
+    const personaLabel = (key, l) => {
+      const where = listingWhere(l);
+      return PERSONAS[key] + (where ? ' \u00b7 ' + where : '');
     };
     // headline generator: persona × angle. In production this is GPT-4o with
     // the listing's enrichment data.
     const HEADLINES = {
       family: ['Schools 10 min away. Verified title.', 'Room for everyone — 7 checks passed.', 'The school run just got shorter.'],
-      investor: ['8.1% gross yield. Independently verified.', 'Verified title. Real returns.', 'The Lagos yield play that survives due diligence.'],
+      /* {city} is filled from the listing. It said "The Lagos yield play"
+         on a property in Ibadan. */
+      investor: ['8.1% gross yield. Independently verified.', 'Verified title. Real returns.', 'The {city} yield play that survives due diligence.'],
       // No escrow service exists on the platform (see terms.html) — headlines
       // offered to agencies must not promise one.
       diaspora: ['Buy from abroad. Independently verified.', 'Verified on the ground so you don’t fly blind.', 'Seven checks passed before you ever see it.'],
@@ -5279,7 +5354,7 @@
                the field — where it reads as ₦15k / day, the same way the
                campaign card already states it. -->
           <div class="field"><label>Audience</label>
-            <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${PERSONAS[p]}</option>`).join('')}</select></div>
+            <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${esc2(personaLabel(p, LISTINGS_DATA[0]))}</option>`).join('')}</select></div>
           <div class="field"><label>Daily budget</label>
             <div class="unit">
               <span class="u-fix">₦</span>
@@ -5295,6 +5370,20 @@
           <button class="btn btn-primary btn-block" id="cfSave" style="margin-top:6px">✦ Generate creatives &amp; launch</button>
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
+
+      /* The audience names a place, so it has to follow the listing rather
+         than sit there stating the location of whichever property happened to
+         be first in the list. */
+      const cfL = document.getElementById('cfL'), cfA = document.getElementById('cfA');
+      function syncAudience() {
+        const l = LISTINGS_DATA[+cfL.value];
+        const keep = cfA.value;
+        cfA.innerHTML = Object.keys(PERSONAS).map(p =>
+          '<option value="' + p + '">' + esc2(personaLabel(p, l)) + '</option>').join('');
+        if (keep) cfA.value = keep;
+      }
+      if (cfL && cfA) { cfL.addEventListener('change', syncAudience); syncAudience(); }
+
       document.getElementById('cfSave').addEventListener('click', () => {
         const nm = document.getElementById('cfN').value.trim();
         if (!nm) { toast('Name the campaign first'); return; }
@@ -5308,11 +5397,12 @@
         SynListings.createCampaign({
           name: nm,
           persona,
-          audience: PERSONAS[persona],
+          audience: personaLabel(persona, li),
           budgetNaira: (parseInt(document.getElementById('cfB').value, 10) || 15) * 1000,
           channels: chans,
           creatives: pool.slice(0, 3).map((hl, k) => ({
-            headline: hl, imageUrl: li.img, channel: chans[k % chans.length],
+            headline: hl.replace(/\{city\}/g, (li && li.city) || 'this area'),
+            imageUrl: li.img, channel: chans[k % chans.length],
           })),
         }).then(() => {
           closeLead();
