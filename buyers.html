@@ -359,9 +359,8 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
 } // end GSAP-dependent section — everything below runs with or without it
 /* ─── App glimpse — the product working, in the hero ────────────────────────
    Plays a real interaction so a first-time visitor learns the interaction
-   model before committing to anything. Replays whenever the audience toggle
-   switches, so both landing pages demo themselves. Respects reduced-motion by
-   rendering the finished state immediately. */
+   model before committing to anything. Respects reduced-motion by rendering
+   the finished state immediately. */
 (function () {
   var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var timers = [];
@@ -415,89 +414,20 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
     at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
   }
 
-  function playAgency() {
-    var box = document.getElementById('peekAgency');
-    if (!box) return;
-    box.innerHTML = '';
-    var leads = [
-      { i: 'BA', n: 'Bola A.', m: '₦150–180M · Lekki · ready to view', s: 'Hot', c: '' },
-      { i: 'CO', n: 'Chidi O.', m: 'Rent · ₦8M/yr · Ikeja', s: 'Qualified', c: 'warm' },
-      { i: 'FM', n: 'Funke M.', m: 'Investment · 8%+ yield', s: 'Qualified', c: 'warm' },
-    ];
-    leads.forEach(function (l, i) {
-      at(250 + i * 620, function () {
-        var d = document.createElement('div');
-        d.className = 'pk-lead';
-        d.innerHTML = '<div class="av">' + l.i + '</div>'
-          + '<div class="l1"><div class="l-n">' + l.n + '</div><div class="l-m">' + l.m + '</div></div>'
-          + '<span class="l-s ' + l.c + '">' + l.s + '</span>';
-        box.appendChild(d); show(d);
-      });
-    });
-    at(2350, function () {
-      var d = document.createElement('div');
-      d.className = 'pk-lead';
-      d.style.borderStyle = 'dashed';
-      d.innerHTML = '<div class="l1"><div class="l-m">Tayo qualified all three before your team opened the app.</div></div>';
-      box.appendChild(d); show(d);
-    });
-  }
-
-
-  /* one upload fanning out to every channel (agency) */
-  function playSyndicate() {
-    var box = document.getElementById('fanList');
-    if (!box) return;
-    box.innerHTML = '';
-    var chans = [['IG','Instagram'],['FB','Facebook'],['WA','WhatsApp'],['X','X'],['TT','TikTok'],['SY','Synapse']];
-    chans.forEach(function (c, i) {
-      var d = document.createElement('div');
-      d.className = 'd-chan';
-      d.innerHTML = '<span class="k">' + c[0] + '</span>' + c[1] + '<span class="ok">✓</span>';
-      box.appendChild(d);
-      at(200 + i * 210, function () { d.classList.add('in'); });
-    });
-  }
-
-  /* a 2am enquiry Tayo handles alone (agency) */
-  function playAgencyChat() {
-    var box = document.getElementById('agencyChat');
-    if (!box) return;
-    box.innerHTML = '';
-    at(150,  function () { bubble(box, 'me', 'Is the Lekki duplex still available?'); });
-    at(700,  function () { box.__t = dots(box); });
-    at(1700, function () {
-      if (box.__t) box.__t.remove();
-      bubble(box, 'you', 'It is — verified 3 days ago. What is your budget range?');
-    });
-    at(2500, function () { bubble(box, 'me', 'Up to ₦190M, buying outright.'); });
-    at(3300, function () {
-      var c = document.createElement('div');
-      c.className = 'pk-card';
-      c.innerHTML = '<div class="c1"><div class="c-p">Qualified lead → your CRM</div>'
-        + '<div class="c-t">Cash buyer · ₦190M · viewing booked Sat 11am</div></div>'
-        + '<span class="d-tag">Hot</span>';
-      box.appendChild(c); show(c);
-    });
-  }
-
-  /* a proximity alert arriving on a phone (agency) */
-  function playPush() {
-    var card = document.getElementById('pushCard');
-    if (!card) return;
-    card.classList.remove('in');
-    at(400, function () { card.classList.add('in'); });
-  }
-
-  window.synPeek = function (aud) {
+  /* The agency glimpse used to live here too, back when one file served both
+     audiences and a toggle swapped between them. It is one audience per page
+     now: this page has no #peekAgency, #fanList, #agencyChat or #pushCard, so
+     playAgency / playSyndicate / playAgencyChat / playPush each found no box
+     and returned immediately, every load, forever. Dead weight is not free --
+     the copy of the fan-out list in it had drifted to advertise X, which the
+     syndication engine cannot publish to, and to omit YouTube, which it can.
+     The live version is in index.html. */
+  window.synPeek = function () {
     clear();
-    if (aud === 'agency') { playAgency(); playSyndicate(); playAgencyChat(); playPush(); }
-    else { playCustomer(); }
+    playCustomer();
   };
-  // one audience per page now — play whichever glimpse this page contains
-  function whichPeek() { return document.getElementById('peekAgency') ? 'agency' : 'customer'; }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek(whichPeek()); });
-  else window.synPeek(whichPeek());
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.synPeek);
+  else window.synPeek();
 })();
 
 /* ─── Mobile carousel ───────────────────────────────────────────────────────
