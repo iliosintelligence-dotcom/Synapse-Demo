@@ -263,8 +263,13 @@
     /* ══════ Social studio: bento overview · view switcher · kanban + calendar ══════ */
     .chan .st { font-size: 12px; }
     .chan .tog { width: 42px; height: 24px; transition: background var(--m-standard); }
-    .chan .tog::after { top: 2px; left: 20px; right: auto; width: 20px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: left var(--m-standard) var(--m-ease-spring); }
-    .chan .tog.off::after { left: 2px; right: auto; }
+    /* The knob slid by animating `left`, which relayouts the switch on every
+       frame of every toggle. Same travel, done on the compositor: it now sits
+       at left:2px permanently and moves with translateX. 18px is the 20px it
+       used to sit at minus that 2px resting offset, so the on and off
+       positions are pixel-identical to before. */
+    .chan .tog::after { top: 2px; left: 2px; right: auto; width: 20px; height: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transform: translateX(18px); transition: transform var(--m-standard) var(--m-ease-spring); }
+    .chan .tog.off::after { transform: translateX(0); }
     .s-bento { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 18px 0 6px; }
     .s-tile { padding: 15px 18px; border-radius: 16px; background: linear-gradient(135deg,rgba(255,255,255,0.86),rgba(255,251,246,0.66)); border: 1px solid var(--border-glass); box-shadow: 0 10px 26px rgba(122,62,22,0.08); text-align: left; }
     button.s-tile { cursor: pointer; transition: transform var(--m-standard), box-shadow var(--m-standard); display: block; width: 100%; }
