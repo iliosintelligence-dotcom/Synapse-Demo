@@ -200,6 +200,27 @@
     .col .ct { font-size: 11px; font-weight: 700; color: var(--ink-muted); background: var(--surface); border-radius: 100px; padding: 1px 8px; }
     .col-chv { display: none; }             /* the chevron only means something once .ch collapses something, i.e. on mobile */
     .col-body { display: block; }           /* desktop: always open, no accordion */
+    /* A KANBAN COLUMN SCROLLS; IT DOES NOT STRETCH THE PAGE.
+       Columns grew to fit their contents and all six stretched to match the
+       tallest, so 125 captions awaiting review made the board 29,000px and the
+       pane 48,000px -- 56 screens. Reaching the bottom of one column meant
+       scrolling past five empty ones the whole way, and the stage headers with
+       the counts were 56 screens behind you.
+
+       Bounded, each column scrolls itself, which is what every kanban does and
+       what the column header is for. overscroll-behavior keeps a column that
+       hits its end from grabbing the page and throwing you somewhere else.
+       Desktop only: below 1025px this is an accordion, and a scroll box inside
+       a collapsed section would be two nested scrollers on a phone. */
+    @media (min-width: 1025px) {
+      .col-body {
+        max-height: min(58vh, 620px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        padding-right: 4px;
+      }
+    }
     .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); }
     .pcard.warn { border-color: rgba(156,122,30,0.4); }
     .pcard .ptop { display: flex; gap: 9px; }
@@ -823,7 +844,14 @@
     .bk-swatch:hover .bk-hex { text-decoration: underline; }
 
     /* The typeface, set in itself. */
-    .bk-type-name { font-size: 15px; font-weight: 700; }
+    .bk-type-name { font-size: 15px; font-weight: 700;
+      /* The agency types this by hand, so it arrives however they typed it --
+         "garamond" here. In a panel whose whole subject is typography, the
+         typeface reading lower-case looks like a defect rather than a choice.
+         `capitalize` only touches the first letter of each word: "garamond"
+         becomes "Garamond" and "SF Pro" is left alone. The stored value is
+         untouched; this is presentation. */
+      text-transform: capitalize; }
     .bk-glyphs { font-size: 34px; line-height: 1.25; margin: 8px 0 4px; word-break: break-word; }
     .bk-sample { font-size: 14px; color: var(--ink-muted); }
 
@@ -1701,7 +1729,18 @@
     .cmp-past-h .k { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em;
       text-transform: uppercase; color: var(--ink-dim); }
     .cmp-past-h .n { font-size: 12.5px; color: var(--ink-muted); }
-    .cmp-past-list { display: flex; flex-direction: column; gap: 8px; }
+    /* EVERY GENERATION EVER, AS ONE UNBROKEN COLUMN.
+       This renders one row per past generation with no ceiling. At 125 rows
+       that is 18,000px of archive stacked above the pipeline -- the agency
+       scrolled twenty screens of history to reach the board it came for, and
+       the panel holding it is the superseded inline generator that the file
+       says desktop keeps on purpose. So it is not removed; it is given the
+       bounds a list of that shape needs. The archive is reference material:
+       it should sit in a box you can look into, not push the working surface
+       off the page. */
+    .cmp-past-list { display: flex; flex-direction: column; gap: 8px;
+      max-height: min(46vh, 460px); overflow-y: auto;
+      overscroll-behavior: contain; scrollbar-width: thin; padding-right: 4px; }
     .cmp-old { border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px;
       background: var(--surface, #fff); }
     .cmp-old-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
