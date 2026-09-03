@@ -1064,3 +1064,34 @@ a:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .cnav-sheet, .cnav-btn, .cnav-fbtn, .cnav-back { transition: none; }
 }
+
+/* ── TOUCH TARGETS ────────────────────────────────────────────────────────
+   Grows the TOUCH area, not the control: a pseudo-element centred on it and
+   stretched to 44px, so nothing moves, nothing resizes, and the design is
+   unchanged -- there is just more of it to hit. The pseudo sits inside the
+   element, so a tap on it is a tap on the control.
+
+   This list is deliberately short. Most small controls in this codebase
+   already carry their own ::before doing exactly this -- the listing heart,
+   the carousel dots, the sign-in link, the auth link button all do, each with
+   a comment saying why. Only the ones with nothing at all are here.
+
+   Gated to coarse pointers: a mouse is precise, and an invisible 44px box
+   around a small control on desktop swallows clicks meant for its neighbour. */
+@media (pointer: coarse) {
+  /* .au-method 40px, .clr 12px, .au-brand 27px: height only. The first two
+     sit in a row where widening would let each steal its neighbour's taps;
+     the third is already 115px wide and only ever short. */
+  .au-method, .clr, .au-brand { position: relative; }
+  .au-method::after, .clr::after, .au-brand::after {
+    content: ''; position: absolute; left: 0; right: 0;
+    top: 50%; transform: translateY(-50%); height: 44px;
+  }
+  /* .bell 40x40 and the appbar mark 29x29 are square and sit in a toolbar
+     with space around them, so these take the width too. */
+  .bell, .appbar .brand { position: relative; }
+  .bell::after, .appbar .brand::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+}

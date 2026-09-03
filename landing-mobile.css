@@ -1093,3 +1093,25 @@
 @media (max-width: 360px) {
   .m-nav-signin { font-size: 12px; margin-left: 6px; }
 }
+
+/* ── TOUCH TARGETS ────────────────────────────────────────────────────────
+   Grows the TOUCH area, not the control: a pseudo-element centred on it and
+   stretched to 44px, so nothing moves, nothing resizes, and the design is
+   unchanged -- there is just more of it to hit. The pseudo sits inside the
+   element, so a tap on it is a tap on the control.
+
+   This list is deliberately short. Most small controls in this codebase
+   already carry their own ::before doing exactly this -- the listing heart,
+   the carousel dots, the sign-in link, the auth link button all do, each with
+   a comment saying why. Only the ones with nothing at all are here.
+
+   Gated to coarse pointers: a mouse is precise, and an invisible 44px box
+   around a small control on desktop swallows clicks meant for its neighbour. */
+@media (pointer: coarse) {
+  /* 34px tall, and the only landing control without its own hit padding. */
+  .m-aud-seg { position: relative; }
+  .m-aud-seg::after {
+    content: ''; position: absolute; left: 0; right: 0;
+    top: 50%; transform: translateY(-50%); height: 44px;
+  }
+}
