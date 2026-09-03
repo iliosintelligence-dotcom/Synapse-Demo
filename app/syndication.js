@@ -77,9 +77,25 @@
       why: 'Anchors the number against the corridor. Best for comparison shoppers already browsing.',
       hook: function (p) { return p.priceLine + ' in ' + p.area + '. Here is what that actually gets you.'; },
       body: function (p) {
+        /* THE POWER LINE IS GONE. It read "Power reliability in this corridor
+           sits around 70%." and there is no such measurement: power_reliability
+           on `neighbourhoods` is seed_rand output from twin_seed.sql, and when
+           it was missing this module substituted a flat 70. So the number was
+           invented twice over -- and unlike Tayo's version of this mistake it
+           was being published, to Instagram and Facebook, under the agency's
+           name, as its own claim about somebody's street.
+
+           toju-demo already reached this conclusion and acts on it: its query
+           selects neighbourhoods(name) and nothing else, because "scores 64 on
+           safety" is a random number wearing a sentence. The same reasoning
+           applies here and applies harder, because a caption is public.
+
+           What is left is true: size, type, area, and where the listing stands
+           with the checks. */
         return p.bedrooms + ' bedrooms, ' + p.kind + ', ' + p.area + '.\n\n'
-          + (p.verified ? 'Verified this month. ' : '')
-          + 'Power reliability in this corridor sits around ' + p.power + '%.';
+          + (p.verified
+              ? 'Verified this month.'
+              : 'The checks have not been run on this one yet.');
       },
       cta: 'Ask Tayo if it fits your budget →',
     },
@@ -149,8 +165,12 @@
     priceShort: function (p) { return p.priceShort; },
     priceLine:  function (p) { return p.priceLine; },
     trust:      function (p) { return p.trust; },
-    power:      function (p) { return p.power; },
-    flood:      function (p) { return p.flood; },
+    /* {power} and {flood} were tokens here. Nothing in the shipped angles
+       used {flood}, and {power} fed only the sentence removed above -- but
+       both stayed reachable from an agency's own template, which made them
+       a loaded gun: type {power} into a custom caption and a seed_rand
+       number goes out as a fact about a street. Removed rather than
+       documented, because a token that must not be used should not exist. */
     verified:   function (p) { return p.verified; },
     /* "3 days" / "1 day" / "14 days" when nothing is known. The plural and the
        null case lived inside the old scarcity angle; a pattern cannot express
@@ -288,7 +308,7 @@
      later listing that its template insists every home has two bedrooms. */
   function bakedLiterals(text, p) {
     var out = [];
-    ['bedrooms', 'power', 'flood', 'trust', 'daysLeft'].forEach(function (name) {
+    ['bedrooms', 'trust', 'daysLeft'].forEach(function (name) {
       var v = TOKENS[name](p);
       if (v == null) return;
       v = String(v);
@@ -402,8 +422,10 @@
       priceLine: naira(row.price) + (rent ? ' a year' : ''),
       rent: rent,
       trust: row.trust_score,
-      power: row.power_reliability == null ? 70 : row.power_reliability,
-      flood: row.flood_risk,
+      /* power_reliability and flood_risk are deliberately not carried. Both
+         are seed_rand values, and the `== null ? 70` that used to sit here
+         meant a listing with no data at all still published a confident
+         70%. */
     };
   }
   /* ── brand kit ───────────────────────────────────────────────────────────
@@ -446,8 +468,23 @@
   function hashtagsFor(p, platform, b) {
     var spec = PLATFORMS[platform];
     if (!spec.hashtagMax) return [];
-    var base = ['#' + String(p.area).replace(/[^a-z0-9]/gi, ''), '#LagosRealEstate',
-                '#' + (p.rent ? 'LagosRent' : 'LagosProperty')];
+    /* THE CITY TAG WAS HARDCODED TO LAGOS. Every caption carried
+       #LagosRealEstate and #LagosRent or #LagosProperty whatever the listing
+       said, so an Ibadan flat went out tagged as Lagos property -- to an
+       audience that searches those tags precisely because it wants Lagos.
+       That is not a cosmetic slip: it mistags the agency's post and points
+       the wrong buyers at it. p.city was already carried a few lines up and
+       already exposed as a token; the tags simply never read it. */
+    var cityTag = String(p.city || p.area || '').replace(/[^a-z0-9]/gi, '');
+    var areaTag = String(p.area || '').replace(/[^a-z0-9]/gi, '');
+    /* An empty area used to produce the literal tag "#undefined", because the
+       old line concatenated String(p.area) straight in. A missing value should
+       cost a tag, not publish one. */
+    var base = areaTag ? ['#' + areaTag] : [];
+    if (cityTag && cityTag.toLowerCase() !== areaTag.toLowerCase()) {
+      base.push('#' + cityTag + 'RealEstate');
+    }
+    base.push('#' + (cityTag || 'Nigeria') + (p.rent ? 'Rent' : 'Property'));
     // The agency's own tag leads when it has one — this is their post.
     if (b && b.handle) base.unshift('#' + b.handle.replace(/[^a-z0-9]/gi, ''));
     if (p.verified) base.push('#VerifiedListing');   // only when it actually is
