@@ -1947,6 +1947,22 @@
     }
     .rm-call:hover { background: var(--action-dim); }
     .rm-none { font-size: 13px; color: var(--ink-muted); line-height: 1.5; margin-top: 4px; }
+    /* The address, in full, under whatever button is above it. mailto: and
+       tel: both do nothing at all when no handler is registered -- silently,
+       with no error -- so neither can be the only way out of this panel. This
+       row means the worst case is a copy-paste rather than a dead end. */
+    .rm-copy { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
+      padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px;
+      background: transparent; cursor: pointer; text-align: left;
+      font: 500 12px var(--f-sans); color: var(--ink-muted);
+      transition: background var(--m-micro), border-color var(--m-micro); }
+    .rm-copy:hover { background: var(--surface); border-color: var(--border-strong); }
+    /* Wraps rather than elides. An address you cannot read in full is no use
+       as the thing you fall back to when the mail handler does nothing --
+       "ilios.intelligence@gmai..." is not an address. */
+    .rm-copy-v { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere;
+      line-height: 1.35; font-variant-numeric: tabular-nums; }
+    .rm-copy-a { flex: none; font-weight: 700; color: var(--brand-text); }
     .crm-empty td { padding: 34px 18px; text-align: center; font-size: 13px; color: var(--ink-muted); }
     @media (max-width: 1024px) { .crm-empty, .crm-empty td { display: block; width: auto; } }
     .crm-tablecard { padding: 0; overflow: hidden; }
@@ -6131,11 +6147,21 @@
     const RM_EMAIL = 'ilios.intelligence@gmail.com';   // already public in terms.html and privacy.html
     let rmCache = null;
 
+    /* A button that puts the value on the clipboard, with the value shown in
+       full beside it. Sits under every mailto:/tel: so the panel always has an
+       affordance that cannot fail quietly. */
+    function rmCopyRow(value) {
+      return '<button type="button" class="rm-copy" data-copy="' + esc2(value) + '">'
+        + '<span class="rm-copy-v">' + esc2(value) + '</span>'
+        + '<span class="rm-copy-a">Copy</span></button>';
+    }
+
     function rmRender(rm, agencyName) {
       const card = document.getElementById('rmCard');
       const subject = 'Synapse support' + (agencyName ? ' \u2014 ' + agencyName : '');
       const mail = '<a class="rm-call" href="mailto:' + RM_EMAIL
-        + '?subject=' + encodeURIComponent(subject) + '">Email Synapse</a>';
+        + '?subject=' + encodeURIComponent(subject) + '">Email Synapse</a>'
+        + rmCopyRow(RM_EMAIL);
 
       if (!rm.assigned) {
         card.innerHTML = '<div class="rm-role">Synapse support</div>'
@@ -6155,12 +6181,54 @@
           + '<div class="rm-none">We do not have a number on file for them yet.</div>' + mail;
         return;
       }
-      /* tel: wants the number with the punctuation stripped; the label keeps
-         it, because that is how you check a number is the one you expect. */
+      /* tel: wants the number with the punctuation stripped. The label used to
+         carry the number too -- so you could check it before dialling -- but
+         the copy row underneath now shows it in full and unelided, and the
+         number twice in a 300px panel reads as a bug. So the button names the
+         person and the row carries the number. */
       const dial = String(rm.phone).replace(/[^\d+]/g, '');
       card.innerHTML = head
-        + '<a class="rm-call" href="tel:' + esc2(dial) + '">Call ' + esc2(rm.phone) + '</a>';
+        + '<a class="rm-call" href="tel:' + esc2(dial) + '">Call ' + esc2(rm.name) + '</a>'
+        + rmCopyRow(rm.phone);
     }
+
+    /* Delegated, because the card is rewritten on every render. */
+    document.getElementById('rmCard').addEventListener('click', (e) => {
+      const btn = e.target.closest('.rm-copy'); if (!btn) return;
+      const value = btn.dataset.copy || '';
+      const tag = btn.querySelector('.rm-copy-a');
+      const said = (word) => { tag.textContent = word; setTimeout(() => { tag.textContent = 'Copy'; }, 2400); };
+      /* Last resort: put the address under the caret ourselves and name the
+         keystroke, rather than telling someone to "copy it manually" and
+         leaving them to do the selecting. */
+      const selectIt = () => {
+        try {
+          const span = btn.querySelector('.rm-copy-v');
+          const range = document.createRange(); range.selectNodeContents(span);
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          said(/Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘C' : 'Ctrl+C');
+        } catch (err) { said('Select it'); }
+      };
+      /* execCommand is the fallback rather than the primary: the async
+         clipboard API needs a secure context, which localhost and the live
+         site both are, but a webview may still refuse it. If both fail the
+         user is told to copy it by hand rather than left thinking it worked --
+         the exact silent failure this row exists to prevent. */
+      const legacy = () => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = value; ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;top:0;left:-9999px';
+          document.body.appendChild(ta); ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          if (ok) said('Copied'); else selectIt();
+        } catch (err) { selectIt(); }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(() => said('Copied')).catch(legacy);
+      } else { legacy(); }
+    });
 
     function rmLoad() {
       if (rmCache) { rmRender(rmCache.rm, rmCache.name); return; }
