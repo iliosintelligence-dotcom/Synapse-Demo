@@ -253,7 +253,14 @@
   function drawMatchMap(st, elId, items) {
     if (!window.L) return st;
     if (!st.map) {
-      st.map = L.map(elId, { scrollWheelZoom: false });
+      /* touchZoom and doubleClickZoom are Leaflet defaults, but they are
+          named here because scrollWheelZoom sitting alone read as "zooming is
+          off on this map". Pinch and double-tap both zoom; only the wheel is
+          held back, because a map that swallows the page scroll is worse than
+          one you have to press + on. */
+      st.map = L.map(elId, {
+        scrollWheelZoom: false, touchZoom: true, doubleClickZoom: true, tap: true,
+      });
       /* CARTO NOW WATERMARKS ITS KEYLESS TILES.
          Nothing here broke -- the provider changed terms. basemaps.cartocdn.com
          still answers 200 with a real PNG, and that PNG has "API KEY REQUIRED /
@@ -270,7 +277,9 @@
          app/map-tiles.js, so the two maps in this app cannot drift apart --
          and OSM stays as the fallback when no key is set or the tiles stop
          answering. */
-      SynTiles.add(st.map);
+      /* detail: asked for a map with streets and names on it rather than a
+          pale backdrop. The price pins sit on top of it either way. */
+      SynTiles.add(st.map, { detail: true });
       st.layer = L.layerGroup().addTo(st.map);
     }
     st.layer.clearLayers();
@@ -282,13 +291,24 @@
       // the map carries the same trust signal the cards do. iconAnchor sits at
       // the tail tip so the pin points AT the location, not beside it.
       const vcls = (l.vstatus || 'verified') === 'verified' ? ' ok' : '';
-      L.marker(c, { icon: L.divIcon({
+      /* A pin used to open a popup naming the home and stop there -- the one
+         question you ask a price on a map is "what is that, and where exactly
+         is it", and it answered half. Now it flies in to street level, and the
+         popup carries the way through to that home's own map. */
+      const mk = L.marker(c, { icon: L.divIcon({
         className: 'pin-wrap',
         html: `<div class="price-pin${vcls}"><span class="pv">${money(l.priceN, l.currency)}</span></div><span class="pin-tail"></span>`,
         iconSize: [0, 0], iconAnchor: [0, 0],
       }) })
         .addTo(st.layer)
-        .bindPopup(`<b>${esc(l.ttl)}</b>${l.match ? '<br>' + l.match + '% match' : ''}${l.score != null ? '<br>Confidence ' + l.score : ''}`);
+        .bindPopup(`<b>${esc(l.ttl)}</b>${l.loc ? '<br>' + esc(l.loc) : ''}`
+          + `${l.score != null ? '<br>Confidence ' + l.score : ''}`
+          + `<br><a class="pin-go" href="${propertyHref(l.id)}">See this home on its own map \u2192</a>`);
+      mk.on('click', function () {
+        /* Zoom to the home, not to the whole set. 16 shows the streets around
+           it; flyTo so it is obvious which pin you pressed. */
+        st.map.flyTo(c, Math.max(st.map.getZoom(), 16), { duration: 0.6 });
+      });
     });
     setTimeout(() => {
       st.map.invalidateSize();

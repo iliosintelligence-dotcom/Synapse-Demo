@@ -121,7 +121,64 @@
       });
 
       layer.addTo(map);
+      this._credit(map);
       return layer;
+    },
+
+    /* THE CREDIT LINE, AND WHAT CAN HONESTLY GO
+       Asked to remove it entirely. Most of it cannot go: the OSM data is
+       ODbL, which requires the credit, and Stadia's terms require theirs.
+       Removing them would not be a styling choice, it would be using the
+       tiles without the licence that lets us use them.
+
+       What CAN go is the word "Leaflet" -- that is Leaflet advertising
+       itself, is not a licence condition, and setPrefix exists precisely so
+       you can drop it.
+
+       So it collapses instead. A small round "i" in the corner, the way
+       Google and Mapbox do it, expanding to the full credit on tap or hover.
+       The attribution is still present, still readable, still one gesture
+       away -- which is what the licences ask for -- and it stops eating a
+       strip of a map on a phone. */
+    _credit: function (map) {
+      var ac = map.attributionControl;
+      if (!ac || ac._synCredit) return;
+      ac._synCredit = true;
+      ac.setPrefix('');                       // "Leaflet" is not a licence term
+
+      var el = ac.getContainer();
+      if (!el) return;
+      el.classList.add('syn-attr');
+      el.setAttribute('title', 'Map credits');
+      el.addEventListener('click', function (e) {
+        // Let a real credit link through; a tap anywhere else toggles.
+        if (e.target && e.target.tagName === 'A') return;
+        el.classList.toggle('is-open');
+      });
+
+      if (document.getElementById('syn-attr-css')) return;
+      var st = document.createElement('style');
+      st.id = 'syn-attr-css';
+      st.textContent = [
+        '.leaflet-control-attribution.syn-attr{',
+        '  max-width:26px;height:20px;overflow:hidden;white-space:nowrap;',
+        '  border-radius:10px;padding:0;cursor:pointer;',
+        '  background:rgba(255,255,255,0.86);',
+        '  font-size:10px;line-height:20px;color:#5a5a5f;',
+        '  transition:max-width .18s ease;}',
+        // The "i" is drawn by the pseudo-element, so the real credit text
+        // stays in the DOM for anything reading the page.
+        '.leaflet-control-attribution.syn-attr::before{',
+        '  content:"ⓘ";display:inline-block;width:26px;text-align:center;',
+        '  font-size:12px;color:#6a6a70;}',
+        '.leaflet-control-attribution.syn-attr.is-open,',
+        '.leaflet-control-attribution.syn-attr:hover{',
+        '  max-width:min(92vw,420px);padding:0 8px 0 0;}',
+        '.leaflet-control-attribution.syn-attr a{color:#4a4a50;}',
+        '@media (prefers-reduced-motion: reduce){',
+        '  .leaflet-control-attribution.syn-attr{transition:none;}}',
+      ].join('');
+      document.head.appendChild(st);
     },
 
     _osm: function (map) {

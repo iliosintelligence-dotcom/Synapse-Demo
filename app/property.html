@@ -364,6 +364,10 @@
        to sit over a map: the route readout when you tap a pin. */
     .pvc-map-wrap { display: block; position: relative; flex: 1; min-height: 0; }
     #pvMap { position: absolute; inset: 0; z-index: 0; }
+    .pvo-hint {
+      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+      font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
+    }
 
     /* ── a listing nobody has placed ─────────────────────────────────
        The map opens on Nigeria at zoom 6 and only moves once the listing
@@ -3029,7 +3033,15 @@
       + 'We don’t have verified amenity or commute data for this listing yet, so there is nothing to show here. '
       + 'We would rather show you nothing than another property’s neighbourhood.</p>';
 
-    var map = L.map('pvMap', { scrollWheelZoom: false }).setView([9.0820, 8.6753], 6);
+    /* Pinch and double-tap zoom are Leaflet defaults and were already on --
+       the container carries leaflet-touch-zoom -- but with only
+       scrollWheelZoom named, the options read as if zooming were switched off.
+       Named explicitly so nobody turns them off by accident. The wheel stays
+       off deliberately: a map that eats the page scroll is worse than one you
+       press + on. */
+    var map = L.map('pvMap', {
+      scrollWheelZoom: false, touchZoom: true, doubleClickZoom: true, tap: true,
+    }).setView([9.0820, 8.6753], 6);
     /* Voyager, not Positron ('light_all'). Positron is a deliberately blank
        canvas -- almost no POI labels, no business names, roads barely
        distinguished -- which is right for a heatmap and wrong for a buyer
@@ -3169,10 +3181,16 @@
          while there is more than one kind on screen. `leg` and `near` are still
          built above because the counts feed it; `near` is unused here now and
          the card renders that content instead. */
+      /* Every pin already routes: tapping one asks OSRM for the real walking
+         path and draws it. Nothing said so, so the map looked like a picture
+         of pins -- the interaction existed and was invisible. One line under
+         the legend, which is where you are already looking to find out what a
+         pin means. */
       var kinds = Object.keys(counts).length;
       if (kinds > 1) {
         overlay.className = 'pvc-overlay';
-        overlay.innerHTML = '<div class="pvo-leg">' + leg + '</div>';
+        overlay.innerHTML = '<div class="pvo-leg">' + leg + '</div>'
+          + '<div class="pvo-hint">Tap any pin for the walking route</div>';
       } else {
         overlay.className = 'pvc-overlay idle';
         overlay.innerHTML = '';
