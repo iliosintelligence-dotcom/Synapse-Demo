@@ -6960,6 +6960,75 @@
       });
     }
 
+    /* ══ WHO YOU ARE IN THIS AGENCY ═══════════════════════════════════════
+       Three roles, and until now the portal knew about none of them. myRole()
+       has been in the data layer the whole time and nothing ever called it,
+       so an agent invited to work leads opened the same ten panes as the
+       person who owns the company -- Brand, Subscription, the team roster,
+       all of it. Row-level security stopped most of the writes, which is why
+       this was never a breach, but a control that is shown and then refuses
+       is worse than one that was never offered: it reads as a broken product
+       rather than a boundary.
+
+         agency_owner  everything, and only they touch billing
+         agency_admin  runs the agency day to day. Brand is their pane -- it
+                       is the company's face and the thing they are actually
+                       responsible for. Not billing: money stays with the one
+                       person who signed up for it.
+         agent         works listings, leads, tours and their own profile.
+                       Their profile is their pane: it is what a buyer reads
+                       before deciding whether to call them.
+
+       Panes are REMOVED, not hidden. buildNav() mirrors the rail into the
+       phone sheet by reading it at open time, so a hidden entry would come
+       back on mobile; and a pane still in the DOM can be reached by a stale
+       hash or by any code that calls goToPane. Gone means gone in both.
+
+       This is the second lock, never the only one. It runs after a round
+       trip, so there is a moment on load where the full rail exists -- the
+       database policies are what actually stop an agent writing the brand,
+       and they were checked before this was written. */
+    const ROLE_PANES = {
+      agency_owner: null,   /* null = every pane */
+      agency_admin: ['overview','crm','negotiator','listings','social','marketing','agents','tours','brand'],
+      agent:        ['overview','crm','negotiator','listings','tours'],
+    };
+
+    function applyRole(role) {
+      /* An unknown role is treated as the least privileged thing we know
+         about rather than the most. A null role means the lookup failed or
+         this account is not a member -- neither is a reason to open the
+         company's books. */
+      const allowed = Object.prototype.hasOwnProperty.call(ROLE_PANES, role)
+        ? ROLE_PANES[role]
+        : ROLE_PANES.agent;
+      document.body.dataset.role = role || 'unknown';
+      if (allowed === null) return;                      // owner: nothing to strip
+
+      const keep = new Set(allowed);
+      document.querySelectorAll('#tabs a[data-pane]').forEach((a) => {
+        if (!keep.has(a.dataset.pane)) a.remove();
+      });
+      document.querySelectorAll('.pane[id^="pane-"]').forEach((pane) => {
+        if (!keep.has(pane.id.replace('pane-', ''))) pane.remove();
+      });
+      /* A group header with nothing under it is a heading for an empty room. */
+      document.querySelectorAll('#tabs .grp-sec').forEach((sec) => {
+        if (!sec.querySelector('a[data-pane]')) sec.remove();
+      });
+      /* If the pane they were on has just gone, put them somewhere real. */
+      if (!document.querySelector('.pane.on') && typeof goToPane === 'function') {
+        goToPane('overview');
+      }
+    }
+
+    (function loadRole() {
+      if (!window.SynListings || !SynListings.myRole) { applyRole(null); return; }
+      SynListings.myRole()
+        .then(applyRole)
+        .catch((err) => { console.error('myRole failed', err); applyRole(null); });
+    })();
+
     /* The nav entry is a link, not a pane: the editor is a drawer, so there is
        nothing to switch to and switching would lose whatever pane you were on. */
     (function wireProfileNav() {
