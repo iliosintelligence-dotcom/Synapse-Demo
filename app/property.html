@@ -2970,7 +2970,22 @@
     var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
     var state = { view: 'poi', time: 'midday' };
     var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function fit(pts) { setTimeout(function () { map.invalidateSize(); if (pts && pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE }); }, 60); }
+    /* maxZoom is the whole point of the options object. A listing with no
+       amenity data fits to a single point -- the home itself -- and a bounds
+       of zero size sends fitBounds straight to the layer's maxZoom, which is
+       20. That is close enough to read building outlines and nothing else:
+       no street names, no context, no way to tell where you are. 16 is the
+       tightest zoom that still shows the surrounding streets. It only ever
+       bites on a degenerate or very small bounds; a spread of real POIs
+       zooms out past it on its own. */
+    function fit(pts) {
+      setTimeout(function () {
+        map.invalidateSize();
+        if (pts && pts.length) {
+          map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE, maxZoom: 16 });
+        }
+      }, 60);
+    }
 
     /* Which pin kinds each tab shows. Names cover both sources: the stored
        Google categories and the OpenStreetMap types the fallback produces, so a
