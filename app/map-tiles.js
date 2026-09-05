@@ -122,7 +122,94 @@
 
       layer.addTo(map);
       this._credit(map);
+      this._gestures(map);
       return layer;
+    },
+
+    /* TWO FINGERS MOVE THE MAP, ONE FINGER MOVES THE PAGE
+       Leaflet's default is that one finger drags the map, and to make that
+       work it stamps touch-action:none on the container. On a phone that
+       turns every map into a hole in the page: put a thumb down to scroll
+       past it and you pan the map instead, so the only controls that still
+       behave are + and -.
+
+       Google Maps solved this years ago and everyone copied it, so it is what
+       people already expect: one finger scrolls the page, two fingers move
+       the map, pinch zooms.
+
+       touch-action:pan-y is what makes it work rather than a preventDefault
+       fight. The browser keeps vertical scrolling, and because pinch-zoom is
+       NOT in that list the browser stops claiming multi-touch -- so the pinch
+       reaches Leaflet instead of zooming the whole page.
+
+       Dragging starts disabled and is switched on only while two fingers are
+       down. The listener runs in the CAPTURE phase deliberately: Leaflet's own
+       touchstart handler is on the same element, and dragging has to be
+       enabled before that handler runs or the first gesture is dropped.
+
+       Desktop is untouched -- a mouse has one pointer and click-drag is the
+       only thing it can mean. */
+    _gestures: function (map) {
+      var el = map.getContainer();
+      if (!el || el._synGestures) return;
+      el._synGestures = true;
+      if (!('ontouchstart' in window)) return;   // mouse: leave it alone
+
+      el.classList.add('syn-gestures');
+      map.dragging.disable();
+      if (map.touchZoom) map.touchZoom.enable();
+
+      var hint = document.createElement('div');
+      hint.className = 'syn-gesture-hint';
+      hint.textContent = 'Use two fingers to move the map';
+      el.appendChild(hint);
+      var hideTimer = null;
+      function flash() {
+        hint.classList.add('on');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () { hint.classList.remove('on'); }, 1400);
+      }
+
+      el.addEventListener('touchstart', function (e) {
+        if (e.touches.length >= 2) {
+          map.dragging.enable();
+          hint.classList.remove('on');
+        } else {
+          map.dragging.disable();
+        }
+      }, { passive: true, capture: true });
+
+      el.addEventListener('touchmove', function (e) {
+        // A one-finger drag is the page scrolling past. Say why the map
+        // stayed put, once, rather than letting it feel broken.
+        if (e.touches.length < 2) flash();
+      }, { passive: true });
+
+      el.addEventListener('touchend', function (e) {
+        if (e.touches.length < 2) map.dragging.disable();
+      }, { passive: true, capture: true });
+
+      this._gestureCss();
+    },
+
+    _gestureCss: function () {
+      if (document.getElementById('syn-gesture-css')) return;
+      var st = document.createElement('style');
+      st.id = 'syn-gesture-css';
+      st.textContent = [
+        /* Beats leaflet.css, which sets touch-action:none on this element. */
+        '.leaflet-container.syn-gestures{touch-action:pan-y !important;}',
+        '.syn-gesture-hint{',
+        '  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);',
+        '  z-index:1000;pointer-events:none;opacity:0;transition:opacity .18s ease;',
+        '  background:rgba(18,18,18,0.82);color:#fff;border-radius:999px;',
+        '  padding:9px 16px;font:600 12.5px/1.2 system-ui,sans-serif;',
+        '  white-space:nowrap;}',
+        '.syn-gesture-hint.on{opacity:1;}',
+        '@media (prefers-reduced-motion: reduce){',
+        '  .syn-gesture-hint{transition:none;}}',
+      ].join('');
+      document.head.appendChild(st);
     },
 
     /* THE CREDIT LINE, AND WHAT CAN HONESTLY GO
