@@ -1175,6 +1175,37 @@
     .rule .ic { font-size: 20px; }
     .rule .t { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; }
     .rule .t b { color: var(--ink); }
+    /* ── the funnel ────────────────────────────────────────────────────
+       This was seven identical pills in a wrapped blob, a down-arrow glyph, a
+       gradient capsule, another arrow, and a line of green text. It read as a
+       diagram because it contained arrows, not because it showed anything:
+       the seven chips were interchangeable, so their arrangement carried no
+       information, and the whole thing said less than one sentence would.
+
+       A spine with three stops instead. In, through, out is the only real
+       structure here, so that is what the shape encodes; the channels become
+       one readable line, because listing them is the point and ranking them
+       is not. No gradient, no arrow glyphs, no colour doing a job that order
+       already does. */
+    .fnl { list-style: none; margin: 0; padding: 0 0 0 22px; position: relative; }
+    .fnl::before {
+      content: ''; position: absolute; left: 4px; top: 7px; bottom: 7px;
+      width: 1px; background: var(--border-strong);
+    }
+    .fnl li { position: relative; padding: 0 0 16px; }
+    .fnl li:last-child { padding-bottom: 0; }
+    .fnl li::before {
+      content: ''; position: absolute; left: -22px; top: 5px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border-strong);
+    }
+    .fnl li.is-tayo::before { background: #121212; border-color: #121212; }
+    .fnl li.is-out::before { background: var(--success); border-color: var(--success); }
+    .fnl .fnl-k { display: block; font: 700 11px var(--f-sans); letter-spacing: .06em;
+      text-transform: uppercase; color: var(--ink); }
+    .fnl .fnl-v { display: block; font-size: 12.5px; line-height: 1.5;
+      color: var(--ink-muted); margin-top: 3px; }
+
     .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
     .flow .src { display: flex; flex-wrap: wrap; gap: 6px; max-width: 340px; }
     .flow .schip { font-size: 11px; padding: 5px 10px; border-radius: 100px; background: rgba(255,255,255,0.7); border: 1px solid var(--border); color: var(--ink-muted); }
@@ -9296,8 +9327,15 @@
           <div class="tp-sec"><div class="tp-k">The rule</div>
             <div class="rule" style="margin:0"><span class="ic">⚖️</span><div class="t"><b>Tayo advises within the range you authorise — it never makes a binding commitment.</b> It can discuss flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div></div>
           </div>
-          <div class="tp-sec"><div class="tp-k">The omnichannel funnel — no lead arrives cold</div>
-            <div class="flow" style="margin:0"><div class="src"><span class="schip">Instagram post</span><span class="schip">Instagram DM</span><span class="schip">TikTok</span><span class="schip">Facebook</span><span class="schip">WhatsApp</span><span class="schip">In-app</span><span class="schip">Proximity</span></div><span class="arw2">↓</span><div class="toju"><span class="o">T</span> Tayo qualifies · presents · negotiates</div><span class="arw2">↓</span><span class="end">Warm handoff to you</span></div>
+          <div class="tp-sec"><div class="tp-k">Where a lead comes from, and what happens to it</div>
+            <ol class="fnl">
+              <li><span class="fnl-k">They start anywhere</span>
+                <span class="fnl-v">Instagram, WhatsApp, TikTok, Facebook, YouTube, the Synapse app, or walking past the building.</span></li>
+              <li class="is-tayo"><span class="fnl-k">Tayo picks it up</span>
+                <span class="fnl-v">Qualifies the budget, presents the fit, handles the objections, and negotiates only inside the range you set.</span></li>
+              <li class="is-out"><span class="fnl-k">You get a warm one</span>
+                <span class="fnl-v">The conversation arrives with it — what they want, what they can pay, what they already asked.</span></li>
+            </ol>
           </div>
           <div class="tp-sec"><div class="tp-k">The five stages</div>
             <div class="stepper" style="margin:0"><span class="step5"><b>1</b> Qualify</span><span class="step5"><b>2</b> Present</span><span class="step5"><b>3</b> Handle objections</span><span class="step5"><b>4</b> Negotiate · your range</span><span class="step5"><b>5</b> Handoff</span></div>
@@ -9317,6 +9355,26 @@
         ], 'Connect a channel or share a listing, and the first real lead lands here.')
         + `<div class="tp-sec"><div class="tp-k">Where your leads come from</div><div class="card brk" id="brk"></div></div>`,
         after: () => renderBrk() },
+      /* brand, tours and verification had no entry, and
+         PANEL[pane] || PANEL.overview meant each of them silently showed the
+         OVERVIEW panel -- you opened the advisor on the Brand pane and read a
+         summary of your listings instead. agents and subscription already
+         have their own further down. */
+      brand: { title: 'Your brand', sub: 'What signs off every post and page',
+        html: () => tpSummary('What this pane decides', [
+          'The name, logo, colour and voice Synapse writes and publishes as.',
+          'Anything blank here shows up as a gap on your public page and in every generated post.',
+        ], 'Ask below what is still missing from your setup.') },
+      tours: { title: 'Viewings', sub: 'Who is coming, and when',
+        html: () => tpSummary('What this pane decides', [
+          'The availability you publish, the slots buyers book, and who has confirmed.',
+          'A booking nobody has reconfirmed is not a body at the door yet.',
+        ], 'Ask below which viewings still need chasing.') },
+      verification: { title: 'Verification', sub: 'What is on file, and what is outstanding',
+        html: () => tpSummary('What this pane decides', [
+          'The documents Nigeria requires of an agency: CAC, SCUML, a state licence, a director\u2019s ID.',
+          'Verified means specific checks passed on a date. It is never something an agency sets for itself.',
+        ], 'Ask below what you still need to send.') },
       listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
         html: () => tpSummary('Keep your listings live', [
           'Every listing expires 14 days after it was last confirmed.',
@@ -9432,16 +9490,30 @@
         'How is my pipeline looking?',
       ],
     };
+    /* Two problems, and the keys were the smaller one: `team` and `plan` are
+       not panes. currentPane() returns the data-pane value -- `agents` and
+       `subscription` -- so those two never matched, and four panes offered no
+       question at all.
+
+       The bigger problem is that these asked the product to explain itself.
+       "How do I move a lead through the five stages" is a manual entry. The
+       advisor is handed a live snapshot of THIS agency -- listings live,
+       verified and stale, leads by stage, posts published versus merely
+       rehearsed, channels connected, brand gaps -- so it can answer what is
+       happening to this business. Every question below is answerable from
+       that snapshot rather than being one the advisor has to bluff. */
     const PANE_Q = {
-      overview:   'Which of my listings are not verified, and why does that matter?',
-      listings:   'Which listings are about to expire?',
-      marketing:  'How do I publish for real instead of rehearsing?',
-      crm:        'How do I move a lead through the five stages?',
-      social:     'What should I post next?',
-      negotiator: 'How does Tayo negotiate on my behalf?',
-      team:       'How do I invite an agent to my team?',
-      brand:      'How do I set up my brand properly?',
-      plan:       'Which plan am I on, and what does it include?',
+      overview:     'What is getting in the way of my listings reaching buyers?',
+      listings:     'Which of my listings are going stale, and what should I do about them?',
+      marketing:    'Have my posts actually published, or are they still rehearsals?',
+      crm:          'Where in the pipeline are my leads getting stuck?',
+      social:       'Which channels am I connected to, and which am I missing?',
+      negotiator:   'Which of my leads are worth a call today?',
+      agents:       'Is my team the right size for the listings we are running?',
+      tours:        'Which viewings still need chasing?',
+      brand:        'What is still missing from my brand setup?',
+      verification: 'What do I still need to send to get verified?',
+      subscription: 'Does my plan fit how much we are actually listing?',
     };
 
     let ADV_HISTORY = [];      // the panel's own conversation, this session
