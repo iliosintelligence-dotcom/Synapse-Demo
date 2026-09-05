@@ -1880,6 +1880,11 @@
       transit: { i: 'bus', col: '#1d7a8c', lbl: 'Transport' },
       park: { i: 'church', col: '#3f9c6d', lbl: 'Parks' },
       cafe: { i: 'restaurant', col: '#c98b3a', lbl: 'Cafes' },
+      /* Neither sits in a tab, so they show only under Nearby -- but a petrol
+         station and a police post are things buyers here actually ask about,
+         and a named legend beats a grey 'Other' pin. */
+      fuel: { i: 'cart', col: '#7a6a3f', lbl: 'Petrol stations' },
+      police: { i: 'church', col: '#4a5b8c', lbl: 'Police' },
       other: { i: 'cart', col: '#6B6B70', lbl: 'Other' },
     };
     /* Never index META directly again: an unknown category must degrade to a
@@ -1899,7 +1904,7 @@
        So: mirrors, tried in order, with a timeout that matches how slow this
        service genuinely is. kumi.systems is the usual community mirror and is
        markedly more reliable than the main instance. */
-    var OVERPASS_URL = 'https://overpass.osm.ch/api/interpreter';
+    var OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
     /* Fastest first, and only mirrors confirmed to answer a browser. Measured
        from this page rather than taken from a mirror list:
          overpass.osm.ch          819ms  ok
@@ -1912,9 +1917,22 @@
        mirror was even tried -- 25 seconds of nothing on the nearby panel. It
        is out for the same reason overpass.osm.jp is: a server that cannot
        answer a browser is not a fallback, it is a delay. */
+    /* ORDER REVERSED, and speed is not the reason.
+
+       overpass.osm.ch is a REGIONAL instance. It answers a Nigerian query in
+       819ms with HTTP 200, a valid Overpass envelope, and zero elements --
+       because its database does not contain Nigeria. Measured directly: the
+       same query returns 0 there and 19 from overpass-api.de. Being first and
+       fastest, it answered every request this product ever made, successfully
+       and emptily, and the fallback below never fired because nothing had
+       failed. Ranking these by latency was measuring the wrong thing.
+
+       overpass-api.de is the main instance and carries the planet, so it goes
+       first now. osm.ch stays as a fallback: for a European listing it is a
+       fine answer and genuinely faster. */
     var OVERPASS_MIRRORS = [
-      'https://overpass.osm.ch/api/interpreter',
       'https://overpass-api.de/api/interpreter',
+      'https://overpass.osm.ch/api/interpreter',
       // overpass.osm.jp was here and is not usable from a browser: it serves a
       // certificate for the wrong common name, so Chrome refuses the request
       // before it is even sent (ERR_CERT_COMMON_NAME_INVALID).
@@ -1931,24 +1949,77 @@
         var url = OVERPASS_MIRRORS[i++];
         return fetchWithTimeout(url, { method: 'POST', body: body }, perTryMs || 15000)
           .then(function (r) { if (!r.ok) throw new Error('overpass ' + r.status); return r.json(); })
+          .then(function (d) {
+            /* An empty result from a regional mirror is indistinguishable from
+               "there is genuinely nothing here" unless we try another one. A
+               real void is rare -- every home has SOMETHING within 3 km -- so
+               treat it as this mirror not covering the area and let the next
+               one answer. If they all come back empty, the last empty result
+               stands and the panel says so honestly. */
+            if (d && Array.isArray(d.elements) && d.elements.length === 0
+                && i < OVERPASS_MIRRORS.length) {
+              return attempt();
+            }
+            return d;
+          })
           .catch(function () { return attempt(); });
       }
       return attempt();
     }
-    var OVERPASS_QUERY_TPL = '[out:json][timeout:15];('
-      + 'node["amenity"="school"](around:1200,{lat},{lng});'
-      + 'node["leisure"="fitness_centre"](around:1200,{lat},{lng});'
-      + 'node["amenity"="gym"](around:1200,{lat},{lng});'
-      + 'node["amenity"="restaurant"](around:1000,{lat},{lng});'
-      + 'node["amenity"="cafe"](around:1000,{lat},{lng});'
-      + 'node["amenity"="place_of_worship"]["religion"="christian"](around:1200,{lat},{lng});'
-      + 'node["amenity"="place_of_worship"]["religion"="muslim"](around:1200,{lat},{lng});'
-      + 'node["highway"="bus_stop"](around:600,{lat},{lng});'
-      + 'node["amenity"="hospital"](around:2000,{lat},{lng});'
-      + 'node["shop"="supermarket"](around:1200,{lat},{lng});'
-      + ');out body 80;';
-    var AMENITY_LABEL = { school: 'School', gym: 'Gym', restaurant: 'Restaurant', cafe: 'Cafe',
-      bus_stop: 'Bus stop', hospital: 'Hospital', supermarket: 'Supermarket', church: 'Church', mosque: 'Mosque' };
+    /* ── what we ask OpenStreetMap for ─────────────────────────────────
+       Three things were wrong with the version this replaces, and together
+       they are why the map looked empty beside tabs promising detail.
+
+       1. `node` only. A school, hospital, market or mall is normally drawn in
+          OSM as a building outline -- a WAY -- not a point. Measured around
+          the Agbowo listing: the same tags returned 5 elements as `node` and
+          9 as `nwr`. Nearly half of everything was invisible because of the
+          word at the start of each line. `out center` gives a way or relation
+          a single point to pin.
+
+       2. Categories the UI advertises that nothing ever asked for. The tabs
+          offer Schools, Health, Shops and Transport, and POI_FILTERS looks
+          for university, pharmacy, market, shopping mall, bank, bus station
+          and park -- none of which appeared in the query, so on this path
+          those tabs could only ever be empty. Within 2 km of that same
+          listing they are worth 29 real places, including the ten mapped
+          features of the University of Ibadan next door.
+
+       3. Radii set for a dense European suburb. Bus stops were fetched within
+          600 m, which found none; there are 21 within 5 km. Widened per
+          category, because a hospital 2.5 km away is still the hospital you
+          would use and a cafe 2.5 km away is not.
+
+       Still genuinely missing, and not fixable here: bus ROUTES and motor
+       parks. Zero route relations and zero amenity=bus_station exist around
+       Ibadan in OSM. Informal transport is not mapped, so we do not draw it. */
+    var OVERPASS_QUERY_TPL = '[out:json][timeout:25];('
+      + 'nwr["amenity"="school"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"~"^(university|college)$"](around:2500,{lat},{lng});'
+      + 'nwr["leisure"="fitness_centre"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="gym"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="restaurant"](around:1200,{lat},{lng});'
+      + 'nwr["amenity"="cafe"](around:1200,{lat},{lng});'
+      + 'nwr["amenity"="place_of_worship"](around:1500,{lat},{lng});'
+      + 'nwr["highway"="bus_stop"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="bus_station"](around:3000,{lat},{lng});'
+      + 'nwr["public_transport"~"^(station|platform)$"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="hospital"](around:3000,{lat},{lng});'
+      + 'nwr["amenity"~"^(clinic|doctors)$"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="pharmacy"](around:1500,{lat},{lng});'
+      + 'nwr["shop"="supermarket"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="marketplace"](around:2500,{lat},{lng});'
+      + 'nwr["shop"~"^(mall|department_store)$"](around:3000,{lat},{lng});'
+      + 'nwr["amenity"="bank"](around:1500,{lat},{lng});'
+      + 'nwr["leisure"="park"](around:2000,{lat},{lng});'
+      + 'nwr["amenity"="fuel"](around:1500,{lat},{lng});'
+      + 'nwr["amenity"="police"](around:2500,{lat},{lng});'
+      + ');out center 250;';
+    var AMENITY_LABEL = { school: 'School', university: 'University', gym: 'Gym',
+      restaurant: 'Restaurant', cafe: 'Cafe', bus_stop: 'Bus stop', transit: 'Transport',
+      hospital: 'Hospital', pharmacy: 'Pharmacy', supermarket: 'Supermarket',
+      market: 'Market', bank: 'Bank', park: 'Park', fuel: 'Petrol station',
+      police: 'Police station', church: 'Church', mosque: 'Mosque' };
 
     function haversineM(a, b) {
       var R = 6371000, toRad = function (d) { return d * Math.PI / 180; };
@@ -1959,15 +2030,31 @@
     }
     function formatDist(m) { return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
 
+    /* Emits the SAME vocabulary the stored Google survey uses -- university,
+       pharmacy, bank, market, transit, park -- because META and POI_FILTERS
+       were written against that vocabulary and the two sources have to be
+       interchangeable. A type invented here would pin correctly and then be
+       missing from every tab and from the legend. */
     function elementToType(tags) {
-      if (tags.amenity === 'school') return 'school';
-      if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym') return 'gym';
-      if (tags.amenity === 'restaurant' || tags.amenity === 'cafe') return 'restaurant';
-      if (tags.amenity === 'place_of_worship' && tags.religion === 'christian') return 'church';
-      if (tags.amenity === 'place_of_worship' && tags.religion === 'muslim') return 'mosque';
+      var a = tags.amenity;
+      if (a === 'school') return 'school';
+      if (a === 'university' || a === 'college') return 'university';
+      if (tags.leisure === 'fitness_centre' || a === 'gym') return 'gym';
+      if (a === 'restaurant') return 'restaurant';
+      if (a === 'cafe') return 'cafe';
+      if (a === 'place_of_worship' && tags.religion === 'muslim') return 'mosque';
+      if (a === 'place_of_worship') return 'church';   // unlabelled religion reads as church
+      // Before the generic public_transport test: a bus stop carries both.
       if (tags.highway === 'bus_stop') return 'bus_stop';
-      if (tags.amenity === 'hospital') return 'hospital';
+      if (a === 'bus_station' || tags.public_transport) return 'transit';
+      if (a === 'hospital' || a === 'clinic' || a === 'doctors') return 'hospital';
+      if (a === 'pharmacy') return 'pharmacy';
       if (tags.shop === 'supermarket') return 'supermarket';
+      if (a === 'marketplace' || tags.shop === 'mall' || tags.shop === 'department_store') return 'market';
+      if (a === 'bank') return 'bank';
+      if (tags.leisure === 'park') return 'park';
+      if (a === 'fuel') return 'fuel';
+      if (a === 'police') return 'police';
       return null;
     }
     function fetchWithTimeout(url, opts, ms) {
@@ -2417,9 +2504,10 @@
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
         /* 12 cut two categories off the end -- the university and one of the
            two malls were fetched, stored, and then silently dropped before the
-           card ever saw them. The survey stores far fewer than 60 per property,
-           so ask for the lot and let the card group them. */
-        body: JSON.stringify({ p_property_id: propId, p_limit: 60 }),
+           card ever saw them. Then 60 was comfortable only while the survey
+           stored 14 per property; it now stores up to 54, and a limit set
+           just above the old ceiling is the same bug waiting to happen. */
+        body: JSON.stringify({ p_property_id: propId, p_limit: 120 }),
       })
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (rows) {
@@ -2852,15 +2940,25 @@
           var seen = {};
           POI = (data.elements || []).reduce(function (out, el) {
             var t = elementToType(el.tags || {});
-            if (!t || el.lat == null || el.lon == null) return out;
-            var key = t + ':' + el.lat.toFixed(5) + ':' + el.lon.toFixed(5);
+            if (!t) return out;
+            /* A node has lat/lon; a way or relation has `center` instead,
+               which is what `out center` is for. Reading only lat/lon is what
+               discarded every building-shaped school and hospital. */
+            var la = el.lat != null ? el.lat : (el.center && el.center.lat);
+            var lo = el.lon != null ? el.lon : (el.center && el.center.lon);
+            if (la == null || lo == null) return out;
+            var key = t + ':' + la.toFixed(5) + ':' + lo.toFixed(5);
             if (seen[key]) return out; seen[key] = true;
-            var c = [el.lat, el.lon];
+            var c = [la, lo];
             out.push({ c: c, t: t, n: (el.tags && el.tags.name) || AMENITY_LABEL[t] || 'Place', dm: haversineM(PROP, c) });
             return out;
           }, []);
           POI.sort(function (a, b) { return a.dm - b.dm; });
-          POI = POI.slice(0, 60);
+          /* 60 was set when the query returned a handful. Now that every
+             advertised category is actually asked for, the nearest 60 could
+             be all restaurants and leave Health and Transport empty while
+             real hospitals sat just outside the cut. */
+          POI = POI.slice(0, 120);
           POI.forEach(function (p) { p.d = formatDist(p.dm); });
           poiState = 'loaded';
           /* AFTER the state flips, not before. Painting first meant
@@ -2963,7 +3061,8 @@
        has its own map rather than the shared one, so it was a second place
        the URL and the attribution had to be kept in step, and they were only
        in step by luck. */
-    SynTiles.add(map);
+    /* detail: this map's whole job is what surrounds one house. */
+    SynTiles.add(map, { detail: true });
     var layer = L.layerGroup().addTo(map);
     var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
     function poiIcon(t) { var m = metaFor(t); return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }

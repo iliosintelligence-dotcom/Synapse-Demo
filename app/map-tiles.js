@@ -54,15 +54,27 @@
      *  them. Others: alidade_smooth_dark, outdoors, osm_bright, stamen_toner. */
     STYLE: 'alidade_smooth',
 
-    /** Attach the right tile layer to a Leaflet map. Returns the layer. */
-    add: function (map) {
+    /** The labelled style, for a map whose whole job is "what is around this
+     *  house?". STYLE above is deliberately quiet because the matches map is
+     *  covered in price pins and a busy base fights them -- but that reasoning
+     *  does not travel. On a single-property map the base IS the content, and
+     *  a quiet style leaves a correct pin sitting on an empty page: no
+     *  business names, no bus stops, roads barely distinguished. Same mistake
+     *  the property page had already been fixed for once, under CARTO's names
+     *  (Positron vs Voyager); alidade_smooth is Positron and this is Voyager. */
+    STYLE_DETAIL: 'osm_bright',
+
+    /** Attach the right tile layer to a Leaflet map. Returns the layer.
+     *  Pass { detail: true } for a map that should carry labels and POIs. */
+    add: function (map, opts) {
       var L = window.L;
       if (!L || !map) return null;
 
+      var style = (opts && opts.detail) ? this.STYLE_DETAIL : this.STYLE;
       var key = String(this.KEY || '').trim();
       /* {r} is Stadia's retina placeholder; detectRetina is what fills it with
          "@2x" on a dense screen and leaves it empty otherwise. */
-      var url = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(this.STYLE)
+      var url = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
         + '/{z}/{x}/{y}{r}.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
 
       var layer = L.tileLayer(url, {
@@ -92,7 +104,7 @@
          with fetch rather than trusting the <img>. One extra request per map,
          and it is the difference between a working map and a wall of
          "unauthorised" that looks deliberate. */
-      var probe = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(this.STYLE)
+      var probe = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
         + '/3/4/3.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
       try {
         fetch(probe, { method: 'GET', cache: 'force-cache' })
