@@ -933,12 +933,13 @@
     .brand-preview .bp-chip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 4px 10px;
       border-radius: 100px; color: #fff; }
     @media (max-width: 560px){ .look-logos, .swatch-row { grid-template-columns: 1fr; } }
-    /* The ask area is pinned under the panel body so it is reachable without
-       scrolling past whatever the pane happened to render. */
+    /* Only the composer is pinned now. It used to sit in a bordered block
+       with the thread and the chips, which is what made the panel read as two
+       stacked panes rather than one column. */
     .tp-ask { border-top: 1px solid var(--border); padding: 10px 14px 12px;
-      background: var(--surface, #fff); display: flex; flex-direction: column; gap: 8px; }
-    .tp-thread { display: flex; flex-direction: column; gap: 8px; max-height: 42vh;
-      overflow-y: auto; }
+      background: var(--surface, #fff); flex: none; }
+    .tp-thread { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+    .tp-chips { margin-top: 12px; }
     .tp-thread:empty { display: none; }
     .tp-msg { font-size: 13px; line-height: 1.55; border-radius: 12px; padding: 9px 12px;
       white-space: pre-wrap; word-break: break-word; }
@@ -1596,7 +1597,11 @@
     .tpanel .thd .sb { font-size: 11.5px; color: var(--ink-dim); margin-top: 1px; }
     .tpanel .thd .x { margin-left: auto; border: none; background: none; font-size: 22px; line-height: 1; color: var(--ink-dim); cursor: pointer; }
     .tpanel .thd .x:hover { color: var(--ink); }
-    .tpanel .tbody { flex: 1; overflow-y: auto; padding: 20px; }
+    /* The scroller. .tbody kept its padding but gave up its own overflow --
+       it is a block inside the column now, not a pane beside it. */
+    .tpanel .tp-scroll { flex: 1; min-height: 0; overflow-y: auto;
+      overscroll-behavior: contain; padding: 20px; }
+    .tpanel .tbody { padding: 0; }
     .tp-sec { margin-bottom: 22px; }
     .tp-sec:last-child { margin-bottom: 0; }
     .tp-k { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
@@ -3550,15 +3555,24 @@
       <div><div class="tt" id="tpTitle">Ask Tayo</div><div class="sb" id="tpSub"></div></div>
       <button class="x" id="tpClose" aria-label="Close">×</button>
     </div>
-    <div class="tbody" id="tpBody"></div>
+    <!-- One scroll, not two. The summary and the conversation each had their
+         own scrolling box -- .tbody with overflow-y and .tp-thread capped at
+         42vh -- so the panel was split across the middle and you scrolled one
+         half while the other sat still. They are one column now: the pane's
+         summary is simply the top of the conversation, and the only thing
+         that stays put is the box you type in.
 
-    <!-- Every pane gets this, not just Overview. The panel used to be
+         Every pane gets the composer, not just Overview. The panel used to be
          read-only: it showed what it had decided to show and there was no way
          to ask it anything, which is the wrong shape for something called an
          advisor. -->
-    <div class="tp-ask">
+    <div class="tp-scroll" id="tpScroll">
+      <div class="tbody" id="tpBody"></div>
       <div class="tp-thread" id="tpThread"></div>
       <div class="tp-chips" id="tpChips"></div>
+    </div>
+
+    <div class="tp-ask">
       <form class="tp-composer" id="tpForm">
         <input id="tpInput" type="text" autocomplete="off"
                placeholder="Ask about your numbers, or how to do something…"
@@ -9539,7 +9553,10 @@
          anything else is shown as typed rather than parsed as markup. */
       d.innerHTML = escT(text).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
       th.appendChild(d);
-      th.scrollTop = th.scrollHeight;
+      /* The thread no longer scrolls -- the panel does -- so keeping the newest
+         message in view means moving the column, not the thread. */
+      const sc = document.getElementById('tpScroll');
+      if (sc) sc.scrollTop = sc.scrollHeight;
       return d;
     }
 
