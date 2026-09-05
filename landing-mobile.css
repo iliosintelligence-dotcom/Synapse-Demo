@@ -51,7 +51,27 @@
    shorthand here silently reset the gutter to 0 and ran the whole page
    edge-to-edge. Longhands keep the two axes independent. */
 .m-wrap { padding-left: 22px; padding-right: 22px; }
-.m-section { padding-top: 72px; padding-bottom: 72px; }
+/* Section partitioning, phone side. Same problem the desktop bands had and
+   the same fix: four of these were fully transparent with no border, so with
+   the section CTAs gone there was nothing at all marking where one idea ended
+   and the next began. Same rhythm, same vocabulary (.raised), alternating
+   around the dark proximity band.
+
+   The partition hairline draws from the centre out as the section arrives --
+   scenery, so it is slower than a UI response and runs on transform only. */
+.m-section { padding-top: 72px; padding-bottom: 72px; background: var(--bg); position: relative; }
+.m-section.raised { background: var(--surface); }
+.m-section + .m-section:not(.m-proximity)::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: rgba(20,20,20,0.09);
+  transform: scaleX(0); transform-origin: 50% 50%;
+  transition: transform .7s var(--ease);
+}
+.m-section + .m-section:not(.m-proximity).in-view::before { transform: scaleX(1); }
+.m-proximity + .m-section::before { content: none; }
+@media (prefers-reduced-motion: reduce) {
+  .m-section + .m-section:not(.m-proximity)::before { transition: none; transform: scaleX(1); }
+}
 .m-kicker {
   font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
   color: var(--brand-text, var(--text-dim)); display: inline-flex; align-items: center; gap: 8px;

@@ -1872,7 +1872,45 @@ footer {
    and bottom, and nothing sits closer to the edge than it has to — the eye
    needs somewhere to rest between ideas, and crowding is what made the page
    feel busy even after the content was cut. */
-.s-band { padding: clamp(96px, 13vh, 168px) 0; position: relative; }
+/* ── Section partitioning ──────────────────────────────────────────────
+   Bands used to declare a ground only when they felt like it: two had none
+   at all (transparent, no border, nothing), and .reality-band sat on #f7f7f7
+   against a #f5f5f5 page -- a two-value shift, which is not a boundary, it
+   is a rounding error. With the section CTAs gone there is nothing else
+   marking where one idea stops and the next starts, so the grounds have to
+   do it.
+
+   An explicit rhythm, alternating around the dark plate at the centre:
+     reality   raised (warm white)
+     turn      paper
+     dark      ink            <- the centrepiece
+     proximity raised
+     fresh     tinted
+     pricing   paper
+   Every band names its own ground; none inherits by accident. */
+.s-band { padding: clamp(96px, 13vh, 168px) 0; position: relative; background: var(--bg); }
+.s-band.raised { background: var(--surface); }
+
+/* The partition itself, and the transition across it. A hairline that draws
+   from the centre out as the section arrives, so a boundary between two
+   ideas is an event rather than a static rule. transform only, one property,
+   ease-out, ~700ms -- slower than a UI response because it is scenery, not
+   feedback.
+
+   Not on .dark, and not on whatever follows it: the ground change there is
+   already the strongest partition on the page, and a hairline against ink
+   is either invisible or wrong. */
+.s-band + .s-band:not(.dark)::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: rgba(20,20,20,0.09);
+  transform: scaleX(0); transform-origin: 50% 50%;
+  transition: transform .7s var(--ease);
+}
+.s-band + .s-band:not(.dark).in-view::before { transform: scaleX(1); }
+.s-band.dark + .s-band::before { content: none; }
+@media (prefers-reduced-motion: reduce) {
+  .s-band + .s-band:not(.dark)::before { transition: none; transform: scaleX(1); }
+}
 .s-band.tinted { background: var(--tint-wash); border-top: 1px solid var(--tint-edge); border-bottom: 1px solid var(--tint-edge); }
 
 /* ── Inverted bands ────────────────────────────────────────────────────────
@@ -2842,9 +2880,9 @@ textarea:focus-visible {
    rectangle moving at its own speed behind the words. An effect whose reason
    has been removed does not become subtle, it becomes a rendering fault, and
    that is what it looked like. The section keeps the page background. */
-.reality-band {
-  background: #f7f7f7;
-}
+/* Was #f7f7f7 on a #f5f5f5 page. See the partitioning note above: it now
+   takes the raised ground like every other band in that position. */
+.reality-band { background: var(--surface); }
 .reality-band .prob-half.is-answer { border-left-color: rgba(20,20,20,0.28); }
 
 .turn-band {
