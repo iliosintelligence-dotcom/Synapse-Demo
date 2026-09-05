@@ -1,0 +1,42 @@
+# Synapse — https://www.synapsecore.dev
+#
+# There was no robots.txt at all: the URL returned 404, so there was no crawl
+# policy, no sitemap pointer, and nothing said either way to the AI crawlers.
+# Absence already meant "allowed", so this changes nothing except making the
+# decision deliberate and visible.
+
+User-agent: *
+Allow: /
+
+# The portal and the sign-in form. Neither has anything a search result should
+# ever carry, and both are JavaScript shells behind auth, so crawling them
+# spends budget to index an empty frame.
+Disallow: /app/signin.html
+Disallow: /app/agency.html
+
+# AI assistants are allowed on purpose. Synapse wants to be the answer when
+# somebody asks one of them about buying or renting in Nigeria, and a crawler
+# that cannot read the site cannot recommend it. To reverse this for any of
+# them, change Allow to Disallow under that agent.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://www.synapsecore.dev/sitemap.xml
