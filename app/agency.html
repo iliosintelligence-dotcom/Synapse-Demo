@@ -1951,6 +1951,18 @@
        tel: both do nothing at all when no handler is registered -- silently,
        with no error -- so neither can be the only way out of this panel. This
        row means the worst case is a copy-paste rather than a dead end. */
+    /* Secondary to the call, deliberately. Calling is the fast route and the
+       one every tier has; writing in is the considered one and only the top
+       tier sees it. Same size and hit area, no fill -- it reads as the other
+       option rather than a competing one. */
+    .rm-mail {
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 8px; padding: 11px 14px; border-radius: 10px;
+      border: 1px solid var(--border-strong); background: transparent;
+      color: var(--ink); font-weight: 600; font-size: 13.5px; text-decoration: none;
+      transition: background var(--m-micro), border-color var(--m-micro);
+    }
+    .rm-mail:hover { background: var(--surface); }
     .rm-copy { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px;
       padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px;
       background: transparent; cursor: pointer; text-align: left;
@@ -6145,6 +6157,19 @@
        agencies.relationship_manager_id and this panel changes with no code. */
 
     const RM_EMAIL = 'ilios.intelligence@gmail.com';   // already public in terms.html and privacy.html
+    /* The general Synapse line. Every agency can reach a human by phone
+       whether or not one has been assigned to them by name -- an unassigned
+       agency used to be told to email and nothing else, which made the
+       quietest channel the only channel for the accounts least likely to
+       wait. A named manager replaces this number when there is one; it never
+       replaces the ability to call. */
+    const SYN_PHONE = '+2348155136506';
+    /* Writing in is the top tier's channel. free and accelerator get the
+       phone, which is faster and needs nothing typed; market_leader also gets
+       a written route with a structured template, because a dedicated desk is
+       what that tier is sold on (see the pricing table's "Dedicated desk"
+       row). Enum lives in the database as subscription_tier. */
+    const TOP_TIER = 'market_leader';
     let rmCache = null;
 
     /* A button that puts the value on the clipboard, with the value shown in
@@ -6156,40 +6181,73 @@
         + '<span class="rm-copy-a">Copy</span></button>';
     }
 
-    function rmRender(rm, agencyName) {
-      const card = document.getElementById('rmCard');
+    /* tel: wants the number without punctuation; the copy row keeps it. */
+    function rmTel(number, label) {
+      return '<a class="rm-call" href="tel:' + esc2(String(number).replace(/[^\d+]/g, '')) + '">'
+        + esc2(label) + '</a>' + rmCopyRow(number);
+    }
+
+    /* The written route, for the tier that has it. Prefilled, because "email
+       us" with an empty body gets back a sentence with none of what anyone
+       needs to act on it -- so the body asks for the number to call back, the
+       listing in question and what is actually wrong. Blank lines, not
+       example values: a template someone has to delete is worse than one they
+       fill in. */
+    function rmMail(agencyName) {
       const subject = 'Synapse support' + (agencyName ? ' \u2014 ' + agencyName : '');
-      const mail = '<a class="rm-call" href="mailto:' + RM_EMAIL
-        + '?subject=' + encodeURIComponent(subject) + '">Email Synapse</a>'
+      const body = [
+        agencyName ? 'Agency: ' + agencyName : 'Agency:',
+        '',
+        'Best number to call you back:',
+        'Listing (name, or its SYN- reference):',
+        'What you need:',
+        '',
+        '',
+        '\u2014 sent from the Synapse agency portal',
+      ].join('\n');
+      return '<a class="rm-mail" href="mailto:' + RM_EMAIL
+        + '?subject=' + encodeURIComponent(subject)
+        + '&body=' + encodeURIComponent(body) + '">Email Synapse instead</a>'
         + rmCopyRow(RM_EMAIL);
+    }
 
-      if (!rm.assigned) {
-        card.innerHTML = '<div class="rm-role">Synapse support</div>'
-          + '<div class="rm-name">No manager assigned yet</div>'
-          + '<div class="rm-none">Your agency has not been given a named contact. '
-          + 'Email us and we will answer from the same place.</div>' + mail;
+    function rmRender(rm, agencyName, tier) {
+      const card = document.getElementById('rmCard');
+      const canEmail = tier === TOP_TIER;
+
+      /* Assigned, with a number of their own: the best case, and the only one
+         where the panel names a person. */
+      if (rm.assigned && rm.phone) {
+        card.innerHTML = '<div class="rm-role">Your relationship manager</div>'
+          /* Neither the name nor the hours are ours to trust into innerHTML. */
+          + '<div class="rm-name">' + esc2(rm.name) + '</div>'
+          + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '')
+          + rmTel(rm.phone, 'Call ' + rm.name)
+          + (canEmail ? rmMail(agencyName) : '');
         return;
       }
-      /* The name is theirs and the hours are the agency's own column; both are
-         escaped because neither is ours to trust into innerHTML. */
-      const head = '<div class="rm-role">Your relationship manager</div>'
-        + '<div class="rm-name">' + esc2(rm.name) + '</div>'
-        + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '');
 
-      if (!rm.phone) {
-        card.innerHTML = head
-          + '<div class="rm-none">We do not have a number on file for them yet.</div>' + mail;
+      /* Assigned but with no number on file: say who they are, then fall
+         through to the line that does work rather than stopping at an
+         apology. */
+      if (rm.assigned) {
+        card.innerHTML = '<div class="rm-role">Your relationship manager</div>'
+          + '<div class="rm-name">' + esc2(rm.name) + '</div>'
+          + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '')
+          + '<div class="rm-none">We have no direct number for them yet \u2014 '
+          + 'the main line will reach them.</div>'
+          + rmTel(SYN_PHONE, 'Call Synapse')
+          + (canEmail ? rmMail(agencyName) : '');
         return;
       }
-      /* tel: wants the number with the punctuation stripped. The label used to
-         carry the number too -- so you could check it before dialling -- but
-         the copy row underneath now shows it in full and unelided, and the
-         number twice in a 300px panel reads as a bug. So the button names the
-         person and the row carries the number. */
-      const dial = String(rm.phone).replace(/[^\d+]/g, '');
-      card.innerHTML = head
-        + '<a class="rm-call" href="tel:' + esc2(dial) + '">Call ' + esc2(rm.name) + '</a>'
-        + rmCopyRow(rm.phone);
+
+      /* Nobody assigned. Still a phone call, not a dead end. */
+      card.innerHTML = '<div class="rm-role">Synapse support</div>'
+        + '<div class="rm-name">Talk to us</div>'
+        + '<div class="rm-none">You do not have a named manager yet. '
+        + 'This line reaches the Synapse team.</div>'
+        + rmTel(SYN_PHONE, 'Call Synapse')
+        + (canEmail ? rmMail(agencyName) : '');
     }
 
     /* Delegated, because the card is rewritten on every render. */
@@ -6231,27 +6289,27 @@
     });
 
     function rmLoad() {
-      if (rmCache) { rmRender(rmCache.rm, rmCache.name); return; }
+      if (rmCache) { rmRender(rmCache.rm, rmCache.name, rmCache.tier); return; }
       const card = document.getElementById('rmCard');
       card.innerHTML = '<div class="rm-role">Synapse support</div>'
         + '<div class="rm-none">Looking up your contact\u2026</div>';
       if (!window.SynListings || !SynListings.relationshipManager) {
         /* Signed out, or the data layer never loaded. Still give them the
            address rather than a spinner that never resolves. */
-        rmRender({ assigned: false }, null);
+        rmRender({ assigned: false }, null, null);
         return;
       }
       Promise.all([
         SynListings.relationshipManager(),
         SynListings.agency ? SynListings.agency().catch(() => null) : Promise.resolve(null),
       ]).then(([rm, a]) => {
-        rmCache = { rm: rm, name: a && a.name };
-        rmRender(rm, rmCache.name);
+        rmCache = { rm: rm, name: a && a.name, tier: a && a.subscription_tier };
+        rmRender(rm, rmCache.name, rmCache.tier);
       }).catch((err) => {
         console.error('relationshipManager failed', err);
         /* A failed lookup is not a reason to strand someone who is trying to
            reach a human. Fall through to the address. */
-        rmRender({ assigned: false }, null);
+        rmRender({ assigned: false }, null, null);
       });
     }
 
