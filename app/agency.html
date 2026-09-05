@@ -3169,6 +3169,11 @@
               <button class="tbtn" id="listSort"><span data-icon="sort"></span> Sort: Freshness</button>
             </div>
             <div class="crm-tools-r">
+              <!-- Hidden until there is something to renew. Listings tend to
+                   expire in cohorts -- a batch uploaded together runs out
+                   together -- so renewing them one card at a time is the kind
+                   of chore that simply does not get done. -->
+              <button class="tbtn" id="relistAllBtn" hidden></button>
               <button class="tbtn primary" id="newListingBtn">+ New listing</button>
             </div>
           </div>
@@ -4984,10 +4989,75 @@
       const left = l.expires_at
         ? Math.ceil((new Date(l.expires_at).getTime() - Date.now()) / 864e5)
         : 14 - l.days;
-      if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', expired: true, warn: false };
-      if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), expired: false, warn: true };
-      return { cls: 'ok', label: left + ' days left', expired: false, warn: false };
+      /* `left` is returned as well as the flags because buildNoti asked for
+         it and it was never there -- see the note on the expiring reminder. */
+      if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', left: left, expired: true, warn: false };
+      if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), left: left, expired: false, warn: true };
+      return { cls: 'ok', label: left + ' days left', left: left, expired: false, warn: false };
     }
+    /* ── renewing in bulk ──────────────────────────────────────────────
+       Every listing carries a Re-list button already, and reconfirm_listing()
+       behind it is sound: membership checked server-side, days clamped to
+       1-90, and it moves expires_at and availability_confirmed_at together
+       without touching listed_at -- so renewing keeps a home visible without
+       pretending it was listed today. Freshness stays honest.
+
+       What was missing is that expiry arrives in cohorts. Every live listing
+       on this account expires within a day of every other, because they were
+       uploaded together. Seven cards is a chore; fifty is a thing nobody
+       does, and then the whole shelf goes dark at once.
+
+       This renews everything expiring or already expired, in one press. It is
+       the same per-listing call underneath -- no bulk endpoint, no new
+       privilege -- so a partial failure leaves the rest renewed rather than
+       rolling anything back, and the count reported is what actually
+       succeeded. */
+    function expiringSet() {
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+      return L.filter((l) => { try { const f = freshness(l); return f.warn || f.expired; } catch (e) { return false; } });
+    }
+
+    function syncRelistAll() {
+      const btn = document.getElementById('relistAllBtn');
+      if (!btn) return;
+      const n = expiringSet().length;
+      btn.hidden = n === 0;
+      if (n) btn.innerHTML = '\u21bb Re-list ' + n + ' expiring';
+    }
+
+    (function wireRelistAll() {
+      const btn = document.getElementById('relistAllBtn');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const due = expiringSet();
+        if (!due.length) return;
+        const was = btn.innerHTML;
+        btn.disabled = true; btn.textContent = 'Re-listing\u2026';
+        Promise.all(due.map((l) =>
+          SynListings.relist(l.id).then((row) => {
+            /* Take the new date from the server rather than assuming it, so
+               the grid repaints as what actually happened. */
+            if (row && row.expires_at) l.expires_at = row.expires_at;
+            if (row && row.availability_confirmed_at) l.availability_confirmed_at = row.availability_confirmed_at;
+            l.days = 0;
+            return true;
+          }).catch((err) => {
+            console.error('relist failed', l.id, err);
+            return false;
+          })
+        )).then((res) => {
+          const ok = res.filter(Boolean).length;
+          btn.disabled = false; btn.innerHTML = was;
+          if (typeof saveListings === 'function') saveListings();
+          renderListings();
+          if (ok === 0) { toast('Could not re-list those. Try one on its own.'); return; }
+          toast(ok === res.length
+            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + ' for another 14 days'
+            : 'Re-listed ' + ok + ' of ' + res.length + ' \u2014 the rest failed');
+        });
+      });
+    })();
+
     // listings toolbar state (filter / search / sort) — operates on LISTINGS_DATA
     const LIST = { f: 'all', q: '', sort: 'fresh' };
     function listFiltered() {
@@ -5003,6 +5073,7 @@
       return a;
     }
     function renderListings() {
+      syncRelistAll();          // the bulk button appears, and counts, with the grid
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
       STATS.listings = [
         [LISTINGS_DATA.length, 'Total'],
@@ -9665,8 +9736,14 @@
           group: 'Today' });
       }
 
-      // freshness() returns { expired, left } for the 14-day rule
-      const expiring = L.filter(l => { try { const f = freshness(l); return f && !f.expired && f.left <= 3; } catch (e) { return false; } });
+      /* This never fired once. The comment here said freshness() returns
+         { expired, left }; it returned { cls, label, expired, warn } and no
+         `left` at all, so `f.left <= 3` was `undefined <= 3`, which is false
+         every time. An agency was therefore never warned BEFORE a listing
+         went dark -- only afterwards, by the expired reminder below, when
+         buyers had already stopped seeing it. `warn` is the flag that means
+         this, and freshness() now returns `left` too. */
+      const expiring = L.filter(l => { try { return freshness(l).warn; } catch (e) { return false; } });
       if (expiring.length) {
         out.push({ type: 'reminder', tag: 'Reminder', icon: 'pending', pane: 'listings',
           title: expiring.length + ' listing' + (expiring.length === 1 ? '' : 's') + ' expiring soon',
