@@ -243,17 +243,13 @@
          they carry the labels this map needs. Attribution is not decoration
          here: ODbL requires it and the tile policy requires it.
 
-         READ THIS BEFORE REAL TRAFFIC. The OSMF tile policy covers modest use
-         and explicitly does not cover heavy or commercial consumption. This is
-         the right fix for a product that is not live yet; it is not the right
-         fix for one that is. Before launch this wants a real tile account --
-         CARTO with a key, MapTiler, Stadia, or self-hosted -- and the only
-         thing that has to change is the URL and the attribution string. No
-         subdomain rotation: OSM retired {s} and asks for the single host. */
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(st.map);
+         The OSMF tile policy covers modest use and explicitly does not cover
+         commercial consumption, which this was relying on. The account is
+         MapTiler now and both the URL and the attribution live in
+         app/map-tiles.js, so the two maps in this app cannot drift apart --
+         and OSM stays as the fallback when no key is set or the tiles stop
+         answering. */
+      SynTiles.add(st.map);
       st.layer = L.layerGroup().addTo(st.map);
     }
     st.layer.clearLayers();
