@@ -1192,7 +1192,7 @@
          weigh, so it is shown with the same prominence as a pass. */
       const verified = p.verification_status === 'verified';
       const passed = Array.isArray(p.verification_nodes)
-        ? p.verification_nodes.filter((n) => n && n.status === 'pass').length : 0;
+        ? p.verification_nodes.filter((n) => n && n.status === 'passed').length : 0;
       const total = Array.isArray(p.verification_nodes) ? p.verification_nodes.length : 0;
       const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
       const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
@@ -1218,7 +1218,7 @@
       (function paintChecks() {
         const card = document.getElementById('pvChecksCard'); if (!card) return;
         const nodes = Array.isArray(p.verification_nodes) ? p.verification_nodes : [];
-        const pass = nodes.filter((n) => n && n.status === 'pass').length;
+        const pass = nodes.filter((n) => n && n.status === 'passed').length;
         const ring = document.getElementById('pvChecksRing');
         const head = document.getElementById('pvChecksHead');
         const note = document.getElementById('pvChecksNote');
@@ -1233,7 +1233,10 @@
           head.textContent = pass + ' of ' + nodes.length + ' checks passed';
           note.textContent = 'What Synapse checked before this listing went live \u2014 not a guarantee.';
           list.innerHTML = nodes.map((n) => {
-            const ok = n.status === 'pass';
+            const ok = n.status === 'passed';
+            /* 'pass'/'fail' here are CSS class names, not statuses -- the
+               status vocabulary is check_status, the stylesheet is its own
+               thing, and conflating them is what started this. */
             const cls = ok ? 'pass' : (n.status === 'pending' ? 'pending' : 'fail');
             const ic = ok ? 'check' : 'pending';
             return '<div class="verify-row ' + cls + '"><span class="vi-ic" data-icon="' + ic +
@@ -3091,11 +3094,11 @@
         return;
       }
       var rows = nodes.map(function (n) {
-        var ok = n.status === 'pass';
+        var ok = n.status === 'passed';
         return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + (n.name || 'Check') + '</b><span style="color:'
           + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'passed' : (n.status || 'pending')) + '</span></div>';
       }).join('');
-      var passed = nodes.filter(function (n) { return n.status === 'pass'; }).length;
+      var passed = nodes.filter(function (n) { return n.status === 'passed'; }).length;
       overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div>'
         + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">' + passed + ' of ' + nodes.length + ' checks passed. These record what Synapse checked, not a guarantee.</p>';
       if (PROP) fit([PROP]);

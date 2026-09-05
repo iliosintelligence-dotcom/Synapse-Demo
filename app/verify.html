@@ -27,6 +27,10 @@
     .vd-chk { font: 600 11.5px var(--f-sans); padding: 6px 11px; border-radius: 100px; cursor: pointer;
       border: 1px solid var(--border); background: rgba(0,0,0,0.03); color: var(--ink-muted); }
     .vd-chk.on { background: rgba(46,125,79,0.1); color: var(--success); border-color: rgba(46,125,79,0.35); }
+    /* Three states need three looks. Failed and not-yet-checked used to be
+       the same grey chip, which is the display half of the same bug. */
+    .vd-chk.failed { background: rgba(179,38,30,0.09); color: #b3261e; border-color: rgba(179,38,30,0.3); }
+    .vd-chk.pending { border-style: dashed; }
     .vd-act { display: flex; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
     .vd-count { font-size: 12px; color: var(--ink-dim); }
     .vd-empty { padding: 40px 4px; color: var(--ink-muted); font-size: 14px; }
@@ -90,11 +94,26 @@
 
     let ROWS = [], FILTER = 'queue', client = null;
 
+    /* The vocabulary is check_status now -- pending, passed, failed,
+       not_applicable, expired -- and the database enforces it on this column
+       (properties_verification_nodes_vocab). This page used to write "pass"
+       and "fail", which were not in any enum and which nothing checked.
+
+       The bigger change is the default. This mapped anything that was not
+       "pass" to "fail", so a listing nobody had opened came back as seven
+       FAILED checks -- the page told an operator that a property had failed
+       a title check that had never been run. Unknown is `pending` now, which
+       is what it always was. */
+    const CHECK_STATES = ['pending', 'passed', 'failed', 'not_applicable', 'expired'];
+
     function nodesOf(row) {
       const have = Array.isArray(row.verification_nodes) ? row.verification_nodes : [];
       const by = {};
       have.forEach((n) => { if (n && n.name) by[n.name] = n.status; });
-      return CHECKS.map((name) => ({ name, status: by[name] === 'pass' ? 'pass' : 'fail' }));
+      return CHECKS.map((name) => ({
+        name,
+        status: CHECK_STATES.indexOf(by[name]) === -1 ? 'pending' : by[name],
+      }));
     }
 
     function render() {
@@ -108,9 +127,9 @@
       }
       listEl.innerHTML = rows.map((r) => {
         const nodes = nodesOf(r);
-        const passed = nodes.filter((n) => n.status === 'pass').length;
+        const passed = nodes.filter((n) => n.status === 'passed').length;
         const chips = nodes.map((n) =>
-          '<button class="vd-chk' + (n.status === 'pass' ? ' on' : '') + '" data-chk="' + esc(r.id) + '|' + esc(n.name) + '">'
+          '<button class="vd-chk ' + esc(n.status) + (n.status === 'passed' ? ' on' : '') + '" data-chk="' + esc(r.id) + '|' + esc(n.name) + '">'
           + esc(n.name) + '</button>').join('');
         const when = r.verified_at ? new Date(r.verified_at).toLocaleDateString('en-GB',
           { day: 'numeric', month: 'short', year: 'numeric' }) : null;
@@ -142,10 +161,14 @@
       const row = ROWS.find((r) => r.id === id); if (!row) return;
       const nodes = nodesOf(row);
       const n = nodes.find((x) => x.name === name);
-      n.status = n.status === 'pass' ? 'fail' : 'pass';
+      /* Three real states, so pressing cycles rather than flips: nobody has
+         looked -> it holds -> it does not -> nobody has looked. A two-way
+         toggle could never say "pending" again once pressed, which is how
+         "not yet checked" turned into "failed" and stayed there. */
+      n.status = n.status === 'pending' ? 'passed' : (n.status === 'passed' ? 'failed' : 'pending');
       const patch = { verification_nodes: nodes };
       if (row.verification_status !== 'verified') {
-        patch.verification_status = nodes.some((x) => x.status === 'pass') ? 'in_progress' : 'unverified';
+        patch.verification_status = nodes.some((x) => x.status === 'passed') ? 'in_progress' : 'unverified';
       }
       const { error } = await client.from('properties').update(patch).eq('id', id);
       if (error) { toast('Could not save: ' + error.message); return; }
@@ -156,7 +179,7 @@
     async function mark(id, on) {
       const row = ROWS.find((r) => r.id === id); if (!row) return;
       const nodes = nodesOf(row);
-      if (on && nodes.filter((n) => n.status === 'pass').length !== CHECKS.length) {
+      if (on && nodes.filter((n) => n.status === 'passed').length !== CHECKS.length) {
         toast('All seven checks must pass first'); return;
       }
       // verified_at records when this actually happened — the field that was
