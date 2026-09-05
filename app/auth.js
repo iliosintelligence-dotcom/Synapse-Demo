@@ -371,7 +371,24 @@
     return client().then(function (c) { return c.auth.signInWithPassword({ email: email, password: password }); });
   }
   function signOut() {
-    return client().then(function (c) { return c.auth.signOut(); })
+    return client().then(function (c) {
+      /* A global sign-out revokes the refresh token on the server, which is
+         what you want and needs the network. But a sign-out button has to end
+         the session on THIS device even when the network does not answer --
+         being unable to reach a server is not a reason to leave somebody
+         signed in on a phone they are trying to hand back.
+
+         So: ask for the global one, and if it has not returned in two and a
+         half seconds, clear the local session and carry on. The server-side
+         revocation still lands if the request completes; the person is signed
+         out here either way. */
+      var global = c.auth.signOut();
+      var fallback = new Promise(function (resolve) {
+        setTimeout(function () { resolve(c.auth.signOut({ scope: 'local' })); }, 2500);
+      });
+      return Promise.race([global, fallback]);
+    })
+      .catch(function () { /* cleared below whatever happened */ })
       .then(function () { cachedUser = null; paintAll(); });
   }
   function resetPassword(email) {
@@ -408,7 +425,20 @@
           + '<button type="button" class="auth-out">Sign out</button></span>';
         var out = slot.querySelector('.auth-out');
         if (out) out.addEventListener('click', function () {
-          signOut().then(function () { window.location.reload(); });
+          /* It did work -- but it said nothing while it worked, and the call
+             it waits on is a network round trip. On a slow connection you
+             press Sign out, the label does not change, the page does not
+             move, and the only reasonable conclusion is that the button is
+             broken. So it answers immediately, and it cannot be pressed twice.
+
+             No .catch() before either: if the request failed, the reload
+             never came and you stayed signed in with no way to know why. */
+          if (out.disabled) return;
+          out.disabled = true;
+          out.textContent = 'Signing out\u2026';
+          signOut()
+            .catch(function () { /* handled below: the session is cleared regardless */ })
+            .then(function () { window.location.reload(); });
         });
       } else {
         /* Two things were wrong with a bare "Sign in" link.
