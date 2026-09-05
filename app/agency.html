@@ -78,7 +78,6 @@
     .side a .syn-i { width: 15px; height: 15px; opacity: .75; flex: none; }
     .side a.on .syn-i, .side a:hover .syn-i { opacity: 1; }
     .side .me { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid var(--border); }
-    .side .me .av2 { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg,#121212,#121212); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
     .side .me .nm2 { font-size: 12.5px; font-weight: 600; }
     .side .me .sub2 { font-size: 10.5px; color: var(--gold); }
     .content { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 32px 80px; }
@@ -1919,18 +1918,23 @@
             font-size: 11.5px; padding: 4px 9px; cursor: pointer; color: var(--ink-muted); }
     .crm-wa.off { opacity: .28; cursor: default; }
     /* Relationship-manager sheet. Deliberately not styled as an alert: it is
-       a phone number, available when it is available. */
-    .rmw { position: relative; display: inline-flex; }
-    .rm-pop {
-      position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
-      min-width: 262px; padding: 14px 16px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; box-shadow: var(--lift-2);
-      opacity: 0; transform: translateY(-6px); pointer-events: none;
-      transition: opacity var(--m-standard) var(--m-ease), transform var(--m-standard) var(--m-ease);
-    }
-    .rmw.open .rm-pop { opacity: 1; transform: none; pointer-events: auto; }
-    .rm-card { padding: 4px 2px; min-width: 232px; }
+       a phone number, available when it is available.
+
+       This was an absolutely-positioned popover anchored inside the appbar's
+       flex row, which is why it was only ever built for desktop -- at 375px a
+       262px box hanging off the right edge of a cramped row has nowhere to
+       go. It is now a fixed panel over a scrim, the same shape as the
+       notification sheet beside it, so one implementation serves both and
+       there is no phone-only or desktop-only escalation route. */
+    .rm-scrim { position: fixed; inset: 0; z-index: 60; display: none; }
+    .rm-scrim.on { display: block; }
+    .rm { position: fixed; top: 64px; right: 20px; z-index: 61; width: 300px; max-width: calc(100vw - 32px);
+      background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 30px 70px rgba(20,26,38,0.22);
+      padding: 16px; transform: translateY(-8px); opacity: 0; pointer-events: none;
+      transition: transform var(--m-standard), opacity var(--m-standard); }
+    .rm.on { transform: none; opacity: 1; pointer-events: auto; }
+    .rm-card { padding: 2px; }
     .rm-name { font-size: 15px; font-weight: 650; color: var(--ink); }
     .rm-role { font-size: 11.5px; color: var(--ink-muted); letter-spacing: .04em;
       text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
@@ -2745,12 +2749,14 @@
       <span class="ts-i" aria-hidden="true">⌕</span>
       <input id="ovSearch" placeholder="Search listings…" aria-label="Search listings" autocomplete="off" />
     </div>
-    <!-- The relationship-manager button stood here and opened an empty box.
-         Its JavaScript had already been deleted (see the note where the
-         handler used to live) and the mobile route before it, so all that was
-         left was a phone icon that answered a tap with nothing. A control
-         that does nothing is worse than an absent one: it spends the trust of
-         everything beside it. -->
+    <!-- Escalation. Sits beside notifications because that is what it is:
+         the other thing you reach for when something is wrong, and not a
+         destination. It is a real control now -- see rmLoad() -- and it lives
+         in the appbar rather than the phone taskbar so desktop and mobile get
+         it from this one element instead of two that can drift apart. -->
+    <button class="bell" id="rmBtn" aria-label="Contact Synapse" aria-haspopup="dialog" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+    </button>
     <button class="bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       <span class="bell-badge" id="bellBadge">4</span>
@@ -2764,6 +2770,11 @@
     <span data-auth-slot style="margin-right:16px"></span>
     <!-- "← Site" was here and went to ../index.html, which is exactly where
          the Synapse logo at the other end of this bar already goes. -->
+  </div>
+
+  <div class="rm-scrim" id="rmScrim"></div>
+  <div class="rm" id="rmPanel" role="dialog" aria-label="Contact Synapse">
+    <div class="rm-card" id="rmCard" aria-live="polite"></div>
   </div>
 
   <div class="noti-scrim" id="notiScrim"></div>
@@ -2811,8 +2822,13 @@
           <a data-pane="subscription" title="Subscription"><span data-icon="card"></span><span class="lbl-x">Subscription</span></a>
         </div>
       </div>
+      <!-- The third initials disc was here, and this one was the worst of them:
+           the two letters were the literal string "PR" typed into the markup.
+           It was never wired to data-agency-initials, so it read "PR" for
+           every agency on Synapse and happened to look correct only because
+           the demo account is Lekki Prime Realty. The name beside it is real
+           (data-agency-name) and says the same thing in words. -->
       <div class="me">
-        <span class="av2">PR</span>
         <div class="who"><div class="nm2" data-agency-name>Your agency</div><div class="sub2" data-agency-tier></div></div>
       </div>
     </aside>
@@ -6093,13 +6109,95 @@
 
        tel: rather than anything platform-mediated. Twilio is not configured,
        so Synapse cannot place or route a call today -- and a dialler link
-       needs no provider at all, on any phone. */
-    /* The relationship-manager control lived here: a fab, a sheet and a
-       scrim driven by #agdCall / #agdCallFab / #agdCallSheet. None of those
-       elements existed in the markup any more, so the block guarded on them,
-       returned immediately, and had done nothing for some time. Removed
-       rather than left to read as a working feature -- and the desktop button
-       that outlived it is gone now too. */
+       needs no provider at all, on any phone.
+
+       That was the design; what shipped was a fab, a sheet and a scrim driven
+       by #agdCall / #agdCallFab / #agdCallSheet, none of which survived in the
+       markup, so the block guarded on them and returned immediately. It had
+       done nothing for a long time. This is the rebuild.
+
+       The data was never the missing piece. my_relationship_manager() exists,
+       is SECURITY DEFINER (the manager is Synapse staff, so no RLS policy can
+       or should show them to a member), scopes itself with is_agency_member(),
+       and LEFT JOINs so an unassigned agency still gets a row of nulls rather
+       than nothing. It is granted to authenticated. Only the front end was
+       missing.
+
+       Worth saying plainly: no agency has a manager assigned today, so every
+       account currently sees the unassigned state. That is the honest answer
+       and it still routes somewhere real. Assigning one is a single UPDATE on
+       agencies.relationship_manager_id and this panel changes with no code. */
+
+    const RM_EMAIL = 'ilios.intelligence@gmail.com';   // already public in terms.html and privacy.html
+    let rmCache = null;
+
+    function rmRender(rm, agencyName) {
+      const card = document.getElementById('rmCard');
+      const subject = 'Synapse support' + (agencyName ? ' \u2014 ' + agencyName : '');
+      const mail = '<a class="rm-call" href="mailto:' + RM_EMAIL
+        + '?subject=' + encodeURIComponent(subject) + '">Email Synapse</a>';
+
+      if (!rm.assigned) {
+        card.innerHTML = '<div class="rm-role">Synapse support</div>'
+          + '<div class="rm-name">No manager assigned yet</div>'
+          + '<div class="rm-none">Your agency has not been given a named contact. '
+          + 'Email us and we will answer from the same place.</div>' + mail;
+        return;
+      }
+      /* The name is theirs and the hours are the agency's own column; both are
+         escaped because neither is ours to trust into innerHTML. */
+      const head = '<div class="rm-role">Your relationship manager</div>'
+        + '<div class="rm-name">' + esc2(rm.name) + '</div>'
+        + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '');
+
+      if (!rm.phone) {
+        card.innerHTML = head
+          + '<div class="rm-none">We do not have a number on file for them yet.</div>' + mail;
+        return;
+      }
+      /* tel: wants the number with the punctuation stripped; the label keeps
+         it, because that is how you check a number is the one you expect. */
+      const dial = String(rm.phone).replace(/[^\d+]/g, '');
+      card.innerHTML = head
+        + '<a class="rm-call" href="tel:' + esc2(dial) + '">Call ' + esc2(rm.phone) + '</a>';
+    }
+
+    function rmLoad() {
+      if (rmCache) { rmRender(rmCache.rm, rmCache.name); return; }
+      const card = document.getElementById('rmCard');
+      card.innerHTML = '<div class="rm-role">Synapse support</div>'
+        + '<div class="rm-none">Looking up your contact\u2026</div>';
+      if (!window.SynListings || !SynListings.relationshipManager) {
+        /* Signed out, or the data layer never loaded. Still give them the
+           address rather than a spinner that never resolves. */
+        rmRender({ assigned: false }, null);
+        return;
+      }
+      Promise.all([
+        SynListings.relationshipManager(),
+        SynListings.agency ? SynListings.agency().catch(() => null) : Promise.resolve(null),
+      ]).then(([rm, a]) => {
+        rmCache = { rm: rm, name: a && a.name };
+        rmRender(rm, rmCache.name);
+      }).catch((err) => {
+        console.error('relationshipManager failed', err);
+        /* A failed lookup is not a reason to strand someone who is trying to
+           reach a human. Fall through to the address. */
+        rmRender({ assigned: false }, null);
+      });
+    }
+
+    function toggleRm(open) {
+      const p = document.getElementById('rmPanel'), sc = document.getElementById('rmScrim'),
+            b = document.getElementById('rmBtn');
+      const on = open === undefined ? !p.classList.contains('on') : open;
+      p.classList.toggle('on', on); sc.classList.toggle('on', on);
+      b.setAttribute('aria-expanded', String(on));
+      if (on) { toggleNoti(false); rmLoad(); }
+    }
+    document.getElementById('rmBtn').addEventListener('click', () => toggleRm());
+    document.getElementById('rmScrim').addEventListener('click', () => toggleRm(false));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleRm(false); });
 
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
@@ -9200,7 +9298,9 @@
       const on = open === undefined ? !p.classList.contains('on') : open;
       p.classList.toggle('on', on); s.classList.toggle('on', on); b.setAttribute('aria-expanded', String(on));
     }
-    document.getElementById('bellBtn').addEventListener('click', () => toggleNoti());
+    /* Both ways round. toggleRm already closed this one; without the mirror
+       both panels sat open over two stacked scrims. */
+    document.getElementById('bellBtn').addEventListener('click', () => { toggleRm(false); toggleNoti(); });
     document.getElementById('notiScrim').addEventListener('click', () => toggleNoti(false));
     // Clearing is a dismissal, not a fix: the underlying state is unchanged, so
     // the flag stops derived items from immediately reappearing.
