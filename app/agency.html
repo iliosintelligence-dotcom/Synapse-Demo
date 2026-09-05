@@ -5861,15 +5861,38 @@
     };
     // headline generator: persona × angle. In production this is GPT-4o with
     // the listing's enrichment data.
+    /* These are published as adverts, under an agency's name, to the public.
+       That makes every word here a claim somebody can be held to, and four
+       of them could not be stood behind:
+
+         "8.1% gross yield"        A number attached to no property. Whatever
+                                   listing an agency picked, this figure was
+                                   invented for it. A fabricated return in a
+                                   property advert is a financial
+                                   misrepresentation, not a turn of phrase.
+         "Independently verified"  Synapse runs its own checks. There is no
+                                   independent party, so the word claims one
+                                   that does not exist.
+         "Real returns"            A promise about money, made by a platform
+                                   that says in its own terms it gives no
+                                   investment advice.
+         "safely" / "so you don't  A safety guarantee, and an implication
+          fly blind"               that somebody physically inspected the
+                                   property on the buyer's behalf.
+
+       What is left says what Synapse actually did -- a named number of
+       checks, on a date -- and lets the property be the offer. The verified
+       lines still only make sense on a verified listing; that is the
+       agency's call, and the pane tells them the status. */
     const HEADLINES = {
-      family: ['Schools 10 min away. Verified title.', 'Room for everyone — 7 checks passed.', 'The school run just got shorter.'],
+      family: ['Schools 10 minutes away.', 'Room for everyone.', 'The school run just got shorter.'],
       /* {city} is filled from the listing. It said "The Lagos yield play"
          on a property in Ibadan. */
-      investor: ['8.1% gross yield. Independently verified.', 'Verified title. Real returns.', 'The {city} yield play that survives due diligence.'],
+      investor: ['Title checked. Papers in order.', 'The {city} listing that survives due diligence.', 'Bring your lawyer. We kept the file.'],
       // No escrow service exists on the platform (see terms.html) — headlines
       // offered to agencies must not promise one.
-      diaspora: ['Buy from abroad. Independently verified.', 'Verified on the ground so you don’t fly blind.', 'Seven checks passed before you ever see it.'],
-      firsthome: ['Your first home, verified 7 ways.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning — safely.'],
+      diaspora: ['Buying from abroad? Start with the paperwork.', 'Seven checks done before you fly.', 'The file, before the flight.'],
+      firsthome: ['Your first home, seven checks done.', 'From ₦1.2M/mo on a payment plan.', 'Stop renting. Start owning.'],
     };
     /* Campaigns live in the `campaigns` table, not in localStorage. In a
        browser they belonged to one machine: a colleague opening the dashboard
