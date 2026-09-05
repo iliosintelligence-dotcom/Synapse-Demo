@@ -47,15 +47,32 @@
      agency_members already restricts this select to rows where profile_id is
      the caller, so an unprivileged read cannot enumerate other agencies. */
   var cachedAgencyId = null;
+  /* The cache held the ANSWER, not the request in flight. Every function in
+     this file starts by asking which agency you are in, and on a cold load
+     they all ask at once -- so the first eleven callers each fired their own
+     query and waited on their own round trip. Measured on one portal load:
+     eleven identical GETs on agency_members, finishing at 313ms through
+     3556ms because they queued behind each other.
+
+     Holding the promise means the first caller makes the request and the
+     other ten wait on that same one. It is cleared on settle so a failure is
+     retried rather than cached forever. */
+  var agencyIdInFlight = null;
   function agencyId(force) {
     if (cachedAgencyId && !force) return Promise.resolve(cachedAgencyId);
-    return client().then(function (c) {
+    if (agencyIdInFlight && !force) return agencyIdInFlight;
+    agencyIdInFlight = client().then(function (c) {
       return c.from('agency_members').select('agency_id').is('deleted_at', null).limit(1);
     }).then(function (r) {
+      agencyIdInFlight = null;
       if (r.error) throw r.error;
       cachedAgencyId = (r.data && r.data[0] && r.data[0].agency_id) || null;
       return cachedAgencyId;
+    }, function (err) {
+      agencyIdInFlight = null;
+      throw err;
     });
+    return agencyIdInFlight;
   }
 
   /* Keep only writable keys, and drop undefined so PostgREST doesn't try to
@@ -1339,6 +1356,257 @@
 
 
 
+  /* -- the agency's papers ------------------------------------------------
+     What a real-estate business in Nigeria must actually hold, and the one
+     place the portal collects it.
+
+     Order is the order of obligation, not of convenience: CAC first because
+     nothing else exists without it, SCUML second because the EFCC requires it
+     BEFORE you may trade, then the practice registrations, then the state
+     licence. `required` marks the four an agency cannot operate without; the
+     rest raise the tier but do not block.
+
+     None of this goes in a public bucket. See agency-documents in migration
+     0076 -- a director's ID behind a guessable URL is the exact failure this
+     path exists to avoid. */
+  var DOC_BUCKET = 'agency-documents';
+  var DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+  var DOC_MAX_BYTES = 15 * 1024 * 1024;
+
+  var DOC_CATALOGUE = [
+    { key: 'cac_certificate', label: 'CAC certificate',
+      body: 'Corporate Affairs Commission', scope: 'federal', required: true,
+      hint: 'Your certificate of incorporation.' },
+    { key: 'scuml_certificate', label: 'SCUML certificate',
+      body: 'EFCC', scope: 'federal', required: true,
+      hint: 'Anti-money-laundering registration. Required before you may trade.' },
+    { key: 'agency_license', label: 'State licence',
+      body: 'State authority', scope: 'state', required: true,
+      hint: 'LASRERA in Lagos. One per state you work in.' },
+    { key: 'directors_id', label: 'Director\u2019s ID',
+      body: 'Government issued', scope: 'federal', required: true,
+      hint: 'NIN slip, passport or driver\u2019s licence.' },
+    { key: 'esvarbon_registration', label: 'ESVARBON registration',
+      body: 'Estate Surveyors and Valuers Registration Board', scope: 'federal', required: false,
+      hint: 'If your firm practises estate surveying or valuation.' },
+    { key: 'niesv_membership', label: 'NIESV membership',
+      body: 'Nigerian Institution of Estate Surveyors and Valuers', scope: 'federal', required: false,
+      hint: 'Professional membership certificate.' },
+    { key: 'bank_statement', label: 'Bank statement',
+      body: 'Corporate account', scope: 'federal', required: false,
+      hint: 'Recent statement in the company\u2019s name.' },
+  ];
+
+  function docExtFor(file) {
+    var m = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png',
+              'image/webp': 'webp', 'image/heic': 'heic' };
+    return m[file.type] || 'pdf';
+  }
+
+  /* Every document on file for this agency, newest first. The bucket is
+     private, so nothing here is a URL you can open -- storage_url holds the
+     PATH, and documentLink() trades it for a short-lived signed URL at the
+     moment somebody actually clicks. */
+  function listDocuments() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) return [];
+        return c1.from('documents')
+          .select('id, document_type, display_name, storage_url, issuing_state, '
+                + 'is_verified, verified_at, expires_at, file_size_bytes, mime_type, created_at')
+          .eq('entity_type', 'agency').eq('entity_id', aid)
+          .is('deleted_at', null).eq('is_current', true)
+          .order('created_at', { ascending: false })
+          .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+      });
+  }
+
+  /* A signed URL, made when it is needed and good for two minutes. Long
+     enough to open the file, short enough that a copied link is worthless by
+     the time it is pasted anywhere. */
+  function documentLink(path) {
+    return client().then(function (c) {
+      return c.storage.from(DOC_BUCKET).createSignedUrl(path, 120);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data.signedUrl;
+    });
+  }
+
+  /* Upload one document and record it. The file goes up first: a row pointing
+     at a file that failed to upload is worse than an orphaned file, because
+     the checklist would then claim the agency supplied something it has not. */
+  function uploadDocument(file, opts) {
+    var o = opts || {};
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (DOC_TYPES.indexOf(file.type) === -1) {
+      return Promise.reject(new Error('Use a PDF, JPG, PNG or WEBP'));
+    }
+    if (file.size > DOC_MAX_BYTES) {
+      return Promise.reject(new Error('That file is '
+        + Math.ceil(file.size / 1024 / 1024) + 'MB \u2014 keep it under 15MB'));
+    }
+    var spec = null;
+    for (var i = 0; i < DOC_CATALOGUE.length; i++) {
+      if (DOC_CATALOGUE[i].key === o.type) { spec = DOC_CATALOGUE[i]; break; }
+    }
+    if (!spec) return Promise.reject(new Error('Unknown document type'));
+    /* The database refuses a state licence with no state (migration 0078).
+       Saying so here means the person is told before a 15MB upload, not
+       after it. */
+    if (spec.scope === 'state' && !o.state) {
+      return Promise.reject(new Error('Choose the state that issued this licence'));
+    }
+
+    var c1, aid, path;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (a) {
+        if (!a) throw new Error('no-agency: this account is not a member of any agency');
+        aid = a;
+        path = aid + '/' + o.type + '-' + Date.now() + '.' + docExtFor(file);
+        return c1.storage.from(DOC_BUCKET).upload(path, file, {
+          cacheControl: '0', upsert: false, contentType: file.type,
+        });
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        /* Supersede what was there rather than deleting it. A replaced
+           certificate is evidence of what was on file when a decision was
+           taken, and the row is what an auditor reads. */
+        var sup = c1.from('documents')
+          .update({ is_current: false, updated_at: new Date().toISOString() })
+          .eq('entity_type', 'agency').eq('entity_id', aid)
+          .eq('document_type', o.type).eq('is_current', true);
+        return spec.scope === 'state' ? sup.eq('issuing_state', o.state) : sup;
+      })
+      .then(function (r) {
+        if (r && r.error) throw r.error;
+        return c1.auth.getUser();
+      })
+      .then(function (u) {
+        return c1.from('documents').insert({
+          entity_type: 'agency', entity_id: aid,
+          document_type: o.type,
+          display_name: (o.name && String(o.name).trim()) || spec.label,
+          storage_url: path,
+          issuing_state: spec.scope === 'state' ? o.state : null,
+          expires_at: o.expiresAt || null,
+          file_size_bytes: file.size,
+          mime_type: file.type,
+          uploaded_by: u && u.data && u.data.user && u.data.user.id,
+          /* is_verified is never set here and no policy would allow it. An
+             agency does not verify its own papers. */
+          is_current: true,
+        }).select('id').single();
+      })
+      .then(function (r) {
+        if (r.error) {
+          /* The row failed, so the file is an orphan. Take it back out rather
+             than leaving a private bucket filling with unreferenced IDs. */
+          c1.storage.from(DOC_BUCKET).remove([path]).catch(function () {});
+          throw r.error;
+        }
+        return r.data;
+      });
+  }
+
+  /* Remove it outright, and the file with it.
+
+     This was a soft delete -- set deleted_at, keep the row -- and it could
+     never have worked. documents_select is `deleted_at is null and
+     can_access_document(...)`, and PostgreSQL applies SELECT policies to the
+     NEW row on UPDATE: stamping deleted_at makes the row invisible to the
+     very policy that has to admit it, so the write is refused with "new row
+     violates row-level security policy". Verified by dropping the deleted_at
+     clause in a transaction, watching the update succeed, and rolling back.
+
+     A hard delete is the honest answer anyway. This path is for "I uploaded
+     the wrong file", the storage object is removed in the same breath, and a
+     row pointing at a file that no longer exists is not an audit trail. The
+     history that matters is superseding -- is_current = false on replacement,
+     which keeps both the row and the file, and which does work. */
+  function deleteDocument(id, path) {
+    var c1;
+    return client().then(function (c) {
+      c1 = c;
+      return c.from('documents').delete().eq('id', id);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (path) return c1.storage.from(DOC_BUCKET).remove([path]).catch(function () { return null; });
+      return null;
+    }).then(function () { return true; });
+  }
+
+  /* The checklist: catalogue + what is on file + what the platform has
+     confirmed, folded together. Everything derived, nothing stored, so it
+     cannot drift from the documents table.
+
+     Four states per row, and the differences matter to whoever is reading:
+       missing    nothing uploaded
+       pending    uploaded, nobody has checked it yet
+       verified   a platform admin confirmed it
+       expired    it had an expiry date and that date has passed */
+  /* An agency signed up before any of this existed cannot be asked to
+     produce it retroactively as a condition of carrying on. agency_verifications
+     .documents_reviewed is the marker: set by the verification desk, readable
+     by the agency, and writable by neither -- the table has a SELECT policy
+     and nothing else, so an agency cannot exempt itself.
+
+     The checklist still renders and still accepts uploads. What changes is
+     that nothing is counted as outstanding and the page stops asking. */
+  function documentsExemption() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) return null;
+        return c1.from('agency_verifications')
+          .select('documents_reviewed, verification_notes, current_tier')
+          .eq('agency_id', aid).is('deleted_at', null)
+          .maybeSingle()
+          .then(function (r) { return r.error ? null : r.data; });
+      })
+      .catch(function () { return null; });
+  }
+
+  function verificationStatus() {
+    return Promise.all([listDocuments(), agency(), documentsExemption()]).then(function (both) {
+      var docs = both[0] || [], ag = both[1] || {}, ver = both[2] || null;
+      var exempt = !!(ver && ver.documents_reviewed);
+      var now = Date.now();
+      var rows = DOC_CATALOGUE.map(function (spec) {
+        var mine = docs.filter(function (d) { return d.document_type === spec.key; });
+        var state = 'missing';
+        if (mine.length) {
+          var allExpired = mine.every(function (d) {
+            return d.expires_at && new Date(d.expires_at).getTime() < now;
+          });
+          state = allExpired ? 'expired'
+            : mine.some(function (d) { return d.is_verified; }) ? 'verified' : 'pending';
+        }
+        return {
+          key: spec.key, label: spec.label, body: spec.body, hint: spec.hint,
+          scope: spec.scope, required: spec.required, state: state, files: mine,
+        };
+      });
+      var missing = exempt ? [] : rows.filter(function (r) {
+        return r.required && (r.state === 'missing' || r.state === 'expired');
+      });
+      return {
+        tier: ag.verification_tier || 'unverified',
+        rows: rows,
+        exempt: exempt,
+        exemptNote: exempt ? (ver.verification_notes || null) : null,
+        outstanding: missing.length,
+        /* Complete means every REQUIRED row is on file. It deliberately does
+           not mean verified: supplying the papers is the agency's half and
+           checking them is ours, and an agency should be able to see when it
+           has finished its half. */
+        complete: missing.length === 0,
+      };
+    });
+  }
+
   /* ── the person, not the agency ───────────────────────────────────────────
      An agent who accepted an invite arrived as a name and nothing else. Not
      because nobody wrote the form -- because agent_profiles carried a single
@@ -1622,6 +1890,13 @@
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,
+    DOC_CATALOGUE: DOC_CATALOGUE,
+    documentsExemption: documentsExemption,
+    listDocuments: listDocuments,
+    documentLink: documentLink,
+    uploadDocument: uploadDocument,
+    deleteDocument: deleteDocument,
+    verificationStatus: verificationStatus,
     myProfile: myProfile,
     myRole: myRole,
     saveMyProfile: saveMyProfile,

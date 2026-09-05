@@ -1509,6 +1509,58 @@
     /* .topav went with the agency chip it styled. .appbar nav and
        .appbar .home stay in app.css: the customer pages use both. */
 
+    /* ── verification checklist ──────────────────────────────────────────
+       A list, not a grid: these are read top to bottom in the order they must
+       be obtained, and a grid would imply they are interchangeable. */
+    .vf-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--surface); margin: 22px 0 18px; }
+    .vf-count { font: 700 15px var(--f-sans); color: var(--ink); }
+    .vf-sub { font-size: 12.5px; color: var(--ink-muted); }
+    .vf-bar { flex: 1 1 160px; min-width: 120px; height: 6px; border-radius: 100px;
+      background: var(--border); overflow: hidden; }
+    .vf-bar i { display: block; height: 100%; border-radius: 100px; background: var(--brand-deep);
+      transition: width .5s var(--m-ease); }
+    .vf-row { display: flex; gap: 14px; padding: 16px 0; border-top: 1px solid var(--border); }
+    .vf-row:first-child { border-top: none; }
+    .vf-ico { width: 34px; height: 34px; flex: none; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 1px solid var(--border); color: var(--ink-muted); }
+    .vf-main { flex: 1; min-width: 0; }
+    .vf-t { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .vf-name { font: 650 14px var(--f-sans); color: var(--ink); }
+    .vf-req { font: 700 10px var(--f-sans); letter-spacing: .07em; text-transform: uppercase;
+      color: var(--ink-dim); }
+    .vf-body-l { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+    .vf-hint { font-size: 12.5px; color: var(--ink-muted); margin-top: 5px; line-height: 1.45; }
+    .vf-chip { font: 700 10.5px var(--f-sans); letter-spacing: .05em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 100px; flex: none; }
+    .vf-chip.missing  { background: var(--surface); border: 1px dashed var(--border-strong); color: var(--ink-dim); }
+    .vf-chip.pending  { background: rgba(255,138,45,0.12); color: #8a4a12; }
+    .vf-chip.verified { background: var(--success-tint); color: var(--success); }
+    .vf-chip.expired  { background: rgba(179,38,30,0.10); color: #b3261e; }
+    .vf-files { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
+    .vf-file { display: flex; align-items: center; gap: 10px; font-size: 12.5px;
+      padding: 7px 10px; border-radius: 9px; background: var(--surface);
+      border: 1px solid var(--border); }
+    .vf-fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vf-fmeta { color: var(--ink-dim); font-size: 11.5px; flex: none; }
+    .vf-fbtn { border: none; background: none; cursor: pointer; font: 600 12px var(--f-sans);
+      color: var(--brand-text); padding: 4px 6px; border-radius: 7px; flex: none; }
+    .vf-fbtn:hover { background: var(--brand-tint); }
+    .vf-fbtn.danger { color: #b3261e; }
+    .vf-act { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .vf-state { font: 500 12.5px var(--f-sans); padding: 8px 10px; border-radius: 9px;
+      border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); }
+    .vf-up { display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 14px; border-radius: 9px; cursor: pointer;
+      border: 1px solid var(--border-strong); background: transparent;
+      font: 600 12.5px var(--f-sans); color: var(--ink);
+      transition: background var(--m-micro), border-color var(--m-micro); }
+    .vf-up:hover { background: var(--surface); }
+    .vf-up[disabled] { opacity: .55; cursor: default; }
+    .vf-note { font-size: 12px; color: var(--ink-muted); margin-top: 20px; line-height: 1.5; }
+
     /* notification dropdown */
     .noti-scrim { position: fixed; inset: 0; z-index: 60; display: none; }
     .noti-scrim.on { display: block; }
@@ -2847,6 +2899,7 @@
       <div class="grp-sec open" data-sec="account">
         <button class="grp" aria-expanded="true" aria-controls="grp-account"><span>Account</span><span class="grp-chv" aria-hidden="true">›</span></button>
         <div class="grp-items" id="grp-account">
+          <a data-pane="verification" title="Verification"><span data-icon="legal"></span><span class="lbl-x">Verification</span></a>
           <a data-pane="subscription" title="Subscription"><span data-icon="card"></span><span class="lbl-x">Subscription</span></a>
         </div>
       </div>
@@ -2938,6 +2991,17 @@
         </section>
 
         <!-- ══ SUBSCRIPTION ══ -->
+        <!-- ══ VERIFICATION ══ the agency's legal papers. Owner and admin
+             only; an agent must never reach a director's ID. -->
+        <section class="pane" id="pane-verification">
+          <div class="eyebrow">Compliance</div>
+          <div class="h1">Get verified</div>
+          <p class="sub">Buyers see a verified badge on every listing you publish.
+             Your documents are private — kept in a closed store, opened only by
+             you and the Synapse verification desk, never shown on your public page.</p>
+          <div id="vfBody"></div>
+        </section>
+
         <section class="pane" id="pane-subscription">
           <div class="eyebrow">Invest in growth</div>
           <div class="h1">Plans that pay for themselves</div>
@@ -6990,7 +7054,7 @@
        and they were checked before this was written. */
     const ROLE_PANES = {
       agency_owner: null,   /* null = every pane */
-      agency_admin: ['overview','crm','negotiator','listings','social','marketing','agents','tours','brand'],
+      agency_admin: ['overview','crm','negotiator','listings','social','marketing','agents','tours','brand','verification'],
       agent:        ['overview','crm','negotiator','listings','tours'],
     };
 
@@ -7027,6 +7091,169 @@
       SynListings.myRole()
         .then(applyRole)
         .catch((err) => { console.error('myRole failed', err); applyRole(null); });
+    })();
+
+    /* ══ VERIFICATION ═══════════════════════════════════════════════════
+       The checklist an agency works through to be verified, and the only
+       place its legal documents are collected.
+
+       Everything shown here is derived by verificationStatus() from the
+       documents table -- no separate progress counter to fall out of step
+       with what was actually uploaded. The four states (missing, pending,
+       verified, expired) are worth distinguishing because they call for
+       different things from the reader: upload it, wait, nothing, replace it.
+
+       is_verified is never settable from this page. Supplying the papers is
+       the agency's half and checking them is ours; an agency that could mark
+       its own CAC certificate verified would make the badge worthless. */
+    const VF_CHIP = { missing: 'Not uploaded', pending: 'In review',
+                      verified: 'Verified', expired: 'Expired' };
+
+    function vfFileRow(f) {
+      const when = f.created_at ? new Date(f.created_at).toLocaleDateString('en-GB',
+        { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+      const kb = f.file_size_bytes ? Math.max(1, Math.round(f.file_size_bytes / 1024)) : null;
+      return '<div class="vf-file" data-doc="' + esc2(f.id) + '" data-path="' + esc2(f.storage_url) + '">'
+        + '<span class="vf-fname">' + esc2(f.display_name || 'Document')
+        + (f.issuing_state ? ' \u00b7 ' + esc2(f.issuing_state) : '') + '</span>'
+        + '<span class="vf-fmeta">' + esc2(when) + (kb ? ' \u00b7 ' + kb + 'KB' : '') + '</span>'
+        + '<button type="button" class="vf-fbtn" data-open>Open</button>'
+        + '<button type="button" class="vf-fbtn danger" data-remove>Remove</button>'
+        + '</div>';
+    }
+
+    function renderVerification(st) {
+      const body = document.getElementById('vfBody');
+      if (!body) return;
+      const required = st.rows.filter((r) => r.required);
+      const done = required.length - st.outstanding;
+      const pct = required.length ? Math.round((done / required.length) * 100) : 0;
+
+      const states = (window.SynPlaces && SynPlaces.STATES) || [];
+
+      /* An exempt agency is not shown a progress bar reading 0%. It joined
+         before any of this existed and is not behind on anything; a bar would
+         say it was. It keeps the list, because uploading is still useful and
+         still raises the tier -- it just stops being asked. */
+      const head = st.exempt
+        ? '<div class="vf-head">'
+          + '<div><div class="vf-count">Nothing outstanding</div>'
+          + '<div class="vf-sub">'
+          + esc2(st.exemptNote || 'Your agency was verified before Synapse began collecting these documents.')
+          + ' You can still add any of them below.</div></div></div>'
+        : '<div class="vf-head">'
+          + '<div><div class="vf-count">' + done + ' of ' + required.length + ' required documents on file</div>'
+          + '<div class="vf-sub">' + (st.complete
+              ? 'Nothing outstanding. The verification desk reviews these next.'
+              : 'Upload the rest and your listings can carry a verified badge.') + '</div></div>'
+          + '<span class="vf-bar"><i style="width:' + pct + '%"></i></span>'
+          + '</div>';
+
+      body.innerHTML = head
+        + st.rows.map((r) => {
+          const isState = r.scope === 'state';
+          return '<div class="vf-row" data-type="' + esc2(r.key) + '">'
+            + '<span class="vf-ico"><span data-icon="' + (r.state === 'verified' ? 'verified' : 'legal') + '"></span></span>'
+            + '<div class="vf-main">'
+            + '<div class="vf-t"><span class="vf-name">' + esc2(r.label) + '</span>'
+            + '<span class="vf-chip ' + r.state + '">' + VF_CHIP[r.state] + '</span>'
+            + (r.required && !st.exempt ? '<span class="vf-req">Required</span>' : '') + '</div>'
+            + '<div class="vf-body-l">' + esc2(r.body) + '</div>'
+            + '<div class="vf-hint">' + esc2(r.hint) + '</div>'
+            + (r.files.length ? '<div class="vf-files">' + r.files.map(vfFileRow).join('') + '</div>' : '')
+            + '<div class="vf-act">'
+            + (isState ? '<select class="vf-state" data-state aria-label="Issuing state">'
+                + '<option value="">Which state?</option>'
+                + states.map((n) => '<option value="' + esc2(n) + '">' + esc2(n) + '</option>').join('')
+                + '</select>' : '')
+            + '<button type="button" class="vf-up" data-pick>'
+            + '<span data-icon="plus"></span>'
+            + (r.files.length ? (isState ? 'Add another state' : 'Replace') : 'Upload') + '</button>'
+            + '</div></div></div>';
+        }).join('')
+        + '<p class="vf-note">Documents are stored in a private bucket and opened through '
+        + 'links that expire after two minutes. Only the people who run this agency and the '
+        + 'Synapse verification desk can see them \u2014 your agents cannot.</p>';
+
+      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(body);
+    }
+
+    function loadVerification() {
+      const body = document.getElementById('vfBody');
+      if (!body) return Promise.resolve();
+      if (!window.SynListings || !SynListings.verificationStatus) return Promise.resolve();
+      return SynListings.verificationStatus()
+        .then(renderVerification)
+        .catch((err) => {
+          console.error('verificationStatus failed', err);
+          body.innerHTML = '<div class="ov-blank">Could not load your documents. '
+            + 'Reload the page, or call Synapse if it keeps happening.</div>';
+        });
+    }
+
+    /* One hidden input, reused. Rebuilding a file input per row would leave
+       seven of them in the DOM doing nothing six-sevenths of the time. */
+    (function wireVerification() {
+      const body = document.getElementById('vfBody');
+      if (!body) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      let pending = null;
+
+      body.addEventListener('click', (e) => {
+        const pick = e.target.closest('[data-pick]');
+        if (pick) {
+          const row = pick.closest('.vf-row');
+          const sel = row.querySelector('[data-state]');
+          if (sel && !sel.value) {
+            toast('Choose the state that issued this licence first');
+            sel.focus();
+            return;
+          }
+          pending = { type: row.dataset.type, state: sel ? sel.value : null, btn: pick };
+          input.value = '';
+          input.click();
+          return;
+        }
+        const open = e.target.closest('[data-open]');
+        if (open) {
+          const file = open.closest('.vf-file');
+          open.disabled = true;
+          SynListings.documentLink(file.dataset.path)
+            .then((url) => { window.open(url, '_blank', 'noopener'); })
+            .catch(() => toast('Could not open that document'))
+            .then(() => { open.disabled = false; });
+          return;
+        }
+        const rm = e.target.closest('[data-remove]');
+        if (rm) {
+          const file = rm.closest('.vf-file');
+          /* Deleting somebody's ID is not an undo-able mistake, so it asks. */
+          if (!window.confirm('Remove this document? The file is deleted as well.')) return;
+          rm.disabled = true;
+          SynListings.deleteDocument(file.dataset.doc, file.dataset.path)
+            .then(() => { toast('Document removed'); return loadVerification(); })
+            .catch((err) => { rm.disabled = false; toast((err && err.message) || 'Could not remove that'); });
+        }
+      });
+
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file || !pending) return;
+        const job = pending; pending = null;
+        const btn = job.btn;
+        const was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Uploading\u2026';
+        SynListings.uploadDocument(file, { type: job.type, state: job.state })
+          .then(() => { toast('Uploaded \u2014 the verification desk will review it'); return loadVerification(); })
+          .catch((err) => {
+            btn.disabled = false; btn.textContent = was;
+            toast((err && err.message) || 'Could not upload that document');
+          });
+      });
     })();
 
     /* The nav entry is a link, not a pane: the editor is a drawer, so there is
@@ -9520,6 +9747,7 @@
        actually switching the view, or vice versa. */
     function goToPane(pane) {
       if (pane === 'tours' && typeof loadTours === 'function') loadTours();
+      if (pane === 'verification' && typeof loadVerification === 'function') loadVerification();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
       const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
