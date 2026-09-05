@@ -215,6 +215,39 @@
         return;
       }
       client = await SynAuth.client();
+
+      /* The gate. This page used to rely on RLS to empty itself for anyone
+         who is not staff, and the comment below said so in as many words --
+         but properties_select_public makes every live listing readable by
+         anybody, signed in or not. So the queue filled up for an agency
+         owner with seven homes belonging to other agencies, and every
+         control on it was one they could press and none they could use.
+         Nothing leaked: those columns are public on the buyer pages too. It
+         simply presented an internal desk as though it were theirs.
+
+         is_platform_admin() rather than reading profiles.role here, because
+         it is the SAME function properties_guard_verification and
+         properties_select_admin use. One definition, so the door and the lock
+         cannot come to different conclusions.
+
+         Second lock, never the only one: the guard is what actually refuses
+         the write, and it was confirmed doing so. This stops an operator
+         being shown a desk that will only ever say no. */
+      let isAdmin = false;
+      try {
+        const { data: admin, error: adminErr } = await client.rpc('is_platform_admin');
+        isAdmin = !adminErr && admin === true;
+      } catch (e) {
+        isAdmin = false;          // fail closed: an unanswered question is a no
+      }
+      if (!isAdmin) {
+        listEl.innerHTML = '<div class="vd-gate">The verification desk is for Synapse staff. '
+          + 'Your agency’s own listings and their verification state are in the '
+          + '<a href="agency.html" style="text-decoration:underline">agency portal</a>.</div>';
+        document.querySelectorAll('#vdSeg').forEach((el) => { el.hidden = true; });
+        return;
+      }
+
       const { data, error } = await client
         .from('properties')
         .select('id,title,price,city,listing_type,verification_status,verification_nodes,verified_at')
@@ -223,11 +256,10 @@
       if (error) { listEl.innerHTML = '<div class="vd-gate">Could not load the queue: ' + esc(error.message) + '</div>'; return; }
       ROWS = data || [];
       if (!ROWS.length) {
-        // An operator who is not a platform admin sees nothing, because RLS
-        // returns nothing — say so rather than implying an empty queue.
-        listEl.innerHTML = '<div class="vd-gate">No listings are visible to this account. '
-          + 'The desk is restricted to platform administrators — if you are one and this looks wrong, '
-          + 'check your profile role.</div>';
+        // Reached only by an admin now, so an empty queue means an empty
+        // queue -- it no longer doubles as the "you are not staff" message.
+        listEl.innerHTML = '<div class="vd-gate">Nothing in the queue. '
+          + 'When an agency lists a home it lands here.</div>';
         return;
       }
       render();
