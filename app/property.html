@@ -368,6 +368,16 @@
       flex-basis: 100%; margin: 6px 0 0;
       font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
     }
+    /* The legend was a single column, which was fine at three categories and
+       a wall at seventeen -- it covered half the map it was explaining. Two
+       columns and a ceiling: it is a key, and a key should not need scrolling
+       past to see the thing it unlocks. */
+    .pvo-leg {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px;
+      max-height: 210px; overflow-y: auto;
+    }
+    .pvo-leg .r { min-width: 0; }
+    .pvo-leg .r span:not(.dot):not(.n) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* ── a listing nobody has placed ─────────────────────────────────
        The map opens on Nigeria at zoom 6 and only moves once the listing
@@ -2520,12 +2530,13 @@
       fetch(SUPABASE_URL + '/rest/v1/rpc/property_surroundings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-        /* 12 cut two categories off the end -- the university and one of the
-           two malls were fetched, stored, and then silently dropped before the
-           card ever saw them. Then 60 was comfortable only while the survey
-           stored 14 per property; it now stores up to 54, and a limit set
-           just above the old ceiling is the same bug waiting to happen. */
-        body: JSON.stringify({ p_property_id: propId, p_limit: 120 }),
+        /* This number has been wrong three times, always in the same
+           direction. 12 cut the university and a mall off the end. 60 was
+           comfortable only while a survey WAS 14 places. A survey is now the
+           whole neighbourhood -- 508 around the Agbowo flat -- so ask for all
+           of it and let the tabs decide what is drawn. The function caps at
+           1500 (migration 0080), which is the real ceiling. */
+        body: JSON.stringify({ p_property_id: propId, p_limit: 1000 }),
       })
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (rows) {
@@ -3172,13 +3183,22 @@
       // repeated calls don't stack duplicates on top of the home pin.
       poiMarkers.forEach(function (m) { layer.removeLayer(m); });
       poiMarkers = [];
+      /* EVERY place is pinned. Only the FRAMING is near-sighted.
+         The survey now reaches several kilometres out -- a university 13.7km
+         away is a real answer to "is there a university near this flat" -- but
+         fitting the view to all of it zoomed out until the house was a speck
+         in a cloud of markers, which answers nothing. So the bounds are built
+         from the nearest handful and everything else is simply already there
+         when you pan or pinch out. `shown` is distance-sorted, so slicing the
+         front of it is slicing the closest. */
       var pts = [PROP];
-      shown.forEach(function (p) {
+      var FRAME_N = 18;
+      shown.forEach(function (p, i) {
         var m = L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer)
           .bindPopup('<b>' + escHtml(p.n) + '</b><br>' + (AMENITY_LABEL[p.t] || metaFor(p.t).lbl) + ' · ' + p.d)
           .on('click', function () { showRoute(p); });
         poiMarkers.push(m);
-        pts.push(p.c);
+        if (i < FRAME_N) pts.push(p.c);
       });
       var counts = {}; shown.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
       /* Iterate the categories actually present, not META's keys: a Google
