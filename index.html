@@ -333,6 +333,17 @@
 
 
 
+  <!-- Phone footer. Same content as the desktop one; the .m-footer-* styles
+       it uses were sitting unused in landing-mobile.css too. -->
+  <footer class="m-footer m-wrap">
+    <p class="m-footer-tagline">Synapse &mdash; by ILIOS Digital.<br>
+      AI that finds buyers homes, and finds agencies buyers.</p>
+    <div class="m-footer-legal-row">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </footer>
+
 </div>
 <!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
 
@@ -742,6 +753,36 @@
      Start with Accelerate, and the pill follows the reader down the page,
      so a fourth ask on the way out repeated buttons that never leave the
      screen. -->
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════
+     There was no footer on this page at all. landing.css has carried the
+     styles for one the whole time -- footer, .footer-bottom, .footer-tagline,
+     .footer-legal -- with no markup anywhere using them, so the rules were
+     orphaned and privacy.html and terms.html were reachable from nothing.
+     Publishing terms you never link to is worse than not having them.
+
+     Deliberately not the four-column .footer-grid those styles also allow.
+     The page now makes exactly one ask -- the pill that follows you down it --
+     and a wall of links on the way out would be a second one wearing a
+     different hat. Who built this, and the two documents a reader is
+     entitled to find. -->
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <p class="footer-tagline">Synapse &mdash; by ILIOS Digital.<br>
+        AI that finds buyers homes, and finds agencies buyers.</p>
+      <!-- A div, not a <nav>. landing.css styles the bare element -- `nav {
+           position: fixed; top: 0 }` for the appbar -- so a <nav> here is
+           torn out of the footer and pinned over the header, which is exactly
+           what it did. -->
+      <div class="footer-legal">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
 <script>
 /* ── Pricing: monthly ⇄ annual (item 43) ─────────────────────────────────
    COMMERCIAL DECISION — confirm before this goes in front of agencies.
