@@ -74,7 +74,16 @@
     'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70',
   ];
 
-  // area → coords (prototype geocoder; real app uses listing lat/lon)
+  /* ── where a pin goes ────────────────────────────────────────
+     This used to be the whole answer, and its own comment said it should not
+     be. Listings carry latitude/longitude and always did -- nothing selected
+     them, so nothing could use them. Every home in the product is in Ibadan
+     and this table has no Bodija, no Jericho, no Akobo, so the area name
+     matched nothing and every pin landed on Lagos, four hundred miles away.
+
+     The table stays as a fallback and nothing more: a listing that genuinely
+     has no coordinates still appears near its city rather than vanishing from
+     a map its own card is sitting next to. */
   const GEO = {
     'ikate': [6.437, 3.522], 'lekki phase 1': [6.447, 3.47], 'lekki': [6.45, 3.5],
     'victoria island': [6.428, 3.421], 'osapa': [6.443, 3.49], 'sangotedo': [6.468, 3.628],
@@ -83,8 +92,16 @@
     'lagos': [6.52, 3.38], 'abuja': [9.06, 7.49], 'port harcourt': [4.82, 7.03],
     'ibadan': [7.38, 3.94], 'calabar': [4.97, 8.34], 'enugu': [6.45, 7.54],
   };
-  function coords(loc, i) {
-    const k = Object.keys(GEO).find((k) => String(loc).toLowerCase().includes(k));
+  function coords(l, i) {
+    // The listing's own position, whenever it has one.
+    const la = Number(l && l.lat), lo = Number(l && l.lng);
+    if (isFinite(la) && isFinite(lo) && (la !== 0 || lo !== 0)) return [la, lo];
+
+    /* No coordinates on the row. Guess from the area name, and spread the
+       guesses slightly so several unplaced listings in one city do not stack
+       into one pin -- they are near the centre, which is all we know. */
+    const where = String((l && l.loc) || '').toLowerCase();
+    const k = Object.keys(GEO).find((key) => where.includes(key));
     const base = k ? GEO[k] : GEO['lagos'];
     return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
   }
@@ -123,6 +140,10 @@
       priceN: Number(m.price) || 0,
       ttl: m.title || '',
       loc: (m.neighbourhood && m.neighbourhood.name) ? m.neighbourhood.name : (m.city || ''),
+      // The map needs a position, not a place name. `loc` is what the card
+      // prints; these two are where the pin goes.
+      lat: m.latitude == null ? null : Number(m.latitude),
+      lng: m.longitude == null ? null : Number(m.longitude),
       // `|| 0` meant a verified home with no trust_score rendered a ring of
       // 0 -- "we checked it and it scored nothing", which is worse than
       // silence. trust_score is currently NULL on every listing.
@@ -255,7 +276,7 @@
     st.layer.clearLayers();
     const pts = [];
     items.forEach((l, i) => {
-      const c = coords(l.loc, i);
+      const c = coords(l, i);
       pts.push(c);
       // A real map pin: price pill + pointer tail, with a verification dot so
       // the map carries the same trust signal the cards do. iconAnchor sits at
