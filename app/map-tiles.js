@@ -42,7 +42,7 @@
 
   var SynTiles = {
     /** Paste the MapTiler key here. Empty = OpenStreetMap, as before. */
-    KEY: '',
+    KEY: 'tVlKd5a2XBZET0hEttWZ',
 
     /** Whichever style your MapTiler plan offers. streets-v2 is the usual one;
      *  if tiles 404, check the style name in MapTiler Cloud → Maps. */
