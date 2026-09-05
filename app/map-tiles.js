@@ -13,10 +13,14 @@
    this repository is public. That is normal and fine, but ONLY once the key
    is restricted, so do this before you commit one:
 
-     MapTiler Cloud → Keys → your key → Origins (allowed HTTP referrers)
-       https://synapsecore.dev/*
-       https://www.synapsecore.dev/*
-       http://localhost:3000/*
+     MapTiler Cloud → API keys → Edit → Allowed origins, one per line:
+       synapsecore.dev
+       *.synapsecore.dev
+       localhost
+
+     BARE DOMAINS. No scheme, no path, no /* -- that is Google Maps' format
+     and MapTiler rejects it. *.synapsecore.dev covers www, which is where
+     the site actually serves from.
 
    Without that restriction anyone can lift the key out of this file and spend
    your quota. With it, a stolen key is worthless off your domains.
