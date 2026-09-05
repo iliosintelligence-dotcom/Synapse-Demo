@@ -364,8 +364,8 @@
        to sit over a map: the route readout when you tap a pin. */
     .pvc-map-wrap { display: block; position: relative; flex: 1; min-height: 0; }
     #pvMap { position: absolute; inset: 0; z-index: 0; }
-    .pvo-hint {
-      margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
+    .pvc-hint {
+      flex-basis: 100%; margin: 6px 0 0;
       font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
     }
 
@@ -506,16 +506,29 @@
          the sheet exists to show the map, and it should show the map. */
       .pvc-overlay { display: none !important; }
 
-      /* ── the map, as a sheet ── */
+      /* ── the map, in the page ─────────────────────────────────────────
+         This was a full-screen sheet: fixed, translated 100% down, hidden,
+         and revealed by the "Map & nearby" button. So on a phone the map was
+         not on the page at all -- you could scroll the whole listing and
+         never meet it, and the pinch and drag work only mattered to someone
+         who had already found the button.
+
+         It sits in the flow now. A height is required rather than optional:
+         Leaflet measures its container once at init and an auto-height flex
+         child collapses to nothing, which is how a map becomes a grey strip.
+         68vh leaves the card below it visible at the fold, so the page still
+         reads as a listing with a map in it rather than a map with a listing
+         somewhere underneath. */
       .pv-canvas {
         display: flex;
-        position: fixed; inset: 0; z-index: 80;
-        transform: translateY(100%);
-        transition: transform .3s cubic-bezier(.22,1,.36,1);
-        visibility: hidden;
+        position: static; transform: none; visibility: visible;
+        height: 68vh; min-height: 380px;
+        margin: 16px 0 0;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
       }
-      .pv-canvas.pvm-open { transform: none; visibility: visible; }
-      @media (prefers-reduced-motion: reduce) { .pv-canvas { transition: none; } }
+      /* Closing is meaningless once it is part of the page. */
+      .pvm-close { display: none !important; }
 
       .pvc-head {
         padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
@@ -826,6 +839,7 @@
           <button data-view="shops" role="tab" aria-selected="false">Shops</button>
           <button data-view="transit" role="tab" aria-selected="false">Transport</button>
         </div>
+        <div class="pvc-hint" id="pvcHint" hidden>Tap any pin for the walking route</div>
       </div>
       <div class="pvc-map-wrap">
         <div id="pvMap"></div>
@@ -3189,12 +3203,18 @@
       var kinds = Object.keys(counts).length;
       if (kinds > 1) {
         overlay.className = 'pvc-overlay';
-        overlay.innerHTML = '<div class="pvo-leg">' + leg + '</div>'
-          + '<div class="pvo-hint">Tap any pin for the walking route</div>';
+        overlay.innerHTML = '<div class="pvo-leg">' + leg + '</div>';
       } else {
         overlay.className = 'pvc-overlay idle';
         overlay.innerHTML = '';
       }
+      /* Outside the overlay on purpose. The overlay is display:none on a
+         phone -- deliberately, nothing floats over a map that small -- so a
+         hint living inside it told the one audience that already had a mouse
+         to hover with. It sits under the tabs now, where it costs the map no
+         space on either size. */
+      var hintEl = document.getElementById('pvcHint');
+      if (hintEl) hintEl.hidden = !shown.length;
       fit(pts);
     }
     function renderCommute() {
@@ -3356,26 +3376,36 @@
          closing it landed you somewhere else entirely. Pin the document at its
          current offset and put it back on close -- position:fixed alone would
          jump to the top, which is the same bug wearing a different hat. */
-      var lockedAt = 0;
-      function open() {
-        lockedAt = window.scrollY || document.documentElement.scrollTop || 0;
-        canvas.classList.add('pvm-open');
-        document.documentElement.style.overflow = 'hidden';
-        document.body.style.overflow = 'hidden';
-        setTimeout(function () { map.invalidateSize(); }, 320);
-      }
-      function close() {
-        canvas.classList.remove('pvm-open');
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, lockedAt);
-      }
-      openBtn.addEventListener('click', open);
-      if (closeBtn) closeBtn.addEventListener('click', close);
-      // hardware/browser back should dismiss the sheet, not leave the page
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && canvas.classList.contains('pvm-open')) close();
+      /* The map is in the page now, so there is nothing to open, nothing to
+         lock the document behind, and nothing to restore a scroll position
+         from. The button is a jump link: the map sits below the photos and
+         the price, which is the right order to read them in, but "take me to
+         it" is still a fair thing to ask of a long page. */
+      openBtn.addEventListener('click', function () {
+        canvas.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'auto' : 'smooth',
+          block: 'start',
+        });
       });
+      if (closeBtn) closeBtn.remove();
+
+      /* Leaflet sizes itself once, against whatever the container measured at
+         init. Inline, that happens while the map is still below the fold and
+         mid-layout, so it has to be re-measured -- once after layout settles,
+         and again whenever the container changes size (rotation, the address
+         bar sliding away, a card above it growing). Without this the tiles
+         are laid out for the wrong box and the map looks torn. */
+      var settle = function () { map.invalidateSize(); };
+      window.addEventListener('load', function () { setTimeout(settle, 120); });
+      setTimeout(settle, 400);
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function () { settle(); });
+        ro.observe(canvas);
+      } else {
+        window.addEventListener('resize', settle);
+        window.addEventListener('orientationchange', function () { setTimeout(settle, 250); });
+      }
     })();
   })();
   </script>
