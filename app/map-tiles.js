@@ -2,32 +2,35 @@
    Synapse — where map tiles come from.
 
    ONE place, because there are two maps: the shared one in matches-shared.js
-   (browse, Tayo, the agency portal) and property.html's own. They were both
-   pointing at tile.openstreetmap.org, and the OSMF tile policy covers modest
-   use and explicitly does not cover commercial traffic. That was the right
-   call for a product with no users and the wrong one for a product with any.
+   (browse, Tayo, the agency portal) and property.html's own. They both used to
+   point at tile.openstreetmap.org, and the OSMF tile policy covers modest use
+   and explicitly does not cover commercial traffic. Right for a product with
+   no users; wrong for one with any.
 
-   ── PASTE YOUR KEY BELOW ──────────────────────────────────────────────────
-   MapTiler keys are public by design: the browser has to send one with every
-   tile request, so it is visible in this file and in the network tab, and
-   this repository is public. That is normal and fine, but ONLY once the key
-   is restricted, so do this before you commit one:
+   ── STADIA MAPS, AND WHY THERE IS NO KEY IN THIS FILE ─────────────────────
+   Stadia authenticates browsers by DOMAIN, not by key. You register
+   synapsecore.dev once in their dashboard and requests from it are served —
+   nothing secret ships in the page, nothing to leak from a public repository,
+   nothing to rotate. That is a better arrangement than any key we could hide,
+   and it is why this file holds no credentials.
 
-     MapTiler Cloud → API keys → Edit → Allowed origins, one per line:
-       synapsecore.dev
-       *.synapsecore.dev
-       localhost
+   localhost and 127.0.0.1 are served with no registration at all, so local
+   development works out of the box. Measured rather than assumed: a tile
+   request carrying Origin http://localhost:3000 returns 200, and one from an
+   unregistered production origin returns 401.
 
-     BARE DOMAINS. No scheme, no path, no /* -- that is Google Maps' format
-     and MapTiler rejects it. *.synapsecore.dev covers www, which is where
-     the site actually serves from.
+   TO GO LIVE, once:
+     Stadia dashboard → Manage Properties → Authentication Configuration
+       → add domain:  synapsecore.dev
+     Add www.synapsecore.dev as well if their matcher does not cover
+     subdomains — the site serves from www.
 
-   Without that restriction anyone can lift the key out of this file and spend
-   your quota. With it, a stolen key is worthless off your domains.
+   A key is only needed for server-side or non-browser access. If that ever
+   comes up, put it in KEY below and it is appended as api_key. Leave it empty
+   for normal use.
 
-   Leave KEY empty and everything still works: the map falls back to
-   OpenStreetMap, which is what it did before. Nothing here can leave a reader
-   staring at a grey rectangle.
+   Nothing here can leave a reader looking at a grey rectangle: if Stadia
+   refuses, the map falls back to OpenStreetMap and the console says why.
    ──────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -35,18 +38,21 @@
   var OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-  /* MapTiler asks for both credits, and it is a licence condition rather than
-     a courtesy -- the tiles are theirs and the data underneath is OSM's. */
-  var MT_ATTR = '<a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">&copy; MapTiler</a> '
-              + '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap contributors</a>';
+  /* All three credits are a licence condition rather than a courtesy: the
+     tiles are Stadia's, the schema is OpenMapTiles', the data is OSM's. */
+  var SM_ATTR = '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener">Stadia Maps</a>, '
+              + '&copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> '
+              + '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
 
   var SynTiles = {
-    /** Paste the MapTiler key here. Empty = OpenStreetMap, as before. */
-    KEY: 'tVlKd5a2XBZET0hEttWZ',
+    /** Normally empty: Stadia authenticates this site by domain. Only wanted
+     *  for non-browser access. */
+    KEY: '',
 
-    /** Whichever style your MapTiler plan offers. streets-v2 is the usual one;
-     *  if tiles 404, check the style name in MapTiler Cloud → Maps. */
-    STYLE: 'streets-v2',
+    /** alidade_smooth is light and low-saturation, chosen because the price
+     *  pins are the loud thing on these maps and a colourful base would fight
+     *  them. Others: alidade_smooth_dark, outdoors, osm_bright, stamen_toner. */
+    STYLE: 'alidade_smooth',
 
     /** Attach the right tile layer to a Leaflet map. Returns the layer. */
     add: function (map) {
@@ -54,23 +60,17 @@
       if (!L || !map) return null;
 
       var key = String(this.KEY || '').trim();
-      if (!key) return this._osm(map);
+      /* {r} is Stadia's retina placeholder; detectRetina is what fills it with
+         "@2x" on a dense screen and leaves it empty otherwise. */
+      var url = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(this.STYLE)
+        + '/{z}/{x}/{y}{r}.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
 
-      /* MapTiler serves 512px tiles; Leaflet assumes 256, so the pair
-         tileSize + zoomOffset is what keeps labels the right size instead of
-         doubled. Their own Leaflet example uses exactly this. */
-      var layer = L.tileLayer(
-        'https://api.maptiler.com/maps/' + encodeURIComponent(this.STYLE)
-          + '/{z}/{x}/{y}.png?key=' + encodeURIComponent(key),
-        {
-          tileSize: 512,
-          zoomOffset: -1,
-          minZoom: 1,
-          maxZoom: 19,
-          crossOrigin: true,
-          attribution: MT_ATTR,
-        }
-      );
+      var layer = L.tileLayer(url, {
+        maxZoom: 20,
+        detectRetina: true,
+        crossOrigin: true,
+        attribution: SM_ATTR,
+      });
 
       var self = this, swapped = false;
       function fallBack(why) {
@@ -78,32 +78,30 @@
         swapped = true;
         try { map.removeLayer(layer); } catch (e) {}
         // eslint-disable-next-line no-console
-        console.warn('MapTiler tiles unavailable (' + why + ') — using OpenStreetMap. '
-          + 'Check the key, its allowed origins, and the style name.');
+        console.warn('Stadia tiles unavailable (' + why + ') — using OpenStreetMap. '
+          + 'Register this domain under Manage Properties → Authentication Configuration.');
         self._osm(map);
       }
 
-      /* A rejected key does NOT look like a failure to the browser. MapTiler
-         answers 403 with content-type image/png -- a picture that says the key
-         is bad -- so the tile LOADS. Measured: four tileload events, zero
-         tileerror, no broken images. A tileerror handler would never have
-         fired, and the map would have sat there tiled with an error graphic
-         looking deliberate.
+      /* A refused request does NOT look like a failure to the browser. Stadia
+         answers 401 with content-type image/png -- a picture saying it was
+         refused -- so the tile LOADS and Leaflet fires tileload, never
+         tileerror. MapTiler does the same with 403. Measured on both.
 
          So the status code has to be read, which means asking for one tile
-         with fetch rather than trusting the <img>. One extra request, once
-         per map, for the difference between a working map and a wall of
-         "invalid key". */
-      var probe = 'https://api.maptiler.com/maps/' + encodeURIComponent(this.STYLE)
-        + '/1/1/1.png?key=' + encodeURIComponent(key);
+         with fetch rather than trusting the <img>. One extra request per map,
+         and it is the difference between a working map and a wall of
+         "unauthorised" that looks deliberate. */
+      var probe = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(this.STYLE)
+        + '/3/4/3.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
       try {
         fetch(probe, { method: 'GET', cache: 'force-cache' })
           .then(function (r) { if (!r.ok) fallBack('HTTP ' + r.status); })
           .catch(function () { /* offline or blocked: tileerror below covers it */ });
       } catch (e) { /* no fetch: leave it to tileerror */ }
 
-      /* Still worth keeping for the case the probe cannot catch -- the host
-         being unreachable, where nothing loads at all. */
+      /* For what the probe cannot see -- the host unreachable, nothing loading
+         at all, which is when tileerror does fire. */
       var fails = 0;
       layer.on('tileerror', function () {
         fails += 1;
