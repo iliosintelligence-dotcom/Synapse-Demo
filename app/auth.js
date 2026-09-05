@@ -419,10 +419,21 @@
     document.querySelectorAll('[data-auth-slot]').forEach(function (slot) {
       if (cachedUser) {
         var name = (cachedUser.user_metadata && cachedUser.user_metadata.full_name) || cachedUser.email || 'Account';
-        var initials = String(name).trim().slice(0, 2).toUpperCase();
-        slot.innerHTML = '<span class="auth-chip" title="' + esc(name) + '">'
-          + '<span class="auth-av">' + esc(initials) + '</span>'
-          + '<button type="button" class="auth-out">Sign out</button></span>';
+        /* THE INITIALS DISC IS GONE. It was a dark circle carrying two letters
+           -- "LP", "DE" -- beside Sign out: the same size and shape as a
+           button, and not one. An agency owner looked at it and could not say
+           what it was, which is the whole test a control has to pass. The
+           agency's name is already on every pane header, and the account it
+           identified is now named in the button's own tooltip, where it costs
+           no space and pretends to be nothing.
+
+           This is the second disc to go from this bar. The first was the
+           agency chip that sat beside it -- removed for exactly this reason,
+           and this one survived only because it happened to be the wrapper
+           carrying sign-out. It was not. */
+        slot.innerHTML = '<span class="auth-chip">'
+          + '<button type="button" class="auth-out" title="Signed in as ' + esc(name) + '">'
+          + 'Sign out</button></span>';
         var out = slot.querySelector('.auth-out');
         if (out) out.addEventListener('click', function () {
           /* It did work -- but it said nothing while it worked, and the call
