@@ -570,11 +570,24 @@
 }
 .m-legal-toc[open] > summary::after { content: '−'; }
 .m-legal-toc-links { padding: 0 18px 10px; display: flex; flex-direction: column; }
+/* Same problem as the desktop .toc, worse on a phone: the only thing marking
+   these as links was a colour change on hover, and there is no hover on a
+   touch screen. A row of grey text inside a panel reads as a list of headings
+   you have already been shown, not nine things you can tap. Underlined, in
+   full-strength ink, with the arrow that says this moves you down the page.
+   The 44px row stays -- that part was right. */
 .m-legal-toc-links a {
-  font-size: 14px; color: var(--text-muted); text-decoration: none;
-  padding: 11px 0; min-height: 44px; display: flex; align-items: center;
+  font-size: 14px; color: var(--text); text-decoration: underline;
+  text-decoration-color: rgba(20,20,20,0.28);
+  text-underline-offset: 3px; text-decoration-thickness: 1px;
+  padding: 11px 0; min-height: 44px; display: flex; align-items: center; gap: 9px;
   border-top: 1px solid rgba(20,20,20,0.06);
 }
+.m-legal-toc-links a::before {
+  content: '\2193'; font-size: 12px; color: var(--text-dim);
+  flex: none; text-decoration: none;
+}
+.m-legal-toc-links a:active { text-decoration-color: currentColor; }
 
 /* the document itself — set for reading on a phone, not for a wide column */
 .m-legal-doc { padding-bottom: 96px; }

@@ -26,8 +26,25 @@
     .legal a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
     .toc { margin-top: 28px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); }
     .toc div { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
-    .toc a { display: block; font-size: 13.5px; color: var(--text-muted); text-decoration: none; padding: 4px 0; }
-    .toc a:hover { color: var(--text); }
+    /* These jump to a section and did not look like they did anything. The
+       only interactive signal was a colour change on hover, which a reader
+       has to already suspect a link to go looking for -- and on a touch
+       screen there is no hover at all, so it was invisible there by
+       definition. Underlined, in full-strength ink, each with the anchor
+       arrow that says "this moves you down the page" rather than "this leaves
+       the site". */
+    .toc a {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 13.5px; color: var(--text); padding: 7px 0;
+      text-decoration: underline; text-decoration-color: rgba(20,20,20,0.28);
+      text-underline-offset: 3px; text-decoration-thickness: 1px;
+    }
+    .toc a::before {
+      content: '\2193'; font-size: 11px; color: var(--text-dim);
+      flex: none; text-decoration: none;
+    }
+    .toc a:hover { text-decoration-color: currentColor; }
+    .toc a:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 3px; }
   </style>
 </head>
 <body>
