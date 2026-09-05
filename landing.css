@@ -1880,14 +1880,17 @@ footer {
    marking where one idea stops and the next starts, so the grounds have to
    do it.
 
-   An explicit rhythm, alternating around the dark plate at the centre:
-     reality   raised (warm white)
-     turn      paper
-     dark      ink            <- the centrepiece
-     proximity raised
-     fresh     tinted
-     pricing   paper
-   Every band names its own ground; none inherits by accident. */
+   An explicit rhythm, alternating around two ink plates:
+     reality    raised (warm white)
+     introducing ink          <- the turn: problem behind, product ahead
+     turn       paper
+     dark       ink           <- Tayo, the other thing worth going quiet for
+     proximity  raised
+     fresh      tinted
+     pricing    paper
+   Every band names its own ground; none inherits by accident. Two ink
+   plates rather than one now: the introduction earns it, and they sit far
+   enough apart to read as bookends rather than a repeat. */
 .s-band { padding: clamp(96px, 13vh, 168px) 0; position: relative; background: var(--bg); }
 .s-band.raised { background: var(--surface); }
 
@@ -2443,6 +2446,96 @@ footer {
 .sticky-cta-x:hover { color: var(--text); background: rgba(20,20,20,0.06); }
 @media (prefers-reduced-motion: reduce) {
   .sticky-cta, .sticky-cta.show { transition: none; }
+}
+
+
+/* ── Introducing ───────────────────────────────────────────────────────────
+   The turn between the problem and the product. Ink ground, because this is
+   the loudest the page is allowed to get: the palette keeps orange off type
+   and off large areas, so the instrument here is scale and space, not colour.
+   The only warm thing is a 64px hairline.
+
+   The word is deliberately enormous and deliberately alone. Everything
+   around it is small. That contrast is the whole effect -- adding a second
+   loud element would spend it. */
+.intro-band { text-align: center; overflow: hidden; }
+.intro-inner { max-width: 860px; margin: 0 auto; }
+
+.intro-rule {
+  display: block; width: 64px; height: 2px; margin: 0 auto 26px;
+  background: var(--tint-ink);
+  transform: scaleX(0); transform-origin: 50% 50%;
+  transition: transform .7s var(--ease);
+}
+.in-view .intro-rule { transform: scaleX(1); }
+
+.intro-eyebrow {
+  font-family: var(--f-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase;
+  color: rgba(245,245,245,0.5); margin: 0 0 18px;
+}
+
+.intro-word {
+  font-family: var(--f-serif); font-weight: 300;
+  font-size: clamp(56px, 13vw, 168px);
+  line-height: .92; letter-spacing: -0.035em;
+  color: #f5f5f5; margin: 0;
+  /* Optical, not decorative: at this size the word reads as a mark rather
+     than a heading, which is the point of putting it here alone. */
+}
+
+.intro-line {
+  font-family: var(--f-sans); font-weight: 500;
+  font-size: clamp(16.5px, 1.8vw, 20px); line-height: 1.65;
+  color: rgba(245,245,245,0.72);
+  max-width: 30ch; margin: 30px auto 0; text-wrap: balance;
+}
+.intro-line em { font-style: normal; color: #fff; }
+
+.intro-foot {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 44px;
+}
+.intro-mark { display: block; width: 17px; opacity: .8; }
+.intro-mark img { display: block; width: 100%; height: auto; }
+.intro-foot-t {
+  font-family: var(--f-sans); font-size: 12px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(245,245,245,0.45);
+}
+
+/* The entrance. One orchestrated moment rather than four scattered ones:
+   the rule draws, the word rises behind it, then the line and the footer
+   follow. transform and opacity only, ease-out, and it starts from a
+   VISIBLE resting state on any browser that never fires the observer. */
+.anim-ready .intro-band .intro-eyebrow,
+.anim-ready .intro-band .intro-word,
+.anim-ready .intro-band .intro-line,
+.anim-ready .intro-band .intro-foot,
+.anim-ready .m-intro .intro-eyebrow,
+.anim-ready .m-intro .intro-word,
+.anim-ready .m-intro .intro-line,
+.anim-ready .m-intro .intro-foot {
+  opacity: 0; transform: translateY(22px);
+  transition: opacity .7s var(--ease), transform .7s var(--ease);
+}
+.anim-ready .in-view .intro-eyebrow,
+.anim-ready .in-view .intro-word,
+.anim-ready .in-view .intro-line,
+.anim-ready .in-view .intro-foot {
+  opacity: 1; transform: none;
+}
+.anim-ready .in-view .intro-eyebrow { transition-delay: .10s; }
+.anim-ready .in-view .intro-word    { transition-delay: .16s; }
+.anim-ready .in-view .intro-line    { transition-delay: .30s; }
+.anim-ready .in-view .intro-foot    { transition-delay: .42s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-rule { transition: none; transform: scaleX(1); }
+  .anim-ready .intro-band [class^="intro-"],
+  .anim-ready .m-intro [class^="intro-"] {
+    opacity: 1; transform: none; transition: none;
+  }
 }
 
 /* ── Typing should not be framed ────────────────────────────────────────
