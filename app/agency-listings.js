@@ -821,6 +821,31 @@
     });
   }
 
+  /* Can anything be sent at all?
+     Asks send-outbox whether WhatsApp credentials exist on the project. It
+     claims nothing and sends nothing, and it answers with variable NAMES and
+     booleans -- never a value. The drawer needs this before offering a Send
+     button: pressing Send on an unconfigured project used to claim the batch,
+     and the claim burns an attempt on every row. */
+  function checkOutbox() {
+    return client().then(function (c) {
+      return c.functions.invoke('send-outbox', { body: { check: true } });
+    }).then(function (r) {
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (d) { return d || { twilioReady: false, missing: [] }; },
+            function () { return { twilioReady: false, missing: [] }; });
+        }
+        return { twilioReady: false, missing: [] };
+      }
+      return r.data || { twilioReady: false, missing: [] };
+    }).catch(function () {
+      // Unknown is not the same as unconfigured; the drawer says nothing.
+      return null;
+    });
+  }
+
   /* Drain the queue. Deliberately an explicit action rather than something
      that fires on a timer: these are real messages to real buyers. */
   function sendOutbox(limit) {
@@ -1887,6 +1912,7 @@
     listOutbox: listOutbox,
     cancelMessage: cancelMessage,
     sendOutbox: sendOutbox,
+    checkOutbox: checkOutbox,
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,

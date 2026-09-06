@@ -2099,6 +2099,18 @@
     .ob-waiting .ob-w-age { color: var(--ink-muted); }
     .ob-waiting .btn { flex: none; min-height: 38px; }
 
+    /* Inside the drawer, above the Send button it is explaining. */
+    .ob-cfg {
+      margin: 0 0 12px; padding: 11px 13px; border-radius: 9px;
+      background: rgba(224,168,59,0.09); border: 1px solid rgba(224,168,59,0.35);
+    }
+    .ob-cfg b { display: block; font-size: 13px; color: var(--ink); }
+    .ob-cfg p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+    .ob-cfg code {
+      display: block; margin-top: 7px; font-size: 11.5px; line-height: 1.7;
+      color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
     .crm-funnel { display: flex; align-items: stretch; gap: 4px; margin: 0 0 14px; flex-wrap: wrap; }
     .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: var(--m-standard); display: flex; flex-direction: column; gap: 7px; }
     @media (hover: hover) and (pointer: fine) {
@@ -4160,6 +4172,7 @@
           <button class="x" aria-label="Close">\u00d7</button>
           <div style="font-size:19px;font-weight:700">Outbox</div>
           <p class="muted" style="font-size:12px;margin:6px 0 14px">Messages are held here until you send them. Nothing goes out on its own.</p>
+          <div class="ob-cfg" id="obCfg" hidden></div>
           <div style="display:flex;gap:8px;margin-bottom:12px">
             <button class="btn btn-primary" id="obSend" style="flex:1">Send now</button>
             <button class="btn" id="obRefresh">Refresh</button>
@@ -4186,6 +4199,33 @@
             });
         });
         paintOutbox();
+        paintOutboxConfig();
+      }
+
+      /* Say whether anything CAN be sent, before the button is pressed.
+         Without this the only way to discover that WhatsApp was never
+         connected was to press Send -- which claimed the batch, burned an
+         attempt on every queued message, and reported "Twilio not configured"
+         once per row. Three presses and a real message was permanently
+         failed. The function refuses to claim now, and this says why up
+         front so it does not come to that. */
+      function paintOutboxConfig() {
+        var box = document.getElementById('obCfg');
+        var send = document.getElementById('obSend');
+        if (!box || !window.SynListings || !SynListings.checkOutbox) return;
+        SynListings.checkOutbox().then(function (r) {
+          // null means we could not tell. Silence beats a wrong warning.
+          if (!r || r.twilioReady !== false) { box.hidden = true; return; }
+          box.innerHTML = '<b>WhatsApp is not connected yet</b>'
+            + '<p>Messages stay queued and unharmed — nothing is lost and nothing '
+            + 'has failed. Sending needs these on the project first:</p>'
+            + '<code>' + (r.missing || []).join('<br>') + '</code>';
+          box.hidden = false;
+          if (send) {
+            send.disabled = true;
+            send.textContent = 'Cannot send yet';
+          }
+        });
       }
 
       function paintOutbox() {
