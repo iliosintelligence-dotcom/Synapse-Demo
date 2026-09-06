@@ -2106,6 +2106,34 @@
     }
     .ob-cfg b { display: block; font-size: 13px; color: var(--ink); }
     .ob-cfg p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+    /* Not a dismissible toast. The consequence of ignoring it is silent --
+       leads simply never arrive -- so it stays until there is a number. Ink
+       rather than red: nothing has broken yet. */
+    .need-phone {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin: 0 0 18px; padding: 14px 16px; border-radius: 12px;
+      background: #121212; color: #fff;
+    }
+    .need-phone .np-txt { flex: 1; min-width: 220px; font-size: 13px; line-height: 1.5; }
+    .need-phone .np-txt b { display: block; font-size: 14px; margin-bottom: 2px; }
+    .need-phone .np-txt span { color: rgba(255,255,255,0.72); }
+    .need-phone form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .need-phone input {
+      min-height: 40px; padding: 0 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.08);
+      color: #fff; font: inherit; font-size: 13px; min-width: 190px;
+    }
+    .need-phone input::placeholder { color: rgba(255,255,255,0.45); }
+    .need-phone button {
+      min-height: 40px; padding: 0 16px; border-radius: 8px; border: 0;
+      background: #fff; color: #121212; font: 600 13px var(--f-sans); cursor: pointer;
+    }
+    .need-phone button[disabled] { opacity: .6; cursor: default; }
+    .need-phone .np-err { flex-basis: 100%; font-size: 12px; color: #ffb4ab; }
+    @media (max-width: 640px) {
+      .need-phone form, .need-phone input, .need-phone button { width: 100%; }
+    }
+
     .ob-to {
       margin: -6px 0 14px; padding: 9px 12px; border-radius: 8px;
       background: var(--surface-2, rgba(20,20,20,0.04));
@@ -3099,6 +3127,11 @@
     </aside>
 
     <div class="content">
+      <!-- Asked of people who were already here when registration started
+           collecting it. Sits above every pane rather than in Settings,
+           because an agency with no number on file cannot be handed a lead at
+           all and will not go looking for a field to explain that. -->
+      <div class="need-phone" id="needPhone" hidden></div>
       <main>
         <!-- ══ OVERVIEW ══ -->
         <section class="pane on" id="pane-overview">
@@ -11091,6 +11124,71 @@
     (function () {
       if (!window.SynAuth) return;
       SynAuth.requireAuth({ role: 'agency', reason: 'agency' });
+    })();
+
+    /* ── the number Tayo hands a lead to ─────────────────────────────────
+       Registration asks for this now, but it cannot reach an account that
+       already exists, and on 2026-09-06 not one of the 41 agency members had
+       a number on file -- so every live lead resolved to nobody reachable.
+
+       Not dismissible. The consequence of ignoring it is silent: leads simply
+       never arrive, and nothing else in the product would ever say why. It
+       goes away by being answered, and only by that. */
+    (function () {
+      var box = document.getElementById('needPhone');
+      if (!box || !window.SynListings || !SynListings.myPhone) return;
+
+      /* Local: escT is a const in an earlier script block and is not in scope
+         here. The text is a database error message, so it is escaped rather
+         than trusted into innerHTML. */
+      function esc1(t) {
+        return String(t == null ? '' : t)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function draw(err) {
+        box.innerHTML =
+          '<div class="np-txt"><b>Tayo has no way to reach you</b>'
+          + '<span>Leads are handed over on WhatsApp. Without a number here, '
+          + 'a lead assigned to you cannot be sent anywhere.</span></div>'
+          + '<form id="npForm" novalidate>'
+          + '<input id="npInput" type="tel" inputmode="tel" autocomplete="tel" '
+          + 'placeholder="0803 123 4567" aria-label="Your WhatsApp number">'
+          + '<button type="submit" id="npSave">Save</button>'
+          + '</form>'
+          + (err ? '<div class="np-err">' + esc1(err) + '</div>' : '');
+        box.hidden = false;
+
+        document.getElementById('npForm').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var input = document.getElementById('npInput');
+          var btn = document.getElementById('npSave');
+          var val = input.value.trim();
+          if (!val) { input.focus(); return; }
+          btn.disabled = true; btn.textContent = 'Saving…';
+          SynListings.setMyPhone(val)
+            .then(function (stored) {
+              box.hidden = true;
+              box.innerHTML = '';
+              if (typeof toast === 'function') {
+                toast('Saved. Tayo will reach you on ' + stored);
+              }
+            })
+            .catch(function (e2) {
+              // Redrawn rather than patched, so the message and the field
+              // cannot drift apart across retries.
+              draw((e2 && e2.message) || 'That number could not be saved');
+            });
+        });
+      }
+
+      SynListings.myPhone().then(function (me) {
+        // null means we could not tell -- an unknown is not a missing number,
+        // and a banner shown to somebody who already gave us one is noise.
+        if (!me) return;
+        if (String(me.phone || '').trim()) return;
+        draw(null);
+      });
     })();
   </script>
   <script src="motion.js"></script>

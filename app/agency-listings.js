@@ -799,6 +799,35 @@
     });
   }
 
+  /* My own number, and setting it.
+     Registration asks for this now, but registration cannot reach an account
+     that already exists -- and on 2026-09-06 not one of the 41 agency members
+     had a number, so every lead resolved to nobody reachable. The portal has
+     to ask the people who are already here.
+
+     set_my_phone normalises server-side with the same rule as signup, so a
+     number typed here and a number typed at signup are stored in one shape.
+     A client that normalised on its own would eventually disagree with it. */
+  function myPhone() {
+    return client().then(function (c) {
+      return c.auth.getUser().then(function (u) {
+        var id = u && u.data && u.data.user && u.data.user.id;
+        if (!id) return null;
+        return c.from('profiles').select('phone').eq('id', id).maybeSingle()
+          .then(function (r) { return r.error ? null : { phone: (r.data && r.data.phone) || '' }; });
+      });
+    }).catch(function () { return null; });
+  }
+
+  function setMyPhone(phone) {
+    return client().then(function (c) {
+      return c.rpc('set_my_phone', { p_phone: phone });
+    }).then(function (r) {
+      if (r.error) throw new Error(r.error.message || 'That number could not be saved');
+      return r.data;
+    });
+  }
+
   /* Who a handoff would reach, asked before it is written. Returns a name
      and whether they are reachable -- never the number itself. */
   function handoffTarget(leadId) {
@@ -1938,6 +1967,8 @@
     sendOutbox: sendOutbox,
     checkOutbox: checkOutbox,
     handoffTarget: handoffTarget,
+    myPhone: myPhone,
+    setMyPhone: setMyPhone,
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,
