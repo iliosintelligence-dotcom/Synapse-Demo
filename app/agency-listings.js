@@ -799,6 +799,39 @@
     });
   }
 
+  /* ── negotiation authority ───────────────────────────────────────────────
+     The lowest Tayo may agree to on a listing. Read and written by agency
+     staff only -- listing_negotiation_authority has no policy a buyer can
+     satisfy, and no function that returns the number is callable by one.
+
+     A missing row is NOT "no limit". It means Tayo has no authority to
+     negotiate this listing at all, which is why the UI says so in words
+     rather than showing an empty box that reads as unlimited. */
+  function getNegotiationFloor(propertyId) {
+    if (!propertyId) return Promise.resolve(null);
+    return client().then(function (c) {
+      return c.from('listing_negotiation_authority')
+        .select('floor_amount, currency, is_active, updated_at')
+        .eq('property_id', propertyId).maybeSingle();
+    }).then(function (r) {
+      if (r.error) return null;
+      return r.data || null;
+    }).catch(function () { return null; });
+  }
+
+  function setNegotiationFloor(propertyId, amount, active) {
+    return client().then(function (c) {
+      return c.rpc('set_negotiation_floor', {
+        p_property_id: propertyId,
+        p_amount: amount,
+        p_active: active !== false,
+      });
+    }).then(function (r) {
+      if (r.error) throw new Error(r.error.message || 'The floor could not be saved');
+      return r.data;
+    });
+  }
+
   /* My own number, and setting it.
      Registration asks for this now, but registration cannot reach an account
      that already exists -- and on 2026-09-06 not one of the 41 agency members
@@ -1967,6 +2000,8 @@
     sendOutbox: sendOutbox,
     checkOutbox: checkOutbox,
     handoffTarget: handoffTarget,
+    getNegotiationFloor: getNegotiationFloor,
+    setNegotiationFloor: setNegotiationFloor,
     myPhone: myPhone,
     setMyPhone: setMyPhone,
     listCampaigns: listCampaigns,

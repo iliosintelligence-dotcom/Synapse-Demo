@@ -5541,6 +5541,31 @@
               <div class="field"><label>Service charge (₦/yr)</label><input id="lfService" type="number" min="0" value="${esc(d.service_charge)}" placeholder="optional"></div>
             </div>
           </fieldset>
+          <!-- ── what Tayo may agree to ──────────────────────────────────
+               Lives with the listing because it is a fact about the listing,
+               not about the negotiator. The Negotiator pane says as much.
+
+               Never shown to a buyer and never sent to one: the table has no
+               policy a consumer can satisfy, and the only function Tayo calls
+               answers yes or no rather than returning the figure. -->
+          <fieldset class="lf-sec"><legend>Negotiation</legend>
+            <div class="row2">
+              <div class="field"><label>Tayo&#39;s floor (₦)</label>
+                <input id="lfFloor" type="number" min="1" placeholder="${isNew ? 'Save the listing first' : 'No floor set'}" ${isNew ? 'disabled' : ''}>
+                <span class="ferr" id="e_floor"></span></div>
+              <div class="field"><label>Negotiation</label>
+                <select id="lfFloorActive" ${isNew ? 'disabled' : ''}>
+                  <option value="on">Tayo may negotiate down to the floor</option>
+                  <option value="off">Tayo may not negotiate this listing</option>
+                </select></div>
+            </div>
+            <p class="muted" style="font-size:11.5px;margin:2px 0 0">
+              The lowest Tayo will agree to. An offer under it stops the
+              negotiation and messages the assigned agent instead. Buyers never
+              see this figure${isNew ? ', and it can be set once the listing exists' : ''}.
+              Only an owner or admin can change it.
+            </p>
+          </fieldset>
           <fieldset class="lf-sec"><legend>Trust &amp; documents</legend>
             <div class="row2">
               <div class="field"><label>Title document</label><select id="lfTitleType"><option value="">— Select —</option>${opt(TITLE_TYPES, d.title_type || '', TITLE_LABEL)}</select></div>
@@ -6103,6 +6128,9 @@
             SynListings.create(data).then((id) => {
               item.id = id;
               toast('Listing created — saved, and unverified until the desk checks it');
+              // The field is disabled until the listing exists, so this only
+              // does anything if it was filled in after a create.
+              saveFloor(id);
               /* The row now has its server id; anything keyed by id (the
                  campaign picker, the archive) needs to see that. */
               announceListings();
@@ -6122,12 +6150,48 @@
             SynListings.update(id, data)
               .then(() => { toast('Listing updated'); announceListings(); })
               .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
+            saveFloor(id);
           } else {
             toast(dbBacked ? 'Updated here only — this listing has no server record' : 'Listing updated');
           }
         }
         saveListings(); renderListings(); closeLead();
       });
+      /* The floor is a separate table with its own permissions, so it is
+         read separately rather than riding on the listing row -- and failing
+         to read it must not stop the rest of the form working. */
+      (function () {
+        const fEl = g('lfFloor'), aEl = g('lfFloorActive');
+        if (!fEl || isNew || !d.id || !window.SynListings) return;
+        SynListings.getNegotiationFloor(d.id).then(function (row) {
+          if (!row) return;                      // no floor: the placeholder says so
+          fEl.value = row.floor_amount == null ? '' : Number(row.floor_amount);
+          if (aEl) aEl.value = row.is_active === false ? 'off' : 'on';
+        });
+      })();
+
+      /* Its own call and its own message. The floor lives in another table
+         with stricter permissions -- an agent can save a listing and still be
+         refused the floor -- so folding it into the listing result would
+         report one outcome for two different things. A function declaration,
+         so the save handler above can reach it. */
+      function saveFloor(id) {
+        const fEl = g('lfFloor'), aEl = g('lfFloorActive');
+        if (!fEl || !id || !window.SynListings) return;
+        const raw = fEl.value.trim();
+        if (raw === '') return;             // leaving it blank is not setting zero
+        const amount = parseFloat(raw);
+        if (!isFinite(amount) || amount <= 0) { toast('A floor has to be a positive amount'); return; }
+        const active = !aEl || aEl.value !== 'off';
+        SynListings.setNegotiationFloor(id, amount, active)
+          .then(function () {
+            toast(active
+              ? 'Tayo will not go below ₦' + amount.toLocaleString()
+              : 'Tayo will not negotiate this listing');
+          })
+          .catch(function (e) { toast((e && e.message) || 'The floor was not saved'); });
+      }
+
       const del = g('lfDel');
       if (del) del.addEventListener('click', () => {
         const gone = LISTINGS_DATA[idx];
