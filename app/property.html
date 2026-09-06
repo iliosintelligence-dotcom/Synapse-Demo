@@ -566,19 +566,6 @@
         width: auto; max-height: 46%;
       }
     }
-    .neg-put { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
-    .neg-put label { display: block; font: 700 12px var(--f-sans); letter-spacing: .04em;
-      text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
-    .neg-put-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .neg-put-row input {
-      flex: 1; min-width: 140px; min-height: 44px; padding: 0 12px;
-      border: 1px solid var(--border-strong); border-radius: 10px;
-      font: 600 15px var(--f-sans); color: var(--ink); background: var(--surface);
-    }
-    .neg-put-row .btn { flex: none; min-height: 44px; }
-    #negPutReply { padding: 10px 12px; border-radius: 10px;
-      background: var(--surface-2, rgba(20,20,20,0.04)); }
-
     .avail-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
       margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
     .avail-lbl { font:700 12px var(--f-sans); letter-spacing:.08em; text-transform:uppercase; color:var(--ink-muted); }
@@ -690,29 +677,6 @@
         <p class="reason" id="negAdvice" style="font-size:13.5px"></p>
         <div class="neg-draft" id="negDraft"></div>
         <button class="copybtn" id="negCopy">Copy message</button>
-
-        <!-- ── putting a number to the agency ─────────────────────────────
-             Until now the only way an offer reached anybody was the buyer
-             copying that draft to a clipboard and finding the agency
-             somewhere else. This puts it on the record instead: Tayo checks
-             it against the authority the agency gave it, answers, and calls a
-             person in when it cannot agree.
-
-             Hidden until the agent has been contacted, because an offer needs
-             an enquiry to belong to -- there is nothing to attach it to
-             before that, and nobody to come back to you. -->
-        <div class="neg-put" id="negPut" hidden>
-          <label for="negAmount">Put an offer to the agency</label>
-          <div class="neg-put-row">
-            <input id="negAmount" type="number" min="1" step="1000" inputmode="numeric"
-                   aria-describedby="negPutHint">
-            <button class="btn btn-primary" id="negSend" type="button">Send offer</button>
-          </div>
-          <p class="reason" id="negPutHint" style="font-size:12.5px;margin:8px 0 0">
-            Tayo can carry an offer, but only the agency can accept one.
-          </p>
-          <p class="reason" id="negPutReply" style="font-size:13.5px" hidden></p>
-        </div>
       </div>
     </div>
 
@@ -1188,19 +1152,6 @@
                      : 'Sent — the agency has your request and will be in touch.'));
             btn.textContent = '✓ Request sent';
             // stays disabled: the request is sent, re-sending helps nobody
-
-            /* Now an offer has an enquiry to attach to. Prefilled with the
-               number Tayo just worked out, and editable, because it is the
-               buyer's offer and not Tayo's. */
-            LEAD_ID = d.lead_id;
-            const put = document.getElementById('negPut');
-            if (put) {
-              const amt = document.getElementById('negAmount');
-              if (amt && !amt.value && NEGOTIATION && NEGOTIATION.offer) {
-                amt.value = NEGOTIATION.offer;
-              }
-              put.hidden = false;
-            }
           })
           .catch((e) => fail(e && e.message === 'no-session' ? 'Please sign in to contact this agent.' : null));
       };
@@ -1784,10 +1735,6 @@
        simply carries no negotiation, which is honest — it is not an offer of
        zero. */
     let NEGOTIATION = null;
-    /* The enquiry an offer belongs to. create-lead has always returned this
-       and the page has always thrown it away -- there was nothing that needed
-       it until an offer had somewhere to go. */
-    let LEAD_ID = null;
     /* The listing agent's name, once paintAgent has resolved one. Only used to
        say who received the request — null on a listing with no named agent, and
        every message below falls back to the agency wording. */
@@ -1835,56 +1782,6 @@
         negBtn.textContent = 'Get my opening offer'; negBtn.disabled = false;
       }
     });
-    /* Sends the offer through toju-offer, which records it, measures it
-       against the agency's authority and calls a person in when it cannot
-       agree. The reply comes back written -- this page never learns the floor,
-       never learns how close the offer came, and has nothing to leak. */
-    (function () {
-      const send = document.getElementById('negSend');
-      if (!send) return;
-      send.addEventListener('click', async () => {
-        const amt = document.getElementById('negAmount');
-        const out = document.getElementById('negPutReply');
-        const value = Number(amt && amt.value);
-        if (!isFinite(value) || value <= 0) {
-          if (amt) amt.focus();
-          toast('Enter the amount you want to offer.');
-          return;
-        }
-        if (!LEAD_ID) { toast('Contact the agent first, then put an offer to them.'); return; }
-
-        const was = send.textContent;
-        send.disabled = true; send.textContent = 'Sending\u2026';
-        try {
-          const c = await SynAuth.client();
-          const sess = await c.auth.getSession();
-          const tok = sess && sess.data && sess.data.session && sess.data.session.access_token;
-          if (!tok) throw new Error('Please sign in again to make an offer.');
-
-          const r = await fetch(SUPABASE_URL + '/functions/v1/toju-offer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
-            body: JSON.stringify({ leadId: LEAD_ID, amount: value }),
-          });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(d.error || 'That offer could not be sent just now.');
-
-          if (out) { out.textContent = d.reply || ''; out.hidden = !d.reply; }
-          /* The button stays usable. A buyer whose offer was not agreed is
-             invited to put a different number, and saying so and then
-             disabling the way to do it would be a lie. */
-          send.textContent = 'Send another offer';
-          send.disabled = false;
-        } catch (e) {
-          send.textContent = was; send.disabled = false;
-          if (out) {
-            out.textContent = (e && e.message) || 'That offer could not be sent just now.';
-            out.hidden = false;
-          }
-        }
-      });
-    })();
-
     function clearNegError() { const p = document.getElementById('negErr'); if (p) p.remove(); }
     function showNegError(kind) {
       const msg = kind === 'offline'
