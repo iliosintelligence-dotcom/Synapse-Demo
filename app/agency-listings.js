@@ -758,21 +758,33 @@
   }
 
   /* ── message outbox ──────────────────────────────────────────────────────
-     Queue first, deliver later. queue_lead_message() writes the row and always
-     succeeds; send-outbox delivers it. That split is the point: with Twilio
-     unconfigured the message still exists, visible and retryable, instead of
-     evaporating into a toast.
+     Queue first, deliver later. queue_agent_handoff() writes the row and
+     always succeeds; send-outbox delivers it. That split is the point: with
+     Twilio unconfigured the message still exists, visible and retryable,
+     instead of evaporating into a toast.
+
+     WHO IT REACHES. The agent the lead is assigned to, or the agency owner
+     when nobody is assigned -- never the buyer. WhatsApp carries Toju-to-agent
+     handoffs and nothing else. queue_lead_message(), which used to read
+     leads.consumer_phone, still exists and now refuses with an explanation
+     (migration 0082): a dropped function reads as a deployment fault and
+     invites someone to recreate it.
 
      There is no client INSERT on message_outbox. The recipient is derived
-     server-side from the lead, so the platform can only ever message someone
-     who actually enquired -- a table taking an arbitrary phone number plus
-     arbitrary text is an open SMS gateway on our own Twilio account. */
+     server-side from the lead's assignment, so the platform cannot be pointed
+     at an arbitrary number -- a table taking any phone number plus any text
+     is an open SMS gateway on our own Twilio account. */
 
   function queueMessages(leadIds, body) {
     if (!leadIds || !leadIds.length) return Promise.resolve({ queued: 0, requested: 0, error: null });
     return client().then(function (c) {
       return Promise.all(leadIds.map(function (id) {
-        return c.rpc('queue_lead_message', { p_lead_id: id, p_body: body })
+        /* queue_agent_handoff, not queue_lead_message. WhatsApp carries
+            Toju-to-agent handoffs and nothing else, so the recipient is the
+            lead's assigned agent -- or the agency owner when nobody is
+            assigned -- and never the buyer. The old function still exists and
+            refuses, so no path can quietly message a buyer again. */
+        return c.rpc('queue_agent_handoff', { p_lead_id: id, p_body: body })
           .then(function (r) { return { ok: !r.error, error: r.error }; });
       }));
     }).then(function (results) {
@@ -785,6 +797,18 @@
         error: firstErr ? firstErr.message : null,
       };
     });
+  }
+
+  /* Who a handoff would reach, asked before it is written. Returns a name
+     and whether they are reachable -- never the number itself. */
+  function handoffTarget(leadId) {
+    return client().then(function (c) {
+      return c.rpc('lead_handoff_target', { p_lead_id: leadId });
+    }).then(function (r) {
+      if (r.error) return null;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      return row || null;
+    }).catch(function () { return null; });
   }
 
   function listOutbox(limit) {
@@ -1913,6 +1937,7 @@
     cancelMessage: cancelMessage,
     sendOutbox: sendOutbox,
     checkOutbox: checkOutbox,
+    handoffTarget: handoffTarget,
     listCampaigns: listCampaigns,
     saveGeneration: saveGeneration,
     listGenerations: listGenerations,

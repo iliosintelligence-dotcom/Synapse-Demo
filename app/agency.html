@@ -2106,6 +2106,13 @@
     }
     .ob-cfg b { display: block; font-size: 13px; color: var(--ink); }
     .ob-cfg p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+    .ob-to {
+      margin: -6px 0 14px; padding: 9px 12px; border-radius: 8px;
+      background: var(--surface-2, rgba(20,20,20,0.04));
+      font-size: 12.5px; line-height: 1.5; color: var(--ink);
+    }
+    .ob-to .warn { color: #b3261e; }
+
     .ob-cfg code {
       display: block; margin-top: 7px; font-size: 11.5px; line-height: 1.7;
       color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -4066,24 +4073,24 @@
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 
+      /* HANDS A LEAD TO AN AGENT. It does not message the buyer.
+         This drawer used to read "Message 3 leads" and queue to
+         leads.consumer_phone -- every WhatsApp this platform could send went
+         to a buyer. WhatsApp now carries Toju-to-agent handoffs only, so the
+         same drawer sends to the assigned agent instead, and whether the LEAD
+         has a phone number stopped being the thing that gates it. */
       function bulkMessage() {
         const picked = selectedLeads();
         if (!picked.length) return;
-        const withPhone = picked.filter(l => l.ph);
-        const without = picked.length - withPhone.length;
-        if (!withPhone.length) { toast('None of those leads has a phone number yet'); return; }
 
         drawer.innerHTML = `
           <button class="x" aria-label="Close">\u00d7</button>
-          <div style="font-size:19px;font-weight:700">Message ${withPhone.length} lead${withPhone.length !== 1 ? 's' : ''}</div>
-          <p class="muted" style="font-size:12px;margin:6px 0 16px">${
-            without
-              ? without + ' of the ' + picked.length + ' selected ' + (without !== 1 ? 'have' : 'has') + ' no phone number and will be skipped. '
-              : ''
-          }Each lead is messaged individually on WhatsApp — this is not a group chat.</p>
+          <div style="font-size:19px;font-weight:700">Hand ${picked.length} lead${picked.length !== 1 ? 's' : ''} to an agent</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 16px">Goes on WhatsApp to the agent each lead is assigned to, or to the agency owner where nobody is assigned. The buyer is not messaged.</p>
+          <div class="ob-to" id="obTo" hidden></div>
           <div class="lf">
-            <div class="field"><label>Message</label>
-              <textarea id="obBody" rows="5" maxlength="1000" placeholder="Hello, following up on your enquiry about…"></textarea></div>
+            <div class="field"><label>What the agent needs to know</label>
+              <textarea id="obBody" rows="5" maxlength="1000" placeholder="New lead from Tayo - budget, area, and what they asked about"></textarea></div>
             <p class="muted" style="font-size:11.5px;margin:-4px 0 0"><span id="obCount">0</span>/1000</p>
             <button class="btn btn-primary btn-block" id="obQueue" style="margin-top:10px">Add to outbox</button>
             <button class="btn btn-block" id="obOpen" style="margin-top:8px">View outbox</button>
@@ -4092,6 +4099,30 @@
         const ta = document.getElementById('obBody');
         const count = document.getElementById('obCount');
         ta.addEventListener('input', () => { count.textContent = ta.value.length; });
+
+        /* Name the recipients before a word is typed. "This goes to Bola" is
+           the difference between a considered handoff and a hopeful one, and
+           an agent with no number on file is worth knowing about now rather
+           than as a queued message that can never be delivered. */
+        (function () {
+          const to = document.getElementById('obTo');
+          if (!to || !SynListings.handoffTarget) return;
+          Promise.all(picked.slice(0, 12).map(l => SynListings.handoffTarget(l.id)))
+            .then((rows) => {
+              const known = rows.filter(Boolean);
+              if (!known.length) return;
+              const names = [...new Set(known.map(r => r.recipient_name))];
+              const unreachable = known.filter(r => r.reachable === false).length;
+              to.innerHTML = '<b>Goes to</b> ' + esc(names.join(', '))
+                + (picked.length > 12 ? ' and others' : '')
+                + (unreachable
+                  ? '<br><span class="warn">' + unreachable + ' of them '
+                    + (unreachable === 1 ? 'has' : 'have')
+                    + ' no phone number on file and cannot be reached.</span>'
+                  : '');
+              to.hidden = false;
+            });
+        })();
         SynMatches.focusUnlessTouch(ta);
         document.getElementById('obOpen').addEventListener('click', openOutbox);
         document.getElementById('obQueue').addEventListener('click', function () {
@@ -4099,17 +4130,17 @@
           if (!body) { toast('Write the message first'); ta.focus(); return; }
           const btn = this;
           btn.disabled = true; btn.textContent = 'Adding…';
-          SynListings.queueMessages(withPhone.map(l => l.id), body)
+          SynListings.queueMessages(picked.map(l => l.id), body)
             .then(({ queued, requested, error }) => {
               toast(queued === requested
-                ? queued + ' message' + (queued !== 1 ? 's' : '') + ' queued — press Send when ready'
+                ? queued + ' handoff' + (queued !== 1 ? 's' : '') + ' queued — press Send when ready'
                 : queued + ' of ' + requested + ' queued — ' + (error || 'the rest were refused'));
               CRM.sel.clear(); renderCrmTable();
               openOutbox();
             })
             .catch(err => {
               btn.disabled = false; btn.textContent = 'Add to outbox';
-              toast((err && err.message) || 'Could not queue those messages');
+              toast((err && err.message) || 'Could not queue those handoffs');
               console.error('queueMessages failed', err);
             });
         });
