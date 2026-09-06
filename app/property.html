@@ -668,8 +668,11 @@
       <p class="reason" id="pvTake"></p>
     </div>
 
-    <!-- AI negotiation assistant -->
-    <div class="card section">
+    <!-- AI negotiation assistant. Hidden for rentals: a landlord sets a
+         rent and it is the rent. Offering to "work the numbers" on a fixed
+         yearly price teaches a buyer to haggle over something nobody will
+         move on, and wastes the one conversation they came to have. -->
+    <div class="card section" id="negCard">
       <div class="lbl"><span data-icon="negotiate"></span> Negotiate with Tayo</div>
       <button class="btn btn-primary" id="negBtn" style="margin-top:12px;padding:11px 20px;font-size:13.5px">Get my opening offer</button>
       <div id="negOut" hidden>
@@ -819,11 +822,23 @@
     </div>
     </div><!-- /deck -->
 
+    <!-- ── one way forward, and it is Tayo ──────────────────────────────
+         "Contact agent" sat here and went straight to the agency: an
+         untouched enquiry with no budget, no timeline and nothing an agent
+         could act on. Doing that part first is what Synapse is for. A buyer
+         who has talked to Tayo arrives knowing what they can afford and what
+         to check, and the agency gets somebody ready instead of somebody
+         curious.
+
+         So the listing hands you to the chat WITH the listing attached, the
+         way you reply to a message rather than starting a new one, and the
+         agency is introduced by Tayo when there is something worth
+         introducing. href is filled by paintProperty; without an id this
+         would open a chat about nothing. -->
     <div class="cta-dock">
-      <!-- href is filled from the real listing by paintProperty; a hardcoded
-           question named a Lekki flat whatever you were actually looking at. -->
-      <a class="btn btn-toju" id="askTojuBtn" href="toju.html"><span data-icon="chat"></span> Ask Tayo</a>
-      <button class="btn btn-primary" style="flex:1" id="contactBtn">Contact agent</button>
+      <a class="btn btn-primary" style="flex:1" id="replyBtn" href="toju.html">
+        <span data-icon="chat"></span> Reply about this home
+      </a>
     </div>
   </div><!-- /pdp -->
 
@@ -1081,88 +1096,6 @@
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
     }
 
-    // Contact agent — this is the moment we ask for an account, because it is
-    // the moment the visitor's details would reach a third party. Browsing and
-    // talking to Tayo stay free and anonymous; handing your number to an agency
-    // is the thing worth an account.
-    let contactBusy = false;   // single-flight: a double tap must not double-send
-    document.getElementById('contactBtn').addEventListener('click', function () {
-      if (contactBusy) return;
-      const btn = this;
-      contactBusy = true; btn.disabled = true; btn.textContent = 'Checking…';
-
-      /* This used to be a setTimeout and a toast. It told the buyer their
-         request had been sent and told the agency nothing at all — no lead was
-         ever written, which is why the CRM could only ever be empty. It now
-         calls create-lead, which persists the lead BEFORE attempting WhatsApp
-         delivery, so a Twilio outage (or Twilio simply not being configured
-         yet) costs the message, never the lead. */
-      const fail = (msg) => {
-        contactBusy = false; btn.disabled = false; btn.textContent = 'Contact agent';
-        toast(msg || 'Could not send that just now — please try again.');
-      };
-
-      const proceed = () => {
-        if (!PROP_ID) return fail('This listing is still loading — try again in a moment.');
-        btn.textContent = 'Sending…';
-        SynAuth.client()
-          .then((c) => c.auth.getSession())
-          .then((r) => {
-            const tok = r && r.data && r.data.session && r.data.session.access_token;
-            if (!tok) throw new Error('no-session');
-            return fetch(SUPABASE_URL + '/functions/v1/create-lead', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
-              body: JSON.stringify(NEGOTIATION
-                ? { property_id: PROP_ID, source: 'contact_button', negotiation: NEGOTIATION }
-                : { property_id: PROP_ID, source: 'contact_button' }),
-            });
-          })
-          .then((res) => res.json().then((d) => ({ ok: res.ok || res.status === 207, d })))
-          .then(({ ok, d }) => {
-            // 207 means the lead is saved but WhatsApp did not go out. The buyer
-            // is still told the truth — their request WAS received — because it
-            // was; the agency sees it in the CRM flagged as undelivered.
-            if (!ok || !d.lead_id) return fail(d && d.error ? 'Not sent: ' + d.error : null);
-
-            /* Collapse this visitor's recorded touches into first/last-touch
-               attribution for the new lead. Done here rather than inside
-               create-lead because the visitor id lives in this browser and the
-               function has no way to know it; moving it server-side is a
-               small change if create-lead ever receives the visitor id.
-               Fire-and-forget: the lead is already saved, and failing to
-               attribute it must never look like failing to send it. */
-            try {
-              const visitor = localStorage.getItem('toju_visitor_v1');
-              if (visitor) {
-                SynAuth.client().then((c) =>
-                  c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: visitor }),
-                ).catch(() => {});
-              }
-            } catch (e) { /* storage blocked; the lead still stands */ }
-            /* Naming the person only where one is actually assigned. The
-               buyer just saw that name on the card; the confirmation closing
-               the loop with the same name is what makes the handover feel
-               like it went to someone rather than into a queue. */
-            const who = AGENT_NAME ? AGENT_NAME.split(' ')[0] : null;
-            toast(d.delivery_status === 'delivered'
-              ? (who ? 'Sent — ' + who + ' will reach out on WhatsApp shortly.'
-                     : 'Sent — the agent will reach out on WhatsApp shortly.')
-              : (who ? 'Sent — ' + who + ' has your request and will be in touch.'
-                     : 'Sent — the agency has your request and will be in touch.'));
-            btn.textContent = '✓ Request sent';
-            // stays disabled: the request is sent, re-sending helps nobody
-          })
-          .catch((e) => fail(e && e.message === 'no-session' ? 'Please sign in to contact this agent.' : null));
-      };
-
-      if (!window.SynAuth) return fail('Sign-in is unavailable right now.');
-      SynAuth.ready().then((u) => {
-        if (u) { proceed(); return; }
-        const here = window.location.pathname + window.location.search;
-        window.location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
-      }).catch(() => fail('Could not check your sign-in — please try again.'));
-    });
 
     // animate neighbourhood bars on view
     const io = new IntersectionObserver((es) => es.forEach((e) => {
@@ -1203,7 +1136,7 @@
       if (t) t.textContent = msg;
       const p = document.getElementById('pvPrice'); if (p) p.textContent = '';
       const l = document.getElementById('pvLoc'); if (l) l.textContent = detail || '';
-      ['negBtn', 'contactBtn', 'saveBtn'].forEach((id) => {
+      ['negBtn', 'saveBtn'].forEach((id) => {
         const b = document.getElementById(id); if (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); }
       });
     }
@@ -1375,8 +1308,11 @@
           sign_in:  ['Sign in to book a tour.', 'Sign in', () => {
             location.href = 'signin.html?reason=inspection&next=' + encodeURIComponent(location.pathname + location.search);
           }],
-          contact:  ['Ask this agency about the home first — then you can book a tour.', 'Contact agent', () => {
-            const c = document.getElementById('contactBtn'); if (c) c.click();
+          contact:  ['Talk to Tayo about this home first — then you can book a tour.', 'Reply about this home', () => {
+            // Straight to the chat with the listing attached. This used to
+            // click the Contact agent button, which no longer exists: the
+            // agency is introduced by Tayo, not by a button on a listing.
+            location.href = 'toju.html' + (URL_ID ? '?reply=' + encodeURIComponent(URL_ID) : '');
           }],
           qualification: ['Tayo needs to understand what you are looking for before booking an agent\u2019s time.', 'Talk to Tayo', () => {
             location.href = 'toju.html';
@@ -3336,11 +3272,12 @@
       // rather than flashing an area-only paragraph and then rewriting it.
       fetchMyPlaces().then(function () { paintAround(); });
       fetchStoredPlaces(p.id || null);
-      var askBtn = document.getElementById('askTojuBtn');
-      if (askBtn && p.title) {
-        var where = [p.neighbourhood, p.city].filter(Boolean).join(', ');
-        askBtn.href = 'toju.html?ask=' + encodeURIComponent(
-          'Tell me more about ' + p.title + (where ? ' in ' + where : '') + ' — is it right for me?');
+      /* The listing travels as an id, not as a typed-out question. The
+         chat looks it up and pins it to the conversation, so every question
+         after it is about this home without the buyer restating which one. */
+      var replyBtn = document.getElementById('replyBtn');
+      if (replyBtn && p.id) {
+        replyBtn.href = 'toju.html?reply=' + encodeURIComponent(p.id);
       }
       /* Placed, or honest about not being. */
       var unpl = document.getElementById('pvcUnplaced');
@@ -3365,6 +3302,11 @@
             + 'going to pin it somewhere approximate and let you plan around it.</p>'
             + (addr ? '<div class="addr">' + escHtml(addr) + '</div>' : '');
         }
+      }
+      /* Rent is set by the agency. Sales are where a number is a question. */
+      var negCard = document.getElementById('negCard');
+      if (negCard && String(p.listing_type || '').toLowerCase() === 'rent') {
+        negCard.hidden = true;
       }
       if (p.latitude != null && p.longitude != null) {
         PROP = [Number(p.latitude), Number(p.longitude)];

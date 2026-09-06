@@ -164,6 +164,36 @@
     /* composer — one frosted chatbox: input on top, suggestions tucked at the bottom */
     .composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 14px 22px 34px;
       display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; }
+    /* The quote bar. A left rule and a tint, which is what a quoted reply
+       looks like everywhere, so it needs no explaining. */
+    .tj-reply {
+      display: flex; align-items: center; gap: 10px;
+      margin: 0 0 8px; padding: 8px 10px 8px 12px;
+      border-left: 3px solid var(--brand-deep, #121212);
+      border-radius: 8px; background: rgba(20,20,20,0.05);
+    }
+    .tj-reply .tjr-main { flex: 1; min-width: 0; }
+    .tj-reply .tjr-k {
+      display: block; font: 700 10.5px var(--f-sans); letter-spacing: .06em;
+      text-transform: uppercase; color: var(--ink-muted);
+    }
+    .tj-reply .tjr-t {
+      display: block; font-size: 13px; font-weight: 600; color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tj-reply .tjr-s { display: block; font-size: 11.5px; color: var(--ink-muted); }
+    .tj-reply .tjr-x {
+      flex: none; width: 30px; height: 30px; border-radius: 50%;
+      border: 0; background: none; color: var(--ink-muted);
+      font-size: 17px; line-height: 1; cursor: pointer;
+    }
+    .tj-reply .tjr-go {
+      flex: none; min-height: 34px; padding: 0 13px; border-radius: 999px;
+      border: 0; background: #121212; color: #fff;
+      font: 600 12px var(--f-sans); cursor: pointer;
+    }
+    .tj-reply .tjr-go[disabled] { opacity: .45; cursor: default; }
+
     .tj-hint { width: 100%; max-width: 480px; text-align: center; font-size: 12.5px; color: var(--ink-muted); border-radius: 12px; padding: 8px 14px; }
     .chatbox { width: 100%; max-width: 480px; border-radius: 24px; padding: 6px 6px 8px;
       backdrop-filter: blur(36px) saturate(1.6); -webkit-backdrop-filter: blur(36px) saturate(1.6); }
@@ -474,6 +504,12 @@
         </div>
         <div class="convo-scroll" aria-live="polite"><div class="convo" id="convo"></div></div>
         <div class="composer" data-cnav-clear>
+          <!-- The listing being replied to, quoted the way a reply is quoted
+               in a chat. It stays for the whole conversation rather than one
+               message: the buyer came here about this home and everything
+               they ask is about it, so restating which one every turn is the
+               thing they were trying to avoid. -->
+          <div class="tj-reply" id="tjReply" hidden></div>
           <div id="tjHint" class="tj-hint" hidden></div>
           <div class="chatbox">
             <div class="pillrow">
@@ -715,6 +751,181 @@
     // The dream context is sent to the model but must never surface in the UI:
     // the server persists it, so restored threads carry it — filter everywhere.
     const isDreamCtx = (m) => m && m.role === 'user' && typeof m.content === 'string' && m.content.startsWith(DREAM_CTX_PREFIX);
+    /* ── the listing this conversation is about ───────────────────────────
+       Arrives as ?reply=<id> from the listing page. Looked up here rather
+       than passed in the URL as text: a title and a price in a query string
+       are a thing a buyer can edit, and Tayo would then be answering about a
+       home at a price nobody is asking.
+
+       Kept for the whole conversation, and remembered across a reload,
+       because it is the subject rather than one message's quote. */
+    const REPLY_KEY = 'toju_reply_v1';
+    let REPLY_TO = null;
+
+    function loadReply() {
+      try { return JSON.parse(localStorage.getItem(REPLY_KEY)) || null; } catch (e) { return null; }
+    }
+    function saveReply(r) {
+      try {
+        if (r) localStorage.setItem(REPLY_KEY, JSON.stringify(r));
+        else localStorage.removeItem(REPLY_KEY);
+      } catch (e) { /* private mode: the chip still works for this page view */ }
+    }
+
+    function priceLine(p) {
+      const n = Number(p.price) || 0;
+      const suffix = p.price_period === 'per_year' ? '/yr'
+        : p.price_period === 'per_month' ? '/mo'
+        : p.price_period === 'per_night' ? '/night' : '';
+      let money;
+      try {
+        money = new Intl.NumberFormat(undefined, {
+          style: 'currency', currency: (p.currency || 'NGN'),
+          currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0,
+        }).format(n);
+      } catch (e) { money = (p.currency || 'NGN') + ' ' + n.toLocaleString(); }
+      return money + suffix;
+    }
+
+    function renderReply() {
+      const box = document.getElementById('tjReply');
+      if (!box) return;
+      if (!REPLY_TO) { box.hidden = true; box.innerHTML = ''; return; }
+      const r = REPLY_TO;
+      const rent = String(r.listing_type || '').toLowerCase() === 'rent';
+      box.innerHTML =
+        '<div class="tjr-main">'
+        + '<span class="tjr-k">Replying about</span>'
+        + '<span class="tjr-t">' + esc(r.title || 'this home') + '</span>'
+        + '<span class="tjr-s">' + esc(priceLine(r))
+        + (r.city ? ' \u00b7 ' + esc(r.city) : '')
+        + (rent ? ' \u00b7 rent is set by the agency' : '') + '</span>'
+        + '</div>'
+        + '<button class="tjr-go" id="tjHandoff" type="button"' + hoAttrs() + '>'
+        + hoLabel() + '</button>'
+        + '<button class="tjr-x" id="tjReplyX" type="button" aria-label="Stop replying about this home">\u00d7</button>';
+      box.hidden = false;
+
+      document.getElementById('tjReplyX').addEventListener('click', () => {
+        REPLY_TO = null; saveReply(null); renderReply();
+      });
+      document.getElementById('tjHandoff').addEventListener('click', handOff);
+    }
+
+    /* WHEN THE INTRODUCTION BECOMES AVAILABLE
+       Not immediately. The reason the listing page no longer has a Contact
+       agent button is that an untouched enquiry is worth nothing to an agent;
+       offering the same thing one screen later, before a word has been said,
+       would only move it. Two turns is a low bar and a real one -- it means
+       the buyer asked something and read an answer.
+
+       The bracketed context notes are excluded from the count. They are
+       written by this page, not by the person, and letting them count would
+       unlock the introduction before the buyer had said anything at all. */
+    let HANDED = false;
+    const userTurns = () => saved.filter((m) => m.role === 'user'
+      && !String(m.content || '').startsWith('[')).length;
+    function hoAttrs() {
+      if (HANDED) return ' disabled title="Already introduced"';
+      return userTurns() >= 2 ? ''
+        : ' disabled title="Ask Tayo about this home first"';
+    }
+    function hoLabel() { return HANDED ? 'Introduced' : 'Introduce me'; }
+
+    /* The introduction. The same create-lead call the listing page used to
+       make -- the lead is written before any WhatsApp is attempted, so a
+       messaging outage costs the message and never the enquiry -- but reached
+       from here, after a conversation, which is the entire point. */
+    async function handOff() {
+      if (!REPLY_TO || HANDED) return;
+      const btn = document.getElementById('tjHandoff');
+      if (btn) { btn.disabled = true; btn.textContent = 'Introducing\u2026'; }
+      try {
+        if (!window.SynAuth) throw new Error('Sign-in is unavailable right now.');
+        const who = await SynAuth.ready();
+        if (!who) {
+          // Handing a name and number to an agency is the thing worth an
+          // account. Browsing and talking to Tayo stay anonymous.
+          const here = location.pathname + location.search;
+          location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
+          return;
+        }
+        const c = await SynAuth.client();
+        const sess = await c.auth.getSession();
+        const tok = sess && sess.data && sess.data.session && sess.data.session.access_token;
+        if (!tok) throw new Error('Please sign in again to be introduced.');
+
+        const res = await fetch(SUPABASE_URL + '/functions/v1/create-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
+          body: JSON.stringify({ property_id: REPLY_TO.id, source: 'toju_chat' }),
+        });
+        const d = await res.json().catch(() => ({}));
+        // 207: the lead is saved and the WhatsApp did not go out. Still an
+        // introduction, and the agency sees it flagged undelivered.
+        if (!(res.ok || res.status === 207) || !d.lead_id) {
+          throw new Error((d && d.error) || 'That introduction did not go through.');
+        }
+
+        /* Collapse this visitor's touches onto the new lead. Fire and forget:
+           the introduction is made, and failing to attribute it must never
+           look like failing to make it. */
+        try {
+          if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {});
+        } catch (e) { /* storage blocked; the lead still stands */ }
+
+        HANDED = true; renderReply();
+        tojuMsg('Done \u2014 I have introduced you to the agent for '
+          + (REPLY_TO.title || 'this home')
+          + '. They have what we talked about, so you will not be starting again.');
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; }
+        tojuMsg((e && e.message) || 'I could not make that introduction just now.');
+      }
+    }
+
+    async function attachReply(id) {
+      try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/properties?id=eq.'
+          + encodeURIComponent(id)
+          + '&select=id,title,price,price_period,currency,listing_type,city,bedrooms',
+          { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
+        const rows = await r.json().catch(() => []);
+        const p = Array.isArray(rows) ? rows[0] : null;
+        if (!p) return;                       // gone or unpublished: no quote
+        REPLY_TO = p; saveReply(p); renderReply();
+      } catch (e) { /* the chat still works without the quote */ }
+    }
+
+    /* What Tayo is told. Same shape as the dream-board note below, which is
+       the pattern this function already understands: a bracketed aside the
+       model reads as context and does not repeat back.
+
+       The rent/sale split is the point. A landlord sets a rent and it is the
+       rent, so Tayo answering "shall I get that down for you" on a rental
+       teaches a buyer to haggle over something nobody will move on. On a
+       sale, a number is a fair question -- inside the price the agency set,
+       never below it, and Tayo cannot agree a figure in any case. */
+    function replyContext() {
+      if (!REPLY_TO) return null;
+      const r = REPLY_TO;
+      const rent = String(r.listing_type || '').toLowerCase() === 'rent';
+      let t = '[The buyer is replying about one specific listing, so answer about THIS home '
+        + 'unless they clearly change the subject: "' + (r.title || 'a listing') + '"'
+        + (r.city ? ' in ' + r.city : '')
+        + ', ' + priceLine(r)
+        + (r.bedrooms ? ', ' + r.bedrooms + ' bed' : '') + '. ';
+      t += rent
+        ? 'This is a RENTAL: the rent is set by the agency and is not negotiable. Do not '
+          + 'invite an offer or suggest a lower figure. Answer what they ask, tell them '
+          + 'what to check before paying, and when they are genuinely interested say you '
+          + 'will introduce them to the agent.'
+        : 'This is a SALE: a number is a fair question. Stay within the asking price the '
+          + 'agency set and never suggest going below it, and be clear you can carry an '
+          + 'offer but only the agency can accept one.';
+      return t + ' Never claim the home is verified unless told it is.]';
+    }
+
     function dreamContext() {
       try {
         const b = JSON.parse(localStorage.getItem('synapse_moodboard_v1'));
@@ -832,6 +1043,10 @@
         const outgoing = saved.slice(-14).map((m) => ({ role: m.role, content: m.content }));
         const dream = dreamContext();
         if (dream) outgoing.unshift({ role: 'user', content: dream });
+        /* After the dream board, so the listing is the nearer context: the
+           board shapes taste, this is the actual question. */
+        const reply = replyContext();
+        if (reply) outgoing.push({ role: 'user', content: reply });
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
@@ -857,6 +1072,7 @@
         tojuMsg(data.reply, matches);
         collect(matches); renderCanvas();
         renderSuggest(data.suggestions);
+        renderReply();   // the introduction unlocks once there is a conversation
       } catch (e) {
         clearTimeout(timer); t.remove();
         const kind = e && e.kind ? e.kind
@@ -1185,6 +1401,17 @@
        typed their brief on the landing page lands mid-conversation rather than
        staring at their own sentence. The URL is cleaned afterwards so a reload
        doesn't re-ask the same thing. */
+    /* ?reply=<listing id> from the listing page. Restored from storage
+       otherwise, so a reload does not drop the subject mid-conversation. */
+    const replyParam = new URLSearchParams(location.search).get('reply');
+    if (replyParam) {
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      attachReply(replyParam);
+    } else {
+      REPLY_TO = loadReply();
+      renderReply();
+    }
+
     const askParam = new URLSearchParams(location.search).get('ask');
     if (askParam) {
       const q = askParam.slice(0, 300).trim();
