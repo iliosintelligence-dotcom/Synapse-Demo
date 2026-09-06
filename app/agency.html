@@ -2085,6 +2085,20 @@
     .tbtn:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .tbtn.primary { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
     .tbtn.primary:hover { background: #a8481f; color: #fff; }
+    /* Amber, not red: nothing has failed. Somebody wrote a message and it is
+       still waiting for them to send it, which is a nudge rather than an
+       alarm -- and red is what this portal uses for a listing that expired. */
+    .ob-waiting {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin: 0 0 14px; padding: 12px 14px;
+      background: rgba(224,168,59,0.09);
+      border: 1px solid rgba(224,168,59,0.35); border-radius: 10px;
+    }
+    .ob-waiting .ob-w-txt { flex: 1; min-width: 200px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+    .ob-waiting .ob-w-txt b { font-weight: 700; }
+    .ob-waiting .ob-w-age { color: var(--ink-muted); }
+    .ob-waiting .btn { flex: none; min-height: 38px; }
+
     .crm-funnel { display: flex; align-items: stretch; gap: 4px; margin: 0 0 14px; flex-wrap: wrap; }
     .fn-card { flex: 1; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 11px; cursor: pointer; transition: var(--m-standard); display: flex; flex-direction: column; gap: 7px; }
     @media (hover: hover) and (pointer: fine) {
@@ -3118,6 +3132,22 @@
             </div>
           </div>
 
+          <!-- ── messages nobody has sent ──────────────────────────────────
+               The outbox was reachable only from INSIDE the compose drawer:
+               you had to tick some leads and start writing a new message
+               before the "View outbox" button existed. So a queued message
+               was invisible unless you happened to be writing another one.
+
+               One had been sitting there for twelve days, at zero attempts,
+               telling a buyer their viewing was cancelled.
+
+               Deliberately a notice and not a send. The rule this queue is
+               built on is that outbound messages to real people are a
+               decision, not a side effect -- so nothing here sends anything.
+               It makes the decision POSSIBLE by admitting the message exists,
+               which is the part that was missing. -->
+          <div class="ob-waiting" id="obWaiting" hidden></div>
+
           <!-- pipeline funnel (always visible — it's the process) -->
           <div class="crm-funnel" id="crmFunnel" data-pane-filters></div>
 
@@ -4073,6 +4103,57 @@
         });
       }
 
+      /* Reads the same rows the drawer does, and only counts. It never sends,
+         and it never opens anything by itself. */
+      function paintWaiting() {
+        var box = document.getElementById('obWaiting');
+        if (!box || !window.SynListings) return;
+        SynListings.listOutbox(50).then(function (rows) {
+          var waiting = (rows || []).filter(function (m) {
+            return m.status === 'queued' || m.status === 'sending';
+          });
+          var failed = (rows || []).filter(function (m) { return m.status === 'failed'; });
+          if (!waiting.length && !failed.length) { box.hidden = true; return; }
+
+          /* Age of the OLDEST, not the newest. "1 message waiting" is easy to
+             put off; "waiting 12 days" is not, and the oldest is the one that
+             has done the damage. */
+          var oldest = waiting.reduce(function (a, m) {
+            var t = new Date(m.created_at).getTime();
+            return (a == null || t < a) ? t : a;
+          }, null);
+          var age = '';
+          if (oldest != null) {
+            var mins = Math.max(0, Math.round((Date.now() - oldest) / 60000));
+            age = mins < 60 ? mins + ' min'
+              : mins < 1440 ? Math.round(mins / 60) + ' hr'
+              : Math.round(mins / 1440) + ' day' + (Math.round(mins / 1440) === 1 ? '' : 's');
+          }
+
+          var bits = [];
+          if (waiting.length) {
+            bits.push('<b>' + waiting.length + ' message' + (waiting.length === 1 ? '' : 's')
+              + ' waiting to be sent</b>'
+              + (age ? ' <span class="ob-w-age">\u00b7 oldest ' + age + '</span>' : ''));
+          }
+          if (failed.length) {
+            bits.push('<b>' + failed.length + ' failed</b>');
+          }
+          box.innerHTML = '<div class="ob-w-txt">' + bits.join(' &nbsp;\u2014&nbsp; ')
+            + '<br>Nothing sends on its own. Open the outbox to review and send.</div>'
+            + '<button class="btn" type="button" id="obWaitingOpen">Open outbox</button>';
+          box.hidden = false;
+          var b = document.getElementById('obWaitingOpen');
+          if (b) b.addEventListener('click', openOutbox);
+          if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(box);
+        }).catch(function () { /* a count that cannot load must not break the pane */ });
+      }
+
+      window.paintOutboxWaiting = paintWaiting;
+      // Paint once on load: the notice has to be there when the pane is the
+      // one you land on, not only when you navigate to it.
+      setTimeout(paintWaiting, 1200);
+
       const OB_LABEL = { queued: 'Waiting', sending: 'Sending', sent: 'Sent', failed: 'Failed', cancelled: 'Cancelled' };
       function openOutbox() {
         drawer.innerHTML = `
@@ -4095,6 +4176,7 @@
               toast(!r.claimed ? 'Nothing waiting to send'
                 : r.sent + ' sent' + (r.failed ? ', ' + r.failed + ' failed — see below' : ''));
               paintOutbox();
+              paintWaiting();
             })
             .catch(err => {
               btn.disabled = false; btn.textContent = 'Send now';
@@ -10051,6 +10133,9 @@
        actually switching the view, or vice versa. */
     function goToPane(pane) {
       if (pane === 'tours' && typeof loadTours === 'function') loadTours();
+      // Recount on arrival -- a message queued in another tab, or one you sent
+      // a minute ago, both change what this should say.
+      if (pane === 'crm' && window.paintOutboxWaiting) window.paintOutboxWaiting();
       if (pane === 'verification' && typeof loadVerification === 'function') loadVerification();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
