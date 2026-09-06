@@ -274,6 +274,17 @@
             <input class="au-input" id="auAgencyName" name="agencyName" type="text" autocomplete="organization" />
             <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
           </div>
+          <!-- Agency staff only. A Toju handoff arrives on somebody's WhatsApp
+               and there is nowhere else for it to go, so an agency without a
+               number here cannot be handed a lead at all. Nothing collected
+               this before: every profile on the project had phone = NULL. -->
+          <div class="au-field" id="staffPhoneField" hidden>
+            <label class="au-label" for="auStaffPhone">Your WhatsApp number</label>
+            <input class="au-input" id="auStaffPhone" name="staffPhone" type="tel" autocomplete="tel"
+                   inputmode="tel" placeholder="0803 123 4567" />
+            <div class="au-hint">Where Tayo sends you a lead the moment it qualifies. Any format — 08…, 234… or +234…</div>
+            <div class="au-err" id="errStaffPhone" hidden></div>
+          </div>
           <div class="au-field" id="emailField">
             <label class="au-label" for="auEmail">Email</label>
             <input class="au-input" id="auEmail" name="email" type="email" autocomplete="email"
@@ -441,6 +452,12 @@
         el('tabIn').setAttribute('aria-selected', String(!up));
         el('nameField').hidden = !up;
         el('agencyNameField').hidden = !(up && role === 'agency');
+        /* Only asked of agency staff, and only when signing up. A buyer has
+           no use for it and should not be asked; an agency without it cannot
+           be handed a lead at all, because a Toju handoff goes to a person's
+           WhatsApp and there is nowhere else for it to go. */
+        var spf = el('staffPhoneField');
+        if (spf) spf.hidden = !(up && role === 'agency' && method !== 'phone');
         el('passHint').hidden = !up;
         el('auH').textContent = up
           ? (role === 'agency' ? 'Create your agency account' : 'Create your account')
@@ -666,6 +683,7 @@
         var pass  = el('auPass').value;
         var name  = el('auName').value.trim();
         var agencyName = el('auAgencyName').value.trim();
+      var staffPhone = el('auStaffPhone') ? el('auStaffPhone').value.trim() : '';
 
         var phone = el('auPhone').value.trim();
         var code  = el('auCode').value.trim();
@@ -692,6 +710,20 @@
           }
         }
 
+        /* Refused here, not later. An agency account created without a
+           number is an agency Tayo cannot hand a lead to, and the only way to
+           notice is a handoff that fails weeks afterwards. */
+        if (mode === 'up' && role === 'agency' && method !== 'phone' && !staffPhone) {
+          var spErr = el('errStaffPhone');
+          if (spErr) {
+            spErr.textContent = 'Tayo sends you leads on WhatsApp, so we need a number for you.';
+            spErr.hidden = false;
+          }
+          var spInput = el('auStaffPhone');
+          if (spInput) spInput.focus();
+          return;
+        }
+
         busy = true; go.disabled = true;
         go.textContent = mode === 'up' ? 'Creating your account…' : 'Signing you in…';
 
@@ -713,7 +745,7 @@
                 ? SynAuth.verifyPhoneCode(pendingPhone, code)
                 : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName }))
             : (mode === 'up'
-                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, next: next })
+                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, phone: staffPhone, next: next })
                 : SynAuth.signIn(email, pass));
 
         work.then(function (res) {

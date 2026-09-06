@@ -288,6 +288,18 @@
       // The agency's display name, typed by the person signing up. Only the
       // trigger reads this; it is never invented on their behalf.
       if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+      /* The number Synapse will reach this person on.
+         Nothing collected it before, so profiles.phone was NULL for all 68
+         accounts on the project -- and a Toju handoff has nowhere to go
+         without it. Normalised here with the same rules the phone sign-in
+         path uses, so the number that receives a handoff is the same shape as
+         the number that could sign them in. The trigger normalises again
+         server-side; this is for the person looking at the field, not for
+         trust. */
+      if (opts.phone) {
+        var tel = normalisePhone(opts.phone);
+        if (tel) meta.phone = tel;
+      }
       /* The confirmation link has to come back to the page the person left,
          WITH the context they left it in. This was origin + pathname only, so
          `role` and `next` were dropped: an agency owner confirming their email
