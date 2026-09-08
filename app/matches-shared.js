@@ -4,7 +4,7 @@
    and the Tayo canvas (toju.html) render from a Tayo match payload:
      · shapeTojuMatch()  — Tayo API match  →  card item (one shape, both pages)
      · listingCardHtml() — the .listing card markup (identical on both pages)
-     · drawMatchMap()    — the Leaflet price-pin map
+     · drawMatchMap()    — the vector map (see app/map/render.js)
      · naira / esc / verifyChip / coords / IMG_POOL — shared helpers
    Full data contract: docs/STATE_CONTRACT.md. Plain script (no build step);
    exposes window.SynMatches. Keep page-level CSS for .listing/.price-pin in
@@ -250,71 +250,71 @@
   // Leaflet price-pin map. `st` is a persistent {map, layer} state object owned
   // by the page; pass the same object every call. Safe when the container was
   // display:none a moment ago (canvas morph) — it re-measures before fitting.
+  /* ── THE MATCHES MAP ───────────────────────────────────────────────────
+     Same signature it has always had -- drawMatchMap(state, elementId, items)
+     -- so browse, Tayo and the agency portal call it exactly as before and
+     none of them had to change. What is underneath is entirely different.
+
+     It was Leaflet drawing divIcon price pills on raster tiles. Now it is
+     SynMapRender: Stadia vector, clustered on a worker, monochrome, with a
+     card instead of a popup. The reason the swap is three lines of call-site
+     churn rather than three files of it is that the provider now lives behind
+     one facade, which is the whole argument for having built it that way.
+
+     ASYNCHRONOUS NOW, WHICH THE OLD ONE WAS NOT. MapLibre and the style are
+     fetched, so the first call cannot paint synchronously. Items handed over
+     before the map is ready are held in st.pending and drawn on ready, so a
+     caller that renders results the moment they arrive does not silently lose
+     the first set -- which is exactly what every one of these three callers
+     does. */
   function drawMatchMap(st, elId, items) {
-    if (!window.L) return st;
-    if (!st.map) {
-      /* touchZoom and doubleClickZoom are Leaflet defaults, but they are
-          named here because scrollWheelZoom sitting alone read as "zooming is
-          off on this map". Pinch and double-tap both zoom; only the wheel is
-          held back, because a map that swallows the page scroll is worse than
-          one you have to press + on. */
-      st.map = L.map(elId, {
-        scrollWheelZoom: false, touchZoom: true, doubleClickZoom: true, tap: true,
+    if (!window.SynMapRender || !window.SynMapStyle) return st;
+    var list = (items || []).map(function (l, i) {
+      var c = coords(l, i);
+      return {
+        id: l.id,
+        lat: c[0], lng: c[1],
+        price: money(l.priceN, l.currency),
+        beds: (l.beds != null ? l.beds : (l.bedrooms != null ? l.bedrooms : 0)) + ' bed',
+        verified: (l.vstatus || '') === 'verified',
+        title: l.ttl || l.title || '',
+        loc: l.loc || l.city || '',
+        img: l.img || '',
+      };
+    }).filter(function (p) { return isFinite(p.lat) && isFinite(p.lng); });
+
+    if (!st.r) {
+      var host = document.getElementById(elId);
+      if (!host) return st;
+      /* The card is positioned against this element, so it has to establish a
+         containing block. Pages style these boxes differently and not all of
+         them set position. */
+      if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+
+      st.r = SynMapRender.create(elId, { zoom: 12 });
+      st.pending = list;
+      st.r.ready().then(function () {
+        st.card = SynMapCard.attach(st.r, host, {
+          href: function (id) { return propertyHref(id); },
+          ask: function (id) { return 'toju.html?reply=' + encodeURIComponent(id); },
+        });
+        st.ready = true;
+        paint(st, st.pending || []);
+      }).catch(function (e) {
+        if (window.console) console.warn('map failed to start:', e && e.message);
       });
-      /* CARTO NOW WATERMARKS ITS KEYLESS TILES.
-         Nothing here broke -- the provider changed terms. basemaps.cartocdn.com
-         still answers 200 with a real PNG, and that PNG has "API KEY REQUIRED /
-         carto.com/basemaps/apikey" printed diagonally across it. Every map in
-         the product was serving that to buyers and agencies alike.
-
-         OSM's standard tiles are the keyless replacement that works today, and
-         they carry the labels this map needs. Attribution is not decoration
-         here: ODbL requires it and the tile policy requires it.
-
-         The OSMF tile policy covers modest use and explicitly does not cover
-         commercial consumption, which this was relying on. The account is
-         MapTiler now and both the URL and the attribution live in
-         app/map-tiles.js, so the two maps in this app cannot drift apart --
-         and OSM stays as the fallback when no key is set or the tiles stop
-         answering. */
-      /* detail: asked for a map with streets and names on it rather than a
-          pale backdrop. The price pins sit on top of it either way. */
-      SynTiles.add(st.map, { detail: true });
-      st.layer = L.layerGroup().addTo(st.map);
+      return st;
     }
-    st.layer.clearLayers();
-    const pts = [];
-    items.forEach((l, i) => {
-      const c = coords(l, i);
-      pts.push(c);
-      // A real map pin: price pill + pointer tail, with a verification dot so
-      // the map carries the same trust signal the cards do. iconAnchor sits at
-      // the tail tip so the pin points AT the location, not beside it.
-      const vcls = (l.vstatus || 'verified') === 'verified' ? ' ok' : '';
-      /* A pin used to open a popup naming the home and stop there -- the one
-         question you ask a price on a map is "what is that, and where exactly
-         is it", and it answered half. Now it flies in to street level, and the
-         popup carries the way through to that home's own map. */
-      const mk = L.marker(c, { icon: L.divIcon({
-        className: 'pin-wrap',
-        html: `<div class="price-pin${vcls}"><span class="pv">${money(l.priceN, l.currency)}</span></div><span class="pin-tail"></span>`,
-        iconSize: [0, 0], iconAnchor: [0, 0],
-      }) })
-        .addTo(st.layer)
-        .bindPopup(`<b>${esc(l.ttl)}</b>${l.loc ? '<br>' + esc(l.loc) : ''}`
-          + `${l.score != null ? '<br>Confidence ' + l.score : ''}`
-          + `<br><a class="pin-go" href="${propertyHref(l.id)}">See this home on its own map \u2192</a>`);
-      mk.on('click', function () {
-        /* Zoom to the home, not to the whole set. 16 shows the streets around
-           it; flyTo so it is obvious which pin you pressed. */
-        st.map.flyTo(c, Math.max(st.map.getZoom(), 16), { duration: 0.6 });
-      });
-    });
-    setTimeout(() => {
-      st.map.invalidateSize();
-      if (pts.length) st.map.fitBounds(L.latLngBounds(pts).pad(0.35));
-    }, 80);
+
+    if (!st.ready) { st.pending = list; return st; }
+    paint(st, list);
     return st;
+  }
+
+  function paint(st, list) {
+    st.r.setProperties(list);
+    if (list.length) st.r.fit(list, 56);
+    st.r.resize();
   }
 
   /* ── Saved homes — race-safe across tabs ────────────────────────────────

@@ -12,6 +12,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="map-tiles.js"></script>
+  <!-- The map: style-synapse styles the world, render owns MapLibre and
+       nothing else may touch it, card is what opens when you press a home.
+       Must load BEFORE matches-shared.js, which calls into them. -->
+  <script src="map/style-synapse.js"></script>
+  <script src="map/render.js"></script>
+  <script src="map/card.js"></script>
   <script src="matches-shared.js"></script>
   <script src="syndication.js"></script>
   <!-- Validation harness. Loads only; runs when called. Meta approval is
