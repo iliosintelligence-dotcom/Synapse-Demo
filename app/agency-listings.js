@@ -178,11 +178,18 @@
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return { data: [], error: null };
       return c1.from('leads')
+        /* lead_attribution comes back WITH the lead rather than in a second
+           round trip. It is one row per touch (first, and last when they
+           differ), and it is the only record of which channel actually
+           produced this lead -- `source` is a single label written at
+           creation, not a chain. The CRM used to derive the channel from
+           `source` and never read this table at all. */
         .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
                 'risk_level, next_action_recommendation, budget_min, budget_max, ' +
                 'preferences, ' +
                 'delivery_status, delivery_error, last_activity_at, created_at, ' +
-                'assigned_agent_id, properties(title, price, city)')
+                'assigned_agent_id, properties(title, price, city), ' +
+                'lead_attribution(channel, is_first_touch, is_last_touch, occurred_at, campaign_id)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .neq('current_stage', 'lost')
@@ -1346,7 +1353,7 @@
       if (!aid) return { data: [], error: null };
       return c1.from('social_posts')
         .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
-              + 'caption, media_urls, failure_reason, created_at')
+              + 'caption, media_urls, failure_reason, created_at, payload')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('scheduled_at', { ascending: true, nullsFirst: false })
@@ -1424,8 +1431,21 @@
             platform: sl.platform,
             status: 'scheduled',
             scheduled_at: new Date(sl.at).toISOString(),
-            caption: String(o.caption || ''),
+            /* Per slot, falling back to the shared one. The captions are
+               genuinely different per channel now -- different subjects, not
+               retoned copies -- so putting one of them on every row would post
+               the Instagram angle to Facebook. Callers with a single caption
+               (the pipeline's own scheduler) still pass o.caption and are
+               unaffected. */
+            caption: String(sl.caption || o.caption || ''),
             media_urls: o.mediaUrls || null,
+            /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
+               six subjects and needs to know which are spent for a listing, or
+               every regeneration rewrites the same three. Stored on the row
+               rather than only in the composer's localStorage so the rotation
+               is shared: a second person generating for this listing skips
+               what is already queued, instead of repeating it. */
+            payload: sl.angle ? { angle: sl.angle } : null,
             dry_run: true,
             created_by: me || null,
           };

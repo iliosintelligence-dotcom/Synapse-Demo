@@ -3703,7 +3703,29 @@
       whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
+      /* The database's attribution_channel enum has ten values and this map
+         had seven, four of which did not overlap. Every lookup here is
+         `CH[channel].color` with no guard, so the first genuinely attributed
+         lead -- a Tayo recommendation, a referral -- would have thrown while
+         rendering the table. These are the missing ones. */
+      tayo:      { label: 'Tayo',      color: '#5B4B8A', short: 'T' },
+      referral:  { label: 'Referral',  color: '#0F7B6C', short: 'R' },
+      web:       { label: 'Website',   color: '#4A6FA5', short: 'W' },
+      organic:   { label: 'Search',    color: '#6E6142', short: 'S' },
     };
+
+    /* attribution_channel (database) → the keys above (UI). Kept explicit
+       rather than clever: the two vocabularies are set by different concerns
+       and will drift, and a missing entry should be obvious here rather than
+       becoming `undefined` three call sites away. Anything unrecognised
+       resolves to 'direct', which is what the fallback always meant. */
+    const ATTR_CHANNEL = {
+      instagram: 'instagram', tiktok: 'tiktok', facebook: 'facebook',
+      whatsapp_campaign: 'whatsapp', proximity_alert: 'proximity',
+      ai_recommendation: 'tayo', referral: 'referral',
+      website: 'web', organic: 'organic', direct_search: 'direct',
+    };
+    const uiChannel = (c) => ATTR_CHANNEL[c] || 'direct';
     /* A channel's badge content. The platforms get their own logo; proximity
        and the direct app are ours and have no mark, so they keep the glyph
        they always had rather than rendering an empty badge. Size is passed by
@@ -3890,6 +3912,41 @@
     const DB_CHANNEL = {
       social_instagram: 'instagram', social_tiktok: 'tiktok', social_facebook: 'facebook',
     };
+    /* What the drawer's chain is drawn from.
+
+       `touches` is what the database actually recorded, oldest first. The
+       channel shown on the table row is the LAST touch -- the one that
+       produced the lead -- which is the standard the "where your leads come
+       from" report needs to be counting.
+
+       When there is no attribution row at all (a lead created before this
+       was fixed, or one whose attribution genuinely failed) this falls back
+       to the lead's own source and says so, rather than silently showing
+       'Direct app' as though that were a finding. */
+    function buildAttr(r) {
+      const rows = Array.isArray(r.lead_attribution) ? r.lead_attribution.slice() : [];
+      rows.sort((a, b) => new Date(a.occurred_at || 0) - new Date(b.occurred_at || 0));
+      if (!rows.length) {
+        return {
+          channel: DB_CHANNEL[r.source] || 'direct',
+          touches: [],
+          unattributed: true,
+        };
+      }
+      const last = rows[rows.length - 1];
+      return {
+        channel: uiChannel(last.channel),
+        touches: rows.map((t) => ({
+          channel: uiChannel(t.channel),
+          at: t.occurred_at || null,
+          first: !!t.is_first_touch,
+          last: !!t.is_last_touch,
+          campaign: t.campaign_id || null,
+        })),
+        unattributed: false,
+      };
+    }
+
     const DEFAULT_NBA = {
       New: 'Call within the hour', Contacted: 'Qualify the budget',
       Viewing: 'Confirm the viewing', Negotiation: 'Send the offer', Won: 'Close the paperwork',
@@ -3945,7 +4002,7 @@
         failReason: r.delivery_error || null,
         agentId: r.assigned_agent_id || null,
         nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
-        attr: { channel: DB_CHANNEL[r.source] || 'direct' },
+        attr: buildAttr(r),
         /* What Tayo settled with the buyer before they made contact, when they
            ran the negotiator. Absent on leads that did not. */
         neg: (r.preferences && r.preferences.negotiation) || null,
@@ -4387,11 +4444,32 @@
 
     // ── lead drawer with the full attribution chain ──
     const scrim = document.getElementById('scrim'), drawer = document.getElementById('drawer');
+    /* The chain, from lead_attribution.
+
+       The version this replaces was written against demo leads and rendered
+       a fixed shape -- channel, then "Tapped link", then optional Tayo
+       minutes, then "Lead created" -- from fields (a.post, a.link, a.toju)
+       that no real lead has ever carried. So every live lead drew the same
+       invented three-step story regardless of what happened. A report an
+       agency uses to decide where to spend money cannot be a template.
+
+       This draws only touches the database recorded: one step per touch,
+       labelled first/last where that is meaningful, with the time it
+       happened. Two touches means two steps. One means one. */
     function chain(a){
-      const m = CH[a.channel];
-      const steps = [`<span class="step">${m.label}${a.post ? ': ' + a.post : ''}${a.posted ? ' <small>· ' + a.posted + '</small>' : ''}</span>`];
-      if (a.channel !== 'direct' && a.channel !== 'proximity') steps.push(`<span class="step">Tapped ${a.link || 'link'}</span>`);
-      if (a.toju > 0) steps.push(`<span class="step">Tayo · ${a.toju} min</span>`);
+      if (!a || a.unattributed) {
+        const m = CH[a && a.channel] || CH.direct;
+        return `<span class="step">${m.label} <small>· from the lead's source; no touch was recorded</small></span>`
+          + '<span class="arw">→</span><span class="step">Lead created</span>';
+      }
+      const steps = a.touches.map((t, i) => {
+        const m = CH[t.channel] || CH.direct;
+        const role = t.first && t.last ? 'only touch'
+          : t.first ? 'first touch'
+          : t.last ? 'last touch' : 'touch ' + (i + 1);
+        const when = t.at ? ' · ' + agoLabel(t.at) + ' ago' : '';
+        return `<span class="step">${m.label} <small>· ${role}${when}</small></span>`;
+      });
       steps.push('<span class="step">Lead created</span>');
       return steps.join('<span class="arw">→</span>');
     }
@@ -7543,9 +7621,19 @@
                        is the company's face and the thing they are actually
                        responsible for. Not billing: money stays with the one
                        person who signed up for it.
-         agent         works listings, leads, tours and their own profile.
-                       Their profile is their pane: it is what a buyer reads
-                       before deciding whether to call them.
+         agent         works listings, leads, tours, social and their own
+                       profile. Their profile is their pane: it is what a
+                       buyer reads before deciding whether to call them.
+
+                       SOCIAL IS THEIRS TOO. An agent who lists a home is the
+                       person who knows how to sell it, and routing every post
+                       about it through an admin makes the admin a bottleneck
+                       on the one activity the product exists to speed up. An
+                       approval step was considered and deliberately dropped:
+                       it would mean listings go live and their marketing sits
+                       in a queue. What an agent CANNOT do is connect the
+                       account -- see below -- because that is a credential
+                       for the whole agency rather than an act of selling.
 
        Panes are REMOVED, not hidden. buildNav() mirrors the rail into the
        phone sheet by reading it at open time, so a hidden entry would come
@@ -7559,7 +7647,7 @@
     const ROLE_PANES = {
       agency_owner: null,   /* null = every pane */
       agency_admin: ['overview','crm','negotiator','listings','social','marketing','agents','tours','brand','verification'],
-      agent:        ['overview','crm','negotiator','listings','tours'],
+      agent:        ['overview','crm','negotiator','listings','social','tours'],
     };
 
     function applyRole(role) {
@@ -8420,6 +8508,16 @@
         }).length;
       }
 
+      /* Publishing is every agent's job; connecting the account is not. The
+         role is stamped on <body> by applyRole() after its round trip, so this
+         reads the same source the nav does rather than asking again. Unknown
+         role -> treated as an agent, which is the least privileged thing we
+         know about. */
+      function canConnect() {
+        var r = document.body.dataset.role;
+        return r === 'agency_owner' || r === 'agency_admin';
+      }
+
       function renderChannels() {
         var box = document.getElementById('cmpChannels');
         if (!box) return;
@@ -8436,7 +8534,16 @@
                 ? '<span class="cmp-ch-at">' + esc(stale ? 'session expired' : '@' + (a.platform_username || 'connected')) + '</span>'
                   + '<button class="cmp-ch-btn" data-disconnect="' + esc(a.id) + '">'
                   + (stale ? 'Reconnect' : 'Disconnect') + '</button>'
-                : '<button class="cmp-ch-btn primary" data-connect="' + pl + '">Connect</button>')
+                : (canConnect()
+                    ? '<button class="cmp-ch-btn primary" data-connect="' + pl + '">Connect</button>'
+                    /* NOT a disabled Connect button. social-connect answers an
+                       agent with 403 -- correctly, since a Meta token belongs
+                       to the agency and not to one person -- and this file's
+                       own rule is that a control which is shown and then
+                       refuses reads as a broken product rather than a
+                       boundary. So an agent is told who can do it instead of
+                       being handed a button that says no. */
+                    : '<span class="cmp-ch-at">an owner or admin connects this</span>'))
             + '</div>';
         });
 
@@ -9270,10 +9377,51 @@
        property -- silently, since the composer names the listing only once. */
     function openComposer(li){
       const idx = Number.isInteger(li) && li >= 0 && li < (LISTINGS_DATA || []).length ? li : 0;
-      cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
+      cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', angles: {}, loading: false, err: '' };
       renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on');
     }
     function closeComposer(){ cmpScrim.classList.remove('on'); cmpModal.classList.remove('on'); }
+    /* WHICH ANGLES THIS LISTING HAS ALREADY SPENT.
+       social-generate rotates through six subjects -- the space, the area, the
+       money, the checks, who it suits, why now -- and only repeats once all
+       six are gone. It cannot do that on its own: it is stateless, so without
+       being told what came before, every press of Generate starts from the top
+       of the rotation and rewrites the same three captions. That was the bug.
+
+       Kept per property, in this browser. localStorage is honestly the wrong
+       home for it -- a colleague on another machine starts the rotation over --
+       but the alternative is a row per generated-and-discarded draft, and a
+       caption nobody scheduled should not leave anything behind in the
+       database. Angles from posts that WERE scheduled are merged in below,
+       and those are shared, so the shared half of this is the half that
+       matters. */
+    const ANGLE_KEY = 'synapse_angles_v1';
+    function angleStore() {
+      try { return JSON.parse(localStorage.getItem(ANGLE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function anglesUsedFor(propertyId) {
+      const local = angleStore()[propertyId] || [];
+      /* Anything already on the schedule for this listing counts as spent too,
+         so a second person generating for it does not repeat what is queued. */
+      /* Guarded: PIPE is declared in another block on this page, and a
+         rotation hint is never worth throwing inside the Generate handler. */
+      let scheduled = [];
+      try {
+        scheduled = (typeof PIPE !== 'undefined' && PIPE.social ? PIPE.social : [])
+          .filter((r) => r.property_id === propertyId && r.payload && r.payload.angle)
+          .map((r) => r.payload.angle);
+      } catch (e) { /* no pipeline loaded in this view */ }
+      return [...new Set(local.concat(scheduled))];
+    }
+    function rememberAngles(propertyId, angles) {
+      if (!propertyId || !angles || !angles.length) return;
+      try {
+        const all = angleStore();
+        all[propertyId] = [...new Set((all[propertyId] || []).concat(angles))];
+        localStorage.setItem(ANGLE_KEY, JSON.stringify(all));
+      } catch (e) { /* private mode: rotation still works for this page view */ }
+    }
+
     async function generateCaptions(){
       if (cmp.chans.size === 0) return;
       cmp.loading = true; cmp.err = ''; renderComposer();
@@ -9287,6 +9435,9 @@
           body: JSON.stringify({
             property: l,
             channels: [...cmp.chans],
+            // what this listing has already been written about, so Generate
+            // moves on to a new angle instead of rewording the last one
+            usedAngles: anglesUsedFor(l && l.id),
             brand: window.BRAND ? {
               name: window.BRAND.name || null,
               tagline: window.BRAND.tagline || null,
@@ -9297,19 +9448,68 @@
         });
         const d = await res.json().catch(() => ({}));
         cmp.loading = false;
-        if (!res.ok || d.error || !d.captions || !Object.keys(d.captions).length) { cmp.err = 'Couldn’t generate captions right now — please try again.'; renderComposer(); return; }
+        if (!res.ok || d.error || !d.captions || !Object.keys(d.captions).length) {
+          /* Say which failure it was. social-generate now distinguishes "the
+             reply was cut off" from "unreadable" from a transport fault, and
+             flattening all three into one sentence is what let a truncation
+             bug sit unnoticed behind "please try again". */
+          cmp.err = (d && d.error) || 'Couldn’t generate captions right now — please try again.';
+          renderComposer(); return;
+        }
         cmp.captions = d.captions; cmp.hashtags = d.hashtags || []; cmp.note = d.note || ''; cmp.rec = d.recommendedChannel || '';
+        cmp.angles = d.angles || {};
+        rememberAngles(l && l.id, d.anglesUsed || []);
         renderComposer();
       } catch (e) { cmp.loading = false; cmp.err = 'Network hiccup — please try again.'; renderComposer(); }
     }
+    /* THIS USED TO SAVE NOTHING.
+       It unshifted a card onto the in-memory `posts` array and re-rendered, so
+       the composer's "Schedule to pipeline" looked like it worked and left no
+       row anywhere -- the next loadPipeline() rebuilt `posts` from the database
+       and the card was simply gone. Every caption generated through the
+       composer was discarded on reload, which is a large part of why
+       social_posts is empty in production.
+
+       It writes real rows now, one per channel, through the same
+       SynListings.schedulePost the pipeline's own scheduler uses -- so the
+       cron drain sees them, the Kanban reloads them, and the angle each
+       caption took is stored with it.
+
+       Each channel gets its OWN caption. The old code picked one "primary"
+       caption and attached it to every channel, which threw away the whole
+       point of generating per-channel copy -- and now that the captions are
+       genuinely different rather than rewordings, sending the Instagram one to
+       Facebook would be visibly wrong rather than merely wasteful. */
     function scheduleFromComposer(){
       const l = POST_LISTINGS[cmp.li];
       cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
-      const chans = [...cmp.chans];
-      const primary = cmp.captions[cmp.rec] || cmp.captions[chans[0]] || Object.values(cmp.captions)[0] || '';
-      posts.unshift({ id: 'np' + Date.now(), listing: l.title, price: nairaShort(l.price), img: l.img, stage: 'scheduled', channels: chans, caption: primary, when: 'Today 5:00 PM', reach: estReach(chans) });
-      renderPipeline();
-      closeComposer();
+      const chans = [...cmp.chans].filter((c) => cmp.captions[c]);
+      if (!chans.length) { toast('Nothing to schedule yet — generate the captions first'); return; }
+
+      const btn = document.getElementById('cmpSchedule');
+      if (btn) { btn.disabled = true; btn.textContent = 'Scheduling…'; }
+
+      /* The next round hour, which is the same default the pipeline's
+         scheduler uses. Nobody means to publish at 14:37, and the agency can
+         move any of these from the Scheduled column. */
+      const at = new Date(Date.now() + 60 * 60 * 1000);
+      at.setMinutes(0, 0, 0);
+
+      SynListings.schedulePost({
+        propertyId: l.id,
+        caption: '',
+        slots: chans.map((c) => ({
+          platform: c, at: at.toISOString(),
+          caption: cmp.captions[c], angle: (cmp.angles || {})[c] || null,
+        })),
+      }).then(() => {
+        toast(chans.length + (chans.length === 1 ? ' post scheduled' : ' posts scheduled') + ' — see the Scheduled column');
+        closeComposer();
+        if (typeof loadPipeline === 'function') loadPipeline();
+      }).catch((err) => {
+        if (btn) { btn.disabled = false; btn.textContent = 'Schedule to pipeline →'; }
+        toast((err && err.message) || 'Could not schedule those');
+      });
     }
     // toast + wire the remaining action buttons so every CTA responds
     function toast(msg){
