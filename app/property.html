@@ -3173,7 +3173,23 @@
          front of it is slicing the closest. */
       var pts = [PROP];
       var FRAME_N = 18;
-      shown.forEach(function (p, i) {
+      /* HOW MANY PINS ARE WORTH DRAWING.
+         Every place was pinned, which on a well-mapped listing is five
+         hundred DOM markers. Measured on this page with 509 of them: a median
+         frame of 24.5ms while panning -- about 41fps on a desktop, and worse
+         on the phone this is mostly used on. Performance is a stated product
+         requirement and that is a map that visibly drags.
+
+         It also was not buying anything. Five hundred pins around one house
+         is not information, it is a texture; nobody can read them and they
+         obscure the streets underneath. `shown` is distance-sorted, so the
+         first sixty ARE the sixty that matter.
+
+         The category counts in the panel below stay the true totals -- 50
+         restaurants is 50 restaurants. This caps what is drawn, not what is
+         counted. */
+      var DRAW_N = 60;
+      shown.slice(0, DRAW_N).forEach(function (p, i) {
         (function (poi) {
           whenMap(function () {
             var m = MAPR.marker(poi.c[1], poi.c[0], poiHtml(poi.t), {
