@@ -275,7 +275,7 @@
         id: l.id,
         lat: c[0], lng: c[1],
         price: money(l.priceN, l.currency),
-        beds: (l.beds != null ? l.beds : (l.bedrooms != null ? l.bedrooms : 0)) + ' bed',
+        beds: bedLabel(l),
         verified: (l.vstatus || '') === 'verified',
         title: l.ttl || l.title || '',
         loc: l.loc || l.city || '',
@@ -311,9 +311,45 @@
     return st;
   }
 
+  /* FRAME ON A NEW RESULT SET, NEVER ON A REPAINT.
+     This used to fit() on every call. These pages re-render the map whenever
+     anything nearby changes -- a save toggled, a filter chip, a re-sort -- and
+     each of those calls handed over the same listings again, so the camera
+     snapped back to the whole city. Open a cluster to look at 45 homes in
+     Jericho and the next repaint threw you back out, which read as the tap not
+     having worked at all.
+
+     So the fit is keyed to WHICH homes are on the map, not to the fact that
+     something called us. Same ids, same set, leave the camera where the user
+     put it. */
+  /* HOW MANY BEDROOMS, ACROSS THREE DIFFERENT ITEM SHAPES.
+     browse, Tayo and the agency portal each shape their listings a little
+     differently before handing them over, and the bedroom count is the field
+     they disagree about most -- the first version read l.beds and l.bedrooms,
+     got neither from browse, and every card on the map said "0 bed" under a
+     title that read "2 bedroom terrace".
+
+     So it tries the fields, and then falls back to the title, which every
+     caller does supply and which starts with the number in all of them. A
+     count is dropped entirely rather than shown as zero: "0 bed" is a claim
+     about the property, and a wrong one. */
+  function bedLabel(l) {
+    var n = [l.beds, l.bedrooms, l.bd, l.bedroom].find(function (v) {
+      return typeof v === 'number' || (typeof v === 'string' && v !== '' && isFinite(v));
+    });
+    if (n == null) {
+      var m = String(l.ttl || l.title || '').match(/(\d+)\s*(?:bed|bedroom)/i);
+      if (m) n = Number(m[1]);
+    }
+    n = Number(n);
+    return isFinite(n) && n > 0 ? n + ' bed' : '';
+  }
+
   function paint(st, list) {
+    var sig = list.map(function (p) { return p.id; }).sort().join(',');
     st.r.setProperties(list);
-    if (list.length) st.r.fit(list, 56);
+    if (list.length && sig !== st.sig) st.r.fit(list, 56);
+    st.sig = sig;
     st.r.resize();
   }
 

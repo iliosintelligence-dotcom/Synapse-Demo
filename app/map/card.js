@@ -106,7 +106,12 @@
     var q = function (s) { return el.querySelector(s); };
     var set = null, idx = 0;
 
-    function show(id) {
+    /* `how`, not `opts` -- attach()'s own opts is captured as `o` above and a
+       second `opts` in here shadows it. It happens to be harmless because
+       nothing below reads the outer one directly, which is exactly the kind of
+       accident that stops being harmless during the next edit. */
+    function show(id, how) {
+      var moveCamera = !(how && how.moveCamera === false);
       var rec = renderer.select(id);
       if (!rec) { hide(); return; }
       var p = rec.props;
@@ -141,10 +146,27 @@
       else ask.hidden = true;
 
       el.classList.add('on');
-      /* Offset rather than centre: the card owns the bottom of the screen, so
-         centring on the pin would put it underneath the card. */
-      if (renderer.map) {
-        renderer.map.easeTo({ center: [rec.lng, rec.lat], offset: [0, -90], duration: 420 });
+
+      /* THE CAMERA ONLY MOVES WHEN IT HAS TO.
+         This used to easeTo on every show(), which broke two things at once.
+         Opening a cluster starts a fitBounds to frame its members, and an
+         easeTo fired a moment later CANCELS it -- so tapping "68" opened a
+         card and left the map exactly where it was, which read as the tap
+         having half-worked. And stepping through 68 homes with the arrows
+         lurched the map on every press.
+
+         So: move only if the marker is off screen, or low enough that the
+         card would be sitting on top of it. Otherwise leave the view alone --
+         the user chose it. */
+      if (moveCamera && renderer.map) {
+        var m = renderer.map;
+        var pt = m.project([rec.lng, rec.lat]);
+        var box = m.getContainer().getBoundingClientRect();
+        var hiddenByCard = pt.y > box.height - (el.offsetHeight + 24);
+        var offScreen = pt.x < 0 || pt.y < 0 || pt.x > box.width || pt.y < 0;
+        if (hiddenByCard || offScreen) {
+          m.easeTo({ center: [rec.lng, rec.lat], offset: [0, -(el.offsetHeight / 2)], duration: 420 });
+        }
       }
     }
 
@@ -170,7 +192,9 @@
        actually work through without hunting for each pin. */
     renderer.onCluster(function (ids) {
       set = ids || null; idx = 0;
-      if (set && set.length) show(set[0]);
+      /* The renderer is already flying the camera to frame this cluster's
+         members; touching it here would cancel that mid-flight. */
+      if (set && set.length) show(set[0], { moveCamera: false });
     });
 
     return { show: show, hide: hide, el: el };

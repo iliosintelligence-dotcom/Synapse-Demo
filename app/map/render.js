@@ -484,6 +484,16 @@
   };
 
   window.SynMapRender = {
-    create: function (el, opts) { return new Renderer(el, opts); },
+    create: function (el, opts) {
+      var r = new Renderer(el, opts);
+      /* A registry, because a map is unusually hard to inspect after the
+         fact: the instance is closed over by whatever page created it, and
+         nothing in the DOM points back at it. Two lines here is the
+         difference between diagnosing a broken interaction in one step and
+         guessing at it. */
+      window.SynMapRender.instances.push(r);
+      return r;
+    },
+    instances: [],
   };
 })();
