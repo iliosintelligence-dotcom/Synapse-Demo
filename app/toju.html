@@ -858,7 +858,13 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/create-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
-          body: JSON.stringify({ property_id: REPLY_TO.id, source: 'toju_chat' }),
+          /* The visitor id travels WITH the lead now, so create-lead can
+             attribute it server-side in the same request. The rpc below is
+             kept as a belt-and-braces retry for leads created by older
+             clients; attribute_lead no-ops when a lead is already done. */
+          body: JSON.stringify({
+            property_id: REPLY_TO.id, source: 'toju_chat', session_id: VISITOR || null,
+          }),
         });
         const d = await res.json().catch(() => ({}));
         // 207: the lead is saved and the WhatsApp did not go out. Still an
