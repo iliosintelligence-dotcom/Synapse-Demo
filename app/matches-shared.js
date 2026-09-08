@@ -298,6 +298,10 @@
         st.card = SynMapCard.attach(st.r, host, {
           href: function (id) { return propertyHref(id); },
           ask: function (id) { return 'toju.html?reply=' + encodeURIComponent(id); },
+          /* Without this the card cannot ask what is near a home. Absent, the
+             Nearby block simply does not render -- it degrades to the card it
+             was, rather than to a broken one. */
+          sb: st.opts.sb || null,
         });
         /* AREA SEARCH IS OPT-IN, and only browse opts in.
            Tayo's map shows the homes Tayo chose and the portal's map shows one

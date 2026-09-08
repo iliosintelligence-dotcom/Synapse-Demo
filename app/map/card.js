@@ -31,7 +31,13 @@
       '.syn-mcard{position:absolute;z-index:6;left:10px;right:10px;bottom:10px;',
       '  max-width:390px;margin:0 auto;background:#fff;border:1px solid #E7E7E3;',
       '  border-radius:18px;box-shadow:0 18px 44px rgba(20,20,18,.16);',
-      '  display:none;overflow:hidden;font-family:var(--f-sans,system-ui,sans-serif);}',
+      /* Capped to the map it floats in. The Nearby block made the card tall
+         enough to overflow a short map container, pushing the price and title
+         off the top -- the two things the card exists to show. It scrolls
+         inside itself now rather than growing past its own frame. */
+      '  display:none;overflow-y:auto;overscroll-behavior:contain;',
+      '  max-height:calc(100% - 20px);',
+      '  font-family:var(--f-sans,system-ui,sans-serif);}',
       '.syn-mcard.on{display:block;}',
       '.syn-mcard-row{display:flex;gap:12px;padding:12px;align-items:flex-start;}',
       '.syn-mcard-img{width:82px;height:82px;flex:none;border-radius:12px;',
@@ -53,7 +59,7 @@
       '  background:#fff;color:#1B1B18;display:flex;align-items:center;',
       '  justify-content:center;text-decoration:none;}',
       '.syn-mcard-cta .pri{background:#141412;border-color:#141412;color:#fff;}',
-      '.syn-mcard-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border:0;',
+      '.syn-mcard-x{position:sticky;float:right;top:8px;right:8px;margin:0 0 -28px;width:28px;height:28px;border:0;',
       '  background:rgba(255,255,255,.92);border-radius:50%;cursor:pointer;font-size:16px;',
       '  line-height:1;color:#55554F;}',
       '.syn-mcard-nav{display:flex;align-items:center;justify-content:space-between;',
@@ -61,6 +67,17 @@
       '.syn-mcard-nav button{border:1px solid #E4E4E0;background:#fff;border-radius:8px;',
       '  width:34px;height:30px;cursor:pointer;font-size:15px;color:#33332F;}',
       '.syn-mcard-nav button[disabled]{opacity:.35;cursor:default;}',
+      '.syn-mcard-near{border-top:1px solid #F0F0EC;padding:10px 12px 0;}',
+      '.syn-mcard-near h6{margin:0 0 6px;font:700 10px var(--f-sans,system-ui);',
+      '  letter-spacing:.12em;text-transform:uppercase;color:#8A8A84;}',
+      '.syn-mcard-near ul{margin:0;padding:0;list-style:none;}',
+      '.syn-mcard-near li{display:flex;gap:8px;align-items:baseline;',
+      '  font-size:12px;color:#45453F;padding:2px 0;}',
+      '.syn-mcard-near .cat{flex:none;width:74px;color:#8A8A84;text-transform:capitalize;}',
+      '.syn-mcard-near .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;',
+      '  white-space:nowrap;color:#33332F;}',
+      '.syn-mcard-near .m{flex:none;font-variant-numeric:tabular-nums;color:#141412;font-weight:600;}',
+      '.syn-mcard-near .none{font-size:12px;color:#8A8A84;padding-bottom:2px;}',
     ].join('');
     document.head.appendChild(st);
   }
@@ -97,6 +114,7 @@
       + '<span data-count></span>'
       + '<button type="button" data-next>&#8250;</button>'
       + '</div>'
+      + '<div class="syn-mcard-near" data-near hidden></div>'
       + '<div class="syn-mcard-cta">'
       + '<a class="pri" data-open href="#">See this home</a>'
       + '<a data-ask href="#">Ask Tayo</a>'
@@ -105,6 +123,81 @@
 
     var q = function (s) { return el.querySelector(s); };
     var set = null, idx = 0;
+
+    /* ── WHAT IS ACTUALLY AROUND THIS HOME ──────────────────────────────
+       property_places has been filling up since the enrichment pipeline was
+       built and nothing has ever read it: 973 rows, seventeen categories,
+       every one carrying a measured distance. This is the first surface that
+       shows any of it.
+
+       DISTANCE ONLY, AND ON PURPOSE. The table has drive_seconds columns and
+       they are NULL on every row, because the Routes API is not billed. "8
+       minutes to Dugbe" would be invented; "Ibadan Central Hospital, 522 m"
+       is measured. So the card offers the one it can stand behind.
+
+       Fetched when the card opens rather than with the listings: nobody needs
+       the surroundings of five hundred homes, only of the one they pressed.
+       Cached per property, because stepping back and forth through a cluster
+       would otherwise re-ask for the same rows. */
+    var nearCache = {};
+
+    function renderNear(id) {
+      var box = q('[data-near]');
+      if (!o.sb) { box.hidden = true; return; }
+
+      if (nearCache[id]) { paintNear(box, nearCache[id]); return; }
+      box.hidden = false;
+      box.innerHTML = '<h6>Nearby</h6><div class="none">Looking\u2026</div>';
+
+      fetch(o.sb.url + '/rest/v1/rpc/property_nearby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: o.sb.anon, Authorization: 'Bearer ' + o.sb.anon,
+        },
+        body: JSON.stringify({ p_property_id: id, p_per_category: 1 }),
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          nearCache[id] = rows || [];
+          /* The card may already have moved on to another home while this was
+             in flight -- stepping through a cluster is faster than a request. */
+          if (renderNear.current === id) paintNear(box, nearCache[id]);
+        })
+        .catch(function () {
+          nearCache[id] = [];
+          if (renderNear.current === id) paintNear(box, []);
+        });
+    }
+
+    /* Which categories earn the space. A card is not a directory: four rows
+       is the most that can be read at a glance, and these are the four that
+       decide whether somebody could actually live somewhere. Ordered by what
+       the data says is closest, not by this list. */
+    var WANTED = ['transit', 'hospital', 'school', 'supermarket', 'market',
+      'pharmacy', 'bank', 'university', 'park'];
+
+    function paintNear(box, rows) {
+      var pick = (rows || [])
+        .filter(function (r) { return WANTED.indexOf(r.category) !== -1; })
+        .slice(0, 4);
+      if (!pick.length) {
+        /* Honest about the gap. A listing whose surroundings have not been
+           fetched yet is not a listing with nothing around it, and saying
+           nothing at all would let the reader assume the latter. */
+        box.innerHTML = '<h6>Nearby</h6>'
+          + '<div class="none">Not mapped yet \u2014 this one is still being checked.</div>';
+        return;
+      }
+      box.innerHTML = '<h6>Nearby</h6><ul>' + pick.map(function (r) {
+        var m = r.nearest_m >= 1000
+          ? (Math.round(r.nearest_m / 100) / 10) + ' km'
+          : r.nearest_m + ' m';
+        return '<li><span class="cat">' + esc(r.category) + '</span>'
+          + '<span class="nm">' + esc(r.nearest_name || '') + '</span>'
+          + '<span class="m">' + m + '</span></li>';
+      }).join('') + '</ul>';
+    }
 
     /* `how`, not `opts` -- attach()'s own opts is captured as `o` above and a
        second `opts` in here shadows it. It happens to be harmless because
@@ -144,6 +237,9 @@
       var ask = q('[data-ask]');
       if (o.ask) { ask.hidden = false; ask.setAttribute('href', o.ask(id)); }
       else ask.hidden = true;
+
+      renderNear.current = id;
+      renderNear(id);
 
       el.classList.add('on');
 

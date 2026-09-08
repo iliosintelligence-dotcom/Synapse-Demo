@@ -10251,7 +10251,9 @@
         </button>`).join('');
       renderOvDetail(list[OV.sel]);
       const items = list.map(l => ({ loc: l.t, ttl: l.t, priceN: l.pr * 1e6, score: ovChecks(l) * 13, match: 0 }));
-      if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items);
+      if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items,
+        /* No areaSearch: this map is this agency's own stock. */
+        { sb: { url: SB_URL, anon: SB_KEY } });
       syncOvSheetA11y();
     }
     /* ── the sheet itself: open/close, not selection ──────────────────

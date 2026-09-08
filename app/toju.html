@@ -632,7 +632,10 @@
       document.body.classList.toggle('has-canvas', items.length > 0);
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
       cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');
-      SynMatches.drawMatchMap(cvMapState, 'cvMap', items);
+      SynMatches.drawMatchMap(cvMapState, 'cvMap', items,
+        /* No areaSearch: this map shows the homes Tayo picked, and replacing
+           them with everything in the viewport would discard the reasoning. */
+        { sb: { url: SUPABASE_URL, anon: ANON_KEY } });
       if (window.synMotion) synMotion.refresh();
     }
     cvGrid.addEventListener('click', (e) => {
