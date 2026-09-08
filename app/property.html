@@ -9,9 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="map-tiles.js"></script>
   <style>
     /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
        monthly cost, neighbourhood intelligence, commute, similar homes. */
@@ -291,8 +288,7 @@
        decision we made, and it is the one control on the map a thumb has to
        hit. Overridden here rather than in app.css because this is the only
        page that mounts a map. */
-    .leaflet-touch .leaflet-bar a,
-    .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+    /* The Leaflet zoom control these sized is gone with Leaflet itself. */
 
     .vcheck label { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 13.5px; color: var(--ink-muted); padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); cursor: pointer; }
     .vcheck input { accent-color: #121212; }
@@ -364,6 +360,10 @@
        to sit over a map: the route readout when you tap a pin. */
     .pvc-map-wrap { display: block; position: relative; flex: 1; min-height: 0; }
     #pvMap { position: absolute; inset: 0; z-index: 0; }
+    /* Monochrome, like the rest of the map. The category colour these
+       carried was the last coloured thing on the page, and the glyph
+       already says what kind of place it is. */
+    .pv-poi-pin.pv-poi-mono { background: #141412 !important; color: #fff; }
     .pvc-hint {
       flex-basis: 100%; margin: 6px 0 0;
       font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
@@ -1775,6 +1775,11 @@
     });
     renderChecks(); renderPhotos();
   </script>
+  <!-- The shared map: style + renderer. This page uses the renderer
+       directly rather than drawMatchMap -- it draws one home and what is
+       around it, not a set of listings. -->
+  <script src="map/style-synapse.js"></script>
+  <script src="map/render.js"></script>
   <script src="icons.js"></script>
   <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
        deferred and runs after icons.js has hydrated. Optional throughout:
@@ -1789,7 +1794,7 @@
      what's nearby (schools/gyms/restaurants/churches/mosques), commute/traffic by
      time of day, route to the listing agency, cost breakdown, legal & documents. */
   (function () {
-    if (!window.L || !document.getElementById('pvMap')) return;
+    if (!window.SynMapRender || !document.getElementById('pvMap')) return;
 
     /* This module used to hardcode one Lekki flat's surroundings: seven named
        schools/gyms/restaurants with invented walking times, two commute
@@ -2952,7 +2957,7 @@
       + '← All nearby places</button>';
 
     function showRoute(poi) {
-      if (routeLine) { layer.removeLayer(routeLine); routeLine = null; }
+      if (routeLine) { whenMap(function () { MAPR.removeLine(routeLine); }); routeLine = null; }
       overlay.className = 'pvc-overlay';
       overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
         + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Working out the walking route…</p>';
@@ -2962,8 +2967,11 @@
         .then(function (data) {
           var route = data.routes && data.routes[0];
           if (!route) throw new Error('no route');
-          var latlngs = route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
-          routeLine = L.polyline(latlngs, { color: metaFor(poi.t).col, weight: 4, opacity: 0.85 }).addTo(layer);
+          /* OSRM already returns lng,lat -- the one place on this page that
+             does not need flipping, which is exactly why the old code had to
+             flip it INTO Leaflet's order and this one does not. */
+          var line = route.geometry.coordinates;
+          whenMap(function () { routeLine = MAPR.line(line, { width: 4, opacity: 0.85 }); });
           var mins = Math.round(route.duration / 60);
           overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
             + '<div class="pvo-eta"><span>' + (AMENITY_LABEL[poi.t] || '') + ' · ' + poi.d + ' away</span></div>'
@@ -2971,7 +2979,7 @@
             + POI_BACK;
           fit([PROP, poi.c]);
           var back = overlay.querySelector('.pv-back');
-          if (back) back.addEventListener('click', function () { if (routeLine) { layer.removeLayer(routeLine); routeLine = null; } renderPOI(); });
+          if (back) back.addEventListener('click', function () { if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; } renderPOI(); });
         })
         .catch(function () {
           overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
@@ -3000,9 +3008,36 @@
        Named explicitly so nobody turns them off by accident. The wheel stays
        off deliberately: a map that eats the page scroll is worse than one you
        press + on. */
-    var map = L.map('pvMap', {
-      scrollWheelZoom: false, touchZoom: true, doubleClickZoom: true, tap: true,
-    }).setView([9.0820, 8.6753], 6);
+    /* THE LAST LEAFLET MAP IN THE APP, NOW ON THE SHARED RENDERER.
+       browse, Tayo and the portal moved to SynMapRender; this one stayed on
+       Leaflet and raster tiles, so the page a buyer looks at longest was the
+       one map still rendered in somebody else's colours. It also drew its
+       nearby pins in a different colour per category, which is the one thing
+       the monochrome direction rules out.
+
+       Everything below talks to the facade. MapLibre is not referenced on
+       this page at all -- markers, lines and fitting are verbs on the
+       renderer, added for exactly this port.
+
+       ASYNC, WHERE LEAFLET WAS NOT. The style and the library are fetched, so
+       nothing can be drawn in the same tick the page runs. whenMap() queues
+       the drawing until the map exists and then replays it in order, which
+       matters because setView() clears the overlay before repopulating it. */
+    var MAPR = SynMapRender.create('pvMap', { center: [8.6753, 9.0820], zoom: 6 });
+    var MAP_READY = false, mapQueue = [];
+    function whenMap(fn) { if (MAP_READY) fn(); else mapQueue.push(fn); }
+    MAPR.ready().then(function () {
+      MAP_READY = true;
+      var q = mapQueue.splice(0);
+      q.forEach(function (f) { try { f(); } catch (e) { /* one bad draw must not stop the rest */ } });
+    }).catch(function (e) {
+      if (window.console) console.warn('property map failed to start:', e && e.message);
+    });
+
+    /* Leaflet is lat,lng. MapLibre is lng,lat. Every coordinate on this page
+       was written for Leaflet, so it flips here and nowhere else -- a swapped
+       pair does not throw, it silently puts Ibadan in the Atlantic. */
+    function xy(c) { return [Number(c[1]), Number(c[0])]; }
     /* Voyager, not Positron ('light_all'). Positron is a deliberately blank
        canvas -- almost no POI labels, no business names, roads barely
        distinguished -- which is right for a heatmap and wrong for a buyer
@@ -3035,10 +3070,17 @@
        the URL and the attribution had to be kept in step, and they were only
        in step by luck. */
     /* detail: this map's whole job is what surrounds one house. */
-    SynTiles.add(map, { detail: true });
-    var layer = L.layerGroup().addTo(map);
-    var homeIcon = L.divIcon({ className: '', html: '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>', iconSize: [30, 30], iconAnchor: [15, 28] });
-    function poiIcon(t) { var m = metaFor(t); return L.divIcon({ className: '', html: '<div class="pv-poi-pin" style="background:' + m.col + '">' + poiSvg(m.i, 13) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }); }
+    function homeHtml() { return '<div class="pv-home-pin">' + poiSvg('home', 16) + '</div>'; }
+    /* MONOCHROME, like the rest of the map. These pins used to carry a
+       different background colour per category, which read as a legend on a
+       map that has no other colour in it. The glyph already says which kind
+       of place it is -- that is what poiSvg draws -- so the colour was doing
+       no work the shape was not already doing, and it was the last thing on
+       this page arguing with the design. */
+    function poiHtml(t) {
+      var m = metaFor(t);
+      return '<div class="pv-poi-pin pv-poi-mono">' + poiSvg(m.i, 13) + '</div>';
+    }
     var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
     var state = { view: 'poi', time: 'midday' };
     var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3051,12 +3093,14 @@
        bites on a degenerate or very small bounds; a spread of real POIs
        zooms out past it on its own. */
     function fit(pts) {
-      setTimeout(function () {
-        map.invalidateSize();
-        if (pts && pts.length) {
-          map.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: !REDUCE, maxZoom: 16 });
-        }
-      }, 60);
+      whenMap(function () {
+        setTimeout(function () {
+          MAPR.resize();
+          if (pts && pts.length) {
+            MAPR.fitPoints(pts.map(xy), { maxZoom: 16, duration: REDUCE ? 0 : 600 });
+          }
+        }, 60);
+      });
     }
 
     /* Which pin kinds each tab shows. Names cover both sources: the stored
@@ -3130,10 +3174,17 @@
       var pts = [PROP];
       var FRAME_N = 18;
       shown.forEach(function (p, i) {
-        var m = L.marker(p.c, { icon: poiIcon(p.t) }).addTo(layer)
-          .bindPopup('<b>' + escHtml(p.n) + '</b><br>' + (AMENITY_LABEL[p.t] || metaFor(p.t).lbl) + ' · ' + p.d)
-          .on('click', function () { showRoute(p); });
-        poiMarkers.push(m);
+        (function (poi) {
+          whenMap(function () {
+            var m = MAPR.marker(poi.c[1], poi.c[0], poiHtml(poi.t), {
+              anchor: 'center',
+              popupHtml: '<b>' + escHtml(poi.n) + '</b><br>'
+                + (AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + ' · ' + poi.d,
+              onClick: function () { showRoute(poi); },
+            });
+            poiMarkers.push(m);
+          });
+        }(p));
         if (i < FRAME_N) pts.push(p.c);
       });
       var counts = {}; shown.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
@@ -3177,7 +3228,18 @@
       overlay.className = 'pvc-overlay';
       if (!PROP || !DEST.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
       var cg = CONGEST[state.time], pts = [PROP];
-      DEST.forEach(function (d, i) { L.marker(d.c).addTo(layer).bindPopup('<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i]); L.polyline([PROP, d.c], { color: cg.color, weight: 5, opacity: 0.75 }).addTo(layer); pts.push(d.c); });
+      DEST.forEach(function (d, i) {
+        whenMap(function () {
+          MAPR.marker(d.c[1], d.c[0], '<div class="pv-poi-pin pv-poi-mono">' + poiSvg('pin', 13) + '</div>',
+            { anchor: 'center', popupHtml: '<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i] });
+          /* Congestion keeps its colour. This is the one place on the map
+             where colour carries information nothing else does -- red really
+             does mean "this drive is bad right now" -- so it stays, and it is
+             the only exception on the page. */
+          MAPR.line([xy(PROP), xy(d.c)], { color: cg.color, width: 5, opacity: 0.75 });
+        });
+        pts.push(d.c);
+      });
       var toggle = ['morning', 'midday', 'evening'].map(function (k) { return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>'; }).join('');
       var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + d.n + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
       overlay.innerHTML = '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
@@ -3242,12 +3304,15 @@
     function setView(v) {
       v = v || 'poi'; state.view = v;
       document.querySelectorAll('#pvcTabs button').forEach(function (b) { var on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
-      layer.clearLayers();
       var L2 = window.__pvListing || {};
-      if (PROP) {
-        L.marker(PROP, { icon: homeIcon }).addTo(layer)
-          .bindPopup('<b>This home</b>' + (L2.title ? '<br>' + L2.title : ''));
-      }
+      whenMap(function () {
+        MAPR.clearOverlay();
+        if (PROP) {
+          MAPR.marker(PROP[1], PROP[0], homeHtml(), {
+            popupHtml: '<b>This home</b>' + (L2.title ? '<br>' + escHtml(L2.title) : ''),
+          });
+        }
+      });
       titleEl.textContent = { poi: 'Nearby', commute: 'Commute', school: 'Schools',
         health: 'Health', shops: 'Shops & markets', transit: 'Getting around' }[v] || 'Nearby';
       if (v === 'commute') renderCommute();
@@ -3310,7 +3375,7 @@
       }
       if (p.latitude != null && p.longitude != null) {
         PROP = [Number(p.latitude), Number(p.longitude)];
-        map.setView(PROP, 14);
+        whenMap(function () { MAPR.flyTo(PROP[1], PROP[0], 14); });
         fetchAmenities(p.id || null, PROP[0], PROP[1]);
         // Commute needs the same coordinates, and they only exist here.
         fetchCommutePanel(p.id || null, PROP[0], PROP[1]);
@@ -3358,7 +3423,7 @@
          and again whenever the container changes size (rotation, the address
          bar sliding away, a card above it growing). Without this the tiles
          are laid out for the wrong box and the map looks torn. */
-      var settle = function () { map.invalidateSize(); };
+      var settle = function () { whenMap(function () { MAPR.resize(); }); };
       window.addEventListener('load', function () { setTimeout(settle, 120); });
       setTimeout(settle, 400);
       if (window.ResizeObserver) {

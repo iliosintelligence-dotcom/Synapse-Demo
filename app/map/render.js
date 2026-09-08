@@ -55,6 +55,7 @@
     this._handlers = { viewport: [], select: [], cluster: [] };
     this._sel = null;
     this._props = { type: 'FeatureCollection', features: [] };
+    this._overlay = { markers: [], lines: [], seq: 0 };
   }
 
   Renderer.prototype.ready = function () {
@@ -439,6 +440,110 @@
       zoom: this.map.getZoom(),
       centre: [this.map.getCenter().lng, this.map.getCenter().lat],
     };
+  };
+
+  /* ── OVERLAY PRIMITIVES ────────────────────────────────────────────────
+     property.html draws things the matches map never needed: a home pin, a
+     pin per nearby place, and lines for walking routes and commutes. Rather
+     than let that page import MapLibre and break the one rule this file
+     exists to keep, the facade grows the two primitives it actually needs.
+
+     Markers are real DOM elements, not symbol layers. That is the right call
+     here and the wrong one for five hundred listings: a DOM node per marker
+     costs layout and does not cluster, which is exactly why the property
+     layer above is a GeoJSON source instead. This map shows a dozen places
+     around one house, where DOM markers keep the existing pin markup and CSS
+     working untouched.
+
+     EVERYTHING IS lng,lat. Leaflet took lat,lng and this page was written
+     against Leaflet, so every call site has to flip. That is the single most
+     likely thing to go silently wrong in the port -- a swapped pair does not
+     throw, it just puts Ibadan in the Atlantic. */
+  Renderer.prototype.marker = function (lng, lat, html, opts) {
+    var gl = window.maplibregl, o = opts || {};
+    var elm = document.createElement('div');
+    elm.innerHTML = html;
+    elm.style.cursor = o.onClick ? 'pointer' : '';
+    if (o.onClick) elm.addEventListener('click', function (e) { e.stopPropagation(); o.onClick(); });
+    var mk = new gl.Marker({ element: elm, anchor: o.anchor || 'bottom' })
+      .setLngLat([lng, lat]);
+    /* Parity with the bindPopup() this replaces. Kept because dropping it
+       would be a quiet narrowing: some of these pins carry the only label the
+       place has. */
+    if (o.popupHtml) {
+      mk.setPopup(new gl.Popup({ offset: 18, closeButton: false }).setHTML(o.popupHtml));
+    }
+    mk.addTo(this.map);
+    this._overlay.markers.push(mk);
+    return mk;
+  };
+
+  Renderer.prototype.line = function (lngLats, opts) {
+    var o = opts || {}, map = this.map;
+    var id = 'syn-ov-line-' + (this._overlay.seq++);
+    map.addSource(id, {
+      type: 'geojson',
+      data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: lngLats } },
+    });
+    map.addLayer({
+      id: id, type: 'line', source: id,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': o.color || window.SynMapStyle.COLOURS.ink,
+        'line-width': o.width || 4,
+        'line-opacity': o.opacity == null ? 0.85 : o.opacity,
+        'line-dasharray': o.dash || [1, 0],
+      },
+    });
+    this._overlay.lines.push(id);
+    return id;
+  };
+
+  /** One line, by the id line() returned. The walking route is drawn and
+   *  erased on its own, without disturbing the pins around it. */
+  Renderer.prototype.removeLine = function (id) {
+    if (!id || !this.map) return this;
+    if (this.map.getLayer(id)) this.map.removeLayer(id);
+    if (this.map.getSource(id)) this.map.removeSource(id);
+    this._overlay.lines = this._overlay.lines.filter(function (x) { return x !== id; });
+    return this;
+  };
+
+  /** Remove everything added through marker() and line(). The equivalent of
+   *  the layerGroup.clearLayers() this replaces. */
+  Renderer.prototype.clearOverlay = function () {
+    var map = this.map;
+    this._overlay.markers.forEach(function (m) { m.remove(); });
+    this._overlay.markers = [];
+    this._overlay.lines.forEach(function (id) {
+      if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(id)) map.removeSource(id);
+    });
+    this._overlay.lines = [];
+    return this;
+  };
+
+  /** fit() takes listing records; this takes bare [lng,lat] pairs, which is
+   *  what an overlay has. maxZoom matters: a single point fits to the source's
+   *  maximum, which is close enough to read roof outlines and nothing else. */
+  Renderer.prototype.fitPoints = function (lngLats, opts) {
+    var o = opts || {};
+    if (!this.map || !lngLats || !lngLats.length) return this;
+    var lo = [180, 90], hi = [-180, -90];
+    lngLats.forEach(function (c) {
+      lo[0] = Math.min(lo[0], c[0]); lo[1] = Math.min(lo[1], c[1]);
+      hi[0] = Math.max(hi[0], c[0]); hi[1] = Math.max(hi[1], c[1]);
+    });
+    if (lo[0] === hi[0] && lo[1] === hi[1]) {
+      this.map.easeTo({ center: lo, zoom: o.maxZoom || 16, duration: o.duration || 500 });
+      return this;
+    }
+    this.map.fitBounds([lo, hi], {
+      padding: o.padding || 56,
+      maxZoom: o.maxZoom || 16,
+      duration: o.duration == null ? 600 : o.duration,
+    });
+    return this;
   };
 
   Renderer.prototype.onViewport = function (fn) { this._handlers.viewport.push(fn); return this; };
