@@ -428,6 +428,19 @@
     return this;
   };
 
+  /** The box currently on screen, in the same shape onViewport reports. Needed
+   *  because "search this area" is a decision taken at click time, not at the
+   *  moment the map last stopped moving. */
+  Renderer.prototype.viewport = function () {
+    if (!this.map) return null;
+    var b = this.map.getBounds();
+    return {
+      west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth(),
+      zoom: this.map.getZoom(),
+      centre: [this.map.getCenter().lng, this.map.getCenter().lat],
+    };
+  };
+
   Renderer.prototype.onViewport = function (fn) { this._handlers.viewport.push(fn); return this; };
   Renderer.prototype.onSelect = function (fn) { this._handlers.select.push(fn); return this; };
   /** Fires with the ids inside a cluster the user just opened, so a caller

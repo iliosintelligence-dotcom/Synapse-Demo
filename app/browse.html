@@ -535,6 +535,7 @@
   <script src="map/style-synapse.js"></script>
   <script src="map/render.js"></script>
   <script src="map/card.js"></script>
+  <script src="map/query.js"></script>
   <script src="matches-shared.js"></script>
   <script>
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
@@ -728,7 +729,13 @@
 
     const mapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
     function drawMap() {
-      SynMatches.drawMatchMap(mapState, 'map', shownItems.length || searchQ ? shownItems : items);
+      /* Browse is the only map that opts into area search. Tayo's map shows
+         the homes Tayo picked and the portal's shows one agency's own stock --
+         on either, "search this area" would replace a curated set with every
+         listing in the viewport. */
+      SynMatches.drawMatchMap(mapState, 'map',
+        shownItems.length || searchQ ? shownItems : items,
+        { areaSearch: true, sb: { url: SUPABASE_URL, anon: ANON_KEY } });
     }
 
     /* ── List ⇄ Map (item 20) ────────────────────────────────────────────

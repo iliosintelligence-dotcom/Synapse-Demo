@@ -267,7 +267,7 @@
      caller that renders results the moment they arrive does not silently lose
      the first set -- which is exactly what every one of these three callers
      does. */
-  function drawMatchMap(st, elId, items) {
+  function drawMatchMap(st, elId, items, opts) {
     if (!window.SynMapRender || !window.SynMapStyle) return st;
     var list = (items || []).map(function (l, i) {
       var c = coords(l, i);
@@ -293,11 +293,29 @@
 
       st.r = SynMapRender.create(elId, { zoom: 12 });
       st.pending = list;
+      st.opts = opts || {};
       st.r.ready().then(function () {
         st.card = SynMapCard.attach(st.r, host, {
           href: function (id) { return propertyHref(id); },
           ask: function (id) { return 'toju.html?reply=' + encodeURIComponent(id); },
         });
+        /* AREA SEARCH IS OPT-IN, and only browse opts in.
+           Tayo's map shows the homes Tayo chose and the portal's map shows one
+           agency's own listings -- on either of those, "search this area"
+           would quietly replace a curated set with every listing in the
+           viewport, including other agencies'. Same component, different
+           question being asked. */
+        if (st.opts.areaSearch && window.SynMapQuery) {
+          if (st.opts.sb) SynMapQuery.setConfig(st.opts.sb);
+          SynMapQuery.attachSearchArea(st.r, function (rows) {
+            /* Straight to the renderer, not through paint(): these rows came
+               from the map, so re-framing the camera onto them would undo the
+               pan that asked for them. */
+            st.r.setProperties(rows);
+            st.sig = rows.map(function (p) { return p.id; }).sort().join(',');
+            if (st.opts.onAreaResults) st.opts.onAreaResults(rows);
+          }, st.opts.filters);
+        }
         st.ready = true;
         paint(st, st.pending || []);
       }).catch(function (e) {
