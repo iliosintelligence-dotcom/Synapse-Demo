@@ -1438,7 +1438,15 @@
                (the pipeline's own scheduler) still pass o.caption and are
                unaffected. */
             caption: String(sl.caption || o.caption || ''),
-            media_urls: o.mediaUrls || null,
+            /* [] NOT null. media_urls is NOT NULL with a default of '{}', and a
+               column default only applies when the column is OMITTED from the
+               insert -- an explicit NULL overrides it and is rejected. The
+               composer schedules without media, so every caption generated in
+               Social Studio hit "null value in column media_urls violates
+               not-null constraint" the moment you pressed Schedule to
+               pipeline. Sending the empty array matches the default and the
+               column's own contract: no media, not unknown media. */
+            media_urls: o.mediaUrls || [],
             /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
                six subjects and needs to know which are spent for a listing, or
                every regeneration rewrites the same three. Stored on the row
