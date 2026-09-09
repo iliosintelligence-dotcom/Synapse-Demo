@@ -1,117 +1,46 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Synapse seam — one place, not fourteen pages.
+   Synapse seam — TURNED OFF. Read this before switching it back on.
 
-   THE PROBLEM THIS SOLVES
-   Synapse is a static multi-page site: index, buyers, agencies, browse,
-   toju, property, agency, dream, verify. Every move between them was a full
-   document navigation, which the browser renders as a white flash and a
-   redraw. The taskbar is on every one of those pages in the same position,
-   and it blinked out and back on every single move. So did the app bar. The
-   product IS one place and the navigation was the only thing insisting it
-   was not.
+   WHAT IT WAS
+   Synapse is a static multi-page site, so every move between pages is a full
+   document navigation: a white flash and a redraw, with the taskbar blinking
+   out and back even though it sits in the same place on every page. This file
+   used cross-document view transitions to smooth that over — a cross-fade for
+   the body, named regions so the chrome held still, and a shared-element
+   morph from a listing card's photo into the property hero.
 
-   WHY NOT A SINGLE-PAGE APP
-   That is the usual answer and it is the wrong trade here. It would mean a
-   router, a build step, and rewriting nine pages that currently work, to buy
-   an effect the platform now gives away. Cross-document view transitions do
-   the same job in CSS: the browser snapshots the outgoing page, snapshots the
-   incoming one, and animates between them. No framework, no rewrite, and
-   every page keeps working exactly as it does today.
+   WHY IT IS OFF
+   It shipped, it was looked at, and it was rejected on sight: "it looks
+   terrible, it seems like a glitch is happening." That was an accurate
+   description, and the cause was mine — the rule meant to hold the chrome
+   still:
 
-   WHAT IT DEGRADES TO
-   Firefox has not shipped cross-document transitions yet, and an older Chrome
-   or Safari has not either. There, `@view-transition` is an unknown at-rule
-   and is skipped -- the navigation is exactly what it is today. Nothing is
-   broken and nothing is worse; it is better where it is supported and
-   unchanged where it is not.
+       ::view-transition-old(syn-taskbar),
+       ::view-transition-new(syn-taskbar) { animation: none; }
 
-   TIMINGS COME FROM motion.css. This introduces no new durations or curves:
-   --m-standard and --m-ease are the same tokens the rest of the app moves on,
-   which is the point -- a transition that felt like a different system would
-   defeat the exercise.
+   `animation: none` on BOTH snapshots does not hold a bar still. It paints
+   the outgoing bar and the incoming bar, each at full opacity, on top of one
+   another for the whole transition. So the taskbar and the app bar doubled
+   and flickered on every navigation, and the one rule written to make the
+   shell feel continuous was the single thing making it look broken.
+
+   WHY OFF RATHER THAN FIXED
+   The specific bug has an obvious fix: name only one side, or give the pair a
+   real cross-fade instead of none. But a page transition is in the way of
+   what somebody asked for, every single time it plays, and one that has
+   already read as a glitch has spent whatever benefit of the doubt it had.
+   Off is the honest state until it can be rebuilt and watched on a real
+   device rather than reasoned about here.
+
+   Navigation is now exactly what it was before any of this existed.
+
+   WHAT SURVIVED
+   seam.js, and it is invisible: coming back to a list puts you where you
+   were, on the home you opened. That was always the part of "one place"
+   worth having, and it never needed any of this.
+
+   TO REVIVE IT
+   Restore `@view-transition { navigation: auto; }` and the root cross-fade
+   first, on its own, and look at it. Do not name the chrome again until the
+   doubling above is genuinely solved — that was the glitch, not the fade.
    ───────────────────────────────────────────────────────────────────────── */
-
-@view-transition { navigation: auto; }
-
-/* ── THE PAGE BODY CROSS-FADES; IT DOES NOT SLIDE ──────────────────────────
-   A slide says "another page arrived". A cross-fade with a very small rise
-   says "this changed". The rise is 6px: enough to read as movement, small
-   enough that it never looks like a card being dealt.
-
-   Deliberately short. A page transition is not a place to be expressive --
-   it is in the way of what the person actually asked for, every single time,
-   and the only good version of it is one they stop noticing. */
-::view-transition-old(root) {
-  animation: syn-seam-out var(--m-standard, 180ms) var(--m-ease, ease-out) both;
-}
-::view-transition-new(root) {
-  animation: syn-seam-in var(--m-standard, 180ms) var(--m-ease, ease-out) both;
-}
-@keyframes syn-seam-out { to { opacity: 0; } }
-@keyframes syn-seam-in { from { opacity: 0; transform: translateY(6px); } }
-
-/* ── THE CHROME DOES NOT GO ANYWHERE ───────────────────────────────────────
-   This is the single largest part of the effect, and it is almost free.
-
-   The taskbar and the app bar are in the same place on every page. Naming
-   them takes them OUT of the root snapshot and gives each its own, so the
-   browser animates the taskbar to the taskbar rather than fading the whole
-   page including it. Because their position does not change between pages,
-   "animating" resolves to sitting perfectly still while the content behind
-   them changes -- which is exactly what a persistent shell looks like, and
-   the thing that stops a navigation reading as a new page.
-
-   A page that lacks one of these is fine: with no counterpart to pair with,
-   it simply gets a plain exit or entry. */
-.cnav { view-transition-name: syn-taskbar; }
-.appbar { view-transition-name: syn-appbar; }
-.pvm-bar { view-transition-name: syn-topbar; }
-
-/* Held still rather than cross-faded: a bar that fades in over itself
-   flickers, because the two snapshots are nearly identical. */
-::view-transition-old(syn-taskbar),
-::view-transition-new(syn-taskbar),
-::view-transition-old(syn-appbar),
-::view-transition-new(syn-appbar),
-::view-transition-old(syn-topbar),
-::view-transition-new(syn-topbar) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-/* ── THE PHOTO YOU PRESSED IS THE PHOTO YOU LAND ON ────────────────────────
-   The strongest single moment in the product: a listing card's photo grows
-   into the property page's hero. It is the difference between "a new page
-   about that home" and "that home, opened".
-
-   Only ONE element may carry this name per document -- a duplicate name
-   aborts the whole transition -- so seam.js tags exactly the card being
-   opened and clears it afterwards. Here we only claim the receiving end,
-   which is static and unambiguous: property.html has one hero image. */
-#heroImg { view-transition-name: syn-photo; }
-
-/* contain, not cover: the card photo and the hero have different aspect
-   ratios, and the default cross-fade between two differently-shaped
-   snapshots is what produces the "squash" people notice. */
-::view-transition-group(syn-photo) {
-  animation-duration: var(--m-expanded, 250ms);
-  animation-timing-function: var(--m-ease, ease-out);
-}
-::view-transition-old(syn-photo),
-::view-transition-new(syn-photo) {
-  height: 100%;
-  overflow: clip;
-  object-fit: cover;
-}
-
-/* ── REDUCED MOTION ────────────────────────────────────────────────────────
-   Not "faster" -- off. Someone who asks for reduced motion is not asking for
-   a shorter animation, and a cross-fade is still motion. The navigation
-   simply happens, which is what it did before any of this existed. */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-}
