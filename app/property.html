@@ -469,7 +469,7 @@
        parent, because cust-nav moves them out of this page's markup and
        into the taskbar -- a rule on where they used to live would stop
        applying the moment they arrive. */
-    .pvm-bar, .pvm-mapbtn, .pvm-backbtn, .pvm-close { display: none; }
+    .pvm-bar, .pvm-mapbtn, .pvm-backbtn, .pvm-close, .pvm-nearbtn { display: none; }
     .pv-backslot { display: block; }
 
     /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
@@ -624,6 +624,25 @@
       }
       /* Only while the map is up. Off-map it has nothing to control. */
       body:not(.pv-map-open) .pvc-overlay { display: none !important; }
+
+      /* THE MAP STARTS CLEAN, AND TAPPING IT GETS BACK TO CLEAN.
+         The card was covering 44% of the screen from the moment the map
+         opened, showing a list nobody had asked for yet. Now the map opens as
+         a map, and the pill beside the taskbar is how you ask. Tapping the
+         map steps back a level at a time and the last step is the card
+         leaving, so the gesture has somewhere to end. */
+      body.pv-map-open .pvm-nearbtn {
+        display: inline-flex; align-items: center; gap: 7px;
+        position: fixed; z-index: 59;
+        left: 74px; bottom: calc(18px + env(safe-area-inset-bottom));
+        min-height: 46px; padding: 0 16px; border-radius: 100px;
+        background: #141412; color: #fff; border: 0;
+        font: 600 13px var(--f-sans); cursor: pointer;
+        box-shadow: 0 10px 26px rgba(20,20,18,0.3);
+      }
+      /* With the list up the pill is the button for the thing already on
+         screen, so it stands down until the list is dismissed. */
+      body.pv-map-open.pv-card-on .pvm-nearbtn { display: none; }
       .pvo-rows { max-height: none; overflow: visible; }
       /* 40px was a mouse target. These are the page's primary controls on a
          phone -- every question about the neighbourhood is asked by pressing
@@ -938,6 +957,12 @@
            stops floating and becomes the section under the map -- see the
            mobile block in the stylesheet for why it cannot stay on top. -->
       <div class="pvc-overlay" id="pvcOverlay"></div>
+      <!-- The map opens with no card at all, and tapping the map steps all the
+           way back to nothing. This is how the list comes back: a pill beside
+           the taskbar, in the same reach as everything else on this screen. -->
+      <button class="pvm-nearbtn" id="pvmNear" type="button">
+        <span data-icon="pin"></span> What&#39;s nearby
+      </button>
     </div>
   </div><!-- /pv-split -->
 
@@ -3217,6 +3242,34 @@
     */
     var PANEL = { mode: 'cats', cat: null, poi: null };
     var COMMUTE_KEY = '__commute';
+    var PHONE_MQ = window.matchMedia('(max-width: 1024px)');
+
+    /* ── A FOURTH STATE: NOT SHOWN AT ALL ───────────────────────────────
+       On a phone the map is the whole screen, so a card sitting on 44% of it
+       from the moment you arrive is the same mistake the old six-tab header
+       made -- the map at its most covered before you have asked anything.
+
+       So the phone map opens clean and tapping the map walks all the way
+       back out: a place returns to its category, a category to the list, and
+       the list to nothing. The gesture needs a floor, and 'nothing' is the
+       honest one; the pill beside the taskbar brings it back.
+
+       Desktop keeps the list as its floor. The card there is the map's only
+       control and there is no pill to restore it, so hiding it would strand
+       you on a map you cannot ask anything about. */
+    function markCardOn(on) {
+      document.body.classList.toggle('pv-card-on', !!on);
+    }
+
+    function hideCard() {
+      PANEL = { mode: 'off', cat: null, poi: null };
+      clearPois();
+      drawHome(false);
+      overlay.className = 'pvc-overlay idle';
+      overlay.innerHTML = '';
+      markCardOn(false);
+      fit([PROP]);
+    }
 
     function clearPois() {
       poiMarkers.forEach(function (m) { m.remove(); });
@@ -3250,6 +3303,7 @@
       clearPois();
       drawHome(false);
       overlay.className = 'pvc-overlay';
+      markCardOn(true);
 
       if (!PROP) { overlay.innerHTML = NO_DATA; return; }
       if (poiState === 'loading') {
@@ -3302,6 +3356,7 @@
       PANEL = { mode: 'places', cat: t, poi: null };
       clearPois();
       drawHome(true);
+      markCardOn(true);
 
       var list = placesOf(t);
       var m = metaFor(t);
@@ -3337,6 +3392,7 @@
       PANEL = { mode: 'places', cat: COMMUTE_KEY, poi: null };
       clearPois();
       drawHome(true);
+      markCardOn(true);
       var cg = CONGEST[state.time], pts = [PROP];
       DEST.forEach(function (d, i) {
         whenMap(function () {
@@ -3366,6 +3422,7 @@
     /* ── state 3: one place, with the walk to it ─────────────────────── */
     function showPlace(poi) {
       PANEL.mode = 'detail'; PANEL.poi = poi;
+      markCardOn(true);
       if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; }
       overlay.className = 'pvc-overlay';
 
@@ -3444,8 +3501,18 @@
       MAPR.onBackgroundClick(function () {
         if (PANEL.mode === 'detail') showCat(PANEL.cat);
         else if (PANEL.mode === 'places') showCats();
+        /* The last step, and only where there is a way back in. */
+        else if (PANEL.mode === 'cats' && PHONE_MQ.matches) hideCard();
       });
     });
+
+    var nearBtn = document.getElementById('pvmNear');
+    if (nearBtn) nearBtn.addEventListener('click', function () { showCats(); });
+
+    /* The phone map opens on a map, not on a list. Called by the sheet rather
+       than at load, because the desktop map has no open event and must keep
+       its card from the start. */
+    window.__pvMapOpened = function () { if (PHONE_MQ.matches) hideCard(); };
 
     /* Kept as the name the rest of the page already calls. Everything that
        used to switch tabs now just returns to the list of kinds. */
@@ -3557,6 +3624,7 @@
            alone on <body> does nothing here. */
         document.documentElement.style.overflow = 'hidden';
         whenMap(function () { setTimeout(function () { MAPR.resize(); }, 60); });
+        if (typeof window.__pvMapOpened === 'function') window.__pvMapOpened();
       }
 
       function closeMap() {
