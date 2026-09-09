@@ -1739,7 +1739,7 @@
         // The neighbourhood record this listing is actually attached to.
         // Without it the section below had nothing to draw from, which is
         // why it was hardcoded to Lekki Phase 1 on every property.
-        + ',neighbourhoods(name,safety_score,family_score,walkability_score,power_reliability,internet_quality,flood_risk,price_trend,avg_rent_3bed,rental_demand,coord_verified_at)'
+        + ',neighbourhoods(name)'
         + '&id=eq.' + encodeURIComponent(URL_ID) + '&limit=1';
       fetch(q, { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } })
         .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
@@ -2375,14 +2375,29 @@
                             straight-line distances from this property.
 
        A missing answer is printed as a missing answer. */
-    var SCORE_ROWS = [
-      { k: 'safety_score',      lbl: 'Safety',            good: true  },
-      { k: 'family_score',      lbl: 'Family life',       good: true  },
-      { k: 'walkability_score', lbl: 'Walkability',       good: true  },
-      { k: 'power_reliability', lbl: 'Power reliability', good: true  },
-      { k: 'internet_quality',  lbl: 'Internet',          good: true  },
-      { k: 'flood_risk',        lbl: 'Flood risk',        good: false },
-    ];
+    /* THE SIX SCORE BARS ARE GONE, AND THEY WERE NEVER MEASUREMENTS.
+       Safety, Family life, Walkability, Power reliability, Internet and Flood
+       risk read off `neighbourhoods`, and every one of those columns is
+       seed_rand output from twin_seed.sql. A buyer saw 'Safety 64' rendered as
+       a filled bar with a number beside it -- the visual language of a
+       measurement -- about the street they were thinking of moving to.
+
+       This is the Lekki Phase 1 bug wearing better clothes. That version put
+       one hardcoded neighbourhood's numbers on every listing in the country;
+       this one puts a different random number on each area, which is harder
+       to notice and no more true.
+
+       Two other surfaces had already worked this out and stopped: the social
+       composer removed the power line rather than publish it under an
+       agency's name, and toju-demo selects neighbourhoods(name) and nothing
+       else because 'scores 64 on safety' is a random number wearing a
+       sentence. The page a buyer actually reads was the last one still
+       printing them.
+
+       Nothing replaces them, because something real already had: the card on
+       the map lists what is actually around this address, by category, with
+       measured distances. A fabricated score above fourteen real places was
+       not adding information -- it was outranking it. */
 
     /* Kept as a named function so the three cases are visible side by side
        rather than buried in a ternary inside a ternary. */
@@ -2484,10 +2499,8 @@
       });
       if (addrEl) addrEl.textContent = addrParts.join(' · ');
 
-      var rows = nb ? SCORE_ROWS.filter(function (r) { return nb[r.k] != null; }) : [];
-      if (!rows.length) {
+      {
         scoresEl.innerHTML = '';
-        scoresEl.insertAdjacentHTML('afterend', '');
         if (noteEl) {
           /* "Not linked to a surveyed neighbourhood" was an apology for a gap
              that no longer exists. Nobody has to survey anything: what is
@@ -2503,29 +2516,12 @@
           noteEl.className = 'nb-empty';
           noteEl.textContent = haveplaces_text(haveplaces, nb);
         }
-        return;
       }
-
-      scoresEl.innerHTML = rows.map(function (r) {
-        var v = Math.max(0, Math.min(100, Number(nb[r.k])));
-        // Flood risk is the one row where a high number is bad.
-        var strong = r.good ? v >= 70 : v <= 35;
-        return '<div class="row"><span>' + r.lbl + '</span><div class="bar"><i'
-          + (strong ? ' class="good"' : '') + ' style="width:' + v + '%"></i></div>'
-          + '<span class="v">' + v + '</span></div>';
-      }).join('');
-
-      if (noteEl) {
-        noteEl.className = 'nb-note';
-        var bits = [];
-        if (nb.price_trend) bits.push('Prices here are ' + esc(String(nb.price_trend)));
-        if (nb.avg_rent_3bed) bits.push('typical 3-bed rent ' + esc(String(nb.avg_rent_3bed)));
-        if (nb.rental_demand) bits.push('rental demand ' + esc(String(nb.rental_demand)));
-        if (!nb.coord_verified_at) {
-          bits.push('this area’s location has not been verified by us yet');
-        }
-        noteEl.innerHTML = bits.length ? bits.join(' · ') : '';
-      }
+      /* The note used to carry price_trend, avg_rent_3bed and rental_demand
+         underneath the bars. Same table, same seed_rand, same problem -- a
+         "typical 3-bed rent" nobody surveyed is worse than no figure at all,
+         because a buyer will price a negotiation against it. Gone with the
+         bars. */
     }
 
     /* ── what is nearby, from the database ──────────────────────────────────

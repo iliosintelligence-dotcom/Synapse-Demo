@@ -954,8 +954,14 @@
         ['Price', sel.map((l) => l.priceN), (v, b) => `<span class="${v === b ? 'best' : ''}">${naira(v)}</span>`, 'min'],
         ['Match', sel.map((l) => l.match), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
         ['Property confidence', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
-        ['Flood risk', sel.map((l) => l.flood ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : v >= 50 ? 'warn' : ''}">${v}/100${v >= 50 ? ' ⚠' : ''}</span>`, 'min'],
-        ['Power reliability', sel.map((l) => l.power ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}/100</span>`, 'max'],
+        /* FLOOD RISK AND POWER RELIABILITY ARE GONE FROM THE COMPARISON.
+           Both read off `neighbourhoods`, and both columns are seed_rand
+           output from twin_seed.sql. This table is the single worst place in
+           the product to print an invented number: it exists so somebody can
+           put two homes side by side and choose, and it was rendering
+           "Flood risk 64/100 ⚠" -- a warning triangle, a denominator, a
+           winner highlighted in green -- off a random number. Somebody was
+           going to rule out a house on it. */
         ['Gross yield', sel.map((l) => l.yield ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
       ];
       let html = '<table class="cmptable"><tr><th></th>' + sel.map((l) => `<th>${esc(l.ttl)}</th>`).join('') + '</tr>';
@@ -980,7 +986,9 @@
             headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
             body: JSON.stringify({
               action: 'compare', visitorId: VISITOR,
-              items: sel.map((l) => ({ id: l.id, title: l.ttl, price: l.priceN, deal: l.per ? 'rent' : 'sale', trustScore: l.score, yieldPct: l.yield ?? null, flood: l.flood ?? null, power: l.power ?? null, area: l.loc })),
+              /* flood/power removed here too: handing them to the advisor
+                 just moves the invention into a sentence. */
+              items: sel.map((l) => ({ id: l.id, title: l.ttl, price: l.priceN, deal: l.per ? 'rent' : 'sale', trustScore: l.score, yieldPct: l.yield ?? null, area: l.loc })),
             }),
           });
           const d = await r.json();
@@ -1032,7 +1040,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,property_media(url,display_order),neighbourhoods(name,flood_risk,power_reliability)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,property_media(url,display_order),neighbourhoods(name)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1073,8 +1081,6 @@
         // Where the pin goes. `loc` above is the label; these are the place.
         lat: p.latitude == null ? null : Number(p.latitude),
         lng: p.longitude == null ? null : Number(p.longitude),
-        flood: p.neighbourhoods ? p.neighbourhoods.flood_risk : null,
-        power: p.neighbourhoods ? p.neighbourhoods.power_reliability : null,
         /* "independently verified" is not repeated here: the chip at the top
            of the card already says Verified, and the score line below said it
            a third time. One card, one statement of a fact. The unverified copy
