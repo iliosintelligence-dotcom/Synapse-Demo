@@ -7670,6 +7670,18 @@
         ? ROLE_PANES[role]
         : ROLE_PANES.agent;
       document.body.dataset.role = role || 'unknown';
+      /* ANNOUNCE IT. The role arrives from its own round trip, and anything
+         that renders off it is racing this line rather than following it.
+         The social channel strip lost that race: it renders when the accounts
+         fetch resolves, read an unstamped data-role, decided the viewer was
+         an agent, and printed "an owner or admin connects this" -- to the
+         owner. It never re-rendered, so an agency owner had no way to connect
+         Instagram or Facebook at all.
+
+         An event rather than a call, because applyRole should not have to
+         know who cares. Whichever chain finishes first, the other is correct
+         by the end. */
+      document.dispatchEvent(new CustomEvent('syn:role', { detail: role || null }));
       if (allowed === null) return;                      // owner: nothing to strip
 
       const keep = new Set(allowed);
@@ -8566,6 +8578,11 @@
         html += '</div>';
         box.innerHTML = html;
       }
+
+      /* Re-render once the role is known. Without this the strip is whatever
+         it guessed before applyRole's round trip came back -- see the comment
+         at the dispatch. */
+      document.addEventListener('syn:role', function () { renderChannels(); });
 
       document.addEventListener('click', function (e) {
         var c = e.target.closest && e.target.closest('[data-connect]');
