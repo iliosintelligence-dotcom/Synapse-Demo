@@ -70,6 +70,17 @@
           style: style,
           center: self.opts.center || [3.4, 6.45],   // Lagos, until told otherwise
           zoom: self.opts.zoom == null ? 11 : self.opts.zoom,
+          /* A CEILING ON ZOOM. MapLibre's default is 22, which is roughly a
+             metre across -- past the point where the vector tiles have
+             anything left to say, so the reward for pinching further is a
+             bigger drawing of the same building and the loss of every
+             landmark that told you where you were.
+
+             18 still resolves individual buildings and the house's own
+             footprint, which is as close as any question on this map needs.
+             fit() and fitPoints() cap themselves at 16 separately; this is
+             the floor under a person's own pinching. */
+          maxZoom: self.opts.maxZoom == null ? 18 : self.opts.maxZoom,
           attributionControl: false,
           /* A map you cannot tilt is one less thing to get wrong by accident
              on a phone, and the design is a flat plan drawing. */
