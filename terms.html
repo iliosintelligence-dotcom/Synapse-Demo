@@ -43,6 +43,9 @@
   <!-- motion.css carries the tokens seam.css animates on. -->
   <link rel="stylesheet" href="app/motion.css" />
   <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
   <style>
     body { background: var(--bg); }
     .legal { max-width: 720px; margin: 0 auto; padding: 64px 24px 100px; }
@@ -252,6 +255,5 @@
     upd();
   })();
 </script>
-  <script src="app/seam.js"></script>
 </body>
 </html>

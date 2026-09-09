@@ -50,6 +50,9 @@
 <link rel="stylesheet" href="landing-mobile.css" />
 <link rel="stylesheet" href="app/motion.css" />
 <link rel="stylesheet" href="app/seam.css" />
+<!-- In <head>, not at the end of <body>: pagereveal fires before a
+     body script has run, and seam.js has to be listening for it. -->
+<script src="app/seam.js"></script>
 </head>
 <body>
 <script>
@@ -569,6 +572,5 @@ document.querySelectorAll('.hero-section').forEach(function (sec) {
 </script>
 <script src="app/icons.js"></script>
 <script src="app/motion.js" data-motion-base="app/motion/"></script>
-  <script src="app/seam.js"></script>
 </body>
 </html>

@@ -13,6 +13,9 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <link rel="stylesheet" href="seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="seam.js"></script>
   <style>
     /* Split auth screen: photography on one side, a calm form on the other.
        The picture carries the aspiration; the form stays completely plain so
@@ -1000,6 +1003,5 @@
       if (expiredLinkMsg) showNote('bad', expiredLinkMsg);
     })();
   </script>
-  <script src="seam.js"></script>
 </body>
 </html>

@@ -76,11 +76,16 @@
              bigger drawing of the same building and the loss of every
              landmark that told you where you were.
 
-             18 still resolves individual buildings and the house's own
-             footprint, which is as close as any question on this map needs.
-             fit() and fitPoints() cap themselves at 16 separately; this is
-             the floor under a person's own pinching. */
-          maxZoom: self.opts.maxZoom == null ? 18 : self.opts.maxZoom,
+             18 was the first attempt and still went too far -- close enough
+             to lose the street pattern that tells you which part of town you
+             are in, which is the thing this map is for. 16.5 holds a block
+             and its surroundings in view: you can still see which building,
+             and you can still see what is around it.
+
+             Half a level above the 16 that fit() and fitPoints() use, so an
+             auto-fit never lands hard against the ceiling and leaves pinching
+             feeling broken. */
+          maxZoom: self.opts.maxZoom == null ? 16.5 : self.opts.maxZoom,
           attributionControl: false,
           /* A map you cannot tilt is one less thing to get wrong by accident
              on a phone, and the design is a flat plan drawing. */

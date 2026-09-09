@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="motion.css" />
   <link rel="stylesheet" href="seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="seam.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     /* ── TRUE GLASSMORPHISM, WARM & LIGHT ──
@@ -1527,6 +1530,5 @@
       if (mn) mn.addEventListener('click', newChat);
     })();
   </script>
-  <script src="seam.js"></script>
 </body>
 </html>
