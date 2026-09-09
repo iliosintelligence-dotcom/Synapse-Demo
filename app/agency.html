@@ -2015,7 +2015,17 @@
       border: 1px solid rgba(54,54,54,0.16); border-radius: 10px; background: var(--surface, #fff); }
     .cmp-ch.on { border-color: rgba(54,54,54,0.42); }
     .cmp-ch.soon { opacity: .55; }
-    .cmp-ch-nm { font: 600 13px/1 var(--f-sans); color: var(--ink); }
+    /* The name sits beside the platform's own mark rather than standing in
+       for it. icons.js has carried the real Instagram, Facebook, TikTok,
+       LinkedIn and X glyphs all along; this strip was spelling the names out
+       in text while the logos went unused. */
+    .cmp-ch-nm { display: inline-flex; align-items: center; gap: 7px;
+      font: 600 13px/1 var(--f-sans); color: var(--ink); }
+    .cmp-ch-ic { display: inline-flex; width: 16px; height: 16px; flex: none; }
+    .cmp-ch-ic svg { width: 100%; height: 100%; }
+    /* Not built yet, and the mark says so with the row rather than shouting
+       a brand we cannot post to. */
+    .cmp-ch.soon .cmp-ch-ic { opacity: .38; }
     .cmp-ch-at { font-size: 12px; color: var(--ink-muted); }
     /* 44px of hit area on a 30px-tall control, carried by the pseudo-element so
        the button keeps its size. Same floor the rest of the portal holds. */
@@ -8541,6 +8551,13 @@
         return r === 'agency_owner' || r === 'agency_admin';
       }
 
+      /* The logos live in SynIcons.BRAND, not the data-icon set -- hydrate()
+         only walks [data-icon] and would leave these empty. brand() returns
+         the markup, so it goes straight into the string. */
+      function mark(pl) {
+        return (window.SynIcons && SynIcons.brand) ? SynIcons.brand(pl, { size: 16 }) : '';
+      }
+
       function renderChannels() {
         var box = document.getElementById('cmpChannels');
         if (!box) return;
@@ -8552,7 +8569,8 @@
              publish attempt fails at the provider, which reads as our bug. */
           var stale = expired(a);
           html += '<div class="cmp-ch' + (a && !stale ? ' on' : '') + '">'
-            + '<span class="cmp-ch-nm">' + esc(CONNECTABLE[pl]) + '</span>'
+            + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+            + esc(CONNECTABLE[pl]) + '</span>'
             + (a
                 ? '<span class="cmp-ch-at">' + esc(stale ? 'session expired' : '@' + (a.platform_username || 'connected')) + '</span>'
                   + '<button class="cmp-ch-btn" data-disconnect="' + esc(a.id) + '">'
@@ -8571,7 +8589,8 @@
         });
 
         Object.keys(SOON).forEach(function (pl) {
-          html += '<div class="cmp-ch soon"><span class="cmp-ch-nm">' + esc(SOON[pl][0]) + '</span>'
+          html += '<div class="cmp-ch soon"><span class="cmp-ch-nm">'
+            + '<span class="cmp-ch-ic">' + mark(pl) + '</span>' + esc(SOON[pl][0]) + '</span>'
             + '<span class="cmp-ch-at">' + esc(SOON[pl][1]) + '</span></div>';
         });
 
@@ -10550,12 +10569,28 @@
     renderNoti();
     renderOverview();
 
-    // Overview is the main page: force it active on every load, ignoring stale hash/state
-    (function forceOverview() {
-      if (location.hash) history.replaceState(null, '', location.pathname);
-      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-overview'));
-      document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.pane === 'overview'));
-      const main = document.querySelector('.grp-sec[data-sec="main"]'); if (main) main.classList.add('open');
+    /* OPEN WHERE YOU LEFT OFF, NOT ALWAYS OVERVIEW.
+
+       This was forceOverview(): it stripped the hash and forced the Overview
+       pane on every load, "ignoring stale hash/state". So reloading while
+       reading Engagement reports put you back on Overview, and a link to a
+       pane could not survive being followed. Reported as the app taking you
+       back to Overview when you belong on the page you were on.
+
+       The hash is now honoured when it names a pane that exists, and Overview
+       is what you get when it does not -- which still covers a first visit, a
+       junk fragment, and a pane this account may not open. applyRole strips
+       panes by role AFTER this runs, so restorePane() re-applies the hash on
+       the syn:role event once that is settled. */
+    (function openInitialPane() {
+      const want = (location.hash || '').replace(/^#/, '');
+      const tab = want && document.querySelector('#tabs [data-pane="' + want + '"]');
+      const pane = tab ? want : 'overview';
+      if (!tab && location.hash) history.replaceState(null, '', location.pathname);
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + pane));
+      document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.pane === pane));
+      const sec = (tab && tab.closest('.grp-sec')) || document.querySelector('.grp-sec[data-sec="main"]');
+      if (sec) sec.classList.add('open');
     })();
 
     /* One way to change pane, used by the sidebar AND by anything else that
@@ -10580,7 +10615,34 @@
       if (window.synMotion) synMotion.refresh();
       const paneEl = document.getElementById('pane-' + pane);
       if (paneEl && paneEl.scrollIntoView) paneEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      rememberPane(pane);
     }
+
+    /* ── THE PANE SURVIVES A RELOAD ──────────────────────────────────────
+       Nothing recorded which pane you were on, and the markup marks Overview
+       as the open one, so every reload threw you back to Overview no matter
+       where you were working. Reloading while reading Engagement reports and
+       landing on Overview is the app losing your place, not navigation.
+
+       replaceState rather than pushState: this makes the pane survive a
+       reload and become linkable, without turning every sidebar click into a
+       browser-history entry that the Back button then has to walk back
+       through. */
+    function rememberPane(pane) {
+      if (!pane) return;
+      try { history.replaceState(null, '', '#' + pane); } catch (e) { /* file:// */ }
+    }
+
+    /* Restored only after applyRole has stripped the panes this account may
+       not see -- otherwise a stale link would try to open a pane that has
+       just been removed from the DOM. An unknown or forbidden pane simply
+       leaves you on the default, which is the honest outcome. */
+    function restorePane() {
+      var want = (location.hash || '').replace(/^#/, '');
+      if (!want || !document.querySelector('#tabs [data-pane="' + want + '"]')) return;
+      goToPane(want);
+    }
+    document.addEventListener('syn:role', restorePane);
 
     /* ══ FLOATING DOCK (mobile) ═══════════════════════════════════════════
        Navigation and creation as two thumb-reachable buttons, taskbar-style.
