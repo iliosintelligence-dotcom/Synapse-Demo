@@ -10254,7 +10254,40 @@
           <span class="ovi-chv" aria-hidden="true">›</span>
         </button>`).join('');
       renderOvDetail(list[OV.sel]);
-      const items = list.map(l => ({ loc: l.t, ttl: l.t, priceN: l.pr * 1e6, score: ovChecks(l) * 13, match: 0 }));
+      /* THE MAP READS THE LISTING, NOT ITS DISPLAY SHIM.
+
+         This built its map items from `l.pr`, and pr is not a price -- it is
+         deriveLegacy's display helper, `Math.round(price / 1e6)`, the price in
+         whole MILLIONS. Multiplying it back up cannot recover what rounding
+         threw away: a ₦159,000 listing is round(0.159) = 0, so the pin read
+         ₦0, and anything not a whole number of millions was quietly wrong.
+         Reported as an agency's own real listing showing ₦0. The row already
+         carries `price` in naira; there was never a reason to go via pr.
+
+         Three more things were wrong in the same line, all from passing the
+         title where a field was expected:
+
+         · loc was the TITLE. coords() falls back to a city lookup keyed on
+           loc when a row has no position, so a title matching no city fell
+           through to Lagos -- every one of this agency's pins sat in Lagos
+           whatever city the home is in. latitude/longitude are on the row, so
+           now it uses them and the fallback is a fallback again.
+         · no id, so a pin had nothing to open: the card's "See this home"
+           went to a bare property.html, which is the wrong property.
+         · no verification status, so `vstatus === 'verified'` was false for
+           every pin and a verified listing was labelled Not verified on its
+           own agency's map. */
+      const items = list.map(l => ({
+        id: l.id,
+        ttl: l.title || l.t,
+        loc: ovLoc(l),
+        priceN: l.price,
+        currency: l.currency,
+        lat: l.latitude, lng: l.longitude,
+        vstatus: l.verification_status,
+        bedrooms: l.bedrooms,
+        img: l.img,
+      }));
       if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items,
         /* No areaSearch: this map is this agency's own stock. */
         { sb: { url: SB_URL, anon: SB_KEY } });
