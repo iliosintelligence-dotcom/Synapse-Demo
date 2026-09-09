@@ -28,6 +28,20 @@
     var st = document.createElement('style');
     st.id = 'syn-mapcard-css';
     st.textContent = [
+      /* THE CARD STOPS SITTING IN THE MIDDLE OF THE MAP.
+         It used to be left:10 right:10 margin:auto -- centred along the
+         bottom edge. On the matches map and the one in the chat that is a
+         250px-tall strip, so a card tall enough to carry a photo, a price and
+         the Nearby block covered the map almost entirely. You pressed a home
+         to look at where it is and the answer was hidden by the reply.
+
+         So it moves to one side and stays out of the middle third. RIGHT,
+         and always right: expanded, the brief is the bottom-right corner, and
+         a card that swapped sides when the map grew would be harder to find
+         than one that never moves.
+
+         The bottom-sheet layout below is still the fallback, because a side
+         card needs a map wide enough to stand beside -- see place(). */
       '.syn-mcard{position:absolute;z-index:6;left:10px;right:10px;bottom:10px;',
       '  max-width:390px;margin:0 auto;background:#fff;border:1px solid #E7E7E3;',
       '  border-radius:18px;box-shadow:0 18px 44px rgba(20,20,18,.16);',
@@ -39,6 +53,14 @@
       '  max-height:calc(100% - 20px);',
       '  font-family:var(--f-sans,system-ui,sans-serif);}',
       '.syn-mcard.on{display:block;}',
+      /* Width comes from place(), which sizes it against the map so the
+         middle third is never crossed. */
+      '.syn-mcard.side{left:auto;right:12px;bottom:12px;margin:0;',
+      '  width:var(--syn-mcard-w,320px);max-width:none;max-height:calc(100% - 24px);}',
+      /* At a third of a narrow map there is not room for an 82px photo and a
+         price side by side, and the price is the one that has to survive. */
+      '.syn-mcard.side .syn-mcard-img{width:60px;height:60px;border-radius:10px;}',
+      '.syn-mcard.side .syn-mcard-row{gap:9px;padding:11px;}',
       '.syn-mcard-row{display:flex;gap:12px;padding:12px;align-items:flex-start;}',
       '.syn-mcard-img{width:82px;height:82px;flex:none;border-radius:12px;',
       '  background:#F2F2EF center/cover no-repeat;display:flex;align-items:center;',
@@ -123,6 +145,37 @@
 
     var q = function (s) { return el.querySelector(s); };
     var set = null, idx = 0;
+
+    /* ── WHERE THE CARD STANDS ───────────────────────────────────────────
+       Measured against the map, not the viewport. The same card is used by
+       the matches page (1058px of map), the chat (795px) and the agency
+       portal panel, and a viewport media query cannot tell those apart --
+       they are all the same browser window.
+
+       The rule is the brief's: the middle third of the map stays completely
+       visible. A card pinned right may therefore be at most a third of the
+       width, less the gutter it sits in. Where that leaves too little to read
+       a price in, there is no side to stand on and the bottom sheet is the
+       honest answer -- which is also the phone case. */
+    var CARD_MIN = 240, CARD_MAX = 360;
+
+    function place() {
+      var w = host.clientWidth || 0;
+      var third = Math.floor(w / 3) - 16;
+      if (third >= CARD_MIN) {
+        el.style.setProperty('--syn-mcard-w', Math.min(CARD_MAX, third) + 'px');
+        el.classList.add('side');
+      } else {
+        el.classList.remove('side');
+        el.style.removeProperty('--syn-mcard-w');
+      }
+    }
+    place();
+    /* The matches page toggles a map view that changes the container's height
+       and width, and a window resize changes both -- so this is re-measured
+       rather than decided once at attach time. */
+    if (window.ResizeObserver) new ResizeObserver(place).observe(host);
+    else window.addEventListener('resize', place);
 
     /* ── WHAT IS ACTUALLY AROUND THIS HOME ──────────────────────────────
        property_places has been filling up since the enrichment pipeline was
@@ -258,10 +311,33 @@
         var m = renderer.map;
         var pt = m.project([rec.lng, rec.lat]);
         var box = m.getContainer().getBoundingClientRect();
-        var hiddenByCard = pt.y > box.height - (el.offsetHeight + 24);
-        var offScreen = pt.x < 0 || pt.y < 0 || pt.x > box.width || pt.y < 0;
-        if (hiddenByCard || offScreen) {
-          m.easeTo({ center: [rec.lng, rec.lat], offset: [0, -(el.offsetHeight / 2)], duration: 420 });
+        var cb = el.getBoundingClientRect();
+
+        /* THE CARD'S ACTUAL RECTANGLE, not an assumption about where it is.
+           This used to test `pt.y > height - (cardHeight + 24)` -- true for
+           any pin in the bottom band of the map, which was right only while
+           the card spanned the full width. Against a card pinned to one third
+           of the right it moves the camera for pins that were never covered,
+           and the whole point of this block is to leave the view alone when
+           it can. */
+        var pad = 18;
+        var behindCard = pt.x > (cb.left - box.left) - pad
+          && pt.x < (cb.right - box.left) + pad
+          && pt.y > (cb.top - box.top) - pad
+          && pt.y < (cb.bottom - box.top) + pad;
+
+        /* `pt.y < 0` was written twice and `pt.y > box.height` not at all, so
+           a pin below the map's bottom edge did not count as off screen. */
+        var offScreen = pt.x < 0 || pt.y < 0 || pt.x > box.width || pt.y > box.height;
+
+        if (behindCard || offScreen) {
+          /* Put the pin in the part of the map that is still showing. With
+             the card on the right that is left of centre; with the bottom
+             sheet it is above centre, as before. */
+          var off = el.classList.contains('side')
+            ? [-(cb.width / 2 + 10), 0]
+            : [0, -(el.offsetHeight / 2)];
+          m.easeTo({ center: [rec.lng, rec.lat], offset: off, duration: 420 });
         }
       }
     }
