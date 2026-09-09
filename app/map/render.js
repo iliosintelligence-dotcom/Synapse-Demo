@@ -546,6 +546,24 @@
     return this;
   };
 
+  /** A tap on the map itself -- not on a marker, not on a pin, not on a
+   *  cluster. The natural "never mind" gesture: you looked at a thing, you
+   *  tap the space around it, you are back where you were. DOM markers stop
+   *  their own clicks, and the layer handlers below run first for pins and
+   *  clusters, so this only fires on genuinely empty map. */
+  Renderer.prototype.onBackgroundClick = function (fn) {
+    var map = this.map;
+    map.on('click', function (e) {
+      var hits = map.queryRenderedFeatures(e.point, {
+        layers: ['syn-cluster', 'syn-prop-pin', 'syn-prop-dot'].filter(function (id) {
+          return map.getLayer(id);
+        }),
+      });
+      if (!hits.length) fn(e);
+    });
+    return this;
+  };
+
   Renderer.prototype.onViewport = function (fn) { this._handlers.viewport.push(fn); return this; };
   Renderer.prototype.onSelect = function (fn) { this._handlers.select.push(fn); return this; };
   /** Fires with the ids inside a cluster the user just opened, so a caller

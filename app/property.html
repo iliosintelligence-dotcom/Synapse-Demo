@@ -364,6 +364,32 @@
        carried was the last coloured thing on the page, and the glyph
        already says what kind of place it is. */
     .pv-poi-pin.pv-poi-mono { background: #141412 !important; color: #fff; }
+    /* THE ONE ACCENT ON THIS MAP. With a category showing, the house has to
+       stay findable among its own results -- so it takes the brand orange and
+       everything else stays black. One colour, one meaning: this is the
+       property, those are the places. */
+    .pv-home-pin.pv-home-on { background: #FF8A2D !important; border-color: #FF8A2D !important; }
+    .pvo-rows { margin: 0; padding: 0; list-style: none; max-height: 34vh; overflow-y: auto; }
+    .pvo-row {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      background: none; border: 0; border-top: 1px solid var(--border);
+      padding: 9px 2px; font: inherit; text-align: left; cursor: pointer; color: var(--ink);
+    }
+    .pvo-rows .pvo-row:first-child { border-top: 0; }
+    .pvo-row:hover { background: rgba(0,0,0,0.025); }
+    .pvo-row .ic {
+      flex: none; width: 22px; height: 22px; border-radius: 50%;
+      background: #141412; color: #fff; display: flex; align-items: center; justify-content: center;
+    }
+    .pvo-row .lb { flex: 1; min-width: 0; font-size: 13px; overflow: hidden;
+                   text-overflow: ellipsis; white-space: nowrap; }
+    .pvo-row .n { flex: none; font: 600 12px var(--f-sans); color: var(--ink-muted);
+                  font-variant-numeric: tabular-nums; }
+    .pvo-back {
+      background: none; border: 0; padding: 0 0 6px; cursor: pointer;
+      font: 600 12px var(--f-sans); color: var(--ink-muted);
+    }
+    .pvo-back:hover { color: var(--ink); }
     .pvc-hint {
       flex-basis: 100%; margin: 6px 0 0;
       font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
@@ -415,7 +441,8 @@
     @media (max-width: 900px) {
       .pvc-map-wrap { flex-direction: column; }
       #pvMap { min-height: 260px; }
-      .pvc-overlay, .pvc-overlay.wide { flex: 0 0 auto; max-height: 40vh; }
+      /* the card's own sizing is in the phone block below; it is
+         positioned, not a flex item, so flex sizing here did nothing */
     }
     .pvo-k { font: 700 12px var(--f-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
     .pvo-leg { display: flex; flex-direction: column; gap: 8px; }
@@ -511,10 +538,24 @@
       .deckbar { padding: 6px 2px 2px; gap: 8px; }
       .dots { margin: 0 4px; }
 
-      /* Nothing floats over the map on a phone. The list this used to carry
-         now lives in the card below, so at this size it is pure obstruction:
-         the sheet exists to show the map, and it should show the map. */
-      .pvc-overlay { display: none !important; }
+      /* ── THE CARD COMES OUT FROM OVER THE MAP ──────────────────────
+         This was display:none, from when the card was a legend repeating a
+         list that also appeared below it. The card is the map's only control
+         now -- the categories, the places, the walk to each one -- so hiding
+         it left a phone with a house pin and nothing to press.
+
+         Floating it back over the map does not work either. The site's
+         navigation button is position:fixed to the bottom-left of the
+         VIEWPORT at z-index 70, and the map is the last thing on this page,
+         so a bottom sheet resting at the end of the scroll parks its own
+         first rows underneath a button that belongs to another layer
+         entirely. Taps would land on the nav.
+
+         So on a phone it stops floating and becomes the section under the
+         map: full width, rows at thumb size, and the page's own scroll doing
+         the work a 46%-tall inner scroller was doing badly. The map keeps
+         every pixel it has, which is what hiding the card was for. */
+      .pvc-map-wrap { height: 58vh; min-height: 330px; }
 
       /* ── the map, in the page ─────────────────────────────────────────
          This was a full-screen sheet: fixed, translated 100% down, hidden,
@@ -530,9 +571,17 @@
          reads as a listing with a map in it rather than a map with a listing
          somewhere underneath. */
       .pv-canvas {
-        display: flex;
+        /* A BLOCK, NOT A 68vh FLEX COLUMN. The canvas was the map and nothing
+           else, so a fixed height and a single flexing child were the same
+           statement twice. Now the card is in this box too, and a flex column
+           with a hard height resolves that by squeezing -- the map fell to its
+           min-height and the card ran out past the bottom border.
+
+           The height moves down to the map itself, where it was always
+           meant to be, and the canvas grows to whatever the card needs. */
+        display: block;
         position: static; transform: none; visibility: visible;
-        height: 68vh; min-height: 380px;
+        height: auto; min-height: 0;
         margin: 16px 0 0;
         border-top: 1px solid var(--border);
         border-bottom: 1px solid var(--border);
@@ -560,11 +609,29 @@
       .pvc-tabs button { flex: none; min-height: 44px; }
       .pvc-trust { width: 100%; }
 
-      /* the overlay panel becomes a bottom card, not a floating box */
       .pvc-overlay, .pvc-overlay.wide {
-        left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
-        width: auto; max-height: 46%;
+        position: static; width: auto; max-height: none; overflow: visible;
+        border: 0; border-radius: 0; box-shadow: none;
+        background: var(--surface, #fff);
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+        /* The last row has to clear the floating nav. It is fixed to the
+           viewport at 18px up and 46px tall, and this card is the last
+           thing on the page -- so with an ordinary 20px of padding the
+           final category comes to rest underneath it and the button that
+           belongs to another layer eats the tap. 76px is that footprint
+           plus room to see what you are pressing. */
+        padding: 14px 16px calc(76px + env(safe-area-inset-bottom));
       }
+      /* The inner scroller was there to stop a floating card swallowing the
+         map. Nothing is floating now, so it only traps the list in a
+         341px-tall box inside a page that scrolls perfectly well. */
+      .pvo-rows { max-height: none; overflow: visible; }
+      /* 40px was a mouse target. These are the page's primary controls on a
+         phone -- every question about the neighbourhood is asked by pressing
+         one -- so they get the full 46. */
+      .pvo-row { min-height: 46px; padding: 12px 2px; }
+      .pvo-row .lb { font-size: 14px; }
+      .pvo-back { min-height: 40px; font-size: 13px; padding: 2px 0 10px; }
     }
     .avail-row { display:flex; align-items:baseline; justify-content:space-between; gap:12px;
       margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
@@ -844,35 +911,26 @@
 
     <!-- RIGHT: reactive map canvas — visualises whatever the active card is about -->
     <div class="pv-canvas">
-      <div class="pvc-head">
-        <button class="pvm-close" id="pvmClose" type="button" aria-label="Close map">✕</button>
-        <div class="pvc-title" id="pvcTitle">Nearby</div>
-        <div class="pvc-trust" id="pvcTrust" hidden>
-          <div class="pvc-ring" id="pvcRing">—</div>
-          <div class="pvc-trust-txt"><b id="pvcVerifyLine"></b><small id="pvcVerifyNote"></small></div>
-        </div>
-        <div class="pvc-tabs" id="pvcTabs" role="tablist" aria-label="Map view">
-          <!-- Map views only. Agency, Costs and Legal were tabs here and none of
-               them puts anything on a map -- they swapped the map's own panel
-               for text that belongs in the cards below, so the map went blank
-               while you read about a service charge. The rest are filters over
-               the same pins. -->
-          <button data-view="poi" class="on" role="tab" aria-selected="true"><span data-icon="pin"></span> Nearby</button>
-          <button data-view="commute" role="tab" aria-selected="false"><span data-icon="commute"></span> Commute</button>
-          <button data-view="school" role="tab" aria-selected="false">Schools</button>
-          <button data-view="health" role="tab" aria-selected="false">Health</button>
-          <button data-view="shops" role="tab" aria-selected="false">Shops</button>
-          <button data-view="transit" role="tab" aria-selected="false">Transport</button>
-        </div>
-        <div class="pvc-hint" id="pvcHint" hidden>Tap any pin for the walking route</div>
-      </div>
+      <!-- THE HEADER IS GONE, ON PURPOSE.
+           It carried a title, a duplicate of the verification badge that is
+           already on the card to the left, and a row of six view tabs. All
+           three were competing with the thing they sat above. The map now has
+           the whole panel, and the floating card at the bottom is the only
+           control -- which is also the only control, so there is nothing to
+           learn twice. -->
+      <button class="pvm-close" id="pvmClose" type="button" aria-label="Close map">✕</button>
       <div class="pvc-map-wrap">
         <div id="pvMap"></div>
         <!-- Sits over the map until coordinates arrive, and stays for a
              listing that has none. See .pvc-unplaced. -->
         <div class="pvc-unplaced" id="pvcUnplaced" hidden></div>
-        <div class="pvc-overlay" id="pvcOverlay"></div>
       </div>
+      <!-- OUTSIDE the map wrap, deliberately. On a desktop it floats over the
+           map exactly as before (.pv-canvas is the positioned ancestor, and
+           the wrap fills it, so the coordinates are identical). On a phone it
+           stops floating and becomes the section under the map -- see the
+           mobile block in the stylesheet for why it cannot stay on top. -->
+      <div class="pvc-overlay" id="pvcOverlay"></div>
     </div>
   </div><!-- /pv-split -->
 
@@ -1190,11 +1248,10 @@
       // Painted twice — .pvtrust-row (mobile, inline in the card) and
       // .pvc-trust (desktop, in the map canvas header) — CSS shows only one
       // per breakpoint, see the min-width:901px rule above .pvtrust-row.
-      ['pvTrust', 'pvcTrust'].forEach((id) => show(id, true));
-      set('pvRing', ringVal); set('pvcRing', ringVal);
+      show('pvTrust', true);
+      set('pvRing', ringVal);
       const vLine = document.getElementById('pvVerifyLine'); if (vLine) vLine.textContent = lineTxt;
-      const vcLine = document.getElementById('pvcVerifyLine'); if (vcLine) vcLine.textContent = lineTxt;
-      set('pvVerifyNote', noteTxt); set('pvcVerifyNote', noteTxt);
+      set('pvVerifyNote', noteTxt);
 
       /* ── the three blocks that used to be hardcoded ───────────────────
          Each renders from data or hides. None of them invents a number. */
@@ -2952,43 +3009,6 @@
        It used to carry id="pvPoiBack" in each, which read as a duplicate id
        even though only ever one is in the document. Scoped to the overlay by
        class instead, so there is one definition and no id to collide. */
-    var POI_BACK = '<button class="pv-back" style="margin-top:10px;background:none;border:1px solid var(--border);'
-      + 'border-radius:100px;padding:6px 13px;font:600 12px var(--f-sans);color:var(--ink);cursor:pointer">'
-      + '← All nearby places</button>';
-
-    function showRoute(poi) {
-      if (routeLine) { whenMap(function () { MAPR.removeLine(routeLine); }); routeLine = null; }
-      overlay.className = 'pvc-overlay';
-      overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
-        + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Working out the walking route…</p>';
-      var coords = PROP[1] + ',' + PROP[0] + ';' + poi.c[1] + ',' + poi.c[0];
-      fetchWithTimeout(OSRM_URL + coords + '?overview=full&geometries=geojson', {}, 9000)
-        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
-        .then(function (data) {
-          var route = data.routes && data.routes[0];
-          if (!route) throw new Error('no route');
-          /* OSRM already returns lng,lat -- the one place on this page that
-             does not need flipping, which is exactly why the old code had to
-             flip it INTO Leaflet's order and this one does not. */
-          var line = route.geometry.coordinates;
-          whenMap(function () { routeLine = MAPR.line(line, { width: 4, opacity: 0.85 }); });
-          var mins = Math.round(route.duration / 60);
-          overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
-            + '<div class="pvo-eta"><span>' + (AMENITY_LABEL[poi.t] || '') + ' · ' + poi.d + ' away</span></div>'
-            + '<div class="pvo-eta">Walking <b>' + mins + ' min</b> · ' + (route.distance / 1000).toFixed(1) + ' km on foot</div>'
-            + POI_BACK;
-          fit([PROP, poi.c]);
-          var back = overlay.querySelector('.pv-back');
-          if (back) back.addEventListener('click', function () { if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; } renderPOI(); });
-        })
-        .catch(function () {
-          overlay.innerHTML = '<div class="pvo-k">Route to ' + escHtml(poi.n) + '</div>'
-            + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Couldn’t reach the routing service just now — straight-line distance is <b>' + poi.d + '</b>. Try again in a moment.</p>'
-            + POI_BACK;
-          var back = overlay.querySelector('.pv-back');
-          if (back) back.addEventListener('click', function () { renderPOI(); });
-        });
-    }
     function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
 
     var DEST = [];                   // no invented commutes
@@ -3081,7 +3101,7 @@
       var m = metaFor(t);
       return '<div class="pv-poi-pin pv-poi-mono">' + poiSvg(m.i, 13) + '</div>';
     }
-    var overlay = document.getElementById('pvcOverlay'), titleEl = document.getElementById('pvcTitle');
+    var overlay = document.getElementById('pvcOverlay');
     var state = { view: 'poi', time: 'midday' };
     var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     /* maxZoom is the whole point of the options object. A listing with no
@@ -3097,244 +3117,316 @@
         setTimeout(function () {
           MAPR.resize();
           if (pts && pts.length) {
-            MAPR.fitPoints(pts.map(xy), { maxZoom: 16, duration: REDUCE ? 0 : 600 });
+            MAPR.fitPoints(pts.map(xy),
+              { maxZoom: 16, padding: fitPad(), duration: REDUCE ? 0 : 600 });
           }
         }, 60);
       });
     }
 
-    /* Which pin kinds each tab shows. Names cover both sources: the stored
-       Google categories and the OpenStreetMap types the fallback produces, so a
-       filter works whichever one is loaded. */
-    var POI_FILTERS = {
-      school:  ['school', 'university'],
-      health:  ['hospital', 'pharmacy'],
-      shops:   ['supermarket', 'market', 'shopping mall', 'restaurant', 'cafe', 'bank'],
-      transit: ['transit', 'bus_stop', 'bus station', 'park'],
-    };
+    /* FIT AROUND THE CARD, NOT UNDER IT.
+       On a desktop the card floats over the bottom-left of the map, so fitting
+       to the raw canvas puts the nearest results -- the very ones the list is
+       sorted to put first -- behind the thing that listed them.
 
-    function renderPOI(only) {
+       Measured rather than assumed: the card is 300px at one breakpoint and a
+       percentage at another, and on a phone it is not over the map at all.
+       Reading its computed position is the only way to be right in all three,
+       and it is also how this stays free on a phone -- position:static means
+       the card is below the map and no padding is owed. */
+    function fitPad() {
+      var pad = { top: 56, bottom: 56, left: 56, right: 56 };
+      var wrap = document.querySelector('.pvc-map-wrap');
+      if (!overlay || !wrap || overlay.offsetParent === null) return pad;
+      if (getComputedStyle(overlay).position !== 'absolute') return pad;
+      var o = overlay.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+      if (!o.width || !w.width) return pad;
+      /* Only the side it hugs. Padding its width from the left AND its height
+         from the bottom would leave a sliver of map to fit into, and fitBounds
+         given no room quietly returns something useless. */
+      pad.left = Math.max(56, Math.min(w.width * 0.55, (o.right - w.left) + 14));
+      return pad;
+    }
+
+    /* BRING THE MAP TO THE PRESS.
+       On a phone the card is under the map rather than on it, so pressing
+       'School' reveals fifty-five pins on something that may be entirely off
+       screen. The map comes up to meet the answer.
+
+       Only when it needs to. If two thirds of the map is already visible the
+       page stays exactly where the reader put it -- which means tapping a pin
+       ON the map never scrolls anything, because the map is plainly in view
+       already, and only a press in the list below moves the page. */
+    function revealMap() {
+      if (!window.matchMedia('(max-width: 1024px)').matches) return;
+      var wrap = document.querySelector('.pvc-map-wrap');
+      if (!wrap) return;
+      var r = wrap.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var seen = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      if (!r.height || seen >= r.height * 0.66) return;
+      wrap.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    /* POI_FILTERS lived here: which pin kinds each of the six tabs showed.
+       The tabs are gone and the card lists the real categories directly, so a
+       hand-maintained mapping from tab name to category names -- which had to
+       cover both the Google words and the OpenStreetMap ones, and silently
+       showed nothing when they disagreed -- is no longer a thing that can be
+       wrong. */
+
+    /* ── THE MAP PANEL: NOTHING UNTIL YOU ASK ──────────────────────────
+       This used to open with every mapped place pinned at once -- schools,
+       restaurants, banks, churches, hundreds of them -- and six tabs above it
+       to filter them down. The map was at its most cluttered the moment you
+       arrived, and the first thing you had to do was reduce it.
+
+       So it starts with the house and nothing else. The card lists what is
+       around, by kind and count, and each row is the button that reveals it.
+       Ask for pharmacies and you get pharmacies. Ask for a particular
+       pharmacy and you get the walk to it.
+
+       Three states, one card:
+         cats    the kinds of place nearby, with counts   (no pins)
+         places  one kind, pinned, listed nearest first   (home turns orange)
+         detail  one place: the route, the distance, the walking time
+    */
+    var PANEL = { mode: 'cats', cat: null, poi: null };
+    var COMMUTE_KEY = '__commute';
+
+    function clearPois() {
+      poiMarkers.forEach(function (m) { m.remove(); });
+      poiMarkers = [];
+      if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; }
+    }
+
+    /* The home pin is redrawn rather than restyled because it is a DOM marker
+       and the class lives on markup the renderer owns. Cheap: it is one node. */
+    var homeMarker = null;
+    function drawHome(active) {
+      whenMap(function () {
+        if (homeMarker) { homeMarker.remove(); homeMarker = null; }
+        if (!PROP) return;
+        var L2 = window.__pvListing || {};
+        homeMarker = MAPR.marker(PROP[1], PROP[0],
+          '<div class="pv-home-pin' + (active ? ' pv-home-on' : '') + '">' + poiSvg('home', 16) + '</div>',
+          { popupHtml: '<b>This home</b>' + (L2.title ? '<br>' + escHtml(L2.title) : '') });
+      });
+    }
+
+    function catCounts() {
+      var counts = {};
+      POI.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
+      return counts;
+    }
+
+    /* ── state 1: what kinds of place are around ─────────────────────── */
+    function showCats() {
+      PANEL = { mode: 'cats', cat: null, poi: null };
+      clearPois();
+      drawHome(false);
       overlay.className = 'pvc-overlay';
+
       if (!PROP) { overlay.innerHTML = NO_DATA; return; }
       if (poiState === 'loading') {
         overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
-          + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Looking up real nearby places on OpenStreetMap…</p>';
-        fit([PROP]);
-        return;
+          + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Looking up real nearby places\u2026</p>';
+        fit([PROP]); return;
       }
       if (poiState === 'error') {
         overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
-          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Couldn’t reach the map data provider just now. '
+          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Couldn\u2019t reach the map data provider just now. '
           + '<button id="pvPoiRetry" style="background:none;border:none;padding:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit">Try again</button></p>';
         fit([PROP]);
         var retry = document.getElementById('pvPoiRetry');
         if (retry) retry.addEventListener('click', function () { poiFetchedFor = null; fetchAmenities(propIdForFetch(), PROP[0], PROP[1]); });
         return;
       }
-      if (!POI.length) { overlay.innerHTML = NO_DATA; return; }
 
-      /* `only` is the tab's filter. Matching is loose on purpose: the stored
-         Google categories and the OpenStreetMap fallback types do not use the
-         same words for the same thing, and a filter that silently shows nothing
-         because one source says 'bus_stop' and the other 'transit' is worse
-         than one that is slightly generous. */
-      var shown = POI;
-      if (only && only.length) {
-        shown = POI.filter(function (p) {
-          var t = String(p.t || '').toLowerCase().replace(/_/g, ' ');
-          return only.some(function (k) {
-            k = k.toLowerCase().replace(/_/g, ' ');
-            return t === k || t.indexOf(k) !== -1 || k.indexOf(t) !== -1;
-          });
-        });
-        if (!shown.length) {
-          poiMarkers.forEach(function (m) { layer.removeLayer(m); });
-          poiMarkers = [];
-          overlay.innerHTML = '<div class="pvo-k">' + escHtml(titleEl.textContent) + '</div>'
-            + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
-            + 'Nothing of this kind is mapped near this home.</p>';
-          fit([PROP]);
-          return;
-        }
-      }
-
-      // renderPOI() can run again without going through setView() (e.g. the
-      // "back from route" button) — clear only OUR OWN previous markers so
-      // repeated calls don't stack duplicates on top of the home pin.
-      poiMarkers.forEach(function (m) { layer.removeLayer(m); });
-      poiMarkers = [];
-      /* EVERY place is pinned. Only the FRAMING is near-sighted.
-         The survey now reaches several kilometres out -- a university 13.7km
-         away is a real answer to "is there a university near this flat" -- but
-         fitting the view to all of it zoomed out until the house was a speck
-         in a cloud of markers, which answers nothing. So the bounds are built
-         from the nearest handful and everything else is simply already there
-         when you pan or pinch out. `shown` is distance-sorted, so slicing the
-         front of it is slicing the closest. */
-      var pts = [PROP];
-      var FRAME_N = 18;
-      /* HOW MANY PINS ARE WORTH DRAWING.
-         Every place was pinned, which on a well-mapped listing is five
-         hundred DOM markers. Measured on this page with 509 of them: a median
-         frame of 24.5ms while panning -- about 41fps on a desktop, and worse
-         on the phone this is mostly used on. Performance is a stated product
-         requirement and that is a map that visibly drags.
-
-         It also was not buying anything. Five hundred pins around one house
-         is not information, it is a texture; nobody can read them and they
-         obscure the streets underneath. `shown` is distance-sorted, so the
-         first sixty ARE the sixty that matter.
-
-         The category counts in the panel below stay the true totals -- 50
-         restaurants is 50 restaurants. This caps what is drawn, not what is
-         counted. */
-      var DRAW_N = 60;
-      shown.slice(0, DRAW_N).forEach(function (p, i) {
-        (function (poi) {
-          whenMap(function () {
-            var m = MAPR.marker(poi.c[1], poi.c[0], poiHtml(poi.t), {
-              anchor: 'center',
-              popupHtml: '<b>' + escHtml(poi.n) + '</b><br>'
-                + (AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + ' · ' + poi.d,
-              onClick: function () { showRoute(poi); },
-            });
-            poiMarkers.push(m);
-          });
-        }(p));
-        if (i < FRAME_N) pts.push(p.c);
-      });
-      var counts = {}; shown.forEach(function (p) { counts[p.t] = (counts[p.t] || 0) + 1; });
-      /* Iterate the categories actually present, not META's keys: a Google
-         category with no META entry would otherwise never appear in the
-         legend even though its pins are on the map. */
-      var leg = Object.keys(counts).map(function (t) {
+      var counts = catCounts();
+      var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+      var rows = keys.map(function (t) {
         var m = metaFor(t);
-        return '<div class="r"><span class="dot" style="background:' + m.col + '">' + poiSvg(m.i, 12)
-          + '</span>' + escHtml(m.lbl) + '<span class="n">' + counts[t] + '</span></div>';
-      }).join('');
-      var near = shown.slice(0, 6).map(function (p, i) { return '<div class="li" data-poi="' + i + '" style="cursor:pointer"><b>' + escHtml(p.n) + '</b><span>' + p.d + '</span></div>'; }).join('');
-      /* The list moved to the card below, where it costs the map nothing. All
-         that is left over the map is a legend -- which pin is what -- and only
-         while there is more than one kind on screen. `leg` and `near` are still
-         built above because the counts feed it; `near` is unused here now and
-         the card renders that content instead. */
-      /* Every pin already routes: tapping one asks OSRM for the real walking
-         path and draws it. Nothing said so, so the map looked like a picture
-         of pins -- the interaction existed and was invisible. One line under
-         the legend, which is where you are already looking to find out what a
-         pin means. */
-      var kinds = Object.keys(counts).length;
-      if (kinds > 1) {
-        overlay.className = 'pvc-overlay';
-        overlay.innerHTML = '<div class="pvo-leg">' + leg + '</div>';
-      } else {
-        overlay.className = 'pvc-overlay idle';
-        overlay.innerHTML = '';
+        return '<button class="pvo-row" data-cat="' + escHtml(t) + '" type="button">'
+          + '<span class="ic">' + poiSvg(m.i, 12) + '</span>'
+          + '<span class="lb">' + escHtml(AMENITY_LABEL[t] || m.lbl) + '</span>'
+          + '<span class="n">' + counts[t] + '</span></button>';
+      });
+      /* Commute sits in the same list as everything else. It used to be a tab
+         of its own, which made it feel like a different mode of the map when
+         it is just another question about the same house. */
+      if (DEST.length) {
+        rows.unshift('<button class="pvo-row" data-cat="' + COMMUTE_KEY + '" type="button">'
+          + '<span class="ic">' + poiSvg('commute', 12) + '</span>'
+          + '<span class="lb">Commute</span>'
+          + '<span class="n">' + DEST.length + '</span></button>');
       }
-      /* Outside the overlay on purpose. The overlay is display:none on a
-         phone -- deliberately, nothing floats over a map that small -- so a
-         hint living inside it told the one audience that already had a mouse
-         to hover with. It sits under the tabs now, where it costs the map no
-         space on either size. */
-      var hintEl = document.getElementById('pvcHint');
-      if (hintEl) hintEl.hidden = !shown.length;
-      fit(pts);
+      if (!rows.length) { overlay.innerHTML = NO_DATA; fit([PROP]); return; }
+
+      overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
+        + '<div class="pvo-rows">' + rows.join('') + '</div>';
+      fit([PROP]);
     }
-    function renderCommute() {
+
+    /* ── state 2: one kind, pinned ───────────────────────────────────── */
+    function placesOf(t) {
+      return POI.filter(function (p) { return p.t === t; });
+    }
+
+    function showCat(t) {
+      if (t === COMMUTE_KEY) return showCommute();
+      PANEL = { mode: 'places', cat: t, poi: null };
+      clearPois();
+      drawHome(true);
+
+      var list = placesOf(t);
+      var m = metaFor(t);
+      var pts = [PROP];
+      /* Same cap as before and for the same measured reason: DOM markers cost
+         a frame each, and sixty of one kind is already more than anyone reads.
+         Within a single category it almost never bites. */
+      list.slice(0, 60).forEach(function (poi, i) {
+        whenMap(function () {
+          poiMarkers.push(MAPR.marker(poi.c[1], poi.c[0], poiHtml(poi.t), {
+            anchor: 'center',
+            onClick: function () { showPlace(poi); },
+          }));
+        });
+        if (i < 18) pts.push(poi.c);
+      });
+
       overlay.className = 'pvc-overlay';
-      if (!PROP || !DEST.length) { overlay.innerHTML = NO_DATA; if (PROP) fit([PROP]); return; }
+      overlay.innerHTML = '<button class="pvo-back" type="button" data-back>\u2039 All nearby</button>'
+        + '<div class="pvo-k">' + escHtml(AMENITY_LABEL[t] || m.lbl) + ' \u00b7 ' + list.length + '</div>'
+        + '<div class="pvo-rows">'
+        + list.slice(0, 60).map(function (poi, i) {
+          return '<button class="pvo-row" data-poi="' + i + '" type="button">'
+            + '<span class="lb">' + escHtml(poi.n) + '</span>'
+            + '<span class="n">' + escHtml(poi.d) + '</span></button>';
+        }).join('')
+        + '</div>';
+      fit(pts);
+      revealMap();
+    }
+
+    function showCommute() {
+      PANEL = { mode: 'places', cat: COMMUTE_KEY, poi: null };
+      clearPois();
+      drawHome(true);
       var cg = CONGEST[state.time], pts = [PROP];
       DEST.forEach(function (d, i) {
         whenMap(function () {
-          MAPR.marker(d.c[1], d.c[0], '<div class="pv-poi-pin pv-poi-mono">' + poiSvg('pin', 13) + '</div>',
-            { anchor: 'center', popupHtml: '<b>' + d.n + '</b><br>' + cg.lbl + ' · ' + cg.etas[i] });
-          /* Congestion keeps its colour. This is the one place on the map
-             where colour carries information nothing else does -- red really
-             does mean "this drive is bad right now" -- so it stays, and it is
-             the only exception on the page. */
-          MAPR.line([xy(PROP), xy(d.c)], { color: cg.color, width: 5, opacity: 0.75 });
+          poiMarkers.push(MAPR.marker(d.c[1], d.c[0],
+            '<div class="pv-poi-pin pv-poi-mono">' + poiSvg('pin', 13) + '</div>', { anchor: 'center' }));
+          /* Congestion keeps its colour: it is the one thing on this map where
+             colour carries information no shape can. */
+          poiMarkers.push({ remove: (function () {
+            var id = MAPR.line([[PROP[1], PROP[0]], [d.c[1], d.c[0]]], { color: cg.color, width: 5, opacity: 0.75 });
+            return function () { MAPR.removeLine(id); };
+          }()) });
         });
         pts.push(d.c);
       });
-      var toggle = ['morning', 'midday', 'evening'].map(function (k) { return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>'; }).join('');
-      var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + d.n + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
-      overlay.innerHTML = '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
-      overlay.querySelectorAll('[data-time]').forEach(function (b) { b.addEventListener('click', function () { state.time = b.dataset.time; setView('commute'); }); });
-      fit(pts);
-    }
-    function renderAgency() {
-      overlay.className = 'pvc-overlay';
-      if (!AGENCY || !AGENCY.n) {
-        overlay.innerHTML = '<div class="pvo-k">Listing agency</div>'
-          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">Agency details are not available for this listing yet.</p>';
-        if (PROP) fit([PROP]);
-        return;
-      }
-      overlay.innerHTML = '<div class="pvo-k">Listing agency</div><div class="pvo-list"><div class="li"><b>'
-        + AGENCY.n + '</b></div></div>'
-        + (AGENCY.sub ? '<p style="font-size:12.5px;color:var(--ink-muted);margin-top:4px">' + AGENCY.sub + '</p>' : '');
-      if (PROP) fit([PROP]);
-    }
-    /* Only costs the listing actually records. The previous version invented a
-       mortgage repayment, a utilities bill and a school-run fuel figure, then
-       summed them into a "true monthly cost" — a confident number built from
-       nothing. Anything absent is simply not shown. */
-    function renderCost() {
-      overlay.className = 'pvc-overlay wide';
-      var L2 = window.__pvListing || {}, rows = [];
-      var money = function (n) { return '₦' + Number(n).toLocaleString('en-NG'); };
-      if (L2.price != null) rows.push('<div class="li"><b>' + (L2.listing_type === 'rent' ? 'Rent' : 'Price') + '</b><span>' + money(L2.price) + (L2.price_period === 'per_year' ? ' / year' : L2.price_period === 'per_month' ? ' / month' : '') + '</span></div>');
-      if (L2.service_charge != null) rows.push('<div class="li"><b>Service charge</b><span>' + money(L2.service_charge) + '</span></div>');
-      if (L2.move_in_cost != null) rows.push('<div class="li"><b>Move-in cost</b><span>' + money(L2.move_in_cost) + '</span></div>');
-      overlay.innerHTML = '<div class="pvo-k">Costs on this listing</div>'
-        + (rows.length
-          ? '<div class="pvo-list">' + rows.join('') + '</div><p style="font-size:12px;color:var(--ink-dim);margin-top:8px">Only what the agency recorded. Utilities, power and financing are not included.</p>'
-          : '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">No cost breakdown recorded for this listing.</p>');
-      if (PROP) fit([PROP]);
-    }
-    /* Reads the listing's real verification_nodes. It previously showed a fixed
-       six-of-seven document list for every property — asserting, on any listing,
-       that a C of O and a governor's consent had been sighted. */
-    function renderLegal() {
-      overlay.className = 'pvc-overlay';
-      var L2 = window.__pvListing || {};
-      var nodes = Array.isArray(L2.verification_nodes) ? L2.verification_nodes : [];
-      if (!nodes.length) {
-        overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div>'
-          + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'
-          + 'Synapse has not run its checks on this listing yet, so there is no document report to show. '
-          + 'Ask the agency for the title documents and have your own lawyer confirm them before you pay anything.</p>';
-        if (PROP) fit([PROP]);
-        return;
-      }
-      var rows = nodes.map(function (n) {
-        var ok = n.status === 'passed';
-        return '<div class="li"><b>' + (ok ? '✓' : '◷') + ' ' + (n.name || 'Check') + '</b><span style="color:'
-          + (ok ? 'var(--success)' : '#7a5410') + '">' + (ok ? 'passed' : (n.status || 'pending')) + '</span></div>';
+      var toggle = ['morning', 'midday', 'evening'].map(function (k) {
+        return '<button data-time="' + k + '" class="' + (k === state.time ? 'on' : '') + '">' + CONGEST[k].lbl + '</button>';
       }).join('');
-      var passed = nodes.filter(function (n) { return n.status === 'passed'; }).length;
-      overlay.innerHTML = '<div class="pvo-k">Legal &amp; documents</div><div class="pvo-list">' + rows + '</div>'
-        + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">' + passed + ' of ' + nodes.length + ' checks passed. These record what Synapse checked, not a guarantee.</p>';
-      if (PROP) fit([PROP]);
+      var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + escHtml(d.n) + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
+      overlay.className = 'pvc-overlay';
+      overlay.innerHTML = '<button class="pvo-back" type="button" data-back>\u2039 All nearby</button>'
+        + '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas
+        + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
+      fit(pts);
+      revealMap();
     }
-    function setView(v) {
-      v = v || 'poi'; state.view = v;
-      document.querySelectorAll('#pvcTabs button').forEach(function (b) { var on = b.dataset.view === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
-      var L2 = window.__pvListing || {};
-      whenMap(function () {
-        MAPR.clearOverlay();
-        if (PROP) {
-          MAPR.marker(PROP[1], PROP[0], homeHtml(), {
-            popupHtml: '<b>This home</b>' + (L2.title ? '<br>' + escHtml(L2.title) : ''),
+
+    /* ── state 3: one place, with the walk to it ─────────────────────── */
+    function showPlace(poi) {
+      PANEL.mode = 'detail'; PANEL.poi = poi;
+      if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; }
+      overlay.className = 'pvc-overlay';
+
+      var head = '<button class="pvo-back" type="button" data-back-cat>\u2039 '
+        + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + '</button>'
+        + '<div class="pvo-k">' + escHtml(poi.n) + '</div>'
+        + '<div class="pvo-eta"><span>' + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl)
+        + ' \u00b7 ' + escHtml(poi.d) + ' away</span></div>';
+      overlay.innerHTML = head
+        + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Working out the walking route\u2026</p>';
+
+      /* Before the route lands, not after: OSRM takes a moment and the map
+         should already be in front of you when the line is drawn on it. */
+      revealMap();
+
+      var coords = PROP[1] + ',' + PROP[0] + ';' + poi.c[1] + ',' + poi.c[0];
+      fetchWithTimeout(OSRM_URL + coords + '?overview=full&geometries=geojson', {}, 9000)
+        .then(function (r) { if (!r.ok) throw new Error('osrm ' + r.status); return r.json(); })
+        .then(function (data) {
+          var route = data.routes && data.routes[0];
+          if (!route) throw new Error('no route');
+          /* OSRM returns lng,lat already -- the one place on this page that
+             needs no flip. */
+          whenMap(function () {
+            routeLine = MAPR.line(route.geometry.coordinates,
+              { color: '#FF8A2D', width: 4, opacity: 0.95 });
           });
-        }
-      });
-      titleEl.textContent = { poi: 'Nearby', commute: 'Commute', school: 'Schools',
-        health: 'Health', shops: 'Shops & markets', transit: 'Getting around' }[v] || 'Nearby';
-      if (v === 'commute') renderCommute();
-      else renderPOI(POI_FILTERS[v] || null);
+          var mins = Math.round(route.duration / 60);
+          /* TIME IS REAL HERE. Elsewhere on the map we refuse to show travel
+             time because property_places.drive_seconds is empty -- but this
+             number came back from a routing engine that just computed the
+             walk, so it is measured and can be shown. */
+          overlay.innerHTML = head
+            + '<div class="pvo-eta">Walking <b>' + mins + ' min</b> \u00b7 '
+            + (route.distance / 1000).toFixed(1) + ' km on foot</div>';
+          fit([PROP, poi.c]);
+        })
+        .catch(function () {
+          overlay.innerHTML = head
+            + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Couldn\u2019t reach the routing service just now \u2014 straight-line distance is <b>'
+            + escHtml(poi.d) + '</b>.</p>';
+        });
     }
-    document.getElementById('pvcTabs').addEventListener('click', function (e) { var b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
+
+    /* One listener for the whole card: its contents are replaced wholesale on
+       every state change, so per-render listeners would leak. */
+    overlay.addEventListener('click', function (e) {
+      var cat = e.target.closest('[data-cat]');
+      if (cat) { showCat(cat.dataset.cat); return; }
+      var back = e.target.closest('[data-back]');
+      if (back) { showCats(); return; }
+      var backCat = e.target.closest('[data-back-cat]');
+      if (backCat) { showCat(PANEL.cat); return; }
+      var row = e.target.closest('[data-poi]');
+      if (row && PANEL.cat && PANEL.cat !== COMMUTE_KEY) {
+        var list = placesOf(PANEL.cat);
+        var poi = list[Number(row.dataset.poi)];
+        if (poi) showPlace(poi);
+        return;
+      }
+      var t = e.target.closest('[data-time]');
+      if (t) { state.time = t.dataset.time; showCommute(); }
+    });
+
+    /* TAP THE MAP TO COME BACK.
+       Asked for directly: look at a school, tap the map, you are back at the
+       list of schools. It is the gesture people already use to dismiss things,
+       and it means the back button in the card is a convenience rather than
+       the only way out.
+
+       One step at a time, not straight to the top: from a place you land back
+       on its own kind, from a kind you land back on all of them. Tapping the
+       map while already at the top does nothing, because there is nowhere
+       further back to go and a map that reacts to every tap feels twitchy. */
+    whenMap(function () {
+      MAPR.onBackgroundClick(function () {
+        if (PANEL.mode === 'detail') showCat(PANEL.cat);
+        else if (PANEL.mode === 'places') showCats();
+      });
+    });
+
+    /* Kept as the name the rest of the page already calls. Everything that
+       used to switch tabs now just returns to the list of kinds. */
+    function setView() { showCats(); }
+    function renderPOI() { showCats(); }
     /* Takes the card element, not an index: the deck can hide or reveal cards,
        and an index into a fixed array cannot survive that. */
     window.__pvView = function (card) {
