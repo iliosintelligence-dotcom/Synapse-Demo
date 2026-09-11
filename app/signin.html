@@ -683,20 +683,20 @@
             <input class="au-input" id="auStaffPhone" name="staffPhone" type="tel" autocomplete="tel"
                    inputmode="tel" placeholder="0803 123 4567" />
             <div class="au-hint">Where Tayo sends you a lead the moment it qualifies. Any format — 08…, 234… or +234…</div>
-            <div class="au-err" id="errStaffPhone" hidden></div>
+            <div class="au-err" id="errStaffPhone" role="alert" hidden></div>
           </div>
           <div class="au-field" id="emailField">
             <label class="au-label" for="auEmail">Email</label>
             <input class="au-input" id="auEmail" name="email" type="email" autocomplete="email"
                    required inputmode="email" />
-            <div class="au-err" id="errEmail" hidden></div>
+            <div class="au-err" id="errEmail" role="alert" hidden></div>
           </div>
           <div class="au-field" id="passField">
             <label class="au-label" for="auPass">Password</label>
             <input class="au-input" id="auPass" name="password" type="password"
                    autocomplete="current-password" required minlength="8" />
             <div class="au-hint" id="passHint" hidden>At least 8 characters. Longer is better than complicated.</div>
-            <div class="au-err" id="errPass" hidden></div>
+            <div class="au-err" id="errPass" role="alert" hidden></div>
           </div>
 
           <!-- Phone. Two steps in one panel: the number, then the code that
@@ -707,14 +707,14 @@
             <input class="au-input" id="auPhone" name="phone" type="tel" autocomplete="tel"
                    inputmode="tel" placeholder="0803 123 4567" />
             <div class="au-hint">Nigerian numbers welcome in any format — 08…, 234… or +234…</div>
-            <div class="au-err" id="errPhone" hidden></div>
+            <div class="au-err" id="errPhone" role="alert" hidden></div>
           </div>
           <div class="au-field" id="codeField" hidden>
             <label class="au-label" for="auCode">The 6-digit code</label>
             <input class="au-input" id="auCode" name="code" type="text" autocomplete="one-time-code"
                    inputmode="numeric" maxlength="6" placeholder="123456" />
             <div class="au-hint" id="codeHint"></div>
-            <div class="au-err" id="errCode" hidden></div>
+            <div class="au-err" id="errCode" role="alert" hidden></div>
             <button type="button" class="au-linkbtn" id="codeBack" style="margin-top:10px">Use a different number</button>
           </div>
 
@@ -744,7 +744,7 @@
             <label class="au-label" for="agName">What is your agency called?</label>
             <input class="au-input" id="agName" type="text" autocomplete="organization" required />
             <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
-            <div class="au-err" id="errAgName" hidden></div>
+            <div class="au-err" id="errAgName" role="alert" hidden></div>
           </div>
           <div class="au-field">
             <label class="au-label" for="agCity">City (optional)</label>
@@ -759,12 +759,12 @@
             <label class="au-label" for="rpPass1">New password</label>
             <input class="au-input" id="rpPass1" type="password" autocomplete="new-password" required minlength="8" />
             <div class="au-hint">At least 8 characters. Longer is better than complicated.</div>
-            <div class="au-err" id="errRp1" hidden></div>
+            <div class="au-err" id="errRp1" role="alert" hidden></div>
           </div>
           <div class="au-field">
             <label class="au-label" for="rpPass2">Confirm new password</label>
             <input class="au-input" id="rpPass2" type="password" autocomplete="new-password" required minlength="8" />
-            <div class="au-err" id="errRp2" hidden></div>
+            <div class="au-err" id="errRp2" role="alert" hidden></div>
           </div>
           <button class="au-submit" id="rpGo" type="submit">Set new password</button>
           <div id="rpNote"></div>
@@ -893,12 +893,26 @@
       /* ── validation + errors ─────────────────────────────────────────── */
       function clearErrors() {
         ['errEmail', 'errPass'].forEach(function (id) { el(id).hidden = true; el(id).textContent = ''; });
-        ['auEmail', 'auPass'].forEach(function (id) { el(id).removeAttribute('aria-invalid'); });
+        ['auEmail', 'auPass'].forEach(function (id) {
+          el(id).removeAttribute('aria-invalid');
+          el(id).removeAttribute('aria-describedby');
+        });
         note.innerHTML = '';
       }
+      /* aria-invalid says THAT the field is wrong; the red border says it too.
+         Neither says WHY, and the sentence that does was being written into a
+         div nothing was listening to -- so a screen reader user got a field
+         marked invalid and no way to find out what was wrong with it.
+
+         role="alert" on the container (in the markup) announces the sentence
+         when it appears. aria-describedby ties it to the field, so tabbing
+         back to a field that is already in error reads the reason again
+         rather than just "invalid". The pair is WCAG 3.3.1's whole point:
+         identify the error AND describe it, to everyone. */
       function fieldError(inputId, errId, msg) {
         el(errId).textContent = msg; el(errId).hidden = false;
         el(inputId).setAttribute('aria-invalid', 'true');
+        el(inputId).setAttribute('aria-describedby', errId);
       }
       function showNote(kind, msg) {
         note.innerHTML = '<div class="au-note ' + kind + '" role="status">' + msg + '</div>';
@@ -1267,10 +1281,14 @@
       function rpFieldError(inputId, errId, msg) {
         el(errId).textContent = msg; el(errId).hidden = false;
         el(inputId).setAttribute('aria-invalid', 'true');
+        el(inputId).setAttribute('aria-describedby', errId);
       }
       function rpClearErrors() {
         ['errRp1', 'errRp2'].forEach(function (id) { el(id).hidden = true; el(id).textContent = ''; });
-        ['rpPass1', 'rpPass2'].forEach(function (id) { el(id).removeAttribute('aria-invalid'); });
+        ['rpPass1', 'rpPass2'].forEach(function (id) {
+          el(id).removeAttribute('aria-invalid');
+          el(id).removeAttribute('aria-describedby');
+        });
         el('rpNote').innerHTML = '';
       }
 
