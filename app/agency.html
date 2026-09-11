@@ -4035,7 +4035,7 @@
       document.getElementById('crmPager').innerHTML =
         `<div class="pg-l">Showing <select id="crmPer" aria-label="Rows per page"><option ${CRM.per===10?'selected':''}>10</option><option ${CRM.per===25?'selected':''}>25</option><option ${CRM.per===50?'selected':''}>50</option></select> per page · ${all.length} lead${all.length!==1?'s':''}</div>
          <nav class="pg-nav" aria-label="Pagination">${nums}</nav>
-         <div class="pg-go">Go to page <input type="number" min="1" max="${pages}" id="crmGo" aria-label="Go to page"><button class="tbtn" id="crmGoBtn">Go</button></div>`;
+         <div class="pg-go">Go to page <input type="number" min="1" max="${pages}" id="crmGo" inputmode="numeric" aria-label="Go to page"><button class="tbtn" id="crmGoBtn">Go</button></div>`;
       renderBulk();
     }
     function renderBulk(){
@@ -5103,7 +5103,7 @@
           +     esc2(me.bio) + '</textarea></div>'
           +   '<div class="row2">'
           +     '<div class="field"><label for="mpYears">Years doing this</label>'
-          +       '<input id="mpYears" type="number" min="0" max="70" value="' + esc2(me.years) + '" placeholder="5"></div>'
+          +       '<input id="mpYears" type="number" inputmode="numeric" min="0" max="70" value="' + esc2(me.years) + '" placeholder="5"></div>'
           +     '<div class="field"><label for="mpLangs">Languages</label>'
           +       '<input id="mpLangs" value="' + esc2(arr(me.languages)) + '" placeholder="English, Yoruba"></div>'
           +   '</div>'
@@ -5789,15 +5789,15 @@
         <p class="muted" style="font-size:12px;margin:6px 0 12px">Complete every required field (<b style="color:var(--brand-text)">*</b>) so Tayo can match this property accurately. ${isNew ? 'New listings enter the 7-check verification queue.' : 'Edits must keep the listing complete.'}</p>
         <div class="lf">
           <fieldset class="lf-sec"><legend>Basics</legend>
-            <div class="field"><label>Title *</label><input id="lfTitle" value="${esc(d.title)}" placeholder="3-Bed Apartment, Lekki Phase 1"><span class="ferr" id="e_title"></span></div>
+            <div class="field"><label>Title *</label><input id="lfTitle" value="${esc(d.title)}" placeholder="3-Bed Apartment, Lekki Phase 1"><span class="ferr" id="e_title" role="alert"></span></div>
             <div class="row2">
               <div class="field"><label>Property type *</label><select id="lfType">${opt(PROP_TYPES, d.property_type, TYPE_LABEL)}</select></div>
               <div class="field"><label>Listing type *</label><select id="lfListing">${opt(LISTING_TYPES, d.listing_type, DEAL_LABEL)}</select></div>
             </div>
-            <div class="field"><label>Description *</label><textarea id="lfDesc" rows="3" placeholder="Condition, layout, neighbourhood, what's included…">${esc(d.description)}</textarea><span class="ferr" id="e_desc"></span></div>
+            <div class="field"><label>Description *</label><textarea id="lfDesc" rows="3" placeholder="Condition, layout, neighbourhood, what's included…">${esc(d.description)}</textarea><span class="ferr" id="e_desc" role="alert"></span></div>
           </fieldset>
           <fieldset class="lf-sec"><legend>Location</legend>
-            <div class="field"><label>Address *</label><input id="lfAddr" value="${esc(d.address)}" placeholder="Street / estate"><span class="ferr" id="e_addr"></span></div>
+            <div class="field"><label>Address *</label><input id="lfAddr" value="${esc(d.address)}" placeholder="Street / estate"><span class="ferr" id="e_addr" role="alert"></span></div>
             <!-- State first, because it decides the other two. It is a real
                  select: there are 36 states and the FCT, that list does not
                  change, and anything outside it is a mistake worth refusing.
@@ -5807,7 +5807,7 @@
             <div class="row2">
               <div class="field"><label>State *</label>
                 <select id="lfState"><option value="">— Select a state —</option></select>
-                <span class="ferr" id="e_state"></span></div>
+                <span class="ferr" id="e_state" role="alert"></span></div>
               <div class="field"><label>City *</label>
                 <div class="combo" id="lfCityCombo">
                   <input id="lfCity" value="${esc(d.city)}" autocomplete="off"
@@ -5816,7 +5816,7 @@
                   <button type="button" class="combo-toggle" tabindex="-1" aria-label="Show cities">▾</button>
                   <div class="combo-list" role="listbox" hidden></div>
                 </div>
-                <span class="ferr" id="e_city"></span></div>
+                <span class="ferr" id="e_city" role="alert"></span></div>
             </div>
             <div class="row2">
               <div class="field"><label>Neighbourhood</label>
@@ -5838,25 +5838,25 @@
                  kept here, so the save path below is unchanged. -->
             <input type="hidden" id="lfLat" value="${esc(d.latitude)}">
             <input type="hidden" id="lfLng" value="${esc(d.longitude)}">
-            <span class="ferr" id="e_lat"></span>
+            <span class="ferr" id="e_lat" role="alert"></span>
             <p class="lf-hint" id="lfGeoNote">The map pin is found from the address.</p>
           </fieldset>
           <fieldset class="lf-sec"><legend>Specifications</legend>
             <div class="row2">
-              <div class="field"><label id="lbBeds">Bedrooms *</label><input id="lfBeds" type="number" min="0" max="20" value="${esc(d.bedrooms)}" placeholder="3"><span class="ferr" id="e_beds"></span></div>
-              <div class="field"><label>Bathrooms</label><input id="lfBaths" type="number" min="0" max="20" value="${esc(d.bathrooms)}" placeholder="3"></div>
+              <div class="field"><label id="lbBeds">Bedrooms *</label><input id="lfBeds" type="number" inputmode="numeric" min="0" max="20" value="${esc(d.bedrooms)}" placeholder="3"><span class="ferr" id="e_beds" role="alert"></span></div>
+              <div class="field"><label>Bathrooms</label><input id="lfBaths" type="number" inputmode="numeric" min="0" max="20" value="${esc(d.bathrooms)}" placeholder="3"></div>
             </div>
-            <div class="field"><label>Area (sqm)</label><input id="lfArea" type="number" min="0" step="any" value="${esc(d.area_sqm)}" placeholder="220"></div>
+            <div class="field"><label>Area (sqm)</label><input id="lfArea" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.area_sqm)}" placeholder="220"></div>
             <div class="field"><label>Amenities</label><input id="lfAmen" value="${esc((d.amenities || []).join(', '))}" placeholder="Parking, 24h power, Security, Pool (comma-separated)"></div>
           </fieldset>
           <fieldset class="lf-sec"><legend>Pricing</legend>
             <div class="row2">
-              <div class="field"><label>Price (₦) *</label><input id="lfPrice" type="number" min="1" value="${esc(d.price)}" placeholder="165000000"><span class="ferr" id="e_price"></span><span class="lf-echo" id="priceEcho"></span></div>
+              <div class="field"><label>Price (₦) *</label><input id="lfPrice" type="number" inputmode="numeric" min="1" value="${esc(d.price)}" placeholder="165000000"><span class="ferr" id="e_price" role="alert"></span><span class="lf-echo" id="priceEcho"></span></div>
               <div class="field"><label>Price period *</label><select id="lfPeriod">${opt(PRICE_PERIODS, d.price_period, PERIOD_LABEL)}</select></div>
             </div>
             <div class="row2">
-              <div class="field"><label>Move-in cost (₦)</label><input id="lfMoveIn" type="number" min="0" value="${esc(d.move_in_cost)}" placeholder="optional"></div>
-              <div class="field"><label>Service charge (₦/yr)</label><input id="lfService" type="number" min="0" value="${esc(d.service_charge)}" placeholder="optional"></div>
+              <div class="field"><label>Move-in cost (₦)</label><input id="lfMoveIn" type="number" inputmode="numeric" min="0" value="${esc(d.move_in_cost)}" placeholder="optional"></div>
+              <div class="field"><label>Service charge (₦/yr)</label><input id="lfService" type="number" inputmode="numeric" min="0" value="${esc(d.service_charge)}" placeholder="optional"></div>
             </div>
           </fieldset>
           <!-- ── what Tayo may agree to ──────────────────────────────────
@@ -5869,8 +5869,8 @@
           <fieldset class="lf-sec"><legend>Negotiation</legend>
             <div class="row2">
               <div class="field"><label>Tayo&#39;s floor (₦)</label>
-                <input id="lfFloor" type="number" min="1" placeholder="${isNew ? 'Save the listing first' : 'No floor set'}" ${isNew ? 'disabled' : ''}>
-                <span class="ferr" id="e_floor"></span></div>
+                <input id="lfFloor" type="number" inputmode="numeric" min="1" placeholder="${isNew ? 'Save the listing first' : 'No floor set'}" ${isNew ? 'disabled' : ''}>
+                <span class="ferr" id="e_floor" role="alert"></span></div>
               <div class="field"><label>Negotiation</label>
                 <select id="lfFloorActive" ${isNew ? 'disabled' : ''}>
                   <option value="on">Tayo may negotiate down to the floor</option>
@@ -5887,7 +5887,7 @@
           <fieldset class="lf-sec"><legend>Trust &amp; documents</legend>
             <div class="row2">
               <div class="field"><label>Title document</label><select id="lfTitleType"><option value="">— Select —</option>${opt(TITLE_TYPES, d.title_type || '', TITLE_LABEL)}</select></div>
-              <div class="field"><label>Gross yield (%)</label><input id="lfYield" type="number" min="0" max="100" step="any" value="${esc(d.yield_pct)}" placeholder="optional"></div>
+              <div class="field"><label>Gross yield (%)</label><input id="lfYield" type="number" inputmode="decimal" min="0" max="100" step="any" value="${esc(d.yield_pct)}" placeholder="optional"></div>
             </div>
             <div class="lf-ro"><span class="k">Verification</span><span class="v">${vLabel}</span></div>
             <label class="lf-toggle"><span>Listing active (visible to buyers)</span><span class="sw ${d.is_active ? 'on' : ''}" id="lfActive" role="switch" aria-checked="${d.is_active}" tabindex="0"></span></label>
@@ -5919,7 +5919,7 @@
                    caption nobody reads. -->
               <div class="lf-gal" id="lfGal"></div>
               <div class="lfimg-prev" id="lfImgPrev"></div>
-              <span class="ferr" id="e_img"></span>
+              <span class="ferr" id="e_img" role="alert"></span>
             </div>
           </fieldset>
           <button class="btn btn-primary btn-block" id="lfSave" style="margin-top:6px">${isNew ? 'Create listing' : 'Save changes'}</button>
@@ -5947,7 +5947,29 @@
         g('priceEcho').textContent = v > 0 ? '= ' + nairaFull(v) + ' (' + nairaShort(v) + ')' : '';
       };
       // validation
-      const setErr = (id, msg) => { const el = g(id); if (el) { el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none'; } };
+      /* The message was written into a span nothing was listening to, and the
+         field it belonged to said nothing about being wrong. Same gap the
+         sign-in form had: the sentence is on screen, in text, and unreachable
+         if you cannot see the screen.
+
+         role="alert" on the span (in the markup) announces it. aria-invalid
+         marks the field, and aria-describedby ties the two together so
+         tabbing back to a field still in error reads the reason rather than
+         just "invalid". ERR_OF is read at call time, not definition time --
+         it is declared below this line and only ever consulted once
+         validate() runs. Two fields share e_lat, which is why this loops the
+         map rather than assuming one field per message. */
+      const setErr = (id, msg) => {
+        const el = g(id); if (!el) return;
+        el.textContent = msg || '';
+        el.style.display = msg ? 'block' : 'none';
+        Object.keys(ERR_OF).forEach(fid => {
+          if (ERR_OF[fid] !== id) return;
+          const f = g(fid); if (!f) return;
+          if (msg) { f.setAttribute('aria-invalid', 'true'); f.setAttribute('aria-describedby', id); }
+          else { f.removeAttribute('aria-invalid'); f.removeAttribute('aria-describedby'); }
+        });
+      };
 
       /* An empty form should not open shouting. validate() runs on open to work
          out whether the listing can be saved yet, and it used to paint every
