@@ -113,6 +113,38 @@
    between audiences is common. On a 375px bar it would force the logo
    or the CTA off-row. A mobile visitor arrived via one specific funnel;
    the audience switch only needs to be a quiet one-way escape hatch. */
+/* ── SKIP TO CONTENT ──────────────────────────────────────────────────────
+   Off-screen until focused, then it drops into the top-left corner. Moved
+   with transform rather than hidden with display:none or visibility:hidden,
+   because both of those take an element out of the tab order entirely and a
+   skip link that cannot be tabbed to is a skip link that does not exist.
+
+   It sits above the fixed bar (z-index 1000) so it is not covered by the
+   thing it exists to skip, and it clears the notch for the same reason the
+   bar does -- this page paints into the inset now. */
+.m-skip {
+  position: fixed;
+  z-index: 2000;
+  top: calc(env(safe-area-inset-top, 0px));
+  left: calc(env(safe-area-inset-left, 0px));
+  transform: translateY(-130%);
+  padding: 12px 18px;
+  background: var(--text, #141414);
+  color: var(--bg, #f5f5f5);
+  font: 600 14px/1 var(--f-sans, system-ui, sans-serif);
+  text-decoration: none;
+  border-radius: 0 0 12px 0;
+  transition: transform .18s var(--ease, ease);
+}
+.m-skip:focus { transform: translateY(0); }
+/* The target should not draw a focus ring when it is focused programmatically
+   by the skip link -- the ring belongs to things you tab to, and landing on
+   the content is not that. Keyboard focus on it still works. */
+#mMain:focus { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  .m-skip { transition: none; }
+}
+
 /* ── EDGE TO EDGE, AND STILL READABLE ──────────────────────────────────
    The page now declares viewport-fit=cover, so it paints into the notch and
    the home-indicator strip instead of being letterboxed by the browser. That

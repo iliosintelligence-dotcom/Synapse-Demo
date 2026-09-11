@@ -82,6 +82,11 @@
      ══════════════════════════════════════════════════════════════════════ -->
 <div class="m-page">
 
+  <!-- First focusable thing on the page, invisible until focused. WCAG 2.4.1:
+       a way past the blocks that repeat on every page -- here the bar with
+       the wordmark, the audience toggle and the sign-in link. -->
+  <a class="m-skip" href="#mMain">Skip to content</a>
+
   <nav class="m-navbar" id="mNavbar">
     <a href="buyers.html" class="m-logo">
       <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
@@ -93,6 +98,12 @@
     </div>
     <a class="m-nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
   </nav>
+
+  <!-- The main landmark. Mobile only, for the reason set out on the agency
+       page: the desktop sections are direct children of body and the rule
+       that hides them on a phone is `body > section`, so wrapping them would
+       make the desktop page render underneath this one. -->
+  <main id="mMain" tabindex="-1">
 
   <!-- ── HERO ── the composer IS the primary action; no competing pill -->
   <header class="m-hero m-wrap">
@@ -152,6 +163,8 @@
       </div>
     </div>
   </section>
+
+  </main>
 
 </div>
 <!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
