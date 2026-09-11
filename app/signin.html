@@ -318,12 +318,65 @@
            will see and still beats the first paint. -->
       <img id="artPhoto" alt="" aria-hidden="true" />
       <script>
+        /* ── THE PANEL CYCLES ────────────────────────────────────────────
+           A sign-in page is somewhere people come back to, and the same
+           photograph every time makes it feel like the page never changed --
+           which, for someone who signs in daily, is most of what they see of
+           the product. So each door has a set and moves through it.
+
+           Two sets, because the two doors argue different things. A buyer
+           gets INTERIORS: rooms, from inside, where somebody lives. An
+           agency gets LANDMARKS: the country they sell into, at the scale
+           they sell at.
+
+           IN ORDER, NOT AT RANDOM. Random repeats -- roughly one visit in
+           five would show the same picture twice running, which reads as
+           broken rather than varied. An index in localStorage means the next
+           visit is always a different photograph, and it degrades to the
+           first one in a private window where storage throws.
+
+           TO ADD MORE: drop the file in images/ and add it to the array.
+           That is the whole procedure. A file that fails to load is skipped
+           rather than leaving an empty panel, so a typo costs one slot and
+           not the page. */
         (function () {
           var agency = document.documentElement.getAttribute('data-role') === 'agency';
-          /* A street of homes for someone looking for one; a bridge for
-             someone selling into the market. */
-          document.getElementById('artPhoto').src =
-            agency ? '../images/hero.jpg' : '../images/estate.jpg';
+
+          /* Rooms from the inside. balcony.jpg is somebody's own balcony at
+             golden hour -- a chair, some grass, their street below -- which
+             is the only genuinely lived-in picture in the folder.
+             interior.jpg is an empty hall and reads as a showhouse, so it
+             sits second. */
+          var INTERIORS = [
+            '../images/balcony.jpg',
+            '../images/interior.jpg',
+          ];
+
+          /* Nigeria at the scale an agency works at. */
+          var LANDMARKS = [
+            '../images/hero.jpg',        // cable-stayed bridge
+            '../images/abuja-gate.jpg',  // Abuja City Gate
+          ];
+
+          var set = agency ? LANDMARKS : INTERIORS;
+          var KEY = 'syn_art_' + (agency ? 'agency' : 'customer');
+
+          var i = 0;
+          try {
+            i = (parseInt(localStorage.getItem(KEY), 10) || 0) % set.length;
+            localStorage.setItem(KEY, String((i + 1) % set.length));
+          } catch (e) { i = 0; }   // private window: always the first, never broken
+
+          var img = document.getElementById('artPhoto');
+          /* Walk on to the next one if a file is missing, and stop after a
+             full lap so a wholly absent set cannot loop forever. */
+          var tried = 0;
+          img.addEventListener('error', function () {
+            if (++tried >= set.length) return;
+            i = (i + 1) % set.length;
+            img.src = set[i];
+          });
+          img.src = set[i];
         })();
       </script>
       <a class="au-brand" href="../index.html">
