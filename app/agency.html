@@ -240,6 +240,29 @@
         scrollbar-width: thin;
         padding-right: 4px;
       }
+
+      /* ── THE PEEK COMES TO THE DESKTOP ────────────────────────────────
+         It was phone-only, on the reasoning that side-by-side columns are
+         the feature and seeing a whole one is the point. Asked for here
+         instead: two cards and a count, the same shape as the phone, so a
+         stage with ninety captions in it reads as a stage rather than as a
+         wall you scroll.
+
+         The scroll box above STAYS, and is the reason this is safe. Expanded,
+         a column still cannot stretch the board -- it scrolls inside its own
+         58vh, which is what stopped 125 captions making the pane 48,000px.
+         The peek shortens the column; the scroll box bounds it. Neither
+         replaces the other. */
+      .col-body > .pcard.pc-extra { display: none; }
+      .col.expanded .col-body > .pcard.pc-extra { display: block; }
+
+      .col-more {
+        display: block; width: 100%; margin-top: 8px;
+        min-height: 38px; padding: 0 14px; border-radius: 11px; cursor: pointer;
+        font: 600 12.5px var(--f-sans); color: var(--ink);
+        background: rgba(0,0,0,0.04); border: 1px dashed var(--border);
+      }
+      .col-more:hover { background: rgba(0,0,0,0.07); }
     }
     .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(20,26,38,0.05); }
     .pcard.warn { border-color: rgba(156,122,30,0.4); }
@@ -4883,7 +4906,7 @@
           </button>
           <div class="col-body" id="${bodyId}">
             ${col.map((p, i) => pcard(p, s.id, i)).join('') || `<div class="col-blank"><span class="col-blank-i" data-icon="${PSTAGE_ICON[s.id] || 'grid'}"></span><p>${esc2(PSTAGE_EMPTY[s.id] || '')}</p></div>`}
-            ${col.length > PIPE_PEEK ? `<button type="button" class="col-more" data-more="${s.id}">+${col.length - PIPE_PEEK} more</button>` : ''}
+            ${col.length > PIPE_PEEK ? `<button type="button" class="col-more" data-more="${s.id}" data-count="${col.length - PIPE_PEEK}">+${col.length - PIPE_PEEK} more</button>` : ''}
             <button type="button" class="col-sheet-x" data-less="${s.id}">Done</button>
           </div>
         </div>`;
@@ -4902,6 +4925,20 @@
       if (more) {
         e.stopPropagation();          // .ch would otherwise toggle the accordion
         var c = more.closest('.col');
+        /* TWO SHAPES FOR TWO SCREENS, one button.
+           On a phone the column becomes a full-screen sheet, because there is
+           nowhere else for ninety cards to go. On a desktop that would be a
+           takeover of a 1440px board to read one of six columns, so the
+           column expands where it stands and the label offers the way back.
+
+           The sheet styles live inside the max-width:1024px block, so without
+           this branch a desktop click would add a class with no rules behind
+           it and look like a dead button. */
+        if (window.matchMedia('(min-width: 1025px)').matches) {
+          var open = c.classList.toggle('expanded');
+          more.textContent = open ? 'Show less' : '+' + more.dataset.count + ' more';
+          return;
+        }
         c.classList.add('sheet', 'open');
         document.documentElement.style.overflow = 'hidden';
         return;
