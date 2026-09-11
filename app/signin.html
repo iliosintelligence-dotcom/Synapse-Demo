@@ -268,13 +268,70 @@
       .au { grid-template-columns: 1fr; min-height: 100dvh; }
 
       .au-art { min-height: 208px; }
-      .au-art::after {
-        background: linear-gradient(180deg, rgba(12,12,12,0.34) 0%, rgba(12,12,12,0.55) 70%, rgba(12,12,12,0.72) 100%);
+
+      /* -- THE MOBILE SCRIM HAS TO OUTRANK THE ROLE SELECTOR -------------
+         This was written as `.au-art::after`, and it never applied once.
+         `:root[data-role="customer"] .au-art::after` is a class more
+         specific, and specificity does not care which media query a rule
+         sits in -- so every phone kept the DESKTOP wash, 26% opaque at the
+         top, while this rule sat here looking like it was doing something.
+
+         What that cost: the white logo and the white headline were left
+         sitting on whatever the photograph happened to be. Over the dark
+         brick interior it passed. Over the bright contemporary living room
+         the text had nothing behind it and the top of the page read as
+         broken -- reported as "nothing is clear, nothing is visible".
+
+         So the role selectors are repeated here to win, and the SHAPE of
+         the gradient changes rather than just its strength. Dark at both
+         ends, where the logo and the headline actually are; lighter through
+         the middle, so the photograph is still a photograph instead of a
+         grey rectangle. Flattening it to a uniform 70% would have fixed the
+         text by throwing away the picture. */
+      :root[data-role="customer"] .au-art::after {
+        background: linear-gradient(180deg,
+          rgba(26,17,10,0.72) 0%, rgba(26,17,10,0.40) 30%,
+          rgba(20,13,9,0.58) 62%, rgba(12,8,5,0.92) 100%);
       }
+      :root[data-role="agency"] .au-art::after {
+        background: linear-gradient(180deg,
+          rgba(8,12,18,0.74) 0%, rgba(8,12,18,0.42) 30%,
+          rgba(7,10,16,0.62) 62%, rgba(5,8,13,0.94) 100%);
+      }
+
+      /* Insurance, not decoration. Each door cycles through five photographs
+         and the sets have already been changed once. A scrim tuned to the
+         five that exist today is one new image away from being wrong again,
+         and the failure mode is silent -- nobody files a bug against a
+         sign-in page, they just cannot read it. A shadow is invisible over a
+         dark wash and saves the text over a bright one. */
+      .au-brand, .au-quote { text-shadow: 0 1px 12px rgba(0,0,0,0.55); }
       .au-brand { top: 20px; left: 22px; }
       .au-art-in { padding: 0 22px 34px; }
       .au-quote { font-size: 25px; max-width: 18ch; }
       .au-sub, .au-marks { display: none; }  /* the form is the job here, not the pitch */
+
+      /* -- AND THE AGENCY'S TWO, WHICH THIS RULE COULD NOT REACH ---------
+         The line above hides the pitch on a phone, and on the buyer's door
+         it does. The agency door carries two more blocks -- the eyebrow and
+         the three-row `.au-work` list -- and both are turned ON by
+         `:root[data-role="agency"]` selectors a full class more specific
+         than the bare `.au-sub, .au-marks` above, so that rule never touched
+         them.
+
+         What that produced, measured on a 375px phone: 266px of content
+         bottom-anchored inside a 208px panel with overflow hidden. The
+         excess did not scroll or shrink, it pushed UP -- the headline's last
+         line was sliced off by the panel edge and the wordmark came to rest
+         on top of the first list row. Reported, accurately, as the logo and
+         the text overlapping with nothing readable.
+
+         Same lesson as the scrim thirty lines up, twice in one media query:
+         a rule written at lower specificity than the one it means to
+         override is not a weak rule, it is a rule that does nothing, and it
+         reads as working code forever. */
+      :root[data-role="agency"] .au-eyebrow,
+      :root[data-role="agency"] .au-work { display: none; }
 
       /* the sheet */
       .au-form {
