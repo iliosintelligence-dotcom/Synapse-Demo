@@ -1194,6 +1194,65 @@
     return m[file.type] || 'jpg';
   }
 
+  /* -- SHRINK BEFORE UPLOAD ---------------------------------------------
+     A listing photograph was uploaded exactly as chosen. The only limit was a
+     10MB gate, so a phone camera's 4000x3000 JPEG went up whole and came back
+     down whole -- into a card 343px wide, on a buyer's mobile data, every time
+     the grid painted. The two photos in the database today are 10KB and 46KB,
+     which is luck rather than design: nothing in this path made them that.
+
+     1600px on the long edge is roughly twice what the largest view uses, so it
+     survives a retina property page with room to spare, and turns an 8MB
+     upload into a couple of hundred KB. It also makes the upload itself finish
+     on the agency's own connection, which in Lagos is the half of this nobody
+     sees from a desk.
+
+     EVERY FAILURE PATH RETURNS THE ORIGINAL FILE. No createImageBitmap, no
+     toBlob, a decode error, or a browser that produces something larger than
+     what it was given -- all of them fall through to uploading exactly what
+     was chosen, which is what happens today. This can make an upload smaller;
+     it cannot stop one working.
+
+     Small files are untouched: under 400KB there is nothing worth re-encoding,
+     and a WebP already down at 10KB would only come back bigger. */
+  var PHOTO_MAX_EDGE = 1600;
+  var PHOTO_SHRINK_FLOOR = 400 * 1024;
+  var PHOTO_QUALITY = 0.82;
+
+  function shrinkForUpload(file) {
+    try {
+      if (!file || file.size < PHOTO_SHRINK_FLOOR) return Promise.resolve(file);
+      if (typeof createImageBitmap !== 'function') return Promise.resolve(file);
+      if (typeof document.createElement('canvas').toBlob !== 'function') return Promise.resolve(file);
+
+      return createImageBitmap(file).then(function (bmp) {
+        var scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(bmp.width, bmp.height));
+        if (!(scale < 1)) { if (bmp.close) bmp.close(); return file; }
+        var cw = Math.round(bmp.width * scale), ch = Math.round(bmp.height * scale);
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        cv.getContext('2d').drawImage(bmp, 0, 0, cw, ch);
+        if (bmp.close) bmp.close();
+        return new Promise(function (res) {
+          cv.toBlob(function (blob) {
+            /* Never upload something bigger than what we were handed: an
+               already-optimised source can re-encode larger, and shipping that
+               would be worse than doing nothing. */
+            if (!blob || blob.size >= file.size) return res(file);
+            var base = String(file.name || 'photo').replace(/[.][^.]+$/, '');
+            try {
+              res(new File([blob], base + '.jpg', { type: 'image/jpeg', lastModified: Date.now() }));
+            } catch (e) {
+              res(file);   // no File constructor: keep the original rather than guess
+            }
+          }, 'image/jpeg', PHOTO_QUALITY);
+        });
+      }).catch(function () { return file; });
+    } catch (e) {
+      return Promise.resolve(file);
+    }
+  }
+
   /* Upload one listing photograph. Resolves to its public URL, which the
      caller stores in property_media.url. */
   function uploadPropertyPhoto(file) {
@@ -1206,7 +1265,11 @@
         'That photo is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under 10MB'));
     }
     var c1, aid;
-    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+    /* Shrunk after the gate, not before. The 10MB limit is about what someone
+       is allowed to choose; it should still say so about a 12MB file rather
+       than silently accepting it because we could squeeze it down. */
+    return shrinkForUpload(file).then(function (f) { file = f; return client(); })
+      .then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
       if (!a) throw new Error('no-agency: this account is not a member of any agency');
       aid = a;
       /* Random suffix, not just a timestamp: two photos chosen in the same
