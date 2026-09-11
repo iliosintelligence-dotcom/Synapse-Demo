@@ -2553,6 +2553,19 @@
       university: 'University', transit: 'Transport', park: 'Park',
     };
 
+    /* One request per property per page, at most. A second call would be
+       refused by the function anyway, but there is no reason to make it. */
+    var surveyAsked = {};
+    function requestSurvey(propId) {
+      if (!propId || surveyAsked[propId]) return;
+      surveyAsked[propId] = true;
+      fetch(SUPABASE_URL + '/rest/v1/rpc/request_enrichment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify({ p_property_id: propId }),
+      }).catch(function () { /* the page is already correct without it */ });
+    }
+
     function fetchStoredPlaces(propId) {
       if (!propId) { placesState = 'empty'; paintAround(); return; }
       placesState = 'loading';
@@ -2589,6 +2602,22 @@
           } else {
             placesState = 'empty';   // nothing surveyed yet; POI fallback fills in
             paintAround();
+            /* ASK FOR THE SURVEY, DO NOT WAIT FOR IT.
+               Nothing is stored for this home, so Overpass is about to answer
+               and the reader gets their list either way. This queues the
+               proper survey for the NEXT visitor.
+
+               Deliberately fire-and-forget, and deliberately not awaited: the
+               Google pass takes tens of seconds and costs money, and making
+               the person who happened to arrive first pay for it in waiting
+               would be the wrong half of the trade. They get the fast answer;
+               the next person gets the good one.
+
+               The server decides whether anything actually happens --
+               request_enrichment refuses a home that is already surveyed,
+               already queued, or deliberately held. This is a request, not a
+               command, which is why its answer is ignored. */
+            requestSurvey(propId);
           }
         })
         .catch(function () { placesState = 'empty'; paintAround(); });
