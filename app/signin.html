@@ -16,6 +16,16 @@
   <!-- In <head>, not at the end of <body>: pagereveal fires before a
        body script has run, and seam.js has to be listening for it. -->
   <script src="seam.js"></script>
+  <script>
+    /* BEFORE THE FIRST PAINT, not after the main script parses the query
+       string further down. Stamped here, the correct panel is the first
+       one drawn; stamped later, every agency would see a beat of the
+       buyer's photograph before it swapped. */
+    (function () {
+      var agency = /(^|[?&])role=agency(&|$)/.test(location.search);
+      document.documentElement.setAttribute('data-role', agency ? 'agency' : 'customer');
+    })();
+  </script>
   <style>
     /* Split auth screen: photography on one side, a calm form on the other.
        The picture carries the aspiration; the form stays completely plain so
@@ -24,8 +34,66 @@
     .au { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 100vh; }
 
     /* ── picture side ── */
+    /* ══ TWO DOORS, NOT ONE WITH DIFFERENT WORDS ═══════════════════════
+       A buyer signing in is at the end of a hopeful, personal search: the
+       panel is a photograph of somewhere someone lives, warm-lit, with a
+       serif line about keys. An agency signing in is arriving at work. The
+       same photograph says the wrong thing to them entirely -- they are not
+       dreaming about a home, they are coming back to leads that have gone
+       cold since Friday.
+
+       So the agency panel drops the photograph and becomes a surface: ink,
+       a drafting grid, sans-serif, and a plain list of what the workspace
+       does. Nothing decorative, nothing aspirational, no stock photo of
+       someone smiling at a laptop. Professional here means it looks like a
+       tool and wastes none of your time.
+
+       The role is stamped on <html> by a script in the head, so the right
+       panel is the first one painted -- swapping it after load would show
+       every agency a buyer's photograph for a beat first. */
     .au-art { position: relative; overflow: hidden; background: #121212; }
     .au-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── THE BUYER'S DOOR: warmer than neutral ──────────────────────────
+       The overlay was a flat grey-black wash over a photograph of a Nigerian
+       estate at dusk, which drained exactly the warmth the picture had. A
+       brown-black gradient keeps the light in it. */
+    :root[data-role="customer"] .au-art::after {
+      background: linear-gradient(180deg, rgba(28,18,10,0.26) 0%, rgba(22,15,10,0.52) 52%, rgba(14,10,7,0.86) 100%);
+    }
+
+    /* ── THE AGENCY'S DOOR: a surface, not a scene ──────────────────────
+       No photograph at all. A drafting grid over ink, drawn in CSS so it
+       costs no request and cannot be a picture of the wrong building. */
+    :root[data-role="agency"] .au-art { background: #0E0E10; }
+    :root[data-role="agency"] .au-art img { display: none; }
+    :root[data-role="agency"] .au-art::after {
+      background:
+        linear-gradient(180deg, rgba(14,14,16,0) 40%, rgba(14,14,16,0.92) 100%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 56px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 56px);
+    }
+    /* Sans, tighter, smaller. The serif is the buyer's voice. */
+    :root[data-role="agency"] .au-quote {
+      font-family: var(--f-sans); font-weight: 650;
+      font-size: clamp(21px, 2.05vw, 27px); letter-spacing: -0.015em; max-width: 18ch;
+    }
+    :root[data-role="agency"] .au-sub { color: rgba(255,255,255,0.70); }
+    /* A label, not a flourish. */
+    .au-eyebrow { display: none; font: 700 11px var(--f-sans); letter-spacing: .16em;
+      text-transform: uppercase; color: rgba(255,255,255,0.46); margin-bottom: 14px; }
+    :root[data-role="agency"] .au-eyebrow { display: block; }
+    /* What the workspace does, stated flat. No figures: a number here would
+       have to be invented, and this product does not print invented numbers. */
+    .au-work { display: none; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.12); }
+    :root[data-role="agency"] .au-work { display: block; }
+    .au-work div { display: flex; align-items: baseline; gap: 12px;
+      padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 13.5px; color: rgba(255,255,255,0.86); }
+    .au-work div:last-child { border-bottom: 0; }
+    .au-work b { flex: none; width: 16px; font: 700 11px var(--f-sans);
+      color: rgba(255,255,255,0.38); }
+    :root[data-role="agency"] .au-marks { display: none; }
     .au-art::after {
       content: ''; position: absolute; inset: 0;
       background: linear-gradient(180deg, rgba(12,12,12,0.30) 0%, rgba(12,12,12,0.55) 55%, rgba(12,12,12,0.82) 100%);
@@ -242,11 +310,20 @@
         <span>Synapse</span>
       </a>
       <div class="au-art-in">
+        <p class="au-eyebrow" id="artEyebrow">Agency workspace</p>
         <p class="au-quote" id="artQuote">The last step before the keys.</p>
         <p class="au-sub" id="artSub">Your account keeps your saved homes, your conversations with Tayo, and the agents you have spoken to — on every device.</p>
         <div class="au-marks">
           <span><i></i> Verified listings only</span>
           <span><i></i> Free for buyers &amp; renters</span>
+        </div>
+        <!-- Agency only; the stylesheet hides it for a buyer. Deliberately
+             without figures -- a number on a sign-in page is either invented
+             or out of date, and this one would be both. -->
+        <div class="au-work">
+          <div><b>01</b> Every lead in one inbox, with what they asked for</div>
+          <div><b>02</b> Follow-ups that go out before the interest cools</div>
+          <div><b>03</b> One listing, posted to every channel at once</div>
         </div>
       </div>
     </div>
@@ -465,10 +542,14 @@
         if (reason === 'contact') mode = 'up';
       }
       if (role === 'agency') {
-        el('artQuote').textContent = 'Every listing, working harder.';
-        el('artSub').textContent = 'Your CRM, your syndication and your verification desk — one workspace for the whole team.';
-        document.querySelector('.au-marks').innerHTML =
-          '<span><i></i> Warm, qualified leads</span><span><i></i> Live in minutes</span>';
+        /* An agency is not moving house. The buyer's panel talks about saved
+           homes and conversations with Tayo, which is the right thing to say
+           to someone at the end of a search and the wrong thing entirely to
+           someone arriving at work. This is about the leads waiting, the
+           follow-ups overdue, and the posts that brought them in. */
+        el('artQuote').textContent = 'The leads are already waiting.';
+        el('artSub').textContent = 'Every enquiry, every reply and every post that brought them in — '
+          + 'in one place your whole team works from.';
         if (!reason) mode = 'up';
       }
 
