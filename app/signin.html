@@ -492,6 +492,28 @@
              follows the photograph it belongs to instead of describing the
              one that failed to load. */
           function paint() {
+            /* ── THE PHONE WAS DOWNLOADING A BILLBOARD ───────────────────
+               These are 1800px files, 237KB to 584KB each, and on a phone
+               this panel is 375x208 CSS pixels. That is roughly five times
+               the pixels anyone can see, on the page that gates the whole
+               product, for an audience paying for the megabyte. At 900px the
+               same picture is 69% smaller and identical at this size.
+
+               srcset BEFORE src, deliberately. A browser that supports
+               srcset chooses from it and never fetches src -- but only if
+               both are set before the load begins. Set src first and some
+               browsers start the 1800px fetch immediately, then fetch again
+               from srcset, and the page pays twice for one photograph.
+
+               sizes says how wide the panel actually is, which srcset cannot
+               know: full width on a phone, about half the window beside the
+               form on a desktop. Without it the browser assumes 100vw and
+               over-fetches on every large screen. */
+            var base = set[i].src.replace(/\.jpg$/, '');
+            img.sizes = '(max-width: 1024px) 100vw, 52vw';
+            img.srcset = base + '-900.jpg 900w, '
+                       + base + '-1200.jpg 1200w, '
+                       + set[i].src + ' 1800w';
             img.src = set[i].src;
             window.SYN_ART_LINE = set[i].line;
             var q = document.getElementById('artQuote');
