@@ -410,23 +410,42 @@
              Rooms, from the inside, with somebody living in them. The old
              set was a street of houses shot from outside and an empty
              unfurnished hall; neither is what the line beside them promises. */
+          /* THE LINE TRAVELS WITH THE PICTURE, not beside it. They are one
+             pair in one array because the alternative -- two arrays and two
+             indices -- drifts the first time somebody adds a photograph and
+             not a line, and drifts silently: the page still renders, it just
+             says the wrong thing about the room behind it. */
           var INTERIORS = [
-            '../images/interior-navy-sofa.jpg',
-            '../images/interior-brick-window.jpg',
-            '../images/interior-contemporary.jpg',
-            '../images/interior-minimal-living.jpg',
-            '../images/interior-art-decor.jpg',
+            { src: '../images/interior-navy-sofa.jpg',
+              line: 'The last step before the keys.' },
+            { src: '../images/interior-brick-window.jpg',
+              line: 'A window you have not looked out of yet.' },
+            { src: '../images/interior-contemporary.jpg',
+              line: 'Somewhere to put your things down.' },
+            { src: '../images/interior-minimal-living.jpg',
+              line: 'The quiet after the search.' },
+            { src: '../images/interior-art-decor.jpg',
+              line: 'A room that already looks like you.' },
           ];
 
           /* Nigeria at the scale an agency works at. abuja-gate.jpg is out:
              it is 541px square, which is why it looked soft blown up across
              a full-height panel. */
+          /* The agency lines carry what the `.au-work` list used to say. That
+             list is hidden on a phone now -- it overflowed the panel and sat
+             on top of the wordmark -- so the three things it promised move
+             into the rotation instead of being lost with it. */
           var LANDMARKS = [
-            '../images/landmark-eko-bridge.jpg',    // Lekki-Ikoyi Link Bridge
-            '../images/landmark-carter-bridge.jpg', // Carter Bridge, Lagos Island
-            '../images/landmark-lagos-sunset.jpg',  // Lagos skyline from the water
-            '../images/landmark-lagos-skyline.jpg', // Lagos skyline
-            '../images/landmark-lagos-aerial.jpg',  // Lagos from above at sunset
+            { src: '../images/landmark-eko-bridge.jpg',    // Lekki-Ikoyi Link Bridge
+              line: 'The leads are already waiting.' },
+            { src: '../images/landmark-carter-bridge.jpg', // Carter Bridge, Lagos Island
+              line: 'Every enquiry in one inbox.' },
+            { src: '../images/landmark-lagos-sunset.jpg',  // Lagos skyline from the water
+              line: 'Follow-ups that go out on time.' },
+            { src: '../images/landmark-lagos-skyline.jpg', // Lagos skyline
+              line: 'One listing, every channel, at once.' },
+            { src: '../images/landmark-lagos-aerial.jpg',  // Lagos from above at sunset
+              line: 'The market you already sell into.' },
           ];
 
           var set = agency ? LANDMARKS : INTERIORS;
@@ -439,15 +458,32 @@
           } catch (e) { i = 0; }   // private window: always the first, never broken
 
           var img = document.getElementById('artPhoto');
+
+          /* This script runs where it sits -- inside the panel, straight after
+             the <img> -- so that the photograph starts downloading before the
+             rest of the page is parsed. Which means #artQuote DOES NOT EXIST
+             yet on the first call. So the line is stashed as well as written,
+             and the block that knows about roles applies it once the markup
+             is there. On a later call -- a file 404s and the set walks on --
+             the element does exist and gets written directly, so the line
+             follows the photograph it belongs to instead of describing the
+             one that failed to load. */
+          function paint() {
+            img.src = set[i].src;
+            window.SYN_ART_LINE = set[i].line;
+            var q = document.getElementById('artQuote');
+            if (q) q.textContent = set[i].line;
+          }
+
           /* Walk on to the next one if a file is missing, and stop after a
              full lap so a wholly absent set cannot loop forever. */
           var tried = 0;
           img.addEventListener('error', function () {
             if (++tried >= set.length) return;
             i = (i + 1) % set.length;
-            img.src = set[i];
+            paint();
           });
-          img.src = set[i];
+          paint();
         })();
       </script>
       <a class="au-brand" href="../index.html">
@@ -692,10 +728,23 @@
            to someone at the end of a search and the wrong thing entirely to
            someone arriving at work. This is about the leads waiting, the
            follow-ups overdue, and the posts that brought them in. */
-        el('artQuote').textContent = 'The leads are already waiting.';
         el('artSub').textContent = 'Every enquiry, every reply and every post that brought them in — '
           + 'in one place your whole team works from.';
         if (!reason) mode = 'up';
+      }
+
+      /* THE LINE THE CYCLER CHOSE, APPLIED LAST.
+         It has to come after the agency block above, which used to hard-code
+         'The leads are already waiting.' here -- that line is now the first
+         entry of the LANDMARKS set, so the agency door still opens on it and
+         then moves through the other four. Written last because whoever
+         writes last wins, and the cycler is the one that knows which
+         photograph is actually on screen.
+
+         Guarded rather than assumed: if the cycler threw, or the element is
+         gone, the markup's own line stands and the page is still a page. */
+      if (window.SYN_ART_LINE && el('artQuote')) {
+        el('artQuote').textContent = window.SYN_ART_LINE;
       }
 
       /* ── mode switch ─────────────────────────────────────────────────── */
