@@ -1825,7 +1825,13 @@
     /* COLLAPSED: everything but the header goes. The header keeps the title
        and the control, so the card never becomes a mystery strip you cannot
        get back. */
-    .cmp-gen.collapsed > *:not(.cmp-head) { display: none; }
+    /* ...EXCEPT THE CHANNELS STRIP, which is not generator UI. It is the
+       account state, and the only route to connecting one. Collapsing this
+       card is a statement about the GENERATOR — "I am not making a campaign
+       right now" — and folding the connect buttons away with it reproduces
+       the same bug by a second road: a phone where nothing can be connected,
+       this time because of a localStorage flag set on a desktop weeks ago. */
+    .cmp-gen.collapsed > *:not(.cmp-head):not(.cmp-channels) { display: none; }
     .cmp-gen.collapsed .cmp-head { margin-bottom: 0; }
     .cmp-gen.collapsed .cmp-head .sub { display: none; }
     .cmp-gen.collapsed .cmp-min svg { transform: rotate(180deg); }
@@ -2523,14 +2529,25 @@
       #pane-social .h2 { font-size: 18px; }
       .cmp-head { margin-bottom: 10px; }
 
-      /* The "Generate a campaign" card comes off mobile entirely: the + in the
-         taskbar opens openComposer(), which picks a listing, chooses channels
-         and calls social-generate — everything this card does and more. Two
-         routes to one job is a phone screen wasted. Desktop keeps both. */
-      /* The inline generator this hides was superseded by the composer modal;
-         its markup and its IIFE are both still here. Renamed from #cmpGen so it
-         no longer shares an id with the composer's own Generate button. */
-      #pane-social #cmpGenPanel { display: none; }
+      /* ── THE CARD COMES BACK TO MOBILE ────────────────────────────────
+         It was taken off entirely, and the reasoning was sound as far as it
+         went: the + in the taskbar opens openComposer(), which picks a
+         listing, chooses channels and calls social-generate — everything
+         this card does and more, so two routes to one job read as a phone
+         screen wasted.
+
+         WHAT THAT MISSED IS THE CHANNELS STRIP. It lives inside this card,
+         and the composer cannot connect an account — it can only post to one
+         already connected. So hiding the card also removed the only place on
+         a phone where Facebook or Instagram can be connected AT ALL. One
+         deletion, two casualties, and the second was invisible because
+         nothing about "the generator is redundant here" suggests "and the
+         connect buttons go with it".
+
+         Reported as the connects and the campaign generation both missing on
+         mobile. They are the same line of CSS. The duplication the original
+         comment worried about is the smaller cost, and the card minimises if
+         it is in the way. */
 
       /* the listing picker was 495px of option text in a 297px control */
       .cmp-gen select, #pane-social select, #pane-marketing select {
