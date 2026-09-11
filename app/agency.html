@@ -8442,7 +8442,7 @@
         <div style="font-size:19px;font-weight:700">Invite a teammate</div>
         <p class="muted" style="font-size:12px;margin:6px 0 18px">You&#39;ll get a link to send them yourself &mdash; we can&#39;t email it out yet. Only the address you invite can use it, and it lasts 14 days.</p>
         <div class="inv">
-          <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr">⚠ Enter a valid email address</span></div>
+          <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr" role="alert">⚠ Enter a valid email address</span></div>
           <div class="field"><label for="invRole">Role</label><select id="invRole"><option value="agent">Agent &mdash; works leads and shows homes</option><option value="agency_admin">Admin &mdash; can also invite and manage</option></select></div>
           <button class="send" id="invSend" disabled aria-disabled="true">Send invite</button>
         </div>`;
@@ -8451,7 +8451,14 @@
       const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
       email.addEventListener('input', () => {
         const v = email.value.trim(), ok = valid(v);
-        err.style.display = (v && !ok) ? 'block' : 'none';
+        /* Shown only once something has been typed: an empty field is not yet
+           wrong. role="alert" on the span announces the sentence when it
+           appears; these two say which field it is about, so tabbing back
+           reads the reason rather than just "invalid". */
+        const showing = !!(v && !ok);
+        err.style.display = showing ? 'block' : 'none';
+        if (showing) { email.setAttribute('aria-invalid', 'true'); email.setAttribute('aria-describedby', 'invErr'); }
+        else { email.removeAttribute('aria-invalid'); email.removeAttribute('aria-describedby'); }
         send.disabled = !ok; send.setAttribute('aria-disabled', String(!ok));
       });
       email.focus();
@@ -9761,7 +9768,7 @@
         <div class="cmp-step">2 · Channels</div>
         <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
         <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '<span data-icon="spark"></span> Generate captions with AI'}</button>`;
-      if (cmp.err) html += `<div class="cmp-err">${cmp.err}</div>`;
+      if (cmp.err) html += `<div class="cmp-err" role="alert">${cmp.err}</div>`;
       if (cmp.captions) {
         html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
         Object.keys(cmp.captions).forEach((ch) => {
@@ -11900,7 +11907,7 @@
           + 'placeholder="0803 123 4567" aria-label="Your WhatsApp number">'
           + '<button type="submit" id="npSave">Save</button>'
           + '</form>'
-          + (err ? '<div class="np-err">' + esc1(err) + '</div>' : '');
+          + (err ? '<div class="np-err" role="alert">' + esc1(err) + '</div>' : '');
         box.hidden = false;
 
         document.getElementById('npForm').addEventListener('submit', function (e) {
