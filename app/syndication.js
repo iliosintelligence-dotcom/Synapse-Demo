@@ -494,6 +494,48 @@
 
   /* ── generation ────────────────────────────────────────────────────────── */
   // One property + one platform + one angle → one variant.
+  /* ── THE SAME ANGLE, WRITTEN FOR THE CHANNEL IT IS GOING TO ────────────
+     Reported: reading through the drafts it is the same four or five
+     captions over and over across Instagram, WhatsApp, YouTube and TikTok.
+     It was, exactly. This function called angle.hook(p) and angle.body(p),
+     and neither takes the platform -- so for one angle every channel got a
+     byte-identical caption, and the only thing that actually varied was the
+     hashtags. Four angles across five platforms is four captions printed
+     twenty times. The channel tabs are what finally made it obvious.
+
+     The FACTS must not change per channel. The price is the price, and a
+     post that says something different on Facebook than on Instagram is one
+     the agency cannot stand behind. What changes is the SHAPE, and the
+     PLATFORMS table already describes it: how much is read before the fold,
+     whether the first line carries the whole thing, how many hashtags are
+     tolerated, whether there is a title at all.
+
+     Same material, cut differently:
+
+       tiktok    the hook and nothing else. The video is the post, and
+                 previewChars is 100 -- a caption nobody finishes is wasted.
+       whatsapp  hook and one sentence, and hashtagMax is already 0. Tags on
+                 a Status read like an advert somewhere meant to be personal.
+       youtube   the description. The title already carries the hook, so
+                 repeating it as the first line is the one thing not to do.
+       facebook  the fullest cut: 250 characters before the fold.
+       instagram hook, body, call to action, tags.
+
+     hook, body and cta are still stored separately on the variant, so
+     recovering a template from a caption is unaffected. */
+  function firstSentence(t) {
+    var m = String(t || '').match(/^[^.!?]+[.!?]/);
+    return m ? m[0].trim() : String(t || '').trim();
+  }
+
+  function shapeCaption(platform, hook, body, cta) {
+    var GAP = '\n\n';
+    if (platform === 'tiktok') return hook + GAP + cta;
+    if (platform === 'whatsapp') return hook + GAP + firstSentence(body) + GAP + cta;
+    if (platform === 'youtube') return body + GAP + cta;
+    return hook + GAP + body + GAP + cta;
+  }
+
   function buildVariant(prop, platform, angle, media, b) {
     var spec = PLATFORMS[platform];
     var p = prop;
@@ -502,7 +544,7 @@
     var tags = hashtagsFor(p, platform, b);
     // WhatsApp Status takes no hashtags, so the sign-off is the only branding
     // that survives there — which is exactly where it matters most.
-    var caption = hook + '\n\n' + body + '\n\n' + angle.cta
+    var caption = shapeCaption(platform, hook, body, angle.cta)
       + signOff(b)
       + (tags.length ? '\n\n' + tags.join(' ') : '');
 
