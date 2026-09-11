@@ -4863,7 +4863,20 @@
        kind of thing is in there and small enough that six stages still fit on
        a phone screen without becoming a scroll. Desktop ignores it entirely
        -- the columns are the point there. */
-    const PIPE_PEEK = 2;
+    /* TWO CARDS ON A PHONE, FOUR ON A BOARD.
+       A phone column is the full width of the screen and two cards already
+       fill the thumb's reach. A desktop column is 208px wide inside a 620px
+       scroll box, where two cards leave most of the column empty and the
+       count does the work a card could have done.
+
+       Read through a function rather than frozen into a constant, because the
+       answer changes with the viewport and the cards are marked .pc-extra at
+       RENDER time -- a value captured once would be wrong the moment a tablet
+       was rotated. The listener below re-renders when the breakpoint is
+       actually crossed, which is the only moment the answer changes. */
+    const PIPE_PEEK_PHONE = 2, PIPE_PEEK_DESK = 4;
+    const pipeDeskQ = window.matchMedia('(min-width: 1025px)');
+    function pipePeek() { return pipeDeskQ.matches ? PIPE_PEEK_DESK : PIPE_PEEK_PHONE; }
     function pcard(p, stage, i){
       let body = '';
       if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
@@ -4886,7 +4899,7 @@
       else if (stage === 'published') body = `<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">✓</span> ${esc2(p.when || 'Published')}</div>
         <div class="w" style="margin-top:4px;color:var(--ink-dim)">Metrics arrive once a channel is connected.</div>`;
       else if (stage === 'underperforming') body = `<div class="rsn">${esc2(p.rsn || '')}</div>`;
-      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}${i >= PIPE_PEEK ? ' pc-extra' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
+      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}${i >= pipePeek() ? ' pc-extra' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
     }
     function renderPipeline(){
       const el = document.getElementById('pipeline'); if (!el) return;
@@ -4906,7 +4919,7 @@
           </button>
           <div class="col-body" id="${bodyId}">
             ${col.map((p, i) => pcard(p, s.id, i)).join('') || `<div class="col-blank"><span class="col-blank-i" data-icon="${PSTAGE_ICON[s.id] || 'grid'}"></span><p>${esc2(PSTAGE_EMPTY[s.id] || '')}</p></div>`}
-            ${col.length > PIPE_PEEK ? `<button type="button" class="col-more" data-more="${s.id}" data-count="${col.length - PIPE_PEEK}">+${col.length - PIPE_PEEK} more</button>` : ''}
+            ${col.length > pipePeek() ? `<button type="button" class="col-more" data-more="${s.id}" data-count="${col.length - pipePeek()}">+${col.length - pipePeek()} more</button>` : ''}
             <button type="button" class="col-sheet-x" data-less="${s.id}">Done</button>
           </div>
         </div>`;
@@ -5461,6 +5474,18 @@
     })();
     renderPipeline();
     renderBento();
+
+    /* The peek is decided at render time, so crossing the breakpoint has to
+       redraw the board -- otherwise a tablet rotated from portrait to
+       landscape keeps the phone's two cards, or the desktop's four survive
+       into a phone-width window and the count disagrees with what is on
+       screen. addEventListener on a MediaQueryList is the modern form;
+       addListener is kept for the Safari versions that never got it. */
+    (function () {
+      var redraw = function () { renderPipeline(); };
+      if (pipeDeskQ.addEventListener) pipeDeskQ.addEventListener('change', redraw);
+      else if (pipeDeskQ.addListener) pipeDeskQ.addListener(redraw);
+    })();
 
     // ── listings — editable, with the 14-day freshness rule ──
     // Every listing must be re-listed every 14 days or it stops showing to
