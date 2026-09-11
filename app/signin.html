@@ -432,7 +432,16 @@
       @media (max-height: 500px) {
         .au-art { min-height: 150px; }
         .au-quote { font-size: 18px; max-width: 28ch; }
-        .au-art-in { padding: 0 22px 16px; }
+        /* The bottom padding is NOT touched here, and that is the point.
+           .au-form has margin-top: -22px -- the sheet deliberately rides up
+           over the panel's bottom edge -- so any text within 22px of that
+           edge is underneath it. The 34px this block inherits exists to clear
+           exactly that overlap, and my first attempt at 16px put the headline
+           straight under the sheet: visible in the measurements as a quote
+           ending at 134 against a sheet starting at 128.
+
+           At 150px with the inherited 34px there is room for two lines and
+           12px of daylight between the text and the sheet. */
         .au-form { padding-top: 20px; }
       }
 
