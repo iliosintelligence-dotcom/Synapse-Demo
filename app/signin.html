@@ -62,16 +62,23 @@
       background: linear-gradient(180deg, rgba(28,18,10,0.26) 0%, rgba(22,15,10,0.52) 52%, rgba(14,10,7,0.86) 100%);
     }
 
-    /* ── THE AGENCY'S DOOR: a surface, not a scene ──────────────────────
-       No photograph at all. A drafting grid over ink, drawn in CSS so it
-       costs no request and cannot be a picture of the wrong building. */
-    :root[data-role="agency"] .au-art { background: #0E0E10; }
-    :root[data-role="agency"] .au-art img { display: none; }
+    /* ── THE AGENCY'S DOOR: a photograph, but not of a home ─────────────
+       The first version of this was flat ink and a CSS grid. It read as
+       professional the way a spreadsheet does -- correct and cold -- and it
+       was the one thing on the page that looked unfinished beside the
+       buyer's photograph.
+
+       So it gets a picture too, and the differentiation moves to the SUBJECT.
+       The buyer sees a street of homes, because that is what they are
+       looking for. An agency sees a bridge: infrastructure, span, reach --
+       the market they sell into rather than a house they might live in. It
+       is the same argument the copy makes, in an image.
+
+       Cooler and deeper than the buyer's warm brown wash, so the two doors
+       still do not look alike at a glance. */
+    :root[data-role="agency"] .au-art { background: #0B0F14; }
     :root[data-role="agency"] .au-art::after {
-      background:
-        linear-gradient(180deg, rgba(14,14,16,0) 40%, rgba(14,14,16,0.92) 100%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 56px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 56px);
+      background: linear-gradient(180deg, rgba(8,12,18,0.34) 0%, rgba(8,12,18,0.62) 48%, rgba(6,9,14,0.92) 100%);
     }
     /* Sans, tighter, smaller. The serif is the buyer's voice. */
     :root[data-role="agency"] .au-quote {
@@ -304,7 +311,21 @@
   <div class="au">
     <!-- picture side -->
     <div class="au-art">
-      <img src="../images/estate.jpg" alt="" aria-hidden="true" />
+      <!-- src is set by the script directly below rather than written here.
+           Two <img> tags switched by CSS would download BOTH pictures on
+           every visit to hide one of them; setting it inline, immediately
+           after the element is parsed, fetches exactly the one this visitor
+           will see and still beats the first paint. -->
+      <img id="artPhoto" alt="" aria-hidden="true" />
+      <script>
+        (function () {
+          var agency = document.documentElement.getAttribute('data-role') === 'agency';
+          /* A street of homes for someone looking for one; a bridge for
+             someone selling into the market. */
+          document.getElementById('artPhoto').src =
+            agency ? '../images/hero.jpg' : '../images/estate.jpg';
+        })();
+      </script>
       <a class="au-brand" href="../index.html">
         <img class="au-mark" src="../images/brand/mark-white-transparent.png" alt="" aria-hidden="true">
         <span>Synapse</span>
