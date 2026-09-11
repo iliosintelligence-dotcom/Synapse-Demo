@@ -179,6 +179,18 @@ a { color: inherit; text-decoration: none; }
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; gap: 22px;
   padding: 14px 22px;
+  /* THE BAR REACHES THE EDGE; ITS CONTENTS DO NOT.
+     On a page that declares viewport-fit=cover this is stuck at the physical
+     top of the screen, which on a notched phone is underneath the clock and
+     the camera. The background should fill that strip -- that is what edge to
+     edge means -- and the brand, the notifications and the account control
+     should sit below it.
+
+     Written as calc(14px + env(..., 0px)) so it is exactly the 14px it has
+     always been everywhere the inset is 0: every page that has not opted into
+     viewport-fit, and every phone without a notch. This is a no-op until a
+     page asks for it. */
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
   background: rgba(247,247,248,0.82);   /* tracks --bg; translucency needs a literal */
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
