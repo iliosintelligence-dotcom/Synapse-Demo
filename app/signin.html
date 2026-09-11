@@ -298,6 +298,25 @@
 
       .au-art { min-height: 208px; }
 
+      /* ── A SHORT SCREEN IS A DIFFERENT SCREEN ─────────────────────────
+         208px of photograph is a third of a portrait phone and more than
+         HALF of a landscape one: measured at 812x375, the panel took 208 of
+         375 and left 167px for the form, so the email field started below
+         the fold on a page whose entire job is that field.
+
+         The photograph is not worth scrolling past to sign in. On a short
+         viewport it becomes a band -- the wordmark and one line still carry
+         the brand -- and the form takes the room it needs. Keyed on height,
+         not orientation, because what matters is how little vertical space
+         there is: a landscape phone and a split-screen window are the same
+         problem. */
+      @media (max-height: 500px) {
+        .au-art { min-height: 132px; }
+        .au-quote { font-size: 19px; max-width: 26ch; }
+        .au-art-in { padding: 0 22px 18px; }
+        .au-form { padding-top: 20px; }
+      }
+
       /* -- THE MOBILE SCRIM HAS TO OUTRANK THE ROLE SELECTOR -------------
          This was written as `.au-art::after`, and it never applied once.
          `:root[data-role="customer"] .au-art::after` is a class more
