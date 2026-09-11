@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- This page already had 2 rules (the bar, the composer) written against
+       env(safe-area-inset-*), and every one computed 0: those functions
+       return 0 unless the viewport says viewport-fit=cover. The layout
+       was designed for the edges and never reached them. -->
+  <meta name="theme-color" content="#F7F7F8" />
   <title>Tayo · Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -378,7 +383,15 @@
 
       .tjm-bar {
         flex: none; display: flex; align-items: center; gap: 12px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-top)) 14px;
+        /* THE TOP INSET WAS ON THE BOTTOM EDGE. Written as
+           `10px 14px calc(10px + env(safe-area-inset-top)) 14px`, which is
+           top / right / BOTTOM / left -- so the allowance for the status bar
+           was padding the wrong side of the bar. Harmless while the inset
+           computed 0, which it did on every device, because this page never
+           declared viewport-fit=cover. Switching that on without this would
+           have grown the bar downwards and still left the back button and the
+           title under the clock. */
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
         background: rgba(245,245,245,0.82);
         backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
         border-bottom: 1px solid rgba(255,255,255,0.6);
