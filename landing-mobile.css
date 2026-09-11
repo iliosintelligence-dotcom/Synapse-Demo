@@ -1081,6 +1081,31 @@
 #mProbCar .m-car-slide:nth-child(3) { z-index: 2; }
 #mProbCar .m-car-slide:nth-child(4) { z-index: 1; box-shadow: none; }
 
+/* ── THE LEAD DECK HAS TO MATCH ───────────────────────────────────────────
+   The rows in the hero panel cascade in one after another, and a deck only
+   reads as a deck if the cards are the same size. On a desktop they were --
+   every meta line happened to fit -- but at 375px
+   "N150-180M · Lekki · ready to view" ran 2px past its box, wrapped to a
+   second line, and that one row stood 82px against its neighbours' 63.
+
+   landing.css now holds .l-m to a single line, which makes the height
+   structural rather than coincidental: an avatar, a name and one line cannot
+   disagree with another avatar, name and line. This is the other half --
+   reclaiming the 2px so the line does not have to be truncated to achieve
+   it. Measured with a Range rather than guessed:
+
+     gap 11 / padding 12   slack -2px   truncates
+     gap  9 / padding 12   slack +2px   fits, no margin
+     gap  9 / padding 10   slack +6px   fits with room
+
+   6px is the buffer for the fact that the same font renders fractionally
+   differently across devices, and 2px is not a margin, it is a coincidence.
+   If a future lead does overrun it, the ellipsis in landing.css catches it
+   and the rows stay level -- which is the property worth protecting. */
+@media (max-width: 1024px) {
+  .pk-lead { gap: 9px; padding: 11px 10px; }
+}
+
 /* The rail on a phone: tighter spacing and a faster cycle, because a narrower
    viewport shows fewer marks and a slow row reads as stalled. */
 .m-logorail {
