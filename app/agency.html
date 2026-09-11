@@ -1818,6 +1818,19 @@
       border: 1px solid var(--border); background: #fff; font: 13.5px var(--f-sans); color: var(--ink); }
     .cmp-out { margin-top: 18px; }
     .cmp-out[hidden] { display: none; }
+    /* Sticky so the exit is reachable from anywhere in a long result. */
+    .cmp-out-hd { position: sticky; top: 0; z-index: 4;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin: 0 0 14px; padding: 10px 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .cmp-out-ttl { min-width: 0; font: 600 13.5px var(--f-sans); color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-out-ttl span { margin-left: 8px; font-weight: 500; color: var(--ink-muted); }
+    .cmp-out-x { flex: none; min-height: 34px; padding: 0 14px; border-radius: 100px;
+      font: 600 12.5px var(--f-sans); color: var(--ink); cursor: pointer;
+      background: rgba(0,0,0,0.04); border: 1px solid var(--border); }
+    .cmp-out-x:hover { background: rgba(0,0,0,0.07); }
     .cmp-sum { display: flex; gap: 18px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px;
       background: rgba(0,0,0,0.03); font-size: 13px; margin-bottom: 14px; }
     .cmp-sum b { font-family: var(--f-serif); font-size: 17px; }
@@ -9210,6 +9223,23 @@
         if (row) loadPast(row.id);
       });
 
+      /* Closing throws away the VIEW, never the work. Every generation is
+         filed by saveGeneration the moment it is made, so what disappears
+         here is on screen only -- it is still in Earlier versions below, and
+         the comment on that save says why: the common next action is 'close
+         this and come back'. */
+      function dismiss() {
+        campaign = null;
+        out.hidden = true;
+        out.innerHTML = '';
+        if (go && go.scrollIntoView) go.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+
+      /* Escape is what people already press to get out of something. */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !out.hidden) dismiss();
+      });
+
       go.addEventListener('click', function () {
         if (running || !rows.length) return;
         var row = rows[+sel.value || 0];
@@ -9272,7 +9302,23 @@
             + '</div>'
           : '<div class="cmp-brandbar plain"><span class="bb-note">No brand set — '
             + 'these post unsigned. Add your name, colours and voice under <b>Team → Brand</b>.</span></div>';
-        var html = brandBar + '<div class="cmp-sum">'
+        /* A WAY OUT, AND IT STAYS ON SCREEN.
+           Generating replaced this panel with several screens of cards and
+           left no way back: no cancel, no close, nothing to press but the
+           thing that made more of it. And because the output is long, a
+           control at the bottom would be a control you have to scroll to
+           find. So the bar sticks to the top of the output -- however far
+           down the cards you are, the exit is in the same place.
+
+           It also names what you are looking at. Six platform sections with
+           no heading gave no clue which listing they belonged to, which
+           matters when the picker above is still showing something else. */
+        var html = '<div class="cmp-out-hd">'
+          + '<div class="cmp-out-ttl">' + esc((campaign.property && campaign.property.title) || 'This listing')
+          + '<span>' + campaign.variants.length + ' drafts</span></div>'
+          + '<button type="button" class="cmp-out-x" id="cmpDismiss">Close</button>'
+          + '</div>'
+          + brandBar + '<div class="cmp-sum">'
           + '<span><b>' + campaign.variants.length + '</b> variants</span>'
           + '<span><b>' + angleCount + '</b> angles</span>'
           + '<span><b>' + Object.keys(S.PLATFORMS).length + '</b> channels</span>'
@@ -9350,6 +9396,7 @@
 
         out.hidden = false;
         out.innerHTML = html;
+        document.getElementById('cmpDismiss').addEventListener('click', dismiss);
         document.getElementById('cmpRun').addEventListener('click', run);
         var liveBtn = document.getElementById('cmpLive');
         if (liveBtn) liveBtn.addEventListener('click', publishLive);
