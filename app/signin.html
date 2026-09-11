@@ -185,6 +185,24 @@
       width: 34px; height: 34px; padding: 0; border-radius: 9px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       color: var(--ink-dim); background: none; border: 0; }
+    /* 34x34 is the visible control; a thumb needs 44, and this one is tapped
+       more than anything else on the form -- it is the only way to check a
+       password you are about to submit. Measured at 33x33 of real tappable
+       area, which is the smallest control on the page.
+
+       The mark keeps its size and a pseudo-element carries the target, the
+       same trick the demo-account link and the landing page's carousel dots
+       already use. Gated to coarse pointers for the reason that file gives:
+       an invisible 44px box here reaches into the text field, and on a mouse
+       it would swallow clicks meant to put the caret at the end of what you
+       typed. A thumb has no such precision to lose. */
+    @media (pointer: coarse) {
+      .au-pw-t::before {
+        content: ''; position: absolute;
+        top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 44px; height: 44px; border-radius: 12px;
+      }
+    }
     /* The glyph is decoration; the button is the control. Without this a
        hit test lands on a <path> and anything reasoning about what is
        under the cursor has to walk up to find the button. */
@@ -351,6 +369,11 @@
 
       .au-tabs { margin: 20px 0 18px; }
       .au-tab { min-height: 44px; font-size: 14px; }
+      /* Its sibling. These two strips sit one above the other and do the same
+         kind of job -- pick one of two -- so one being 44 and the other 40 was
+         an oversight rather than a decision. Measured at 43px of tappable
+         height against the tab strip's 44. */
+      .au-method { min-height: 44px; }
 
       .au-field { margin-bottom: 16px; }
       .au-label { font-size: 13px; margin-bottom: 7px; }
