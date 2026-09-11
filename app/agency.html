@@ -1819,11 +1819,35 @@
     .cmp-out { margin-top: 18px; }
     .cmp-out[hidden] { display: none; }
     /* Sticky so the exit is reachable from anywhere in a long result. */
+    /* A block, not a flex row. It held title and close side by side, and the
+       tab strip added below became a third flex child sitting BESIDE them --
+       which pushed the first tab off the end of a scroller nobody knew was
+       scrollable. The row is .cmp-out-top now and the tabs sit under it. */
     .cmp-out-hd { position: sticky; top: 0; z-index: 4;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      display: block;
       margin: 0 0 14px; padding: 10px 12px; border-radius: 12px;
       background: rgba(255,255,255,0.92); border: 1px solid var(--border);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .cmp-out-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    /* The tabs live in the sticky bar with the title and the close, so the
+       way between channels is in the same place as the way out. */
+    .cmp-tabs { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto;
+      scrollbar-width: none; -ms-overflow-style: none; }
+    .cmp-tabs::-webkit-scrollbar { display: none; }
+    .cmp-tab { flex: none; display: inline-flex; align-items: center; gap: 7px;
+      min-height: 34px; padding: 0 12px; border-radius: 100px; cursor: pointer;
+      font: 600 12.5px var(--f-sans); color: var(--ink-muted);
+      background: rgba(0,0,0,0.04); border: 1px solid transparent; }
+    .cmp-tab:hover { color: var(--ink); }
+    .cmp-tab.on { background: #121212; color: #fff; }
+    .cmp-tab .ic { display: inline-flex; width: 14px; height: 14px; }
+    .cmp-tab .ic svg { width: 100%; height: 100%; }
+    .cmp-tab .n { font-variant-numeric: tabular-nums; opacity: .75; }
+    /* A channel with drafts that fail its limits says so on the tab, so a
+       problem cannot hide behind a tab nobody opened. */
+    .cmp-tab .bad { display: inline-flex; align-items: center; justify-content: center;
+      min-width: 17px; height: 17px; padding: 0 4px; border-radius: 100px;
+      background: #a8402b; color: #fff; font: 700 10.5px var(--f-sans); }
     .cmp-out-ttl { min-width: 0; font: 600 13.5px var(--f-sans); color: var(--ink);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cmp-out-ttl span { margin-left: 8px; font-weight: 500; color: var(--ink-muted); }
@@ -9313,12 +9337,7 @@
            It also names what you are looking at. Six platform sections with
            no heading gave no clue which listing they belonged to, which
            matters when the picker above is still showing something else. */
-        var html = '<div class="cmp-out-hd">'
-          + '<div class="cmp-out-ttl">' + esc((campaign.property && campaign.property.title) || 'This listing')
-          + '<span>' + campaign.variants.length + ' drafts</span></div>'
-          + '<button type="button" class="cmp-out-x" id="cmpDismiss">Close</button>'
-          + '</div>'
-          + brandBar + '<div class="cmp-sum">'
+        var sumHtml = brandBar + '<div class="cmp-sum">'
           + '<span><b>' + campaign.variants.length + '</b> variants</span>'
           + '<span><b>' + angleCount + '</b> angles</span>'
           + '<span><b>' + Object.keys(S.PLATFORMS).length + '</b> channels</span>'
@@ -9332,15 +9351,33 @@
               + 'those angles claim the seven checks passed.</div>'
             : '');
 
+        /* ONE CHANNEL AT A TIME.
+           Five platforms times six angles is thirty cards, and they were
+           stacked in a single column under each other -- so the answer to
+           "what did it write for Instagram" was somewhere in a page and a
+           half of scrolling, and comparing two channels meant remembering
+           the first one. Nobody posts to five channels in one sitting; they
+           work through one, then the next.
+
+           So the platforms become tabs in the sticky bar. Same cards, same
+           order, one channel visible. The tab carries its own count and
+           flags how many of its drafts need attention, so nothing hides
+           behind a tab you have not opened. */
+        var platHtml = '', tabs = '', firstPlat = null;
         Object.keys(S.PLATFORMS).forEach(function (pl) {
           var spec = S.PLATFORMS[pl];
           var vs = campaign.variants.filter(function (v) { return v.platform === pl; });
           if (!vs.length) return;
-          html += '<div class="cmp-plat"><div class="cmp-plat-h">'
-            + '<span class="k" style="background:' + spec.colour + '">'
-            + ((window.SynIcons && SynIcons.brand && SynIcons.brand(pl, { size: 12 })) || esc(spec.short))
-            + '</span>'
-            + esc(spec.label) + '</div><div class="cmp-grid">'
+          if (!firstPlat) firstPlat = pl;
+          var nBad = vs.filter(function (v) { return v.issues.length; }).length;
+          tabs += '<button type="button" class="cmp-tab" data-plat="' + pl + '">'
+            + '<span class="ic">'
+            + ((window.SynIcons && SynIcons.brand && SynIcons.brand(pl, { size: 14 })) || esc(spec.short))
+            + '</span>' + esc(spec.label)
+            + '<span class="n">' + vs.length + '</span>'
+            + (nBad ? '<span class="bad" title="' + nBad + ' need attention">' + nBad + '</span>' : '')
+            + '</button>';
+          platHtml += '<div class="cmp-plat" data-plat="' + pl + '" hidden><div class="cmp-grid">'
             + vs.map(function (v) {
                 var bodyOnly = v.caption.split('\n\n').slice(1).join('\n\n');
                 return '<div class="cmp-card' + (v.issues.length ? ' bad' : '') + '" title="' + esc(v.angleWhy) + '">'
@@ -9362,6 +9399,17 @@
               }).join('')
             + '</div></div>';
         });
+
+        var html = '<div class="cmp-out-hd">'
+          + '<div class="cmp-out-top">'
+          + '<div class="cmp-out-ttl">' + esc((campaign.property && campaign.property.title) || 'This listing')
+          + '<span>' + campaign.variants.length + ' drafts</span></div>'
+          + '<button type="button" class="cmp-out-x" id="cmpDismiss">Close</button>'
+          + '</div>'
+          + (tabs ? '<div class="cmp-tabs" role="tablist">' + tabs + '</div>' : '')
+          + '</div>'
+          + sumHtml
+          + platHtml;
 
         /* Two buttons, never one that changes meaning. A rehearsal and a real
            send are different acts, and a single button whose behaviour depends
@@ -9397,6 +9445,27 @@
         out.hidden = false;
         out.innerHTML = html;
         document.getElementById('cmpDismiss').addEventListener('click', dismiss);
+
+        /* Delegated, because the strip is rebuilt on every generation. */
+        var tabBar = out.querySelector('.cmp-tabs');
+        function showPlat(pl) {
+          out.querySelectorAll('.cmp-plat').forEach(function (p) {
+            p.hidden = p.getAttribute('data-plat') !== pl;
+          });
+          out.querySelectorAll('.cmp-tab').forEach(function (t) {
+            var on = t.getAttribute('data-plat') === pl;
+            t.classList.toggle('on', on);
+            t.setAttribute('aria-selected', String(on));
+          });
+        }
+        if (tabBar) {
+          tabBar.addEventListener('click', function (e) {
+            var t = e.target.closest('.cmp-tab');
+            if (t) showPlat(t.getAttribute('data-plat'));
+          });
+          if (firstPlat) showPlat(firstPlat);
+        }
+
         document.getElementById('cmpRun').addEventListener('click', run);
         var liveBtn = document.getElementById('cmpLive');
         if (liveBtn) liveBtn.addEventListener('click', publishLive);
