@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- The chrome should match what is behind it, and on this page that differs
+       by width: the phone layout puts the dark photograph at the top of the
+       screen (body is #121212 under the 1024px breakpoint), the desktop layout
+       is the light ground. One value would be wrong on one of them. -->
+  <meta name="theme-color" content="#121212" media="(max-width: 1024px)" />
+  <meta name="theme-color" content="#f5f5f5" media="(min-width: 1025px)" />
   <title>Sign in · Synapse</title>
   <!-- No indexing of an auth screen, and never leak the ?next= path in a referrer -->
   <meta name="robots" content="noindex, nofollow" />
@@ -30,7 +36,12 @@
     /* Split auth screen: photography on one side, a calm form on the other.
        The picture carries the aspiration; the form stays completely plain so
        nothing competes with the four fields that matter. */
-    body { min-height: 100vh; background: var(--bg); }
+    /* dvh, not vh. On a phone 100vh is the viewport with the browser toolbar
+       HIDDEN, so a page pinned to it is taller than the screen the moment the
+       toolbar is showing -- which is most of the time. .au already used dvh
+       under the breakpoint; body did not, and it is the element that paints
+       the background behind everything. */
+    body { min-height: 100vh; min-height: 100dvh; background: var(--bg); }
     .au { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 100vh; }
 
     /* ── picture side ── */
@@ -324,7 +335,15 @@
          sign-in page, they just cannot read it. A shadow is invisible over a
          dark wash and saves the text over a bright one. */
       .au-brand, .au-quote { text-shadow: 0 1px 12px rgba(0,0,0,0.55); }
-      .au-brand { top: 20px; left: 22px; }
+      /* Cleared of the notch. viewport-fit=cover lets the photograph run to
+         the physical top of the screen, which is what it should do -- and it
+         puts this wordmark under the camera cutout unless it steps down by
+         the inset. On a phone without one the inset is 0px and this is the
+         20px it always was. */
+      .au-brand {
+        top: calc(20px + env(safe-area-inset-top, 0px));
+        left: calc(22px + env(safe-area-inset-left, 0px));
+      }
       .au-art-in { padding: 0 22px 34px; }
       .au-quote { font-size: 25px; max-width: 18ch; }
       .au-sub, .au-marks { display: none; }  /* the form is the job here, not the pitch */
@@ -353,7 +372,11 @@
 
       /* the sheet */
       .au-form {
-        padding: 26px 22px calc(40px + env(safe-area-inset-bottom));
+        padding:
+          26px
+          calc(22px + env(safe-area-inset-right, 0px))
+          calc(40px + env(safe-area-inset-bottom, 0px))
+          calc(22px + env(safe-area-inset-left, 0px));
         background: var(--bg);
         border-radius: 26px 26px 0 0;
         margin-top: -22px;

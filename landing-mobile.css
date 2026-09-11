@@ -50,7 +50,15 @@
    therefore padding-top/padding-bottom longhand only — a `padding: 64px 0`
    shorthand here silently reset the gutter to 0 and ran the whole page
    edge-to-edge. Longhands keep the two axes independent. */
-.m-wrap { padding-left: 22px; padding-right: 22px; }
+/* The gutter carries the landscape insets for the same reason the bar does:
+   in portrait every inset is 0px and this is the 22px it has always been, and
+   in landscape on a notched phone the text steps around the cutout instead of
+   disappearing behind it. Backgrounds still run to the physical edge, because
+   the padding is on the wrapper and not on the section. */
+.m-wrap {
+  padding-left: calc(22px + env(safe-area-inset-left, 0px));
+  padding-right: calc(22px + env(safe-area-inset-right, 0px));
+}
 /* Section partitioning, phone side. Same problem the desktop bands had and
    the same fix: four of these were fully transparent with no border, so with
    the section CTAs gone there was nothing at all marking where one idea ended
@@ -105,9 +113,29 @@
    between audiences is common. On a 375px bar it would force the logo
    or the CTA off-row. A mobile visitor arrived via one specific funnel;
    the audience switch only needs to be a quiet one-way escape hatch. */
+/* ── EDGE TO EDGE, AND STILL READABLE ──────────────────────────────────
+   The page now declares viewport-fit=cover, so it paints into the notch and
+   the home-indicator strip instead of being letterboxed by the browser. That
+   is the whole point -- and it is also how you hide a wordmark behind a
+   camera cutout if you stop there.
+
+   So the BAR bleeds to the top edge and its CONTENTS do not. The background
+   fills the inset; padding-top pushes the logo, the audience toggle and the
+   sign-in link clear of it. Height grows by the same amount so the 56px
+   content row is unchanged on a phone with no notch, where every inset is
+   0px and this computes to exactly what it was before.
+
+   The left/right insets are for landscape. Rotate a notched phone and the
+   cutout eats into one side; without them the wordmark sits under it. */
 .m-navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-  height: 56px; padding: 0 16px;
+  box-sizing: border-box;
+  height: calc(56px + env(safe-area-inset-top, 0px));
+  padding:
+    env(safe-area-inset-top, 0px)
+    calc(16px + env(safe-area-inset-right, 0px))
+    0
+    calc(16px + env(safe-area-inset-left, 0px));
   display: flex; align-items: center; justify-content: space-between;
   transition: background .3s var(--ease), border-color .3s var(--ease);
   border-bottom: 1px solid transparent;
