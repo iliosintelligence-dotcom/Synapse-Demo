@@ -4911,6 +4911,29 @@
       }).then(() => { buildPosts(); repaintSocial(); });
     }
 
+    /* THE QUEUE MOVES AFTER WE STOP LOOKING.
+       loadPipeline() runs once when an action finishes, and at that moment the
+       row is still 'scheduled'. drain_social_queue picks it up within the
+       minute, publishes it, and nothing tells this tab -- so the card sits in
+       Scheduled until somebody reloads, which is exactly the "I have to reload
+       the page" complaint. The repaint was never broken; it only ever ran once,
+       before the interesting thing happened.
+
+       A few refreshes on a decaying schedule rather than a permanent poll. The
+       window that matters is the minute or two after an action; a tab left open
+       on this pane all afternoon should not keep asking, and a hidden tab
+       should not ask at all. */
+    let pipeWatchers = [];
+    function watchPipeline() {
+      pipeWatchers.forEach(clearTimeout);
+      pipeWatchers = [4000, 12000, 30000, 70000].map((ms) => setTimeout(() => {
+        if (document.hidden) return;
+        const pane = document.getElementById('pane-social');
+        if (pane && !pane.classList.contains('on')) return;
+        loadPipeline();
+      }, ms));
+    }
+
     const fmt = n => n >= 1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : ''+n;
     const CHR = { instagram: 3200, tiktok: 8600, youtube: 4200, facebook: 1500, whatsapp: 900 };
     const estReach = ch => ch.reduce((s,c) => s + (CHR[c]||0), 0);
@@ -5450,6 +5473,7 @@
                 + (!sent.published && !sent.failed ? ' \u2014 queued, going out shortly' : ''));
             } else toast('Queued \u2014 going out within the minute');
             loadPipeline();
+            watchPipeline();
           })
           .catch((err) => {
             btn.disabled = false; if (other) other.disabled = false;
@@ -10307,6 +10331,9 @@
         toast(chans.length + (chans.length === 1 ? ' post scheduled' : ' posts scheduled') + ' — see the Scheduled column');
         closeComposer();
         if (typeof loadPipeline === 'function') loadPipeline();
+        /* and again over the next minute, because the drain moves these to
+           Published behind our back. */
+        if (typeof watchPipeline === 'function') watchPipeline();
       }).catch((err) => {
         if (btn) { btn.disabled = false; btn.textContent = 'Schedule to pipeline →'; }
         toast((err && err.message) || 'Could not schedule those');
