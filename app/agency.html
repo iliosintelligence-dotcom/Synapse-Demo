@@ -4833,15 +4833,37 @@
           img: l ? l.img : '', channels: chans, caption: d.generated_text || '',
           scheduledAt: null, when: '', reach: estReach(chans) });
       });
+      /* A SYNAPSE TWIN IS NOT A CARD IN THE AGENCY'S PIPELINE.
+         Every post now queues one twin per Synapse channel, and they carry the
+         same agency_id -- so the moment amplification went live, scheduling one
+         Instagram post filled this column with four cards, three of which the
+         agency did not make and cannot edit. Two real posts came back behind
+         twelve twins, pushed under the "see more" fold, which reads exactly
+         like scheduling did nothing.
+
+         They are folded into the post they came from instead: same information,
+         one card, and the column counts what the agency actually did. */
+      const twinsBySource = {};
       PIPE.social.forEach(r => {
+        if (r.leg !== 'synapse' || !r.twin_of) return;
+        (twinsBySource[r.twin_of] = twinsBySource[r.twin_of] || []).push(r);
+      });
+
+      PIPE.social.forEach(r => {
+        if (r.leg === 'synapse') return;          // folded in below, never a card
         const l = listingById(r.property_id);
         const chans = r.platform ? [r.platform] : [];
         const stage = r.status === 'published' ? 'published' : 'scheduled';
+        const twins = twinsBySource[r.id] || [];
         out.push({ id: 'p:' + r.id, postId: r.id, contentId: r.content_id,
           propertyId: r.property_id, stage,
           listing: listingTitle(l), price: l ? priceLabel(l) : '',
           img: l ? l.img : '', channels: chans, caption: r.caption || '',
           scheduledAt: r.scheduled_at, publishedAt: r.published_at,
+          /* What Synapse is doing with it, carried on the card rather than
+             beside it. Without this the amplification is invisible to the
+             agency it is being given to. */
+          amp: twins.map(t => t.platform),
           when: fmtWhen(r.published_at || r.scheduled_at), reach: estReach(chans) });
       });
       /* PER-COLUMN ORDER, because the two columns want opposite things.

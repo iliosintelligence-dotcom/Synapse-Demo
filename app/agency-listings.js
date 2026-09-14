@@ -1416,7 +1416,7 @@
       if (!aid) return { data: [], error: null };
       return c1.from('social_posts')
         .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
-              + 'caption, media_urls, failure_reason, created_at, payload')
+              + 'caption, media_urls, failure_reason, created_at, payload, leg, twin_of')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('scheduled_at', { ascending: true, nullsFirst: false })
