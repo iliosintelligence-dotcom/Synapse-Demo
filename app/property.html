@@ -1305,13 +1305,17 @@
          accusation and not a warning — it is a fact the buyer is entitled to
          weigh, so it is shown with the same prominence as a pass. */
       const verified = p.verification_status === 'verified';
-      const passed = Array.isArray(p.verification_nodes)
-        ? p.verification_nodes.filter((n) => n && n.status === 'passed').length : 0;
-      const total = Array.isArray(p.verification_nodes) ? p.verification_nodes.length : 0;
       const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
       const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
+      /* NO FRACTION. "3 of 3 checks passed" read as complete, and was: it
+         counted the checks somebody happened to record, not the seven this
+         platform can run. A desk attestation covering three of them showed a
+         perfect-looking 3/3 beside a trust score of 43 -- both truthful, and
+         flatly contradicting each other on the same screen. The score already
+         says how much is known; the list below says what. A ratio in between
+         was a third number saying neither. */
       const noteTxt = verified
-        ? (total ? `${passed} of ${total} checks passed` : 'Checks passed')
+        ? 'What Synapse checked on this listing'
         : 'Listed by the agency; Synapse has not run its checks on this home yet.';
       // Painted twice — .pvtrust-row (mobile, inline in the card) and
       // .pvc-trust (desktop, in the map canvas header) — CSS shows only one
@@ -1330,8 +1334,22 @@
       // ring and picking a fraction.
       (function paintChecks() {
         const card = document.getElementById('pvChecksCard'); if (!card) return;
+        /* property_check_type, in words a buyer reads rather than column
+           names. The raw enum was reaching the page -- somebody house-hunting
+           was shown "listing_authenticity" and "media_validation" and left to
+           translate. Kept beside the renderer because this is the only place
+           it is used, and a map in a distant file is how these fall out of
+           step with the enum. */
+        const CHECK_LABEL = {
+          listing_authenticity: 'The listing is genuine',
+          ownership_validation: 'The agency can sell it',
+          media_validation: 'The photos match the property',
+          freshness_validation: 'Still available',
+          structural_assessment: 'Structural condition',
+          flood_risk: 'Flood risk',
+          government_acquisition_risk: 'Government acquisition risk',
+        };
         const nodes = Array.isArray(p.verification_nodes) ? p.verification_nodes : [];
-        const pass = nodes.filter((n) => n && n.status === 'passed').length;
         const ring = document.getElementById('pvChecksRing');
         const head = document.getElementById('pvChecksHead');
         const note = document.getElementById('pvChecksNote');
@@ -1339,12 +1357,21 @@
         const isV = p.verification_status === 'verified';
 
         if (nodes.length) {
-          const pct = Math.round((pass / nodes.length) * 100);
+          /* THE RING IS THE TRUST SCORE, NOT A RATIO OF WHAT WAS RECORDED.
+             pass/nodes.length answered "of the checks someone entered, how
+             many passed" -- which is 100% the moment anybody enters three and
+             passes three, drawing a full green ring on a listing nothing was
+             inspected for. trust_score is out of all seven check types, so a
+             desk attestation reads 43 and a fully scouted listing reads 100,
+             and the ring means what a buyer already assumes it means. */
+          const score = (p.trust_score == null || p.trust_score === '') ? null : Number(p.trust_score);
+          const pct = score == null ? 0 : Math.max(0, Math.min(100, score));
           ring.style.background =
             'conic-gradient(var(--success) 0% ' + pct + '%, rgba(0,0,0,0.08) ' + pct + '% 100%)';
-          ring.innerHTML = '<span>' + pass + '/' + nodes.length + '</span>';
-          head.textContent = pass + ' of ' + nodes.length + ' checks passed';
-          note.textContent = 'What Synapse checked before this listing went live \u2014 not a guarantee.';
+          ring.innerHTML = '<span>' + (score == null ? (isV ? '\u2713' : '\u2014') : score) + '</span>';
+          head.textContent = isV ? 'Verified by Synapse' : 'What has been checked';
+          note.textContent = 'Each line is a check Synapse runs. Anything not listed has not been '
+            + 'looked at \u2014 this is what was done, not a guarantee.';
           list.innerHTML = nodes.map((n) => {
             const ok = n.status === 'passed';
             /* 'pass'/'fail' here are CSS class names, not statuses -- the
@@ -1352,8 +1379,13 @@
                thing, and conflating them is what started this. */
             const cls = ok ? 'pass' : (n.status === 'pending' ? 'pending' : 'fail');
             const ic = ok ? 'check' : 'pending';
+            /* Unknown types fall back to the type with its underscores opened
+               out, so a check added to the enum later degrades to readable
+               rather than to a blank row. */
+            const lbl = n.label || n.name || CHECK_LABEL[n.type]
+              || String(n.type || 'Check').replace(/_/g, ' ');
             return '<div class="verify-row ' + cls + '"><span class="vi-ic" data-icon="' + ic +
-                   '"></span><span class="vi-lbl">' + esc(n.label || n.name || n.type || 'Check') +
+                   '"></span><span class="vi-lbl">' + esc(lbl) +
                    (ok ? '' : ' \u2014 ' + esc(n.status || 'not passed')) + '</span></div>';
           }).join('');
         } else {
