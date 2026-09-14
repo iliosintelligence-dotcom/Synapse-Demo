@@ -336,21 +336,47 @@
       return;
     }
 
+    /* BLOCKED IS A DEAD END UNLESS WE SAY HOW TO LEAVE IT. Once a browser has
+       denied notifications for a site, requestPermission() resolves 'denied'
+       immediately and shows nobody a prompt, so the button genuinely cannot do
+       anything and is right to be disabled. What was wrong was WHERE the
+       explanation lived: a title tooltip, which on a phone has no hover to
+       reveal it and is simply unreachable. A tester on Android got a dead
+       button reading "Blocked" and nowhere to find out why — which is the
+       whole of the failure, since the fix is thirty seconds in site settings.
+       It goes in the card now, where a thumb can read it. */
+    var blocked = (perm === 'denied' && !on);
+
     slot.innerHTML = '<div class="prox-card' + (on ? ' on' : '') + '">'
       + '<span class="prox-pin"><i></i></span>'
       + '<div class="prox-txt">'
-      + '<b>' + (on ? 'Watching for homes near you' : 'Tell me when I walk past one') + '</b>'
-      + '<span>' + (on
-          ? 'While Synapse is open we check your surroundings against your brief. Verified homes only, at most a few a day, never between 9:30pm and 8am.'
-          : 'We check verified homes against where you are and your brief. You choose the areas, and you can switch it off any time.')
+      + '<b>' + (on ? 'Watching for homes near you'
+                    : (blocked ? 'Notifications are switched off for Synapse'
+                               : 'Tell me when I walk past one')) + '</b>'
+      /* "Verified homes only" was true until proximity started including
+         unverified listings and labelling them instead. Leaving it would have
+         promised a filter that no longer exists — the same stale claim the
+         push templates carried, in the one place a person reads before opting
+         in. Say what actually happens: everything near you, each one told
+         straight. */
+      + '<span>' + (blocked
+          ? 'Your browser is blocking them, so we cannot ask again from here.'
+          : (on
+            ? 'While Synapse is open we check your surroundings against your brief. Every home says whether we have verified it, at most a few a day, never between 9:30pm and 8am.'
+            : 'We check homes near you against your brief and tell you plainly whether each one has been verified. You choose the areas, and you can switch it off any time.'))
         + '</span>'
+      + (blocked
+          ? '<span class="prox-note">To turn it back on: open your browser’s settings for this site '
+            + '— in Chrome, tap ⋮ → Site settings → Notifications; on iPhone, Settings → '
+            + 'Notifications → Synapse — set it to Allow, then reload this page.</span>'
+          : '')
       + (on ? '<span class="prox-note">Walking around with Synapse closed needs the mobile app — a browser cannot check your location once the tab is gone.</span>' : '')
       + '</div>'
-      + '<button type="button" class="prox-btn">' + (on ? 'Turn off' : (perm === 'denied' ? 'Blocked' : 'Turn on')) + '</button>'
+      + '<button type="button" class="prox-btn">' + (on ? 'Turn off' : (blocked ? 'Blocked' : 'Turn on')) + '</button>'
       + '</div>';
 
     var btn = slot.querySelector('.prox-btn');
-    if (perm === 'denied' && !on) { btn.disabled = true; btn.title = 'Notifications are blocked for this site in your browser settings.'; return; }
+    if (blocked) { btn.disabled = true; return; }
 
     btn.addEventListener('click', function () {
       if (proximityOn()) { setProximity(false); paint(slot); return; }
@@ -358,8 +384,14 @@
       enableProximity(readCriteria()).then(function (r) {
         btn.disabled = false;
         if (!r.ok) {
-          btn.textContent = r.reason === 'denied' ? 'Blocked' : 'Try again';
-          if (r.reason === 'denied') btn.disabled = true;
+          /* Repaint rather than relabel when the answer was 'denied'. Simply
+             writing "Blocked" onto the button reproduced the dead end this
+             function was just fixed for: permission() now reads 'denied', so
+             paint() draws the card that explains how to undo it. Any other
+             failure keeps the button live, because trying again is the right
+             next move for a dropped request. */
+          if (r.reason === 'denied') { paint(slot); return; }
+          btn.textContent = 'Try again';
           return;
         }
         paint(slot);
