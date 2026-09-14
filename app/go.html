@@ -13,10 +13,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css" />
+  <!-- ABSOLUTE, and it has to be. This file lives at /app/go.html but is SERVED
+       at /go/<handle> through a rewrite, so the browser resolves every relative
+       path against /go/ -- where there is no stylesheet, no script and no
+       property page. Loaded directly from /app/go.html it all works, which is
+       exactly why this survived local testing and broke the moment it was
+       deployed: the page came up in Times New Roman with no cards. Every href
+       and src on this page is rooted for the same reason. -->
+  <link rel="stylesheet" href="/app/app.css" />
   <!-- One function of it: money(). Loaded rather than copied so the price here
        and the price on the property page cannot say different things. -->
-  <script src="matches-shared.js" defer></script>
+  <script src="/app/matches-shared.js" defer></script>
   <style>
     /* ── THE LINK IN THE BIO ────────────────────────────────────────────────
        Instagram and TikTok do not linkify captions, so this page is the only
@@ -123,8 +130,8 @@
     </div>
 
     <div class="ft">
-      <a class="primary" href="toju.html">Tell Tayo what you're looking for</a>
-      <a class="ghost" href="browse.html">See every home on Synapse</a>
+      <a class="primary" href="/app/toju.html">Tell Tayo what you're looking for</a>
+      <a class="ghost" href="/app/browse.html">See every home on Synapse</a>
       <p class="note">Every listing on Synapse expires unless it is re-confirmed,
         so nothing here has been sitting for months.</p>
     </div>
@@ -211,7 +218,7 @@
      the posts with no link in the caption either. */
   function hrefFor(r) {
     if (r.token) return '/s/' + encodeURIComponent(r.token);
-    return 'property.html?id=' + encodeURIComponent(r.property_id)
+    return '/app/property.html?id=' + encodeURIComponent(r.property_id)
       + '&ch=' + encodeURIComponent(r.platform || 'organic');
   }
 
