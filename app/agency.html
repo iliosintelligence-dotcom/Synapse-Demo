@@ -1947,6 +1947,15 @@
     .tpl-field textarea { min-height: 92px; }
     .tpl-hint { font-size: 11.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.5; }
     .tpl-toks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+    /* A CHIP HAS TO SAY WHAT IT PRODUCES.
+       These were bare {token} names, which tells you the syntax and nothing
+       about the result -- and three of the twelve offered were traps: bare
+       {verified} renders the literal word "false" into a caption, {price}
+       renders 450000 with no naira sign or separators, and {trust} renders
+       nothing at all. The curated list carries a sample of the real output, so
+       what you are inserting is legible before you insert it. */
+    .tpl-tok .ex { color: var(--ink-dim); font-weight: 400; margin-left: 5px; }
+    .tpl-tok.wide { border-radius: 8px; }
     .tpl-tok { border: 1px solid rgba(54,54,54,0.2); background: transparent; border-radius: 100px;
       padding: 4px 9px; font: 500 11.5px/1 ui-monospace, Menlo, monospace; cursor: pointer;
       color: var(--ink-muted); }
@@ -1969,6 +1978,18 @@
     .tpl-warn:empty, .tpl-note:empty { display: none; }
     .tpl-actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
     .tpl-actions .grow { flex: 1; }
+    /* WHY SAVE LOOKED DEAD.
+       Every refusal -- no name, no opening line, an unknown token, a rejected
+       write -- was printed into .tpl-warn, which lives in the PREVIEW column.
+       Above 860px that is the other side of the dialog; below 860px the grid
+       stacks and it is a screenful away. The button was pressed, the message
+       was written, and nobody ever saw it, which reads exactly like a button
+       that does nothing. It says it here now, against the button that was
+       pressed, and the offending field takes focus. */
+    .tpl-msg { flex-basis: 100%; order: -1; font-size: 12.5px; line-height: 1.5;
+      padding: 9px 11px; border-radius: 9px; background: rgba(168,64,43,0.07);
+      color: #a8402b; }
+    .tpl-msg:empty { display: none; }
 
     /* Your own templates, listed where campaigns are made. */
     .tpl-mine { margin-top: 20px; }
@@ -9463,6 +9484,15 @@
               flood_risk: l.flood_risk, power_reliability: l.power_reliability,
             };
           });
+        /* A DEAD BUTTON HAS TO LOOK DEAD.
+           Generate's first line is `if (running || !rows.length) return`, so
+           with nothing in the picker it was a fully-styled primary button that
+           did nothing at all when pressed, and said nothing about why. The
+           select underneath explained it, which is not where anybody looks
+           after pressing a button. */
+        go.disabled = !rows.length;
+        go.style.opacity = rows.length ? '' : '.5';
+        go.title = rows.length ? '' : 'Add a listing under Listings first';
         if (!rows.length) {
           sel.innerHTML = '<option value="">No active listings yet — add one under Listings first</option>';
           return;
@@ -9608,13 +9638,62 @@
         document.dispatchEvent(new CustomEvent('syn:templates', { detail: list }));
       }
 
+      /* A NEW TEMPLATE OPENS FILLED IN.
+         It used to open blank: two empty textareas, twenty-four unexplained
+         {token} chips, an empty preview, and a Save that refused. There was
+         nothing on screen to say what a template IS, and the one control that
+         would have shown you -- the live preview -- had nothing to render.
+
+         So a new one starts as a working example rendered against a real
+         listing of theirs. The preview fills the moment it opens, which is the
+         whole explanation: this text, that result. Every word is editable, and
+         Save succeeds on the first press instead of refusing. */
+      var TPL_STARTER = {
+        name: 'Weekend viewings',
+        why: 'Best for a listing that has been up a week and needs a second look',
+        hook_pattern: 'Still available in {area} \u2014 {priceLine}.',
+        body_pattern: 'A {bedrooms}-bed {kind} in {area}.\n\n'
+          + '{verified?We have checked this one on the ground.|Viewings this weekend.}',
+        cta: 'Take a look \u2192',
+      };
+
+      /* WHAT MAY BE OFFERED, which is not what the engine resolves.
+         S.tokenNames() is every token that renders, and handing all twelve to
+         an agency as one-click chips was a loaded gun: {verified} on its own
+         renders the string "false", {price} renders 450000 with no naira sign
+         or separators, {trust} renders nothing. All three still WORK --
+         templates already saved with them keep rendering, and dropping them
+         from the engine would break those -- they are simply not suggested,
+         and the two that print something misleading are called out in the
+         preview if somebody types them anyway.
+
+         Each chip carries a sample of its own output, so a chip reading
+         "{priceLine}  \u20a6450,000 a year" needs no legend beneath it. */
+      var TPL_CHIPS = [
+        { t: 'area',       ex: 'Lekki Phase 1' },
+        { t: 'city',       ex: 'Lagos' },
+        { t: 'kind',       ex: 'apartment' },
+        { t: 'bedrooms',   ex: '3' },
+        { t: 'priceLine',  ex: '\u20a6450,000 a year' },
+        { t: 'priceShort', ex: '\u20a6450,000/yr' },
+        { t: 'title',      ex: 'the listing name' },
+        { t: 'days',       ex: '13 days' },
+        { ins: '{verified?yes|no}', label: '{verified?\u2026|\u2026}',
+          ex: 'one wording if verified, another if not', wide: true },
+      ];
+
       function tplOpen(draft) {
         tplDraft = Object.assign({
           id: null, name: '', why: '', hook_pattern: '', body_pattern: '',
           cta: '', platforms: [], requires_verified: false,
-        }, draft || {});
+        }, draft || TPL_STARTER);
 
-        var tokens = S.tokenNames();
+        var chipHtml = TPL_CHIPS.map(function (c) {
+          var ins = c.ins || ('{' + c.t + '}');
+          return '<button type="button" class="tpl-tok' + (c.wide ? ' wide' : '') + '"'
+            + ' data-ins="' + esc(ins) + '">' + esc(c.label || ins)
+            + '<span class="ex">' + esc(c.ex) + '</span></button>';
+        }).join('');
         var listingOpts = rows.map(function (r, i) {
           return '<option value="' + i + '">' + esc(r.title || 'Listing ' + (i + 1)) + '</option>';
         }).join('');
@@ -9622,7 +9701,9 @@
         tplModal.innerHTML =
           '<div class="modal-head"><div><div class="h2" style="margin:0">'
           + (tplDraft.id ? 'Edit template' : 'New template') + '</div>'
-          + '<p class="muted" style="font-size:13px;margin:4px 0 0">Write it once. Every listing fills in its own details.</p>'
+          + '<p class="muted" style="font-size:13px;margin:4px 0 0">'
+          +   'Write the caption once and put a <b>{token}</b> wherever a detail belongs. '
+          +   'The preview renders it against a real listing of yours, live as you type.</p>'
           + '</div><button class="modal-x" type="button" id="tplX" aria-label="Close">\u00d7</button></div>'
 
           + '<div class="tpl-grid">'
@@ -9634,12 +9715,12 @@
           +     '<div class="tpl-field"><label for="tplHook">Opening line</label>'
           +       '<textarea id="tplHook" style="min-height:64px"></textarea>'
           +       '<div class="tpl-toks" data-into="tplHook">'
-          +         tokens.map(function (t) { return '<button type="button" class="tpl-tok">{' + t + '}</button>'; }).join('')
+          +         chipHtml
           +       '</div></div>'
           +     '<div class="tpl-field"><label for="tplBody">Body</label>'
           +       '<textarea id="tplBody"></textarea>'
           +       '<div class="tpl-toks" data-into="tplBody">'
-          +         tokens.map(function (t) { return '<button type="button" class="tpl-tok">{' + t + '}</button>'; }).join('')
+          +         chipHtml
           +       '</div>'
           +       '<div class="tpl-hint">Use <code>{area}</code> to drop in a value, or '
           +         '<code>{verified?yes|no}</code> to say one thing when a listing is verified and another when it is not.</div>'
@@ -9660,7 +9741,7 @@
           +   '</div></div>'
           + '</div>'
 
-          + '<div class="tpl-actions"><span class="grow"></span>'
+          + '<div class="tpl-actions"><div class="tpl-msg" id="tplMsg"></div><span class="grow"></span>'
           +   '<button class="btn" type="button" id="tplCancel">Cancel</button>'
           +   '<button class="btn btn-primary" type="button" id="tplSave">'
           +     (tplDraft.id ? 'Save changes' : 'Save template') + '</button>'
@@ -9674,7 +9755,14 @@
         document.getElementById('tplVerified').checked = !!tplDraft.requires_verified;
 
         ['tplName', 'tplWhy', 'tplHook', 'tplBody', 'tplCta'].forEach(function (id) {
-          document.getElementById(id).addEventListener('input', tplPreview);
+          document.getElementById(id).addEventListener('input', function () {
+            /* The refusal is about the state Save was pressed in. Typing
+               changes that state, so leaving it up would have it contradict
+               the form in front of you. */
+            var m = document.getElementById('tplMsg');
+            if (m) m.textContent = '';
+            tplPreview();
+          });
         });
         document.getElementById('tplVerified').addEventListener('change', tplPreview);
         document.getElementById('tplAgainst').addEventListener('change', tplPreview);
@@ -9688,12 +9776,16 @@
           box.addEventListener('click', function (e) {
             var b = e.target.closest('.tpl-tok');
             if (!b) return;
+            /* data-ins, not textContent: a chip now shows a sample of its
+               output next to the token, so its text is no longer the thing to
+               paste. */
+            var ins = b.dataset.ins || b.textContent;
             var into = document.getElementById(box.dataset.into);
             var at = into.selectionStart == null ? into.value.length : into.selectionStart;
             var end = into.selectionEnd == null ? at : into.selectionEnd;
-            into.value = into.value.slice(0, at) + b.textContent + into.value.slice(end);
+            into.value = into.value.slice(0, at) + ins + into.value.slice(end);
             into.focus();
-            into.selectionStart = into.selectionEnd = at + b.textContent.length;
+            into.selectionStart = into.selectionEnd = at + ins.length;
             tplPreview();
           });
         });
@@ -9743,10 +9835,36 @@
             .filter(Boolean).join('\n\n');
         } catch (err) { warn.textContent = err.message; return; }
 
+        /* TOKENS THAT RENDER, AND SHOULD NOT.
+           Three of the engine's tokens produce something an agency would never
+           knowingly publish: bare {verified} prints the word "false", {price}
+           prints 450000 with no naira sign, {trust} prints nothing at all.
+           They are no longer offered as chips, but a pattern can still be
+           typed or carried over from an older template -- and this is the one
+           place the warning belongs, because the rendered proof is sitting
+           directly underneath it. Advisory, not blocking: the template is
+           valid, it is the wording that is wrong.
+
+           The braces are required to close immediately, so {priceLine} and
+           {verified?yes|no} are not caught by this. */
+        var pat = t.hook_pattern + ' ' + t.body_pattern;
+        var traps = [];
+        if (/\{verified\}/.test(pat)) traps.push('{verified} on its own prints the word \u201cfalse\u201d '
+          + '\u2014 use {verified?\u2026|\u2026} to say one thing when it is verified and another when it is not');
+        if (/\{price\}/.test(pat)) traps.push('{price} prints the bare number \u2014 {priceLine} or {priceShort} '
+          + 'print it as money');
+        if (/\{trust\}/.test(pat)) traps.push('{trust} prints nothing on most listings');
+
         /* The two things an agency cannot see by reading its own pattern. */
         var msgs = [];
+        if (traps.length) warn.textContent = traps.join('. ') + '.';
         if (!p.verified && /verif/i.test(t.hook_pattern + ' ' + t.body_pattern) && !t.requires_verified) {
-          warn.textContent = 'This wording mentions verification, and the listing you are previewing '
+          /* Appended, not assigned. This ran after the trap check and used to
+             overwrite it, so a pattern with a bare {verified} -- which matches
+             /verif/i -- lost the one message that explained why the preview
+             underneath says "false". */
+          warn.textContent = (warn.textContent ? warn.textContent + ' ' : '')
+            + 'This wording mentions verification, and the listing you are previewing '
             + 'against is not verified. Tick "only use on verified listings", or the claim will run where it is not true.';
         }
         if (t.requires_verified) msgs.push('Skipped on listings that are not verified.');
@@ -9757,12 +9875,32 @@
       function tplSave() {
         var t = tplCollect();
         var btn = document.getElementById('tplSave');
-        var warn = document.getElementById('tplWarn');
-        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
-        if (bad.length) { warn.textContent = 'Fix the tokens first.'; return; }
-        if (!t.name) { warn.textContent = 'Give the template a name.'; return; }
-        if (!t.hook_pattern.trim()) { warn.textContent = 'A template needs an opening line.'; return; }
+        var msg = document.getElementById('tplMsg');
 
+        /* REFUSE OUT LOUD, NEXT TO THE BUTTON.
+           These three messages used to be written into .tpl-warn, which sits
+           in the preview column -- the other half of the dialog on a wide
+           screen, a screenful down once the grid stacks under 860px. Pressing
+           Save with an empty name therefore did exactly nothing that anyone
+           could see. Naming the field is not enough either when the form is
+           long, so the field itself takes focus. */
+        function refuse(text, focusId) {
+          if (msg) msg.textContent = text;
+          var el = focusId && document.getElementById(focusId);
+          if (el) { el.focus(); if (el.select) el.select(); }
+        }
+
+        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
+        if (bad.length) {
+          refuse('Not a token: ' + bad.map(function (x) { return '{' + x + '}'; }).join(', ')
+            + '. Use one of the chips under the field.',
+            S.unknownTokens(t.hook_pattern).length ? 'tplHook' : 'tplBody');
+          return;
+        }
+        if (!t.name) { refuse('Give the template a name so you can find it again.', 'tplName'); return; }
+        if (!t.hook_pattern.trim()) { refuse('A template needs an opening line.', 'tplHook'); return; }
+
+        if (msg) msg.textContent = '';
         btn.disabled = true; btn.textContent = 'Saving\u2026';
         SynListings.saveTemplate(t).then(function () {
           return SynListings.listTemplates();
@@ -9774,7 +9912,8 @@
           toast(t.id ? 'Template updated' : 'Template saved \u2014 it is in your next campaign');
         }).catch(function (err) {
           btn.disabled = false; btn.textContent = t.id ? 'Save changes' : 'Save template';
-          warn.textContent = (err && err.message) || 'Could not save that.';
+          if (msg) msg.textContent = (err && err.message) || 'Could not save that.';
+          console.error('saveTemplate failed', err);
         });
       }
 
@@ -9909,9 +10048,13 @@
       })();
 
       go.addEventListener('click', function () {
-        if (running || !rows.length) return;
+        /* Every one of these used to be a silent return. A press that produces
+           neither output nor an explanation is indistinguishable from a broken
+           button, and that is what was reported. */
+        if (running) { toastOrAlert('Still working on the last one \u2014 one moment.'); return; }
+        if (!rows.length) { toastOrAlert('No active listings yet \u2014 add one under Listings first.'); return; }
         var row = rows[+sel.value || 0];
-        if (!row) return;
+        if (!row) { toastOrAlert('Pick a listing first.'); sel.focus(); return; }
         campaign = S.generate(row, { brand: window.BRAND });
         render();
 
