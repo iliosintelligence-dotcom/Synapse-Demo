@@ -176,6 +176,14 @@
     .cost-row.total { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 10px; margin-top: 4px; font-weight: 600; color: var(--ink); }
     .cost-row.total b { color: var(--brand); font-family: var(--f-serif); font-size: 18px; }
     .cost-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+    /* The seam between what it costs and what to offer. A rule rather than a
+       second card: they are two halves of one answer, and a border says
+       "related" where a card edge says "separate". */
+    .neg-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(54,54,54,0.14); }
+    .neg-sub { display: flex; align-items: center; gap: 7px; margin-bottom: 11px;
+      font: 600 11.5px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+    .cost-handoff { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(54,54,54,0.14);
+      font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); }
 
     /* neighbourhood intelligence bars */
     .nb { display: flex; flex-direction: column; gap: 10px; }
@@ -770,23 +778,18 @@
       <p class="reason" id="pvTake"></p>
     </div>
 
-    <!-- AI negotiation assistant. Hidden for rentals: a landlord sets a
-         rent and it is the rent. Offering to "work the numbers" on a fixed
-         yearly price teaches a buyer to haggle over something nobody will
-         move on, and wastes the one conversation they came to have. -->
-    <div class="card section" id="negCard">
-      <div class="lbl"><span data-icon="negotiate"></span> Negotiate with Tayo</div>
-      <button class="btn btn-primary" id="negBtn" style="margin-top:12px;padding:11px 20px;font-size:13.5px">Get my opening offer</button>
-      <div id="negOut" hidden>
-        <div class="neg-offer" id="negOffer"></div>
-        <p class="reason" id="negAdvice" style="font-size:13.5px"></p>
-        <div class="neg-draft" id="negDraft"></div>
-        <button class="copybtn" id="negCopy">Copy message</button>
-      </div>
-    </div>
+    <!-- ── THE MONEY, IN ONE CARD ──────────────────────────────────────
+         "Negotiate with Tayo" and "What it really costs" were two cards
+         answering one question: what will this house actually take from me.
+         A buyer swiped past the costs to reach the offer, then swiped back to
+         check the costs against it, because the number you should offer only
+         means something next to the number you will really pay. They are one
+         thought and they are now one card, costs first because the offer is
+         an answer to them.
 
-    <!-- true monthly cost — the Zillow calculator, Lagos reality -->
-    <div class="card section">
+         Reported from a phone, where the cost of the split is highest: two
+         swipes to hold one idea in your head. -->
+    <div class="card section" id="costCard">
       <div class="lbl"><span data-icon="costs"></span> What it really costs</div>
       <!-- Every figure here was written into the page: ₦83k service charge,
            ₦120k power, ₦45k for a "12 min route", a ₦248k total and a note
@@ -798,6 +801,30 @@
            state. -->
       <div class="cost-rows" id="costRows"></div>
       <p class="cost-note" id="costNote"></p>
+
+      <!-- Sales only. A landlord sets a rent and it is the rent; offering to
+           "work the numbers" on a fixed yearly price teaches a buyer to haggle
+           over something nobody will move on, and wastes the one conversation
+           they came to have. It is the BLOCK that hides now, not the card --
+           what a place costs matters just as much to someone renting it. -->
+      <div id="negBlock" class="neg-block">
+        <div class="neg-sub"><span data-icon="negotiate"></span> What to offer</div>
+        <button class="btn btn-primary" id="negBtn" style="padding:11px 20px;font-size:13.5px">Get my opening offer</button>
+        <div id="negOut" hidden>
+          <div class="neg-offer" id="negOffer"></div>
+          <p class="reason" id="negAdvice" style="font-size:13.5px"></p>
+          <div class="neg-draft" id="negDraft"></div>
+          <button class="copybtn" id="negCopy">Copy message</button>
+        </div>
+      </div>
+
+      <!-- Where the money card hands over. The button itself is the sticky
+           dock below, which follows you down every card; this says what
+           pressing it does, at the moment a buyer has just worked out what
+           the house costs and is deciding whether to act. -->
+      <p class="cost-handoff">Ready to move on this? Tayo takes your brief first, then
+        introduces the agency with it — so the agent you meet already knows
+        what you can afford and what you asked about.</p>
     </div>
 
     <!-- Neighbourhood intelligence.
@@ -939,7 +966,7 @@
          would open a chat about nothing. -->
     <div class="cta-dock">
       <a class="btn btn-primary" style="flex:1" id="replyBtn" href="toju.html">
-        <span data-icon="chat"></span> Reply about this home
+        <span data-icon="chat"></span> Discuss with an agent
       </a>
     </div>
   </div><!-- /pdp -->
@@ -3601,10 +3628,15 @@
             + (addr ? '<div class="addr">' + escHtml(addr) + '</div>' : '');
         }
       }
-      /* Rent is set by the agency. Sales are where a number is a question. */
-      var negCard = document.getElementById('negCard');
-      if (negCard && String(p.listing_type || '').toLowerCase() === 'rent') {
-        negCard.hidden = true;
+      /* Rent is set by the agency. Sales are where a number is a question.
+         Hides the offer BLOCK now that costs and negotiation share a card --
+         hiding the card would take the cost breakdown with it, which is the
+         part a renter needs most. This also quietly fixes a counting bug: the
+         old line hid a whole deck card without calling __pvDeckChanged(), so
+         every rental drew one dot more than it had cards. */
+      var negBlock = document.getElementById('negBlock');
+      if (negBlock && String(p.listing_type || '').toLowerCase() === 'rent') {
+        negBlock.hidden = true;
       }
       if (p.latitude != null && p.longitude != null) {
         PROP = [Number(p.latitude), Number(p.longitude)];

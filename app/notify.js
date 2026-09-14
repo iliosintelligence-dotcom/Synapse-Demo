@@ -410,7 +410,14 @@
      back from toju-demo's `restore` action. Until this is wired to that, the
      radius is the only real input, and saying so is the honest version. */
   function readCriteria() {
-    return { radiusM: 1200 };
+    /* 500m, matching the column default set when the radius was reconsidered.
+       THIS LINE IS WHY THAT DEFAULT DID NOTHING: the client sends a radius on
+       every watch, 1200 sat inside the server's 200-5000 clamp, so it was
+       taken as a deliberate choice and the default was never consulted. The
+       first real watch created after the change came out at 1200m and fired
+       for a home 1177m away -- a fifteen-minute walk, announced as "right
+       here". A default only defaults for callers who say nothing. */
+    return { radiusM: 500 };
   }
 
   SynNotify.mountProximity = mountProximity;
