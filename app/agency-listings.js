@@ -1474,6 +1474,23 @@
    * dry_run stays true: nothing is connected to a platform yet, and a row that
    * claimed otherwise would be a lie the publisher would later act on.
    */
+  /**
+   * Queue one post per channel, THROUGH queue_social_post.
+   *
+   * THIS USED TO INSERT INTO social_posts DIRECTLY, and that was the bug behind
+   * an entire rehearsal. queue_social_post is where a post gets its short link
+   * minted and its Synapse twin queued; a direct PostgREST insert skips both.
+   * So every caption scheduled from the composer -- the button an operator
+   * actually presses -- arrived with no tracked link in it and no amplification
+   * behind it, while publishLive(), which nobody uses to schedule, was the only
+   * caller that did it properly. Two ways in, one of them right.
+   *
+   * One call per slot, sequentially. The RPC takes a single platform because a
+   * short link is per post per channel -- that is the whole point of it -- and
+   * sequential rather than parallel for the reason publishLive gives: a partial
+   * failure halfway through a fan-out leaves an unknown number of rows queued
+   * and the agency unable to tell what is about to go out.
+   */
   function schedulePost(opts) {
     var o = opts || {};
     var slots = (o.slots || []).filter(function (sl) {
@@ -1481,48 +1498,53 @@
     });
     if (!o.propertyId) return Promise.reject(new Error('No listing on that post'));
     if (!slots.length) return Promise.reject(new Error('Pick at least one channel and time'));
-    var c1, me;
-    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
-      .then(function (u) { me = u && u.data && u.data.user && u.data.user.id; return agencyId(); })
-      .then(function (aid) {
-        if (!aid) throw new Error('No agency on this account');
-        return c1.from('social_posts').insert(slots.map(function (sl) {
-          return {
-            property_id: o.propertyId,
-            content_id: o.contentId || null,
-            agency_id: aid,
-            platform: sl.platform,
-            status: 'scheduled',
-            scheduled_at: new Date(sl.at).toISOString(),
+
+    var c1;
+    var made = [];
+    return client().then(function (c) {
+      c1 = c;
+      return slots.reduce(function (chain, sl) {
+        return chain.then(function () {
+          var at = new Date(sl.at).toISOString();
+          return c1.rpc('queue_social_post', {
+            p_property_id: o.propertyId,
+            p_platform: sl.platform,
             /* Per slot, falling back to the shared one. The captions are
-               genuinely different per channel now -- different subjects, not
+               genuinely different per channel -- different subjects, not
                retoned copies -- so putting one of them on every row would post
-               the Instagram angle to Facebook. Callers with a single caption
-               (the pipeline's own scheduler) still pass o.caption and are
-               unaffected. */
-            caption: String(sl.caption || o.caption || ''),
-            /* [] NOT null. media_urls is NOT NULL with a default of '{}', and a
-               column default only applies when the column is OMITTED from the
-               insert -- an explicit NULL overrides it and is rejected. The
-               composer schedules without media, so every caption generated in
-               Social Studio hit "null value in column media_urls violates
-               not-null constraint" the moment you pressed Schedule to
-               pipeline. Sending the empty array matches the default and the
-               column's own contract: no media, not unknown media. */
-            media_urls: o.mediaUrls || [],
+               the Instagram angle to Facebook. */
+            p_caption: String(sl.caption || o.caption || ''),
+            /* [] NOT null. media_urls is NOT NULL with a default of '{}', and
+               an explicit null overrides the default rather than falling back
+               to it. */
+            p_media_urls: o.mediaUrls || [],
+            p_scheduled_at: at,
+            p_dry_run: true,
             /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
                six subjects and needs to know which are spent for a listing, or
-               every regeneration rewrites the same three. Stored on the row
-               rather than only in the composer's localStorage so the rotation
-               is shared: a second person generating for this listing skips
-               what is already queued, instead of repeating it. */
-            payload: sl.angle ? { angle: sl.angle } : null,
-            dry_run: true,
-            created_by: me || null,
-          };
-        })).select('id, platform, scheduled_at');
-      })
-      .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+               every regeneration rewrites the same three. This is why the RPC
+               grew a payload parameter: without it, moving off the direct
+               insert would have silently dropped the rotation. */
+            p_payload: sl.angle ? { angle: sl.angle } : null,
+          }).then(function (r) {
+            if (r.error) throw r.error;
+            made.push({ id: r.data, platform: sl.platform, scheduled_at: at });
+          });
+        });
+      }, Promise.resolve());
+    }).then(function () {
+      /* content_id links the row back to the generated_content it came from,
+         and the RPC does not take it -- it is the pipeline's bookkeeping, not
+         the publisher's. Patched on afterwards, and only when there is one, so
+         the composer (which has none) costs no extra round trip. A failure
+         here loses the link to the draft and not the post, so it does not
+         reject: the posts are queued either way. */
+      if (!o.contentId || !made.length) return made;
+      return c1.from('social_posts')
+        .update({ content_id: o.contentId })
+        .in('id', made.map(function (m) { return m.id; }))
+        .then(function () { return made; }, function () { return made; });
+    });
   }
 
   /** Move a queued post to another time, another channel, or mark it done.

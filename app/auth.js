@@ -415,7 +415,14 @@
     opts = opts || {};
     return ready().then(function (u) {
       if (u && (!opts.role || roleOf(u) === opts.role)) return u;
-      var here = window.location.pathname + window.location.search;
+      /* THE FRAGMENT IS PART OF WHERE THEY WERE. This was pathname + search,
+         so bouncing through sign-in dropped #social or #marketing and landed
+         everyone back on Overview -- reported as "reload takes me back to
+         overview", which is what it looks like from the outside: the agency
+         portal keeps its open pane in the hash, and the trip through the gate
+         quietly threw it away. Line 134 of this same file already builds a
+         return path WITH the hash; this one had simply not been kept in step. */
+      var here = window.location.pathname + window.location.search + window.location.hash;
       var q = '?next=' + encodeURIComponent(here);
       if (opts.role) q += '&role=' + encodeURIComponent(opts.role);
       if (opts.reason) q += '&reason=' + encodeURIComponent(opts.reason);
@@ -476,7 +483,7 @@
            entrance on the agency side offers both; the customer side offered
            neither. */
         var here = window.location.pathname.slice(window.location.pathname.lastIndexOf('/') + 1)
-          + window.location.search;
+          + window.location.search + window.location.hash;
         var back = encodeURIComponent(here || 'toju.html');
         slot.innerHTML =
           '<a class="auth-in" href="signin.html?next=' + back + '">Sign in</a>'

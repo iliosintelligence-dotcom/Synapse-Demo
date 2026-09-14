@@ -4844,6 +4844,24 @@
           scheduledAt: r.scheduled_at, publishedAt: r.published_at,
           when: fmtWhen(r.published_at || r.scheduled_at), reach: estReach(chans) });
       });
+      /* PER-COLUMN ORDER, because the two columns want opposite things.
+         Scheduled answers "what goes out next", so soonest first. Published
+         answers "what just went out", so NEWEST first -- and it was inheriting
+         the scheduled ordering (scheduled_at ascending, straight from the
+         query), which buried the post you made a minute ago at the bottom of
+         the column behind everything older, under a "see more".
+
+         Ranked by stage first so this is a proper total order rather than a
+         comparator that returns 0 for pairs from different columns -- that
+         breaks transitivity and is only accidentally stable. */
+      const STAGE_RANK = { uploaded: 0, generating: 1, approval: 2, scheduled: 3, published: 4 };
+      const when = (p) => new Date(p.publishedAt || p.scheduledAt || 0).getTime();
+      out.sort((a, b) => {
+        const ra = STAGE_RANK[a.stage] === undefined ? 9 : STAGE_RANK[a.stage];
+        const rb = STAGE_RANK[b.stage] === undefined ? 9 : STAGE_RANK[b.stage];
+        if (ra !== rb) return ra - rb;
+        return a.stage === 'published' ? when(b) - when(a) : when(a) - when(b);
+      });
       posts = out;
     }
 
@@ -8972,18 +8990,72 @@
          variant becomes a durable row first (queue_social_post), and only then
          is the queue drained. Written-then-sent, so a provider outage costs the
          attempt and never the intent -- the same order message_outbox uses. */
+      /* SYNAPSE'S OWN CHANNELS, so this tab can tell "nothing will go out"
+         apart from "YOUR accounts are not connected, but ours are".
+         synapse_channels is service-role only -- the trypost account ids are
+         not the portal's business -- so this goes through a function that
+         returns the platform and handle and nothing else. Loaded once. */
+      var SYN_CHANS = null;
+      function synChannels() {
+        if (SYN_CHANS) return Promise.resolve(SYN_CHANS);
+        return token().then(function (t) {
+          if (!t) return [];
+          return fetch(SB_URL + '/rest/v1/rpc/synapse_channel_list', {
+            method: 'POST',
+            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t,
+                       'Content-Type': 'application/json' },
+            body: '{}',
+          }).then(function (r) { return r.ok ? r.json() : []; });
+        }).then(function (rows) {
+          SYN_CHANS = new Set((rows || []).map(function (r) { return r.platform; }));
+          return SYN_CHANS;
+        }).catch(function () {
+          /* Not knowing is not the same as none, but it has to resolve to
+             something. An empty set means this falls back to exactly the old
+             behaviour -- publish only what the agency has connected -- which
+             is the safe direction to fail in: it never promises amplification
+             that might not happen. */
+          SYN_CHANS = new Set();
+          return SYN_CHANS;
+        });
+      }
+
       function publishLive() {
         if (running || !campaign) return;
+        synChannels().then(publishLiveWith);
+      }
+
+      /* THE GATE USED TO ASK ONLY "is one of YOUR accounts connected", which
+         was the whole story until Synapse started amplifying. With nothing
+         connected it refused outright -- "connect Instagram or Facebook
+         first" -- while our own channels sat ready and waiting, so the free
+         amplification an agency is promised could not happen until they had
+         done the very thing it exists to work without. Reported as the send
+         button not working. */
+      function publishLiveWith(syn) {
+        if (running || !campaign) return;
         var ready = campaign.variants.filter(function (v) {
-          return !v.issues.length && CONNECTABLE[v.platform] && connectedTo(v.platform)
+          if (v.issues.length) return false;
+          var mine = CONNECTABLE[v.platform] && connectedTo(v.platform)
             && !expired(connectedTo(v.platform));
+          return mine || syn.has(v.platform);
         });
         if (!ready.length) {
-          toastOrAlert('Nothing to publish: connect Instagram or Facebook first.');
+          toastOrAlert(syn.size
+            ? 'Nothing to publish yet — every channel here still has something to fix.'
+            : 'Nothing to publish: connect Instagram or Facebook first.');
           return;
         }
+        /* The confirm has to describe where these actually land, because with
+           nothing connected they land somewhere the operator did not choose
+           and would not otherwise expect. */
         if (!confirm('Publish ' + ready.length + ' post' + (ready.length === 1 ? '' : 's')
-            + ' for real, to your connected accounts? This is public and cannot be undone from here.')) return;
+            + ' for real?'
+            + (syn.size
+                ? ' They go to your own connected accounts where you have them, and to'
+                  + ' Synapse\u2019s channels either way.'
+                : ' They go to your connected accounts.')
+            + ' This is public and cannot be undone from here.')) return;
 
         running = true;
         var btn = document.getElementById('cmpLive');
@@ -10329,7 +10401,9 @@
     function startCheckout(plan) {
       authToken().then((token) => {
         if (!token) {
-          const here = window.location.pathname + window.location.search;
+          /* With the hash, so paying from the Subscription pane returns you
+             to the Subscription pane rather than to Overview. */
+          const here = window.location.pathname + window.location.search + window.location.hash;
           window.location.href = 'signin.html?role=agency&reason=agency&next=' + encodeURIComponent(here);
           return;
         }
