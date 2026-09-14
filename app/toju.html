@@ -26,7 +26,35 @@
        Off-white with a breath of terracotta — never dark. */
     .tj-orb { position: absolute; width: 56px; height: 56px; margin: -16px 0 0 -6px; opacity: .6; pointer-events: none; }
     body { background: var(--bg); }
-    .tj-bg { position: fixed; inset: 0; z-index: 0;
+    /* WHY THE BACKGROUND JUMPED ON EVERY SCROLL.
+       These layers were `position: fixed; inset: 0`, which sounds like "cover
+       the viewport" and on a phone means "cover the LAYOUT viewport, whatever
+       it currently is". Scrolling down retracts the browser's URL bar, the
+       layout viewport grows by 60-100px, inset:0 recomputes, the layer
+       resizes -- and because the photo is sized `cover`, a taller box rescales
+       and re-centres it. So the picture visibly snapped to a new crop the
+       moment you started scrolling, snapped back when you scrolled up, and did
+       it again on every direction change. Nothing was animating; the image was
+       being re-laid-out under the glass.
+
+       100lvh is the LARGE viewport height -- the height with the chrome
+       retracted -- and it does not change. The layer is now always the tallest
+       it will ever need to be, the extra sitting behind the URL bar when that
+       bar is showing, and the crop is computed exactly once. 100vh first as
+       the fallback for anything that predates the unit.
+
+       translateZ(0) gives it its own compositor layer. Every card and bubble
+       on these two pages carries backdrop-filter: blur(28px), which resamples
+       whatever is painted behind it; without the promotion that is a full
+       repaint of a 1600px photograph on each scroll frame, under a dozen
+       simultaneous blurs, which is the other half of "the scroll isn't
+       smooth". */
+    .tj-bg, .tj-wash {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 0;
+      height: 100vh; height: 100lvh;
+      transform: translateZ(0);
+    }
+    .tj-bg {
       background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
     /* A GROUND FOR THE WORDS THAT ARE NOT ON GLASS.
        The note below is right and stays: the photo is clear and the glass does
@@ -42,7 +70,13 @@
        no ground get one. This is the scroll-edge idea -- veil where floating
        type overlaps an image, not across the whole image. */
     .tj-bg::after {
-      content: ''; position: absolute; inset: 0 0 auto 0; height: 42vh;
+      /* 42% OF THE LAYER, not 42vh. A vh here would keep changing with the
+         browser chrome even now that its parent does not, so the scrim would
+         slide up and down against a photo that is finally holding still --
+         swapping one moving part for another. A percentage is measured against
+         the parent, which is now a fixed 100lvh, so the two move together or
+         not at all. */
+      content: ''; position: absolute; inset: 0 0 auto 0; height: 42%;
       background: linear-gradient(180deg,
         rgba(250,250,248,0.94) 0%,
         rgba(250,250,248,0.78) 38%,
@@ -53,10 +87,14 @@
     /* Asked for less transparency: give them a solid band rather than a wash
        that still lets the window through. */
     @media (prefers-reduced-transparency: reduce) {
-      .tj-bg::after { background: var(--bg, #f7f7f8); height: 46vh; }
+      /* Same reason, and it matters more here: this variant is a SOLID band
+         with a hard bottom edge rather than a gradient that fades out, so a
+         height that drifts with the chrome drags a visible line down the page
+         as you scroll. */
+      .tj-bg::after { background: var(--bg, #f7f7f8); height: 46%; }
     }
     /* whisper of a warm wash — the photo stays CLEAR; glass does the frosting */
-    .tj-wash { position: fixed; inset: 0; z-index: 0;
+    .tj-wash {
       background-image: var(--grain);
       background-repeat: repeat; }
 

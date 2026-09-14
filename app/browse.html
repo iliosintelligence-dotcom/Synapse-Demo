@@ -23,9 +23,37 @@
     /* Not a catalogue — only the homes Tayo picked for this brief.
        Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
     body { background: var(--bg); }
-    .bg-scene { position: fixed; inset: 0; z-index: 0;
+    /* WHY THE BACKGROUND JUMPED ON EVERY SCROLL.
+       These layers were `position: fixed; inset: 0`, which sounds like "cover
+       the viewport" and on a phone means "cover the LAYOUT viewport, whatever
+       it currently is". Scrolling down retracts the browser's URL bar, the
+       layout viewport grows by 60-100px, inset:0 recomputes, the layer
+       resizes -- and because the photo is sized `cover`, a taller box rescales
+       and re-centres it. So the picture visibly snapped to a new crop the
+       moment you started scrolling, snapped back when you scrolled up, and did
+       it again on every direction change. Nothing was animating; the image was
+       being re-laid-out under the glass.
+
+       100lvh is the LARGE viewport height -- the height with the chrome
+       retracted -- and it does not change. The layer is now always the tallest
+       it will ever need to be, the extra sitting behind the URL bar when that
+       bar is showing, and the crop is computed exactly once. 100vh first as
+       the fallback for anything that predates the unit.
+
+       translateZ(0) gives it its own compositor layer. Every card and bubble
+       on these two pages carries backdrop-filter: blur(28px), which resamples
+       whatever is painted behind it; without the promotion that is a full
+       repaint of a 1600px photograph on each scroll frame, under a dozen
+       simultaneous blurs, which is the other half of "the scroll isn't
+       smooth". */
+    .bg-scene, .bg-wash {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 0;
+      height: 100vh; height: 100lvh;
+      transform: translateZ(0);
+    }
+    .bg-scene {
       background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
-    .bg-wash { position: fixed; inset: 0; z-index: 0;
+    .bg-wash {
       background-image: var(--grain);
       background-repeat: repeat; }
     .wrap { position: relative; z-index: 1; }
@@ -50,7 +78,13 @@
     /* Map view: the map becomes the page. The list, the novelty shelf and the
        recently-viewed rail step aside rather than competing for the same
        screen — but the toolbar stays, because filters must keep working. */
-    body.view-map #map { height: calc(100dvh - 210px); min-height: 340px; }
+    /* 100svh, not 100dvh. dvh tracks the viewport as the URL bar hides and
+       shows -- and #map carries `transition: height .28s`, so every scroll that
+       moved the chrome kicked off a 280ms height animation on a Leaflet canvas.
+       The map appeared to breathe while you scrolled. svh is the SMALL
+       viewport height: the height with the chrome fully shown, which never
+       changes, so the map fits without being cut off and holds still. */
+    body.view-map #map { height: calc(100svh - 210px); min-height: 340px; }
     body.view-map .grid,
     body.view-map .fresh-since,
     body.view-map .recent,
@@ -356,7 +390,7 @@
 
       /* list view: no map competing with the homes; Map view owns the screen */
       body:not(.view-map) #map { display: none; }
-      body.view-map #map { height: calc(100dvh - 260px); min-height: 300px; margin-bottom: 12px; }
+      body.view-map #map { height: calc(100svh - 260px); min-height: 300px; margin-bottom: 12px; }
 
       .viewseg { margin-bottom: 12px; }
       .vseg { min-height: 40px; padding: 0 18px; }
