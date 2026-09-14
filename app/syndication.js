@@ -640,13 +640,29 @@
   }
 
   /* ── validation ────────────────────────────────────────────────────────── */
+  /* THE CAPTION THAT SHIPS IS LONGER THAN THE ONE WRITTEN HERE.
+     queue_social_post mints a short link per post and appends it to the
+     caption server-side, so a caption measured against the raw platform limit
+     is measured against the wrong number. The difference matters at exactly
+     one moment -- the caption that fits by twenty characters and is then
+     truncated by the platform, with the link, which is the part nobody can
+     afford to lose, sitting at the truncated end.
+
+     A LENGTH, NOT A STRING. Nothing in this file may put the link into a
+     caption: the server owns that, and a client-side copy would be a second,
+     different link. This only reserves the room.
+
+       '\n\n' + 'https://www.synapsecore.dev/s/' + a six-character token = 38 */
+  var LINK_RESERVE = 38;
+
   // Returns human-readable problems. Empty array means publishable.
   function validate(v) {
     var spec = PLATFORMS[v.platform];
     var out = [];
     if (!spec) return ['Unknown platform.'];
-    if (v.caption.length > spec.captionMax)
-      out.push('Caption is ' + v.caption.length + ' characters — ' + spec.label + ' allows ' + spec.captionMax + '.');
+    if (v.caption.length > spec.captionMax - LINK_RESERVE)
+      out.push('Caption is ' + v.caption.length + ' characters — ' + spec.label + ' allows '
+        + spec.captionMax + ', and ' + LINK_RESERVE + ' are held for the tracked link.');
     if (spec.hashtagMax === 0 && v.hashtags.length)
       out.push(spec.label + ' does not use hashtags.');
     if (v.hashtags.length > spec.hashtagMax)
@@ -753,12 +769,27 @@
   }
 
   // Exactly what would be sent to each platform's API.
-  /* The tracked link. A post that cannot be traced to a lead is just posting,
-     so every variant carries the channel it went out on and the post it came
-     from. The property page reads these and records a touch; when that visitor
-     becomes a lead, the touches collapse into first/last-touch attribution.
-     Nothing here identifies a person -- the visitor id is an anonymous uuid
-     the browser already holds. */
+  /* SUPERSEDED. READ THIS BEFORE WIRING IT TO ANYTHING.
+     This builds a correct ?ch= url and always did. It is also called from
+     exactly one place in the whole product -- syndication-test.html -- so no
+     published post has ever carried one, which is why channel_interactions sat
+     empty and leads arrived attributed to 'direct_search'.
+
+     The real link is now minted SERVER-SIDE by queue_social_post, which is the
+     only way a token can be bound to a post id and recorded in short_links.
+     This function cannot do that: it has no post id, it writes no row, and the
+     long url it returns would be a SECOND, different link competing with the
+     one the post actually carries -- the exact ambiguity the short-link service
+     exists to remove.
+
+     Kept because payloadFor() is the test page's fixture for "what would be
+     sent", and it is still honest about the shape. Do not put its output into
+     a caption, a queue payload, or anything a person can click.
+
+     The original note, still true of the mechanism: the property page reads
+     these and records a touch; when that visitor becomes a lead, the touches
+     collapse into first/last-touch attribution. Nothing here identifies a
+     person -- the visitor id is an anonymous uuid the browser already holds. */
   function trackedLink(v, opts) {
     opts = opts || {};
     var base = (opts.origin || '') + 'app/property.html?id=' + encodeURIComponent(v.propertyId);
@@ -796,5 +827,6 @@
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
     trackedLink: trackedLink, CHANNEL_FOR: CHANNEL_FOR,
+    LINK_RESERVE: LINK_RESERVE,
   };
 })();

@@ -2138,9 +2138,38 @@
     .cmp-res.no .cmp-res-st { color: #a8402b; }
     .cmp-res-tx { flex: 1; min-width: 0; color: var(--ink-muted); word-break: break-word; }
 
+    /* ── the link each post carries ────────────────────────────────
+       Same row grammar as the outcomes above -- channel, value, action -- so
+       the two blocks read as one list rather than two designs. The url is
+       rendered in full and selectable as well as copyable, for the same
+       reason the invite link is: clipboard access can be refused, and the
+       link still has to be able to get out. */
+    #cmpLinks:empty { display: none; }
+    .cmp-lnk-hd { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase;
+      color: var(--ink-dim); margin: 16px 0 7px; }
+    .cmp-lnk-note { font-size: 12px; line-height: 1.55; color: var(--ink-muted); margin: 0 0 4px; }
+    .cmp-lnk { display: flex; align-items: center; gap: 10px; padding: 8px 0;
+      border-top: 1px solid rgba(54,54,54,0.1); font-size: 12.5px; }
+    .cmp-lnk-pl { font-weight: 700; text-transform: capitalize; min-width: 78px; color: var(--ink); }
+    .cmp-lnk-u { flex: 1; min-width: 0; color: var(--ink); word-break: break-all; user-select: all;
+      font: 12.5px/1.5 var(--f-mono, ui-monospace, monospace); }
+
+    /* WHAT THE SERVER WILL ADD, MARKED AS NOT YET REAL.
+       queue_social_post appends a tracked short link to the caption it
+       queues, so the caption on a card is not the whole post. The dots are
+       deliberately not a token: minting one to rehearse with would produce a
+       different link from the one the post finally carries. Sized and
+       coloured as a note, never as an anchor -- nothing here is clickable,
+       because there is nothing yet to click. */
+    .cmp-ph { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+      font-size: 10.5px; line-height: 1.5; color: var(--ink-dim); }
+    .cmp-ph-u { padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,0.04);
+      color: var(--ink-muted); font: 11px var(--f-mono, ui-monospace, monospace); }
+
     @media (max-width: 560px) {
       .cmp-ch { flex: 1 1 100%; justify-content: space-between; }
       .cmp-res { flex-wrap: wrap; gap: 4px 10px; }
+      .cmp-lnk { flex-wrap: wrap; gap: 4px 10px; }
     }
 
     .ov-detail { position: sticky; top: 0; }
@@ -8737,6 +8766,12 @@
          the other two in its own words. Nothing here ever sees a token --
          social-connect puts it in Vault and this page only ever learns that a
          row exists. */
+      /* Six dots, because a token is six base62 characters. Shown without the
+         scheme so it reads as a note rather than as an address someone could
+         try to type -- and defined once, here, so no render can be tempted to
+         build one out of a real token. */
+      var LINK_PREVIEW = 'synapsecore.dev/s/\u2022\u2022\u2022\u2022\u2022\u2022';
+
       var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook' };
       var SOON = {
         tiktok: ['TikTok', 'not built yet'],
@@ -8956,6 +8991,15 @@
         var stat = document.getElementById('cmpStat');
         btn.disabled = true; btn.textContent = 'Queueing…';
         bar.style.width = '8%';
+        /* Last run's links go before this run's start. Leaving them up would
+           show links for posts that are not the ones now going out. */
+        var linkBox = document.getElementById('cmpLinks');
+        if (linkBox) linkBox.innerHTML = '';
+
+        /* The uuid queue_social_post returns, kept. It is the only handle on
+           the row a short link hangs off, and it used to be thrown away --
+           which is why the link a post carries could not be shown anywhere. */
+        var queuedPosts = [];
 
         token().then(function (t) {
           if (!t) throw new Error('Sign in again to publish.');
@@ -8984,9 +9028,33 @@
                 queued++;
                 bar.style.width = (8 + Math.round((queued / ready.length) * 52)) + '%';
                 stat.textContent = queued + ' of ' + ready.length + ' queued';
+                /* The body is the new post's id -- the RPC returns uuid, and
+                   PostgREST hands a scalar back as JSON. Read tolerantly and
+                   never fatally: a body that is not a uuid costs this post
+                   its link, and must not also cost the publish of a row that
+                   is already written and about to go out. */
+                return r.text().then(function (tx) {
+                  var id = tx;
+                  try { id = JSON.parse(tx); } catch (err) { /* not JSON; use it raw */ }
+                  if (typeof id === 'string' && UUID_RE.test(id.trim())) {
+                    queuedPosts.push({ id: id.trim(), platform: v.platform });
+                  }
+                }).catch(function () { /* the link is a bonus; the post is the work */ });
               });
             });
           }, Promise.resolve()).then(function () {
+            /* Before the send, not after it. The links exist the moment the
+               rows do, so showing them here means a provider outage costs the
+               attempt without also costing the operator the link they have to
+               paste by hand. A failure to read them is said out loud rather
+               than swallowed, and never stops the publish. */
+            return loadShortLinks(head, queuedPosts)
+              .then(function (links) { showLinks(links, null); })
+              .catch(function (err) {
+                showLinks([], 'Could not load the tracked links ('
+                  + ((err && err.message) ? String(err.message).slice(0, 80) : 'network') + ').');
+              });
+          }).then(function () {
             btn.textContent = 'Publishing…';
             return fetch(SB_URL + '/functions/v1/social-publish', {
               method: 'POST', headers: head,
@@ -9012,6 +9080,131 @@
           stat.textContent = '';
           toastOrAlert(err.message || 'Could not publish.');
         });
+      }
+
+      /* ── the link, which is the point ────────────────────────────
+         queue_social_post mints one short link per post and appends it to the
+         caption. On Facebook that is enough, because a caption link is
+         tappable there. On Instagram and TikTok it is not: the link in the
+         caption is dead text, so the operator has to put it in their bio or a
+         link sticker BY HAND -- and a link they cannot find in the portal
+         cannot be pasted anywhere. These rows are that link, one per queued
+         post, shown and copyable.
+
+         Read back from short_links rather than parsed out of the caption we
+         just sent: the table is the record, RLS already scopes it to this
+         agency, and a caption is free text whose shape nothing guarantees. */
+      var SHORT_HOST = 'https://www.synapsecore.dev';
+      var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      /* vercel.json rewrites /s/:token to the edge function, so on any real
+         deployment the short link lives on whatever host is already serving
+         this page -- which keeps preview deployments working and never hands
+         someone a link to an origin they are not on. Only localhost has no
+         such rewrite, so only localhost falls back to the canonical host: the
+         same rule auth.js applies to links that leave the browser. */
+      function shortUrl(tok) {
+        var o = location.origin;
+        return (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|$)/i.test(o)
+          ? SHORT_HOST : o) + '/s/' + tok;
+      }
+
+      /* One round trip for the whole batch, keyed on the post ids the RPC
+         handed back. Returns the queue's order, not the database's: these are
+         read against the posts the operator has just watched go out. */
+      function loadShortLinks(head, posts) {
+        var ids = posts.map(function (p) { return p.id; });
+        if (!ids.length) return Promise.resolve([]);
+        return fetch(SB_URL + '/rest/v1/short_links'
+            + '?select=social_post_id,token'
+            + '&social_post_id=in.(' + ids.join(',') + ')', { headers: head })
+          .then(function (r) {
+            if (!r.ok) return r.text().then(function (tx) { throw new Error(tx.slice(0, 160)); });
+            return r.json();
+          })
+          .then(function (rowsIn) {
+            var tokenFor = {};
+            (rowsIn || []).forEach(function (row) { tokenFor[row.social_post_id] = row.token; });
+            return posts.map(function (p) {
+              return {
+                platform: p.platform,
+                url: tokenFor[p.id] ? shortUrl(tokenFor[p.id]) : '',
+              };
+            });
+          });
+      }
+
+      function showLinks(links, problem) {
+        var box = document.getElementById('cmpLinks');
+        if (!box) return;
+        if (problem) {
+          box.innerHTML = '<div class="cmp-lnk-hd">Tracked links</div>'
+            + '<p class="cmp-lnk-note">' + esc(problem) + ' The posts are queued either way \u2014 '
+            + 'this is the link that carries the channel into attribution, so it is worth '
+            + 'coming back for.</p>';
+          return;
+        }
+        if (!links.length) { box.innerHTML = ''; return; }
+        var have = links.filter(function (l) { return l.url; });
+        var missing = links.length - have.length;
+        box.innerHTML = '<div class="cmp-lnk-hd">Tracked link'
+            + (have.length === 1 ? '' : 's') + ' \u00b7 ' + have.length + '</div>'
+          + (have.length
+              ? '<p class="cmp-lnk-note">Each link stamps its own channel onto the listing page, which '
+                + 'is what attributes the lead. A caption link is not tappable on Instagram or TikTok '
+                + '\u2014 paste this into the bio or a link sticker.</p>'
+              : '')
+          + have.map(function (l) {
+              return '<div class="cmp-lnk">'
+                + '<span class="cmp-lnk-pl">' + esc(l.platform) + '</span>'
+                + '<span class="cmp-lnk-u">' + esc(l.url) + '</span>'
+                + '<button type="button" class="cmp-ch-btn" data-link="' + esc(l.url) + '"'
+                + ' aria-label="Copy the ' + esc(l.platform) + ' link">Copy</button>'
+                + '</div>';
+            }).join('')
+          + (missing
+              ? '<p class="cmp-lnk-note">' + missing + ' of these posts came back without a link. '
+                + 'They still publish; clicks on them cannot be traced to a channel.</p>'
+              : '')
+          + '<span class="sr-only" role="status" id="cmpLinkSay"></span>';
+        /* Assignment, not addEventListener: publishing a second time without
+           regenerating re-renders this block into the same element, and a
+           second listener would copy twice on one press. */
+        box.onclick = copyLink;
+      }
+
+      /* Clipboard first, selection as the fallback, and a word either way. A
+         copy button that fails silently is worse than no button at all: the
+         operator walks off believing the link is on their clipboard. The word
+         goes to a live region as well as onto the button, because the button
+         it replaces is the thing a screen reader has just read out. */
+      function copyLink(e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-link]') : null;
+        if (!btn) return;
+        var url = btn.getAttribute('data-link') || '';
+        function said(word, spoken) {
+          btn.textContent = word;
+          var say = document.getElementById('cmpLinkSay');
+          if (say) say.textContent = spoken;
+          setTimeout(function () { btn.textContent = 'Copy'; }, 2400);
+        }
+        function selectIt() {
+          try {
+            var span = btn.parentNode.querySelector('.cmp-lnk-u');
+            var range = document.createRange(); range.selectNodeContents(span);
+            var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+            var mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+            said(mac ? '\u2318C' : 'Ctrl+C',
+              'The link is selected. Press ' + (mac ? 'Command C' : 'Control C') + ' to copy it.');
+          } catch (err) {
+            said('Select it', 'Could not copy. Select the link and copy it by hand.');
+          }
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url)
+            .then(function () { said('Copied', 'Copied ' + url); })
+            .catch(selectIt);
+        } else selectIt();
       }
 
       /* Per-post outcomes, in the provider's own words. A failure that says
@@ -9630,6 +9823,29 @@
                   + '<div class="cmp-angle">' + esc(v.angleName) + '</div>'
                   + '<div class="cmp-hook">' + esc(v.hook) + '</div>'
                   + '<div class="cmp-body">' + esc(bodyOnly) + '</div>'
+                  /* PREVIEW ONLY. NEVER PAYLOAD.
+                     The caption that goes out is not the caption above:
+                     queue_social_post appends a tracked short link to it
+                     server-side. Saying so here is the difference between a
+                     rehearsal that tells the truth and one that implies the
+                     post ships exactly as shown.
+
+                     It is drawn, not minted, and it is drawn HERE -- in the
+                     card's html, from a constant -- so it is never written
+                     back onto the variant. publishLive() sends v.caption,
+                     which nothing on this path touches, so the dots cannot
+                     reach a real account. Minting a token to rehearse with
+                     would be worse than showing nothing: create_short_link
+                     keys on social_post_id when it has one and on
+                     (property, channel, campaign) when it does not, so a
+                     rehearsal token would be a second, different link from
+                     the one the post finally carries -- the exact ambiguity
+                     the whole service exists to remove. */
+                  + '<div class="cmp-ph">'
+                  + '<span class="cmp-ph-u" aria-hidden="true">' + esc(LINK_PREVIEW) + '</span>'
+                  + '<span class="sr-only">A tracked synapsecore.dev short link</span>'
+                  + '<span>appended to this caption when it is queued</span>'
+                  + '</div>'
                   + '<div class="cmp-meta">'
                   + (v.media ? esc(v.media.label) + ' · ' + esc(v.ratio || '') : 'no creative')
                   + ' · ' + (v.issues.length
@@ -9676,6 +9892,7 @@
           + '<div class="cmp-bar"><i id="cmpBar"></i></div>'
           + '<span id="cmpStat" style="font-size:12.5px;color:var(--ink-muted);min-width:120px"></span>'
           + '</div>'
+          + '<div id="cmpLinks"></div>'
           + '<div id="cmpResults"></div>'
           + (live
               ? '<p class="cmp-note"><b>' + live + ' channel' + (live === 1 ? '' : 's') + ' connected.</b> '
