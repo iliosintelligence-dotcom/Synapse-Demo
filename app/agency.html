@@ -5288,24 +5288,30 @@
         +   '<div class="p">' + esc2(p.price || '') + '</div></div></div>'
         + (p.caption ? '<div class="sch-cap">' + esc2(p.caption) + '</div>' : '')
         + '<div class="sch-slots" id="schSlots">' + slotRow(plat, base) + '</div>'
-        + '<button type="button" class="btn" id="schAdd" style="margin-top:8px">+ Add another time</button>'
-        + '<div class="sch-note" id="schNote"></div>'
         /* TWO WAYS OUT OF THIS SHEET, because scheduling and sending are
-           different intentions and the sheet only offered one. An agency that
-           wanted it out now had to pick a time, save it, find the card, and
-           press send now -- four steps to do the obvious thing.
+           different intentions and it only offered one. An agency that wanted
+           a listing out NOW had to pick a time, save it, find the card in the
+           pipeline, and press send now -- four steps to do the obvious thing.
 
-           Post now is NOT the primary button. It is public and irreversible,
-           and a full-width primary is the one a thumb hits by accident on a
-           phone; the reversible action keeps that position. Reschedule is
-           unchanged -- that sheet moves a post that already exists, and the
-           pipeline card already has its own send-now for it. */
-        + (mode === 'reschedule'
-            ? '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">Save</button>'
-            : '<div class="sch-acts" style="display:flex;gap:8px;margin-top:12px">'
-              + '<button class="btn btn-primary" id="schSave" style="flex:1">Add to schedule</button>'
-              + '<button class="btn" id="schNow" style="flex:1">Post now</button>'
-              + '</div>');
+           POST NOW SITS WITH THE SECONDARY ACTIONS, next to "add another
+           time", and Add to schedule keeps the full-width primary it always
+           had. Two reasons, and neither is aesthetic: a full-width primary is
+           the button a thumb finds by default on a phone, and that position
+           should belong to the reversible action -- Post now is public and
+           cannot be undone from here. Putting them side by side as equals
+           also made the ordinary case look like a choice, when scheduling is
+           simply what this sheet is for.
+
+           Reschedule shows no Post now: that sheet moves a post which already
+           exists, and its pipeline card already carries a send-now. */
+        + '<div class="sch-more" style="display:flex;gap:8px;margin-top:8px">'
+        +   '<button type="button" class="btn" id="schAdd" style="flex:1">+ Add another time</button>'
+        +   (mode === 'reschedule' ? ''
+              : '<button type="button" class="btn" id="schNow" style="flex:1">Post now</button>')
+        + '</div>'
+        + '<div class="sch-note" id="schNote"></div>'
+        + '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">'
+        +   esc2(mode === 'reschedule' ? 'Save' : 'Add to schedule') + '</button>';
       scrim.classList.add('on'); drawer.classList.add('on');
 
       const slots = document.getElementById('schSlots');
