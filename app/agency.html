@@ -10198,7 +10198,7 @@
         });
         if (cmp.hashtags.length) html += `<div class="cmp-tags">${cmp.hashtags.map(escT).join('  ')}</div>`;
         if (cmp.note) html += `<div class="cmp-note"><b>Tayo's tip:</b> ${escT(cmp.note)}</div>`;
-        html += `<button class="btn btn-primary" style="width:100%;margin-top:16px" id="cmpSchedule">Schedule to pipeline →</button>`;
+        html += `<button class="btn btn-primary" style="width:100%;margin-top:16px" id="cmpSchedule">Send for approval →</button>`;
       }
       cmpModal.innerHTML = html;
     }
@@ -10293,57 +10293,62 @@
         renderComposer();
       } catch (e) { cmp.loading = false; cmp.err = 'Network hiccup — please try again.'; renderComposer(); }
     }
-    /* THIS USED TO SAVE NOTHING.
-       It unshifted a card onto the in-memory `posts` array and re-rendered, so
-       the composer's "Schedule to pipeline" looked like it worked and left no
-       row anywhere -- the next loadPipeline() rebuilt `posts` from the database
-       and the card was simply gone. Every caption generated through the
-       composer was discarded on reload, which is a large part of why
-       social_posts is empty in production.
+    /* WHERE A GENERATED CAPTION GOES, which has been wrong twice.
+       First it went nowhere: the button unshifted a card onto an in-memory
+       array, so the work looked saved and was gone on the next reload. Then it
+       went straight into the SCHEDULE, which is the other extreme -- a caption
+       travelled from "the model just wrote this" to "queued to go out" with no
+       read, no edit, no second version and no decision in between, and the
+       approval column sat empty because nothing ever arrived in it.
 
-       It writes real rows now, one per channel, through the same
-       SynListings.schedulePost the pipeline's own scheduler uses -- so the
-       cron drain sees them, the Kanban reloads them, and the angle each
-       caption took is stored with it.
+       It files drafts now. Each channel keeps its OWN caption -- they are
+       genuinely different pieces rather than rewordings, so putting the
+       Instagram one on Facebook would be visibly wrong -- and each carries the
+       angle it took, which is what stops the next generation repeating a
+       subject this listing has already used.
 
-       Each channel gets its OWN caption. The old code picked one "primary"
-       caption and attached it to every channel, which threw away the whole
-       point of generating per-channel copy -- and now that the captions are
-       genuinely different rather than rewordings, sending the Instagram one to
-       Facebook would be visibly wrong rather than merely wasteful. */
+       Scheduling happens afterwards, from the card, once a human has looked. */
     function scheduleFromComposer(){
       const l = POST_LISTINGS[cmp.li];
       cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
       const chans = [...cmp.chans].filter((c) => cmp.captions[c]);
-      if (!chans.length) { toast('Nothing to schedule yet — generate the captions first'); return; }
+      if (!chans.length) { toast('Nothing to send yet — generate the captions first'); return; }
 
       const btn = document.getElementById('cmpSchedule');
-      if (btn) { btn.disabled = true; btn.textContent = 'Scheduling…'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
 
-      /* The next round hour, which is the same default the pipeline's
-         scheduler uses. Nobody means to publish at 14:37, and the agency can
-         move any of these from the Scheduled column. */
-      const at = new Date(Date.now() + 60 * 60 * 1000);
-      at.setMinutes(0, 0, 0);
+      /* Captions land in APPROVAL, not in the schedule. This used to queue
+         social_posts straight from the composer, which meant a caption went
+         from "the model just wrote this" to "queued to go out" with nothing in
+         between -- no read, no edit, no second version, no decision. A
+         generated caption is a draft until somebody says otherwise, and the
+         approval column is where somebody says otherwise.
 
-      SynListings.schedulePost({
-        propertyId: l.id,
-        caption: '',
-        slots: chans.map((c) => ({
-          platform: c, at: at.toISOString(),
-          caption: cmp.captions[c], angle: (cmp.angles || {})[c] || null,
-        })),
-      }).then(() => {
-        toast(chans.length + (chans.length === 1 ? ' post scheduled' : ' posts scheduled')
-          + ' — going out for real at that time');
+         It also skipped the review queue entirely, so the column existed and
+         nothing ever arrived in it.
+
+         saveGeneration files one row per channel with the angle it took, which
+         is what social-generate reads to avoid rewriting the same subject next
+         time. Scheduling happens from the card, once a human has looked. */
+      const variants = chans.map((c) => ({
+        platform: c,
+        caption: cmp.captions[c],
+        /* angleKey, not angle: saveGeneration files anything it does not
+           recognise as 'custom' rather than guessing, and the composer's
+           angles come back keyed by channel. */
+        angleKey: (cmp.angles || {})[c],
+      }));
+
+      SynListings.saveGeneration(l.id, variants).then((r) => {
+        const n = (r && r.saved) || 0;
+        if (!n) throw new Error('Nothing could be filed — none of those channels has a content type yet.');
+        toast(n + (n === 1 ? ' caption' : ' captions') + ' sent for approval — review them in Awaiting approval');
         closeComposer();
         if (typeof loadPipeline === 'function') loadPipeline();
-        /* and again over the next minute, because the drain moves these to
-           Published behind our back. */
-        if (typeof watchPipeline === 'function') watchPipeline();
       }).catch((err) => {
-        if (btn) { btn.disabled = false; btn.textContent = 'Schedule to pipeline →'; }
-        toast((err && err.message) || 'Could not schedule those');
+        if (btn) { btn.disabled = false; btn.textContent = 'Send for approval →'; }
+        toast((err && err.message) || 'Could not send those for approval');
+        console.error('saveGeneration failed', err);
       });
     }
     // toast + wire the remaining action buttons so every CTA responds
