@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#F7F7F8" />
+  <title>Homes we just posted · Synapse</title>
+  <meta name="description" content="The homes this account recently posted, with the full details on each." />
+  <!-- NOT indexed. This page exists to be opened from one specific bio link;
+       a search engine finding it would show a stale slice of the catalogue
+       where browse.html is the real answer. -->
+  <meta name="robots" content="noindex, follow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <!-- One function of it: money(). Loaded rather than copied so the price here
+       and the price on the property page cannot say different things. -->
+  <script src="matches-shared.js" defer></script>
+  <style>
+    /* ── THE LINK IN THE BIO ────────────────────────────────────────────────
+       Instagram and TikTok do not linkify captions, so this page is the only
+       route from a post to the home it is about. It is opened almost entirely
+       inside Instagram's in-app browser on a phone: no back button worth the
+       name, no tabs, and a reader who tapped one line of text and is deciding
+       within about two seconds whether this was worth it.
+
+       So: no page transitions, no scroll-triggered reveals, no auth, nothing
+       that has to load before the first card can be read. Large tap targets,
+       one column, and the price first -- the question that sent them here is
+       "how much is that one". */
+    body { background: var(--bg); color: var(--ink); margin: 0;
+      font-family: var(--f-sans); -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 560px; margin: 0 auto;
+      /* the side gutter survives at every width, and the bottom one clears
+         the in-app browser's toolbar */
+      padding: 26px 18px calc(40px + env(safe-area-inset-bottom)); }
+
+    .hd { display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
+    .hd .mark { width: 34px; height: 34px; border-radius: 9px; flex: none;
+      background: var(--brand); color: #F7F7F8; display: grid; place-items: center;
+      font: 700 15px/1 var(--f-sans); }
+    .hd .who { font: 700 17px/1.2 var(--f-sans); }
+    .hd .plat { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
+    .lede { font-size: 14px; line-height: 1.55; color: var(--ink-muted);
+      margin: 12px 0 22px; }
+
+    .list { display: grid; gap: 14px; }
+
+    /* A CARD IS THE WHOLE LINK, not a title with a link in it. A thumb on a
+       phone is imprecise and this is the only action on the page. */
+    .home { display: block; text-decoration: none; color: inherit;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: #fff; overflow: hidden;
+      transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .18s; }
+    .home:active { transform: scale(.985); }
+    @media (hover: hover) {
+      .home:hover { box-shadow: 0 10px 28px rgba(13,13,15,.09); }
+    }
+    @media (prefers-reduced-motion: reduce) { .home { transition: none; } }
+    .home:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+    .ph { aspect-ratio: 4 / 3; background: rgba(13,13,15,.05); position: relative; }
+    .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ph .none { position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: 12.5px; color: var(--ink-dim); }
+    .tag { position: absolute; left: 10px; top: 10px; font: 700 10.5px/1 var(--f-sans);
+      letter-spacing: .08em; text-transform: uppercase; padding: 6px 9px;
+      border-radius: 100px; background: rgba(255,255,255,.93); color: var(--ink-muted); }
+    .tag.ok { color: var(--success-ink); }
+
+    .body { padding: 14px 15px 16px; }
+    .price { font: 700 21px/1.15 var(--f-sans); letter-spacing: -.01em;
+      font-variant-numeric: tabular-nums; }
+    .price .per { font-size: 13px; font-weight: 400; color: var(--ink-muted); }
+    .ttl { font-size: 14.5px; line-height: 1.45; margin-top: 5px; }
+    .meta { font-size: 12.5px; color: var(--ink-muted); margin-top: 6px; }
+
+    .state { border: 1px solid var(--border); border-radius: var(--radius);
+      background: #fff; padding: 26px 20px; text-align: center;
+      font-size: 14px; line-height: 1.6; color: var(--ink-muted); }
+    .state b { display: block; color: var(--ink); font-size: 15.5px; margin-bottom: 6px; }
+
+    .ft { margin-top: 26px; display: grid; gap: 9px; }
+    .ft a { display: block; text-align: center; text-decoration: none;
+      border-radius: var(--radius); padding: 14px 16px; font: 600 14px var(--f-sans); }
+    .ft .primary { background: var(--brand); color: #F7F7F8; }
+    .ft .ghost { border: 1px solid var(--border); color: var(--ink); background: #fff; }
+    .ft .note { text-align: center; font-size: 11.5px; color: var(--ink-dim);
+      line-height: 1.5; margin-top: 4px; }
+
+    /* The skeleton is the page's real shape, so nothing jumps when the rows
+       land. Two is enough to read as "loading" without pretending to know how
+       many there will be. */
+    .skel { border: 1px solid var(--border); border-radius: var(--radius);
+      background: #fff; overflow: hidden; }
+    .skel .ph { background: rgba(13,13,15,.06); }
+    .skel .ln { height: 13px; border-radius: 6px; background: rgba(13,13,15,.07);
+      margin: 0 15px 9px; }
+    .skel .ln.a { height: 20px; width: 45%; margin-top: 14px; }
+    .skel .ln.b { width: 82%; }
+    .skel .ln.c { width: 40%; margin-bottom: 16px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .skel { animation: pulse 1.5s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .62 } }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hd">
+      <div class="mark">S</div>
+      <div>
+        <div class="who" id="who">Synapse</div>
+        <div class="plat" id="plat"></div>
+      </div>
+    </div>
+    <p class="lede" id="lede">The homes we posted recently. Tap one for the full details.</p>
+
+    <div class="list" id="list">
+      <div class="skel"><div class="ph"></div><div class="ln a"></div><div class="ln b"></div><div class="ln c"></div></div>
+      <div class="skel"><div class="ph"></div><div class="ln a"></div><div class="ln b"></div><div class="ln c"></div></div>
+    </div>
+
+    <div class="ft">
+      <a class="primary" href="toju.html">Tell Tayo what you're looking for</a>
+      <a class="ghost" href="browse.html">See every home on Synapse</a>
+      <p class="note">Every listing on Synapse expires unless it is re-confirmed,
+        so nothing here has been sitting for months.</p>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ORDER, because it is not the obvious one. This inline script runs DURING
+     parsing; a deferred script runs after parsing finishes. So window.SynMatches
+     does not exist while these lines are being read -- only by the time a card
+     is drawn, which happens inside a fetch callback, a network round trip
+     later. That is why price() is a function called at render rather than a
+     reference captured now, and why it carries a fallback: the ordering is
+     reliable, but a page whose entire job is showing a price should not be one
+     failed script away from showing none. */
+
+  var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  var ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+
+  /* The handle arrives as /go/<handle>, rewritten to this file with ?h=.
+     Reading BOTH means the page still works if the rewrite is missing or
+     somebody opens /app/go.html?h=... directly, which is what will happen the
+     first time anyone tests it. */
+  var q = new URLSearchParams(location.search);
+  var handle = q.get('h') || '';
+  if (!handle) {
+    var seg = location.pathname.replace(/\/+$/, '').split('/');
+    if (seg.length > 1 && seg[seg.length - 2] === 'go') handle = decodeURIComponent(seg[seg.length - 1]);
+  }
+
+  var list = document.getElementById('list');
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* THE PRICE COMES FROM THE APP'S OWN FORMATTER, not a copy.
+     This page first carried its own naira(), lifted from an older helper that
+     rounds to whole millions -- so a 1,450,000 listing read "₦1M", a third
+     off, on the single number the reader tapped the link to see. And the
+     property page one tap later would have said something else, which reads as
+     a bait and switch rather than a rounding bug.
+
+     money() is currency-aware and rounds honestly, and importing it is the
+     only way the two pages cannot drift apart. The fallback exists because a
+     bio link is the last place that should render a blank where a price goes
+     -- if the shared script fails, an exact figure is still correct, just
+     longer than the house style. */
+  function price(n, cur) {
+    if (window.SynMatches && SynMatches.money) return SynMatches.money(n, cur);
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency', currency: /^[A-Za-z]{3}$/.test(cur || '') ? cur : 'NGN',
+        currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0,
+      }).format(Number(n) || 0);
+    } catch (e) { return '₦' + (Number(n) || 0).toLocaleString(); }
+  }
+
+  function rpc(fn, body) {
+    return fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    }).then(function (r) {
+      if (!r.ok) throw new Error('rpc ' + fn + ' ' + r.status);
+      return r.json();
+    });
+  }
+
+  /* WHERE A CARD GOES.
+     The post's own short link when it has one, so the click is recorded in
+     click_events against that exact post -- which is the first time Instagram
+     traffic has been measurable at all, because until now there was nothing
+     on Instagram anyone could click.
+
+     Posts made before queue_social_post minted links have no token. They fall
+     back to the property page with the channel on it: coarser attribution, but
+     the alternative is leaving the reader at a dead end, and those are exactly
+     the posts with no link in the caption either. */
+  function hrefFor(r) {
+    if (r.token) return '/s/' + encodeURIComponent(r.token);
+    return 'property.html?id=' + encodeURIComponent(r.property_id)
+      + '&ch=' + encodeURIComponent(r.platform || 'organic');
+  }
+
+  function card(r) {
+    var per = r.listing_type === 'rent' ? '<span class="per">/yr</span>' : '';
+    var bits = [];
+    if (r.bedrooms) bits.push(r.bedrooms + ' bed' + (r.bedrooms === 1 ? '' : 's'));
+    if (r.city) bits.push(r.city);
+
+    /* The badge says what is true, both ways round. An unverified listing is
+       not hidden and not quietly unlabelled -- the same rule the property card
+       and the proximity notification follow. */
+    var tag = r.verified
+      ? '<span class="tag ok">Verified</span>'
+      : '<span class="tag">Not yet verified</span>';
+
+    var photo = r.image_url
+      ? '<img src="' + esc(r.image_url) + '" alt="" loading="lazy" '
+        + 'onerror="this.remove()">'
+      : '<span class="none">No photo yet</span>';
+
+    return '<a class="home" href="' + esc(hrefFor(r)) + '">'
+      + '<div class="ph">' + photo + tag + '</div>'
+      + '<div class="body">'
+      +   '<div class="price">' + esc(price(r.price, r.currency)) + per + '</div>'
+      +   '<div class="ttl">' + esc(r.title || 'Listing') + '</div>'
+      +   (bits.length ? '<div class="meta">' + esc(bits.join(' · ')) + '</div>' : '')
+      + '</div></a>';
+  }
+
+  function state(title, body) {
+    list.innerHTML = '<div class="state"><b>' + esc(title) + '</b>' + esc(body) + '</div>';
+  }
+
+  if (!handle) {
+    state('No account in the link',
+      'This page needs to be opened from an account’s bio link.');
+    return;
+  }
+
+  /* Both calls at once. The owner only changes the heading, so a slow or
+     failed lookup there must not hold up the listings -- which are the reason
+     anybody tapped the link. */
+  rpc('bio_owner', { p_handle: handle }).then(function (rows) {
+    var o = rows && rows[0];
+    if (!o) return;
+    var name = o.is_synapse ? 'Synapse' : (o.agency_name || 'Synapse');
+    document.getElementById('who').textContent = name;
+    document.getElementById('plat').textContent = o.handle || '';
+    document.title = 'Homes we just posted · ' + name;
+    if (!o.is_synapse) {
+      document.getElementById('lede').textContent =
+        'Homes ' + name + ' posted recently, listed on Synapse. Tap one for the full details.';
+    }
+  }).catch(function () { /* the heading stays generic; not worth a message */ });
+
+  rpc('bio_page', { p_handle: handle, p_limit: 12 }).then(function (rows) {
+    if (!rows || !rows.length) {
+      /* TWO DIFFERENT NOTHINGS, and the reader deserves to know which.
+         An unknown handle is our mistake; an account that has not posted
+         anything live yet is simply early. Neither is "something went
+         wrong", and both still offer a way onward through the footer. */
+      return rpc('bio_owner', { p_handle: handle }).then(function (o) {
+        if (o && o.length) {
+          state('Nothing posted yet',
+            'This account has not put a home out yet. Everything on Synapse is below.');
+        } else {
+          state('We could not find that account',
+            'Check the link, or browse everything on Synapse below.');
+        }
+      }).catch(function () {
+        state('Nothing to show yet', 'Browse everything on Synapse below.');
+      });
+    }
+    list.innerHTML = rows.map(card).join('');
+  }).catch(function (err) {
+    console.error('bio_page failed', err);
+    state('That did not load',
+      'Something went wrong on our side, not yours. Try again, or browse everything on Synapse below.');
+  });
+})();
+</script>
+</body>
+</html>
