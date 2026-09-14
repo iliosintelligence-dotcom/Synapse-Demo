@@ -5391,7 +5391,13 @@
                A failure here leaves them queued for the cron, so the post is
                late rather than lost -- said plainly in the toast. */
             if (!now) return null;
-            return token().then((t) => fetch(SB_URL + '/functions/v1/social-publish', {
+            /* authToken(), NOT token(). token() is private to the composer's
+               IIFE and this sheet is outside it, so calling it here threw
+               "token is not defined" the moment anybody pressed Post now --
+               and threw it AFTER the rows were already queued, so the posts
+               existed and the operator was told it had failed. authToken() is
+               declared at the top level of this script and does the same job. */
+            return authToken().then((t) => fetch(SB_URL + '/functions/v1/social-publish', {
               method: 'POST',
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t,
                          'Content-Type': 'application/json' },
