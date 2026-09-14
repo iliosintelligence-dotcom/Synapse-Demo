@@ -1519,7 +1519,12 @@
                to it. */
             p_media_urls: o.mediaUrls || [],
             p_scheduled_at: at,
-            p_dry_run: true,
+            /* DEFAULTS TO A REHEARSAL, and every existing caller leaves it
+               that way. Only "Post now" passes false, and it asks first --
+               dry_run is the switch between a row that records what WOULD be
+               sent and one that actually goes out in public, so it is not
+               something a caller should set by accident. */
+            p_dry_run: o.dryRun === false ? false : true,
             /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
                six subjects and needs to know which are spent for a listing, or
                every regeneration rewrites the same three. This is why the RPC

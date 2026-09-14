@@ -5290,8 +5290,22 @@
         + '<div class="sch-slots" id="schSlots">' + slotRow(plat, base) + '</div>'
         + '<button type="button" class="btn" id="schAdd" style="margin-top:8px">+ Add another time</button>'
         + '<div class="sch-note" id="schNote"></div>'
-        + '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">'
-        +   esc2(mode === 'reschedule' ? 'Save' : 'Add to schedule') + '</button>';
+        /* TWO WAYS OUT OF THIS SHEET, because scheduling and sending are
+           different intentions and the sheet only offered one. An agency that
+           wanted it out now had to pick a time, save it, find the card, and
+           press send now -- four steps to do the obvious thing.
+
+           Post now is NOT the primary button. It is public and irreversible,
+           and a full-width primary is the one a thumb hits by accident on a
+           phone; the reversible action keeps that position. Reschedule is
+           unchanged -- that sheet moves a post that already exists, and the
+           pipeline card already has its own send-now for it. */
+        + (mode === 'reschedule'
+            ? '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">Save</button>'
+            : '<div class="sch-acts" style="display:flex;gap:8px;margin-top:12px">'
+              + '<button class="btn btn-primary" id="schSave" style="flex:1">Add to schedule</button>'
+              + '<button class="btn" id="schNow" style="flex:1">Post now</button>'
+              + '</div>');
       scrim.classList.add('on'); drawer.classList.add('on');
 
       const slots = document.getElementById('schSlots');
@@ -5315,10 +5329,20 @@
         x.closest('.slot').remove();
       });
 
-      document.getElementById('schSave').addEventListener('click', () => {
+      /* `now` is the only difference between the two buttons: it overrides
+         every row's time and clears dry_run, then drains the queue rather than
+         waiting for the minute-by-minute cron. Everything else -- the rows,
+         the validation, the approval move, the reload -- is identical, which
+         is why they share this. */
+      function commitSchedule(now) {
         const rows = [...slots.querySelectorAll('[data-slot]')].map(r => ({
           platform: r.querySelector('.slot-p').value,
-          at: r.querySelector('.slot-d').value + 'T' + r.querySelector('.slot-t').value,
+          /* The channel still comes from the row; only the time is replaced.
+             Somebody who added three rows to reach three channels means all
+             three, and only stopped caring about when. */
+          at: now
+            ? new Date().toISOString()
+            : r.querySelector('.slot-d').value + 'T' + r.querySelector('.slot-t').value,
         })).filter(r => r.at && r.at.indexOf('undefined') < 0);
 
         const bad = rows.find(r => isNaN(new Date(r.at).getTime()));
@@ -5326,8 +5350,11 @@
         if (!rows.length || bad) { note.textContent = 'Give every row a date and a time.'; return; }
         note.textContent = '';
 
-        const btn = document.getElementById('schSave');
-        btn.disabled = true; btn.textContent = 'Saving\u2026';
+        const btn = document.getElementById(now ? 'schNow' : 'schSave');
+        const other = document.getElementById(now ? 'schSave' : 'schNow');
+        const was = btn.textContent;
+        btn.disabled = true; if (other) other.disabled = true;
+        btn.textContent = now ? 'Sending\u2026' : 'Saving\u2026';
 
         /* Rescheduling reuses the row that already exists and only creates
            rows for the extra slots, so moving a post does not leave the old
@@ -5342,8 +5369,29 @@
             ? SynListings.schedulePost({
                 propertyId: p.propertyId, contentId: p.contentId || null,
                 caption: p.caption || '', mediaUrls: p.img ? [p.img] : null, slots: extra,
+                /* The whole difference. A scheduled row is a rehearsal until
+                   somebody says otherwise; Post now says otherwise, once, and
+                   was confirmed above. */
+                dryRun: now ? false : true,
               })
             : null)
+          .then(() => {
+            /* DRAIN IT RATHER THAN WAIT. drain_social_queue ticks every minute
+               and would pick these up on its own, so this is not required for
+               correctness -- but "Post now" that takes up to sixty seconds to
+               do anything visible reads as broken, and the agency reloads the
+               page trying to make it work. live:true still only sends rows
+               queued with dry_run false, which is exactly the ones just made.
+               A failure here leaves them queued for the cron, so the post is
+               late rather than lost -- said plainly in the toast. */
+            if (!now) return null;
+            return token().then((t) => fetch(SB_URL + '/functions/v1/social-publish', {
+              method: 'POST',
+              headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t,
+                         'Content-Type': 'application/json' },
+              body: JSON.stringify({ live: true, limit: Math.min(50, rows.length * 4) }),
+            })).then((r) => r.json()).catch(() => null);
+          })
           .then(() => {
             /* A caption that has been scheduled is no longer awaiting review,
                so it leaves the approval column. Failing to move it would show
@@ -5352,20 +5400,41 @@
               return SynListings.setContentStatus(p.contentId, 'scheduled').catch(() => {});
             }
           })
-          .then(() => {
+          .then((sent) => {
             closeLead();
             const n = mode === 'reschedule' ? rows.length - 1 + 1 : rows.length;
-            toast(mode === 'reschedule'
-              ? 'Moved to ' + fmtWhen(rows[0].at)
-              : n + (n === 1 ? ' post scheduled' : ' posts scheduled'));
+            if (mode === 'reschedule') toast('Moved to ' + fmtWhen(rows[0].at));
+            else if (!now) toast(n + (n === 1 ? ' post scheduled' : ' posts scheduled'));
+            /* What actually happened, from the publisher's own count, rather
+               than "sent" on the strength of having asked. A drain that could
+               not run leaves them queued, and saying so is the difference
+               between a late post and one somebody goes looking for. */
+            else if (sent && typeof sent.published === 'number') {
+              toast(sent.published + ' published'
+                + (sent.failed ? ' \u00b7 ' + sent.failed + ' failed \u2014 see the card'
+                               : '')
+                + (!sent.published && !sent.failed ? ' \u2014 queued, going out shortly' : ''));
+            } else toast('Queued \u2014 going out within the minute');
             loadPipeline();
           })
           .catch((err) => {
-            btn.disabled = false;
-            btn.textContent = mode === 'reschedule' ? 'Save' : 'Add to schedule';
+            btn.disabled = false; if (other) other.disabled = false;
+            btn.textContent = was;
             note.textContent = (err && err.message) || 'Could not save that.';
             console.error('schedule failed', err);
           });
+      }
+
+      document.getElementById('schSave').addEventListener('click', () => commitSchedule(false));
+      const nowBtn = document.getElementById('schNow');
+      if (nowBtn) nowBtn.addEventListener('click', () => {
+        /* The only irreversible button in this sheet, so it is the only one
+           that asks. Naming the count and the word "public" is the point --
+           "are you sure?" tells nobody anything. */
+        const n = slots.querySelectorAll('[data-slot]').length;
+        if (!confirm('Post ' + n + ' time' + (n === 1 ? '' : 's') + ' right now, for real? '
+            + 'This is public and cannot be undone from here.')) return;
+        commitSchedule(true);
       });
     }
 
