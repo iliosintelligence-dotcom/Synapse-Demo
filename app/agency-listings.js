@@ -1519,12 +1519,21 @@
                to it. */
             p_media_urls: o.mediaUrls || [],
             p_scheduled_at: at,
-            /* DEFAULTS TO A REHEARSAL, and every existing caller leaves it
-               that way. Only "Post now" passes false, and it asks first --
-               dry_run is the switch between a row that records what WOULD be
-               sent and one that actually goes out in public, so it is not
-               something a caller should set by accident. */
-            p_dry_run: o.dryRun === false ? false : true,
+            /* A SCHEDULED POST IS A REAL POST, and defaulting this to a
+               rehearsal meant it never could be. Everything queued from the
+               portal carried dry_run true, so a post scheduled for 8pm reached
+               8pm, went to the MOCK adapter, recorded what it would have sent,
+               and stopped. Forever, at every time, however long anybody waited.
+               Scheduling could not reach a platform at all -- and that is not a
+               fault in the drain or in any adapter: nothing was ever asking
+               them to send anything. Only "Post now" passed false, which is why
+               only "Post now" ever did anything.
+
+               Inverted. A caller must now ask for a rehearsal rather than ask
+               to be real. Post now still passes false explicitly and keeps its
+               confirm; a scheduled post is equally real, and its confirmation
+               is that somebody chose a time and pressed the button. */
+            p_dry_run: o.dryRun === true ? true : false,
             /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
                six subjects and needs to know which are spent for a listing, or
                every regeneration rewrites the same three. This is why the RPC

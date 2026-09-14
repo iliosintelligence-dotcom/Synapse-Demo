@@ -5420,10 +5420,12 @@
             ? SynListings.schedulePost({
                 propertyId: p.propertyId, contentId: p.contentId || null,
                 caption: p.caption || '', mediaUrls: p.img ? [p.img] : null, slots: extra,
-                /* The whole difference. A scheduled row is a rehearsal until
-                   somebody says otherwise; Post now says otherwise, once, and
-                   was confirmed above. */
-                dryRun: now ? false : true,
+                /* BOTH BUTTONS ARE REAL NOW; they differ only in WHEN. This
+                   used to pass true for the scheduled case, which is what made
+                   "schedule it for 8pm" mean "go to the mock at 8pm and stop".
+                   Passing nothing lets schedulePost's default stand, and that
+                   default is now a real send -- so a time somebody chose is a
+                   time something actually goes out. */
               })
             : null)
           .then(() => {
@@ -5461,7 +5463,11 @@
             closeLead();
             const n = mode === 'reschedule' ? rows.length - 1 + 1 : rows.length;
             if (mode === 'reschedule') toast('Moved to ' + fmtWhen(rows[0].at));
-            else if (!now) toast(n + (n === 1 ? ' post scheduled' : ' posts scheduled'));
+            /* Says what scheduling now MEANS. It used to queue a rehearsal, so
+               "scheduled" was a safe word; it is not any more, and the toast is
+               the only place a person finds that out before the time arrives. */
+            else if (!now) toast(n + (n === 1 ? ' post scheduled' : ' posts scheduled')
+              + ' — going out for real at that time');
             /* What actually happened, from the publisher's own count, rather
                than "sent" on the strength of having asked. A drain that could
                not run leaves them queued, and saying so is the difference
@@ -10328,7 +10334,8 @@
           caption: cmp.captions[c], angle: (cmp.angles || {})[c] || null,
         })),
       }).then(() => {
-        toast(chans.length + (chans.length === 1 ? ' post scheduled' : ' posts scheduled') + ' — see the Scheduled column');
+        toast(chans.length + (chans.length === 1 ? ' post scheduled' : ' posts scheduled')
+          + ' — going out for real at that time');
         closeComposer();
         if (typeof loadPipeline === 'function') loadPipeline();
         /* and again over the next minute, because the drain moves these to
