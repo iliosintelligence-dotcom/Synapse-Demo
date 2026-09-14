@@ -28,9 +28,30 @@
      to. Keep every new kind in this table rather than special-casing it. */
   var TYPES = {
     /* customer side */
+    /* PROXIMITY NO LONGER SHOWS ONLY VERIFIED HOMES, so it can no longer say
+       "verified" as a constant. It used to read 'A verified home, right where
+       you are' whatever arrived, which was survivable only while the matcher
+       refused to return anything else. The moment that gate came off, the same
+       line became a false claim on a stranger's lock screen, sending them to an
+       address on the strength of it.
+
+       `d.verified` is strictly true or false, never truthy: a field that went
+       missing because somebody renamed a column has to read as NOT verified.
+       The safe default for a claim is refusing to make it.
+
+       "not yet verified" and not "unverified" — the listing is not accused of
+       anything, it has simply not been checked yet. Same words property.html
+       uses, so the notification and the page it opens agree. */
     proximity_match:    { side: 'customer', icon: 'pin',      route: 'property.html',
-                          title: 'A verified home, right where you are',
-                          body: function (d) { return d.title + ' · ' + d.distance + 'm away · verified ' + d.verifiedAgo; } },
+                          title: function (d) {
+                            return d.verified === true
+                              ? 'A verified home, right where you are'
+                              : 'A home right where you are';
+                          },
+                          body: function (d) {
+                            return d.title + ' · ' + d.distance + 'm away · '
+                              + (d.verified === true ? 'verified by Synapse' : 'not yet verified');
+                          } },
     new_match:          { side: 'customer', icon: 'spark',    route: 'browse.html',
                           title: 'Tayo found something new',
                           body: function (d) { return d.count + ' new verified home' + (d.count === 1 ? '' : 's') + ' fit your brief.'; } },
@@ -71,8 +92,16 @@
   function render(kind, data) {
     var t = TYPES[kind];
     if (!t) return null;
+    /* A title may be a string or a function, because one of them has to change
+       with the data: proximity cannot call a home verified until it knows that
+       it is. Every other entry stays a plain string and is unaffected. Wrapped
+       in the same try/catch as the body — a copy function that throws must
+       cost the wording, never the notification. */
+    var title = typeof t.title === 'function'
+      ? (function () { try { return t.title(data || {}); } catch (e) { return ''; } })()
+      : t.title;
     return { kind: kind, side: t.side, icon: t.icon, route: t.route,
-             title: t.title, body: (function () { try { return t.body(data || {}); } catch (e) { return ''; } })() };
+             title: title, body: (function () { try { return t.body(data || {}); } catch (e) { return ''; } })() };
   }
 
   /* ── 2 · Service worker + push ─────────────────────────────────────────── */
