@@ -18,6 +18,7 @@
   <!-- In <head>, not at the end of <body>: pagereveal fires before a
        body script has run, and seam.js has to be listening for it. -->
   <script src="seam.js"></script>
+  <script src="arrival.js"></script>
   <style>
     /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
        monthly cost, neighbourhood intelligence, commute, similar homes. */
@@ -1774,7 +1775,14 @@
        which is the case for every ordinary visit. */
     (function recordAttribution() {
       const q = new URLSearchParams(window.location.search);
-      const channel = q.get('ch');
+      /* THE URL FIRST, THEN WHAT WE REMEMBERED ON ARRIVAL.
+         ?ch= is only present when a short link pointed straight at a listing.
+         Somebody who came through the Instagram bio landed in Tayo's chat
+         instead, spent a while describing what they wanted, and arrived here
+         through the app — by which point the channel was long gone from the
+         URL and this visit looked organic. SynArrival kept it. */
+      const channel = q.get('ch')
+        || (window.SynArrival ? SynArrival.channel() : '');
       if (!channel || !URL_ID) return;
 
       let visitor = null;
@@ -1794,7 +1802,9 @@
           p_property_id: URL_ID,
           p_channel: channel,
           p_session_id: visitor,
-          p_post_id: q.get('post') || null,
+          p_post_id: q.get('post')
+            || (window.SynArrival ? SynArrival.post() : null)
+            || null,
           p_kind: 'visit',
         }),
       }).catch(() => { /* attribution is never worth breaking a page view over */ });
