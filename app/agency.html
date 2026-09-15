@@ -1624,7 +1624,17 @@
       .toju-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 22px 46px rgba(54,54,54,0.55); animation: none; }
     }
     .toju-fab .sparkle { display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
-    @keyframes fabGlow { 0%, 100% { box-shadow: 0 16px 38px rgba(54,54,54,0.42), 0 0 0 0 rgba(54,54,54,0.5); } 50% { box-shadow: 0 16px 38px rgba(54,54,54,0.42), 0 0 0 13px rgba(54,54,54,0); } }
+    /* The orb fills the button. The glyph it replaced said "button" once and
+       then said it again identically every 2.8 seconds, whether Tayo was idle
+       or mid-thought -- so the pulse was decoration wearing the clothes of an
+       indicator. The canvas is pointer-transparent so the whole circle stays
+       one target. */
+    .toju-fab .orbmount { display: block; pointer-events: none; line-height: 0; }
+    /* The ring pulse goes with it. Two things breathing on different clocks in
+       the same 58px circle read as a glitch, and the orb is the better of the
+       two: it is showing state, the shadow was showing the time. The resting
+       shadow stays -- that is depth, not animation. */
+    @keyframes fabGlow { 0%, 100% { box-shadow: 0 16px 38px rgba(54,54,54,0.42); } 50% { box-shadow: 0 16px 38px rgba(54,54,54,0.42); } }
     @media (prefers-reduced-motion: reduce) { .toju-fab { animation: none; } }
     body.tpanel-open .toju-fab { opacity: 0; pointer-events: none; }
 
@@ -1635,6 +1645,10 @@
     .tpanel.on { transform: translateX(0); }
     .tpanel .thd { flex: none; display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(54,54,54,0.1), rgba(54,54,54,0.04)); }
     .tpanel .thd .o { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#121212,#121212); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex: none; }
+    /* The small preset, which is its own design rather than the large one
+       scaled: fewer rings, quicker motion. At 30px a slow arc reads as a
+       stationary smudge. */
+    .tpanel .thd .o .orbmount { display: block; line-height: 0; margin: -1px; }
     .tpanel .thd .tt { font-weight: 700; font-size: 14.5px; }
     .tpanel .thd .sb { font-size: 11.5px; color: var(--ink-dim); margin-top: 1px; }
     .tpanel .thd .x { margin-left: auto; border: none; background: none; font-size: 22px; line-height: 1; color: var(--ink-dim); cursor: pointer; }
@@ -3851,7 +3865,7 @@
   <!-- persistent Ask-Tayo button + context-aware panel -->
   <div class="pprev-scrim" id="pprevScrim"><div class="pprev" id="pprevModal" role="dialog" aria-label="Property preview"></div></div>
 
-  <button class="toju-fab" id="tojuFab" aria-label="Ask Tayo"><span class="sparkle" aria-hidden="true">✦</span></button>
+  <button class="toju-fab" id="tojuFab" aria-label="Ask Tayo"><span class="orbmount" aria-hidden="true"></span></button>
   <div class="tpanel-scrim" id="tpScrim"></div>
   <aside class="tpanel" id="tpanel" aria-label="Ask Tayo">
     <div class="thd">
@@ -3911,6 +3925,7 @@
   <script type="module" src="icon-morph.js"></script>
   <script src="auth.js"></script>
   <script src="ng-places.js"></script>
+  <script src="vendor/orb.js"></script>
   <script src="agency-listings.js"></script>
   <script>
     // Channel attribution (Phase B) — every lead carries a source→tap→Tayo→lead chain.
@@ -6062,6 +6077,39 @@
     }
 
     // ── property preview ("zoom to confirm the right property") ──
+    /* ── THE ORB ──────────────────────────────────────────────────────────
+       Mounted on the two things that persist: the floating Ask-Tayo button,
+       which is on every pane of the portal, and the panel header once it
+       opens.
+
+       The state is driven by whether a request is actually in flight, which is
+       the whole reason to replace a CSS pulse with a canvas: a pulse on a
+       fixed loop tells you the page is still running, and this tells you Tayo
+       is thinking. Anything that lies about that is worse than the glyph. */
+    const ORBS = { fab: null, panel: null };
+
+    function orbState(state) {
+      if (ORBS.fab) ORBS.fab.set(state);
+      if (ORBS.panel) ORBS.panel.set(state);
+    }
+
+    (function mountOrbs() {
+      if (!window.SynOrb) return;   // vendored script missing: the button still works
+      const fab = document.querySelector('#tojuFab .orbmount');
+      if (fab) ORBS.fab = SynOrb.mount(fab, { preset: 'lg' });
+      /* The panel header is rendered before this runs, so it is mounted here
+         too rather than on open -- one orb, reused, instead of a new canvas
+         and a new observer every time the panel is toggled. */
+      const head = document.querySelector('.tpanel .thd .o');
+      if (head) {
+        head.textContent = '';
+        const m = document.createElement('span');
+        m.className = 'orbmount';
+        head.appendChild(m);
+        ORBS.panel = SynOrb.mount(m, { preset: 'sm' });
+      }
+    })();
+
     /* Which post the open panel belongs to, so a slow engagement fetch cannot
        write its answer into a panel that has since been closed, or reopened on
        a different post. Declared HERE rather than beside closePropPreview: it
@@ -11442,6 +11490,13 @@
       document.getElementById('tpChips').innerHTML = '';
       advSay('you', q);
       const pending = advSay('toju', 'Thinking…');
+      /* THE ORB MEANS THIS. Both orbs -- the floating button and the panel
+         header -- turn over the moment a request actually leaves, and turn
+         back in the .then() below, which runs on success AND on failure. An
+         indicator that keeps spinning after an error is worse than none: it
+         says the machine is still working on something it has already given
+         up on. */
+      if (typeof orbState === 'function') orbState('thinking');
 
       SynAuth.client()
         .then(function (c) { return c.auth.getSession(); })
@@ -11468,6 +11523,7 @@
         })
         .then(function () {
           advBusy = false; send.disabled = false;
+          if (typeof orbState === 'function') orbState('idle');
           advChips();
           document.getElementById('tpThread').scrollTop = 1e6;
         });
