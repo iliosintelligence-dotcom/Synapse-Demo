@@ -1840,6 +1840,45 @@
     .ovs.verified { color: var(--success); background: rgba(46,125,79,0.1); }
     .ovs.pending { color: var(--gold); background: rgba(156,122,30,0.12); }
 
+    /* ── follow-ups and the trail, inside the lead drawer ─────────────────
+       Frappe CRM's organising idea, and the right one: one page per lead
+       carrying its activities, its notes and its tasks, so nobody assembles
+       the story from four screens. We had the tables and no reader.
+
+       An overdue task is the only thing here allowed to shout. Everything else
+       is a record; that one is a debt. */
+    .tk { display: flex; align-items: flex-start; gap: 9px; padding: 9px 0;
+      border-top: 1px solid var(--border); }
+    .tk:first-child { border-top: 0; }
+    .tk-done { flex: none; width: 19px; height: 19px; margin-top: 1px; border-radius: 50%;
+      border: 1.5px solid rgba(54,54,54,0.35); background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+      color: transparent; transition: background var(--m-standard), color var(--m-standard); }
+    .tk-done:hover { border-color: var(--success); color: var(--success); background: rgba(46,125,79,0.08); }
+    .tk-done::before { content: ''; position: absolute; }
+    .tk-b { min-width: 0; flex: 1; }
+    .tk-t { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+    .tk-d { font-size: 11.5px; color: var(--ink-muted); line-height: 1.45; margin-top: 2px; }
+    .tk-w { font-size: 11.5px; margin-top: 3px; color: var(--ink-dim); }
+    .tk-w.due { color: #a8402b; font-weight: 700; }
+    .tk-p { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 100px; background: rgba(0,0,0,0.05);
+      color: var(--ink-muted); flex: none; }
+    .tk-p.urgent { background: rgba(168,64,43,0.1); color: #a8402b; }
+    .tk-p.high { background: rgba(176,125,43,0.12); color: #7a5410; }
+
+    /* The trail. A timeline rather than a table: what matters is the order and
+       the gaps, not lining values up in columns. */
+    .tl { position: relative; padding-left: 15px; margin-top: 4px; }
+    .tl::before { content: ''; position: absolute; left: 3px; top: 4px; bottom: 4px;
+      width: 1px; background: var(--border); }
+    .tl-i { position: relative; padding: 6px 0; font-size: 12.5px; line-height: 1.5; }
+    .tl-i::before { content: ''; position: absolute; left: -15px; top: 12px; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--border-strong, #E7E7EA); border: 1px solid var(--bg); }
+    .tl-i.mark::before { background: var(--action); }
+    .tl-w { color: var(--ink-dim); font-size: 11px; margin-left: 6px; }
+    .tl-none { font-size: 12.5px; color: var(--ink-dim); padding: 6px 0; }
+
     /* ── post analytics, inside the post preview ──────────────────────────
        Opened by clicking a live card. It is a PANEL rather than more lines on
        the card because the card has to stay scannable in a column 208px wide
@@ -4641,8 +4680,97 @@
        rows carry none of those - no engine produces them yet - so every one of
        those sections is now conditional. Rendering "undefined" under a heading
        like "AI summary" would be worse than not showing the heading at all. */
+    /* How overdue, in words. "3 days ago" is a fact; "3 days overdue" is a
+       debt, and only the second one gets somebody to act. */
+    function dueWords(iso) {
+      if (!iso) return { text: 'No date set', late: false };
+      const ms = new Date(iso).getTime() - Date.now();
+      if (isNaN(ms)) return { text: '', late: false };
+      const late = ms < 0;
+      const h = Math.abs(ms) / 3600000;
+      const n = h < 1 ? Math.max(1, Math.round(Math.abs(ms) / 60000)) : (h < 48 ? Math.round(h) : Math.round(h / 24));
+      const unit = h < 1 ? 'min' : (h < 48 ? 'hour' : 'day');
+      const plural = n === 1 ? '' : 's';
+      return { text: late ? n + ' ' + unit + plural + ' overdue' : 'Due in ' + n + ' ' + unit + plural, late };
+    }
+
+    function taskList(rows) {
+      if (!rows || !rows.length) {
+        return '<div class="tl-none">Nothing outstanding on this lead.</div>';
+      }
+      return rows.map(function (t) {
+        const d = dueWords(t.due_at);
+        const pr = (t.priority === 'urgent' || t.priority === 'high') ? t.priority : '';
+        return '<div class="tk" data-task="' + esc2(t.id) + '">'
+          + '<button class="tk-done" title="Mark done" data-done="' + esc2(t.id) + '">\u2713</button>'
+          + '<div class="tk-b"><div class="tk-t">' + esc2(t.title || 'Follow up') + '</div>'
+          + (t.description ? '<div class="tk-d">' + esc2(t.description) + '</div>' : '')
+          + '<div class="tk-w' + (d.late ? ' due' : '') + '">' + esc2(d.text) + '</div></div>'
+          + (pr ? '<span class="tk-p ' + pr + '">' + pr + '</span>' : '')
+          + '</div>';
+      }).join('');
+    }
+
+    /* One line per event, in the lead's own words rather than the enum's.
+       'lead_stage_changed' tells a developer what happened; "Moved from
+       contacted to qualified, after 2 days" tells the person who has to act on
+       it. The seconds are carried on the payload precisely so this can say how
+       long it sat, which is the number that shows a lead going cold. */
+    function activityLine(a) {
+      const p = a.payload || {};
+      const secs = Number(p.seconds_in_previous);
+      const sat = isFinite(secs) && secs > 60
+        ? ', after ' + (secs < 86400 ? Math.round(secs / 3600) + 'h' : Math.round(secs / 86400) + ' days')
+        : '';
+      switch (a.activity_type) {
+        case 'lead_created':       return { t: 'Lead arrived' + (p.source ? ' from ' + String(p.source).replace(/_/g, ' ') : ''), mark: true };
+        case 'lead_stage_changed': return { t: 'Moved ' + String(p.from || '?').replace(/_/g, ' ') + ' \u2192 ' + String(p.to || '?').replace(/_/g, ' ') + sat, mark: true };
+        case 'lead_assigned':      return { t: 'Assigned to an agent' };
+        case 'task_created':       return { t: 'Follow-up raised: ' + (p.title || 'a task') };
+        case 'task_completed':     return { t: 'Done: ' + (p.title || 'a task') };
+        case 'call_logged':        return { t: 'Call logged' };
+        case 'whatsapp_sent':      return { t: 'WhatsApp sent' };
+        case 'viewing_scheduled':  return { t: 'Viewing booked', mark: true };
+        case 'viewing_completed':  return { t: 'Viewing done', mark: true };
+        case 'note_added':         return { t: 'Note added' };
+        case 'deal_closed':        return { t: 'Closed', mark: true };
+        case 'deal_lost':          return { t: 'Lost', mark: true };
+        default:                   return { t: String(a.activity_type || '').replace(/_/g, ' ') };
+      }
+    }
+
+    function activityList(rows) {
+      if (!rows || !rows.length) {
+        return '<div class="tl-none">Nothing recorded yet. Moving this lead will start the trail.</div>';
+      }
+      return '<div class="tl">' + rows.map(function (a) {
+        const line = activityLine(a);
+        return '<div class="tl-i' + (line.mark ? ' mark' : '') + '">' + esc2(line.t)
+          + '<span class="tl-w">' + esc2(fmtWhen(a.created_at)) + '</span></div>';
+      }).join('') + '</div>';
+    }
+
+    /* Which lead the open drawer belongs to, so a slow read cannot paint one
+       lead's history under another's name -- the same guard the post analytics
+       panel needed, for the same reason. */
+    let LEAD_OPEN_FOR = null;
+
+    function loadLeadDetail(leadId) {
+      if (!leadId || !window.SynListings || !SynListings.leadTasks) return;
+      SynListings.leadTasks(leadId).then(function (rows) {
+        const box = document.getElementById('leadTasks');
+        if (box && LEAD_OPEN_FOR === leadId) box.innerHTML = taskList(rows);
+      }).catch(function (e) { console.error('lead tasks', e); });
+
+      SynListings.leadActivity(leadId).then(function (rows) {
+        const box = document.getElementById('leadTrail');
+        if (box && LEAD_OPEN_FOR === leadId) box.innerHTML = activityList(rows);
+      }).catch(function (e) { console.error('lead activity', e); });
+    }
+
     function openLead(i){
       const l = leads[i]; if (!l) return;
+      LEAD_OPEN_FOR = l.id || null;
       const a = l.attr, m = CH[a.channel];
       const sec = (k, html) => html ? `<div class="sec"><div class="k">${k}</div>${html}</div>` : '';
       const won = l.stage === 'Won'
@@ -4683,14 +4811,57 @@
         }</p></div>
         ${sec('AI summary', l.summary ? `<p style="margin-top:6px;font-size:13px;line-height:1.6">${l.summary}</p>` : '')}
         <div class="sec"><div class="k">Interested in</div><p style="margin-top:6px;font-size:13.5px;font-weight:600">${l.pr.split(' \u00b7 ')[0]}</p><p class="muted" style="font-size:12px">${l.pr.split(' \u00b7 ').slice(1).join(' \u00b7 ')}</p></div>
+        ${l.id ? `<div class="sec"><div class="k">Follow-ups</div>
+          <div id="leadTasks"><div class="tl-none">Loading\u2026</div></div></div>` : ''}
+        ${l.id ? `<div class="sec"><div class="k">History</div>
+          <div id="leadTrail"><div class="tl-none">Loading\u2026</div></div></div>` : ''}
         <div class="sec"><div class="k">How this lead reached you</div><div class="chain">${chain(a)}</div>${(a.link||a.campaign)?`<p class="muted" style="font-size:11px;margin-top:10px">${a.link?'Tracked link <b style="color:var(--ink-muted)">'+a.link+'</b>':''}${a.campaign?' \u00b7 campaign <b style="color:var(--ink-muted)">'+a.campaign+'</b>':''}</p>`:''}<div class="capture">\u26a1 Auto-captured \u2014 no manual entry</div></div>
         ${won}
         ${sec('Relationship graph', Array.isArray(l.graph) && l.graph.length ? graphHtml(l.graph) : '')}
         ${l.brief ? `<div class="sec brief"><div class="k">\u2726 Brief from Tayo</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${l.brief}</p></div>` : ''}`;
       scrim.classList.add('on'); drawer.classList.add('on');
       if (window.synMotion) synMotion.refresh();
+      /* After the drawer is up, not before: the lead's own details are already
+         in hand and should paint immediately, while the follow-ups and the
+         trail are two round trips that must not hold them back. */
+      loadLeadDetail(l.id);
     }
-    function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
+    /* TICKING A TASK OFF, which is the only write in the drawer.
+       Delegated from the drawer rather than bound per row, because the list is
+       re-rendered whenever it reloads and per-row handlers would be lost with
+       the nodes that carried them.
+
+       The row is removed on success rather than re-fetched: one fewer round
+       trip, and the list is short enough that a full reload would visibly
+       redraw work the agent is in the middle of reading. The trail IS
+       re-fetched, because completing a task is itself an event and the history
+       is the place that claims to be complete. */
+    drawer.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-done]');
+      if (!b) return;
+      const id = b.dataset.done;
+      const row = b.closest('.tk');
+      b.disabled = true;
+      SynListings.completeTask(id).then(function () {
+        if (row) row.remove();
+        const box = document.getElementById('leadTasks');
+        if (box && !box.querySelector('.tk')) {
+          box.innerHTML = '<div class="tl-none">Nothing outstanding on this lead.</div>';
+        }
+        toast('Done');
+        if (LEAD_OPEN_FOR && SynListings.leadActivity) {
+          SynListings.leadActivity(LEAD_OPEN_FOR).then(function (rows) {
+            const t = document.getElementById('leadTrail');
+            if (t) t.innerHTML = activityList(rows);
+          }).catch(function () { /* the task is done either way */ });
+        }
+      }).catch(function (err) {
+        b.disabled = false;
+        toast((err && err.message) || 'Could not mark that done');
+      });
+    });
+
+    function closeLead(){ LEAD_OPEN_FOR = null; scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
     scrim.addEventListener('click', closeLead);
     /* One listener on the container instead of one per render. The drawer's
        innerHTML is replaced by eleven different templates and each used to

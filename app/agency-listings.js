@@ -213,6 +213,88 @@
      so the attribution record cannot be rewritten after the fact. */
   var LEAD_STAGES = ['new', 'contacted', 'qualified', 'viewing_scheduled',
                      'viewing_completed', 'negotiating', 'commitment', 'closed', 'lost'];
+  /* ── what has happened to a lead ────────────────────────────────────────
+     Migration 0111 made a stage change write its own history, log itself to
+     the activity feed and raise the follow-up it implies. These read that back.
+
+     The lead drawer is where they belong, and the reason is the reference the
+     CRM work is being measured against: Frappe's organising idea is that ONE
+     page carries the activities, the notes and the tasks for an entity, so
+     nobody has to assemble the story from four screens. Ours had the tables
+     and no reader, which is the same as not having them. */
+
+  /** Open follow-ups on one lead, soonest first. Completed ones are dropped:
+   *  this list is what somebody still has to do, and a done task in it is a
+   *  line the eye has to skip past every time. The history section below
+   *  records the completion, so nothing is lost by leaving it out here. */
+  function leadTasks(leadId) {
+    if (!leadId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('tasks')
+        .select('id, title, description, task_type, priority, status, due_at, completed_at, assigned_to')
+        .eq('lead_id', leadId)
+        .is('deleted_at', null)
+        .in('status', ['pending', 'in_progress'])
+        .order('due_at', { ascending: true, nullsFirst: false })
+        .limit(50);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** The trail, newest first. activity_feed is append-only by trigger, so this
+   *  is the one account of a lead that cannot have been tidied up afterwards. */
+  function leadActivity(leadId, limit) {
+    if (!leadId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('activity_feed')
+        .select('id, activity_type, payload, created_at, agent_id')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false })
+        .limit(limit || 40);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Done. completed_at is set alongside the status because a status with no
+   *  time behind it cannot answer "how long did that actually take", which is
+   *  the only interesting question about a finished task. */
+  function completeTask(id) {
+    if (!id) return Promise.reject(new Error('no task'));
+    return client().then(function (c) {
+      return c.from('tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString() })
+        .eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Everything still owed across the agency, soonest first -- the answer to
+   *  "what do I do this morning", which is the question a CRM exists for and
+   *  the one this product could not answer at all. RLS narrows it to the
+   *  caller's own tasks unless they are an admin or owner, which is the right
+   *  default: an agent opening this wants their list, not everyone's. */
+  function openTasks(limit) {
+    return client().then(function (c) { return agencyId().then(function (aid) { return [c, aid]; }); })
+      .then(function (pair) {
+        var c = pair[0], aid = pair[1];
+        if (!aid) return { data: [], error: null };
+        return c.from('tasks')
+          .select('id, lead_id, title, task_type, priority, status, due_at')
+          .eq('agency_id', aid)
+          .is('deleted_at', null)
+          .in('status', ['pending', 'in_progress'])
+          .order('due_at', { ascending: true, nullsFirst: false })
+          .limit(limit || 100);
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return r.data || [];
+      });
+  }
+
   function setLeadStage(id, stage) {
     if (LEAD_STAGES.indexOf(stage) < 0) return Promise.reject(new Error('Unknown stage: ' + stage));
     var c1;
@@ -2130,6 +2212,10 @@
     list: list,
     leads: leads,
     setLeadStage: setLeadStage,
+    leadTasks: leadTasks,
+    leadActivity: leadActivity,
+    completeTask: completeTask,
+    openTasks: openTasks,
     roster: roster,
     invites: invites,
     createInvite: createInvite,
