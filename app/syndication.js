@@ -148,245 +148,30 @@
   ];
 
 
-  /* ── patterns ───────────────────────────────────────────────────────────
-     The angles above are the fallback. The real catalogue is rows in
-     content_templates, which carry text rather than functions, so an agency
-     can write its own. A pattern is plain prose with two constructs:
+  /* THE {token} ENGINE WAS HERE, and it went with the editor it existed for.
+     Removed: TOKENS, renderPattern and its {verified?yes|no} conditional,
+     patternTokens, unknownTokens, angleFromTemplate, derenderPattern,
+     templateFromVariant, setTemplates, and the activeAngles indirection that
+     let stored rows stand in for the angles below.
 
-       {area}                     substitute
-       {verified?yes|no}          pick a branch on a truthy field
+     The idea was that an agency writes "{priceLine} in {area}" once and every
+     listing fills in its own details. That is a good idea and it was the wrong
+     one the moment Generate started calling a model: a pattern substitutes
+     values into a sentence somebody already wrote, so it says the same thing
+     forever. It cannot notice that this listing has a service charge worth
+     leading on, or that the honest line about an unverified home is that it is
+     unverified. Reported as the generator repeating itself, which is precisely
+     what a template does.
 
-     The conditional is not decoration. "Verified this month." must never
-     appear on an unverified listing, and half the seeded angles turn on
-     exactly that -- a substitution-only language would have quietly changed
-     what this product claims about a property.
+     content_templates still exists and still holds its rows. Nothing reads it.
 
-     UNKNOWN TOKENS THROW. The alternative is a buyer reading "{bedroms}" in a
-     caption on Instagram, which is unrecoverable and looks like nobody is
-     home. Failing here means the variant is dropped and the agency is told. */
-  var TOKENS = {
-    /* Everything shape() produces that is safe to print, plus two derived
-       forms the seeded angles need. Adding a token is adding a line here. */
-    title:      function (p) { return p.title; },
-    kind:       function (p) { return p.kind; },
-    area:       function (p) { return p.area; },
-    city:       function (p) { return p.city; },
-    bedrooms:   function (p) { return p.bedrooms; },
-    price:      function (p) { return p.price; },
-    priceShort: function (p) { return p.priceShort; },
-    priceLine:  function (p) { return p.priceLine; },
-    trust:      function (p) { return p.trust; },
-    /* {power} and {flood} were tokens here. Nothing in the shipped angles
-       used {flood}, and {power} fed only the sentence removed above -- but
-       both stayed reachable from an agency's own template, which made them
-       a loaded gun: type {power} into a custom caption and a seed_rand
-       number goes out as a fact about a street. Removed rather than
-       documented, because a token that must not be used should not exist. */
-    verified:   function (p) { return p.verified; },
-    /* "3 days" / "1 day" / "14 days" when nothing is known. The plural and the
-       null case lived inside the old scarcity angle; a pattern cannot express
-       them, so they belong here where every template gets them right. */
-    days: function (p) {
-      if (p.daysLeft == null) return '14 days';
-      return p.daysLeft + (p.daysLeft === 1 ? ' day' : ' days');
-    },
-    daysLeft: function (p) { return p.daysLeft; },
-  };
+     The ANGLES above stay: plain functions, never patterns, and what
+     generate() works from. generate() itself is no longer on the Generate
+     button -- aiCampaign() is -- but it is still exercised by
+     syndication-test.html and is still the answer if the model is away. */
 
-  function tokenRaw(name, p) {
-    if (!Object.prototype.hasOwnProperty.call(TOKENS, name)) {
-      throw new Error('Unknown token {' + name + '}');
-    }
-    return TOKENS[name](p);
-  }
-
-  function tokenValue(name, p) {
-    var v = tokenRaw(name, p);
-    return v == null ? '' : String(v);
-  }
-
-  /* A CONDITIONAL MUST TEST THE VALUE, NOT ITS PRINTED FORM.
-     This read tokenValue() first, which stringifies -- and String(false) is
-     "false", which is truthy. Every {verified?...|...} therefore took the yes
-     branch, so an UNVERIFIED listing was captioned "Verified this month." That
-     is a false claim about a property, published under the agency's own name,
-     produced by the one part of the system whose job is to refuse exactly
-     that. Caught by diffing rendered output against the hardcoded angles on a
-     verified and an unverified listing; the verified case passed and would
-     have shipped it. */
-  function tokenTruthy(name, p) {
-    var v = tokenRaw(name, p);
-    if (v == null || v === false) return false;
-    if (v === 0) return false;
-    return String(v).trim() !== '';
-  }
-
-  /** Renders one pattern against a shaped listing. Throws on an unknown token. */
-  function renderPattern(pattern, p) {
-    return String(pattern == null ? '' : pattern).replace(
-      /\{([a-zA-Z]+)(\?([^|}]*)\|([^}]*))?\}/g,
-      function (_all, name, hasBranch, yes, no) {
-        if (hasBranch) {
-          /* Presence of the token is still checked on the branch form: a
-             conditional on a field that does not exist is a silent always-no. */
-          return tokenTruthy(name, p) ? yes : no;
-        }
-        return tokenValue(name, p);
-      },
-    );
-  }
-
-  /** Every token a pattern uses, for validation before anything is saved. */
-  function patternTokens(pattern) {
-    var out = [], m, re = /\{([a-zA-Z]+)(\?[^}]*)?\}/g;
-    while ((m = re.exec(String(pattern || '')))) if (out.indexOf(m[1]) === -1) out.push(m[1]);
-    return out;
-  }
-
-  /** Which tokens in a pattern we cannot resolve. Empty means it is safe. */
-  function unknownTokens(pattern) {
-    return patternTokens(pattern).filter(function (t) {
-      return !Object.prototype.hasOwnProperty.call(TOKENS, t);
-    });
-  }
-
-  /**
-   * Turns a content_templates row into the shape buildVariant already expects,
-   * so the rest of the pipeline -- validation, media, sign-off, hashtags --
-   * does not know or care that angles stopped being code.
-   */
-  function angleFromTemplate(row) {
-    return {
-      id: row.id,
-      templateId: row.id,
-      angleKey: row.angle_key || 'custom',
-      name: row.name,
-      why: row.why || '',
-      requiresVerified: !!row.requires_verified,
-      platforms: Array.isArray(row.platforms) ? row.platforms : [],
-      isSeed: !row.agency_id,
-      hook: function (p) { return renderPattern(row.hook_pattern, p); },
-      body: function (p) { return renderPattern(row.body_pattern, p); },
-      cta: row.cta || '',
-    };
-  }
-
-
-  /* ── turning a caption back into a pattern ──────────────────────────────
-     "Save as template" starts from text that has already been rendered: the
-     area, the price and the bedroom count are baked into it. Saved verbatim,
-     the agency would get a template that says "Bodija" on every listing it
-     ever writes.
-
-     So the substitution is run backwards. Each token is rendered against the
-     listing this caption came from, and wherever that exact string appears it
-     becomes the token again. Longest values first: '2' would otherwise match
-     inside '₦1,200,000' and turn a price into nonsense.
-
-     Values that cannot be found stay literal, which is correct and visible --
-     an agency that typed a neighbourhood by hand gets a template mentioning
-     that neighbourhood, and the editor shows them exactly that. */
-  var DERENDER_TOKENS = ['priceLine', 'priceShort', 'title', 'area', 'city', 'kind', 'bedrooms', 'days'];
-
-  function derenderPattern(text, p) {
-    if (!text) return '';
-    var out = String(text);
-    var pairs = [];
-    DERENDER_TOKENS.forEach(function (name) {
-      var v = TOKENS[name](p);
-      if (v == null) return;
-      v = String(v);
-      /* One and two character values are not safe to reverse: a bedroom count
-         of 2 appears inside dates, prices and the word "2-bed" everywhere. It
-         is left literal rather than corrupting the rest of the sentence. */
-      if (v.length < 3) return;
-      pairs.push({ token: name, value: v });
-    });
-    pairs.sort(function (a, b) { return b.value.length - a.value.length; });
-    pairs.forEach(function (pair) {
-      out = out.split(pair.value).join('{' + pair.token + '}');
-    });
-    return out;
-  }
-
-  /**
-   * A template, recovered from one generated variant. The agency edits it from
-   * here rather than starting at a blank box -- the caption they liked is
-   * already the shape of the thing they want to keep.
-   */
-  /* Values too short to reverse safely, that are nonetheless sitting in the
-     text. The agency is told about these rather than left to discover on a
-     later listing that its template insists every home has two bedrooms. */
-  function bakedLiterals(text, p) {
-    var out = [];
-    ['bedrooms', 'trust', 'daysLeft'].forEach(function (name) {
-      var v = TOKENS[name](p);
-      if (v == null) return;
-      v = String(v);
-      if (v.length >= 3) return;                    // long enough: already a token
-      if (String(text).indexOf(v) === -1) return;   // not in the text at all
-      out.push({ token: name, value: v });
-    });
-    return out;
-  }
-
-  function templateFromVariant(v, propertyRow) {
-    var p = shape(propertyRow);
-    var hook = derenderPattern(v.hook, p);
-    var body = derenderPattern(v.body, p);
-
-    /* A CONDITIONAL THAT WAS TRUE ONCE IS NOT A CONDITIONAL ANY MORE.
-       {verified?Verified this month. |} renders to "Verified this month. " on a
-       verified listing, and reversing the substitution cannot know a branch was
-       ever there -- so the claim comes back unconditional and would appear on
-       an unverified home the next time this template runs.
-
-       Saving it as requires_verified is the honest repair: the template keeps
-       the sentence and can only ever run where the sentence is true. Same rule
-       the seeded Verified-first angle lives under, arrived at from the other
-       direction. */
-    var claimsVerification = /verif/i.test(hook + ' ' + body);
-
-    return {
-      name: v.angleName ? (v.angleName + ' (yours)') : 'My angle',
-      why: '',
-      hook_pattern: hook,
-      body_pattern: body,
-      cta: v.cta || '',
-      platforms: [],
-      requires_verified: claimsVerification,
-      angle_key: 'custom',
-      /* Advisory, for the editor. Not columns -- these describe this one
-         recovery, not the template. */
-      _claimsVerification: claimsVerification,
-      _literals: bakedLiterals(hook + ' ' + body, p),
-    };
-  }
-
-  /* The catalogue in use. Starts as the built-ins so a page that never loads
-     templates -- or loads them and fails -- behaves exactly as it did before. */
-  /* The built-ins are their own key -- 'trust' is both the id and the kind,
-     which is what made the uuid switch silent in the first place. */
+  /* The built-ins are their own key -- 'trust' is both the id and the kind. */
   ANGLES.forEach(function (a) { a.angleKey = a.id; a.templateId = null; });
-
-  var activeAngles = ANGLES;
-
-  /**
-   * Installs the rows as the catalogue. A row whose pattern uses a token we
-   * cannot resolve is REFUSED, not repaired: it would render braces to a
-   * buyer. Returns what was taken and what was not, so the caller can say so.
-   */
-  function setTemplates(rows) {
-    if (!rows || !rows.length) { activeAngles = ANGLES; return { used: 0, rejected: [] }; }
-    var good = [], rejected = [];
-    rows.forEach(function (r) {
-      var bad = unknownTokens(r.hook_pattern).concat(unknownTokens(r.body_pattern));
-      if (bad.length) { rejected.push({ name: r.name, tokens: bad }); return; }
-      good.push(angleFromTemplate(r));
-    });
-    activeAngles = good.length ? good : ANGLES;
-    return { used: good.length, rejected: rejected };
-  }
 
   /* ── Stock media pool ───────────────────────────────────────────────────
      Placeholder creative so a campaign can be built and reviewed before a
@@ -603,12 +388,9 @@
     var b = brandBits(opts.brand);
     var p = shape(propertyRow);
     var platforms = opts.platforms && opts.platforms.length ? opts.platforms : Object.keys(PLATFORMS);
-    /* activeAngles, not ANGLES: the catalogue is rows once setTemplates has
-       run, and the built-ins only when it has not. */
     var angles = opts.angles && opts.angles.length
-      ? activeAngles.filter(function (a) { return opts.angles.indexOf(a.id) > -1; })
-      : activeAngles;
-
+      ? ANGLES.filter(function (a) { return opts.angles.indexOf(a.id) > -1; })
+      : ANGLES;
     /* An angle whose premise is the verification cannot run on a listing that
        has not been verified. Dropping it is deliberate: the alternative is
        generating a claim the agency would publish under its own name, and the
@@ -726,7 +508,14 @@
         body: text.split('\n').slice(1).join('\n').trim(),
         cta: '',
         caption: caption,
-        tags: useTags,
+        /* hashtags, NOT tags. validate() reads v.hashtags to check the
+           per-platform cap and payloadFor() sends v.hashtags -- naming the
+           field `tags` here meant every AI variant threw inside validate on
+           `undefined.length`, which is to say the Generate button would have
+           died on its first press. Caught by running it rather than reading
+           it: the shape looked right beside buildVariant until the two were
+           compared field by field. */
+        hashtags: useTags,
         media: media,
         ratio: media && media.ratios ? media.ratios[0] : null,
         writtenBy: 'ai',
@@ -931,10 +720,7 @@
   window.SynSyndicate = {
     PLATFORMS: PLATFORMS, ANGLES: ANGLES, STOCK: STOCK,
     shape: shape, generate: generate, validate: validate,
-    setTemplates: setTemplates, renderPattern: renderPattern,
-    templateFromVariant: templateFromVariant, derenderPattern: derenderPattern,
     aiCampaign: aiCampaign,
-    unknownTokens: unknownTokens, tokenNames: function () { return Object.keys(TOKENS); },
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
     trackedLink: trackedLink, CHANNEL_FOR: CHANNEL_FOR,

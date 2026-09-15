@@ -939,23 +939,6 @@
        The angles that write your captions belong next to the logo and the
        colours: they are as much your voice as the typeface is. Each is shown
        as the post it would produce, not as the pattern it is stored as. */
-    .bk-tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 12px; }
-    .bk-tpl { border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-      background: var(--surface, #fff); display: flex; flex-direction: column; text-align: left;
-      padding: 0; cursor: default; }
-    .bk-tpl.mine { cursor: pointer; }
-    .bk-tpl.mine:hover { border-color: rgba(54,54,54,0.4); }
-    .bk-tpl-top { display: flex; align-items: center; gap: 7px; padding: 10px 12px;
-      border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-    .bk-tpl-nm { font: 700 12.5px/1.3 var(--f-sans); color: var(--ink); }
-    .bk-tpl-tag { font-size: 10.5px; padding: 2px 7px; border-radius: 100px;
-      background: rgba(20,20,20,0.06); color: var(--ink-dim); margin-left: auto; }
-    .bk-tpl-body { padding: 12px; font-size: 12.5px; line-height: 1.55; color: var(--ink-muted);
-      white-space: pre-wrap; word-break: break-word; flex: 1;
-      display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
-    .bk-tpl-foot { padding: 8px 12px 11px; font-size: 11px; color: var(--ink-dim);
-      border-top: 1px dashed var(--rule-soft, rgba(20,20,20,0.08)); }
-    .bk-tpl-against { font-size: 11.5px; color: var(--ink-dim); margin-bottom: 10px; }
 
     .brand-preview { border-radius: 12px; border: 1px solid var(--border); background: #fff;
       padding: 16px 18px; display: flex; align-items: center; gap: 14px; min-height: 64px; }
@@ -1954,83 +1937,6 @@
        still be there when you look for it. */
     /* Earlier versions. A list, not a grid: these are read one at a time
        when somebody is looking for a line they wrote before. */
-    /* ── template editor ────────────────────────────────────────────────
-       Two columns: what you are writing, and what a buyer would read. They
-       stack on a narrow screen because the preview is the half worth keeping
-       visible, so it goes second and stays in view as you type. */
-    .tpl-modal { max-width: 940px; width: calc(100vw - 40px); }
-    .tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    @media (max-width: 860px) { .tpl-grid { grid-template-columns: 1fr; } }
-    .tpl-field { margin-bottom: 13px; }
-    .tpl-field label { display: block; font: 700 11px/1 var(--f-sans); letter-spacing: .12em;
-      text-transform: uppercase; color: var(--ink-dim); margin-bottom: 6px; }
-    .tpl-field input, .tpl-field textarea, .tpl-field select {
-      width: 100%; border: 1px solid rgba(54,54,54,0.22); border-radius: 10px;
-      padding: 10px 12px; font: 400 13.5px/1.55 var(--f-sans); background: #fff;
-      color: var(--ink); resize: vertical; }
-    .tpl-field textarea { min-height: 92px; }
-    .tpl-hint { font-size: 11.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.5; }
-    .tpl-toks { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-    /* A CHIP HAS TO SAY WHAT IT PRODUCES.
-       These were bare {token} names, which tells you the syntax and nothing
-       about the result -- and three of the twelve offered were traps: bare
-       {verified} renders the literal word "false" into a caption, {price}
-       renders 450000 with no naira sign or separators, and {trust} renders
-       nothing at all. The curated list carries a sample of the real output, so
-       what you are inserting is legible before you insert it. */
-    .tpl-tok .ex { color: var(--ink-dim); font-weight: 400; margin-left: 5px; }
-    .tpl-tok.wide { border-radius: 8px; }
-    .tpl-tok { border: 1px solid rgba(54,54,54,0.2); background: transparent; border-radius: 100px;
-      padding: 4px 9px; font: 500 11.5px/1 ui-monospace, Menlo, monospace; cursor: pointer;
-      color: var(--ink-muted); }
-    .tpl-tok:hover { border-color: rgba(54,54,54,0.5); color: var(--ink); }
-
-    .tpl-prev { background: var(--sunken, rgba(20,20,20,0.04)); border: 1px solid var(--border);
-      border-radius: 12px; padding: 15px 16px; position: sticky; top: 0; }
-    .tpl-prev-h { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      flex-wrap: wrap; margin-bottom: 10px; }
-    .tpl-prev-h .k { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em;
-      text-transform: uppercase; color: var(--ink-dim); }
-    .tpl-prev-h select { max-width: 58%; font-size: 12px; padding: 5px 8px;
-      border-radius: 8px; border: 1px solid rgba(54,54,54,0.22); background: #fff; color: var(--ink); }
-    .tpl-out { font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
-      color: var(--ink); min-height: 120px; }
-    .tpl-warn { margin-top: 11px; font-size: 12px; line-height: 1.5; padding: 9px 11px;
-      border-radius: 9px; background: rgba(168,64,43,0.07); color: #a8402b; }
-    .tpl-note { margin-top: 11px; font-size: 12px; line-height: 1.5; padding: 9px 11px;
-      border-radius: 9px; background: rgba(20,20,20,0.05); color: var(--ink-muted); }
-    .tpl-warn:empty, .tpl-note:empty { display: none; }
-    .tpl-actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
-    .tpl-actions .grow { flex: 1; }
-    /* WHY SAVE LOOKED DEAD.
-       Every refusal -- no name, no opening line, an unknown token, a rejected
-       write -- was printed into .tpl-warn, which lives in the PREVIEW column.
-       Above 860px that is the other side of the dialog; below 860px the grid
-       stacks and it is a screenful away. The button was pressed, the message
-       was written, and nobody ever saw it, which reads exactly like a button
-       that does nothing. It says it here now, against the button that was
-       pressed, and the offending field takes focus. */
-    .tpl-msg { flex-basis: 100%; order: -1; font-size: 12.5px; line-height: 1.5;
-      padding: 9px 11px; border-radius: 9px; background: rgba(168,64,43,0.07);
-      color: #a8402b; }
-    .tpl-msg:empty { display: none; }
-
-    /* Your own templates, listed where campaigns are made. */
-    .tpl-mine { margin-top: 20px; }
-    .tpl-mine:empty { display: none; }
-    .tpl-row { display: flex; align-items: center; gap: 10px; padding: 10px 0;
-      border-top: 1px solid var(--border); font-size: 13.5px; flex-wrap: wrap; }
-    .tpl-row .nm { font-weight: 700; }
-    .tpl-row .hk { color: var(--ink-muted); flex: 1; min-width: 160px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tpl-row .vf { font-size: 11px; padding: 3px 7px; border-radius: 100px;
-      background: rgba(20,20,20,0.06); color: var(--ink-muted); }
-
-    /* Save-as-template sits on the card it would copy. */
-    .cmp-keep { margin-top: 8px; border: 0; background: none; padding: 0; cursor: pointer;
-      font: 600 11.5px var(--f-sans); color: var(--ink-muted);
-      text-decoration: underline; text-underline-offset: 2px; }
-    .cmp-keep:hover { color: var(--ink); }
 
     /* ── listing photo gallery ───────────────────────────────────────────
        Small tiles, because the job here is order and removal rather than
@@ -3524,7 +3430,6 @@
             <div class="cmp-past" id="cmpPast"></div>
 
             <!-- Their own angles, where campaigns are made. -->
-            <div class="tpl-mine" id="tplMine"></div>
           </div>
 
           <div class="s-work-hd">
@@ -3909,8 +3814,6 @@
        {area} tells you nothing about what a buyer sees -- so the preview is
        not a nicety here, it is the only way to judge the thing you are
        writing. Rendered against a real listing of the agency's own. -->
-  <div class="modal-scrim" id="tplScrim"></div>
-  <div class="modal tpl-modal" id="tplModal" role="dialog" aria-modal="true" aria-label="Caption template" hidden></div>
 
   <!-- social composer: pick a listing → AI captions per channel → schedule -->
   <div class="modal-scrim" id="cmpScrim"></div>
@@ -10027,416 +9930,27 @@
         loadPast(row && row.id);
       });
 
-      /* Install the catalogue before anything can be generated. Until this
-         resolves, syndication.js uses its built-in angles -- so a slow or
-         failed load produces the old behaviour rather than no behaviour. */
-      if (window.SynListings && SynListings.listTemplates) {
-        SynListings.listTemplates().then(function (rows) {
-          var res = S.setTemplates(rows);
-          renderMyTemplates(rows);
-          if (res.rejected.length) {
-            /* A template referring to a token we cannot resolve is dropped
-               rather than rendered -- braces in a live caption are worse than
-               one missing angle. Said out loud so it can be fixed. */
-            console.warn('templates skipped (unknown tokens):', res.rejected);
-          }
-        }).catch(function (err) {
-          console.error('could not load caption templates; using the built-in angles', err);
-        });
-      }
+      /* THE TEMPLATE EDITOR WAS HERE, and the pattern engine it authored for.
 
+         It existed to let an agency write "{priceLine} in {area}" and have it
+         filled per listing -- which is a real idea, and the wrong one once the
+         button beside it started calling a model. A pattern can substitute
+         values into a sentence somebody already wrote; it cannot notice that
+         this listing has a service charge worth leading on, or that the
+         honest thing to say about an unverified home is that it is unverified.
+         Generate produces different copy every press now, and a template
+         produces the same sentence forever, which is the complaint that
+         started this.
 
-      /* ═══════════ template editor ═══════════
-         A pattern cannot be judged as text: "{priceLine} in {area}" tells you
-         nothing about what a buyer reads. So this is two panes -- the pattern,
-         and the same pattern rendered against a real listing of theirs -- and
-         the preview updates on every keystroke. */
-      var tplModal = document.getElementById('tplModal');
-      var tplScrim = document.getElementById('tplScrim');
-      var tplDraft = null;
+         So it is gone rather than improved: the editor, its live preview, the
+         token chips, save-as-template, the brand-page gallery, and the
+         {token} engine underneath them in syndication.js.
 
-      function tplClose() {
-        tplModal.hidden = true; tplScrim.classList.remove('on');
-        document.body.style.overflow = '';
-      }
-      tplScrim.addEventListener('click', tplClose);
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !tplModal.hidden) tplClose();
-      });
+         content_templates is NOT dropped. The five seeded rows and anything an
+         agency wrote are still there, and a deleted table is the one mistake
+         that cannot be walked back. Nothing reads it any more. */
 
-      /* The editor lives here because this is where campaigns are made, but
-         the brand page shows the same templates and clicking one should open
-         it. Published rather than duplicated -- two editors would drift, and
-         the second one would be the one with the stale token list. */
-      window.SynTemplateEditor = {
-        open: function (draft) { goToPane('social'); setTimeout(function () { tplOpen(draft); }, 260); },
-        reload: function () {
-          return SynListings.listTemplates().then(function (list) {
-            S.setTemplates(list); renderMyTemplates(list); announceTemplates(list); return list;
-          });
-        },
-      };
-
-      /* Anything holding its own copy of the catalogue hears about a change
-         here. The brand gallery caches its rows -- without this it kept
-         showing a template's old name after the edit had already been saved,
-         and calling its refresh by hand from the save path is the kind of
-         wiring the next feature forgets. */
-      function announceTemplates(list) {
-        document.dispatchEvent(new CustomEvent('syn:templates', { detail: list }));
-      }
-
-      /* A NEW TEMPLATE OPENS FILLED IN.
-         It used to open blank: two empty textareas, twenty-four unexplained
-         {token} chips, an empty preview, and a Save that refused. There was
-         nothing on screen to say what a template IS, and the one control that
-         would have shown you -- the live preview -- had nothing to render.
-
-         So a new one starts as a working example rendered against a real
-         listing of theirs. The preview fills the moment it opens, which is the
-         whole explanation: this text, that result. Every word is editable, and
-         Save succeeds on the first press instead of refusing. */
-      var TPL_STARTER = {
-        name: 'Weekend viewings',
-        why: 'Best for a listing that has been up a week and needs a second look',
-        hook_pattern: 'Still available in {area} \u2014 {priceLine}.',
-        body_pattern: 'A {bedrooms}-bed {kind} in {area}.\n\n'
-          + '{verified?We have checked this one on the ground.|Viewings this weekend.}',
-        cta: 'Take a look \u2192',
-      };
-
-      /* WHAT MAY BE OFFERED, which is not what the engine resolves.
-         S.tokenNames() is every token that renders, and handing all twelve to
-         an agency as one-click chips was a loaded gun: {verified} on its own
-         renders the string "false", {price} renders 450000 with no naira sign
-         or separators, {trust} renders nothing. All three still WORK --
-         templates already saved with them keep rendering, and dropping them
-         from the engine would break those -- they are simply not suggested,
-         and the two that print something misleading are called out in the
-         preview if somebody types them anyway.
-
-         Each chip carries a sample of its own output, so a chip reading
-         "{priceLine}  \u20a6450,000 a year" needs no legend beneath it. */
-      var TPL_CHIPS = [
-        { t: 'area',       ex: 'Lekki Phase 1' },
-        { t: 'city',       ex: 'Lagos' },
-        { t: 'kind',       ex: 'apartment' },
-        { t: 'bedrooms',   ex: '3' },
-        { t: 'priceLine',  ex: '\u20a6450,000 a year' },
-        { t: 'priceShort', ex: '\u20a6450,000/yr' },
-        { t: 'title',      ex: 'the listing name' },
-        { t: 'days',       ex: '13 days' },
-        { ins: '{verified?yes|no}', label: '{verified?\u2026|\u2026}',
-          ex: 'one wording if verified, another if not', wide: true },
-      ];
-
-      function tplOpen(draft) {
-        tplDraft = Object.assign({
-          id: null, name: '', why: '', hook_pattern: '', body_pattern: '',
-          cta: '', platforms: [], requires_verified: false,
-        }, draft || TPL_STARTER);
-
-        var chipHtml = TPL_CHIPS.map(function (c) {
-          var ins = c.ins || ('{' + c.t + '}');
-          return '<button type="button" class="tpl-tok' + (c.wide ? ' wide' : '') + '"'
-            + ' data-ins="' + esc(ins) + '">' + esc(c.label || ins)
-            + '<span class="ex">' + esc(c.ex) + '</span></button>';
-        }).join('');
-        var listingOpts = rows.map(function (r, i) {
-          return '<option value="' + i + '">' + esc(r.title || 'Listing ' + (i + 1)) + '</option>';
-        }).join('');
-
-        tplModal.innerHTML =
-          '<div class="modal-head"><div><div class="h2" style="margin:0">'
-          + (tplDraft.id ? 'Edit template' : 'New template') + '</div>'
-          + '<p class="muted" style="font-size:13px;margin:4px 0 0">'
-          +   'Write the caption once and put a <b>{token}</b> wherever a detail belongs. '
-          +   'The preview renders it against a real listing of yours, live as you type.</p>'
-          + '</div><button class="modal-x" type="button" id="tplX" aria-label="Close">\u00d7</button></div>'
-
-          + '<div class="tpl-grid">'
-          +   '<div>'
-          +     '<div class="tpl-field"><label for="tplName">Name</label>'
-          +       '<input id="tplName" type="text" maxlength="60" placeholder="Weekend viewings"></div>'
-          +     '<div class="tpl-field"><label for="tplWhy">When to use it <span style="text-transform:none;letter-spacing:0">(optional)</span></label>'
-          +       '<input id="tplWhy" type="text" maxlength="160" placeholder="Best for warm audiences already following us"></div>'
-          +     '<div class="tpl-field"><label for="tplHook">Opening line</label>'
-          +       '<textarea id="tplHook" style="min-height:64px"></textarea>'
-          +       '<div class="tpl-toks" data-into="tplHook">'
-          +         chipHtml
-          +       '</div></div>'
-          +     '<div class="tpl-field"><label for="tplBody">Body</label>'
-          +       '<textarea id="tplBody"></textarea>'
-          +       '<div class="tpl-toks" data-into="tplBody">'
-          +         chipHtml
-          +       '</div>'
-          +       '<div class="tpl-hint">Use <code>{area}</code> to drop in a value, or '
-          +         '<code>{verified?yes|no}</code> to say one thing when a listing is verified and another when it is not.</div>'
-          +     '</div>'
-          +     '<div class="tpl-field"><label for="tplCta">Closing line</label>'
-          +       '<input id="tplCta" type="text" maxlength="120" placeholder="Take a look \u2192"></div>'
-          +     '<div class="tpl-field"><label style="display:flex;align-items:center;gap:9px;text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:400">'
-          +       '<input type="checkbox" id="tplVerified" style="width:auto"> Only use on verified listings</label>'
-          +       '<div class="tpl-hint">Tick this if the wording claims anything about verification. A listing cannot self-certify, so the claim has to be true wherever it appears.</div></div>'
-          +   '</div>'
-
-          +   '<div><div class="tpl-prev">'
-          +     '<div class="tpl-prev-h"><span class="k">What a buyer reads</span>'
-          +       '<select id="tplAgainst">' + listingOpts + '</select></div>'
-          +     '<div class="tpl-out" id="tplOut"></div>'
-          +     '<div class="tpl-warn" id="tplWarn"></div>'
-          +     '<div class="tpl-note" id="tplNote"></div>'
-          +   '</div></div>'
-          + '</div>'
-
-          + '<div class="tpl-actions"><div class="tpl-msg" id="tplMsg"></div><span class="grow"></span>'
-          +   '<button class="btn" type="button" id="tplCancel">Cancel</button>'
-          +   '<button class="btn btn-primary" type="button" id="tplSave">'
-          +     (tplDraft.id ? 'Save changes' : 'Save template') + '</button>'
-          + '</div>';
-
-        document.getElementById('tplName').value = tplDraft.name;
-        document.getElementById('tplWhy').value = tplDraft.why;
-        document.getElementById('tplHook').value = tplDraft.hook_pattern;
-        document.getElementById('tplBody').value = tplDraft.body_pattern;
-        document.getElementById('tplCta').value = tplDraft.cta;
-        document.getElementById('tplVerified').checked = !!tplDraft.requires_verified;
-
-        ['tplName', 'tplWhy', 'tplHook', 'tplBody', 'tplCta'].forEach(function (id) {
-          document.getElementById(id).addEventListener('input', function () {
-            /* The refusal is about the state Save was pressed in. Typing
-               changes that state, so leaving it up would have it contradict
-               the form in front of you. */
-            var m = document.getElementById('tplMsg');
-            if (m) m.textContent = '';
-            tplPreview();
-          });
-        });
-        document.getElementById('tplVerified').addEventListener('change', tplPreview);
-        document.getElementById('tplAgainst').addEventListener('change', tplPreview);
-        document.getElementById('tplX').addEventListener('click', tplClose);
-        document.getElementById('tplCancel').addEventListener('click', tplClose);
-        document.getElementById('tplSave').addEventListener('click', tplSave);
-
-        /* Clicking a token puts it where the cursor was, which is the only
-           reason a token list beats a paragraph explaining the syntax. */
-        tplModal.querySelectorAll('.tpl-toks').forEach(function (box) {
-          box.addEventListener('click', function (e) {
-            var b = e.target.closest('.tpl-tok');
-            if (!b) return;
-            /* data-ins, not textContent: a chip now shows a sample of its
-               output next to the token, so its text is no longer the thing to
-               paste. */
-            var ins = b.dataset.ins || b.textContent;
-            var into = document.getElementById(box.dataset.into);
-            var at = into.selectionStart == null ? into.value.length : into.selectionStart;
-            var end = into.selectionEnd == null ? at : into.selectionEnd;
-            into.value = into.value.slice(0, at) + ins + into.value.slice(end);
-            into.focus();
-            into.selectionStart = into.selectionEnd = at + ins.length;
-            tplPreview();
-          });
-        });
-
-        tplModal.hidden = false;
-        tplScrim.classList.add('on');
-        document.body.style.overflow = 'hidden';
-        document.getElementById('tplName').focus();
-        tplPreview();
-      }
-
-      function tplCollect() {
-        return {
-          id: tplDraft && tplDraft.id,
-          name: document.getElementById('tplName').value.trim(),
-          why: document.getElementById('tplWhy').value.trim(),
-          hook_pattern: document.getElementById('tplHook').value,
-          body_pattern: document.getElementById('tplBody').value,
-          cta: document.getElementById('tplCta').value.trim(),
-          platforms: [],
-          requires_verified: document.getElementById('tplVerified').checked,
-        };
-      }
-
-      function tplPreview() {
-        var t = tplCollect();
-        var row = rows[+document.getElementById('tplAgainst').value || 0];
-        var out = document.getElementById('tplOut');
-        var warn = document.getElementById('tplWarn');
-        var note = document.getElementById('tplNote');
-        warn.textContent = ''; note.textContent = '';
-        if (!row) { out.textContent = 'Add a listing to preview against.'; return; }
-
-        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
-        if (bad.length) {
-          /* Shown before saving rather than after: an unknown token is the one
-             mistake that would reach a buyer as literal braces. */
-          out.textContent = '';
-          warn.textContent = 'Not a token: ' + bad.map(function (x) { return '{' + x + '}'; }).join(', ')
-            + '. Pick one from the list, or the template cannot be saved.';
-          return;
-        }
-
-        var p = S.shape(row);
-        try {
-          out.textContent = [S.renderPattern(t.hook_pattern, p), S.renderPattern(t.body_pattern, p), t.cta]
-            .filter(Boolean).join('\n\n');
-        } catch (err) { warn.textContent = err.message; return; }
-
-        /* TOKENS THAT RENDER, AND SHOULD NOT.
-           Three of the engine's tokens produce something an agency would never
-           knowingly publish: bare {verified} prints the word "false", {price}
-           prints 450000 with no naira sign, {trust} prints nothing at all.
-           They are no longer offered as chips, but a pattern can still be
-           typed or carried over from an older template -- and this is the one
-           place the warning belongs, because the rendered proof is sitting
-           directly underneath it. Advisory, not blocking: the template is
-           valid, it is the wording that is wrong.
-
-           The braces are required to close immediately, so {priceLine} and
-           {verified?yes|no} are not caught by this. */
-        var pat = t.hook_pattern + ' ' + t.body_pattern;
-        var traps = [];
-        if (/\{verified\}/.test(pat)) traps.push('{verified} on its own prints the word \u201cfalse\u201d '
-          + '\u2014 use {verified?\u2026|\u2026} to say one thing when it is verified and another when it is not');
-        if (/\{price\}/.test(pat)) traps.push('{price} prints the bare number \u2014 {priceLine} or {priceShort} '
-          + 'print it as money');
-        if (/\{trust\}/.test(pat)) traps.push('{trust} prints nothing on most listings');
-
-        /* The two things an agency cannot see by reading its own pattern. */
-        var msgs = [];
-        if (traps.length) warn.textContent = traps.join('. ') + '.';
-        if (!p.verified && /verif/i.test(t.hook_pattern + ' ' + t.body_pattern) && !t.requires_verified) {
-          /* Appended, not assigned. This ran after the trap check and used to
-             overwrite it, so a pattern with a bare {verified} -- which matches
-             /verif/i -- lost the one message that explained why the preview
-             underneath says "false". */
-          warn.textContent = (warn.textContent ? warn.textContent + ' ' : '')
-            + 'This wording mentions verification, and the listing you are previewing '
-            + 'against is not verified. Tick "only use on verified listings", or the claim will run where it is not true.';
-        }
-        if (t.requires_verified) msgs.push('Skipped on listings that are not verified.');
-        var lit = (S.derenderPattern ? [] : []);
-        if (msgs.length) note.textContent = msgs.join(' ');
-      }
-
-      function tplSave() {
-        var t = tplCollect();
-        var btn = document.getElementById('tplSave');
-        var msg = document.getElementById('tplMsg');
-
-        /* REFUSE OUT LOUD, NEXT TO THE BUTTON.
-           These three messages used to be written into .tpl-warn, which sits
-           in the preview column -- the other half of the dialog on a wide
-           screen, a screenful down once the grid stacks under 860px. Pressing
-           Save with an empty name therefore did exactly nothing that anyone
-           could see. Naming the field is not enough either when the form is
-           long, so the field itself takes focus. */
-        function refuse(text, focusId) {
-          if (msg) msg.textContent = text;
-          var el = focusId && document.getElementById(focusId);
-          if (el) { el.focus(); if (el.select) el.select(); }
-        }
-
-        var bad = S.unknownTokens(t.hook_pattern).concat(S.unknownTokens(t.body_pattern));
-        if (bad.length) {
-          refuse('Not a token: ' + bad.map(function (x) { return '{' + x + '}'; }).join(', ')
-            + '. Use one of the chips under the field.',
-            S.unknownTokens(t.hook_pattern).length ? 'tplHook' : 'tplBody');
-          return;
-        }
-        if (!t.name) { refuse('Give the template a name so you can find it again.', 'tplName'); return; }
-        if (!t.hook_pattern.trim()) { refuse('A template needs an opening line.', 'tplHook'); return; }
-
-        if (msg) msg.textContent = '';
-        btn.disabled = true; btn.textContent = 'Saving\u2026';
-        SynListings.saveTemplate(t).then(function () {
-          return SynListings.listTemplates();
-        }).then(function (list) {
-          S.setTemplates(list);        // in use immediately, no reload
-          renderMyTemplates(list);
-          announceTemplates(list);
-          tplClose();
-          toast(t.id ? 'Template updated' : 'Template saved \u2014 it is in your next campaign');
-        }).catch(function (err) {
-          btn.disabled = false; btn.textContent = t.id ? 'Save changes' : 'Save template';
-          if (msg) msg.textContent = (err && err.message) || 'Could not save that.';
-          console.error('saveTemplate failed', err);
-        });
-      }
-
-      /* Their own templates, listed where campaigns are made. Seeds are not
-         listed: they cannot be edited, and a row with no controls is furniture. */
-      function renderMyTemplates(list) {
-        var box = document.getElementById('tplMine');
-        if (!box) return;
-        var mine = (list || []).filter(function (t) { return t.agency_id; });
-        if (!mine.length) {
-          box.innerHTML = '<div class="tpl-row" style="border-top:1px solid var(--border)">'
-            + '<span class="hk">No templates of your own yet \u2014 press <b>Save as template</b> '
-            + 'on a caption you like, or start one from scratch.</span>'
-            + '<button class="btn" type="button" id="tplNew">New template</button></div>';
-        } else {
-          box.innerHTML = '<div class="cmp-past-h"><span class="k">Your templates</span>'
-            + '<span class="n">' + mine.length + ' of your own, alongside the five built in</span></div>'
-            + mine.map(function (t) {
-                return '<div class="tpl-row" data-tid="' + esc(t.id) + '">'
-                  + '<span class="nm">' + esc(t.name) + '</span>'
-                  + '<span class="hk">' + esc(t.hook_pattern) + '</span>'
-                  + (t.requires_verified ? '<span class="vf">verified only</span>' : '')
-                  + '<button class="btn" type="button" data-edit-tpl>Edit</button>'
-                  + '<button class="btn" type="button" data-del-tpl>Delete</button></div>';
-              }).join('')
-            + '<div class="tpl-row"><span class="hk"></span>'
-            + '<button class="btn" type="button" id="tplNew">New template</button></div>';
-        }
-      }
-
-      document.getElementById('tplMine').addEventListener('click', function (e) {
-        if (e.target.id === 'tplNew') { tplOpen(null); return; }
-        var row = e.target.closest('[data-tid]');
-        if (!row) return;
-        var id = row.dataset.tid;
-        if (e.target.closest('[data-edit-tpl]')) {
-          SynListings.listTemplates().then(function (list) {
-            var t = list.filter(function (x) { return x.id === id; })[0];
-            if (t) tplOpen(t);
-          });
-          return;
-        }
-        if (e.target.closest('[data-del-tpl]')) {
-          if (!confirm('Delete this template? Captions it already wrote are kept.')) return;
-          SynListings.deleteTemplate(id)
-            .then(function () { return SynListings.listTemplates(); })
-            .then(function (list) {
-              S.setTemplates(list); renderMyTemplates(list); announceTemplates(list);
-              toast('Template deleted');
-            })
-            .catch(function (err) { toast((err && err.message) || 'Could not delete that.'); });
-        }
-      });
-
-      /* Save as template, from a card. */
-      out.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-keep]');
-        if (!b || !campaign) return;
-        var v = campaign.variants.filter(function (x) { return x.id === b.dataset.keep; })[0];
-        var row = rows[+sel.value || 0];
-        if (!v || !row) return;
-        var draft = S.templateFromVariant(v, row);
-        tplOpen(draft);
-        /* Say what could not be turned back into a token. An agency that never
-           learns "2 bedrooms" is fixed will find out on a four-bedroom house. */
-        if (draft._literals && draft._literals.length) {
-          document.getElementById('tplNote').textContent =
-            'Kept as written, because they are too short to swap safely: '
-            + draft._literals.map(function (l) { return l.value; }).join(', ')
-            + '. Replace them with a token if they should change per listing.';
-        }
-      });
-
-      loadChannels();
-      /* Whatever the picker starts on. Without this the archive only appears
+      loadChannels();      /* Whatever the picker starts on. Without this the archive only appears
          after you change listing, which reads as it being empty. */
       document.addEventListener('syn:listings', function () {
         var row = rows[+sel.value || 0];
@@ -10714,7 +10228,6 @@
                      rendered, so saving it verbatim would bake this listing's
                      area and price into every future post -- the editor opens
                      on the recovered pattern instead. */
-                  + '<button type="button" class="cmp-keep" data-keep="' + esc(v.id) + '">Save as template</button>'
                   + '</div>';
               }).join('')
             + '</div></div>';
@@ -12435,108 +11948,7 @@
          Shown the way a buyer would see them: rendered against a real listing,
          set in the agency's own typeface, signed off with its name. A wall of
          {priceLine} would be the storage format, not the brand. */
-      var bkTpl = { rows: null, loading: false };
-
-      function bkPreviewListing() {
-        var all = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-        /* A verified listing if there is one: it is the only way the
-           verified-only angles can be shown at all, and showing them greyed
-           out with no example is worse than showing them working. */
-        return all.filter(function (l) { return l.verification_status === 'verified'; })[0] || all[0] || null;
-      }
-
-      function renderTemplateGallery() {
-        var host = document.getElementById('bkTplHost');
-        if (!host) return;
-
-        if (!window.SynSyndicate || !window.SynListings || !SynListings.listTemplates) {
-          host.innerHTML = '<div class="bk-none">Templates are unavailable right now.</div>';
-          return;
-        }
-        if (bkTpl.rows === null) {
-          if (bkTpl.loading) return;
-          bkTpl.loading = true;
-          SynListings.listTemplates().then(function (list) {
-            bkTpl.rows = list; bkTpl.loading = false; renderTemplateGallery();
-          }).catch(function () {
-            bkTpl.loading = false;
-            host.innerHTML = '<div class="bk-none">Could not load your templates \u2014 reload to try again.</div>';
-          });
-          return;
-        }
-
-        var S = window.SynSyndicate;
-        var row = bkPreviewListing();
-        if (!row) {
-          host.innerHTML = '<div class="bk-none">Add a listing and these will preview against it. '
-            + 'They are the angles Tayo writes your captions from.</div>';
-          return;
-        }
-
-        var p = S.shape(row);
-        var brand = S.brandBits(window.BRAND);
-        var font = (window.BRAND && window.BRAND.brand_font) || '';
-
-        var cards = bkTpl.rows.map(function (t) {
-          var mine = !!t.agency_id;
-          var body;
-          if (t.requires_verified && !p.verified) {
-            body = 'Only runs on a verified listing. ' + esc2(row.title || 'This listing')
-              + ' is not verified, so there is nothing to preview.';
-          } else {
-            try {
-              body = [S.renderPattern(t.hook_pattern, p), S.renderPattern(t.body_pattern, p), t.cta]
-                .filter(Boolean).join('\n\n') + S.signOff(brand);
-            } catch (err) {
-              body = 'This template refers to something we cannot fill in: ' + err.message;
-            }
-          }
-          return '<' + (mine ? 'button type="button"' : 'div') + ' class="bk-tpl' + (mine ? ' mine' : '') + '"'
-            + (mine ? ' data-tpl="' + esc2(t.id) + '"' : '') + '>'
-            + '<div class="bk-tpl-top"><span class="bk-tpl-nm">' + esc2(t.name) + '</span>'
-            +   (t.requires_verified ? '<span class="bk-tpl-tag">verified only</span>'
-                                     : '<span class="bk-tpl-tag">' + (mine ? 'yours' : 'built in') + '</span>')
-            + '</div>'
-            + '<div class="bk-tpl-body"' + (font ? ' style="font-family:' + esc2(font) + '"' : '') + '>'
-            +   esc2(body) + '</div>'
-            + (t.why ? '<div class="bk-tpl-foot">' + esc2(t.why) + '</div>' : '')
-            + '</' + (mine ? 'button' : 'div') + '>';
-        }).join('');
-
-        host.innerHTML =
-          '<div class="bk-tpl-against">Previewed against <b>' + esc2(row.title || 'your listing') + '</b>'
-          + (font ? ', set in ' + esc2(font) : '') + '.</div>'
-          + '<div class="bk-tpl-grid">' + cards + '</div>'
-          + '<div style="margin-top:12px"><button class="btn" type="button" id="bkTplNew">New template</button></div>';
-      }
-
-      document.addEventListener('click', function (e) {
-        if (e.target.id === 'bkTplNew') {
-          if (window.SynTemplateEditor) SynTemplateEditor.open(null);
-          return;
-        }
-        var card = e.target.closest && e.target.closest('.bk-tpl.mine');
-        if (!card || !bkTpl.rows) return;
-        var t = bkTpl.rows.filter(function (x) { return x.id === card.dataset.tpl; })[0];
-        /* Only your own open: a seed has nothing editable, and a modal that
-           refuses to save is a worse answer than not opening. */
-        if (t && window.SynTemplateEditor) SynTemplateEditor.open(t);
-      });
-
-      /* Listings arriving changes what these preview against. */
-      document.addEventListener('syn:listings', function () {
-        if (document.getElementById('bkTplHost')) renderTemplateGallery();
-      });
-
-      /* And a template being written, edited or deleted changes the templates
-         themselves -- the cache is dropped so the next draw re-reads. */
-      document.addEventListener('syn:templates', function (e) {
-        bkTpl.rows = (e && e.detail) || null;
-        if (document.getElementById('bkTplHost')) renderTemplateGallery();
-      });
-
-      function renderKit() {
-        if (!view) return;
+      function renderKit() {        if (!view) return;
         if (brandIsEmpty()) {
           view.innerHTML =
             '<div class="bk-empty"><div class="h2">Your brand is not set up yet</div>'
@@ -12632,7 +12044,6 @@
 
           /* the angles that write in this voice */
           + '<div class="bk-card"><div class="bk-k">Post templates</div>'
-          +   '<div id="bkTplHost"><div class="bk-none">Loading\u2026</div></div>'
           + '</div>'
 
           /* where to find you */
@@ -12647,7 +12058,6 @@
 
         /* The gallery is async, so it fills the placeholder the kit just drew
            rather than blocking the rest of the page on a fetch. */
-        renderTemplateGallery();
       }
 
       /* Copying a hex is the single most common thing anyone does with a brand

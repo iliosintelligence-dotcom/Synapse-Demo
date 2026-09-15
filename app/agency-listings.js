@@ -2079,71 +2079,12 @@
       });
   }
 
-  /* ── caption templates ────────────────────────────────────────────────
-     Ours (agency_id null) plus this agency's own, in one list. RLS decides
-     which rows come back; this asks for both and sorts them together, so an
-     agency's own angle can sit above a seeded one. */
-  function listTemplates() {
-    return client().then(function (c) {
-      return c.from('content_templates')
-        .select('id, agency_id, name, why, hook_pattern, body_pattern, cta, platforms, requires_verified, sort_order, angle_key')
-        .is('deleted_at', null)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: true });
-    }).then(function (r) {
-      if (r.error) throw r.error;
-      return r.data || [];
-    });
-  }
+  /* listTemplates / saveTemplate / deleteTemplate lived here and are gone
+     with the editor they served. content_templates still exists and still
+     holds its rows -- the five seeds and anything an agency wrote -- but
+     nothing in the app reads it any more. */
 
-
-  /* Writing a template. agency_id is stamped here from membership, never taken
-     from the caller -- the RLS policy would refuse a foreign id anyway, but a
-     client that can propose one is a client that will eventually send the
-     wrong one. */
-  function saveTemplate(t) {
-    var c1;
-    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
-      if (!aid) throw new Error('No agency for this account.');
-      var row = {
-        agency_id: aid,
-        name: String(t.name || '').trim(),
-        why: String(t.why || '').trim(),
-        hook_pattern: String(t.hook_pattern || ''),
-        body_pattern: String(t.body_pattern || ''),
-        cta: String(t.cta || ''),
-        platforms: Array.isArray(t.platforms) ? t.platforms : [],
-        requires_verified: !!t.requires_verified,
-        angle_key: 'custom',
-      };
-      if (!row.name) throw new Error('Give the template a name.');
-      if (!row.hook_pattern.trim()) throw new Error('A template needs an opening line.');
-      return t.id
-        ? c1.from('content_templates').update(row).eq('id', t.id).select('id').single()
-        : c1.from('content_templates').insert(row).select('id').single();
-    }).then(function (r) {
-      if (r.error) throw r.error;
-      return r.data;
-    });
-  }
-
-  /* Soft delete: a template that wrote captions still explains rows in
-     generated_content, and template_id points at it. */
-  function deleteTemplate(id) {
-    return client().then(function (c) {
-      return c.from('content_templates')
-        .update({ deleted_at: new Date().toISOString(), is_active: false })
-        .eq('id', id);
-    }).then(function (r) {
-      if (r.error) throw r.error;
-      return true;
-    });
-  }
-
-
-  /* Several photos at once. Sequential rather than Promise.all: a phone on a
-     Nigerian mobile connection uploading eight files in parallel is how you get
+  /* Several photos at once.     Nigerian mobile connection uploading eight files in parallel is how you get
      eight timeouts instead of eight photos, and the progress callback would
      have nothing meaningful to report. One at a time, in the order chosen, so
      the first file picked becomes display_order 0 -- the cover.
@@ -2233,9 +2174,6 @@
     retrySocialPost: retrySocialPost,
     socialPostStats: socialPostStats,
     postMetrics: postMetrics,
-    listTemplates: listTemplates,
-    saveTemplate: saveTemplate,
-    deleteTemplate: deleteTemplate,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,
     addCreatives: addCreatives,
