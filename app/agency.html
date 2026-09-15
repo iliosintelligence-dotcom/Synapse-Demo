@@ -1356,11 +1356,19 @@
     .lcard .acts .edit:hover { background: rgba(0,0,0,0.09); }
     .lcard .acts .relist { background: rgba(54,54,54,0.1); color: var(--brand-text); border: 1px solid rgba(54,54,54,0.3); }
     .lcard .acts .relist.hot { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
-    .lcard .lc-post { width: 100%; margin-top: 7px; border: 1px solid var(--border);
-      border-radius: 100px; padding: 8px; background: transparent; color: var(--ink);
-      font: 600 12px var(--f-sans); cursor: pointer; display: flex; align-items: center;
+    /* THE ORANGE, because this is the CTA on the card -- Edit and Re-list act
+       on a listing that already exists, this one makes something new.
+
+       --action and --action-on, not a hand-picked hex: the palette's rule is
+       that orange FILLS and never carries a word, and it is measured rather
+       than asserted. White on this orange is 2.35:1, the least readable thing
+       in the system; graphite on it is 8.25:1. --action-on is that graphite,
+       so the label is legible by construction rather than by my eye. */
+    .lcard .lc-post { width: 100%; margin-top: 7px; border: 0;
+      border-radius: 100px; padding: 9px; background: var(--action); color: var(--action-on);
+      font: 700 12.5px var(--f-sans); cursor: pointer; display: flex; align-items: center;
       justify-content: center; gap: 6px; }
-    .lcard .lc-post:hover { background: rgba(0,0,0,0.05); border-color: rgba(54,54,54,0.3); }
+    .lcard .lc-post:hover { background: var(--action-dim); }
     .lcard .lc-post [data-icon] { width: 13px; height: 13px; }
     .lcard.expired .lc-post { opacity: .55; }
 
@@ -6337,7 +6345,7 @@
                  width and under the pair above because it is the one action
                  here that makes something new. -->
             <button class="lc-post" data-post="${esc2(l.id)}">
-              <span data-icon="spark"></span> Write social posts</button>
+              <span data-icon="spark"></span> Post</button>
           </div>
         </div>`;
       }).join('');
