@@ -5260,7 +5260,21 @@
       else if (stage === 'approval') body = `<div class="cap">${esc2((p.caption || '').slice(0, 260))}</div>
         <button class="act pri" data-act="approve" data-id="${p.id}">Keep &amp; schedule</button>
         <button class="act gh" data-act="discard" data-id="${p.id}">Discard</button>`;
-      else if (stage === 'scheduled') body = `<div class="w" style="margin-top:8px">🕑 ${esc2(p.when || 'no time set')}</div>
+      /* A RETRY IS NOT A FRESH SCHEDULE.
+         A row can be status 'scheduled' and already carry a failure_reason:
+         the publisher tried, could not, and pushed scheduled_at forward for
+         another go. On the board that looked identical to a post which had
+         never been attempted -- same clock, same time, nothing said. And when
+         the reason is "no account is connected", the remaining attempts are
+         certain to fail the same way, so the agency sat watching a clock for
+         an outcome that was already decided.
+
+         It stays in Scheduled, because it genuinely is still queued and a
+         transient failure really can succeed next time. It just stops
+         pretending the first attempt never happened. */
+      else if (stage === 'scheduled') body = (p.failure
+          ? `<div class="rsn" style="margin-top:8px">Tried already — ${esc2(p.failure)}</div>` : '')
+        + `<div class="w" style="margin-top:8px">🕑 ${esc2(p.when || 'no time set')}</div>
         <button class="act ok" data-act="sendnow" data-id="${p.id}">Send now</button>
         <div class="actrow">
           <button class="act gh" data-act="reschedule" data-id="${p.id}">Move</button>
@@ -5736,13 +5750,27 @@
               body: JSON.stringify({ live: true, limit: Math.min(50, rows.length * 4) }),
             })).then((r) => r.json()).catch(() => null);
           })
-          .then(() => {
-            /* A caption that has been scheduled is no longer awaiting review,
-               so it leaves the approval column. Failing to move it would show
-               the same caption in two places forever. */
+          .then((sent) => {
+            /* PASSES `sent` THROUGH, and that one word is the whole bug.
+               This step was inserted between the drain and the report and
+               returned its own value, so the publisher's answer -- published,
+               failed, the counts -- was discarded and the final .then always
+               received undefined. Post now therefore always fell through to
+               "Queued, going out within the minute", including on the run that
+               put three real posts on Instagram, Facebook and X inside two
+               seconds. The posts went out; the sentence said they had not
+               quite yet. Reported as the button not working, and from where
+               the operator sat that is exactly what it looked like.
+
+               A caption that has been scheduled is no longer awaiting review,
+               so it still leaves the approval column here -- the move just no
+               longer eats the result on its way past. */
             if (mode === 'approve' && p.contentId) {
-              return SynListings.setContentStatus(p.contentId, 'scheduled').catch(() => {});
+              return SynListings.setContentStatus(p.contentId, 'scheduled')
+                .catch(() => {})
+                .then(() => sent);
             }
+            return sent;
           })
           .then((sent) => {
             closeLead();
@@ -5758,10 +5786,18 @@
                not run leaves them queued, and saying so is the difference
                between a late post and one somebody goes looking for. */
             else if (sent && typeof sent.published === 'number') {
-              toast(sent.published + ' published'
-                + (sent.failed ? ' \u00b7 ' + sent.failed + ' failed \u2014 see the card'
-                               : '')
-                + (!sent.published && !sent.failed ? ' \u2014 queued, going out shortly' : ''));
+              /* The count is every row the drain sent, which includes the
+                 Synapse twins -- and it should. One press does put the listing
+                 on several channels, and reporting only the agency's own leg
+                 would hide the amplification exactly when it is the part that
+                 worked. */
+              const n2 = sent.published;
+              toast(n2
+                ? n2 + (n2 === 1 ? ' post is live' : ' posts are live')
+                  + (sent.failed ? ' \u00b7 ' + sent.failed + ' could not go out \u2014 see Needs attention' : '')
+                : (sent.failed
+                    ? sent.failed + ' could not go out \u2014 see Needs attention'
+                    : 'Queued \u2014 going out within the minute'));
             } else toast('Queued \u2014 going out within the minute');
             loadPipeline();
             watchPipeline();
