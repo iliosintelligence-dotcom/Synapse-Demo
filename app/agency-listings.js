@@ -1609,6 +1609,32 @@
     }).then(function (r) { if (r.error) throw r.error; return true; });
   }
 
+  /** Engagement from the platforms themselves -- likes, comments, shares --
+   *  for posts published through trypost.
+   *
+   *  Through the edge function rather than direct, because the trypost key is
+   *  a workspace-wide credential: anything holding it can post as Synapse on
+   *  every connected account, so it stays on the server. functions.invoke
+   *  attaches the session, and the function forwards that same token to
+   *  PostgREST -- so a post that is not yours does not come back and is never
+   *  asked about.
+   *
+   *  Returns {} rather than throwing on any failure. This is the decoration on
+   *  a panel whose important numbers are already on screen. */
+  function postMetrics(ids) {
+    var list = (ids || []).filter(Boolean).slice(0, 20);
+    if (!list.length) return Promise.resolve({});
+    return client().then(function (c) {
+      return c.functions.invoke('post-metrics', { body: { postIds: list } });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && r.data.results) || {};
+    }).catch(function (e) {
+      console.error('post-metrics', e);
+      return {};
+    });
+  }
+
   /** The per-post funnel: human click-throughs, listing visits, leads.
    *
    *  All three are measured by us -- our redirect counts the click, our
@@ -2201,6 +2227,7 @@
     deleteSocialPost: deleteSocialPost,
     retrySocialPost: retrySocialPost,
     socialPostStats: socialPostStats,
+    postMetrics: postMetrics,
     listTemplates: listTemplates,
     saveTemplate: saveTemplate,
     deleteTemplate: deleteTemplate,
