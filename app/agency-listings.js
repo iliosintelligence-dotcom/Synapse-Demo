@@ -1366,8 +1366,14 @@
              worth keeping, not a summary of it. */
           generated_text: String(v.caption || ''),
           status: 'draft',
-          generated_by: 'syndication.js',
-          generation_prompt_version: String(promptVersion || 'angles-v1'),
+          /* WHO WROTE IT, and it used to say 'syndication.js' for everything --
+             the template engine and the model alike -- which made the two
+             indistinguishable in the archive. That is how 46 template-era rows
+             were still filling Awaiting approval and Earlier versions after
+             the templates themselves were deleted: nothing could tell them
+             apart to leave them out. */
+          generated_by: 'social-generate',
+          generation_prompt_version: String(promptVersion || 'angles-v2'),
         });
       });
       if (!rows.length) return { saved: 0 };

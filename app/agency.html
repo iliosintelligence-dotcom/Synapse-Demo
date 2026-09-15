@@ -1356,6 +1356,13 @@
     .lcard .acts .edit:hover { background: rgba(0,0,0,0.09); }
     .lcard .acts .relist { background: rgba(54,54,54,0.1); color: var(--brand-text); border: 1px solid rgba(54,54,54,0.3); }
     .lcard .acts .relist.hot { background: var(--brand-deep); color: #fff; border-color: var(--brand-deep); }
+    .lcard .lc-post { width: 100%; margin-top: 7px; border: 1px solid var(--border);
+      border-radius: 100px; padding: 8px; background: transparent; color: var(--ink);
+      font: 600 12px var(--f-sans); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 6px; }
+    .lcard .lc-post:hover { background: rgba(0,0,0,0.05); border-color: rgba(54,54,54,0.3); }
+    .lcard .lc-post [data-icon] { width: 13px; height: 13px; }
+    .lcard.expired .lc-post { opacity: .55; }
 
     /* listing edit / new drawer form */
     .lf .field { margin-bottom: 13px; }
@@ -5904,9 +5911,10 @@
          to the database and reloads. None of them move a card by setting a
          property on an array, which is what this did before. */
       if (act === 'gen') {
-        const idx = (LISTINGS_DATA || []).findIndex(l => l.id === p.propertyId);
-        if (idx < 0) { toast('That listing is no longer here — reload and try again'); return; }
-        if (typeof openComposer === 'function') openComposer(idx);
+        /* The id, not a LISTINGS_DATA index -- see openComposer. This line is
+           where the mismatch came from: it searched one array and handed the
+           result to a function that read another. */
+        if (typeof openComposer === 'function') openComposer(p.propertyId);
         else toast('The composer did not load');
       } else if (act === 'approve') {
         openScheduler(p, 'approve');
@@ -6321,6 +6329,15 @@
               <button class="edit" data-edit="${oi}">Edit</button>
               <button class="relist ${f.expired || f.warn ? 'hot' : ''}" data-relist="${oi}">↻ Re-list</button>
             </div>
+            <!-- WRITING POSTS STARTED IN THE WRONG PLACE. The composer lived
+                 only on the Social pane, behind a listing picker -- so the way
+                 to write about the home you were looking at was to leave it,
+                 change pane, and find it again in a dropdown. The listing is
+                 the thing being advertised; the button belongs on it. Full
+                 width and under the pair above because it is the one action
+                 here that makes something new. -->
+            <button class="lc-post" data-post="${esc2(l.id)}">
+              <span data-icon="spark"></span> Write social posts</button>
           </div>
         </div>`;
       }).join('');
@@ -7109,6 +7126,21 @@
     }
 
     document.getElementById('lgrid').addEventListener('click', (e) => {
+      /* Straight into the composer for THIS listing, on the pane that owns
+         it. goToPane first because the composer's modal is anchored there;
+         opening it from Listings would otherwise put a dialog over a pane that
+         has nothing to do with it, and closing it would leave you somewhere
+         you never navigated to. */
+      const po = e.target.closest('[data-post]');
+      if (po) {
+        const id = po.dataset.post;
+        if (typeof goToPane === 'function') goToPane('social');
+        setTimeout(function () {
+          if (typeof openComposer === 'function') openComposer(id);
+          else toast('The composer did not load');
+        }, 260);
+        return;
+      }
       const ed = e.target.closest('[data-edit]');
       if (ed) { const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
       const rl = e.target.closest('[data-relist]');
@@ -10378,8 +10410,25 @@
        sits on a specific card, and opening the composer on whichever listing
        happened to be first would have generated captions for the wrong
        property -- silently, since the composer names the listing only once. */
-    function openComposer(li){
-      const idx = Number.isInteger(li) && li >= 0 && li < (LISTINGS_DATA || []).length ? li : 0;
+    /* TAKES AN ID NOW, because the index it used to take was an index into a
+       different array. It bounds-checked `li` against LISTINGS_DATA.length and
+       then read POST_LISTINGS[li] -- and POST_LISTINGS is FILTERED to active
+       listings. One archived listing anywhere above the one you clicked and
+       the composer silently opened on a different property: same button, same
+       click, wrong home, captions written about it and filed against it.
+
+       An id cannot drift out of step with an array it is not an index into.
+       A number is still accepted so the taskbar's "+" keeps working. */
+    function openComposer(which){
+      let idx = 0;
+      if (typeof which === 'string') {
+        const found = POST_LISTINGS.findIndex((l) => l.id === which);
+        if (found < 0) { toast('That listing is not one you can post about'); return; }
+        idx = found;
+      } else if (Number.isInteger(which) && which >= 0 && which < POST_LISTINGS.length) {
+        idx = which;
+      }
+      if (!POST_LISTINGS.length) { toast('Add an active listing first'); return; }
       cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', angles: {}, loading: false, err: '' };
       renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on');
     }
