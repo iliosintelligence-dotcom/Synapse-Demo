@@ -1840,6 +1840,23 @@
     .ovs.verified { color: var(--success); background: rgba(46,125,79,0.1); }
     .ovs.pending { color: var(--gold); background: rgba(156,122,30,0.12); }
 
+    /* ── the day's follow-ups ─────────────────────────────────────────────
+       Grouped by when, not by lead: an agent works a morning in time order and
+       does not care which lead a call belongs to until they are making it. */
+    .td-h { font: 700 11px/1 var(--f-sans); letter-spacing: .14em; text-transform: uppercase;
+      color: var(--ink-dim); margin: 18px 0 2px; }
+    .td-h:first-child { margin-top: 0; }
+    .td-h.late { color: #a8402b; }
+    .td-r { display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); cursor: pointer; }
+    .td-r:hover { background: rgba(0,0,0,0.02); }
+    .td-r .who { font-weight: 700; font-size: 13.5px; min-width: 128px; }
+    .td-r .what { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .td-r .when { font-size: 11.5px; color: var(--ink-dim); flex: none; }
+    .td-r .when.late { color: #a8402b; font-weight: 700; }
+    .td-none { font-size: 13.5px; color: var(--ink-muted); padding: 20px 0; text-align: center; }
+
     /* ── follow-ups and the trail, inside the lead drawer ─────────────────
        Frappe CRM's organising idea, and the right one: one page per lead
        carrying its activities, its notes and its tasks, so nobody assembles
@@ -3362,7 +3379,13 @@
           <!-- toolbar -->
           <div class="crm-tools" data-pane-filters>
             <div class="crm-tools-l">
-              <div class="seg"><button class="seg-b on"><span data-icon="card"></span> Table</button><button class="seg-b" id="crmBoardBtn"><span data-icon="boards"></span> Board</button></div>
+              <!-- TODAY is the screen a CRM is opened FOR. Frappe's lead page
+                   consolidates the tasks onto the entity, which we now do too --
+                   but an agent does not start their morning by opening leads one
+                   at a time to discover what is owed. They start with the list.
+                   openTasks() has existed since the follow-ups were built and had
+                   nowhere to render. -->
+              <div class="seg"><button class="seg-b on" id="crmTableBtn"><span data-icon="card"></span> Table</button><button class="seg-b" id="crmTodayBtn"><span data-icon="check"></span> Today</button><button class="seg-b" id="crmBoardBtn"><span data-icon="boards"></span> Board</button></div>
               <button class="tbtn" id="crmFilterBtn"><span data-icon="filter"></span> Filter</button>
               <button class="tbtn" id="crmSortBtn"><span data-icon="sort"></span> Sort</button>
             </div>
@@ -3400,6 +3423,9 @@
             </table>
             <div class="crm-pg" id="crmPager"></div>
           </div>
+
+          <!-- what is owed, across every lead -->
+          <div class="card" id="crmToday" hidden style="padding:18px 20px"></div>
 
           <!-- floating bulk-action bar -->
           <div class="crm-bulk" id="crmBulk" role="toolbar" aria-label="Bulk actions">
@@ -4612,6 +4638,83 @@
       document.getElementById('crmExport').addEventListener('click', () => toast('Exporting your pipeline to CSV…'));
       document.getElementById('crmAdd').addEventListener('click', () => { toast('Refreshing leads...'); CRM.loaded = false; CRM.error = null; renderCrmTable(); loadLeads(); });
       document.getElementById('crmBoardBtn').addEventListener('click', () => toast('Board view is coming next'));
+
+      /* TODAY — everything owed, across every lead, in the order it is owed.
+         RLS narrows tasks to the caller's own unless they are an admin or
+         owner, which is the right default: an agent opening this wants their
+         list, not the agency's. */
+      function renderToday(rows) {
+        const box = document.getElementById('crmToday');
+        if (!box) return;
+        if (!rows || !rows.length) {
+          box.innerHTML = '<div class="td-none">Nothing owed right now. '
+            + 'Follow-ups appear here the moment a lead moves stage.</div>';
+          return;
+        }
+        const now = Date.now(), endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+        const buckets = { late: [], today: [], later: [] };
+        rows.forEach((t) => {
+          const due = t.due_at ? new Date(t.due_at).getTime() : null;
+          if (due && due < now) buckets.late.push(t);
+          else if (!due || due <= endOfDay.getTime()) buckets.today.push(t);
+          else buckets.later.push(t);
+        });
+        /* The lead's name, not its uuid. A task that says "call 4f3a-..." is a
+           task nobody does. Falls back to the title alone when the lead is not
+           in the loaded page rather than showing an id. */
+        const nameOf = (id) => {
+          const l = (leads || []).find((x) => x.id === id);
+          return l ? l.nm : '';
+        };
+        const rowHtml = (t, late) => {
+          const d = dueWords(t.due_at);
+          const who = nameOf(t.lead_id);
+          return '<div class="td-r" data-lead="' + esc2(t.lead_id || '') + '">'
+            + (who ? '<span class="who">' + esc2(who) + '</span>' : '')
+            + '<span class="what">' + esc2(t.title || 'Follow up') + '</span>'
+            + '<span class="when' + (late ? ' late' : '') + '">' + esc2(d.text) + '</span>'
+            + '</div>';
+        };
+        let html = '';
+        if (buckets.late.length) html += '<div class="td-h late">Overdue \u00b7 ' + buckets.late.length + '</div>'
+          + buckets.late.map((t) => rowHtml(t, true)).join('');
+        if (buckets.today.length) html += '<div class="td-h">Today \u00b7 ' + buckets.today.length + '</div>'
+          + buckets.today.map((t) => rowHtml(t, false)).join('');
+        if (buckets.later.length) html += '<div class="td-h">Later \u00b7 ' + buckets.later.length + '</div>'
+          + buckets.later.map((t) => rowHtml(t, false)).join('');
+        box.innerHTML = html;
+      }
+
+      function showCrmView(which) {
+        const table = document.querySelector('.crm-tablecard');
+        const today = document.getElementById('crmToday');
+        const onToday = which === 'today';
+        if (table) table.hidden = onToday;
+        if (today) today.hidden = !onToday;
+        document.getElementById('crmTableBtn').classList.toggle('on', !onToday);
+        document.getElementById('crmTodayBtn').classList.toggle('on', onToday);
+        if (onToday && window.SynListings && SynListings.openTasks) {
+          document.getElementById('crmToday').innerHTML =
+            '<div class="td-none">Loading\u2026</div>';
+          SynListings.openTasks().then(renderToday).catch(function (e) {
+            console.error('openTasks', e);
+            document.getElementById('crmToday').innerHTML =
+              '<div class="td-none">Could not load your follow-ups.</div>';
+          });
+        }
+      }
+      document.getElementById('crmTableBtn').addEventListener('click', () => showCrmView('table'));
+      document.getElementById('crmTodayBtn').addEventListener('click', () => showCrmView('today'));
+
+      /* A row opens the lead it belongs to, which is where the task can be
+         ticked off and the rest of the story is. */
+      document.getElementById('crmToday').addEventListener('click', (e) => {
+        const r = e.target.closest('[data-lead]');
+        if (!r || !r.dataset.lead) return;
+        const i = (leads || []).findIndex((x) => x.id === r.dataset.lead);
+        if (i >= 0) openLead(i);
+        else toast('That lead is not on this page of the table');
+      });
       function crmMenu(anchor, opts, pick){
         document.querySelectorAll('.crm-menu').forEach(m => m.remove());
         const r = anchor.getBoundingClientRect();
