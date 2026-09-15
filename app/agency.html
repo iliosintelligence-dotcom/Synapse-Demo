@@ -4910,7 +4910,7 @@
       scheduled: 'calendar', published: 'share', attention: 'chart',
     };
     const PSTAGE_EMPTY = {
-      uploaded: 'No listings waiting on content.',
+      uploaded: 'Nothing waiting on content \u2014 every listing has a caption in review or a post queued.',
       generating: 'Nothing generating right now.',
       approval: 'Nothing waiting on your review.',
       scheduled: 'Nothing scheduled yet.',
@@ -4971,16 +4971,55 @@
 
     function buildPosts() {
       const out = [];
-      /* A listing is "waiting on content" only until it has some. Once a
-         caption exists it is represented by that caption, not twice. */
+      /* IN FLIGHT, NOT EVER TOUCHED -- and the difference is why this column
+         was empty.
+
+         The rule was "a listing waits here until it has ANY caption or post",
+         so a listing disqualified itself the first time anything was written
+         about it and never came back. One post in September and the listing is
+         gone from the board for good. An agency whose listings have all been
+         posted once sees an empty first column permanently, with nothing
+         telling it that any of them are due again -- which is the opposite of
+         what a pipeline is for.
+
+         What actually belongs here is a listing with nothing IN FLIGHT: no
+         caption awaiting review, nothing queued to go out. Published history
+         does not disqualify it, because a home that went out three weeks ago
+         is exactly a home that should go out again.
+
+         'publishing' counts as in flight; 'published' and 'failed' do not. A
+         failed post is not work in progress -- it is work that stopped, and it
+         has its own column. */
+      const IN_FLIGHT = { draft: 1, scheduled: 1, publishing: 1 };
       const busy = {};
       PIPE.drafts.forEach(d => { if (d.property_id) busy[d.property_id] = 1; });
-      PIPE.social.forEach(r => { if (r.property_id) busy[r.property_id] = 1; });
+      PIPE.social.forEach(r => {
+        if (r.property_id && IN_FLIGHT[r.status]) busy[r.property_id] = 1;
+      });
+
+      /* What this listing has already had, so the card can say "ready for its
+         next post" rather than pretending nothing was ever written. Counting
+         only what reached a platform -- a draft somebody discarded is not
+         history. */
+      const postedBefore = {};
+      PIPE.social.forEach(r => {
+        if (!r.property_id || r.status !== 'published') return;
+        const at = r.published_at || r.scheduled_at;
+        const cur = postedBefore[r.property_id];
+        postedBefore[r.property_id] = {
+          n: (cur ? cur.n : 0) + 1,
+          last: (!cur || (at && at > cur.last)) ? at : cur.last,
+        };
+      });
+
       (LISTINGS_DATA || []).forEach(l => {
         if (!l.id || busy[l.id]) return;
+        const hist = postedBefore[l.id] || null;
         out.push({ id: 'l:' + l.id, propertyId: l.id, stage: 'uploaded',
           listing: listingTitle(l), price: priceLabel(l), img: l.img,
-          channels: [], caption: '', scheduledAt: null, when: '', reach: 0 });
+          channels: [], caption: '', scheduledAt: null, when: '', reach: 0,
+          postedCount: hist ? hist.n : 0,
+          lastPostedAt: hist ? hist.last : null });
       });
       PIPE.drafts.forEach(d => {
         const l = listingById(d.property_id);
@@ -5342,7 +5381,13 @@
 
     function pcard(p, stage, i){
       let body = '';
-      if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
+      /* A listing that has been posted before is not the same as one nobody
+         has touched, and the button should not pretend otherwise. Saying so
+         also explains why it is sitting in the first column again. */
+      if (stage === 'uploaded') body = (p.postedCount
+          ? `<div class="w" style="margin-top:8px;color:var(--ink-muted)">Posted ${p.postedCount} time${p.postedCount === 1 ? '' : 's'}${p.lastPostedAt ? ' · last ' + esc2(fmtWhen(p.lastPostedAt)) : ''}</div>`
+          : '')
+        + `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ ${p.postedCount ? 'Write another post' : 'Generate content'}</button>`;
       else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> Writing captions…</div><div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>`;
       /* Keep or discard — the two answers a review actually has. Approving
          opens the scheduler rather than silently picking a time, because "when"
