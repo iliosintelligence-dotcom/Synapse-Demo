@@ -6054,9 +6054,39 @@
         /* The only irreversible button in this sheet, so it is the only one
            that asks. Naming the count and the word "public" is the point --
            "are you sure?" tells nobody anything. */
-        const n = slots.querySelectorAll('[data-slot]').length;
-        if (!confirm('Post ' + n + ' time' + (n === 1 ? '' : 's') + ' right now, for real? '
-            + 'This is public and cannot be undone from here.')) return;
+        const rows = [...slots.querySelectorAll('[data-slot]')];
+        const n = rows.length;
+
+        /* WHAT WILL ACTUALLY HAPPEN, WHICH WAS NOT WHAT IT SAID.
+           Every Post now queues two things: the agency's own post and a
+           Synapse twin. On this project the agency leg has been attempted five
+           times and has succeeded zero times, because no agency has ever
+           connected an account -- while the Synapse leg has published sixteen
+           times. So the operator pressed a button, watched posts appear on
+           Synapse's Instagram, saw nothing on their own, and reported the
+           button as broken. It was not: their account was never connected, and
+           nothing in the flow said so at the moment it mattered.
+
+           The failure_reason was written on a card afterwards, which is the
+           wrong place and the wrong time. This says it before anything is
+           queued, and still lets them go ahead -- the Synapse leg is real
+           reach and refusing to post would be worse than posting honestly. */
+        const connected = Array.isArray(window.SYN_CONNECTED) ? window.SYN_CONNECTED : null;
+        const wanted = [...new Set(rows.map(r => r.querySelector('.slot-p').value))];
+        const missing = connected ? wanted.filter(p => connected.indexOf(p) < 0) : [];
+
+        let ask = 'Post ' + n + ' time' + (n === 1 ? '' : 's') + ' right now, for real? '
+          + 'This is public and cannot be undone from here.';
+        if (missing.length) {
+          const names = missing.map(p => (CH[p] && CH[p].label) || p).join(' and ');
+          ask = 'Your ' + names + ' ' + (missing.length === 1 ? 'is' : 'are') + ' not connected yet, '
+            + 'so this will NOT post as you.\n\n'
+            + 'Synapse will still put it out on its own channels, and the tracked link still '
+            + 'brings those readers back to your listing.\n\n'
+            + 'Post on Synapse\u2019s channels now? Connect your account under Channels to post as '
+            + 'yourself as well.';
+        }
+        if (!confirm(ask)) return;
         commitSchedule(true);
       });
     }
@@ -9701,16 +9731,28 @@
         var box = document.getElementById('cmpChannels');
         if (!box) return Promise.resolve();
         return token().then(function (t) {
-          if (!t) { accounts = []; renderChannels(); return; }
+          if (!t) { accounts = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
               + '?select=id,platform,platform_username,is_active,token_expires_at'
               + '&is_active=eq.true&deleted_at=is.null', {
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
             })
             .then(function (r) { return r.ok ? r.json() : []; })
-            .then(function (rowsIn) { accounts = rowsIn || []; renderChannels(); })
-            .catch(function () { accounts = []; renderChannels(); });
+            .then(function (rowsIn) { accounts = rowsIn || []; publishConnected(); renderChannels(); })
+            .catch(function () { accounts = []; publishConnected(); renderChannels(); });
         });
+      }
+
+      /* WHICH PLATFORMS THIS AGENCY CAN ACTUALLY POST AS.
+         `accounts` is private to this IIFE and the scheduler sheet lives in
+         another scope entirely, so the sheet had no way to know -- which is
+         why it cheerfully queued posts that were guaranteed to fail. Published
+         as a plain array of platform names rather than the rows: the sheet
+         needs the answer, not the credentials. */
+      function publishConnected() {
+        window.SYN_CONNECTED = accounts
+          .filter(function (a) { return a && a.platform; })
+          .map(function (a) { return a.platform; });
       }
 
       function connectedTo(platform) {
