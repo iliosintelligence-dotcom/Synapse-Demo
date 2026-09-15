@@ -1154,16 +1154,29 @@
   function paintAgency() {
     return agency().then(function (a) {
       if (!a) return null;
-      var tier = a.verification_tier ? String(a.verification_tier) : '';
-      /* The label is "<tier> verified" — which reads correctly for gold and
-         basic, but the most common tier in the database is literally
-         "verified", and that produced "Verified verified" on every page of
-         those agencies' portals. When the tier already names the state, say
-         it once. */
+      var tier = a.verification_tier ? String(a.verification_tier).toLowerCase() : '';
+      /* APPENDING "verified" IS A CLAIM, so it is now an allowlist rather
+         than the default.
+
+         The label used to be "<tier> verified" for everything except the one
+         tier that was special-cased. That made the risky branch the fallback:
+         any tier that was not literally "verified" had the word appended to
+         it, and the four agencies whose tier is "unverified" read
+         "✦ Unverified verified" — a contradiction wearing a badge glyph, on
+         every page of their portal.
+
+         Only GOLD and BASIC are qualifiers that need the word ("Gold
+         verified"). Every other tier already names its own state and is shown
+         as itself, so a tier nobody has added yet can never be dressed up as
+         verified by accident. The glyph goes with the claim: ✦ marks a real
+         badge, so an unverified agency does not get one. */
+      var QUALIFIER = { gold: 1, basic: 1 };
+      var UNVERIFIED = { unverified: 1, pending: 1, rejected: 1, none: 1 };
       var tierWord = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : '';
       var tierLabel = !tier ? ''
-        : tier.toLowerCase() === 'verified' ? '✦ Verified'
-        : '✦ ' + tierWord + ' verified';
+        : QUALIFIER[tier] ? '✦ ' + tierWord + ' verified'
+        : UNVERIFIED[tier] ? tierWord
+        : '✦ ' + tierWord;
       var initials = String(a.name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
       document.querySelectorAll('[data-agency-name]').forEach(function (el) { el.textContent = a.name || 'Your agency'; });
       document.querySelectorAll('[data-agency-tier]').forEach(function (el) { el.textContent = tierLabel; });

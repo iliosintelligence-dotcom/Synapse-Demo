@@ -6072,19 +6072,40 @@
            queued, and still lets them go ahead -- the Synapse leg is real
            reach and refusing to post would be worse than posting honestly. */
         const connected = Array.isArray(window.SYN_CONNECTED) ? window.SYN_CONNECTED : null;
+        const lapsed = Array.isArray(window.SYN_EXPIRED) ? window.SYN_EXPIRED : [];
         const wanted = [...new Set(rows.map(r => r.querySelector('.slot-p').value))];
         const missing = connected ? wanted.filter(p => connected.indexOf(p) < 0) : [];
+        const nameOf = (p) => (CH[p] && CH[p].label) || p;
 
         let ask = 'Post ' + n + ' time' + (n === 1 ? '' : 's') + ' right now, for real? '
           + 'This is public and cannot be undone from here.';
         if (missing.length) {
-          const names = missing.map(p => (CH[p] && CH[p].label) || p).join(' and ');
-          ask = 'Your ' + names + ' ' + (missing.length === 1 ? 'is' : 'are') + ' not connected yet, '
-            + 'so this will NOT post as you.\n\n'
+          /* Two different problems with two different fixes, so they get two
+             different sentences. A lapsed token is not a missing account, and
+             sending that agency to "connect your Instagram" points them at a
+             row already sitting on the strip. */
+          const stale = missing.filter(p => lapsed.indexOf(p) >= 0);
+          const never = missing.filter(p => lapsed.indexOf(p) < 0);
+          const staleN = stale.map(nameOf).join(' and ');
+          const neverN = never.map(nameOf).join(' and ');
+          const many = missing.length > 1;
+          const mixed = stale.length && never.length;
+          const lead = mixed
+            ? 'Your ' + missing.map(nameOf).join(' and ') + ' will not post as you'
+            : stale.length
+              ? 'Your sign-in for ' + staleN + ' ' + (many ? 'have' : 'has')
+                + ' expired, so this will NOT post as you'
+              : 'Your ' + neverN + ' ' + (many ? 'are' : 'is')
+                + ' not connected yet, so this will NOT post as you';
+          const fix = mixed
+            ? 'Reconnect ' + staleN + ' and connect ' + neverN + ' under Channels'
+            : stale.length
+              ? 'Reconnect ' + (many ? 'them' : 'it') + ' under Channels'
+              : 'Connect ' + (many ? 'them' : 'it') + ' under Channels';
+          ask = lead + '.\n\n'
             + 'Synapse will still put it out on its own channels, and the tracked link still '
             + 'brings those readers back to your listing.\n\n'
-            + 'Post on Synapse\u2019s channels now? Connect your account under Channels to post as '
-            + 'yourself as well.';
+            + 'Post on Synapse\u2019s channels now? ' + fix + ' to post as yourself as well.';
         }
         if (!confirm(ask)) return;
         commitSchedule(true);
@@ -9749,9 +9770,26 @@
          why it cheerfully queued posts that were guaranteed to fail. Published
          as a plain array of platform names rather than the rows: the sheet
          needs the answer, not the credentials. */
+      /* USABLE, not merely present -- the same test liveCount() applies, and
+         they have to agree. An expired token is a row, not a channel: the
+         strip already greys it out and asks for a reconnect, but this used to
+         publish it as connected anyway. So the one agency most likely to be
+         caught out -- one that DID connect, months ago, and whose token has
+         since lapsed -- was the one Post now had nothing to say to. It would
+         report no problem, queue the post, and let the publisher discover the
+         dead token afterwards, which is the exact silence this array exists to
+         break. */
       function publishConnected() {
         window.SYN_CONNECTED = accounts
-          .filter(function (a) { return a && a.platform; })
+          .filter(function (a) { return a && a.platform && !expired(a); })
+          .map(function (a) { return a.platform; });
+        /* Published separately because the two states need different words
+           and a different fix. "Never connected" is solved by OAuth; "the
+           token lapsed" is solved by reconnecting an account that is already
+           listed on the strip, and telling that agency to "connect your
+           Instagram" sends them looking for something they can already see. */
+        window.SYN_EXPIRED = accounts
+          .filter(function (a) { return a && a.platform && expired(a); })
           .map(function (a) { return a.platform; });
       }
 

@@ -94,6 +94,12 @@
           touchPitch: false,
         });
         self.map.touchZoomRotate.disableRotation();
+        /* BEFORE 'load', deliberately. The style already contains POI layers
+           pointing at our marks, so the renderer can ask for one while we are
+           still waiting here -- and addMarks() below cannot answer yet. This
+           hands those requests a mark instead of a console warning and a
+           permanently iconless layer. */
+        if (window.SynMapStyle.wireMissingMarks) window.SynMapStyle.wireMissingMarks(self.map);
         return new Promise(function (res) { self.map.on('load', function () { res(); }); });
       })
       .then(function () {

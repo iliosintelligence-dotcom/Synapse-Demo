@@ -267,6 +267,69 @@
      caller that renders results the moment they arrive does not silently lose
      the first set -- which is exactly what every one of these three callers
      does. */
+  /* The state a map is left in when its style never arrived. Deliberately
+     plain -- no icon, no colour, the same paper the map itself would have
+     been -- because this is a hiccup to recover from, not an error page. The
+     button is the point: the cause is almost always a connection that dropped
+     for a moment, so the fix is to ask again, and the reader should not have
+     to reload the whole portal to do it.
+
+     Rebuilt through drawMatchMap with a cleared state, so a retry takes the
+     same path as the first attempt and can fail into this box again. */
+  /* Shipped with the component rather than pasted into every page that embeds
+     a map -- browse, Tayo, property and the portal would otherwise each need
+     their own copy, and the fourth one would be the one that got forgotten.
+     Injected once, on first failure, so a session that never breaks never
+     pays for it. Tokens with literal fallbacks: this has to render on pages
+     that do not define the portal's variables. */
+  function mapFailCss() {
+    if (document.getElementById('syn-mapfail-css')) return;
+    var s = document.createElement('style');
+    s.id = 'syn-mapfail-css';
+    s.textContent =
+      '.syn-mapfail{display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'gap:12px;height:100%;min-height:160px;padding:24px;text-align:center;'
+      + 'background:var(--paper,#FCFCFB);border-radius:inherit;}'
+      + '.syn-mapfail p{margin:0;font-size:13.5px;color:var(--ink-muted,#5E5E59);}'
+      + '.syn-mapfail-retry{font:inherit;font-size:13px;font-weight:600;cursor:pointer;'
+      + 'padding:9px 18px;border-radius:999px;border:1px solid var(--border,#E2E2DE);'
+      + 'background:var(--surface,#FFF);color:var(--ink,#141412);'
+      + 'transition:background .15s ease,border-color .15s ease,transform .15s ease;}'
+      + '.syn-mapfail-retry:hover{background:var(--paper,#F4F4F2);border-color:var(--ink-dim,#8A8A86);}'
+      + '.syn-mapfail-retry:active{transform:scale(.97);}'
+      + '.syn-mapfail-retry:focus-visible{outline:2px solid var(--ink,#141412);outline-offset:2px;}'
+      + '@media (prefers-reduced-motion:reduce){.syn-mapfail-retry{transition:none;}'
+      + '.syn-mapfail-retry:active{transform:none;}}';
+    document.head.appendChild(s);
+  }
+
+  function mapFailed(host, st, list) {
+    if (!host) return;
+    mapFailCss();
+    host.innerHTML =
+      '<div class="syn-mapfail" role="status">'
+      + '<p>The map could not load.</p>'
+      + '<button type="button" class="syn-mapfail-retry">Try again</button>'
+      + '</div>';
+    var btn = host.querySelector('.syn-mapfail-retry');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      /* Tear the dead one down first. A renderer whose style never arrived may
+         still hold a GL context and a slot in SynMapRender.instances, and a
+         reader who taps Try again four times should not leak four of them. */
+      try { if (st.r && st.r.map && st.r.map.remove) st.r.map.remove(); } catch (err) { /* already gone */ }
+      if (window.SynMapRender && SynMapRender.instances) {
+        var at = SynMapRender.instances.indexOf(st.r);
+        if (at >= 0) SynMapRender.instances.splice(at, 1);
+      }
+      host.innerHTML = '';
+      /* Every handle on the dead renderer goes, or ready() hands back the
+         same rejected promise it cached and the retry appears to do nothing. */
+      st.r = null; st.card = null; st.ready = false; st.sig = null;
+      drawMatchMap(st, host.id, list || st.pending || [], st.opts || {});
+    });
+  }
+
   function drawMatchMap(st, elId, items, opts) {
     if (!window.SynMapRender || !window.SynMapStyle) return st;
     var list = (items || []).map(function (l, i) {
@@ -324,6 +387,14 @@
         paint(st, st.pending || []);
       }).catch(function (e) {
         if (window.console) console.warn('map failed to start:', e && e.message);
+        /* AND SAY IT ON THE PAGE, not only in a console nobody has open.
+           The whole map hangs off one style fetch; when it fails the reader
+           gets an empty white rectangle where a map should be, with no way to
+           tell whether it is broken, still loading, or simply has no homes in
+           it. A console warning is a note to us. This is the note to them --
+           and it offers the one action that actually helps, because the usual
+           cause is a connection that dropped for a second. */
+        mapFailed(host, st, list);
       });
       return st;
     }

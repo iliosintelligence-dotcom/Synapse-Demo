@@ -311,13 +311,29 @@
   }
 
   /** Fetch Stadia's vector style and return it as ours. */
+  /* ONE RETRY, because the common failure here is not "Stadia is down".
+     It is a phone that changed cell on the way to the fetch, a laptop coming
+     back from sleep, a hotel portal that has not let go yet -- all of which
+     fail instantly and succeed instantly on a second ask a moment later. The
+     whole map hangs off this one request: without it there is no basemap, no
+     property pins, and no click handling, so it is worth asking twice before
+     giving up. Two attempts, not a ladder -- if the second fails the caller
+     shows its own honest failure rather than leaving the reader watching a
+     blank box get no better. */
+  function fetchStyle(url, tries) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('style ' + r.status);
+      return r.json();
+    }).catch(function (e) {
+      if (tries <= 1) throw e;
+      return new Promise(function (res) { setTimeout(res, 400); })
+        .then(function () { return fetchStyle(url, tries - 1); });
+    });
+  }
+
   function load(styleName) {
     var name = styleName || 'alidade_smooth';
-    return fetch('https://tiles.stadiamaps.com/styles/' + encodeURIComponent(name) + '.json')
-      .then(function (r) {
-        if (!r.ok) throw new Error('style ' + r.status);
-        return r.json();
-      })
+    return fetchStyle('https://tiles.stadiamaps.com/styles/' + encodeURIComponent(name) + '.json', 2)
       .then(function (style) {
         style.layers = (style.layers || [])
           /* Their POI and park-label layers are replaced wholesale by ours
@@ -338,7 +354,51 @@
       if (map.hasImage && map.hasImage(id)) return;
       try { map.addImage(id, drawMark(MARKS[kind], 22), { pixelRatio: 2 }); } catch (e) { /* already there */ }
     });
+
   }
 
-  window.SynMapStyle = { load: load, addMarks: addMarks, COLOURS: C, MARKS: MARKS };
+  /** THE SAFETY NET, and it has to be wired at CONSTRUCTION, not after
+   *  'load'.
+   *
+   *  The POI layers are part of the STYLE, so the renderer holds layers
+   *  pointing at 'syn-transit' the moment the style parses -- which is before
+   *  addMarks() can possibly have run, because addMarks waits for 'load'. If a
+   *  frame is drawn in that gap MapLibre asks for the image, finds nothing,
+   *  and logs "Image syn-transit could not be loaded". Registering the handler
+   *  after 'load' is therefore too late to stop the very warning it exists to
+   *  stop -- which is exactly what happened on the first attempt at this fix.
+   *
+   *  It also covers the case addMarks's own comment admits to: images do not
+   *  survive setStyle, so a style swap no longer depends on somebody
+   *  remembering to call addMarks again.
+   *
+   *  Once per map, and only ever for ids we own. */
+  function wireMissingMarks(map) {
+    if (!map || map.__synMarksWired) return;
+    map.__synMarksWired = true;
+
+    /* ONE SHOT WAS THE WHOLE PROBLEM. addMarks() was called once, from the
+       'load' handler, and every one of its addImage() calls threw because the
+       style was not ready yet -- then the bare catch swallowed all fourteen.
+       The map spent the session with no marks at all and one console warning
+       to show for it, which is precisely the failure a silent catch buys you.
+
+       'styledata' fires whenever style data lands, including after a setStyle,
+       so registering here means the marks are put back at every moment they
+       CAN be registered rather than at one moment we hoped they could. It is
+       idempotent -- addMarks skips what is already present -- so firing
+       several times costs a hasImage check each. */
+    map.on('styledata', function () { addMarks(map); });
+
+    map.on('styleimagemissing', function (e) {
+      var id = e && e.id;
+      if (!id || id.indexOf('syn-') !== 0) return;
+      var kind = id.slice(4);
+      if (!MARKS[kind] || (map.hasImage && map.hasImage(id))) return;
+      try { map.addImage(id, drawMark(MARKS[kind], 22), { pixelRatio: 2 }); } catch (err) { /* raced us to it */ }
+    });
+  }
+
+  window.SynMapStyle = { load: load, addMarks: addMarks, wireMissingMarks: wireMissingMarks,
+                         COLOURS: C, MARKS: MARKS };
 })();
