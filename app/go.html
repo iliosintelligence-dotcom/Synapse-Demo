@@ -71,10 +71,25 @@
     .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .ph .none { position: absolute; inset: 0; display: grid; place-items: center;
       font-size: 12.5px; color: var(--ink-dim); }
+    /* ONLY A CLAIM EARNS THE BADGE.
+       Both states used to sit on the photo in the same uppercase pill, which
+       made "NOT YET VERIFIED" the loudest thing on the card -- read before the
+       price, before the address, on every listing. That is a hierarchy error
+       rather than an honesty one: the fact is worth stating, but stamping the
+       ABSENCE of a claim across the photograph gives it more weight than the
+       claim itself would get, and this is the page Instagram traffic lands on.
+
+       So verified keeps the badge and gets a stronger one. Unverified moves
+       down into the meta line, where the reader is already taking in plain
+       facts -- 1 bed, Ibadan, not yet verified -- stated once, legibly, and
+       not dressed as a warning. Nothing is hidden and nothing is softened;
+       only the order of attention changed. */
     .tag { position: absolute; left: 10px; top: 10px; font: 700 10.5px/1 var(--f-sans);
       letter-spacing: .08em; text-transform: uppercase; padding: 6px 9px;
-      border-radius: 100px; background: rgba(255,255,255,.93); color: var(--ink-muted); }
-    .tag.ok { color: var(--success-ink); }
+      border-radius: 100px; background: var(--ink, #0D0D0F); color: #fff;
+      box-shadow: 0 2px 10px rgba(13,13,15,.22); display: inline-flex;
+      align-items: center; gap: 5px; }
+    .tag .mk { font-size: 11px; line-height: 1; }
 
     .body { padding: 14px 15px 16px; }
     .price { font: 700 21px/1.15 var(--f-sans); letter-spacing: -.01em;
@@ -82,6 +97,10 @@
     .price .per { font-size: 13px; font-weight: 400; color: var(--ink-muted); }
     .ttl { font-size: 14.5px; line-height: 1.45; margin-top: 5px; }
     .meta { font-size: 12.5px; color: var(--ink-muted); margin-top: 6px; }
+    /* The same size and colour as the rest of the meta line, because it is the
+       same kind of fact. A dot separates it from beds and city exactly as they
+       are separated from each other. */
+    .meta .unv { color: var(--ink-dim, #8A8A86); }
 
     .state { border: 1px solid var(--border); border-radius: var(--radius);
       background: #fff; padding: 26px 20px; text-align: center;
@@ -222,6 +241,18 @@
       + '&ch=' + encodeURIComponent(r.platform || 'organic');
   }
 
+  /* The verification words are the last entry in `bits` and get their own
+     class so they read as the quietest fact on the line. Everything is escaped
+     the same way it was when the whole line went through esc() in one go. */
+  function metaLine(bits, verified) {
+    return bits.map(function (b, i) {
+      var last = i === bits.length - 1;
+      return (!verified && last)
+        ? '<span class="unv">' + esc(b) + '</span>'
+        : esc(b);
+    }).join(' · ');
+  }
+
   function card(r) {
     var per = r.listing_type === 'rent' ? '<span class="per">/yr</span>' : '';
     var bits = [];
@@ -230,10 +261,13 @@
 
     /* The badge says what is true, both ways round. An unverified listing is
        not hidden and not quietly unlabelled -- the same rule the property card
-       and the proximity notification follow. */
+       and the proximity notification follow. What changed is WHERE each one is
+       said: a verified listing wears it on the photo, an unverified one states
+       it in the meta line with the other plain facts. See the .tag comment. */
     var tag = r.verified
-      ? '<span class="tag ok">Verified</span>'
-      : '<span class="tag">Not yet verified</span>';
+      ? '<span class="tag"><span class="mk" aria-hidden="true">✦</span>Verified</span>'
+      : '';
+    if (!r.verified) bits.push('Not yet verified');
 
     var photo = r.image_url
       ? '<img src="' + esc(r.image_url) + '" alt="" loading="lazy" '
@@ -245,7 +279,7 @@
       + '<div class="body">'
       +   '<div class="price">' + esc(price(r.price, r.currency)) + per + '</div>'
       +   '<div class="ttl">' + esc(r.title || 'Listing') + '</div>'
-      +   (bits.length ? '<div class="meta">' + esc(bits.join(' · ')) + '</div>' : '')
+      +   (bits.length ? '<div class="meta">' + metaLine(bits, r.verified) + '</div>' : '')
       + '</div></a>';
   }
 
