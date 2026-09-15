@@ -3937,6 +3937,7 @@
       facebook:  { label: 'Facebook',  color: '#1877F2', short: 'f' },
       youtube:   { label: 'YouTube',   color: '#FF0000', short: 'YT' },
       whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
+      x:         { label: 'X',         color: '#161616', short: 'X'  },
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
       /* The database's attribution_channel enum has ten values and this map
@@ -4850,7 +4851,7 @@
       instagram_post: 'instagram', instagram_reel: 'instagram',
       tiktok_script: 'tiktok', youtube_short: 'youtube',
       facebook_post: 'facebook', whatsapp_message: 'whatsapp',
-      linkedin_post: 'linkedin',
+      linkedin_post: 'linkedin', x_post: 'x',
     };
 
     /** "Today 5:00 PM" near at hand, a real date further out. */
@@ -9341,7 +9342,7 @@
     }
     rebuildPostListings();
     document.addEventListener('syn:listings', rebuildPostListings);
-    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp' };
+    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X' };
 
     /* ── Campaign generator ────────────────────────────────────────────────
        Pulls real verified listings from the database, fans each into every
@@ -10502,8 +10503,70 @@
         if (!rows.length) { toastOrAlert('No active listings yet \u2014 add one under Listings first.'); return; }
         var row = rows[+sel.value || 0];
         if (!row) { toastOrAlert('Pick a listing first.'); sel.focus(); return; }
-        campaign = S.generate(row, { brand: window.BRAND });
-        render();
+
+        /* THIS BUTTON NOW CALLS THE MODEL.
+           It used to call S.generate(), which renders TEMPLATES: same listing
+           in, same words out, every single time. Pressing Generate twice gave
+           the same campaign twice and reloading gave it again, because there
+           is no model and no randomness anywhere in that path. Reported as
+           "it's just repeating the same things, it's not connected to any AI"
+           -- which was exactly right. It never was.
+
+           social-generate has been writing the composer's captions all along:
+           a real call, one distinct angle dealt per channel, and a standing
+           refusal to invent a fact the listing does not contain. The campaign
+           panel simply was not using it. usedAngles goes with the request so a
+           second press moves to different subjects instead of re-rolling the
+           same ones.
+
+           Everything after this is unchanged -- platform limits, the media
+           pairing, the ready/needs-attention counts, queueing -- because
+           aiCampaign returns the shape render() already knows. */
+        var was = go.innerHTML;
+        running = true;
+        go.disabled = true;
+        go.innerHTML = '<span class="spin2"></span>Writing\u2026';
+
+        fetch(SB_URL + '/functions/v1/social-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SB_KEY,
+                     Authorization: 'Bearer ' + SB_KEY },
+          body: JSON.stringify({
+            property: row,
+            channels: Object.keys(S.PLATFORMS),
+            usedAngles: (typeof anglesUsedFor === 'function' ? anglesUsedFor(row.id) : []),
+            brand: window.BRAND ? {
+              name: window.BRAND.name || null,
+              tagline: window.BRAND.tagline || null,
+              voice: window.BRAND.brand_voice || null,
+              handle: (window.BRAND.social && window.BRAND.social.instagram) || null,
+            } : null,
+          }),
+        }).then(function (r) {
+          return r.json().catch(function () { return {}; });
+        }).then(function (d) {
+          if (!d || d.error || !d.captions) {
+            throw new Error((d && d.error) || 'The writer did not return anything usable.');
+          }
+          campaign = S.aiCampaign(row, d, { brand: window.BRAND });
+          if (!campaign.variants.length) throw new Error('Nothing came back for those channels.');
+          /* Spent, so the next press starts somewhere else. */
+          if (typeof rememberAngles === 'function') {
+            rememberAngles(row.id, Object.keys(d.angles || {}).map(function (k) { return d.angles[k]; }));
+          }
+          render();
+          archive(row);
+        }).catch(function (err) {
+          console.error('generate failed', err);
+          toastOrAlert((err && err.message) || 'Could not write those just now.');
+        }).then(function () {
+          running = false; go.disabled = false; go.innerHTML = was;
+        });
+      });
+
+      /* Filing what was just written. Split out of the handler so the success
+         path above reads as one sequence; the behaviour is unchanged. */
+      function archive(row) {
 
         /* Keep it. Generating used to leave nothing behind -- these captions
            lived in the tab and died with it. Saved before the agency decides
@@ -10533,7 +10596,7 @@
               markSaved(0, (err && err.message) || 'not saved');
             });
         }
-      });
+      }
 
       function render() {
         var ok = campaign.variants.filter(function (v) { return !v.issues.length; });
@@ -10778,7 +10841,13 @@
         <div class="cmp-step">1 · Verified listing</div>
         <div class="cmp-listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}">${photoHtml(l.img, { small: true })}<div style="min-width:0"><div class="t">${l.title.split(',')[0]}</div><div class="p">${nairaShort(l.price)}</div></div></button>`).join('')}</div>
         <div class="cmp-step">2 · Channels</div>
-        <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'].map(chanChip).join('')}</div>
+        <!-- X WAS MISSING FROM THIS LIST AND POSTS WERE GOING OUT ON IT.
+             Synapse's own X account twins every listing, so the platform has
+             been publishing all along -- with a caption written for Instagram
+             and reworded, because no agency was ever offered the chance to
+             write one for it. Reported exactly that way: "X is not an option
+             but the app is posting to all the connected platforms." -->
+        <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp', 'x'].map(chanChip).join('')}</div>
         <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '<span data-icon="spark"></span> Generate captions with AI'}</button>`;
       if (cmp.err) html += `<div class="cmp-err" role="alert">${cmp.err}</div>`;
       if (cmp.captions) {

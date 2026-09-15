@@ -48,6 +48,17 @@
       media: ['image', 'video'], videoMaxSec: 240,
       firstLineMatters: true, previewChars: 250,
     },
+    /* X, which has been receiving posts this file never knew existed. Synapse's
+       own X account carries a twin of every listing, so captions have been
+       going out under a 280-character limit that nothing here was checking --
+       the agency's Instagram caption, reworded, on the one platform where
+       length IS the craft. 240 leaves room for the short link the server
+       appends, which is the whole reason LINK_RESERVE exists. */
+    x: {
+      label: 'X', short: 'X', colour: '#161616',
+      captionMax: 240, hashtagMax: 2, ratios: ['1:1', '16:9', '4:5'],
+      media: ['image'], firstLineMatters: true, previewChars: 240,
+    },
     whatsapp: {
       label: 'WhatsApp Status', short: 'WA', colour: '#25D366',
       captionMax: 700, hashtagMax: 0, ratios: ['9:16'],
@@ -639,6 +650,105 @@
     };
   }
 
+  /* ── A CAMPAIGN THE MODEL WROTE ─────────────────────────────────────────
+     generate() above renders TEMPLATES. Same listing in, same words out,
+     forever -- which is correct for a template engine and completely wrong as
+     the thing behind a button labelled "Generate". Pressing it twice gave the
+     same campaign twice, and reloading gave it again, because there is no
+     randomness and no model anywhere in this file. Reported, correctly, as
+     "it's not connected to any AI" -- it never was.
+
+     social-generate is. It has been writing the composer's captions all along:
+     a real Claude call, one distinct angle dealt per channel, with the angles
+     this listing has already spent passed in so the next round moves on.
+
+     This builds the same campaign object the panel already renders, from that
+     response instead of from a pattern. Everything downstream -- the platform
+     limits, the media pairing, the ready/needs-attention counts, queueing --
+     is untouched, because the shape is the shape. */
+  var AI_ANGLE_LABEL = {
+    space: 'The space itself', location: 'Where it is', value: 'The money',
+    trust: 'What has been checked', fit: 'Who it is for', moment: 'Why now',
+    cost: 'What it really costs', amenity: 'What it has',
+    objection: 'The honest worry', process: 'What happens next',
+    question: 'A question', custom: 'Custom',
+  };
+
+  /**
+   * Turns one social-generate response into a campaign.
+   *
+   * @param propertyRow the listing, as generate() takes it
+   * @param ai          { captions: {ch: text}, angles: {ch: angleId},
+   *                      hashtags: [], recommendedChannel, note }
+   */
+  function aiCampaign(propertyRow, ai, opts) {
+    opts = opts || {};
+    var b = brandBits(opts.brand);
+    var p = shape(propertyRow);
+    var caps = (ai && ai.captions) || {};
+    var angles = (ai && ai.angles) || {};
+    var tags = (ai && ai.hashtags) || [];
+
+    var variants = [];
+    Object.keys(caps).forEach(function (pl, i) {
+      if (!PLATFORMS[pl]) return;              // unknown platform: never guess
+      var pool = mediaFor(pl);
+      var media = pool.length ? pool[i % pool.length] : null;
+      var text = String(caps[pl] || '').trim();
+      if (!text) return;
+
+      /* The model returns hashtags separately and per batch, not per channel,
+         so they are appended here under each platform's own cap -- WhatsApp
+         Status takes none at all, and Facebook wants far fewer than Instagram.
+         Appending the same thirty to every channel is how a caption that reads
+         well becomes a caption that reads like spam on one of them. */
+      var spec = PLATFORMS[pl];
+      var useTags = spec.hashtagMax ? tags.slice(0, Math.min(spec.hashtagMax, 8)) : [];
+      var caption = text + signOff(b) + (useTags.length ? '\n\n' + useTags.join(' ') : '');
+
+      var key = angles[pl] || 'custom';
+      var v = {
+        id: pl + '_ai_' + key + '_' + (media ? media.id : 'none'),
+        platform: pl,
+        angle: key,
+        angleKey: key,
+        templateId: null,
+        angleName: AI_ANGLE_LABEL[key] || key,
+        angleWhy: (ai && ai.note) || '',
+        propertyId: p.id,
+        title: spec.needsTitle
+          ? (p.bedrooms + '-Bed ' + p.kind + ' in ' + p.area + ' \u00b7 ' + p.priceShort).slice(0, spec.titleMax)
+          : null,
+        /* The first line, because that is what every feed truncates to and
+           what the card shows. Split on the newline the model actually wrote
+           rather than re-deriving a hook it never had. */
+        hook: text.split('\n')[0],
+        body: text.split('\n').slice(1).join('\n').trim(),
+        cta: '',
+        caption: caption,
+        tags: useTags,
+        media: media,
+        ratio: media && media.ratios ? media.ratios[0] : null,
+        writtenBy: 'ai',
+      };
+      v.issues = validate(v);
+      variants.push(v);
+    });
+
+    return {
+      id: 'cmp_' + Date.now().toString(36),
+      property: p,
+      objective: opts.objective || 'reach',
+      createdAt: new Date().toISOString(),
+      variants: variants,
+      skipped: [],
+      brand: b,
+      note: (ai && ai.note) || '',
+      recommended: (ai && ai.recommendedChannel) || null,
+      writtenBy: 'ai',
+    };
+  }
+
   /* ── validation ────────────────────────────────────────────────────────── */
   /* THE CAPTION THAT SHIPS IS LONGER THAN THE ONE WRITTEN HERE.
      queue_social_post mints a short link per post and appends it to the
@@ -823,6 +933,7 @@
     shape: shape, generate: generate, validate: validate,
     setTemplates: setTemplates, renderPattern: renderPattern,
     templateFromVariant: templateFromVariant, derenderPattern: derenderPattern,
+    aiCampaign: aiCampaign,
     unknownTokens: unknownTokens, tokenNames: function () { return Object.keys(TOKENS); },
     brandBits: brandBits, signOff: signOff,
     createQueue: createQueue, payloadFor: payloadFor, naira: naira,
