@@ -9267,6 +9267,32 @@
        Lagos properties with invented trust scores, so an agency could compose
        and schedule a post about a home it does not have. Derived from
        LISTINGS_DATA and rebuilt whenever listings change. */
+    /* THE WHOLE ROW, FOR THE GENERATOR ONLY.
+       Both send paths were handing social-generate a PROJECTION rather than a
+       listing. POST_LISTINGS carries ten fields and the campaign picker's rows
+       carry thirteen, and neither includes description, amenities,
+       service_charge, move_in_cost, bathrooms, address or title_type.
+
+       Those are exactly the fields the rewrite depends on. Without them the
+       itemised Other Charges block cannot appear, the Title line on a sale
+       cannot appear, and the amenity angle has nothing to name -- so the
+       generator was still receiving the same thin data that produced the
+       repetition in the first place, while the prompt asked it for a spec
+       sheet it had no specs for.
+
+       It went unnoticed because every test fed the function a hand-written
+       full row. The function was right; the caller was starving it.
+
+       Looked up by id rather than widening the projections: they exist to
+       render the composer and the picker, half a dozen places read their exact
+       shape, and the generator is the only consumer that wants all fifty
+       columns. */
+    function fullListing(id) {
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA))
+        ? LISTINGS_DATA : [];
+      return L.find((x) => x && x.id === id) || null;
+    }
+
     let POST_LISTINGS = [];
     function rebuildPostListings() {
       const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
@@ -10086,7 +10112,10 @@
           headers: { 'Content-Type': 'application/json', apikey: SB_KEY,
                      Authorization: 'Bearer ' + SB_KEY },
           body: JSON.stringify({
-            property: row,
+            /* Same again: `row` here is buildPicker's thirteen-field
+               projection, which has no charges, no amenities and no title
+               type. */
+            property: fullListing(row && row.id) || row,
             channels: Object.keys(S.PLATFORMS),
             usedAngles: (typeof anglesUsedFor === 'function' ? anglesUsedFor(row.id) : []),
             brand: window.BRAND ? {
@@ -10493,7 +10522,10 @@
           // goes to the model that can. Sent only when the agency actually
           // wrote one — an absent voice must not become an invented one.
           body: JSON.stringify({
-            property: l,
+            /* The row, not POST_LISTINGS' projection of it -- see fullListing.
+               Falls back to the projection if the listing has gone from
+               LISTINGS_DATA, which is the old behaviour rather than a crash. */
+            property: fullListing(l && l.id) || l,
             channels: [...cmp.chans],
             // what this listing has already been written about, so Generate
             // moves on to a new angle instead of rewording the last one
