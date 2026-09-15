@@ -1415,8 +1415,15 @@
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return { data: [], error: null };
       return c1.from('social_posts')
+        /* short_links embedded, because it holds the only real performance
+           number this product has. click_count / human_click_count are ours --
+           recorded by our own redirect -- and need no platform connection, no
+           Graph API token and no review. The Published column was telling
+           agencies "metrics arrive once a channel is connected" while sitting
+           on a post with 26 clicks from 5 people. */
         .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
-              + 'caption, media_urls, failure_reason, created_at, payload, leg, twin_of')
+              + 'caption, media_urls, failure_reason, created_at, payload, leg, twin_of, '
+              + 'short_links(token, click_count, human_click_count, last_clicked_at)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('scheduled_at', { ascending: true, nullsFirst: false })
@@ -1585,10 +1592,51 @@
   }
 
   /** Take a post off the schedule. Soft, like everything else here. */
+  /* THROUGH THE RPC, not a direct UPDATE. Removing is a soft delete, which is
+     an UPDATE, and social_posts_guard refuses any UPDATE from the browser once
+     old.status has left draft/scheduled -- so a FAILED post could not be
+     retried, rescheduled OR removed. It was stuck on the board permanently,
+     and because the pipeline showed every non-published status as 'Scheduled'
+     it looked like it was still on its way out.
+
+     discard_social_post still refuses a published one, deliberately: that row
+     is the agency's record of what actually went out, and hiding it here would
+     not unpublish anything, it would only make our account of it wrong. */
   function deleteSocialPost(id) {
     if (!id) return Promise.reject(new Error('no post'));
     return client().then(function (c) {
-      return c.from('social_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+      return c.rpc('discard_social_post', { p_post_id: id });
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** The per-post funnel: human click-throughs, listing visits, leads.
+   *
+   *  All three are measured by us -- our redirect counts the click, our
+   *  property page records the visit, our lead form closes the loop -- so they
+   *  exist with nothing connected to any platform. That is the whole reason
+   *  the pipeline can report performance at all today.
+   *
+   *  Returns a map keyed by social_post_id so a card can look itself up. */
+  function socialPostStats() {
+    return client().then(function (c) {
+      return c.rpc('social_post_stats');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var by = {};
+      (r.data || []).forEach(function (row) {
+        if (row && row.social_post_id) by[row.social_post_id] = row;
+      });
+      return by;
+    });
+  }
+
+  /** Puts a failed post back in the publish queue. Resets attempts server-side,
+   *  because drain_social_queue skips anything at max_attempts and a failed
+   *  post has spent them all. */
+  function retrySocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.rpc('retry_social_post', { p_post_id: id });
     }).then(function (r) { if (r.error) throw r.error; return true; });
   }
 
@@ -2151,6 +2199,8 @@
     schedulePost: schedulePost,
     updateSocialPost: updateSocialPost,
     deleteSocialPost: deleteSocialPost,
+    retrySocialPost: retrySocialPost,
+    socialPostStats: socialPostStats,
     listTemplates: listTemplates,
     saveTemplate: saveTemplate,
     deleteTemplate: deleteTemplate,

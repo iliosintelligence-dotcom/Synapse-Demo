@@ -4768,29 +4768,40 @@
       { id: 'generating', label: 'Content generating', who: 'GPT-4o — no action needed' },
       { id: 'approval', label: 'Awaiting approval', who: 'You review before publishing' },
       { id: 'scheduled', label: 'Scheduled', who: 'Auto-publishes at best time' },
-      { id: 'published', label: 'Published', who: 'Metrics collected every 6h' },
-      { id: 'underperforming', label: 'Underperforming', who: 'Tayo suggests a boost' },
+      { id: 'published', label: 'Published', who: 'Live \u2014 click-throughs counted' },
+      /* WAS 'Underperforming', 'Tayo suggests a boost'.
+         Nothing ever put a card in it. buildPosts() emitted four stages and
+         this was not one of them, so the only way in was dragging a card --
+         which wrote an in-memory metrics object nothing read and rendered a
+         blank warning card, because its body printed p.rsn and nothing ever
+         set p.rsn. A column promising a boost nobody offers, that fills only
+         by accident.
+
+         It is fed by two real conditions now: a post that failed with nothing
+         else carrying it, and a post that went live and nobody clicked. Both
+         have an action attached. */
+      { id: 'attention', label: 'Needs attention', who: 'Failed, or live and unclicked' },
     ];
     // Mobile collapses the pipeline into an accordion (see renderPipeline);
     // these two are the only stages where the agent has something to do, so
     // they're the only ones that start open. Desktop ignores this — every
     // .col-body is always visible there — so it costs nothing on the
     // columns' native home.
-    const PSTAGE_ACTION = { approval: true, underperforming: true };
+    const PSTAGE_ACTION = { approval: true, attention: true };
     /* One glyph per stage, so a column reads as itself before the sentence
        does. A lone line of grey text in an otherwise empty column looked like
        a stage that had failed to load rather than one nobody has reached. */
     const PSTAGE_ICON = {
       uploaded: 'home', generating: 'spark', approval: 'check',
-      scheduled: 'calendar', published: 'share', underperforming: 'chart',
+      scheduled: 'calendar', published: 'share', attention: 'chart',
     };
     const PSTAGE_EMPTY = {
       uploaded: 'No listings waiting on content.',
       generating: 'Nothing generating right now.',
       approval: 'Nothing waiting on your review.',
       scheduled: 'Nothing scheduled yet.',
-      published: 'Nothing published yet — this fills in once a channel is connected and a post actually goes out.',
-      underperforming: 'Nothing flagged — performance looks fine.',
+      published: 'Nothing has gone out yet. A post lands here the moment it reaches a platform \u2014 yours or Synapse\u2019s.',
+      attention: 'Nothing to fix \u2014 nothing failed, and everything live has been clicked.',
     };
     /* ── THE PIPELINE, FROM THE DATABASE ───────────────────────────────
        `posts` was declared here as [] and never assigned by anything, so every
@@ -4807,7 +4818,7 @@
        'generating' stays a client-side moment while the composer runs; it has
        no database state because nothing is persisted until a caption exists. */
     let posts = [];
-    const PIPE = { loaded: false, error: null, drafts: [], social: [] };
+    const PIPE = { loaded: false, error: null, drafts: [], social: [], stats: {} };
 
     /* content_type is per-format; a platform can have more than one (a post and
        a reel are both Instagram). Scheduling only cares about the platform. */
@@ -4831,6 +4842,18 @@
     }
     const listingById = (id) => (LISTINGS_DATA || []).find(l => l.id === id) || null;
     const listingTitle = (l) => (l && (l.title || l.t)) || 'This listing';
+
+    /* Same rule the composer's link rows use: /s/:token is rewritten to the
+       edge function by vercel.json, so on any real deployment the short link
+       lives on whatever host is already serving this page -- which keeps
+       preview deployments working and never hands somebody a link to an origin
+       they are not on. Only localhost has no such rewrite, so only localhost
+       falls back to the canonical host. */
+    function shortLinkUrl(tok) {
+      const o = location.origin;
+      return (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|$)/i.test(o)
+        ? 'https://www.synapsecore.dev' : o) + '/s/' + tok;
+    }
 
     function buildPosts() {
       const out = [];
@@ -4865,27 +4888,137 @@
          They are folded into the post they came from instead: same information,
          one card, and the column counts what the agency actually did. */
       const twinsBySource = {};
+      const twinClaimed = {};
       PIPE.social.forEach(r => {
         if (r.leg !== 'synapse' || !r.twin_of) return;
         (twinsBySource[r.twin_of] = twinsBySource[r.twin_of] || []).push(r);
+        twinClaimed[r.id] = 1;
       });
 
+      /* The one real number in here. Our own redirect counts these, so they
+         exist with no platform connected, no Graph token and no app review --
+         which is exactly what the Published card used to deny by saying
+         "metrics arrive once a channel is connected". human_click_count is
+         the honest one; click_count includes the preview crawlers that fetch
+         every link the moment it is posted. */
+      /* social_post_stats() is the authority where it has an answer: it counts
+         distinct sessions for visits and joins leads through the token, which
+         the embedded short_links row cannot do. The embed stays as the
+         fallback for the moment between the posts landing and the stats
+         landing, and for the case where the stats call failed. */
+      const statOf = (id) => (PIPE.stats && PIPE.stats[id]) || null;
+
+      const clicksOf = (r) => {
+        const st = statOf(r && r.id);
+        if (st) {
+          return { human: st.clicks || 0, total: st.clicks_raw || 0,
+                   last: st.last_click || null, token: st.token || '',
+                   visits: st.visits || 0, leads: st.leads || 0 };
+        }
+        const ls = r && r.short_links;
+        const rows = Array.isArray(ls) ? ls : (ls ? [ls] : []);
+        return rows.reduce((a, x) => ({
+          human: a.human + (x.human_click_count || 0),
+          total: a.total + (x.click_count || 0),
+          last: (!a.last || (x.last_clicked_at && x.last_clicked_at > a.last))
+            ? (x.last_clicked_at || a.last) : a.last,
+          token: a.token || x.token || '',
+          visits: a.visits, leads: a.leads,
+        }), { human: 0, total: 0, last: null, token: '', visits: 0, leads: 0 });
+      };
+
+      const LIVE = { published: 1 };
+      const DAY2 = 48 * 60 * 60 * 1000;
+
+      /* WHAT STAGE A POST IS REALLY IN, which was one ternary:
+           r.status === 'published' ? 'published' : 'scheduled'
+         social_post_status has five values. That line put draft, scheduled,
+         publishing AND failed into the Scheduled column, so a post that had
+         already failed sat there wearing a clock icon, looking like it was
+         about to go out, forever. Two of them are sitting there right now,
+         both saying "No account is connected to this agency" in a
+         failure_reason the card never read.
+
+         And a post is not alone. Every agency post queues a Synapse twin per
+         channel, and the twins publish independently -- so the agency's own
+         Facebook post can fail for want of a connected account while the
+         listing goes live on three Synapse channels and collects clicks. The
+         family reached a platform; saying "scheduled" is false in both
+         directions. */
+      function stageFor(r, twins) {
+        const mineLive = !!LIVE[r.status];
+        const anyTwinLive = twins.some(t => LIVE[t.status]);
+        if (!mineLive && !anyTwinLive) {
+          return r.status === 'failed' ? 'attention' : 'scheduled';
+        }
+        /* Live. The only thing that can pull it back out is nobody clicking:
+           two days up, a link that anyone could have tapped, and not one human
+           did. That is a real underperformance signal measured on our own
+           data, rather than a column somebody drags cards into. */
+        const c = clicksOf(r);
+        const twinClicks = twins.reduce((a, t) => a + clicksOf(t).human, 0);
+        const at = new Date(r.published_at
+          || (twins.find(t => LIVE[t.status]) || {}).published_at || 0).getTime();
+        const old = at && (Date.now() - at) > DAY2;
+        /* NO LINK MEANS NO VERDICT. Posts made before queue_social_post started
+           minting links carry no token, so their click count is zero and always
+           will be -- flagging them would be calling a post a failure for a
+           measurement we never took. Unmeasurable is not the same as unclicked,
+           and the difference matters most on the oldest posts, which are
+           exactly the ones without a link. */
+        const measurable = !!c.token || twins.some(t => clicksOf(t).token);
+        if (old && measurable && (c.human + twinClicks) === 0) return 'attention';
+        return 'published';
+      }
+
       PIPE.social.forEach(r => {
-        if (r.leg === 'synapse') return;          // folded in below, never a card
+        /* A twin is folded into the post it came from rather than given a card
+           of its own -- otherwise one Instagram post fills the column with
+           four cards, three of which the agency did not make and cannot edit.
+           But a twin whose source is missing was being skipped ENTIRELY: the
+           first post that ever reached Instagram has twin_of null, so it was
+           invisible in the pipeline while being the only thing that had ever
+           gone out. An orphan gets to be its own card. */
+        if (r.leg === 'synapse' && twinClaimed[r.id]) return;
+        const isOrphanTwin = r.leg === 'synapse';
+
         const l = listingById(r.property_id);
         const chans = r.platform ? [r.platform] : [];
-        const stage = r.status === 'published' ? 'published' : 'scheduled';
         const twins = twinsBySource[r.id] || [];
+        const stage = stageFor(r, twins);
+        const c = clicksOf(r);
+        const twinLive = twins.filter(t => LIVE[t.status]);
+        const twinClicks = twins.reduce((a, t) => a + clicksOf(t).human, 0);
+
         out.push({ id: 'p:' + r.id, postId: r.id, contentId: r.content_id,
           propertyId: r.property_id, stage,
           listing: listingTitle(l), price: l ? priceLabel(l) : '',
           img: l ? l.img : '', channels: chans, caption: r.caption || '',
-          scheduledAt: r.scheduled_at, publishedAt: r.published_at,
+          scheduledAt: r.scheduled_at,
+          publishedAt: r.published_at || (twinLive[0] || {}).published_at || null,
+          status: r.status,
+          failure: r.failure_reason || '',
+          /* Whether the agency's OWN account carried it, which is a different
+             question from whether it went out at all. */
+          mineLive: !!LIVE[r.status],
+          isSynapseOnly: isOrphanTwin || (!LIVE[r.status] && twinLive.length > 0),
           /* What Synapse is doing with it, carried on the card rather than
              beside it. Without this the amplification is invisible to the
              agency it is being given to. */
           amp: twins.map(t => t.platform),
-          when: fmtWhen(r.published_at || r.scheduled_at), reach: estReach(chans) });
+          ampLive: twinLive.map(t => t.platform),
+          clicks: c.human + twinClicks,
+          clicksRaw: c.total + twins.reduce((a, t) => a + clicksOf(t).total, 0),
+          /* The family's totals. A twin is the same listing on a Synapse
+             channel, so a visit it produced is a visit this post produced --
+             counting only the agency's own leg would report the amplification
+             as worthless precisely when it is doing the work. */
+          visits: c.visits + twins.reduce((a, t) => a + clicksOf(t).visits, 0),
+          leads: c.leads + twins.reduce((a, t) => a + clicksOf(t).leads, 0),
+          lastClick: c.last,
+          token: c.token,
+          when: fmtWhen(r.published_at || (twinLive[0] || {}).published_at || r.scheduled_at),
+          reach: estReach(chans) });
       });
       /* PER-COLUMN ORDER, because the two columns want opposite things.
          Scheduled answers "what goes out next", so soonest first. Published
@@ -4897,7 +5030,7 @@
          Ranked by stage first so this is a proper total order rather than a
          comparator that returns 0 for pairs from different columns -- that
          breaks transitivity and is only accidentally stable. */
-      const STAGE_RANK = { uploaded: 0, generating: 1, approval: 2, scheduled: 3, published: 4 };
+      const STAGE_RANK = { uploaded: 0, generating: 1, approval: 2, scheduled: 3, published: 4, attention: 5 };
       const when = (p) => new Date(p.publishedAt || p.scheduledAt || 0).getTime();
       out.sort((a, b) => {
         const ra = STAGE_RANK[a.stage] === undefined ? 9 : STAGE_RANK[a.stage];
@@ -4922,8 +5055,16 @@
       Promise.all([
         SynListings.listPendingContent ? SynListings.listPendingContent() : Promise.resolve([]),
         SynListings.listSocialPosts(),
-      ]).then(([drafts, social]) => {
+        /* Resolves to {} rather than rejecting. The funnel is the nicest thing
+           on these cards and the least important: a post that went out is
+           still a post that went out, and losing the whole pipeline because a
+           stats query failed would be the tail wagging the dog. */
+        SynListings.socialPostStats
+          ? SynListings.socialPostStats().catch((e) => { console.error('stats', e); return {}; })
+          : Promise.resolve({}),
+      ]).then(([drafts, social, stats]) => {
         PIPE.drafts = drafts || []; PIPE.social = social || [];
+        PIPE.stats = stats || {};
         PIPE.loaded = true; PIPE.error = null;
       }).catch((err) => {
         PIPE.loaded = true;
@@ -4969,8 +5110,14 @@
       requestAnimationFrame(tick);
       setTimeout(() => { el.textContent = fmt(to); }, dur + 140); // guarantee the final value even if rAF is throttled
     }
+    /* ~reach is a GUESS -- estReach multiplies channels by a constant. It is
+       fine on a card that has nothing better, and misleading the moment the
+       card below it reports a measured number: "~12,000 reach" sitting above
+       "3 people tapped through" reads as a catastrophic conversion rate rather
+       than as one invented figure beside one real one. Once a post is live the
+       estimate is dropped and the measurement speaks. */
     const chavRow = p => p.channels.length
-      ? `<div class="chavs">${p.channels.map(c => `<span class="cav" style="background:${CH[c].color}">${chMark(c, 12)}</span>`).join('')}${p.reach ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>`
+      ? `<div class="chavs">${p.channels.map(c => `<span class="cav" style="background:${CH[c].color}">${chMark(c, 12)}</span>`).join('')}${p.reach && p.stage !== 'published' && p.stage !== 'attention' ? `<span class="reach">~${fmt(p.reach)} reach</span>` : ''}</div>`
       : '';
     /* HOW MANY POSTS A STAGE SHOWS BEFORE IT ASKS. Two is enough to see what
        kind of thing is in there and small enough that six stages still fit on
@@ -4990,6 +5137,90 @@
     const PIPE_PEEK_PHONE = 2, PIPE_PEEK_DESK = 4;
     const pipeDeskQ = window.matchMedia('(min-width: 1025px)');
     function pipePeek() { return pipeDeskQ.matches ? PIPE_PEEK_DESK : PIPE_PEEK_PHONE; }
+    /* WHO ACTUALLY CARRIED IT. The agency's own post and the Synapse twins
+       succeed and fail independently: the agency's Facebook can fail for want
+       of a connected account while the same listing goes live on three Synapse
+       channels. One line, both facts, because "published" on its own leaves an
+       agency thinking its own account posted when it did not -- and leaves the
+       free amplification it was promised completely invisible. */
+    function carriedBy(p) {
+      const bits = [];
+      /* Through CH like the Synapse half, not the raw enum. These are the
+         platform's own spelling of its name -- "Your Instagram", "Your X" --
+         and the raw column value gave "Your instagram" and "Your x", which
+         reads as a typo in the one line vouching for where the post went. */
+      if (p.mineLive) {
+        const me = p.channels[0];
+        bits.push('<b>Your ' + esc2((CH[me] && CH[me].label) || me || 'account') + '</b>');
+      }
+      if (p.ampLive && p.ampLive.length) {
+        bits.push('Synapse on ' + esc2(p.ampLive.map(c => (CH[c] && CH[c].label) || c).join(', ')));
+      }
+      if (!bits.length) return '';
+      return '<div class="w" style="margin-top:4px;color:var(--ink-muted)">' + bits.join(' \u00b7 ') + '</div>';
+    }
+
+    /* Clicks read as a sentence rather than a stat block: at these numbers
+       "3 people" is the whole story and a dashboard tile would be dressing up
+       single digits. Zero says so plainly instead of hiding -- a live post
+       nobody has clicked is the most useful thing this column can tell you. */
+    function clickLine(p) {
+      if (!p.token && !p.clicks) return '';
+      if (!p.clicks) {
+        return '<div class="w" style="margin-top:4px;color:var(--ink-dim)">No one has tapped the link yet.</div>';
+      }
+      /* THE FUNNEL, NOT A CLICK COUNT. Three numbers we measure ourselves:
+         the redirect counts the tap, the property page records the visit, the
+         lead form closes the loop. Written as one sentence because at these
+         magnitudes "5 tapped, 5 read it, 0 called" is the whole story and a
+         row of dashboard tiles would be dressing up single digits.
+
+         Visits appear only when they differ from taps -- when everyone who
+         tapped reached the listing, saying it twice is noise. Enquiries always
+         appear once somebody has tapped, INCLUDING at zero: an agency deciding
+         whether this post earned its keep needs the zero most of all. */
+      const bits = ['<b>' + p.clicks + '</b> '
+        + (p.clicks === 1 ? 'person' : 'people') + ' tapped through'];
+      if (p.visits && p.visits !== p.clicks) bits.push('<b>' + p.visits + '</b> read the listing');
+      bits.push('<b>' + (p.leads || 0) + '</b> ' + ((p.leads || 0) === 1 ? 'enquiry' : 'enquiries'));
+      return '<div class="w" style="margin-top:4px">\u2197 ' + bits.join(' \u00b7 ') + '</div>'
+        + (p.lastClick ? '<div class="w" style="margin-top:2px;color:var(--ink-dim)">Last tap '
+            + esc2(fmtWhen(p.lastClick)) + '</div>' : '');
+    }
+
+    function liveBody(p) {
+      return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
+        + esc2(p.when || 'Published') + '</div>'
+        + carriedBy(p)
+        + clickLine(p)
+        + (p.token ? '<button class="act gh" data-act="openlink" data-id="' + p.id + '">Open the link</button>' : '');
+    }
+
+    /* Two different problems share this column, and they want different words.
+       A failure names what went wrong and offers the retry; a live post nobody
+       clicked is not broken, so it gets no alarming language and no retry --
+       the useful action there is to write it differently and send it again. */
+    function attentionBody(p) {
+      if (p.status === 'failed') {
+        return '<div class="rsn">' + esc2(p.failure || 'This did not go out.') + '</div>'
+          + carriedBy(p)
+          + '<button class="act pri" data-act="sendnow" data-id="' + p.id + '">Try again</button>'
+          + '<div class="actrow"><button class="act gh" data-act="remove" data-id="' + p.id + '">Remove</button></div>';
+      }
+      /* Naming the preview fetches matters here. A post with 31 raw hits and
+         no human ones looks, to anybody who has seen the raw number anywhere
+         else, like the tracking is broken -- when in fact the crawlers fetched
+         it and no person followed. Saying both is the difference between "your
+         link is broken" and "your post did not land". */
+      return '<div class="rsn">Live since ' + esc2(p.when || 'a while back')
+        + ' \u2014 ' + (p.clicksRaw ? p.clicksRaw + ' preview fetches, but ' : '')
+        + 'not one person has tapped the link.</div>'
+        + carriedBy(p)
+        + '<button class="act gh" data-act="duplicate" data-id="' + p.id + '">Write another version</button>'
+        + (p.token ? '<div class="actrow"><button class="act gh" data-act="openlink" data-id="'
+            + p.id + '">Check the link</button></div>' : '');
+    }
+
     function pcard(p, stage, i){
       let body = '';
       if (stage === 'uploaded') body = `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ Generate content</button>`;
@@ -5007,12 +5238,16 @@
           <button class="act gh" data-act="duplicate" data-id="${p.id}">Copy</button>
           <button class="act gh" data-act="remove" data-id="${p.id}">Remove</button>
         </div>`;
-      /* No invented metrics. Nothing is connected to a platform yet, so views
-         and DMs would be numbers we made up about posts nobody has seen. */
-      else if (stage === 'published') body = `<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">✓</span> ${esc2(p.when || 'Published')}</div>
-        <div class="w" style="margin-top:4px;color:var(--ink-dim)">Metrics arrive once a channel is connected.</div>`;
-      else if (stage === 'underperforming') body = `<div class="rsn">${esc2(p.rsn || '')}</div>`;
-      return `<div class="pcard ${stage === 'underperforming' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}${i >= pipePeek() ? ' pc-extra' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
+      /* STILL NO INVENTED METRICS -- but there is a real one now, and this
+         card was denying it. Views and DMs would be made up; click-throughs
+         are not. Our own redirect counts them, which is why they exist with
+         nothing connected to any platform, and the card used to read
+         "metrics arrive once a channel is connected" while sitting on a post
+         that 5 people had clicked. Human clicks, not raw: the raw count is
+         mostly preview crawlers fetching the link the second it is posted. */
+      else if (stage === 'published') body = liveBody(p);
+      else if (stage === 'attention') body = attentionBody(p);
+      return `<div class="pcard ${stage === 'attention' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}${i >= pipePeek() ? ' pc-extra' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
     }
     function renderPipeline(){
       const el = document.getElementById('pipeline'); if (!el) return;
@@ -5606,6 +5841,25 @@
         SynListings.deleteSocialPost(p.postId)
           .then(() => { toast('Taken off the schedule'); loadPipeline(); })
           .catch((err) => { b.disabled = false; toast((err && err.message) || 'Could not remove that'); });
+      } else if (act === 'openlink') {
+        /* The tracked link, opened in a new tab. This is the same URL that is
+           in the caption, so opening it here records a click like any other --
+           which is honest: somebody did look at the page. */
+        if (!p.token) { toast('No tracked link on this one'); return; }
+        window.open(shortLinkUrl(p.token), '_blank', 'noopener');
+      } else if (act === 'sendnow' && p.status === 'failed') {
+        /* A DIFFERENT CALL, because the row is in a state the browser may not
+           write. Moving scheduled_at -- which is what Send now does -- is
+           refused outright by social_posts_guard once the status is 'failed',
+           so this button did nothing at all on the cards that needed it most.
+           The RPC resets the status, the clock and the attempt count together. */
+        b.disabled = true; b.textContent = 'Queueing\u2026';
+        SynListings.retrySocialPost(p.postId)
+          .then(() => { toast('Back in the queue \u2014 it goes out on the next run'); loadPipeline(); })
+          .catch((err) => {
+            b.disabled = false; b.textContent = 'Try again';
+            toast((err && err.message) || 'Could not queue that again');
+          });
       } else if (act === 'sendnow') {
         if (!p.postId) return;
         /* NOT "mark it published". The database refuses that from a browser --
@@ -5665,9 +5919,21 @@
       pipe.addEventListener('drop', e => {
         const col = e.target.closest('.col'); if (!col || !dragId) return; e.preventDefault();
         const stage = col.dataset.stage, p = posts.find(x => x.id === dragId);
-        if (p && stage && p.stage !== stage) {
+        /* PUBLISHED AND NEEDS-ATTENTION ARE DERIVED, NOT CHOSEN.
+           Dropping a card into Published used to set the stage in memory and
+           fabricate a metrics object -- views, DMs and leads computed from
+           estReach -- so a post nobody had sent acquired an audience by being
+           dragged, and the next reload silently undid it. Neither column can
+           be entered by hand now: one means a platform accepted the post, the
+           other means it failed or nobody clicked, and a drag cannot make
+           either true. */
+        const DERIVED = { published: 1, attention: 1 };
+        if (p && stage && DERIVED[stage]) {
+          toast(stage === 'published'
+            ? 'A post lands here when a platform accepts it \u2014 use Send now.'
+            : 'This fills itself when a post fails or goes unclicked.');
+        } else if (p && stage && p.stage !== stage) {
           p.stage = stage;
-          if (stage === 'published' && !p.metrics) { const r = p.reach || estReach(p.channels); p.metrics = { views: r, dms: Math.round(r * 0.0022), leads: Math.round(r * 0.0007) }; }
           renderPipeline(); renderBento();
         }
         col.classList.remove('drop');
