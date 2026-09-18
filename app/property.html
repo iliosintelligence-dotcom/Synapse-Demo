@@ -1583,9 +1583,17 @@
       const facts = [];
       if (p.bedrooms != null) facts.push(`<span><b>${p.bedrooms}</b> bed${p.bedrooms === 1 ? '' : 's'}</span>`);
       if (p.bathrooms != null) facts.push(`<span><b>${p.bathrooms}</b> bath${p.bathrooms === 1 ? '' : 's'}</span>`);
+      if (p.toilets != null) facts.push(`<span><b>${p.toilets}</b> toilet${p.toilets === 1 ? '' : 's'}</span>`);
       if (p.parking_spaces != null) facts.push(`<span><b>${p.parking_spaces}</b> parking</span>`);
       if (p.area_sqm != null) facts.push(`<span><b>${p.area_sqm}</b> m²</span>`);
       if (p.year_built != null) facts.push(`<span>built <b>${p.year_built}</b></span>`);
+      /* Both of these have columns and a caption prompt that asks for them,
+         and neither had an input until now -- so every real listing carried
+         null and the card dropped the row without anybody noticing. */
+      const FURNISHED_LABEL = { fully: 'fully furnished', semi: 'semi-furnished', unfurnished: 'unfurnished' };
+      const CONDITION_LABEL = { brand_new: 'brand new', excellent: 'excellent condition', good: 'good condition', fair: 'fair condition', needs_work: 'needs work' };
+      if (p.furnished) facts.push(`<span>${FURNISHED_LABEL[p.furnished] || p.furnished}</span>`);
+      if (p.property_condition) facts.push(`<span>${CONDITION_LABEL[p.property_condition] || p.property_condition}</span>`);
       if (p.title_type) facts.push(`<span>${TITLE_LABEL[p.title_type] || p.title_type}</span>`);
       const fEl = document.getElementById('pvFacts');
       if (fEl) fEl.innerHTML = facts.join('');
@@ -2809,11 +2817,26 @@
       if (p.move_in_cost != null) {
         rows.push(['Move-in cost (one-off)', money(p.move_in_cost)]);
       }
+      /* Zero is an answer worth printing. An agency that charges no legal fee
+         is advertising, and money(0) would render a currency-formatted nothing
+         where a word reads better. A null is not a zero and never reaches
+         here -- it is named in the note below instead. */
+      var fee = function (n) { return Number(n) === 0 ? 'None' : money(n); };
+      if (p.agency_fee != null) {
+        rows.push(['Agency fee (one-off)', fee(p.agency_fee)]);
+      }
+      if (p.legal_fee != null) {
+        rows.push(['Legal fee (one-off)', fee(p.legal_fee)]);
+      }
 
       /* A first-year total only where every part of it is known. Adding up two
-         of three numbers and calling it a total is worse than not showing one. */
-      if (isRent && p.price != null && p.service_charge != null && p.move_in_cost != null) {
-        var first = Number(p.price) + Number(p.service_charge) + Number(p.move_in_cost);
+         of three numbers and calling it a total is worse than not showing one,
+         and that holds harder now there are five parts rather than three: a
+         total that quietly omitted the agency fee would be wrong in exactly
+         the direction that costs somebody money. */
+      var parts = [p.price, p.service_charge, p.move_in_cost, p.agency_fee, p.legal_fee];
+      if (isRent && parts.every(function (v) { return v != null; })) {
+        var first = parts.reduce(function (a, v) { return a + Number(v); }, 0);
         rows.push(['First year, all in', money(first), true]);
       }
 
@@ -2829,13 +2852,22 @@
       }).join('');
 
       if (noteEl) {
+        /* Names precisely what is missing. The old note ended "any agency
+           fee are separate and not shown here" -- true at the time, because
+           there was no column for one, but it amounted to telling the buyer to
+           go and ask. There is a column now, so the card either shows the fee
+           or says plainly that this agency has not stated it. */
         var missing = [];
         if (p.service_charge == null) missing.push('service charge');
         if (p.move_in_cost == null) missing.push('move-in cost');
+        if (p.agency_fee == null) missing.push('agency fee');
+        if (p.legal_fee == null) missing.push('legal fee');
+        var tail = 'Utilities and power are separate and not shown here.';
         noteEl.textContent = missing.length
-          ? ('The agency has not stated a ' + missing.join(' or a ')
-             + ' for this listing. Utilities, power and any agency fee are separate and not shown here.')
-          : 'Utilities, power and any agency fee are separate and not shown here.';
+          ? ('The agency has not stated a ' + missing.slice(0, -1).join(', ')
+             + (missing.length > 1 ? ' or ' : '') + missing[missing.length - 1]
+             + ' for this listing. ' + tail)
+          : tail;
       }
     }
 

@@ -30,6 +30,10 @@
   var WRITABLE = [
     'title', 'description', 'property_type', 'listing_type',
     'price', 'price_period', 'move_in_cost', 'service_charge',
+    /* The agency fee and the legal fee. Writable by the agency like every
+       other charge, and deliberately absent from the social caption payload
+       in social-generate — the listing page shows them, a post does not. */
+    'agency_fee', 'legal_fee',
     'address', 'city', 'state', 'country', 'latitude', 'longitude',
     'bedrooms', 'bathrooms', 'area_sqm', 'amenities',
     'title_type', 'yield_pct', 'is_active', 'is_negotiable',
@@ -79,16 +83,62 @@
      null a column the form simply didn't collect. Empty strings become null:
      the form yields '' for untouched optional fields and '' is not a valid
      numeric or enum. */
+  /* Columns this database turned out not to have yet. The site deploys on
+     push and migrations are run by hand, so a newly added column can briefly
+     exist in this file and not in the table. Without this, PostgREST answers
+     PGRST204 and the entire listing save fails -- the agent loses the form,
+     over a fee field they may not even have filled in. */
+  var absent = Object.create(null);
+
   function scrub(data) {
     var out = {};
     WRITABLE.forEach(function (k) {
       if (!(k in data)) return;
+      if (absent[k]) return;
       var v = data[k];
       if (v === undefined) return;
       if (v === '') v = null;
       out[k] = v;
     });
     return out;
+  }
+
+  /* Recognises only the two ways "no such column" is reported, and only acts
+     on a column the error actually names. Anything else is a real failure and
+     is left to propagate: a save that breaks for a genuine reason must still
+     break loudly. */
+  /* Retries while each failure teaches us a new missing column, because
+     PostgREST names only ONE per response and the columns that go missing
+     together are the ones added by the same migration. Bounded at four: the
+     loop cannot spin -- noteAbsentColumn is only true when it has just marked
+     something new -- but a write path that retries on a server error should
+     have a ceiling regardless of how sure the reasoning is. */
+  function withColumnRetry(run, tries) {
+    tries = (tries == null) ? 4 : tries;
+    return run().then(function (r) {
+      if (r && r.error && tries > 1 && noteAbsentColumn(r.error)) {
+        return withColumnRetry(run, tries - 1);
+      }
+      return r;
+    });
+  }
+
+  function noteAbsentColumn(err) {
+    if (!err) return false;
+    var code = err.code || '';
+    if (code !== 'PGRST204' && code !== '42703') return false;
+    var text = String(err.message || '') + ' ' + String(err.details || '');
+    var hit = null;
+    WRITABLE.forEach(function (k) {
+      if (!absent[k] && text.indexOf(k) !== -1) hit = hit || k;
+    });
+    if (!hit) return false;
+    absent[hit] = true;
+    if (window.console) {
+      console.warn('[listings] "' + hit + '" is not in the database yet — saving without it. '
+        + 'Run the pending migration to store it.');
+    }
+    return true;
   }
 
   /* An agency's own switch controls visibility, so mirror it into `status`.
@@ -1076,11 +1126,19 @@
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) throw new Error('no-agency: this account is not a member of any agency');
-      var row = withStatus(scrub(data));
-      row.agency_id = aid;
-      Object.assign(row, freshWindow());   // starts the 14-day clock
-      // verification_* and trust_score are deliberately never set here.
-      return c1.from('properties').insert(row).select('id').single();
+      /* Rebuilt on the retry rather than reused: scrub() is what drops a
+         column now known to be absent, so the second attempt has to go back
+         through it. */
+      var build = function () {
+        var row = withStatus(scrub(data));
+        row.agency_id = aid;
+        Object.assign(row, freshWindow());   // starts the 14-day clock
+        // verification_* and trust_score are deliberately never set here.
+        return row;
+      };
+      return withColumnRetry(function () {
+        return c1.from('properties').insert(build()).select('id').single();
+      });
     }).then(function (r) {
       if (r.error) throw r.error;
       var id = r.data.id;
@@ -1092,7 +1150,11 @@
     var c1;
     return client().then(function (c) {
       c1 = c;
-      return c.from('properties').update(withStatus(scrub(data))).eq('id', id).select('id').single();
+      return withColumnRetry(function () {
+        /* Rebuilt each time: scrub() is what drops a column now known to be
+           absent, so a reused payload would repeat the same rejected write. */
+        return c.from('properties').update(withStatus(scrub(data))).eq('id', id).select('id').single();
+      });
     }).then(function (r) {
       if (r.error) throw r.error;
       return writeMedia(c1, id, data.media).then(function () { return id; });

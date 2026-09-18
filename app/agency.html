@@ -6550,8 +6550,11 @@
     // a blank listing template (all required fields empty for the create form)
     function blankListing() {
       return { title:'', description:'', property_type:'apartment', listing_type:'sale', price:'', price_period:'total',
-        move_in_cost:'', service_charge:'', address:'', city:'', state:'Lagos', country:'Nigeria', neighbourhood:'',
-        latitude:'', longitude:'', bedrooms:'', bathrooms:'', area_sqm:'', amenities:[], title_type:'', yield_pct:'',
+        move_in_cost:'', service_charge:'', agency_fee:'', legal_fee:'',
+        address:'', city:'', state:'Lagos', country:'Nigeria', neighbourhood:'',
+        latitude:'', longitude:'', bedrooms:'', bathrooms:'', toilets:'', parking_spaces:'',
+        area_sqm:'', year_built:'', furnished:'', property_condition:'',
+        amenities:[], title_type:'', yield_pct:'',
         verification_status:'unverified', is_active:true, media:[{ url:'', is_primary:true, display_order:0 }], leads:0, days:0 };
     }
 
@@ -6602,7 +6605,10 @@
           agency_id: null, // set server-side from the auth context (JWT)
           title: l.title, description: l.description, property_type: l.property_type, listing_type: l.listing_type,
           price: l.price, price_period: l.price_period, move_in_cost: l.move_in_cost, service_charge: l.service_charge,
-          bedrooms: l.bedrooms, bathrooms: l.bathrooms, area_sqm: l.area_sqm,
+          agency_fee: l.agency_fee, legal_fee: l.legal_fee,
+          bedrooms: l.bedrooms, bathrooms: l.bathrooms, toilets: l.toilets,
+          area_sqm: l.area_sqm, parking_spaces: l.parking_spaces, year_built: l.year_built,
+          furnished: l.furnished, property_condition: l.property_condition,
           address: l.address, city: l.city, state: l.state, country: l.country, latitude: l.latitude, longitude: l.longitude,
           amenities: l.amenities || [], title_type: l.title_type, yield_pct: l.yield_pct,
           verification_status: l.verification_status, is_active: l.is_active, // verification is system-owned, not agency-writable
@@ -6857,7 +6863,30 @@
               <div class="field"><label id="lbBeds">Bedrooms *</label><input id="lfBeds" type="number" inputmode="numeric" min="0" max="20" value="${esc(d.bedrooms)}" placeholder="3"><span class="ferr" id="e_beds" role="alert"></span></div>
               <div class="field"><label>Bathrooms</label><input id="lfBaths" type="number" inputmode="numeric" min="0" max="20" value="${esc(d.bathrooms)}" placeholder="3"></div>
             </div>
+            <div class="row2">
+              <div class="field"><label>Toilets</label><input id="lfToilets" type="number" inputmode="numeric" min="0" max="20" value="${esc(d.toilets)}" placeholder="4"></div>
+              <div class="field"><label>Parking spaces</label><input id="lfParking" type="number" inputmode="numeric" min="0" max="50" value="${esc(d.parking_spaces)}" placeholder="2"></div>
+            </div>
             <div class="field"><label>Area (sqm)</label><input id="lfArea" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.area_sqm)}" placeholder="220"></div>
+            <div class="row2">
+              <div class="field"><label>Year built</label><input id="lfYear" type="number" inputmode="numeric" min="1900" max="2100" value="${esc(d.year_built)}" placeholder="2021"></div>
+              <div class="field"><label>Furnishing</label>
+                <select id="lfFurnished">
+                  <option value="">Not stated</option>
+                  <option value="unfurnished"${d.furnished === 'unfurnished' ? ' selected' : ''}>Unfurnished</option>
+                  <option value="semi"${d.furnished === 'semi' ? ' selected' : ''}>Semi-furnished</option>
+                  <option value="fully"${d.furnished === 'fully' ? ' selected' : ''}>Fully furnished</option>
+                </select></div>
+            </div>
+            <div class="field"><label>Condition</label>
+              <select id="lfCondition">
+                <option value="">Not stated</option>
+                <option value="brand_new"${d.property_condition === 'brand_new' ? ' selected' : ''}>Brand new</option>
+                <option value="excellent"${d.property_condition === 'excellent' ? ' selected' : ''}>Excellent</option>
+                <option value="good"${d.property_condition === 'good' ? ' selected' : ''}>Good</option>
+                <option value="fair"${d.property_condition === 'fair' ? ' selected' : ''}>Fair</option>
+                <option value="needs_work"${d.property_condition === 'needs_work' ? ' selected' : ''}>Needs work</option>
+              </select></div>
             <div class="field"><label>Amenities</label><input id="lfAmen" value="${esc((d.amenities || []).join(', '))}" placeholder="Parking, 24h power, Security, Pool (comma-separated)"></div>
           </fieldset>
           <fieldset class="lf-sec"><legend>Pricing</legend>
@@ -6869,6 +6898,26 @@
               <div class="field"><label>Move-in cost (₦)</label><input id="lfMoveIn" type="number" inputmode="numeric" min="0" value="${esc(d.move_in_cost)}" placeholder="optional"></div>
               <div class="field"><label>Service charge (₦/yr)</label><input id="lfService" type="number" inputmode="numeric" min="0" value="${esc(d.service_charge)}" placeholder="optional"></div>
             </div>
+            <!-- The two charges a Nigerian tenant is most reliably surprised
+                 by, and until now the card had nowhere to show them: its cost
+                 note literally ended "any agency fee are separate and not shown
+                 here". Commonly 5-10% of the annual rent each.
+
+                 Blank and zero are different answers and are stored that way.
+                 Blank means the agency has not said; the card names it as not
+                 stated rather than implying there is no fee. Zero means there
+                 genuinely is none, and the card says so, which is worth
+                 advertising.
+
+                 These stay off social captions by design -- the caption
+                 allowlist in social-generate does not carry them. A post is an
+                 invitation; a fee schedule belongs where there is room to show
+                 what it is attached to. -->
+            <div class="row2">
+              <div class="field"><label>Agency fee (₦)</label><input id="lfAgencyFee" type="number" inputmode="numeric" min="0" value="${esc(d.agency_fee)}" placeholder="optional"></div>
+              <div class="field"><label>Legal fee (₦)</label><input id="lfLegalFee" type="number" inputmode="numeric" min="0" value="${esc(d.legal_fee)}" placeholder="optional"></div>
+            </div>
+            <p class="lf-hint">Shown to buyers in the cost breakdown on the listing page. Left blank, the listing says the fee has not been stated. Never used in social captions.</p>
           </fieldset>
           <!-- ── what Tayo may agree to ──────────────────────────────────
                Lives with the listing because it is a fact about the listing,
@@ -7579,11 +7628,21 @@
           property_type: g('lfType').value, listing_type: g('lfListing').value,
           price: num(g('lfPrice').value), price_period: g('lfPeriod').value,
           move_in_cost: num(g('lfMoveIn').value), service_charge: num(g('lfService').value),
+          /* num() returns null for '', which is what keeps "not stated" and
+             "no fee" apart all the way to the card. */
+          agency_fee: num(g('lfAgencyFee').value), legal_fee: num(g('lfLegalFee').value),
           address: g('lfAddr').value.trim(), city: g('lfCity').value.trim(), state: g('lfState').value.trim(), country: g('lfCountry').value,
           neighbourhood: g('lfHood').value.trim(), latitude: num(g('lfLat').value), longitude: num(g('lfLng').value),
           bedrooms: g('lfBeds').value === '' ? null : parseInt(g('lfBeds').value, 10),
           bathrooms: g('lfBaths').value === '' ? null : parseInt(g('lfBaths').value, 10),
           area_sqm: num(g('lfArea').value),
+          toilets: g('lfToilets').value === '' ? null : parseInt(g('lfToilets').value, 10),
+          parking_spaces: g('lfParking').value === '' ? null : parseInt(g('lfParking').value, 10),
+          year_built: g('lfYear').value === '' ? null : parseInt(g('lfYear').value, 10),
+          /* '' is a real answer here -- "not stated" -- and an empty enum
+             string is not a value Postgres will take, so it goes as null. */
+          furnished: g('lfFurnished').value || null,
+          property_condition: g('lfCondition').value || null,
           // Split on comma, pipe OR newline. People paste amenity lists straight
           // out of a brochure and those use pipes and line breaks at least as
           // often as commas — comma-only silently stored the whole list as ONE
