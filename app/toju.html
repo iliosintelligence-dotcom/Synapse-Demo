@@ -724,6 +724,10 @@
     function rebuildCanvas() {
       canvasMatches = []; cvKeys.clear();
       saved.forEach((m) => { if (m.role === 'assistant') collect(m.matches); });
+      /* The home they arrived about is not in the transcript -- nothing Tayo
+         said put it there -- so a rebuild would drop it. It belongs on the
+         canvas for as long as the conversation is about it. */
+      if (REPLY_MATCH) collect([REPLY_MATCH]);
       renderCanvas();
     }
 
@@ -973,17 +977,55 @@
       }
     }
 
+    /* The listing the visitor arrived about, kept in the shape the canvas
+       speaks so it can be re-seeded after a rebuild. */
+    let REPLY_MATCH = null;
+
+    /* A properties row as a Tayo match. Same field names the API emits, so
+       shapeTojuMatch needs no special case and the card is identical to every
+       other card on the canvas -- which is the point: a home you asked about
+       should not look like a different kind of object from a home Tayo found. */
+    function replyMatch(p) {
+      const media = Array.isArray(p.property_media) ? p.property_media.slice() : [];
+      media.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      return {
+        id: p.id,
+        img: media.length ? media[0].url : null,
+        title: p.title,
+        price: p.price,
+        listingType: p.listing_type,
+        city: p.city,
+        bedrooms: p.bedrooms,
+        bathrooms: p.bathrooms,
+        areaSqm: p.area_sqm,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        verificationStatus: p.verification_status,
+        trustScore: p.trust_score,
+      };
+    }
+
     async function attachReply(id) {
       try {
         const r = await fetch(SUPABASE_URL + '/rest/v1/properties?id=eq.'
           + encodeURIComponent(id)
-          + '&select=id,title,price,price_period,currency,listing_type,city,bedrooms',
+          /* The extra columns are what turns a quote line into a card: the
+             photograph, where the pin goes, and whether it has been checked.
+             Without them the canvas had nothing worth drawing, which is why
+             arriving from a listing showed no listing. */
+          + '&select=id,title,price,price_period,currency,listing_type,city,bedrooms,'
+          + 'bathrooms,area_sqm,latitude,longitude,verification_status,trust_score,'
+          + 'property_media(url,display_order)',
           { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
         const rows = await r.json().catch(() => []);
         const p = Array.isArray(rows) ? rows[0] : null;
-        if (!p) return;                       // gone or unpublished: no quote
+        if (!p) return null;                  // gone or unpublished: no quote
         REPLY_TO = p; saveReply(p); renderReply();
-      } catch (e) { /* the chat still works without the quote */ }
+        REPLY_MATCH = replyMatch(p);
+        collect([REPLY_MATCH]);
+        renderCanvas();
+        return p;
+      } catch (e) { return null; }            // the chat still works without it
     }
 
     /* What Tayo is told. Same shape as the dream-board note below, which is
@@ -1508,7 +1550,20 @@
     const replyParam = new URLSearchParams(location.search).get('reply');
     if (replyParam) {
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
-      attachReply(replyParam);
+      /* TAYO SPEAKS FIRST. Attaching the listing and then waiting made the
+         visitor open a conversation about a home they had just been reading --
+         the context was carried across and never used.
+
+         Sent as a visible message rather than hidden priming because it is a
+         truthful account of what "Discuss with an agent" meant, and because
+         replyContext() already instructs the model to answer about THIS
+         listing, so what comes back is grounded in the row rather than
+         invented. Skipped when ?ask= is also present: that carries the
+         visitor's own words and they outrank a generic opener. */
+      const alsoAsking = new URLSearchParams(location.search).get('ask');
+      attachReply(replyParam).then((p) => {
+        if (p && !alsoAsking) send('Tell me about this home.');
+      });
     } else {
       REPLY_TO = loadReply();
       renderReply();
