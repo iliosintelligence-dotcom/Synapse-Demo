@@ -283,6 +283,11 @@
     .commute .c { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 7px 13px; }
     .commute .c b { color: var(--ink); font-weight: 600; }
     .cmt-ff { font-style: normal; color: var(--ink-dim); margin-left: 3px; font-size: 12px; }
+    /* An estimate reads as an estimate. Set quieter than the figure it
+       qualifies so the distance stays the thing you read first — it is the
+       part we actually know. */
+    .cmt-est { color: var(--ink-dim); font-size: 11.5px; }
+    .pvo-est { color: rgba(255,255,255,.62); font-size: 11.5px; font-weight: 400; }
     .cmt-src { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
     .nb-addr { margin: 2px 0 12px; font-size: 13px; color: var(--ink-muted); line-height: 1.5; }
     .nb-empty { font-size: 13px; line-height: 1.55; color: var(--ink-muted); margin: 4px 0 0; }
@@ -2516,6 +2521,42 @@
     }
     function formatDist(m) { return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km'; }
 
+    /* ── how long that actually takes ──────────────────────────────────────
+       Derived from distance rather than taken from the router, because the
+       router cannot be trusted for either number here.
+
+       WALKING: the public OSRM demo only has the car profile loaded, and
+       answers a /foot/ request with car routing instead of refusing it.
+       Measured on three pairs from this address: foot and driving returned
+       identical distances and durations, at 70.4, 55.9 and 62.9 km/h. So a
+       "walking" time from that engine is a driving time wearing a different
+       label. 4.8 km/h is an ordinary adult pace on a pavement.
+
+       DRIVING: the same profile reads OSM maxspeed tags and models no
+       congestion at all, which is how it arrives at 55-70 km/h averages. A
+       range between 16 and 26 km/h is the honest shape for a Nigerian urban
+       journey -- the low end is a bad hour, the high end a clear one. A point
+       estimate would invite somebody to plan a viewing around a number that
+       has never been measured.
+
+       Both are labelled estimates wherever they are shown. The DISTANCE is
+       still OSRM's and still worth having: it follows the road network rather
+       than a straight line, which is the part the engine genuinely knows. */
+    var WALK_KMH = 4.8;
+    var DRIVE_KMH_FAST = 26, DRIVE_KMH_SLOW = 16;
+    function walkMins(m) { return Math.max(1, Math.round((m / 1000) / WALK_KMH * 60)); }
+    function driveMins(m) {
+      var km = m / 1000;
+      return {
+        lo: Math.max(1, Math.round(km / DRIVE_KMH_FAST * 60)),
+        hi: Math.max(2, Math.round(km / DRIVE_KMH_SLOW * 60)),
+      };
+    }
+    function driveText(m) {
+      var r = driveMins(m);
+      return r.lo === r.hi ? ('about ' + r.lo + ' min') : (r.lo + '\u2013' + r.hi + ' min');
+    }
+
     /* Emits the SAME vocabulary the stored Google survey uses -- university,
        pharmacy, bank, market, transit, park -- because META and POI_FILTERS
        were written against that vocabulary and the two sources have to be
@@ -2737,9 +2778,19 @@
       } else if (CMT_DESTS && CMT_DESTS.length) {
         CMT_DESTS.forEach(function (d) {
           var pick = cmtSecondsFor(d);
-          var t = fmtMin(pick.sec != null ? Math.round(pick.sec / 60) : null);
+          /* A measured per-hour figure from property_places is still the best
+             answer when it exists. Otherwise the distance carries it: the
+             road distance where OSRM gave us one, the straight line where it
+             did not, and a driving range worked out from that rather than the
+             engine's free-flow guess. The old code read pick.sec while the
+             router wrote d.sec, so every routed duration was computed and
+             then silently dropped -- these chips have been showing bare
+             distances ever since. */
+          var t = pick.sec != null ? fmtMin(Math.round(pick.sec / 60)) : null;
+          var metres = (d.route_m != null ? d.route_m : d.dm);
           parts.push('<span class="c">' + esc(d.name) + ' <b>'
-            + (t ? t : formatDist(d.dm)) + '</b>'
+            + (t ? t : formatDist(metres)) + '</b>'
+            + (t ? '' : ' <span class="cmt-est">' + driveText(metres) + ' drive</span>')
             // An hour we did not measure is marked, not quietly substituted.
             + (t && !pick.measured ? '<i class="cmt-ff" title="Free-flow time; this hour was not measured">~</i>' : '')
             + '</span>');
@@ -2759,14 +2810,19 @@
 
       if (src) {
         var routed = (CMT_DESTS || []).some(function (d) { return d.sec != null; });
+        /* This said "Places and drive times from Google Maps, measured from
+           this address." Nothing here has ever called Google -- places come
+           from OpenStreetMap via Overpass and routes from OSRM -- and at the
+           moment it rendered there were usually no drive times at all, because
+           the routed seconds were being dropped by a field-name mismatch. It
+           named the wrong source, for numbers that were not there, and called
+           straight lines measured. */
         src.textContent = cmtState === 'ready' && CMT_DESTS && CMT_DESTS.length
           ? (routed
-              /* Was "free-flow traffic. Real journeys at peak will be longer." --
-                 a hedge standing in for a measurement we can now actually take.
-                 The buttons above answer that question directly, so the line
-                 only needs to name where the numbers came from. */
-              ? 'Places and drive times from Google Maps, measured from this address.'
-              : 'Places from OpenStreetMap. Driving times unavailable, so these are straight-line distances.')
+              ? 'Places from OpenStreetMap, distances along the road network via OSRM. '
+                + 'Driving times are estimated from distance at Nigerian urban speeds, not live traffic.'
+              : 'Places from OpenStreetMap. Routing was unavailable, so these are straight-line '
+                + 'distances and the times estimated from them are rougher still.')
           : '';
       }
 
@@ -3513,7 +3569,11 @@
     }
 
     /* ── "connect to this amenity": a real walking route via OSRM ────────── */
-    var OSRM_URL = 'https://router.project-osrm.org/route/v1/foot/';
+    /* driving, not foot. The demo server has only the car profile and
+       silently answers /foot/ with car routing, so asking for foot bought a
+       misleading label and nothing else. We now ask for what it has, use the
+       road distance it returns, and work the times out ourselves. */
+    var OSRM_URL = 'https://router.project-osrm.org/route/v1/driving/';
     /* One button, written by both the routed and the failed-routing branch.
        It used to carry id="pvPoiBack" in each, which read as a duplicate id
        even though only ever one is in the document. Scoped to the overlay by
@@ -3927,14 +3987,19 @@
             routeLine = MAPR.line(route.geometry.coordinates,
               { color: '#FF8A2D', width: 4, opacity: 0.95 });
           });
-          var mins = Math.round(route.duration / 60);
-          /* TIME IS REAL HERE. Elsewhere on the map we refuse to show travel
-             time because property_places.drive_seconds is empty -- but this
-             number came back from a routing engine that just computed the
-             walk, so it is measured and can be shown. */
+          /* The DURATION from this engine is discarded. It is a car time
+             whatever profile was asked for -- the demo server has only the
+             car profile and answers /foot/ with driving -- so it was
+             reporting 9 minutes for 9.66 km and calling it walking. The
+             distance is kept, because that part is real: it follows the road
+             network instead of cutting across a straight line. */
+          var km = route.distance / 1000;
+          var walk = walkMins(route.distance);
           overlay.innerHTML = head
-            + '<div class="pvo-eta">Walking <b>' + mins + ' min</b> \u00b7 '
-            + (route.distance / 1000).toFixed(1) + ' km on foot</div>';
+            + '<div class="pvo-eta">' + km.toFixed(1) + ' km by road \u00b7 '
+            + 'about <b>' + walk + ' min</b> on foot, '
+            + '<b>' + driveText(route.distance) + '</b> driving'
+            + '<span class="pvo-est"> \u00b7 estimated from distance</span></div>';
           fit([PROP, poi.c]);
         })
         .catch(function () {
