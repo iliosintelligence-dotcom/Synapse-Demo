@@ -38,12 +38,21 @@
       background: rgba(13,13,15,.86);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
     .pvlb.on { display: flex; }
+    /* A drag on the photograph is the viewer's, start to finish. Nothing
+       here scrolls, so anything the browser took from this gesture it took
+       from the page behind -- which is the deck. */
     .pvlb-stage { position: relative; width: 100%; height: 100%;
+      overscroll-behavior: contain;
       display: flex; align-items: center; justify-content: center;
       padding: 60px 12px calc(56px + env(safe-area-inset-bottom)); box-sizing: border-box; }
     .pvlb-stage img { max-width: 100%; max-height: 100%; object-fit: contain;
-      display: block; touch-action: pan-y; user-select: none; -webkit-user-drag: none;
-      position: relative; z-index: 0; }
+      display: block; user-select: none; -webkit-user-drag: none;
+      position: relative; z-index: 0;
+      /* none, not pan-y. pan-y left vertical gestures to the browser, which is
+         how a drag across the picture could still move the page behind it.
+         While this is open it owns the gesture -- there is nothing here to
+         scroll, and the drag below is doing the work. */
+      touch-action: none; will-change: transform; }
     .pvlb-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px;
       width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
       background: rgba(255,255,255,.14); color: #fff; font-size: 19px; line-height: 1;
@@ -100,8 +109,18 @@
     .hero .actions { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; }
     .hero .act { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; }
     .hero .act.on { color: #121212; background: rgba(255,255,255,0.9); }
-    .thumbs { display: flex; gap: 8px; margin-top: 10px; }
-    .thumbs img { width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: opacity var(--m-micro) var(--m-ease), border-color var(--m-micro) var(--m-ease); }
+    /* SCROLLS, rather than squeezing. This was a flex row with no wrap, no
+       overflow-x and no flex: none on the children, so eight photographs did
+       the only thing left to them and shrank: measured 60, 36, 36, 32, 28, 28,
+       36 and 28 pixels wide against a height fixed at 46 -- eight different
+       widths, every one a distorted sliver. A thumbnail strip should run off
+       the edge and scroll; it should never restate the aspect ratio of the
+       picture in it. */
+    .thumbs { display: flex; gap: 8px; margin-top: 10px;
+      overflow-x: auto; overscroll-behavior-x: contain;
+      scrollbar-width: none; -ms-overflow-style: none; }
+    .thumbs::-webkit-scrollbar { display: none; }
+    .thumbs img { flex: none; width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: opacity var(--m-micro) var(--m-ease), border-color var(--m-micro) var(--m-ease); }
     .thumbs img.on { opacity: 1; border-color: var(--brand); }
 
     .summary { margin-top: 14px; position: relative; padding: 24px; }
@@ -325,7 +344,7 @@
     .commute .c.pending { opacity: .55; }
 
     /* similar homes */
-    .sim { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .sim { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; overscroll-behavior-x: contain; }
     .sim::-webkit-scrollbar { display: none; }
     .sim a { flex: none; width: 168px; border-radius: 15px; overflow: hidden; background: rgba(255,255,255,0.65); border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.09); transition: transform var(--m-standard) var(--m-ease); }
     @media (hover: hover) and (pointer: fine) {
@@ -380,8 +399,16 @@
     /* ── SWIPE DECK: the property image never scrolls away. The info cards
        (overview, Tayo's take, negotiate, cost…) swipe left/right instead of
        stacking vertically. One screen, no vertical page scroll. ── */
-    html { height: 100%; }
-    body { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+    /* overscroll-behavior: none is the fix for "I can move the page
+       horizontally". This shell is a copy of toju.html's -- same 100dvh, same
+       overflow: hidden -- but it was copied without the containment, so a swipe
+       that ran off the end of the deck below chained out to the browser and iOS
+       took it as the interactive back gesture, sliding the whole page. There is
+       nothing on this page for the document itself to scroll, so nothing is
+       lost by saying so. */
+    html { height: 100%; overscroll-behavior: none; }
+    body { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+      overscroll-behavior: none; }
     .pdp { flex: 1; min-height: 0; position: relative; z-index: 1; max-width: 460px; width: 100%; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; }
     .pdp .hero { height: 230px; flex: none; }
     .pdp .thumbs { flex: none; }
@@ -393,7 +420,10 @@
        exists. The bar is now just the two arrows around the dots, so it
        shrinks to the height of a tap target instead of a caption plus one. */
     .deckbar { justify-content: center; }
-    .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    /* overscroll-behavior-x: contain -- the deck is eight panels wide and a
+       flick at either end used to hand the rest of the gesture to the browser.
+       Contained, the swipe simply stops at the first and last card. */
+    .deck { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; }
     .deck::-webkit-scrollbar { display: none; }
     /* scroll-snap-stop pins one gesture to one card. Snap decides where a
        scroll LANDS, not how far it travels, so with momentum scrolling a single
@@ -673,7 +703,8 @@
       /* five tabs will not fit across 375px — scroll them */
       .pvc-tabs {
         margin-left: 0; width: 100%; flex-wrap: nowrap;
-        overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+        overflow-x: auto; overscroll-behavior-x: contain;
+        scrollbar-width: none; -ms-overflow-style: none;
       }
       .pvc-tabs::-webkit-scrollbar { display: none; }
       .pvc-tabs button { flex: none; min-height: 44px; }
@@ -1150,6 +1181,11 @@
         if (!PHOTOS.length) return;
         lastFocus = document.activeElement;
         paint();
+        /* Cleared on the way in. A viewer closed mid-gesture would otherwise
+           reopen holding the offset it was dragged to. */
+        img.style.transition = 'none';
+        img.style.transform = 'translateX(0)';
+        img.style.opacity = '1';
         box.classList.toggle('single', PHOTOS.length < 2);
         box.classList.add('on');
         document.body.classList.add('pvlb-open');
@@ -1167,8 +1203,39 @@
 
       /* Drives goToPhoto so the hero, the counter and the thumbnail highlight
          all move with it: this is a bigger view of the same gallery, not a
-         second one. */
-      function step(d) { goToPhoto(photoIndex + d); paint(); }
+         second one.
+
+         THE SLIDE IS THE POINT. Swapping src left nothing to tell you the
+         gesture landed or which direction you went. The outgoing photo leaves
+         the way you are going and the next one arrives from the other side --
+         --m-micro out, --m-standard back, --m-ease, the same budget a card
+         transition gets everywhere else in the app.
+
+         Guarded by `sliding` because a fast double-tap on the arrow would
+         otherwise start a second slide mid-flight and strand the transform. */
+      let sliding = false;
+      function step(d) {
+        if (sliding || PHOTOS.length < 2) { if (!sliding) { goToPhoto(photoIndex + d); paint(); } return; }
+        sliding = true;
+        const away = d > 0 ? -1 : 1;          // going next: this one leaves left
+        img.style.transition = 'transform var(--m-micro) var(--m-ease), opacity var(--m-micro) var(--m-ease)';
+        img.style.transform = 'translateX(' + (away * 26) + 'px)';
+        img.style.opacity = '0';
+        setTimeout(function () {
+          goToPhoto(photoIndex + d);
+          paint();
+          /* Placed on the far side with no transition, then released. Without
+             the reflow the browser coalesces both writes and the photo simply
+             appears, which is the animation this replaces. */
+          img.style.transition = 'none';
+          img.style.transform = 'translateX(' + (-away * 26) + 'px)';
+          void img.offsetWidth;
+          img.style.transition = 'transform var(--m-standard) var(--m-ease), opacity var(--m-standard) var(--m-ease)';
+          img.style.transform = 'translateX(0)';
+          img.style.opacity = '1';
+          setTimeout(function () { sliding = false; }, 190);
+        }, 110);
+      }
 
       hero.addEventListener('click', open);
       shut.addEventListener('click', close);
@@ -1189,24 +1256,53 @@
         if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
       });
 
-      /* Same rule the hero uses: horizontal intent has to be established
-         before the gesture is claimed, or a vertical flick reads as a swipe
-         and the photo jumps when somebody meant to dismiss. */
+      /* THE PHOTO FOLLOWS THE FINGER. This was a threshold test on touchend:
+         nothing moved during the drag, then the picture changed. Nothing said
+         the gesture had been noticed and nothing said which way it was going.
+
+         Horizontal intent still has to be established before the drag is
+         claimed, or a vertical flick reads as a swipe -- but once claimed, the
+         photo tracks, and on release it either completes or springs back. A
+         gesture that does not complete should visibly fail rather than do
+         nothing. */
       let x0 = null, y0 = null, claimed = false;
+
+      function rest(animate) {
+        img.style.transition = animate
+          ? 'transform var(--m-standard) var(--m-ease), opacity var(--m-standard) var(--m-ease)'
+          : 'none';
+        img.style.transform = 'translateX(0)';
+        img.style.opacity = '1';
+      }
+
       img.addEventListener('touchstart', (e) => {
+        if (sliding) return;
         const t = e.changedTouches[0];
         x0 = t.clientX; y0 = t.clientY; claimed = false;
+        img.style.transition = 'none';     // the finger sets the position now
       }, { passive: true });
+
       img.addEventListener('touchmove', (e) => {
-        if (x0 == null) return;
+        if (x0 == null || sliding) return;
         const t = e.changedTouches[0];
-        if (!claimed && Math.abs(t.clientX - x0) > Math.abs(t.clientY - y0) + 8) claimed = true;
+        const dx = t.clientX - x0;
+        if (!claimed && Math.abs(dx) > Math.abs(t.clientY - y0) + 8) claimed = true;
+        if (!claimed) return;
+        /* Damped, and damped harder at the ends: a photo that slides freely
+           when there is nothing to slide to promises a picture that is not
+           there. */
+        const atEnd = PHOTOS.length < 2;
+        img.style.transform = 'translateX(' + (dx * (atEnd ? 0.18 : 0.55)) + 'px)';
+        img.style.opacity = String(Math.max(0.45, 1 - Math.abs(dx) / 420));
       }, { passive: true });
+
       img.addEventListener('touchend', (e) => {
         if (x0 == null) return;
         const dx = e.changedTouches[0].clientX - x0;
-        if (claimed && Math.abs(dx) > 42) step(dx < 0 ? 1 : -1);
+        const go = claimed && Math.abs(dx) > 42 && PHOTOS.length > 1;
         x0 = null; y0 = null; claimed = false;
+        if (go) { rest(false); step(dx < 0 ? 1 : -1); }
+        else rest(true);          // springs back, so a half-swipe reads as declined
       }, { passive: true });
     })();
 
