@@ -790,6 +790,45 @@
       outline: none; transition: border-color var(--m-standard), background var(--m-standard);
     }
     .field textarea { resize: vertical; min-height: 66px; }
+
+    /* ── amenities: a vocabulary, not a spelling test ──────────────────
+       The box looks and focuses exactly like .field input because it stands
+       in for one; the real value lives in a hidden input beside it. */
+    .amen { position: relative; }
+    .amen-box { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      width: 100%; min-height: 44px; padding: 6px 8px; border-radius: 11px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.75);
+      transition: border-color var(--m-standard), background var(--m-standard);
+      cursor: text; box-sizing: border-box; }
+    .amen-box.on { border-color: rgba(54,54,54,0.45); background: #fff; }
+    .amen-chip { display: inline-flex; align-items: center; gap: 5px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.7);
+      border-radius: 100px; padding: 4px 5px 4px 11px;
+      font: 600 12px var(--f-sans); color: var(--ink); }
+    .amen-chip button { border: none; background: none; cursor: pointer;
+      color: var(--ink-dim); font-size: 14px; line-height: 1; padding: 1px 4px;
+      border-radius: 50%; min-height: 0; }
+    .amen-chip button:hover { color: var(--ink); background: rgba(0,0,0,0.07); }
+    /* !important because .field input above sets a 44px min-height and a
+       border, and this input has to disappear into the box around it. */
+    .amen-in { flex: 1 1 110px; min-width: 110px;
+      border: none !important; background: none !important; outline: none;
+      min-height: 30px !important; padding: 0 3px !important;
+      font: 13.5px var(--f-sans); color: var(--ink); }
+    .amen-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+      z-index: 40; max-height: 268px; overflow-y: auto; overscroll-behavior: contain;
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.13); padding: 5px; display: none; }
+    .amen-menu.on { display: block; }
+    .amen-grp { font: 700 10px var(--f-sans); letter-spacing: .09em;
+      text-transform: uppercase; color: var(--ink-dim); padding: 10px 9px 4px; }
+    .amen-opt { padding: 8px 10px; border-radius: 8px; font-size: 13px;
+      color: var(--ink); cursor: pointer; display: flex; align-items: center;
+      justify-content: space-between; gap: 10px; }
+    .amen-opt:hover, .amen-opt.hi { background: var(--brand-tint); }
+    .amen-opt[aria-selected="true"] { color: var(--ink-dim); }
+    .amen-opt[aria-selected="true"]::after { content: '\2713'; color: var(--brand); font-weight: 700; }
+    .amen-none { padding: 11px 10px; font-size: 12.5px; color: var(--ink-dim); }
     .field input:focus, .field textarea:focus, .field select:focus { border-color: rgba(54,54,54,0.45); background: #fff; }
     .field input::placeholder, .field textarea::placeholder { color: var(--ink-dim); }
 
@@ -6887,7 +6926,19 @@
                 <option value="fair"${d.property_condition === 'fair' ? ' selected' : ''}>Fair</option>
                 <option value="needs_work"${d.property_condition === 'needs_work' ? ' selected' : ''}>Needs work</option>
               </select></div>
-            <div class="field"><label>Amenities</label><input id="lfAmen" value="${esc((d.amenities || []).join(', '))}" placeholder="Parking, 24h power, Security, Pool (comma-separated)"></div>
+            <div class="field amen" id="amenHost">
+              <label for="amenIn">Amenities</label>
+              <div class="amen-box" id="amenBox">
+                <input id="amenIn" class="amen-in" type="text" role="combobox"
+                       aria-expanded="false" aria-controls="amenMenu" aria-autocomplete="list"
+                       autocomplete="off" placeholder="Search amenities&#8230;">
+              </div>
+              <div class="amen-menu" id="amenMenu" role="listbox" aria-label="Amenities"></div>
+              <!-- The canonical value. The save reads this and splits it, so
+                   the write path never learned about any of the above. -->
+              <input type="hidden" id="lfAmen" value="${esc((d.amenities || []).join(', '))}">
+              <p class="lf-hint">Pick from the list, or type your own and press Enter.</p>
+            </div>
           </fieldset>
           <fieldset class="lf-sec"><legend>Pricing</legend>
             <div class="row2">
@@ -7266,6 +7317,164 @@
          uploader that fills it and the save that writes it, so it belongs to
          the form, not to one of its widgets. */
       let photos = [];
+
+      /* Grouped so the dropdown reads as a checklist of the questions
+         buyers actually ask, in the order they ask them. Power and water come
+         first on purpose: in Lagos and Ibadan they decide a viewing. */
+      const AMENITY_GROUPS = [
+        { g: 'Power', items: ['24/7 power', 'Backup generator', 'Solar power',
+          'Inverter and batteries', 'Prepaid meter', 'Dedicated transformer'] },
+        { g: 'Water', items: ['Borehole', 'Constant water supply',
+          'Water treatment plant', 'Overhead tank'] },
+        { g: 'Security', items: ['24/7 security', 'Gated estate', 'Security post',
+          'CCTV surveillance', 'Electric fence', 'Perimeter fence', 'Intercom',
+          'Access control', 'Burglary proof', 'Fire alarm', 'Smoke detectors',
+          'Fire extinguisher'] },
+        { g: 'Parking and access', items: ['Car park', 'Covered parking',
+          'Visitor parking', 'Ample parking space', 'Elevator', 'Wheelchair access',
+          'Tarred road access', 'Good drainage', 'Street lights'] },
+        { g: 'Inside', items: ['Air conditioning', 'Fitted kitchen',
+          'Fitted wardrobes', 'POP ceiling', 'All rooms ensuite', 'Guest toilet',
+          'Walk-in closet', 'Store room', 'Laundry room', 'Study or home office',
+          'Balcony', 'Terrace', 'Furnished', 'Serviced apartment',
+          'Water heater', 'Ceiling fans'] },
+        { g: 'Leisure', items: ['Swimming pool', 'Gym', "Children's playground",
+          'Garden', 'Lawn', 'Barbecue area', 'Clubhouse', 'Tennis court',
+          'Basketball court', 'Cinema room', 'Games room', 'Rooftop terrace',
+          'Jacuzzi', 'Sauna', 'Bar'] },
+        { g: 'Staff and service', items: ["Boys' quarters (BQ)",
+          'Domestic staff quarters', 'Gatehouse', 'Facility management',
+          'Estate maintenance', 'Waste disposal', 'Cleaning service', 'Concierge'] },
+        { g: 'Connectivity', items: ['Fibre internet', 'WiFi', 'Satellite TV',
+          'Cable TV'] },
+        { g: 'Setting', items: ['Waterfront', 'Sea view', 'City view',
+          'Corner piece', 'Close to main road', 'Pet friendly', 'Newly built'] },
+      ];
+
+      /* ── the amenities combobox ──────────────────────────────────────
+         Free text fed a FILTER, which is the part that made this worth
+         replacing: "24h power", "24hr power" and "24/7 power" are three
+         amenities as far as any query is concerned, and nothing was ever
+         going to make the people typing them agree. A list makes the common
+         ones identical; Enter still accepts anything the list has not got. */
+      (function wireAmenities() {
+        const host = g('amenHost'); if (!host) return;
+        const store = g('lfAmen'), box = g('amenBox');
+        const input = g('amenIn'), menu = g('amenMenu');
+        if (!store || !box || !input || !menu) return;
+
+        const norm = (v) => String(v || '').trim().toLowerCase();
+        /* Seeded from the hidden input, split the same way the save splits it,
+           so a listing written before this existed opens as chips. */
+        let chosen = store.value.split(/[|,;\n]+/).map((v) => v.trim()).filter(Boolean);
+        let hi = -1;
+
+        function sync() {
+          store.value = chosen.join(', ');
+          box.querySelectorAll('.amen-chip').forEach((n) => n.remove());
+          chosen.forEach((a) => {
+            const chip = document.createElement('span');
+            chip.className = 'amen-chip';
+            chip.appendChild(document.createTextNode(a));
+            const x = document.createElement('button');
+            x.type = 'button';
+            x.setAttribute('aria-label', 'Remove ' + a);
+            x.textContent = '\u00d7';
+            x.addEventListener('click', (e) => {
+              e.stopPropagation();
+              chosen = chosen.filter((v) => v !== a);
+              sync(); paint(); input.focus();
+            });
+            chip.appendChild(x);
+            box.insertBefore(chip, input);
+          });
+        }
+
+        function add(raw) {
+          /* Splits on the save's own separators, so pasting a brochure list
+             into the box becomes chips rather than one absurd amenity. */
+          String(raw || '').split(/[|,;\n]+/).forEach((piece) => {
+            const v = piece.trim().replace(/\s+/g, ' ');
+            if (!v) return;
+            if (!chosen.some((c) => norm(c) === norm(v))) chosen.push(v);
+          });
+          input.value = ''; sync(); paint();
+        }
+
+        function paint() {
+          const q = norm(input.value);
+          let html = '';
+          AMENITY_GROUPS.forEach((grp) => {
+            const hits = grp.items.filter((it) => !q || norm(it).indexOf(q) !== -1);
+            if (!hits.length) return;
+            html += '<div class="amen-grp">' + esc(grp.g) + '</div>';
+            hits.forEach((it) => {
+              const on = chosen.some((c) => norm(c) === norm(it));
+              html += '<div class="amen-opt" role="option" data-v="' + esc(it)
+                + '" aria-selected="' + on + '">' + esc(it) + '</div>';
+            });
+          });
+          if (!html) {
+            html = input.value.trim()
+              ? '<div class="amen-none">Nothing matches. Press Enter to add \u201c'
+                + esc(input.value.trim()) + '\u201d.</div>'
+              : '<div class="amen-none">Every amenity is already on this listing.</div>';
+          }
+          menu.innerHTML = html;
+          hi = -1;
+        }
+
+        function open() { menu.classList.add('on'); input.setAttribute('aria-expanded', 'true'); paint(); }
+        function shut() { menu.classList.remove('on'); input.setAttribute('aria-expanded', 'false'); hi = -1; }
+        function opts() { return Array.prototype.slice.call(menu.querySelectorAll('.amen-opt')); }
+        function move(d) {
+          const list = opts(); if (!list.length) return;
+          hi = (hi + d + list.length) % list.length;
+          list.forEach((o, k) => o.classList.toggle('hi', k === hi));
+          if (list[hi]) list[hi].scrollIntoView({ block: 'nearest' });
+        }
+
+        box.addEventListener('click', () => { input.focus(); });
+        input.addEventListener('focus', () => { box.classList.add('on'); open(); });
+        input.addEventListener('input', () => { if (!menu.classList.contains('on')) open(); else paint(); });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown') { e.preventDefault(); if (!menu.classList.contains('on')) open(); move(1); return; }
+          if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); return; }
+          if (e.key === 'Escape') { shut(); return; }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const list = opts();
+            if (hi >= 0 && list[hi]) add(list[hi].dataset.v);
+            else if (input.value.trim()) add(input.value);
+            return;
+          }
+          /* Backspace on an empty box removes the last chip -- the behaviour
+             every token field has, and the only way to undo a mis-tap without
+             reaching for a small \u00d7. */
+          if (e.key === 'Backspace' && !input.value && chosen.length) {
+            chosen.pop(); sync(); paint();
+          }
+        });
+
+        menu.addEventListener('mousedown', (e) => {
+          /* mousedown, not click: the input would blur first and shut the menu
+             out from under the pointer. */
+          const o = e.target.closest('.amen-opt'); if (!o) return;
+          e.preventDefault();
+          const v = o.dataset.v;
+          if (chosen.some((c) => norm(c) === norm(v))) chosen = chosen.filter((c) => norm(c) !== norm(v));
+          else chosen.push(v);
+          input.value = ''; sync(); paint(); input.focus();
+        });
+
+        document.addEventListener('mousedown', (e) => {
+          if (host.contains(e.target)) return;
+          box.classList.remove('on'); shut();
+        });
+
+        sync();
+      })();
 
       (function wirePhotoUpload() {
         const pick = g('lfImgPick'), fileEl = g('lfImgFile'), prev = g('lfImgPrev'), urlEl = g('lfImg');
