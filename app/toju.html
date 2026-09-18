@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <!-- This page already had 2 rules (the bar, the composer) written against
        env(safe-area-inset-*), and every one computed 0: those functions
        return 0 unless the viewport says viewport-fit=cover. The layout
@@ -405,7 +405,13 @@
        URL bar shows and hides, which on a chat reads as the input running
        away from your thumb. 100dvh + a single internal scroller fixes it. */
     @media (max-width: 1024px) {
-      html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+      /* --vvh here too, and this is the half that was missing. Sizing only
+         .tj-app left the DOCUMENT at full screen height while the app inside
+         it shrank -- a page taller than the visible area is precisely what
+         iOS scrolls to reveal a focused field, which carried the composer
+         back off the bottom. With the document exactly the visible height
+         there is nothing left to scroll. */
+      html, body { height: var(--vvh, 100%); overflow: hidden; overscroll-behavior: none; }
 
       /* ── cross-page nav ────────────────────────────────────────────────
          Hiding .appbar took the only links to the other consumer pages with
@@ -417,7 +423,11 @@
          copies of one list. cust-nav.js now injects a single floating taskbar
          from one array of destinations, so .appbar can stay fully hidden. */
 
-      .tj-app { height: var(--vvh, 100dvh); display: flex; flex-direction: column; }
+      /* translateY(--vvtop) is belt and braces: if the layout viewport is
+         scrolled anyway, the shell follows the visible region rather than
+         being left above it. 0 in every normal case. */
+      .tj-app { height: var(--vvh, 100dvh); display: flex; flex-direction: column;
+        transform: translateY(var(--vvtop, 0px)); }
       .appbar { display: none; }                 /* site nav is not chat chrome */
       .tj-layout { flex: 1; flex-direction: column; min-height: 0; }
       .tj-chat, body.has-canvas .tj-chat {
