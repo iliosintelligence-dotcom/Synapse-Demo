@@ -5896,6 +5896,28 @@
         +   esc2(mode === 'reschedule' ? 'Save' : 'Add to schedule') + '</button>';
       scrim.classList.add('on'); drawer.classList.add('on');
 
+      /* WHAT WILL ACTUALLY GO OUT. A listing with twelve photographs posts as
+         a carousel of ten, because that is Meta's limit — and an agency that
+         uploaded twelve and was told nothing would reasonably assume all
+         twelve went. Silent truncation is the kind of small lie that is only
+         ever discovered by someone scrolling their own post. */
+      (function sayPhotoCount() {
+        const note = document.getElementById('schNote');
+        if (!note) return;
+        const n = photosOf(p.propertyId, p.img).length;
+        const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+        const row = p.propertyId ? L.find((x) => x && x.id === p.propertyId) : null;
+        const have = (row && Array.isArray(row.media)) ? row.media.length : n;
+        if (n === 0) { note.textContent = 'This listing has no photo, so the post will be text only.'; return; }
+        if (n === 1) { note.textContent = have > 1
+          ? 'Only one of this listing’s photos is a usable link, so it posts as a single image.'
+          : 'Posts as a single image — this listing has one photo.'; return; }
+        note.textContent = have > n
+          ? 'Posts as a carousel of ' + n + ' photos. This listing has ' + have
+            + ', and ' + n + ' is the most Instagram accepts in one post.'
+          : 'Posts as a carousel of ' + n + ' photos.';
+      })();
+
       const slots = document.getElementById('schSlots');
       document.getElementById('schAdd').addEventListener('click', () => {
         const last = slots.lastElementChild;
@@ -5922,6 +5944,36 @@
          waiting for the minute-by-minute cron. Everything else -- the rows,
          the validation, the approval move, the reload -- is identical, which
          is why they share this. */
+    /* EVERY PHOTO, IN GALLERY ORDER — a listing with twelve pictures should
+       go out as a carousel, not as its cover shot.
+
+       Nothing downstream needed changing for this. media_urls has always been
+       an array; queue_social_post has always taken text[]; and social-publish
+       has always branched on length, building Instagram children with
+       is_carousel_item and a CAROUSEL parent when there is more than one. The
+       portal was the only place that ever put a single URL in, so the whole
+       carousel path existed and had never once been reached.
+
+       Capped at ten because Meta accepts ten items in a post and
+       social-publish's checkMedia refuses an eleventh — better to send the
+       first ten than to queue a post that is certain to fail. Non-https and
+       duplicate URLs are dropped here for the same reason: checkMedia rejects
+       them, and it is cheaper to notice now than after it is queued. */
+    const CAROUSEL_MAX = 10;
+    function photosOf(propertyId, fallbackImg) {
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+      const l = propertyId ? L.find((x) => x && x.id === propertyId) : null;
+      const https = (u) => typeof u === 'string' && /^https:\/\//i.test(u.trim());
+      const urls = ((l && Array.isArray(l.media)) ? l.media : [])
+        .map((m) => (m && typeof m.url === 'string' ? m.url.trim() : ''))
+        .filter(https);
+      const uniq = [...new Set(urls)].slice(0, CAROUSEL_MAX);
+      if (uniq.length) return uniq;
+      /* No gallery to read (a draft not in LISTINGS_DATA, say): the cover is
+         better than nothing, and one photo is a valid post. */
+      return https(fallbackImg) ? [fallbackImg.trim()] : [];
+    }
+
       function commitSchedule(now) {
         const rows = [...slots.querySelectorAll('[data-slot]')].map(r => ({
           platform: r.querySelector('.slot-p').value,
@@ -5956,7 +6008,7 @@
           .then(() => extra.length
             ? SynListings.schedulePost({
                 propertyId: p.propertyId, contentId: p.contentId || null,
-                caption: p.caption || '', mediaUrls: p.img ? [p.img] : null, slots: extra,
+                caption: p.caption || '', mediaUrls: photosOf(p.propertyId, p.img), slots: extra,
                 /* BOTH BUTTONS ARE REAL NOW; they differ only in WHEN. This
                    used to pass true for the scheduled case, which is what made
                    "schedule it for 8pm" mean "go to the mock at 8pm and stop".
@@ -10180,6 +10232,29 @@
              not to fan out is that a partial failure halfway through a parallel
              batch leaves an unknown number of rows queued, and the agency
              cannot tell what is about to go out. */
+      /* THE WHOLE GALLERY, not the cover. Same reasoning as photosOf() in the
+         scheduler: media_urls is an array, queue_social_post takes text[], and
+         social-publish builds an Instagram carousel whenever there is more
+         than one. This composer sent exactly one URL, so a listing with twelve
+         photographs went out as a single picture.
+
+         Declared here rather than shared because the two live in separate
+         IIFEs; keeping them in step matters, so both cap at ten (Meta's limit,
+         enforced by checkMedia) and both drop non-https and duplicates, which
+         checkMedia would reject anyway. */
+      function campaignPhotos(propertyId, fallbackUrl) {
+        var L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+        var l = propertyId ? L.filter(function (x) { return x && x.id === propertyId; })[0] : null;
+        var ok = function (u) { return typeof u === 'string' && /^https:\/\//i.test(u.trim()); };
+        var out = [];
+        ((l && Array.isArray(l.media)) ? l.media : []).forEach(function (m) {
+          var u = (m && typeof m.url === 'string') ? m.url.trim() : '';
+          if (ok(u) && out.indexOf(u) < 0) out.push(u);
+        });
+        if (out.length) return out.slice(0, 10);
+        return ok(fallbackUrl) ? [fallbackUrl.trim()] : [];
+      }
+
           return ready.reduce(function (chain, v) {
             return chain.then(function () {
               return fetch(SB_URL + '/rest/v1/rpc/queue_social_post', {
@@ -10188,7 +10263,9 @@
                   p_property_id: campaign.property && campaign.property.id,
                   p_platform: v.platform,
                   p_caption: v.caption,
-                  p_media_urls: v.media && v.media.url ? [v.media.url] : [],
+                  p_media_urls: campaignPhotos(
+                    campaign.property && campaign.property.id,
+                    v.media && v.media.url),
                   p_dry_run: false,
                 }),
               }).then(function (r) {
