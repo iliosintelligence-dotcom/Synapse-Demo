@@ -42,7 +42,8 @@
       display: flex; align-items: center; justify-content: center;
       padding: 60px 12px calc(56px + env(safe-area-inset-bottom)); box-sizing: border-box; }
     .pvlb-stage img { max-width: 100%; max-height: 100%; object-fit: contain;
-      display: block; touch-action: pan-y; user-select: none; -webkit-user-drag: none; }
+      display: block; touch-action: pan-y; user-select: none; -webkit-user-drag: none;
+      position: relative; z-index: 0; }
     .pvlb-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px;
       width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
       background: rgba(255,255,255,.14); color: #fff; font-size: 19px; line-height: 1;
@@ -53,17 +54,31 @@
       left: 50%; transform: translateX(-50%);
       font-size: 12.5px; color: rgba(255,255,255,.82); letter-spacing: .04em;
       font-variant-numeric: tabular-nums; }
-    /* Arrows are a pointer affordance; a phone swipes. Hidden where there is
-       no hover rather than shrunk, so they never sit over the picture. */
+    /* SHOWN ON EVERY DEVICE, and that is the fix rather than the default.
+       These were behind @media (hover: hover) and (pointer: fine), so on a
+       touch or hybrid machine they were display:none -- and a tap where an
+       arrow should be fell through to .pvlb-stage, which closes. The viewer
+       shut, the page came back, and the page's own gallery arrow was sitting
+       lower down where the finger had just been: "the arrow moves down and
+       takes me back to the property cards".
+
+       Arrows are not a mouse affordance on a photo viewer. They are also the
+       only VISIBLE way to move for somebody who has not guessed that the
+       picture swipes. */
     .pvlb-a { position: absolute; top: 50%; transform: translateY(-50%);
-      width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
-      background: rgba(255,255,255,.14); color: #fff; font-size: 22px; line-height: 1;
-      display: none; place-items: center; }
-    .pvlb-a.prev { left: 14px; }
-    .pvlb-a.next { right: 14px; }
-    .pvlb-a:hover { background: rgba(255,255,255,.26); }
+      width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(255,255,255,.16); color: #fff; font-size: 24px; line-height: 1;
+      display: grid; place-items: center;
+      /* Above the stage, so a tap can never reach the close-on-backdrop
+         behind them -- which is the whole failure being fixed. */
+      z-index: 1; }
+    .pvlb-a.prev { left: 10px; }
+    .pvlb-a.next { right: 10px; }
+    .pvlb-a:hover { background: rgba(255,255,255,.28); }
     .pvlb-a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    @media (hover: hover) and (pointer: fine) { .pvlb-a { display: grid; } }
+    /* One photo needs no arrows, and two empty circles over a picture look
+       like something failed to load. */
+    .pvlb.single .pvlb-a { display: none; }
     body.pvlb-open { overflow: hidden; }
     /* Says it can be opened. Without this a picture looks like a picture. */
     .hero img { cursor: zoom-in; }
@@ -1135,6 +1150,7 @@
         if (!PHOTOS.length) return;
         lastFocus = document.activeElement;
         paint();
+        box.classList.toggle('single', PHOTOS.length < 2);
         box.classList.add('on');
         document.body.classList.add('pvlb-open');
         shut.focus();

@@ -417,15 +417,25 @@
 
       /* Readability over the glass effect, same call as the chat page. A card
          on a phone spans the full width, so the wallpaper runs directly under
-         the body copy — at 46% alpha the brief was barely legible. Heavier
-         wash, near-opaque cards; the frosted look survives, the guesswork
-         doesn't. */
+         the body copy — at 46% alpha the brief was barely legible.
+
+         MATCHED TO .rc, the recently-viewed tile, because the two sit inches
+         apart on this page and did not look related: .rc was 0.72 and this was
+         0.95, so the tiles read as frosted and the cards below them read as
+         plain white. Reported exactly that way.
+
+         The original fix was right about the problem and heavy-handed about
+         the remedy: it was the SECOND stop at 0.46 that made body copy hard to
+         read, and taking the whole card to 0.95 solved it by removing the
+         glass the comment claims survives. .rc is the proof of the middle
+         ground -- same wallpaper, same page, perfectly legible at 0.72. So:
+         its first stop, and a second stop well clear of 0.46. */
       .bg-wash {
         background-image: var(--grain);
       background-repeat: repeat;
       }
       .card, .searchbar {
-        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,253,250,0.90));
+        background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.62));
       }
 
       /* compare: a full-width bar and a full-screen sheet, not a floating
