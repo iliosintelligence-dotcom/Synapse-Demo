@@ -22,6 +22,52 @@
   <style>
     /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
        monthly cost, neighbourhood intelligence, commute, similar homes. */
+    /* ── a photograph, at its own size ──────────────────
+       The hero below is a 340px band with object-fit: cover, so it shows a
+       CROP of every picture -- right for a header, useless if you actually
+       want to look at the room. Tapping it opens the whole frame.
+
+       contain, not cover: this is the one place the entire photograph matters,
+       and a portrait shot of a bedroom cropped to landscape is exactly what
+       somebody opened it to escape.
+
+       pvlb-, not lb-: `.lb` is already a label class on this page, worn by
+       four elements in the neighbourhood cards and ownership rows. */
+    .pvlb { position: fixed; inset: 0; z-index: 120; display: none;
+      align-items: center; justify-content: center;
+      background: rgba(13,13,15,.86);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    .pvlb.on { display: flex; }
+    .pvlb-stage { position: relative; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 60px 12px calc(56px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+    .pvlb-stage img { max-width: 100%; max-height: 100%; object-fit: contain;
+      display: block; touch-action: pan-y; user-select: none; -webkit-user-drag: none; }
+    .pvlb-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px;
+      width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(255,255,255,.14); color: #fff; font-size: 19px; line-height: 1;
+      display: grid; place-items: center; }
+    .pvlb-x:hover { background: rgba(255,255,255,.26); }
+    .pvlb-x:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .pvlb-n { position: absolute; bottom: calc(16px + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      font-size: 12.5px; color: rgba(255,255,255,.82); letter-spacing: .04em;
+      font-variant-numeric: tabular-nums; }
+    /* Arrows are a pointer affordance; a phone swipes. Hidden where there is
+       no hover rather than shrunk, so they never sit over the picture. */
+    .pvlb-a { position: absolute; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(255,255,255,.14); color: #fff; font-size: 22px; line-height: 1;
+      display: none; place-items: center; }
+    .pvlb-a.prev { left: 14px; }
+    .pvlb-a.next { right: 14px; }
+    .pvlb-a:hover { background: rgba(255,255,255,.26); }
+    .pvlb-a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    @media (hover: hover) and (pointer: fine) { .pvlb-a { display: grid; } }
+    body.pvlb-open { overflow: hidden; }
+    /* Says it can be opened. Without this a picture looks like a picture. */
+    .hero img { cursor: zoom-in; }
+
     .hero { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; }
     .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
     .hero { touch-action: pan-y; }        /* horizontal is ours, vertical is the page's */
@@ -733,6 +779,18 @@
     </div>
     <div class="thumbs" id="thumbs"></div>
 
+    <!-- In the markup rather than injected, so the first open costs no layout
+         and it is visible to anyone reading the page. -->
+    <div class="pvlb" id="pvlb" role="dialog" aria-modal="true" aria-label="Photos">
+      <div class="pvlb-stage">
+        <img id="pvlbImg" alt="" />
+        <button type="button" class="pvlb-a prev" id="pvlbPrev" aria-label="Previous photo">&#8249;</button>
+        <button type="button" class="pvlb-a next" id="pvlbNext" aria-label="Next photo">&#8250;</button>
+      </div>
+      <button type="button" class="pvlb-x" id="pvlbX" aria-label="Close photos">&#10005;</button>
+      <div class="pvlb-n" id="pvlbN"></div>
+    </div>
+
     <div class="deckbar">
       <button class="arrow" id="deckPrev" aria-label="Previous card">‹</button>
       <!-- The label lived here and printed the current card's title plus
@@ -1052,6 +1110,89 @@
       const t = e.target.closest('img[data-i]');
       if (t) goToPhoto(Number(t.dataset.i));
     });
+
+    /* ── the photograph, full size ───────────────────────
+       Shares photoIndex with the hero rather than keeping its own, so closing
+       this leaves the strip on the picture you were looking at. Two indices
+       would drift the moment somebody swiped in one and not the other, and the
+       thumbnail highlight is where that shows. */
+    (function lightbox() {
+      const box = document.getElementById('pvlb');
+      const img = document.getElementById('pvlbImg');
+      const num = document.getElementById('pvlbN');
+      const shut = document.getElementById('pvlbX');
+      if (!box || !img || !shut) return;
+      let lastFocus = null;
+
+      function paint() {
+        if (!PHOTOS.length) return;
+        img.src = PHOTOS[photoIndex];
+        num.textContent = PHOTOS.length > 1
+          ? (photoIndex + 1) + ' of ' + PHOTOS.length : '';
+      }
+
+      function open() {
+        if (!PHOTOS.length) return;
+        lastFocus = document.activeElement;
+        paint();
+        box.classList.add('on');
+        document.body.classList.add('pvlb-open');
+        shut.focus();
+      }
+
+      function close() {
+        box.classList.remove('on');
+        document.body.classList.remove('pvlb-open');
+        /* Back where they were. Dropping focus to the top of the document
+           after closing an overlay makes a keyboard or screen-reader user
+           find their place again. */
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      }
+
+      /* Drives goToPhoto so the hero, the counter and the thumbnail highlight
+         all move with it: this is a bigger view of the same gallery, not a
+         second one. */
+      function step(d) { goToPhoto(photoIndex + d); paint(); }
+
+      hero.addEventListener('click', open);
+      shut.addEventListener('click', close);
+      document.getElementById('pvlbPrev').addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
+      document.getElementById('pvlbNext').addEventListener('click', (e) => { e.stopPropagation(); step(1); });
+
+      /* The backdrop closes; the photograph does not. Tapping the picture you
+         just opened and having it vanish is the most irritating thing a viewer
+         like this can do. */
+      box.addEventListener('click', (e) => {
+        if (e.target === box || e.target.classList.contains('pvlb-stage')) close();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (!box.classList.contains('on')) return;
+        if (e.key === 'Escape') { close(); return; }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      });
+
+      /* Same rule the hero uses: horizontal intent has to be established
+         before the gesture is claimed, or a vertical flick reads as a swipe
+         and the photo jumps when somebody meant to dismiss. */
+      let x0 = null, y0 = null, claimed = false;
+      img.addEventListener('touchstart', (e) => {
+        const t = e.changedTouches[0];
+        x0 = t.clientX; y0 = t.clientY; claimed = false;
+      }, { passive: true });
+      img.addEventListener('touchmove', (e) => {
+        if (x0 == null) return;
+        const t = e.changedTouches[0];
+        if (!claimed && Math.abs(t.clientX - x0) > Math.abs(t.clientY - y0) + 8) claimed = true;
+      }, { passive: true });
+      img.addEventListener('touchend', (e) => {
+        if (x0 == null) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        if (claimed && Math.abs(dx) > 42) step(dx < 0 ? 1 : -1);
+        x0 = null; y0 = null; claimed = false;
+      }, { passive: true });
+    })();
 
     /* ── swipe ────────────────────────────────────────────────────────────
        A listing with eight photos showed one, and the only way to the rest was

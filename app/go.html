@@ -43,16 +43,35 @@
          the in-app browser's toolbar */
       padding: 26px 18px calc(40px + env(safe-area-inset-bottom)); }
 
-    .hd { display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
-    .hd .mark { width: 34px; height: 34px; border-radius: 9px; flex: none;
-      background: var(--brand); color: #F7F7F8; display: grid; place-items: center;
-      font: 700 15px/1 var(--f-sans); }
-    .hd .who { font: 700 17px/1.2 var(--f-sans); }
-    .hd .plat { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
+    /* THE REAL MARK, not a letter in a box. This page is the first thing
+       Instagram traffic sees of Synapse and it opened with a grey square
+       containing an S -- which reads as a page somebody had not finished.
+       Same asset and same treatment as the site nav, so arriving here from a
+       post feels like arriving somewhere rather than at a redirect. */
+    .brandbar { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+    .brandbar img { width: 26px; height: 26px; border-radius: 7px; display: block; }
+    .brandbar .word { font: 700 15px/1 var(--f-sans); letter-spacing: -.01em; }
+    .brandbar .by { margin-left: auto; font-size: 11.5px; color: var(--ink-dim); }
+
+    /* WHOSE HOMES THESE ARE, which is a different question from whose site
+       this is. On an agency's bio link the agency is the headline and Synapse
+       is the bar above it; on Synapse's own it is simply the one name. */
+    .hd { margin-bottom: 4px; }
+    .hd .who { font: 700 25px/1.18 var(--f-sans); letter-spacing: -.02em;
+      text-wrap: balance; }
+    .hd .plat { font-size: 13px; color: var(--ink-dim); margin-top: 5px; }
+    .hd h1 { margin: 0; }
     .lede { font-size: 14px; line-height: 1.55; color: var(--ink-muted);
-      margin: 12px 0 22px; }
+      margin: 10px 0 22px; }
 
     .list { display: grid; gap: 14px; }
+
+    /* Ends the page deliberately. Without it the last thing on screen is a
+       secondary button, which reads as the page having been cut off. */
+    .sig { display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
+      font-size: 11.5px; color: var(--ink-dim); }
+    .sig img { width: 18px; height: 18px; border-radius: 5px; display: block; }
 
     /* A CARD IS THE WHOLE LINK, not a title with a link in it. A thumb on a
        phone is imprecise and this is the only action on the page. */
@@ -134,13 +153,15 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="hd">
-      <div class="mark">S</div>
-      <div>
-        <div class="who" id="who">Synapse</div>
-        <div class="plat" id="plat"></div>
-      </div>
+    <div class="brandbar">
+      <img src="/images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true" />
+      <span class="word">Synapse</span>
+      <span class="by">Verified Nigerian homes</span>
     </div>
+    <header class="hd">
+      <h1 class="who" id="who">Homes we just posted</h1>
+      <div class="plat" id="plat"></div>
+    </header>
     <p class="lede" id="lede">The homes we posted recently. Tap one for the full details.</p>
 
     <div class="list" id="list">
@@ -153,6 +174,10 @@
       <a class="ghost" href="/app/browse.html">See every home on Synapse</a>
       <p class="note">Every listing on Synapse expires unless it is re-confirmed,
         so nothing here has been sitting for months.</p>
+      <div class="sig" aria-hidden="true">
+        <img src="/images/brand/mark-black-on-white-tight.jpg" alt="" />
+        <span>Synapse &middot; an AI property advisor for Nigeria</span>
+      </div>
     </div>
   </div>
 
@@ -300,7 +325,12 @@
     var o = rows && rows[0];
     if (!o) return;
     var name = o.is_synapse ? 'Synapse' : (o.agency_name || 'Synapse');
-    document.getElementById('who').textContent = name;
+    /* THE HEADING IS NOT THE BRAND. The bar above already says Synapse, so on
+       Synapse's own bio link repeating it made the page open with the same
+       word twice and told the reader nothing. On an agency's link the agency
+       IS the answer to "whose homes are these", and it leads. */
+    document.getElementById('who').textContent =
+      o.is_synapse ? 'Homes we just posted' : name;
     document.getElementById('plat').textContent = o.handle || '';
     document.title = 'Homes we just posted · ' + name;
     if (!o.is_synapse) {
