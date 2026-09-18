@@ -5901,7 +5901,40 @@
          uploaded twelve and was told nothing would reasonably assume all
          twelve went. Silent truncation is the kind of small lie that is only
          ever discovered by someone scrolling their own post. */
+    /* DECLARED BEFORE ITS FIRST USE, and that is load-bearing rather than
+       tidy. This block sat below, next to commitSchedule, which reads fine
+       because photosOf is a hoisted function declaration and could be called
+       from anywhere above it. CAROUSEL_MAX is a const and is NOT hoisted: the
+       sayPhotoCount() call a few lines down ran while it was still in the
+       temporal dead zone, threw "Cannot access 'CAROUSEL_MAX' before
+       initialization", and took the rest of this function with it -- including
+       the click handlers for Add another time, Post now and Add to schedule.
+       The button did not misbehave; it never got a listener at all. */
+    const CAROUSEL_MAX = 10;
+    function photosOf(propertyId, fallbackImg) {
+      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
+      const l = propertyId ? L.find((x) => x && x.id === propertyId) : null;
+      const https = (u) => typeof u === 'string' && /^https:\/\//i.test(u.trim());
+      const urls = ((l && Array.isArray(l.media)) ? l.media : [])
+        .map((m) => (m && typeof m.url === 'string' ? m.url.trim() : ''))
+        .filter(https);
+      const uniq = [...new Set(urls)].slice(0, CAROUSEL_MAX);
+      if (uniq.length) return uniq;
+      /* No gallery to read (a draft not in LISTINGS_DATA, say): the cover is
+         better than nothing, and one photo is a valid post. */
+      return https(fallbackImg) ? [fallbackImg.trim()] : [];
+    }
+
+      /* WRAPPED, because a sentence must never be able to disable a button.
+         This note is decoration -- it tells the agency how many photos will go
+         out -- and it is wired in the middle of the setup that attaches the
+         click handlers for Add another time, Post now and Add to schedule. A
+         throw here therefore took all three with it, and the reported symptom
+         was "Post now is not working" when Post now had simply never been
+         given a listener. Reordering fixed the specific cause; this makes the
+         whole class of cause harmless. */
       (function sayPhotoCount() {
+        try {
         const note = document.getElementById('schNote');
         if (!note) return;
         const n = photosOf(p.propertyId, p.img).length;
@@ -5916,6 +5949,12 @@
           ? 'Posts as a carousel of ' + n + ' photos. This listing has ' + have
             + ', and ' + n + ' is the most Instagram accepts in one post.'
           : 'Posts as a carousel of ' + n + ' photos.';
+        } catch (err) {
+          /* Left silent on the sheet on purpose: the agency came here to
+             schedule a post, not to be told a caption under the buttons could
+             not be computed. It is logged so it is not invisible to us. */
+          if (window.console) console.warn('photo count note failed:', err);
+        }
       })();
 
       const slots = document.getElementById('schSlots');
@@ -5944,36 +5983,6 @@
          waiting for the minute-by-minute cron. Everything else -- the rows,
          the validation, the approval move, the reload -- is identical, which
          is why they share this. */
-    /* EVERY PHOTO, IN GALLERY ORDER — a listing with twelve pictures should
-       go out as a carousel, not as its cover shot.
-
-       Nothing downstream needed changing for this. media_urls has always been
-       an array; queue_social_post has always taken text[]; and social-publish
-       has always branched on length, building Instagram children with
-       is_carousel_item and a CAROUSEL parent when there is more than one. The
-       portal was the only place that ever put a single URL in, so the whole
-       carousel path existed and had never once been reached.
-
-       Capped at ten because Meta accepts ten items in a post and
-       social-publish's checkMedia refuses an eleventh — better to send the
-       first ten than to queue a post that is certain to fail. Non-https and
-       duplicate URLs are dropped here for the same reason: checkMedia rejects
-       them, and it is cheaper to notice now than after it is queued. */
-    const CAROUSEL_MAX = 10;
-    function photosOf(propertyId, fallbackImg) {
-      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-      const l = propertyId ? L.find((x) => x && x.id === propertyId) : null;
-      const https = (u) => typeof u === 'string' && /^https:\/\//i.test(u.trim());
-      const urls = ((l && Array.isArray(l.media)) ? l.media : [])
-        .map((m) => (m && typeof m.url === 'string' ? m.url.trim() : ''))
-        .filter(https);
-      const uniq = [...new Set(urls)].slice(0, CAROUSEL_MAX);
-      if (uniq.length) return uniq;
-      /* No gallery to read (a draft not in LISTINGS_DATA, say): the cover is
-         better than nothing, and one photo is a valid post. */
-      return https(fallbackImg) ? [fallbackImg.trim()] : [];
-    }
-
       function commitSchedule(now) {
         const rows = [...slots.querySelectorAll('[data-slot]')].map(r => ({
           platform: r.querySelector('.slot-p').value,
