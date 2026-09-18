@@ -12021,17 +12021,7 @@
          · no verification status, so `vstatus === 'verified'` was false for
            every pin and a verified listing was labelled Not verified on its
            own agency's map. */
-      const items = list.map(l => ({
-        id: l.id,
-        ttl: l.title || l.t,
-        loc: ovLoc(l),
-        priceN: l.price,
-        currency: l.currency,
-        lat: l.latitude, lng: l.longitude,
-        vstatus: l.verification_status,
-        bedrooms: l.bedrooms,
-        img: l.img,
-      }));
+      const items = list.map(ovItem);
       if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items,
         /* No areaSearch: this map is this agency's own stock. */
         { sb: { url: SB_URL, anon: SB_KEY } });
@@ -12097,12 +12087,63 @@
     // Crossing the breakpoint mid-session (a resized/rotated window, or
     // devtools) should not leave the sheet's a11y state stale.
     window.addEventListener('resize', syncOvSheetA11y);
+    /* The one place a listing row becomes a map item. It used to be inline
+       in drawOvMap, which meant selectOv had to construct the same thing
+       independently -- and didn't, passing a bare title where coords() wanted
+       this object. Fixing the shape in one place and not the other is how the
+       map came to pan to Lagos for every listing on it. */
+    /* ── the map follows the selection ────────────────────────────────
+       This was `if (OV.map.map) OV.map.map.panTo(...)`, a Leaflet handle left
+       behind when the map became MapLibre behind SynMapRender. The state
+       object is {r, pending, opts, card, ready, sig} -- there is no `map` on
+       it -- so that guard has been false since the migration and the body
+       never ran. The map was not panning to the wrong home; it was not
+       panning, which is why it looked pinned to one property.
+
+       select() is used rather than flying to a computed position because it
+       both highlights the pin and hands back where that pin actually is. The
+       highlight and the camera then cannot disagree about which home is
+       meant, which they would the moment either side rounded differently. */
+    function focusOvMap(l, i) {
+      const r = OV.map && OV.map.r;
+      if (!r || !l) return;
+
+      let hit = null;
+      try { hit = r.select(l.id); } catch (e) { hit = null; }
+      if (hit) { r.flyTo(hit.lng, hit.lat, 15); return; }
+
+      /* No pin for it: the map may still be drawing, or the row was filtered
+         out of the last draw. Fall back to the position the pin would be
+         given -- index included, because coords() spreads listings that have
+         no coordinates of their own by index, and a different index would
+         arrive beside the pin rather than on it. */
+      if (!window.SynMatches) return;
+      const c = SynMatches.coords(ovItem(l), i);
+      /* coords() returns [lat, lng]; flyTo takes lng first. Same two numbers,
+         opposite order -- the mistake that puts an Ibadan house at sea. */
+      r.flyTo(c[1], c[0], 15);
+    }
+
+    function ovItem(l) {
+      return {
+        id: l.id,
+        ttl: l.title || l.t,
+        loc: ovLoc(l),
+        priceN: l.price,
+        currency: l.currency,
+        lat: l.latitude, lng: l.longitude,
+        vstatus: l.verification_status,
+        bedrooms: l.bedrooms,
+        img: l.img,
+      };
+    }
+
     function selectOv(i, trigger) {
       OV.sel = i;
       const list = ovFiltered();
       document.querySelectorAll('#ovList .ovi').forEach((b, k) => b.classList.toggle('on', k === i));
       renderOvDetail(list[i]);
-      if (OV.map.map && window.SynMatches) OV.map.map.panTo(SynMatches.coords(list[i].t, 0), { animate: true });
+      focusOvMap(list[i], i);
       // On a phone the map and card above just updated off-screen — .tpanel
       // and #drawer's own idiom is the fix: push the detail in as a sheet
       // instead of leaving the result of the tap invisible below the list.
