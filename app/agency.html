@@ -7463,6 +7463,43 @@
         if (urlEl.value.trim()) showPreview(urlEl.value.trim(), '');
       })();
       priceEcho(); validate();
+
+      /* THE FORM IS THE FAST PATH; THIS IS THE GUARANTEE.
+         findPin() above geocodes while the agent types, which is worth having
+         because they see the pin land and can correct it. But a form is not a
+         guarantee: it only runs when somebody uses this screen, in a browser,
+         with the network holding — and an agent who pastes an address and hits
+         Save immediately can outrun it. Every listing a real agency had
+         uploaded before today was unplaced, and nothing said so.
+
+         So the server is asked to place anything that still has no pin the
+         moment it is posted. geocode-listings only ever fills coordinates that
+         are NULL, so this can never overwrite a pin the agent set by hand.
+
+         Deliberately not awaited and never fatal: a listing that cannot be
+         geocoded is still a listing, and the save has already succeeded by the
+         time this runs. When it does land, the row is updated in place so the
+         map has the pin without a reload. */
+      function ensurePin(id, data) {
+        if (!id || !dbBacked) return;
+        if (data && data.latitude != null && data.longitude != null) return;
+        if (!data || !data.address) return;
+        authToken().then((t) => {
+          if (!t) return;
+          return fetch(SB_URL + '/functions/v1/geocode-listings', {
+            method: 'POST',
+            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id }),
+          }).then((r) => (r.ok ? r.json() : null));
+        }).then((out) => {
+          const hit = out && Array.isArray(out.results) && out.results[0];
+          if (!hit || !hit.placed) return;
+          const row = (LISTINGS_DATA || []).find((x) => x && x.id === id);
+          if (row) { row.latitude = hit.lat; row.longitude = hit.lon; }
+          announceListings();
+        }).catch(() => { /* the pin is a bonus; the listing is the work */ });
+      }
+
       // save
       g('lfSave').addEventListener('click', () => {
         if (!validate()) {
@@ -7506,6 +7543,7 @@
               // The field is disabled until the listing exists, so this only
               // does anything if it was filled in after a create.
               saveFloor(id);
+              ensurePin(id, data);
               /* The row now has its server id; anything keyed by id (the
                  campaign picker, the archive) needs to see that. */
               announceListings();
@@ -7523,7 +7561,7 @@
                button -- the same reason the create branch already did this. */
             toast('Saving…');
             SynListings.update(id, data)
-              .then(() => { toast('Listing updated'); announceListings(); })
+              .then(() => { toast('Listing updated'); announceListings(); ensurePin(id, data); })
               .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
             saveFloor(id);
           } else {
