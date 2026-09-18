@@ -609,15 +609,40 @@
       .pv-split > .pdp {
         flex: none; max-width: none; width: 100%; margin: 0;
         border-right: none; padding: 10px 14px 0;
-        height: auto; min-height: 0;
+        /* 100%, not auto. .pv-split is correctly 844 here, but auto let this
+           grow to its content -- measured 1360 inside an 844 parent -- and
+           the deck, being flex:1 of THIS, inherited the wrong idea of how
+           tall the screen is and came out at 916. Everything below then had
+           no reason to scroll, because as far as the layout was concerned it
+           all fitted; the body simply clipped the overflow and there was no
+           way to reach it. The height has to come from the screen at the top
+           of the chain or nothing under it can size itself. */
+        height: 100%; min-height: 0;
       }
       .hero { height: 244px; }
       .thumbs img { width: 62px; height: 46px; }
 
-      /* the deck sizes to its tallest card instead of being trapped in a
-         flex column, so a phone scrolls the page rather than each card */
-      .deck { overflow-y: visible; }
-      .deck > .card { max-height: none; overflow-y: visible; }
+      /* THE CARDS SCROLL INSIDE THE DECK. Two rules used to sit here
+         turning that off -- overflow-y: visible on the deck, and
+         max-height: none with overflow-y: visible on the card -- reasoning
+         that the deck should size to its tallest card "so a phone scrolls the
+         page rather than each card".
+
+         Sound intent, for a page that no longer exists. The swipe deck that
+         replaced it sets `body { overflow: hidden }` and states the rule
+         outright: one screen, no vertical page scroll. So the phone does not
+         scroll the page, it cannot, and those two had switched off the only
+         other way to reach the bottom of a long card.
+
+         Measured at 390x844 with them in place: the deck was 916px tall in an
+         844px viewport, every card 914, every one reporting scrollHeight
+         equal to clientHeight -- nothing scrolled anywhere, and the overflow
+         was clipped by the body with no way to get at it. Around Ibadan is
+         where it showed first because it is the longest card.
+
+         Gone rather than adjusted, so the base rules apply again: the card is
+         capped at the deck's height and scrolls within it, which is what the
+         deck was built to do. */
       .deckbar .arrow { width: 44px; height: 44px; }
       .dots i { width: 7px; height: 7px; }
       .dots i.on { width: 20px; }
@@ -750,10 +775,22 @@
          a map, and the pill beside the taskbar is how you ask. Tapping the
          map steps back a level at a time and the last step is the card
          leaving, so the gesture has somewhere to end. */
+      /* ABOVE the taskbar, not beside it. It was at left:74, bottom:18 --
+         inside the taskbar's own 16-to-374 footprint and under its z-index
+         70, and therefore untappable: six probes across its width with
+         elementFromPoint all returned .cnav-triggers and not one returned
+         this button. It read as a dead control, and pressing it from a
+         console worked, because a synthetic click skips hit-testing and a
+         finger does not.
+
+         "Beside the taskbar" was true when the taskbar was a small cluster on
+         the left. At 358px wide there is no beside, so it takes the shelf
+         above -- the same one the nearby list uses, which is free because the
+         two never appear together (this hides under .pv-card-on). */
       body.pv-map-open .pvm-nearbtn {
         display: inline-flex; align-items: center; gap: 7px;
-        position: fixed; z-index: 59;
-        left: 74px; bottom: calc(18px + env(safe-area-inset-bottom));
+        position: fixed; z-index: 71;
+        left: 16px; bottom: calc(78px + env(safe-area-inset-bottom));
         min-height: 46px; padding: 0 16px; border-radius: 100px;
         background: #141412; color: #fff; border: 0;
         font: 600 13px var(--f-sans); cursor: pointer;
