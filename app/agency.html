@@ -6592,7 +6592,7 @@
         move_in_cost:'', service_charge:'', agency_fee:'', legal_fee:'',
         address:'', city:'', state:'Lagos', country:'Nigeria', neighbourhood:'',
         latitude:'', longitude:'', bedrooms:'', bathrooms:'', toilets:'', parking_spaces:'',
-        area_sqm:'', year_built:'', furnished:'', property_condition:'',
+        area_sqm:'', year_built:'', furnished:'', property_condition:'', electricity_band:'',
         amenities:[], title_type:'', yield_pct:'',
         verification_status:'unverified', is_active:true, media:[{ url:'', is_primary:true, display_order:0 }], leads:0, days:0 };
     }
@@ -6648,6 +6648,7 @@
           bedrooms: l.bedrooms, bathrooms: l.bathrooms, toilets: l.toilets,
           area_sqm: l.area_sqm, parking_spaces: l.parking_spaces, year_built: l.year_built,
           furnished: l.furnished, property_condition: l.property_condition,
+          electricity_band: l.electricity_band,
           address: l.address, city: l.city, state: l.state, country: l.country, latitude: l.latitude, longitude: l.longitude,
           amenities: l.amenities || [], title_type: l.title_type, yield_pct: l.yield_pct,
           verification_status: l.verification_status, is_active: l.is_active, // verification is system-owned, not agency-writable
@@ -6917,6 +6918,21 @@
                   <option value="fully"${d.furnished === 'fully' ? ' selected' : ''}>Fully furnished</option>
                 </select></div>
             </div>
+            <!-- Bands are a NERC commitment, not an opinion about the
+                 area: A is at least 20 hours a day, E at least 4. The hours
+                 are in the labels so this is a choice about supply rather
+                 than a memory test about letters, and nothing is preselected
+                 because guessing one would invent a commitment on a disco's
+                 behalf. -->
+            <div class="field"><label>Electricity band</label>
+              <select id="lfBand">
+                <option value="">Not stated</option>
+                <option value="A"${d.electricity_band === 'A' ? ' selected' : ''}>Band A &#183; 20+ hrs/day</option>
+                <option value="B"${d.electricity_band === 'B' ? ' selected' : ''}>Band B &#183; 16+ hrs/day</option>
+                <option value="C"${d.electricity_band === 'C' ? ' selected' : ''}>Band C &#183; 12+ hrs/day</option>
+                <option value="D"${d.electricity_band === 'D' ? ' selected' : ''}>Band D &#183; 8+ hrs/day</option>
+                <option value="E"${d.electricity_band === 'E' ? ' selected' : ''}>Band E &#183; 4+ hrs/day</option>
+              </select></div>
             <div class="field"><label>Condition</label>
               <select id="lfCondition">
                 <option value="">Not stated</option>
@@ -7852,6 +7868,7 @@
              string is not a value Postgres will take, so it goes as null. */
           furnished: g('lfFurnished').value || null,
           property_condition: g('lfCondition').value || null,
+          electricity_band: g('lfBand').value || null,
           // Split on comma, pipe OR newline. People paste amenity lists straight
           // out of a brochure and those use pipes and line breaks at least as
           // often as commas — comma-only silently stored the whole list as ONE

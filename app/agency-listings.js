@@ -38,7 +38,7 @@
     'bedrooms', 'bathrooms', 'area_sqm', 'amenities',
     'title_type', 'yield_pct', 'is_active', 'is_negotiable',
     'toilets', 'parking_spaces', 'floor_level', 'total_floors',
-    'year_built', 'furnished', 'property_condition',
+    'year_built', 'furnished', 'property_condition', 'electricity_band',
   ];
 
   function client() {

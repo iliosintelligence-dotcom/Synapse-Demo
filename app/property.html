@@ -1592,6 +1592,14 @@
          null and the card dropped the row without anybody noticing. */
       const FURNISHED_LABEL = { fully: 'fully furnished', semi: 'semi-furnished', unfurnished: 'unfurnished' };
       const CONDITION_LABEL = { brand_new: 'brand new', excellent: 'excellent condition', good: 'good condition', fair: 'fair condition', needs_work: 'needs work' };
+      /* The hours, not just the letter. "Band D" is meaningless to anyone
+         who has not had to learn the NERC bands, and this page is read by
+         buyers -- so it carries the letter for the people who know it and the
+         commitment for everyone else. */
+      const BAND_HOURS = { A: '20+', B: '16+', C: '12+', D: '8+', E: '4+' };
+      if (p.electricity_band && BAND_HOURS[p.electricity_band]) {
+        facts.push(`<span>Band <b>${p.electricity_band}</b> · ${BAND_HOURS[p.electricity_band]} hrs/day</span>`);
+      }
       if (p.furnished) facts.push(`<span>${FURNISHED_LABEL[p.furnished] || p.furnished}</span>`);
       if (p.property_condition) facts.push(`<span>${CONDITION_LABEL[p.property_condition] || p.property_condition}</span>`);
       if (p.title_type) facts.push(`<span>${TITLE_LABEL[p.title_type] || p.title_type}</span>`);
