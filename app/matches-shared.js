@@ -129,7 +129,15 @@
   function shapeTojuMatch(m, i) {
     return {
       id: m.id || 'r' + i,
-      img: null, // renderer falls back to IMG_POOL[i % IMG_POOL.length]
+      /* THE LISTING'S OWN PHOTOGRAPH. This was hardcoded null with the note
+         "renderer falls back to IMG_POOL", and that fallback is gone — it
+         dressed a real home in a stock flat, which a buyer cannot tell from a
+         real photo of the place they are about to enquire about. So the cards
+         went blank instead, while the agency's 21 uploaded photos sat in
+         property_media untouched, because the server had never been asked for
+         them either. Both ends are fixed; null here now means the listing
+         genuinely has no picture, and the card says so. */
+      img: (typeof m.img === 'string' && m.img.trim()) ? m.img.trim() : null,
       kind: m.room != null ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
       per: m.listingType === 'rent',
       // Tayo shows every matching home and labels each one. This MUST come from
@@ -441,9 +449,35 @@
   function paint(st, list) {
     var sig = list.map(function (p) { return p.id; }).sort().join(',');
     st.r.setProperties(list);
-    if (list.length && sig !== st.sig) st.r.fit(list, 56);
-    st.sig = sig;
+    /* RESIZE BEFORE FITTING, which is the whole bug. fitBounds solves for the
+       viewport it can see at the time, and this called it BEFORE resize() told
+       MapLibre the container's real size — so the camera was framed for one
+       box and then shown in another. With a single pin nobody notices, because
+       flyTo centres it regardless. With two it is obvious: one sits centred
+       and the other hangs off toward an edge, which is exactly how it was
+       reported.
+
+       It shows up here rather than everywhere because these maps are painted
+       while the pane they live in is still settling — the sheet is opening, the
+       column is still laying out — so the size at fit time is genuinely stale.
+       Resizing first costs one extra layout read and makes the fit correct. */
     st.r.resize();
+    /* Padding has to fit inside what it is padding. 56px a side needs 112px of
+       height before a single pin can be placed, and these containers are 300px
+       and shrink on a phone; when the padding crowds out the viewport
+       fitBounds either throws or returns a nonsense zoom. Ask for 56, take
+       what the box can actually spare. */
+    if (list.length && sig !== st.sig) st.r.fit(list, fitPad(st.r, 56));
+    st.sig = sig;
+  }
+
+  /** The largest padding this container can take without swallowing itself. */
+  function fitPad(renderer, want) {
+    var el = renderer && renderer.map && renderer.map.getContainer && renderer.map.getContainer();
+    if (!el) return want;
+    var w = el.clientWidth || 0, h = el.clientHeight || 0;
+    if (!w || !h) return 0;                       // not laid out yet: no padding is safe
+    return Math.max(0, Math.min(want, Math.floor(Math.min(w, h) / 2) - 24));
   }
 
   /* ── Saved homes — race-safe across tabs ────────────────────────────────
