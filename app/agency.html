@@ -5901,62 +5901,6 @@
          uploaded twelve and was told nothing would reasonably assume all
          twelve went. Silent truncation is the kind of small lie that is only
          ever discovered by someone scrolling their own post. */
-    /* DECLARED BEFORE ITS FIRST USE, and that is load-bearing rather than
-       tidy. This block sat below, next to commitSchedule, which reads fine
-       because photosOf is a hoisted function declaration and could be called
-       from anywhere above it. CAROUSEL_MAX is a const and is NOT hoisted: the
-       sayPhotoCount() call a few lines down ran while it was still in the
-       temporal dead zone, threw "Cannot access 'CAROUSEL_MAX' before
-       initialization", and took the rest of this function with it -- including
-       the click handlers for Add another time, Post now and Add to schedule.
-       The button did not misbehave; it never got a listener at all. */
-    const CAROUSEL_MAX = 10;
-    function photosOf(propertyId, fallbackImg) {
-      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-      const l = propertyId ? L.find((x) => x && x.id === propertyId) : null;
-      const https = (u) => typeof u === 'string' && /^https:\/\//i.test(u.trim());
-      const urls = ((l && Array.isArray(l.media)) ? l.media : [])
-        .map((m) => (m && typeof m.url === 'string' ? m.url.trim() : ''))
-        .filter(https);
-      const uniq = [...new Set(urls)].slice(0, CAROUSEL_MAX);
-      if (uniq.length) return uniq;
-      /* No gallery to read (a draft not in LISTINGS_DATA, say): the cover is
-         better than nothing, and one photo is a valid post. */
-      return https(fallbackImg) ? [fallbackImg.trim()] : [];
-    }
-
-      /* WRAPPED, because a sentence must never be able to disable a button.
-         This note is decoration -- it tells the agency how many photos will go
-         out -- and it is wired in the middle of the setup that attaches the
-         click handlers for Add another time, Post now and Add to schedule. A
-         throw here therefore took all three with it, and the reported symptom
-         was "Post now is not working" when Post now had simply never been
-         given a listener. Reordering fixed the specific cause; this makes the
-         whole class of cause harmless. */
-      (function sayPhotoCount() {
-        try {
-        const note = document.getElementById('schNote');
-        if (!note) return;
-        const n = photosOf(p.propertyId, p.img).length;
-        const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-        const row = p.propertyId ? L.find((x) => x && x.id === p.propertyId) : null;
-        const have = (row && Array.isArray(row.media)) ? row.media.length : n;
-        if (n === 0) { note.textContent = 'This listing has no photo, so the post will be text only.'; return; }
-        if (n === 1) { note.textContent = have > 1
-          ? 'Only one of this listing’s photos is a usable link, so it posts as a single image.'
-          : 'Posts as a single image — this listing has one photo.'; return; }
-        note.textContent = have > n
-          ? 'Posts as a carousel of ' + n + ' photos. This listing has ' + have
-            + ', and ' + n + ' is the most Instagram accepts in one post.'
-          : 'Posts as a carousel of ' + n + ' photos.';
-        } catch (err) {
-          /* Left silent on the sheet on purpose: the agency came here to
-             schedule a post, not to be told a caption under the buttons could
-             not be computed. It is logged so it is not invisible to us. */
-          if (window.console) console.warn('photo count note failed:', err);
-        }
-      })();
-
       const slots = document.getElementById('schSlots');
       document.getElementById('schAdd').addEventListener('click', () => {
         const last = slots.lastElementChild;
@@ -6017,7 +5961,13 @@
           .then(() => extra.length
             ? SynListings.schedulePost({
                 propertyId: p.propertyId, contentId: p.contentId || null,
-                caption: p.caption || '', mediaUrls: photosOf(p.propertyId, p.img), slots: extra,
+                /* NO MEDIA NAMED, deliberately. queue_social_post reads
+                   property_media itself and uses the listing's whole
+                   gallery in display order, capped at ten. The portal used
+                   to work this out from LISTINGS_DATA and got it wrong --
+                   one photo where there were eight -- because that array is
+                   rebuilt from four places and any of them can drop it. */
+                caption: p.caption || '', mediaUrls: null, slots: extra,
                 /* BOTH BUTTONS ARE REAL NOW; they differ only in WHEN. This
                    used to pass true for the scheduled case, which is what made
                    "schedule it for 8pm" mean "go to the mock at 8pm and stop".
@@ -10241,29 +10191,6 @@
              not to fan out is that a partial failure halfway through a parallel
              batch leaves an unknown number of rows queued, and the agency
              cannot tell what is about to go out. */
-      /* THE WHOLE GALLERY, not the cover. Same reasoning as photosOf() in the
-         scheduler: media_urls is an array, queue_social_post takes text[], and
-         social-publish builds an Instagram carousel whenever there is more
-         than one. This composer sent exactly one URL, so a listing with twelve
-         photographs went out as a single picture.
-
-         Declared here rather than shared because the two live in separate
-         IIFEs; keeping them in step matters, so both cap at ten (Meta's limit,
-         enforced by checkMedia) and both drop non-https and duplicates, which
-         checkMedia would reject anyway. */
-      function campaignPhotos(propertyId, fallbackUrl) {
-        var L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-        var l = propertyId ? L.filter(function (x) { return x && x.id === propertyId; })[0] : null;
-        var ok = function (u) { return typeof u === 'string' && /^https:\/\//i.test(u.trim()); };
-        var out = [];
-        ((l && Array.isArray(l.media)) ? l.media : []).forEach(function (m) {
-          var u = (m && typeof m.url === 'string') ? m.url.trim() : '';
-          if (ok(u) && out.indexOf(u) < 0) out.push(u);
-        });
-        if (out.length) return out.slice(0, 10);
-        return ok(fallbackUrl) ? [fallbackUrl.trim()] : [];
-      }
-
           return ready.reduce(function (chain, v) {
             return chain.then(function () {
               return fetch(SB_URL + '/rest/v1/rpc/queue_social_post', {
@@ -10272,9 +10199,11 @@
                   p_property_id: campaign.property && campaign.property.id,
                   p_platform: v.platform,
                   p_caption: v.caption,
-                  p_media_urls: campaignPhotos(
-                    campaign.property && campaign.property.id,
-                    v.media && v.media.url),
+                  /* Omitted on purpose -- see the scheduler. The listing's
+                     gallery beats this variant's single hero image: a buyer
+                     scrolling a carousel of the actual home learns more than
+                     they do from one angle of it. */
+                  p_media_urls: null,
                   p_dry_run: false,
                 }),
               }).then(function (r) {
