@@ -18,6 +18,9 @@
   <!-- In <head>, not at the end of <body>: pagereveal fires before a
        body script has run, and seam.js has to be listening for it. -->
   <script src="seam.js"></script>
+  <!-- Before anything paints: it publishes --vvh, so a shell sized from it
+       never renders at the wrong height first and then corrects. -->
+  <script src="kbd.js"></script>
   <script src="arrival.js"></script>
   <style>
     /* Listing detail — Zillow-grade depth, advisory framing: gallery, true
@@ -407,7 +410,13 @@
        nothing on this page for the document itself to scroll, so nothing is
        lost by saying so. */
     html { height: 100%; overscroll-behavior: none; }
-    body { height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+    /* --vvh last, so it wins where it exists. The two before it are the
+       ladder for browsers without visualViewport, and 100dvh is what this
+       page had. See kbd.js: on iOS a keyboard shrinks only the visual
+       viewport, so dvh alone leaves anything docked at the bottom underneath
+       it. */
+    body { height: 100vh; height: 100dvh; height: var(--vvh, 100dvh);
+      overflow: hidden; display: flex; flex-direction: column;
       overscroll-behavior: none; }
     .pdp { flex: 1; min-height: 0; position: relative; z-index: 1; max-width: 460px; width: 100%; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; }
     .pdp .hero { height: 230px; flex: none; }

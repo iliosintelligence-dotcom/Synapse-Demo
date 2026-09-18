@@ -18,6 +18,9 @@
   <!-- In <head>, not at the end of <body>: pagereveal fires before a
        body script has run, and seam.js has to be listening for it. -->
   <script src="seam.js"></script>
+  <!-- Before anything paints: it publishes --vvh, so a shell sized from it
+       never renders at the wrong height first and then corrects. -->
+  <script src="kbd.js"></script>
   <script src="arrival.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -271,7 +274,11 @@
     /* ── TWO-PANE CANVAS LAYOUT (chat left · listings right) ── */
     html, body { height: 100%; }
     body { overflow: hidden; }
-    .tj-app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100dvh; }
+    /* --vvh is the VISUAL viewport: the part of the screen not covered by
+       the keyboard. 100dvh is not that -- the d is for the URL bar, and on
+       iOS a keyboard does not change it at all, which is how the composer
+       ended up underneath one. The fallback is the old behaviour exactly. */
+    .tj-app { position: relative; z-index: 1; display: flex; flex-direction: column; height: var(--vvh, 100dvh); }
     .tj-app .appbar { flex: none; }
     .tj-layout { flex: 1; display: flex; min-height: 0; }
     /* The chat opens centered, exactly like the original Tayo page. The moment
@@ -410,7 +417,7 @@
          copies of one list. cust-nav.js now injects a single floating taskbar
          from one array of destinations, so .appbar can stay fully hidden. */
 
-      .tj-app { height: 100dvh; display: flex; flex-direction: column; }
+      .tj-app { height: var(--vvh, 100dvh); display: flex; flex-direction: column; }
       .appbar { display: none; }                 /* site nav is not chat chrome */
       .tj-layout { flex: 1; flex-direction: column; min-height: 0; }
       .tj-chat, body.has-canvas .tj-chat {
@@ -1464,6 +1471,20 @@
       convo.parentNode.insertBefore(el, convo);
       el.querySelector('.tj-mem-x').addEventListener('click', () => el.remove());
     }
+
+    /* Shortening a scroller does not move its scrollTop, so when the
+       keyboard opens the message you were reading slides up behind the
+       composer at the moment you start replying to it. Re-pin to the bottom,
+       but only if you were already there -- somebody who has scrolled back
+       through the conversation to check something is not asking to be thrown
+       to the end because they tapped the box. */
+    document.documentElement.addEventListener('syn:keyboard', function (e) {
+      if (!e.detail || !e.detail.open) return;
+      var sc = document.querySelector('.convo-scroll');
+      if (!sc) return;
+      var nearBottom = (sc.scrollHeight - sc.scrollTop - sc.clientHeight) < 220;
+      if (nearBottom) requestAnimationFrame(function () { sc.scrollTop = sc.scrollHeight; });
+    });
 
     // deep link from a listing: ?ask=... pre-fills the composer
     /* Deep link from a listing or the landing hero: ?ask=…

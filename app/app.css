@@ -761,9 +761,17 @@ a:focus-visible {
 }
 
 @media (max-width: 1024px) {
+/* Out of the way while typing. The taskbar is fixed to the bottom of the
+   screen, so with a keyboard up it either sits over the composer or floats in
+   the middle of nothing -- and nobody navigates to another page halfway
+   through a sentence. kbd.js sets .kb-open on <html>. */
+html.kb-open .cnav { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
 .cnav {
   display: block;
   position: fixed; z-index: 70;
+  transition: opacity var(--m-standard, .18s) var(--m-ease, ease),
+              transform var(--m-standard, .18s) var(--m-ease, ease);
   left: 16px;
   /* Spans the width now, so the search control can sit at the far end from the
      navigation triggers and the open field has the whole bar to grow into.
