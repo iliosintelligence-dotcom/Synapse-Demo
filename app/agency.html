@@ -7015,39 +7015,127 @@
          costs only the pin: coordinates were always optional here, and a
          listing that cannot be geocoded is still a listing. It never blocks
          the save. */
+      /* ONE QUESTION WAS THE WRONG QUESTION, AND IT ASKED IT ONCE.
+         This sent the address exactly as typed and gave up on a miss. Every
+         listing a real agency has ever uploaded came out with no pin —
+         invisible on every map — while the 501 seeded ones looked fine because
+         the seed wrote coordinates directly. Two for two, silently.
+
+         The reason is in the data, not the agent. Measured against Nominatim:
+
+           "Number 4, Ekiti street, Bodija, Ibadan, Oyo, Nigeria"  no match
+           "Ekiti street, Bodija, Ibadan, Nigeria"                 7.41636, 3.90264
+
+         Nigerian OSM holds streets but almost no house numbers, so leading
+         "Number 4," guarantees a miss on an address that is otherwise findable.
+         And it goes further: "Awolowo Road, Bodija" and "Okeola Agbowo Street"
+         both miss even with the number stripped — those streets are not mapped
+         at all — while "Bodija, Ibadan" and "Agbowo, Ibadan" both resolve.
+
+         So the ladder ends at the AREA, because the area is the thing Nigerian
+         map data actually has. A pin in the right neighbourhood is worth far
+         more than no pin: it puts the home in the part of town a buyer is
+         choosing between, which is the question this map answers.
+
+         What it must not do is imply a doorstep it does not know. Each rung
+         says which one it landed on, so nobody mistakes an area centroid for a
+         surveyed address — and the lat/lng fields stay editable for an agency
+         that wants to place it exactly. */
+      const HOUSE_NO =
+        /^\s*(?:(?:no|number|nos|house|flat|plot|suite|apt|apartment|block)\s*\.?\s*)?\d+\s*[a-z]?\s*(?:[,/-]\s*|\s+)/i;
+
+      function geoLadder(addr, hood, city, state) {
+        const A = addr.trim(), H = hood.trim(), C = city.trim(), S = state.trim();
+        /* The area belongs in the street rungs too, unless the address already
+           says it. "Okeola Agbowo Street, Ibadan" asks a bigger question than
+           "Okeola Agbowo Street, Agbowo, Ibadan" — several cities have a street
+           of the same name, and the area is what separates them. Skipped when
+           the address already contains it so the query does not read
+           "...Bodija, Bodija, Ibadan". */
+        const near = (H && A.toLowerCase().indexOf(H.toLowerCase()) < 0) ? [H] : [];
+        const tail = [C, S, 'Nigeria'].filter(Boolean);
+        const rungs = [];
+        if (A) rungs.push({ q: [A].concat(near, tail), how: 'address' });
+        const street = A.replace(HOUSE_NO, '').trim();
+        /* Only worth a second request when stripping actually changed
+           something, and only when what is left still names a street rather
+           than a bare number. */
+        if (street && street !== A && /[a-z]/i.test(street)) {
+          rungs.push({ q: [street].concat(near, tail), how: 'street' });
+        }
+        if (H) rungs.push({ q: [H].concat(tail), how: 'area' });
+        if (C) rungs.push({ q: tail, how: 'city' });
+        return rungs;
+      }
+
+      const GEO_SAYS = {
+        address: () => 'Map pin found from the address.',
+        street:  () => 'Map pin found from the street — house numbers are not mapped in Nigeria.',
+        area:    (w) => 'That street is not on the map, so the pin sits on ' + w + '. '
+                      + 'Good enough to show the area; edit the pin if you need it exact.',
+        city:    (w) => 'Pinned to ' + w + ' only. Add the area above to place it closer.',
+      };
+
       let geoKey = '';
+      let geoRun = 0;
       function findPin() {
         const addr = g('lfAddr').value.trim();
+        const hood = g('lfHood') ? g('lfHood').value.trim() : '';
         const city = g('lfCity').value.trim();
         const state = g('lfState').value.trim();
         if (!addr || !city) return;
-        const key = [addr, city, state].join('|').toLowerCase();
+        const key = [addr, hood, city, state].join('|').toLowerCase();
         if (key === geoKey) return;              // nothing new to look up
         geoKey = key;
+
         const note = g('lfGeoNote');
         if (note) note.textContent = 'Finding the map pin…';
-        const q = [addr, city, state, 'Nigeria'].filter(Boolean).join(', ');
-        fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ng&q='
-              + encodeURIComponent(q))
-          .then(r => r.ok ? r.json() : [])
-          .then(rows => {
-            const hit = Array.isArray(rows) && rows[0];
-            if (!hit || hit.lat == null || hit.lon == null) throw new Error('no match');
-            g('lfLat').value = Number(hit.lat).toFixed(6);
-            g('lfLng').value = Number(hit.lon).toFixed(6);
-            if (note) note.textContent = 'Map pin found from the address.';
-            validate();
-          })
-          .catch(() => {
+
+        /* Which lookup this is. A slow first rung must never be allowed to
+           land after a later edit has already started its own ladder and
+           overwrite the newer answer with the older one. */
+        const run = ++geoRun;
+        const rungs = geoLadder(addr, hood, city, state);
+
+        const ask = (i) => {
+          if (run !== geoRun) return Promise.resolve(null);   // superseded
+          if (i >= rungs.length) return Promise.resolve(null);
+          const r = rungs[i];
+          return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ng&q='
+                       + encodeURIComponent(r.q.join(', ')))
+            .then((res) => res.ok ? res.json() : [])
+            .then((rows) => {
+              const hit = Array.isArray(rows) && rows[0];
+              if (hit && hit.lat != null && hit.lon != null) return { hit: hit, how: r.how, said: r.q[0] };
+              /* Nominatim asks for no more than one request a second and this
+                 is a free service we are guests on. The pause is only paid
+                 when a rung actually misses. */
+              return new Promise((res2) => setTimeout(res2, 1100)).then(() => ask(i + 1));
+            })
+            .catch(() => new Promise((res2) => setTimeout(res2, 1100)).then(() => ask(i + 1)));
+        };
+
+        ask(0).then((found) => {
+          if (run !== geoRun) return;            // a newer lookup owns the field
+          if (!found) {
             g('lfLat').value = ''; g('lfLng').value = '';
             /* Says what it means for the listing, not what failed. The agency
                can do nothing about a geocoder miss, so it is told the
                consequence and left alone. */
             if (note) note.textContent = 'No map pin for this address — the listing still works without one.';
             validate();
-          });
+            return;
+          }
+          g('lfLat').value = Number(found.hit.lat).toFixed(6);
+          g('lfLng').value = Number(found.hit.lon).toFixed(6);
+          if (note) note.textContent = GEO_SAYS[found.how](found.said);
+          validate();
+        });
       }
-      ['lfAddr', 'lfCity', 'lfState'].forEach(id => g(id).addEventListener('blur', findPin));
+      ['lfAddr', 'lfHood', 'lfCity', 'lfState'].forEach(id => {
+        const el = g(id);
+        if (el) el.addEventListener('blur', findPin);
+      });
 
       /* Probe on blur rather than per keystroke: one request when they have
          finished pasting, not one per character. */
