@@ -1529,6 +1529,7 @@
            on a post with 26 clicks from 5 people. */
         .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
               + 'caption, media_urls, failure_reason, created_at, payload, leg, twin_of, '
+              + 'likes, comments, shares, metrics_at, '
               + 'short_links(token, click_count, human_click_count, last_clicked_at)')
         .eq('agency_id', aid)
         .is('deleted_at', null)

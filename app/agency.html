@@ -5164,6 +5164,34 @@
          landing, and for the case where the stats call failed. */
       const statOf = (id) => (PIPE.stats && PIPE.stats[id]) || null;
 
+      /* ENGAGEMENT, WHICH IS NOT THE SAME AS CLICKS. Clicks are ours -- our
+         redirect counts them, so they exist with nothing connected. These come
+         from the platform via trypost and only exist after the sweep has asked.
+
+         NULL is carried rather than flattened to zero, and the difference
+         matters on the card: a post nobody commented on and a post we have not
+         been able to ask about both render as "0 comments" otherwise, and those
+         want opposite reactions from whoever is reading. */
+      const engageOf = (r) => ({
+        likes: (r && typeof r.likes === 'number') ? r.likes : null,
+        comments: (r && typeof r.comments === 'number') ? r.comments : null,
+        at: (r && r.metrics_at) || null,
+      });
+
+      /* Across the post and its twins. One listing went out on several
+         accounts; the agency wants to know how the LISTING did. null + 3 is 3,
+         not null -- a platform that cannot report must not erase one that can. */
+      const engageAcross = (r, twins) => {
+        const all = [engageOf(r)].concat((twins || []).map(engageOf));
+        const add = (k) => all.reduce(
+          (a, e) => (e[k] == null ? a : (a == null ? e[k] : a + e[k])), null);
+        return {
+          likes: add('likes'),
+          comments: add('comments'),
+          at: all.reduce((a, e) => (!a || (e.at && e.at > a)) ? (e.at || a) : a, null),
+        };
+      };
+
       const clicksOf = (r) => {
         const st = statOf(r && r.id);
         if (st) {
@@ -5268,6 +5296,7 @@
              has to ask about all of them -- the platform numbers for "Synapse
              put this on Instagram" live on the twin, not on this row. */
           familyIds: [r.id].concat(twinLive.map(t => t.id)),
+          engage: engageAcross(r, twins),
           clicks: c.human + twinClicks,
           clicksRaw: c.total + twins.reduce((a, t) => a + clicksOf(t).total, 0),
           /* The family's totals. A twin is the same listing on a Synapse
@@ -5449,11 +5478,35 @@
             + esc2(fmtWhen(p.lastClick)) + '</div>' : '');
     }
 
+    /* WHAT THE PLATFORM SAYS, under what we measured ourselves. Separate
+       lines on purpose: a tap is somebody who came to the listing, a comment is
+       somebody who stayed on Instagram, and running them together as one
+       "engagement" number would hide which of the two actually happened.
+
+       Silent until the sweep has an answer. An empty line where a number will
+       later appear reads as zero, and zero is a claim. */
+    function engageLine(p) {
+      const e = p.engage || {};
+      if (e.comments == null && e.likes == null) return '';
+      const bits = [];
+      if (e.comments != null) {
+        bits.push('<b>' + e.comments + '</b> ' + (e.comments === 1 ? 'comment' : 'comments'));
+      }
+      if (e.likes != null) bits.push('<b>' + e.likes + '</b> liked');
+      if (!bits.length) return '';
+      /* Comments are the ones worth acting on -- somebody asked something in
+         public and is waiting -- so the card nudges only on those. */
+      const act = e.comments ? ' style="color:var(--ink)"' : '';
+      return '<div class="w"' + act + ' style="margin-top:4px">\ud83d\udcac '
+        + bits.join(' \u00b7 ') + '</div>';
+    }
+
     function liveBody(p) {
       return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
         + esc2(p.when || 'Published') + '</div>'
         + carriedBy(p)
         + clickLine(p)
+        + engageLine(p)
         + (p.token ? '<button class="act gh" data-act="openlink" data-id="' + p.id + '">Open the link</button>' : '');
     }
 
