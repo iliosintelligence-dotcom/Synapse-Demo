@@ -43,9 +43,9 @@
       '<div class="synbounce" aria-hidden="true">'
       + '<span class="sb-x">'
       + '<span class="sb-shadow"></span>'
-      + '<span class="sb-y"><span class="sb-squash">'
+      + '<span class="sb-y"><span class="sb-squash"><span class="sb-tilt">'
       + '<img src="../images/brand/mark-black-on-white-tight.jpg" alt="">'
-      + '</span></span>'
+      + '</span></span></span>'
       + '</span>'
       + '</div>'
       + '<div class="synload-msg"></div>';

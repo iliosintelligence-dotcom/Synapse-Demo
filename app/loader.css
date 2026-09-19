@@ -11,6 +11,7 @@
      .sb-x       constant horizontal speed          linear
      .sb-y       falls, then rises                  ease-in down, ease-out up
      .sb-squash  compresses on contact, springs     held at 1 except on impact
+     .sb-tilt    leans into the bounce, then out    holds each pose, turns fast
      .sb-shadow  proximity to the surface           tied to the same timeline
 
    The physics that make it read as weight rather than as a wobble:
@@ -26,6 +27,14 @@
    compressing spreads the mark upward from the point of contact instead of
    shrinking it towards its own middle. The contact point is the one place
    that must not move.
+
+   IT TURNS THE WAY IT IS GOING. Travelling right, it rotates clockwise
+   throughout: tipped back on the approach, flat for the moment it is actually
+   touching, tipped forward as it leaves. One direction of spin, matching one
+   direction of travel — an object that leaned back on the way in and back
+   again on the way out would be rocking, not moving. The rotation holds each
+   pose and does most of its turning around the bounce, so it reads as two
+   attitudes either side of an impact rather than a constant tumble.
 
    IT OVERSHOOTS ON THE WAY OUT. Straight back to 1.0 reads as rubber. A
    stretch past its own height — thinner and taller for a moment — is what a
@@ -44,14 +53,20 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 .synbounce {
-  --sb-dur: 1150ms;
-  --sb-rise: 64px;          /* apex height above the surface */
-  --sb-travel: 92px;        /* distance either side of centre */
-  --sb-size: 46px;
+  --sb-dur: 1400ms;
+  --sb-rise: 88px;          /* apex height above the surface */
+  --sb-size: 64px;
+  /* EDGE TO EDGE, and off both of them. Half the viewport plus the mark's own
+     width means it starts fully past the left edge and ends fully past the
+     right: it is arriving from somewhere and leaving for somewhere, which is
+     the difference between crossing between two pages and pacing about on
+     one. A mark that turns round inside the frame is waiting; this one is in
+     transit and the screen happens to be in the way. */
+  --sb-travel: calc(50vw + var(--sb-size));
   position: relative;
-  width: calc(var(--sb-travel) * 2 + var(--sb-size) * 2);
-  height: calc(var(--sb-rise) + var(--sb-size) + 26px);
-  margin: 0 auto;
+  width: 100%;
+  height: calc(var(--sb-rise) + var(--sb-size) + 34px);
+  overflow: hidden;         /* nothing spills past the overlay's edges */
   pointer-events: none;
 }
 
@@ -77,6 +92,17 @@
   animation: sb-squash var(--sb-dur) linear infinite;
 }
 
+/* Inside .sb-squash, so the squash still compresses towards the GROUND
+   rather than along the mark's own tilted axis — a parent's scale applies to
+   whatever the child has already drawn, which is the rotated shape. Gravity
+   does not care which way the object is leaning. */
+.synbounce .sb-tilt {
+  display: block;
+  /* Pivots on the contact point, like the squash. */
+  transform-origin: 50% 100%;
+  animation: sb-tilt var(--sb-dur) linear infinite;
+}
+
 .synbounce .sb-squash img {
   display: block;
   width: var(--sb-size);
@@ -95,7 +121,7 @@
   position: absolute;
   left: 50%; bottom: -5px;
   width: calc(var(--sb-size) * 0.92);
-  height: 8px;
+  height: 10px;
   margin-left: calc(var(--sb-size) * -0.46);
   border-radius: 50%;
   background: rgba(22, 22, 20, 0.55);
@@ -128,6 +154,19 @@
      makes it a spring rather than a ball of rubber. */
   57%       { transform: scale(0.88, 1.14); }
   66%, 100% { transform: scale(1, 1); }
+}
+
+@keyframes sb-tilt {
+  /* Holds the incoming lean rather than turning the whole way across, so it
+     reads as a pose and not a spin. */
+  0%, 26%   { transform: rotate(-24deg);
+              animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+  /* Flat for the moment it is genuinely touching: an object lands on its
+     base, then pivots off it. Same dwell the squash uses. */
+  46%, 54%  { transform: rotate(0deg);
+              animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+  /* And away, still turning clockwise — the same direction it is travelling. */
+  74%, 100% { transform: rotate(24deg); }
 }
 
 @keyframes sb-shadow {
@@ -164,6 +203,7 @@
   .synbounce .sb-x,
   .synbounce .sb-y,
   .synbounce .sb-squash,
+  .synbounce .sb-tilt,
   .synbounce .sb-shadow { animation: none; }
   .synbounce .sb-shadow { opacity: 0.22; filter: blur(4px); }
 }
