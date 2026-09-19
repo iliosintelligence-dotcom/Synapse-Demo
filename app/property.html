@@ -36,7 +36,13 @@
 
        pvlb-, not lb-: `.lb` is already a label class on this page, worn by
        four elements in the neighbourhood cards and ownership rows. */
-    .pvlb { position: fixed; inset: 0; z-index: 120; display: none;
+    /* 900, not 120. .pvc-overlay -- the nearby card on the map -- is
+       z-index 500, so this viewer was opening UNDERNEATH it and the card
+       stayed on screen across the photograph. Chosen with room above the
+       highest layer here (overlay 500, taskbar 70, nearby pill 71) rather
+       than one more than it, so the next thing added does not land on a
+       modal by accident. */
+    .pvlb { position: fixed; inset: 0; z-index: 900; display: none;
       align-items: center; justify-content: center;
       background: rgba(13,13,15,.86);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
@@ -95,6 +101,14 @@
        like something failed to load. */
     .pvlb.single .pvlb-a { display: none; }
     body.pvlb-open { overflow: hidden; }
+    /* Stacking alone would not be enough. The backdrop is rgba(13,13,15,.86)
+       over a 14px blur, so a white card behind it still reads as a pale smear
+       across the photograph somebody opened in order to look at it. Anything
+       that would compete with the viewer stands down for as long as it is
+       open, and comes back when it closes. */
+    body.pvlb-open .pvc-overlay,
+    body.pvlb-open .pvm-nearbtn,
+    body.pvlb-open .cnav { display: none !important; }
     /* Says it can be opened. Without this a picture looks like a picture. */
     .hero img, .hero video { cursor: zoom-in; }
 
