@@ -53,46 +53,47 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 .synbounce {
-  /* 2200ms, not 1400. At the old speed the mark crossed faster than you could
-     resolve what it was -- a dark shape going past, and the point of putting
-     the brand here at all is that somebody sees the brand. Slow enough to
-     read, and the arc is long enough that slow does not mean idle. */
   --sb-dur: 2200ms;
-  /* A tall arc. It comes in high and leaves high, so the bounce is mostly a
-     vertical event with some sideways drift -- which is what a bounce is.
-     At 88px it skimmed. */
   --sb-rise: 190px;         /* apex height above the surface */
-  --sb-size: 64px;
-  /* EDGE TO EDGE, and off both of them. Half the viewport plus the mark's own
-     width means it starts fully past the left edge and ends fully past the
-     right: it is arriving from somewhere and leaving for somewhere, which is
-     the difference between crossing between two pages and pacing about on
-     one. A mark that turns round inside the frame is waiting; this one is in
-     transit and the screen happens to be in the way. */
-  --sb-travel: calc(50vw + var(--sb-size));
-  position: relative;
-  width: 100%;
-  height: calc(var(--sb-rise) + var(--sb-size) + 34px);
-  overflow: hidden;         /* nothing spills past the overlay's edges */
+  --sb-size: 88px;
+  /* ON SCREEN ALMOST ALL THE TIME. At 50vw + the mark's width it left the
+     frame entirely at both ends, and the gap between one pass and the next
+     read as the animation having stopped rather than as a loop. 40vw keeps
+     it arriving and leaving without the dead air. */
+  --sb-travel: 40vw;
+
+  /* NO BOX. This was a fixed-height element with overflow:hidden, which gave
+     the motion a visible ceiling and floor -- the arc was being cropped by a
+     rectangle you could see the edges of. It now fills the overlay, so the
+     only boundary is the screen, and there is nothing to clip against. */
+  position: absolute;
+  inset: 0;
   pointer-events: none;
 }
 
-/* The travelling frame. Everything that moves sideways lives in here. */
+/* A zero-size anchor ON the surface line, at the middle of the screen. Giving
+   it width and a bottom offset is what tied the motion to a box; an anchor
+   with no dimensions cannot crop anything. */
 .synbounce .sb-x {
   position: absolute;
-  left: 50%; bottom: 20px;
-  width: var(--sb-size);
-  margin-left: calc(var(--sb-size) / -2);
+  left: 50%; top: 50%;
+  width: 0; height: 0;
   animation: sb-x var(--sb-dur) linear infinite;
+  will-change: transform;
 }
 
+/* bottom: 0 against a zero-height parent puts the mark's base exactly on the
+   surface line, which is what translateY(0) is meant to mean. */
 .synbounce .sb-y {
-  display: block;
+  position: absolute;
+  left: 0; bottom: 0;
   animation: sb-y var(--sb-dur) linear infinite;
+  will-change: transform;
 }
 
 .synbounce .sb-squash {
   display: block;
+  will-change: transform;
   /* The bottom edge is the contact point, and it is the one thing that must
      stay put while the shape deforms around it. */
   transform-origin: 50% 100%;
@@ -105,6 +106,7 @@
    does not care which way the object is leaning. */
 .synbounce .sb-tilt {
   display: block;
+  will-change: transform;
   /* Pivots on the contact point, like the squash. */
   transform-origin: 50% 100%;
   animation: sb-tilt var(--sb-dur) linear infinite;
@@ -112,6 +114,9 @@
 
 .synbounce .sb-squash img {
   display: block;
+  /* Centred on the anchor by its own negative margin, since the parent has
+     no width to centre within. */
+  margin-left: calc(var(--sb-size) / -2);
   width: var(--sb-size);
   height: auto;
   /* The mark ships as black on white with no transparent variant. multiply is
@@ -122,17 +127,22 @@
 /* On the floor, not on the object: it follows the mark across but never
    leaves the surface with it. */
 .synbounce .sb-shadow {
-  /* Positioned against .sb-x, its parent, so it inherits the horizontal
-     travel and nothing else. Under .synbounce instead, it stayed parked at
-     the centre while the mark flew over the top of it. */
+  /* Against .sb-x, so it inherits the horizontal travel and nothing else. */
   position: absolute;
-  left: 50%; bottom: -5px;
+  left: 0; top: -5px;
   width: calc(var(--sb-size) * 0.92);
-  height: 10px;
+  height: 12px;
   margin-left: calc(var(--sb-size) * -0.46);
-  border-radius: 50%;
-  background: rgba(22, 22, 20, 0.55);
+  /* A GRADIENT, NOT A BLURRED BOX. The softness used to come from an animated
+     filter: blur(), and that is what was costing the framerate -- a blur
+     re-rasterises the layer on every single frame, and doing it next to an
+     element with mix-blend-mode gave the compositor two things it cannot
+     cheaply do at once. The soft edge is baked into the gradient instead, so
+     the only things still animating anywhere here are transform and opacity,
+     which the compositor handles without repainting. */
+  background: radial-gradient(closest-side, rgba(22,22,20,0.62), rgba(22,22,20,0) 100%);
   animation: sb-shadow var(--sb-dur) linear infinite;
+  will-change: transform, opacity;
 }
 
 @keyframes sb-x {
@@ -191,17 +201,17 @@
 
 @keyframes sb-shadow {
   /* Far: small, faint, diffuse. */
-  0%, 100% { opacity: 0.04; transform: scale(0.30, 0.55); filter: blur(9px); }
+  0%, 100% { opacity: 0.05; transform: scale(0.34, 0.5); }
   /* Near: wide, dark, tight. The three move together because that is how a
      shadow reports distance; changing only the opacity looks like a fade. */
-  52%      { opacity: 0.36; transform: scale(1.10, 1);    filter: blur(2.2px); }
+  52%      { opacity: 0.40; transform: scale(1.12, 1); }
 }
 
 /* A short screen cannot hold a 190px arc plus the mark plus the message, and
    .synbounce clips. Landscape phones and small laptops get a lower bounce
    rather than a cropped one. */
 @media (max-height: 640px) {
-  .synbounce { --sb-rise: 110px; --sb-size: 52px; }
+  .synbounce { --sb-rise: 110px; --sb-size: 66px; }
 }
 
 /* ── the overlay it usually lives in ─────────────────────────────────────── */
