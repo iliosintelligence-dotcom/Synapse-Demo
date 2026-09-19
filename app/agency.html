@@ -170,6 +170,24 @@
        Sits above the plan cards, because the question "should I upgrade"
        is answered by what you have used, not by the feature list. Reads as
        information until something is full, and only then as a warning. */
+    /* Stays until dismissed, and the text is selectable: this is the sentence
+       somebody pastes to whoever can fix the Meta app. */
+    .connect-err {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 22px; z-index: 200; max-width: min(620px, calc(100vw - 32px));
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 14px 13px 16px; border-radius: 13px;
+      background: #fff; border: 1px solid rgba(168,44,44,0.34);
+      box-shadow: 0 16px 44px rgba(20,20,18,0.2);
+      font-size: 13px; line-height: 1.55; color: #7d2626;
+    }
+    .connect-err .ce-msg { user-select: text; }
+    .connect-err .ce-x {
+      flex: none; border: none; background: none; cursor: pointer;
+      color: var(--ink-dim); font-size: 14px; line-height: 1; padding: 2px 4px;
+      min-height: 0;
+    }
+
     .plan-usage {
       display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
       margin: 4px 0 22px; padding: 14px 18px;
@@ -10479,6 +10497,25 @@
             ? 'Could not connect' + (detail ? ': ' + detail : '.')
             : (CONNECTABLE[outcome] || outcome) + ' connected'
               + (detail ? ' as ' + detail : '') + '. Posts to it are real from now on.';
+
+        /* A FAILURE STAYS ON SCREEN. Success is fine as a toast -- you can
+           see the result in the channel strip either way. A failure is the
+           opposite: Meta's reason arrives once, in a query parameter this
+           function has already stripped from the URL, and four seconds
+           later the only record of why the connection failed is gone. It is
+           also the sentence somebody needs to paste to whoever can fix it,
+           so it has to be selectable rather than merely visible. */
+        if (outcome === 'error' || outcome === 'cancelled') {
+          var bar = document.createElement('div');
+          bar.className = 'connect-err';
+          bar.setAttribute('role', 'alert');
+          bar.innerHTML = '<div class="ce-msg"></div>'
+            + '<button type="button" class="ce-x" aria-label="Dismiss">&#10005;</button>';
+          bar.querySelector('.ce-msg').textContent = msg;   // Meta's words, unescaped by us
+          bar.querySelector('.ce-x').addEventListener('click', function () { bar.remove(); });
+          document.body.appendChild(bar);
+          return;
+        }
         setTimeout(function () { toastOrAlert(msg); }, 400);
       })();
 
