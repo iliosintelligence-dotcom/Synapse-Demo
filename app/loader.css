@@ -1,0 +1,169 @@
+/* ── The mark bounces through ──────────────────────────────────────────────
+   A loading state with somewhere to be: the Synapse mark comes in from the
+   left, strikes an unseen surface in the middle, takes the shock, springs off
+   it and carries on to the right — towards the page it is fetching.
+
+   FOUR NESTED ELEMENTS, FOUR JOBS. One element cannot hold this: horizontal
+   travel, vertical fall, squash and shadow each want their own easing, and a
+   single `transform` can only carry one curve at a time. So each layer owns
+   one axis of the motion and they compose:
+
+     .sb-x       constant horizontal speed          linear
+     .sb-y       falls, then rises                  ease-in down, ease-out up
+     .sb-squash  compresses on contact, springs     held at 1 except on impact
+     .sb-shadow  proximity to the surface           tied to the same timeline
+
+   The physics that make it read as weight rather than as a wobble:
+
+   HORIZONTAL SPEED IS CONSTANT. Nothing pushes it sideways, so nothing
+   changes that component. Easing the x-travel is the single thing that makes
+   a bounce look like a cartoon rather than an object.
+
+   IT ACCELERATES DOWN AND DECELERATES UP. Falling gets faster, rising gets
+   slower. Same curve, mirrored, which is gravity doing one thing.
+
+   THE SQUASH PINS ITS BASE. transform-origin sits at the bottom edge, so
+   compressing spreads the mark upward from the point of contact instead of
+   shrinking it towards its own middle. The contact point is the one place
+   that must not move.
+
+   IT OVERSHOOTS ON THE WAY OUT. Straight back to 1.0 reads as rubber. A
+   stretch past its own height — thinner and taller for a moment — is what a
+   spring does when it releases, and it is the frame that sells the weight.
+
+   VOLUME IS ROUGHLY CONSERVED. Squashed to 0.70 it widens to 1.24; stretched
+   to 1.14 it narrows to 0.88. Nothing here is simulating anything, but a
+   shape that loses mass when it lands looks wrong even to somebody who could
+   not say why.
+
+   THE SHADOW IS A DISTANCE READOUT, not decoration. Far away it is small,
+   faint and diffuse; at contact it is wide, dark and tight. That single
+   relationship is what places the mark in space — without it the thing is
+   sliding on glass. It travels with .sb-x but sits outside .sb-y, because a
+   shadow stays on the floor while the object leaves it.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.synbounce {
+  --sb-dur: 1150ms;
+  --sb-rise: 64px;          /* apex height above the surface */
+  --sb-travel: 92px;        /* distance either side of centre */
+  --sb-size: 46px;
+  position: relative;
+  width: calc(var(--sb-travel) * 2 + var(--sb-size) * 2);
+  height: calc(var(--sb-rise) + var(--sb-size) + 26px);
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+/* The travelling frame. Everything that moves sideways lives in here. */
+.synbounce .sb-x {
+  position: absolute;
+  left: 50%; bottom: 20px;
+  width: var(--sb-size);
+  margin-left: calc(var(--sb-size) / -2);
+  animation: sb-x var(--sb-dur) linear infinite;
+}
+
+.synbounce .sb-y {
+  display: block;
+  animation: sb-y var(--sb-dur) linear infinite;
+}
+
+.synbounce .sb-squash {
+  display: block;
+  /* The bottom edge is the contact point, and it is the one thing that must
+     stay put while the shape deforms around it. */
+  transform-origin: 50% 100%;
+  animation: sb-squash var(--sb-dur) linear infinite;
+}
+
+.synbounce .sb-squash img {
+  display: block;
+  width: var(--sb-size);
+  height: auto;
+  /* The mark ships as black on white with no transparent variant. multiply is
+     how the rest of the app floats it off that background — see .syn-mark. */
+  mix-blend-mode: multiply;
+}
+
+/* On the floor, not on the object: it follows the mark across but never
+   leaves the surface with it. */
+.synbounce .sb-shadow {
+  /* Positioned against .sb-x, its parent, so it inherits the horizontal
+     travel and nothing else. Under .synbounce instead, it stayed parked at
+     the centre while the mark flew over the top of it. */
+  position: absolute;
+  left: 50%; bottom: -5px;
+  width: calc(var(--sb-size) * 0.92);
+  height: 8px;
+  margin-left: calc(var(--sb-size) * -0.46);
+  border-radius: 50%;
+  background: rgba(22, 22, 20, 0.55);
+  animation: sb-shadow var(--sb-dur) linear infinite;
+}
+
+@keyframes sb-x {
+  from { transform: translateX(calc(var(--sb-travel) * -1)); }
+  to   { transform: translateX(var(--sb-travel)); }
+}
+
+@keyframes sb-y {
+  /* Accelerating: slow at the apex, quickest just before it lands. */
+  0%   { transform: translateY(calc(var(--sb-rise) * -1));
+         animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.55); }
+  /* Contact. The gap to 54% is the dwell the squash happens inside — an
+     impact with no duration reads as a teleport. */
+  46%  { transform: translateY(0); }
+  54%  { transform: translateY(0);
+         animation-timing-function: cubic-bezier(0.1, 0.5, 0.4, 1); }
+  /* Decelerating away, the fall run backwards. */
+  100% { transform: translateY(calc(var(--sb-rise) * -1)); }
+}
+
+@keyframes sb-squash {
+  0%, 44%   { transform: scale(1, 1); }
+  /* Taking the shock: shorter, and wider by about as much as it lost. */
+  50%       { transform: scale(1.24, 0.70); }
+  /* The release. Thinner and taller than it started — this is the frame that
+     makes it a spring rather than a ball of rubber. */
+  57%       { transform: scale(0.88, 1.14); }
+  66%, 100% { transform: scale(1, 1); }
+}
+
+@keyframes sb-shadow {
+  /* Far: small, faint, diffuse. */
+  0%, 100% { opacity: 0.07; transform: scale(0.42, 0.62); filter: blur(7px); }
+  /* Near: wide, dark, tight. The three move together because that is how a
+     shadow reports distance; changing only the opacity looks like a fade. */
+  50%      { opacity: 0.34; transform: scale(1.06, 1);    filter: blur(2.5px); }
+}
+
+/* ── the overlay it usually lives in ─────────────────────────────────────── */
+.synload {
+  position: fixed; inset: 0; z-index: 950;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  background: rgba(250, 248, 245, 0.93);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.synload.on { display: flex; }
+.synload .synload-msg {
+  font: 500 13.5px var(--f-sans, system-ui);
+  color: var(--ink-muted, #55555c);
+  letter-spacing: 0.01em;
+}
+
+/* Below the viewer (900) so an open photograph is never covered by a loader,
+   and above everything else on the page. */
+
+@media (prefers-reduced-motion: reduce) {
+  /* The bounce IS the motion here, so there is nothing to soften — it stops,
+     and the mark simply sits on the surface with its shadow. A slow version
+     of a bouncing logo is worse for somebody who asked for less movement
+     than no version of it. */
+  .synbounce .sb-x,
+  .synbounce .sb-y,
+  .synbounce .sb-squash,
+  .synbounce .sb-shadow { animation: none; }
+  .synbounce .sb-shadow { opacity: 0.22; filter: blur(4px); }
+}
