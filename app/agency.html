@@ -11037,10 +11037,15 @@
         go.disabled = true;
         go.innerHTML = '<span class="spin2"></span>Writing\u2026';
 
-        fetch(SB_URL + '/functions/v1/social-generate', {
+        /* The SESSION token, not the anon key. social-generate now resolves
+           the caller to an agency and checks whether their plan includes AI
+           captions -- with the anon key it cannot tell who is asking, and it
+           was also answering anyone who found the URL. */
+        token().then(function (t) {
+        return fetch(SB_URL + '/functions/v1/social-generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: SB_KEY,
-                     Authorization: 'Bearer ' + SB_KEY },
+                     Authorization: 'Bearer ' + (t || SB_KEY) },
           body: JSON.stringify({
             /* Same again: `row` here is buildPicker's thirteen-field
                projection, which has no charges, no amenities and no title
@@ -11075,6 +11080,7 @@
         }).then(function () {
           running = false; go.disabled = false; go.innerHTML = was;
         });
+        });   /* closes token().then -- the fetch chain is returned from it */
       });
 
       /* Filing what was just written. Split out of the handler so the success
@@ -11446,8 +11452,10 @@
       cmp.loading = true; cmp.err = ''; renderComposer();
       try {
         const l = POST_LISTINGS[cmp.li];
+        /* Session token, for the same reason as the composer above. */
+        const tk = await token();
         const res = await fetch(SB_URL + '/functions/v1/social-generate', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (tk || SB_KEY) },
           // Voice is the one brand field a fixed template cannot honour, so it
           // goes to the model that can. Sent only when the agency actually
           // wrote one — an absent voice must not become an invented one.
