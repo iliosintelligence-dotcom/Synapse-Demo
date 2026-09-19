@@ -81,3 +81,73 @@ already poll — "3 new comments since yesterday on your post about X". It needs
 somewhere to keep the previously-seen count so a *change* can be detected;
 `post-metrics` currently overwrites. That is a small migration and a compare,
 and it would close most of the felt gap without any Meta dependency.
+
+---
+
+## Decided: what an erasure keeps
+
+**Eden, 2026-09-19. Implemented and live.**
+
+> "Keep personal data but not sensitive personal data. You can keep email, you
+> can keep login. But the agency would have to provide their agency details and
+> their legal documents for verification. Everything else should be anonymous."
+
+`erase_personal_data()` anonymises by default rather than deleting.
+
+**Kept:** `auth.users` (email and login — note `profiles` has no email column
+at all, so this was never being deleted), `profiles.id` and `role`, agencies
+and their verification documents, and the bare fact of a lead — which home,
+which agency, when, what stage.
+
+**Purged:** `consumer_profiles` (income, occupation, age, marital status,
+children, future children, elderly dependents, school budget),
+`affordability_analyses`, `consumer_places` (including `kind='worship'`, which
+is religious belief and sensitive in its own right), `financial_identities`,
+`chat_sessions`, `proximity_events`.
+
+**Blanked:** name, phone, WhatsApp and avatar on `profiles`; name, phone,
+preferences and budget on `leads`.
+
+### The tension worth revisiting
+
+Keeping the email means the person remains identifiable to us. Under NDPA s.34
+somebody asking to be erased is, in the ordinary case, asking for that too, and
+"we kept your login" is not an answer unless another lawful basis covers the
+account itself. The policy is a sound default; it is not a complete answer to
+every request.
+
+So the function has two modes and the statutory route stays open — `anonymise`
+(default) and `full`. `your-data.html` offers the first and says plainly that
+anyone who wants the account gone can have it. **What is not yet built is the
+route that does it without a human in the loop:** `full` mode deletes the
+profile but cannot touch `auth.users`, which needs the Auth admin API from an
+edge function. Until that exists, a full erasure is a manual job.
+
+---
+
+## Considering: passkeys and login IDs instead of passwords
+
+**Raised by Eden 2026-09-19. Not started.**
+
+> "I'm also considering using passkeys and login IDs instead of passwords."
+
+Worth taking seriously, and it points the same way as the decision above.
+
+**Why it fits.** A password is a credential we are responsible for — the
+current `privacy.html` already notes we hold a hash for people who only ever
+wanted to look at houses. Passkeys move that liability to the device: there is
+no shared secret to leak, phish or reset, and no password-reset email flow to
+maintain. A login ID rather than an email address goes further — it is the one
+change that would let somebody hold an account without handing us an
+identifier that is also their identity everywhere else.
+
+**What it would touch.** Supabase Auth supports WebAuthn, so this is a
+provider-configuration and sign-in-flow change rather than a rebuild. The real
+work is in the edges: recovery when the device is lost (the hard part, and the
+one that decides whether this helps or strands people), a migration path for
+existing password accounts, and whether an agency account — which is a shared
+business login in practice — can work on a per-device credential at all.
+
+**Decide before building:** whether login IDs replace email or sit alongside
+it. If they replace it, the retention decision above changes shape, because
+there would no longer be an email to keep.
