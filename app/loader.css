@@ -53,8 +53,15 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 .synbounce {
-  --sb-dur: 1400ms;
-  --sb-rise: 88px;          /* apex height above the surface */
+  /* 2200ms, not 1400. At the old speed the mark crossed faster than you could
+     resolve what it was -- a dark shape going past, and the point of putting
+     the brand here at all is that somebody sees the brand. Slow enough to
+     read, and the arc is long enough that slow does not mean idle. */
+  --sb-dur: 2200ms;
+  /* A tall arc. It comes in high and leaves high, so the bounce is mostly a
+     vertical event with some sideways drift -- which is what a bounce is.
+     At 88px it skimmed. */
+  --sb-rise: 190px;         /* apex height above the surface */
   --sb-size: 64px;
   /* EDGE TO EDGE, and off both of them. Half the viewport plus the mark's own
      width means it starts fully past the left edge and ends fully past the
@@ -139,21 +146,34 @@
          animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.55); }
   /* Contact. The gap to 54% is the dwell the squash happens inside — an
      impact with no duration reads as a teleport. */
+  /* The dwell runs 46-56% now: the mark is genuinely in contact for the whole
+     compression, so the squash happens against the surface rather than in
+     mid-air on the way back up. */
   46%  { transform: translateY(0); }
-  54%  { transform: translateY(0);
+  56%  { transform: translateY(0);
          animation-timing-function: cubic-bezier(0.1, 0.5, 0.4, 1); }
   /* Decelerating away, the fall run backwards. */
   100% { transform: translateY(calc(var(--sb-rise) * -1)); }
 }
 
 @keyframes sb-squash {
-  0%, 44%   { transform: scale(1, 1); }
-  /* Taking the shock: shorter, and wider by about as much as it lost. */
-  50%       { transform: scale(1.24, 0.70); }
-  /* The release. Thinner and taller than it started — this is the frame that
-     makes it a spring rather than a ball of rubber. */
-  57%       { transform: scale(0.88, 1.14); }
-  66%, 100% { transform: scale(1, 1); }
+  0%, 38%   { transform: scale(1, 1); }
+  /* ANTICIPATION. Falling at its quickest it draws out slightly — thinner and
+     taller — so the compression that follows has something to compress from.
+     Without it the squash arrives from nowhere. */
+  45%       { transform: scale(0.94, 1.07); }
+  /* Full compression. Deeper than before (0.62, not 0.70) because at this
+     duration there is time to see it, and a squash you cannot see is just a
+     slightly blurry frame. */
+  52%       { transform: scale(1.32, 0.62); }
+  /* The release, overshooting well past its own height. */
+  60%       { transform: scale(0.82, 1.22); }
+  /* A SECOND, SMALLER OSCILLATION. One overshoot reads as a glitch; two
+     decaying ones read as a spring, and that is the whole difference between
+     a shape that bounced and a shape that was scaled. */
+  69%       { transform: scale(1.09, 0.93); }
+  78%       { transform: scale(0.97, 1.03); }
+  86%, 100% { transform: scale(1, 1); }
 }
 
 @keyframes sb-tilt {
@@ -163,7 +183,7 @@
               animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
   /* Flat for the moment it is genuinely touching: an object lands on its
      base, then pivots off it. Same dwell the squash uses. */
-  46%, 54%  { transform: rotate(0deg);
+  46%, 56%  { transform: rotate(0deg);
               animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
   /* And away, still turning clockwise — the same direction it is travelling. */
   74%, 100% { transform: rotate(24deg); }
@@ -171,10 +191,17 @@
 
 @keyframes sb-shadow {
   /* Far: small, faint, diffuse. */
-  0%, 100% { opacity: 0.07; transform: scale(0.42, 0.62); filter: blur(7px); }
+  0%, 100% { opacity: 0.04; transform: scale(0.30, 0.55); filter: blur(9px); }
   /* Near: wide, dark, tight. The three move together because that is how a
      shadow reports distance; changing only the opacity looks like a fade. */
-  50%      { opacity: 0.34; transform: scale(1.06, 1);    filter: blur(2.5px); }
+  52%      { opacity: 0.36; transform: scale(1.10, 1);    filter: blur(2.2px); }
+}
+
+/* A short screen cannot hold a 190px arc plus the mark plus the message, and
+   .synbounce clips. Landscape phones and small laptops get a lower bounce
+   rather than a cropped one. */
+@media (max-height: 640px) {
+  .synbounce { --sb-rise: 110px; --sb-size: 52px; }
 }
 
 /* ── the overlay it usually lives in ─────────────────────────────────────── */
