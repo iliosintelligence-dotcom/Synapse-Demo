@@ -36,18 +36,13 @@
        mid-sentence to tell them a page is loading is not help. */
     wrap.setAttribute('aria-live', 'polite');
     wrap.innerHTML =
-      /* The shadow lives INSIDE .sb-x and OUTSIDE .sb-y, which is the whole
-         trick: it travels sideways with the mark and stays on the floor when
-         the mark leaves it. As a sibling of .sb-x it sat still at the centre
-         while the mark flew over the top of it. */
-      '<div class="synbounce" aria-hidden="true">'
-      + '<span class="sb-x">'
-      + '<span class="sb-shadow"></span>'
-      + '<span class="sb-y"><span class="sb-squash"><span class="sb-tilt">'
-      + '<img src="../images/brand/mark-black-on-white-tight.jpg" alt="">'
-      + '</span></span></span>'
-      + '</span>'
-      + '</div>'
+      /* No <img>. The mark is a masked div: the shape comes from the PNG's
+         alpha channel and the colour from a token, so there is no image
+         background that can render as a white card behind the logo -- which
+         is what the blend-mode version did anywhere the backdrop was not
+         white. */
+      '<div class="synload-mark" aria-hidden="true"></div>'
+      + '<div class="synload-bar" aria-hidden="true"></div>'
       + '<div class="synload-msg"></div>';
     document.body.appendChild(wrap);
     setMsg(wrap, msg);

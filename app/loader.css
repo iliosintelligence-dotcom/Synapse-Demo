@@ -1,246 +1,75 @@
-/* ── The mark bounces through ──────────────────────────────────────────────
-   A loading state with somewhere to be: the Synapse mark comes in from the
-   left, strikes an unseen surface in the middle, takes the shock, springs off
-   it and carries on to the right — towards the page it is fetching.
+/* ── The loading screen ────────────────────────────────────────────────────
+   The mark, still, over a slim indeterminate bar.
 
-   FOUR NESTED ELEMENTS, FOUR JOBS. One element cannot hold this: horizontal
-   travel, vertical fall, squash and shadow each want their own easing, and a
-   single `transform` can only carry one curve at a time. So each layer owns
-   one axis of the motion and they compose:
+   THE BOUNCE IS GONE. It was doing too much: a logo skidding across the
+   screen is the sort of thing that is charming once and tiresome on every
+   navigation, and it cost real framerate to draw. A loading state's whole job
+   is to say "still working, nothing is broken" and then get out of the way.
 
-     .sb-x       constant horizontal speed          linear
-     .sb-y       falls, then rises                  ease-in down, ease-out up
-     .sb-squash  compresses on contact, springs     held at 1 except on impact
-     .sb-tilt    leans into the bounce, then out    holds each pose, turns fast
-     .sb-shadow  proximity to the surface           tied to the same timeline
+   THE MARK IS A MASK, NOT AN IMAGE. It used to be the black-on-white JPG with
+   mix-blend-mode: multiply, which is how the rest of the app floats it off its
+   own background — and multiply only works when what is behind it is white.
+   Over the frosted overlay, over a photograph, in a browser that ignores the
+   blend, it drew a white card with a logo in it.
 
-   The physics that make it read as weight rather than as a wobble:
-
-   HORIZONTAL SPEED IS CONSTANT. Nothing pushes it sideways, so nothing
-   changes that component. Easing the x-travel is the single thing that makes
-   a bounce look like a cartoon rather than an object.
-
-   IT ACCELERATES DOWN AND DECELERATES UP. Falling gets faster, rising gets
-   slower. Same curve, mirrored, which is gravity doing one thing.
-
-   THE SQUASH PINS ITS BASE. transform-origin sits at the bottom edge, so
-   compressing spreads the mark upward from the point of contact instead of
-   shrinking it towards its own middle. The contact point is the one place
-   that must not move.
-
-   IT TURNS THE WAY IT IS GOING. Travelling right, it rotates clockwise
-   throughout: tipped back on the approach, flat for the moment it is actually
-   touching, tipped forward as it leaves. One direction of spin, matching one
-   direction of travel — an object that leaned back on the way in and back
-   again on the way out would be rocking, not moving. The rotation holds each
-   pose and does most of its turning around the bounce, so it reads as two
-   attitudes either side of an impact rather than a constant tumble.
-
-   IT OVERSHOOTS ON THE WAY OUT. Straight back to 1.0 reads as rubber. A
-   stretch past its own height — thinner and taller for a moment — is what a
-   spring does when it releases, and it is the frame that sells the weight.
-
-   VOLUME IS ROUGHLY CONSERVED. Squashed to 0.70 it widens to 1.24; stretched
-   to 1.14 it narrows to 0.88. Nothing here is simulating anything, but a
-   shape that loses mass when it lands looks wrong even to somebody who could
-   not say why.
-
-   THE SHADOW IS A DISTANCE READOUT, not decoration. Far away it is small,
-   faint and diffuse; at contact it is wide, dark and tight. That single
-   relationship is what places the mark in space — without it the thing is
-   sliding on glass. It travels with .sb-x but sits outside .sb-y, because a
-   shadow stays on the floor while the object leaves it.
+   mark-white-transparent.png has a real alpha channel (RGBA, verified), so the
+   alpha can be used as a MASK and the colour painted underneath. The shape
+   comes from the file, the colour from a token, and there is no background at
+   all — nothing to show through, nothing to blend, and it inherits the theme
+   for free.
    ─────────────────────────────────────────────────────────────────────── */
 
-.synbounce {
-  --sb-dur: 2200ms;
-  --sb-rise: 190px;         /* apex height above the surface */
-  --sb-size: 88px;
-  /* ON SCREEN ALMOST ALL THE TIME. At 50vw + the mark's width it left the
-     frame entirely at both ends, and the gap between one pass and the next
-     read as the animation having stopped rather than as a loop. 40vw keeps
-     it arriving and leaving without the dead air. */
-  --sb-travel: 40vw;
-
-  /* NO BOX. This was a fixed-height element with overflow:hidden, which gave
-     the motion a visible ceiling and floor -- the arc was being cropped by a
-     rectangle you could see the edges of. It now fills the overlay, so the
-     only boundary is the screen, and there is nothing to clip against. */
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* A zero-size anchor ON the surface line, at the middle of the screen. Giving
-   it width and a bottom offset is what tied the motion to a box; an anchor
-   with no dimensions cannot crop anything. */
-.synbounce .sb-x {
-  position: absolute;
-  left: 50%; top: 50%;
-  width: 0; height: 0;
-  animation: sb-x var(--sb-dur) linear infinite;
-  will-change: transform;
-}
-
-/* bottom: 0 against a zero-height parent puts the mark's base exactly on the
-   surface line, which is what translateY(0) is meant to mean. */
-.synbounce .sb-y {
-  position: absolute;
-  left: 0; bottom: 0;
-  animation: sb-y var(--sb-dur) linear infinite;
-  will-change: transform;
-}
-
-.synbounce .sb-squash {
-  display: block;
-  will-change: transform;
-  /* The bottom edge is the contact point, and it is the one thing that must
-     stay put while the shape deforms around it. */
-  transform-origin: 50% 100%;
-  animation: sb-squash var(--sb-dur) linear infinite;
-}
-
-/* Inside .sb-squash, so the squash still compresses towards the GROUND
-   rather than along the mark's own tilted axis — a parent's scale applies to
-   whatever the child has already drawn, which is the rotated shape. Gravity
-   does not care which way the object is leaning. */
-.synbounce .sb-tilt {
-  display: block;
-  will-change: transform;
-  /* Pivots on the contact point, like the squash. */
-  transform-origin: 50% 100%;
-  animation: sb-tilt var(--sb-dur) linear infinite;
-}
-
-.synbounce .sb-squash img {
-  display: block;
-  /* Centred on the anchor by its own negative margin, since the parent has
-     no width to centre within. */
-  margin-left: calc(var(--sb-size) / -2);
-  width: var(--sb-size);
-  height: auto;
-  /* The mark ships as black on white with no transparent variant. multiply is
-     how the rest of the app floats it off that background — see .syn-mark. */
-  mix-blend-mode: multiply;
-}
-
-/* On the floor, not on the object: it follows the mark across but never
-   leaves the surface with it. */
-.synbounce .sb-shadow {
-  /* Against .sb-x, so it inherits the horizontal travel and nothing else. */
-  position: absolute;
-  left: 0; top: -5px;
-  width: calc(var(--sb-size) * 0.92);
-  height: 12px;
-  margin-left: calc(var(--sb-size) * -0.46);
-  /* A GRADIENT, NOT A BLURRED BOX. The softness used to come from an animated
-     filter: blur(), and that is what was costing the framerate -- a blur
-     re-rasterises the layer on every single frame, and doing it next to an
-     element with mix-blend-mode gave the compositor two things it cannot
-     cheaply do at once. The soft edge is baked into the gradient instead, so
-     the only things still animating anywhere here are transform and opacity,
-     which the compositor handles without repainting. */
-  background: radial-gradient(closest-side, rgba(22,22,20,0.62), rgba(22,22,20,0) 100%);
-  animation: sb-shadow var(--sb-dur) linear infinite;
-  will-change: transform, opacity;
-}
-
-@keyframes sb-x {
-  from { transform: translateX(calc(var(--sb-travel) * -1)); }
-  to   { transform: translateX(var(--sb-travel)); }
-}
-
-@keyframes sb-y {
-  /* Accelerating: slow at the apex, quickest just before it lands. */
-  0%   { transform: translateY(calc(var(--sb-rise) * -1));
-         animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.55); }
-  /* Contact. The gap to 54% is the dwell the squash happens inside — an
-     impact with no duration reads as a teleport. */
-  /* The dwell runs 46-56% now: the mark is genuinely in contact for the whole
-     compression, so the squash happens against the surface rather than in
-     mid-air on the way back up. */
-  46%  { transform: translateY(0); }
-  56%  { transform: translateY(0);
-         animation-timing-function: cubic-bezier(0.1, 0.5, 0.4, 1); }
-  /* Decelerating away, the fall run backwards. */
-  100% { transform: translateY(calc(var(--sb-rise) * -1)); }
-}
-
-@keyframes sb-squash {
-  0%, 38%   { transform: scale(1, 1); }
-  /* ANTICIPATION. Falling at its quickest it draws out slightly — thinner and
-     taller — so the compression that follows has something to compress from.
-     Without it the squash arrives from nowhere. */
-  45%       { transform: scale(0.94, 1.07); }
-  /* Full compression. Deeper than before (0.62, not 0.70) because at this
-     duration there is time to see it, and a squash you cannot see is just a
-     slightly blurry frame. */
-  52%       { transform: scale(1.32, 0.62); }
-  /* The release, overshooting well past its own height. */
-  60%       { transform: scale(0.82, 1.22); }
-  /* A SECOND, SMALLER OSCILLATION. One overshoot reads as a glitch; two
-     decaying ones read as a spring, and that is the whole difference between
-     a shape that bounced and a shape that was scaled. */
-  69%       { transform: scale(1.09, 0.93); }
-  78%       { transform: scale(0.97, 1.03); }
-  86%, 100% { transform: scale(1, 1); }
-}
-
-@keyframes sb-tilt {
-  /* Holds the incoming lean rather than turning the whole way across, so it
-     reads as a pose and not a spin. */
-  0%, 26%   { transform: rotate(-24deg);
-              animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-  /* Flat for the moment it is genuinely touching: an object lands on its
-     base, then pivots off it. Same dwell the squash uses. */
-  46%, 56%  { transform: rotate(0deg);
-              animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
-  /* And away, still turning clockwise — the same direction it is travelling. */
-  74%, 100% { transform: rotate(24deg); }
-}
-
-@keyframes sb-shadow {
-  /* Far: small, faint, diffuse. */
-  0%, 100% { opacity: 0.05; transform: scale(0.34, 0.5); }
-  /* Near: wide, dark, tight. The three move together because that is how a
-     shadow reports distance; changing only the opacity looks like a fade. */
-  52%      { opacity: 0.40; transform: scale(1.12, 1); }
-}
-
-/* A short screen cannot hold a 190px arc plus the mark plus the message, and
-   .synbounce clips. Landscape phones and small laptops get a lower bounce
-   rather than a cropped one. */
-@media (max-height: 640px) {
-  .synbounce { --sb-rise: 110px; --sb-size: 66px; }
-}
-
-/* ── the overlay it usually lives in ─────────────────────────────────────── */
 .synload {
   position: fixed; inset: 0; z-index: 950;
   display: none; flex-direction: column;
-  align-items: center; justify-content: center; gap: 22px;
-  background: rgba(250, 248, 245, 0.93);
+  align-items: center; justify-content: center; gap: 20px;
+  background: rgba(250, 248, 245, 0.94);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .synload.on { display: flex; }
-.synload .synload-msg {
-  font: 500 13.5px var(--f-sans, system-ui);
+
+/* The shape is the PNG's alpha; the colour is ours. No background, so there
+   is nothing that can render as a white box behind it. */
+.synload-mark {
+  width: 74px; height: 102px;         /* the asset is 164x227 */
+  background-color: var(--ink, #141412);
+  -webkit-mask-image: url('../images/brand/mark-white-transparent.png');
+          mask-image: url('../images/brand/mark-white-transparent.png');
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-position: center;   mask-position: center;
+  -webkit-mask-size: contain;      mask-size: contain;
+}
+
+/* A track and a travelling segment. Indeterminate on purpose: we do not know
+   how long a page will take, and a bar that pretends to know is worse than
+   one that only says "still going". */
+.synload-bar {
+  position: relative; width: 132px; height: 2px; border-radius: 2px;
+  background: rgba(20, 20, 18, 0.10); overflow: hidden;
+}
+.synload-bar::after {
+  content: ''; position: absolute; inset: 0 auto 0 0;
+  width: 40%; border-radius: 2px;
+  background: var(--brand, #ff8a2d);
+  /* transform only — the one property that animates without repainting. The
+     bounce animated filter: blur() every frame, which is what made it stutter. */
+  animation: synload-slide 1150ms var(--m-ease-inout, cubic-bezier(.77,0,.175,1)) infinite;
+}
+
+@keyframes synload-slide {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(360%); }
+}
+
+.synload-msg {
+  font: 500 13px var(--f-sans, system-ui);
   color: var(--ink-muted, #55555c);
   letter-spacing: 0.01em;
 }
-
-/* Below the viewer (900) so an open photograph is never covered by a loader,
-   and above everything else on the page. */
+.synload-msg:empty { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The bounce IS the motion here, so there is nothing to soften — it stops,
-     and the mark simply sits on the surface with its shadow. A slow version
-     of a bouncing logo is worse for somebody who asked for less movement
-     than no version of it. */
-  .synbounce .sb-x,
-  .synbounce .sb-y,
-  .synbounce .sb-squash,
-  .synbounce .sb-tilt,
-  .synbounce .sb-shadow { animation: none; }
-  .synbounce .sb-shadow { opacity: 0.22; filter: blur(4px); }
+  /* The bar stops and simply sits at a fixed width. Still visibly a loading
+     state; nothing moves. */
+  .synload-bar::after { animation: none; width: 100%; opacity: 0.5; }
 }
