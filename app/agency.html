@@ -166,6 +166,29 @@
     .pr-pop { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; letter-spacing: .07em; color: #fff; background: var(--brand); padding: 4px 12px; border-radius: 0 0 8px 8px; white-space: nowrap; }
 
     /* add-ons */
+    /* ── plan usage ───────────────────────────────────────────────────
+       Sits above the plan cards, because the question "should I upgrade"
+       is answered by what you have used, not by the feature list. Reads as
+       information until something is full, and only then as a warning. */
+    .plan-usage {
+      display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
+      margin: 4px 0 22px; padding: 14px 18px;
+      background: rgba(255,255,255,0.7); border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .pu-plan { font-size: 13px; color: var(--ink-muted); }
+    .pu-plan b { color: var(--ink); }
+    .pu-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-muted); }
+    .pu-k { color: var(--ink-dim); }
+    .pu-v { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .pu-max { color: var(--ink-dim); }
+    .pu-bar { width: 66px; height: 4px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; }
+    .pu-bar i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
+    /* Only shouts when it has something to shout about. */
+    .pu-item.full .pu-v, .pu-item.full .pu-note { color: #9a2b2b; }
+    .pu-item.full .pu-bar i { background: #9a2b2b; }
+    .pu-note { font-size: 11.5px; font-weight: 600; }
+
     .addons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-top: 16px; }
     .addon { padding: 18px 18px 16px; border-radius: 16px; }
     .addon .aico { font-size: 20px; }
@@ -2624,6 +2647,7 @@
          tiers, which is the right pattern here and already works. Only the
          add-ons lede goes, consistent with the other panes. */
       #pane-subscription .sub { display: none; }
+      #pane-subscription .plan-usage { flex-direction: column; align-items: stretch; }
       #pane-subscription .h2 { font-size: 18px; margin-top: 18px; }
 
       /* ══ Brand ══════════════════════════════════════════════════════════
@@ -3496,6 +3520,12 @@
         <section class="pane" id="pane-subscription">
           <div class="eyebrow">Invest in growth</div>
           <div class="h1">Plans that pay for themselves</div>
+
+          <!-- Filled from agency_plan_usage(), which reads the same
+               plan_limits() the triggers enforce. Hidden until it has real
+               numbers: "0 of 20" is a confident claim about somebody's
+               account that happens to be untrue. -->
+          <div class="plan-usage" id="planUsage" hidden></div>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
           <div class="pr-cards" id="pricingCards"></div>
@@ -11683,11 +11713,57 @@
         if (msg && !b.dataset.wired) { b.dataset.wired = '1'; b.addEventListener('click', () => toast(msg)); }
       });
     }
+    /* ── what this agency has used ────────────────────────────────────
+       The numbers come from the database function the triggers share, so the
+       portal cannot promise headroom the insert will refuse. */
+    function renderPlanUsage() {
+      var box = document.getElementById('planUsage');
+      if (!box || !window.SynAuth || !SynAuth.client) return;
+
+      SynAuth.client().then(function (c) {
+        return SynListings.agencyId().then(function (aid) {
+          if (!aid) return null;
+          return c.rpc('agency_plan_usage', { p_agency_id: aid });
+        });
+      }).then(function (r) {
+        var u = r && r.data;
+        if (!u || !u.tier) return;             // knows nothing, says nothing
+
+        var TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader' };
+
+        function row(label, used, max) {
+          /* null max is unlimited, which is not the same as a ceiling of
+             zero and must never render as "3 of 0". */
+          if (max == null) {
+            return '<div class="pu-item"><span class="pu-k">' + label + '</span>'
+              + '<b class="pu-v">' + used + '</b>'
+              + '<span class="pu-max">of unlimited</span></div>';
+          }
+          var pct = Math.min(100, Math.round(used / max * 100));
+          var full = used >= max;
+          return '<div class="pu-item' + (full ? ' full' : '') + '">'
+            + '<span class="pu-k">' + label + '</span>'
+            + '<b class="pu-v">' + used + '</b>'
+            + '<span class="pu-max">of ' + max + '</span>'
+            + '<span class="pu-bar"><i style="width:' + pct + '%"></i></span>'
+            + (full ? '<span class="pu-note">at your limit</span>' : '')
+            + '</div>';
+        }
+
+        box.innerHTML =
+          '<div class="pu-plan">You are on <b>' + esc(TIER_NAME[u.tier] || u.tier) + '</b></div>'
+          + row('Active listings', u.listings_used, u.listings_max)
+          + row('Team seats', u.seats_used, u.seats_max);
+        box.hidden = false;
+      }).catch(function () { /* stays hidden; a wrong number is worse */ });
+    }
+
     function renderPricing() {
       document.getElementById('pricingGrid').innerHTML = pricingCompareHTML(PRICING.plans, COMPARE_ROWS);
       const pc = document.getElementById('pricingCards');
       if (pc) pc.innerHTML = pricingCardsHTML(PRICING.plans, COMPARE_ROWS);
       wirePricingToasts();
+      renderPlanUsage();
     }
     renderPricing();
     document.getElementById('addonsGrid').innerHTML = PRICING.addons.map(addonHTML).join('');
