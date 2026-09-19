@@ -177,7 +177,16 @@
       .map(function (m) { return typeof m === 'string' ? { url: m } : m; })
       .filter(function (m) { return m && m.url; })
       .map(function (m, i) {
-        return { property_id: propertyId, url: m.url, media_type: m.media_type || 'image', display_order: i };
+        /* Derived when the caller did not say. Every caller in the portal
+           passes a bare URL string, so before this every video was being
+           filed as an image -- and the column has been able to say 'video'
+           since 0002. */
+        return {
+          property_id: propertyId,
+          url: m.url,
+          media_type: m.media_type || mediaTypeFromUrl(m.url),
+          display_order: i,
+        };
       });
     return c.from('property_media').delete().eq('property_id', propertyId).then(function () {
       if (!rows.length) return { data: [], error: null };
@@ -1346,9 +1355,41 @@
   var PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
   var PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 
+  /* mp4 and quicktime only. webm is left out on purpose: Meta will not ingest
+     it, so accepting it would mean an agency uploads a file, sees it on the
+     listing, schedules a post and learns hours later that Instagram refused
+     it. Refusing at the point where they can still pick another file is
+     kinder than a correct error at the wrong moment. MOV is in because that
+     is what an iPhone records and most of these will be filmed on one. */
+  var VIDEO_TYPES = ['video/mp4', 'video/quicktime'];
+  /* 100MB is roughly 90 seconds of 1080p from a phone, which is also where
+     Instagram caps a Reel -- the two limits agree instead of surprising each
+     other. The photo limit stays at 10MB: these are different questions, and
+     the bucket's own ceiling cannot tell them apart. */
+  var VIDEO_MAX_BYTES = 100 * 1024 * 1024;
+
   function photoExtFor(file) {
-    var m = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif' };
+    var m = {
+      'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif',
+      'video/mp4': 'mp4', 'video/quicktime': 'mov',
+    };
     return m[file.type] || 'jpg';
+  }
+
+  /* ── the one rule for "is this a video" ────────────────────────────────
+     The form's gallery is a list of URL strings and social_posts.media_urls
+     is a text[] of URLs, so nowhere downstream carries a type beside the
+     link. Rather than thread a parallel array through the form, the queue and
+     the publisher, the type is derived from the URL -- here, and by the same
+     rule in social-publish, because two different guesses about one string is
+     how a video ends up posted as a photograph.
+
+     Query strings and fragments are stripped first: a Supabase public URL can
+     arrive with ?t= on it and ".mp4?t=1" matches nothing. */
+  var VIDEO_EXT = /\.(mp4|mov|m4v|qt)$/i;
+  function mediaTypeFromUrl(url) {
+    var clean = String(url || '').split('#')[0].split('?')[0];
+    return VIDEO_EXT.test(clean) ? 'video' : 'image';
   }
 
   /* -- SHRINK BEFORE UPLOAD ---------------------------------------------
@@ -1414,18 +1455,33 @@
      caller stores in property_media.url. */
   function uploadPropertyPhoto(file) {
     if (!file) return Promise.reject(new Error('No file selected'));
-    if (PHOTO_TYPES.indexOf(file.type) === -1) {
-      return Promise.reject(new Error('Use a JPG, PNG, WEBP or AVIF photo'));
-    }
-    if (file.size > PHOTO_MAX_BYTES) {
+
+    var isVideo = VIDEO_TYPES.indexOf(file.type) !== -1;
+    if (!isVideo && PHOTO_TYPES.indexOf(file.type) === -1) {
+      /* Names what IS accepted rather than what was wrong. Somebody who just
+         tried a .webm or a .avi needs to know which file to go and find. */
       return Promise.reject(new Error(
-        'That photo is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under 10MB'));
+        'Use a JPG, PNG, WEBP or AVIF photo, or an MP4 or MOV video'));
     }
+
+    var cap = isVideo ? VIDEO_MAX_BYTES : PHOTO_MAX_BYTES;
+    if (file.size > cap) {
+      return Promise.reject(new Error(
+        'That ' + (isVideo ? 'video' : 'photo') + ' is '
+        + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under '
+        + Math.round(cap / 1024 / 1024) + 'MB'));
+    }
+
     var c1, aid;
-    /* Shrunk after the gate, not before. The 10MB limit is about what someone
-       is allowed to choose; it should still say so about a 12MB file rather
-       than silently accepting it because we could squeeze it down. */
-    return shrinkForUpload(file).then(function (f) { file = f; return client(); })
+    /* Shrunk after the gate, not before. The limit is about what someone is
+       allowed to choose; it should still say so about a 12MB file rather than
+       silently accepting it because we could squeeze it down.
+
+       Never for video: shrinkForUpload draws the file into a canvas, which on
+       a video yields one still frame -- it would upload a single frame under
+       an .mp4 name and call it a walkthrough. */
+    var prepared = isVideo ? Promise.resolve(file) : shrinkForUpload(file);
+    return prepared.then(function (f) { file = f; return client(); })
       .then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
       if (!a) throw new Error('no-agency: this account is not a member of any agency');
       aid = a;
@@ -1433,7 +1489,11 @@
          second would otherwise collide, and upsert:false would reject the
          second with an error the person cannot act on. */
       var rand = (Math.random().toString(36).slice(2, 8));
-      var path = aid + '/photo-' + Date.now() + '-' + rand + '.' + photoExtFor(file);
+      /* The prefix is cosmetic; the EXTENSION is load-bearing, because it
+         is what mediaTypeFromUrl reads here and what the publisher reads
+         again at the other end. */
+      var path = aid + '/' + (isVideo ? 'video-' : 'photo-')
+        + Date.now() + '-' + rand + '.' + photoExtFor(file);
       return c1.storage.from(PHOTO_BUCKET).upload(path, file, {
         cacheControl: '31536000', upsert: false, contentType: file.type,
       }).then(function (r) {
@@ -2278,6 +2338,10 @@
   window.SynListings = {
     uploadPropertyPhoto: uploadPropertyPhoto,
     uploadPropertyPhotos: uploadPropertyPhotos,
+    /* Exported so the gallery, the studio preview and anything else deciding
+       between <img> and <video> asks the same question of the same string. */
+    mediaTypeFromUrl: mediaTypeFromUrl,
+    isVideoUrl: function (u) { return mediaTypeFromUrl(u) === 'video'; },
     agencyId: agencyId,
     agency: agency,
     paintAgency: paintAgency,

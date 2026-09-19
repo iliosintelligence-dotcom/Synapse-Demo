@@ -2091,7 +2091,12 @@
     .lf-gal:empty { display: none; }
     .lf-ph { position: relative; aspect-ratio: 4/3; border-radius: 9px; overflow: hidden;
       border: 1px solid var(--border); background: rgba(20,20,20,0.05); }
-    .lf-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .lf-ph img, .lf-ph video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* A video tile has to be recognisable as one at thumbnail size, where the
+       first frame of a hallway looks exactly like a photograph of a hallway. */
+    .lf-ph .vid-badge { position: absolute; top: 6px; left: 6px; width: 22px; height: 22px;
+      border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 9px;
+      display: grid; place-items: center; pointer-events: none; }
     .lf-ph .cover { position: absolute; left: 0; bottom: 0; right: 0; font: 700 9.5px/1 var(--f-sans);
       letter-spacing: .1em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,0.62);
       padding: 4px 6px; text-align: center; }
@@ -7029,15 +7034,19 @@
             <div class="field">
               <label>Photos of the property *</label>
               <div class="lfimg-row">
-                <button type="button" class="btn-ghost" id="lfImgPick">Choose photos</button>
+                <button type="button" class="btn-ghost" id="lfImgPick">Choose photos or video</button>
                 <!-- multiple: buyers judge a home on a gallery, and an agency
                      photographing a flat comes away with a dozen shots, not
                      one. The write path already stored an ordered list; only
                      this input was singular. (No backticks in here -- this
                      markup lives inside a template literal, and one would end
                      the string.) -->
+                <!-- mp4 and quicktime and no webm, matching the upload gate
+                     and the bucket: Meta will not ingest webm, and a file that
+                     uploads fine and fails at Instagram hours later is the
+                     worst place to find that out. -->
                 <input id="lfImgFile" type="file" multiple
-                       accept="image/png,image/jpeg,image/webp,image/avif" hidden>
+                       accept="image/png,image/jpeg,image/webp,image/avif,video/mp4,video/quicktime" hidden>
                 <span class="lfimg-or">or paste a link</span>
               </div>
               <input id="lfImg" value="${esc(primary)}" placeholder="https://… (a direct link to the image itself)">
@@ -7703,13 +7712,26 @@
         function syncPhotos() {
           /* display_order 0 is the cover, and #lfImg is that same photo. */
           urlEl.value = photos[0] || '';
+          /* An <img> pointed at an mp4 is a broken image, and the onerror
+             below would then mark a perfectly good upload "pending". The
+             gallery has to draw what the thing actually is. */
+          const isVid = (u) => (window.SynListings && SynListings.isVideoUrl)
+            ? SynListings.isVideoUrl(u)
+            : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ''));
           galEl.innerHTML = photos.map((u, i) =>
-            `<div class="lf-ph" data-i="${i}">`
-            + `<img src="${esc2(u)}" alt="" loading="lazy"`
-            + ` onerror="this.closest('.lf-ph').classList.add('pending')">`
+            `<div class="lf-ph${isVid(u) ? ' is-vid' : ''}" data-i="${i}">`
+            + (isVid(u)
+                /* muted + playsinline so it previews without ever making
+                   noise in an office, and preload=metadata so nine tiles do
+                   not pull nine whole videos down to draw a thumbnail. */
+                ? `<video src="${esc2(u)}" muted playsinline preload="metadata"`
+                  + ` onerror="this.closest('.lf-ph').classList.add('pending')"></video>`
+                  + '<span class="vid-badge" aria-hidden="true">▶</span>'
+                : `<img src="${esc2(u)}" alt="" loading="lazy"`
+                  + ` onerror="this.closest('.lf-ph').classList.add('pending')">`)
             + (i === 0 ? '<span class="cover">Cover</span>'
                        : `<button type="button" class="mv" data-up="${i}" aria-label="Make this the cover">↑</button>`)
-            + `<button type="button" class="x" data-rm="${i}" aria-label="Remove photo">×</button>`
+            + `<button type="button" class="x" data-rm="${i}" aria-label="Remove">×</button>`
             + '</div>').join('');
           if (photos.length) imgProbeCache[photos[0]] = 'ok';
           validate();
@@ -7743,7 +7765,7 @@
           }
 
           pick.disabled = true;
-          const label = files.length === 1 ? 'photo' : 'photos';
+          const label = files.length === 1 ? 'file' : 'files';
           galNote(`Uploading ${files.length} ${label}…`);
 
           SynListings.uploadPropertyPhotos(files, (done, total, name) => {
@@ -7762,14 +7784,14 @@
                 galNote('None of those could be used: '
                   + failed.map(f => f.name + ' (' + f.reason + ')').join(', '), true);
               } else {
-                galNote(`${urls.length} ${urls.length === 1 ? 'photo' : 'photos'} added.`);
+                galNote(`${urls.length} ${urls.length === 1 ? 'file' : 'files'} added.`);
               }
             })
             .catch((err) => {
               galNote((err && err.message) || 'That upload did not go through.', true);
             })
             .finally(() => {
-              pick.disabled = false; pick.textContent = 'Choose photos';
+              pick.disabled = false; pick.textContent = 'Choose photos or video';
               /* Cleared so choosing the same file again still fires change. */
               fileEl.value = '';
             });

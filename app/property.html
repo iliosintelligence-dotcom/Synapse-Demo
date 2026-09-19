@@ -48,6 +48,9 @@
       overscroll-behavior: contain;
       display: flex; align-items: center; justify-content: center;
       padding: 60px 12px calc(56px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+    .pvlb-stage video { max-width: 100%; max-height: 100%; object-fit: contain;
+      display: block; position: relative; z-index: 0; background: #0d0d0f; }
+    .pvlb-stage img[hidden], .pvlb-stage video[hidden] { display: none; }
     .pvlb-stage img { max-width: 100%; max-height: 100%; object-fit: contain;
       display: block; user-select: none; -webkit-user-drag: none;
       position: relative; z-index: 0;
@@ -93,10 +96,15 @@
     .pvlb.single .pvlb-a { display: none; }
     body.pvlb-open { overflow: hidden; }
     /* Says it can be opened. Without this a picture looks like a picture. */
-    .hero img { cursor: zoom-in; }
+    .hero img, .hero video { cursor: zoom-in; }
 
     .hero { position: relative; height: 340px; border-radius: var(--radius); overflow: hidden; }
-    .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
+    /* The video takes the image's geometry rather than its own. Without
+       this a 1080x1920 phone clip renders at its intrinsic size and bursts
+       out of a 340px band. */
+    .hero img, .hero video { width: 100%; height: 100%; object-fit: cover; transition: opacity var(--m-standard) var(--m-ease); }
+    .hero video { display: block; background: #0d0d0f; }
+    .hero img[hidden], .hero video[hidden] { display: none; }
     .hero { touch-action: pan-y; }        /* horizontal is ours, vertical is the page's */
     .hero:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
     .swipe-hint { position: absolute; left: 12px; bottom: 12px; z-index: 2;
@@ -123,8 +131,15 @@
       overflow-x: auto; overscroll-behavior-x: contain;
       scrollbar-width: none; -ms-overflow-style: none; }
     .thumbs::-webkit-scrollbar { display: none; }
-    .thumbs img { flex: none; width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: opacity var(--m-micro) var(--m-ease), border-color var(--m-micro) var(--m-ease); }
-    .thumbs img.on { opacity: 1; border-color: var(--brand); }
+    .thumbs img, .thumbs .th-v { flex: none; width: 74px; height: 54px; border-radius: 10px; object-fit: cover; cursor: pointer; opacity: .6; border: 2px solid transparent; transition: opacity var(--m-micro) var(--m-ease), border-color var(--m-micro) var(--m-ease); }
+    /* A wrapper rather than a bare <video>, because it carries the marker:
+       at this size the first frame of a hallway and a photograph of a hallway
+       are the same picture, and the strip's job is to say which is which. */
+    .thumbs .th-v { position: relative; display: block; overflow: hidden; box-sizing: border-box; }
+    .thumbs .th-v video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0d0f; }
+    .thumbs .th-v i { position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: 11px; font-style: normal; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+    .thumbs img.on, .thumbs .th-v.on { opacity: 1; border-color: var(--brand); }
 
     .summary { margin-top: 14px; position: relative; padding: 24px; }
     .summary .price { font-family: var(--f-serif); font-weight: 600; font-size: 40px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
@@ -625,7 +640,7 @@
         height: 100%; min-height: 0;
       }
       .hero { height: 244px; }
-      .thumbs img { width: 62px; height: 46px; }
+      .thumbs img, .thumbs .th-v { width: 62px; height: 46px; }
 
       /* THE CARDS SCROLL INSIDE THE DECK. Two rules used to sit here
          turning that off -- overflow-y: visible on the deck, and
@@ -867,6 +882,12 @@
     <div class="pv-backslot" data-cnav-back-slot></div>
     <div class="hero">
       <img id="heroImg" src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80" alt="" />
+      <!-- Beside the image rather than replacing it: swapping one element
+           between <img> and <video> would rebuild the node on every step and
+           tear off the swipe handlers with it. Muted and controlled, never
+           autoplaying here -- this is the top of a page somebody may be
+           scrolling in public. -->
+      <video id="heroVid" hidden muted playsinline controls preload="metadata"></video>
       <span class="counter" id="counter">1 / 5</span>
       <span class="swipe-hint" id="swipeHint" hidden>Swipe for more</span>
       <div class="actions">
@@ -881,6 +902,10 @@
     <div class="pvlb" id="pvlb" role="dialog" aria-modal="true" aria-label="Photos">
       <div class="pvlb-stage">
         <img id="pvlbImg" alt="" />
+        <!-- Opening the viewer is a deliberate act, so this one does start
+             playing -- muted, with controls, which is the bargain every
+             gallery makes. -->
+        <video id="pvlbVid" hidden muted playsinline controls preload="metadata"></video>
         <button type="button" class="pvlb-a prev" id="pvlbPrev" aria-label="Previous photo">&#8249;</button>
         <button type="button" class="pvlb-a next" id="pvlbNext" aria-label="Next photo">&#8250;</button>
       </div>
@@ -1164,26 +1189,63 @@
        showed the same apartment regardless of which home you opened. */
     let PHOTOS = [];
     const hero = document.getElementById('heroImg');
+    const heroVid = document.getElementById('heroVid');
     const thumbs = document.getElementById('thumbs');
+
+    /* The same rule agency-listings.js applies when it records media_type and
+       the publisher applies again when it decides between image_url and
+       video_url. Asked of the same string in all three places on purpose: two
+       different guesses is how a video gets posted as a photograph. */
+    const isVid = (u) => (window.SynListings && SynListings.isVideoUrl)
+      ? SynListings.isVideoUrl(u)
+      : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ''));
+
+    /* A video left running when you move on keeps running -- you would hear a
+       kitchen tap while looking at a bedroom. */
+    function stopHeroVideo() {
+      if (!heroVid) return;
+      try { heroVid.pause(); } catch (e) {}
+    }
+
+    /* Shows whichever element this item needs and hides the other. */
+    function paintHero(url) {
+      const video = isVid(url);
+      stopHeroVideo();
+      if (video) {
+        heroVid.src = url; heroVid.hidden = false;
+        hero.hidden = true; hero.removeAttribute('src');
+      } else {
+        heroVid.hidden = true; heroVid.removeAttribute('src');
+        hero.hidden = false; hero.src = url;
+      }
+    }
     function renderGallery() {
       const counter = document.getElementById('counter');
       if (!PHOTOS.length) {
         thumbs.innerHTML = '';
         if (counter) counter.textContent = '';
         hero.removeAttribute('src');
+        hero.hidden = false;
+        if (heroVid) { stopHeroVideo(); heroVid.hidden = true; heroVid.removeAttribute('src'); }
         hero.alt = 'No photos supplied for this listing';
         return;
       }
       photoIndex = 0;
-      hero.src = PHOTOS[0];
+      paintHero(PHOTOS[0]);
       hero.alt = 'Photo of this property';
       if (counter) counter.textContent = '1 / ' + PHOTOS.length;
       /* Say there is more than one, once, on the photo itself. The counter
          alone is easy to miss and does not tell you what to do about it. */
       const more = document.getElementById('swipeHint');
       if (more) more.hidden = PHOTOS.length < 2;
-      thumbs.innerHTML = PHOTOS.map((p, i) =>
-        `<img src="${p}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`).join('');
+      /* A <video> tile rather than an <img> pointed at an mp4, which would
+         draw a broken-image icon in the strip. preload=metadata so eight
+         tiles fetch eight first frames, not eight whole films. */
+      thumbs.innerHTML = PHOTOS.map((p, i) => (isVid(p)
+        ? `<span class="th-v${i === 0 ? ' on' : ''}" data-i="${i}">`
+          + `<video src="${p}" muted playsinline preload="metadata"></video>`
+          + '<i aria-hidden="true">▶</i></span>'
+        : `<img src="${p}" data-i="${i}" class="${i === 0 ? 'on' : ''}" alt="" />`)).join('');
     }
     /* ONE function moves the gallery, and everything that can move it calls
        this. Thumbnails had their own copy of the logic; adding swipe beside it
@@ -1195,16 +1257,23 @@
       /* Wraps, because a gallery that stops dead at the last photo feels
          broken on a phone -- you swipe again and nothing happens. */
       photoIndex = (i + PHOTOS.length) % PHOTOS.length;
-      hero.style.opacity = 0;
-      setTimeout(() => { hero.src = PHOTOS[photoIndex]; hero.style.opacity = 1; }, 160);
+      /* The fade applies to whichever element is showing, so it has to be set
+         on both -- the outgoing one is about to be hidden anyway. */
+      hero.style.opacity = 0; if (heroVid) heroVid.style.opacity = 0;
+      setTimeout(() => {
+        paintHero(PHOTOS[photoIndex]);
+        hero.style.opacity = 1; if (heroVid) heroVid.style.opacity = 1;
+      }, 160);
       const counter = document.getElementById('counter');
       if (counter) counter.textContent = (photoIndex + 1) + ' / ' + PHOTOS.length;
-      thumbs.querySelectorAll('img').forEach((im) =>
+      thumbs.querySelectorAll('[data-i]').forEach((im) =>
         im.classList.toggle('on', Number(im.dataset.i) === photoIndex));
     }
 
     thumbs.addEventListener('click', (e) => {
-      const t = e.target.closest('img[data-i]');
+      /* [data-i], not img[data-i] -- a video tile is a <span> wrapping a
+         <video>, and the old selector matched neither. */
+      const t = e.target.closest('[data-i]');
       if (t) goToPhoto(Number(t.dataset.i));
     });
 
@@ -1221,9 +1290,24 @@
       if (!box || !img || !shut) return;
       let lastFocus = null;
 
+      const vid = document.getElementById('pvlbVid');
+
+      function stopLbVideo() { if (vid) { try { vid.pause(); } catch (e) {} } }
+
       function paint() {
         if (!PHOTOS.length) return;
-        img.src = PHOTOS[photoIndex];
+        const url = PHOTOS[photoIndex];
+        stopLbVideo();
+        if (vid && isVid(url)) {
+          vid.src = url; vid.hidden = false;
+          img.hidden = true; img.removeAttribute('src');
+          /* Muted, so a browser will honour it; a rejected play() is not
+             worth handling beyond not throwing. */
+          vid.play().catch(function () {});
+        } else {
+          if (vid) { vid.hidden = true; vid.removeAttribute('src'); }
+          img.hidden = false; img.src = url;
+        }
         num.textContent = PHOTOS.length > 1
           ? (photoIndex + 1) + ' of ' + PHOTOS.length : '';
       }
@@ -1245,6 +1329,9 @@
 
       function close() {
         box.classList.remove('on');
+        /* Closing a viewer on a playing video must stop it, or the sound
+           follows you back to the page you thought you had left. */
+        stopLbVideo();
         document.body.classList.remove('pvlb-open');
         /* Back where they were. Dropping focus to the top of the document
            after closing an overlay makes a keyboard or screen-reader user
