@@ -96,7 +96,7 @@
     <h1 class="yd-h">Your data</h1>
     <p class="yd-p">
       What Synapse holds about you, a copy you can take with you, and a way to have it
-      deleted. You do not need an account to use any of this.
+      erased. You do not need an account to use any of this.
       <a href="/privacy">The full privacy policy</a> explains why we hold each of these things.
     </p>
 
@@ -136,22 +136,34 @@
 
     <!-- ── erasure ──────────────────────────────────────────────────────── -->
     <section class="yd-card">
-      <h2>Delete everything</h2>
+      <h2>Erase my personal data</h2>
       <p>
-        Erases your conversations with Tayo, your saved homes, your dream board, the record of
-        which listings you looked at, and anything stored against the identifier above. It cannot
-        be undone, and we cannot recover it afterwards — that is the point of it.
+        Removes everything we hold about <em>you</em>: your conversations with Tayo, your income,
+        occupation and household details, the places you told us matter to you, your saved homes,
+        your dream board, and the record of which listings you opened. It cannot be undone.
+      </p>
+      <!-- Named rather than glossed. Calling this "delete everything" while
+           keeping the sign-in is the kind of sentence a person is entitled to
+           feel misled by afterwards, and it is exactly what consumer
+           protection law is about. -->
+      <!-- Hidden for visitors with no account, where it would be a confusing
+           answer to a question they never asked. -->
+      <p class="yd-note" id="signinNote" hidden>
+        <b>Your sign-in stays.</b> We keep your email address and password so the account still
+        works — nothing else. If you want the account itself gone as well, say so when you write
+        to us and we will remove it; you are entitled to that and we will not argue about it.
       </p>
       <p class="yd-note">
-        If an agency has already been introduced to you, they may keep their own record of that
-        introduction where the law allows it. We will tell you plainly rather than imply otherwise.
+        If an agency has already been introduced to you, they keep the record that an
+        introduction happened — which home, which agency, and when. Your name, number, budget
+        and preferences are removed from it.
       </p>
       <div class="yd-confirm">
         <label class="yd-note" for="confirmBox">Type <b>DELETE</b> to confirm.</label>
         <input id="confirmBox" type="text" autocomplete="off" placeholder="DELETE" />
       </div>
       <div class="yd-row" style="margin-top:12px">
-        <button class="yd-btn danger" id="deleteBtn" type="button" disabled>Delete everything</button>
+        <button class="yd-btn danger" id="deleteBtn" type="button" disabled>Erase my personal data</button>
         <span class="yd-note" id="deleteNote"></span>
       </div>
     </section>
@@ -203,6 +215,9 @@
 
     /* ── who ─────────────────────────────────────────────────────────── */
     function paintWho() {
+      /* The sign-in caveat is only true of people who have a sign-in. */
+      var sn = $('signinNote');
+      if (sn) sn.hidden = !PROFILE;
       if (PROFILE) {
         $('whoP').textContent = 'You are signed in. Your data is stored against your account.';
         $('whoId').textContent = PROFILE;
@@ -310,7 +325,9 @@
         if (window.SynLoader) SynLoader.hide();
 
         if (res.ok) {
-          note.textContent = 'Deleted. Nothing is left on this device, and your records have been removed.';
+          /* Says what was done, not what sounds most final. */
+          note.textContent = 'Done. This device is cleared and your personal details have been '
+            + 'removed from our records. Your sign-in still works.';
           note.className = 'yd-note yd-ok';
         } else {
           /* Named, not swallowed. Somebody who asked for erasure is entitled
