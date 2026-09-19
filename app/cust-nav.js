@@ -414,6 +414,26 @@
         + '<b class="cn-count" data-cnav-count="' + p.file + '" hidden></b></a>';
     }).join('');
 
+    /* ── the two documents every page must be able to reach ───────────
+       Nothing under app/ linked to either of these. A privacy policy nobody
+       can open is not notice, and notice is the obligation.
+
+       Here rather than in a footer on each page because this file is the one
+       piece of chrome all the consumer pages share -- toju is a fixed app
+       shell with nowhere to put a footer, property is a swipe deck with no
+       page scroll, browse scrolls normally. Six footers would also be a
+       seventh page forgetting one.
+
+       Absolute paths: these pages live under /app/ and the documents do not.
+       A relative href would 404 from every one of them. */
+    var legal = document.createElement('div');
+    legal.className = 'cnav-legal';
+    legal.innerHTML =
+      '<a href="/privacy" role="menuitem">Privacy</a>'
+      + '<span aria-hidden="true">·</span>'
+      + '<a href="/terms" role="menuitem">Terms</a>';
+    sheet.appendChild(legal);
+
     adoptPageActions(sheet);
     document.body.appendChild(wrap);
     installBack();

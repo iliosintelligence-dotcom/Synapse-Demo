@@ -123,6 +123,14 @@
        image changes. A darker ink and one more weight step buy that back
        without promoting it above the title. */
     .tj-trust { font-size: 12.5px; font-weight: 600; color: #45454B; margin-top: 6px; }
+    /* Quieter than .tj-trust and deliberately not hidden behind a toggle. A
+       disclosure you have to open is one most people never read, and the
+       whole point of this one is that it changes how somebody talks to Tayo
+       about money. */
+    .tj-disclose { font-size: 11.5px; line-height: 1.5; color: var(--ink-dim);
+      margin-top: 7px; max-width: 62ch; }
+    .tj-disclose a { color: var(--ink-muted); }
+    .tjm-status a { color: inherit; text-decoration: underline; }
     .tj-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(46,125,79,0.14); }
 
     .convo { display: flex; flex-direction: column; gap: 18px; padding-top: 22px; }
@@ -531,7 +539,9 @@
       <a class="tjm-back" href="../buyers.html" data-cnav-back aria-label="Back">←</a>
       <div class="tjm-id">
         <span class="tjm-name" role="heading" aria-level="1">Tayo</span>
-        <span class="tjm-status"><i></i> Every home shows its status</span>
+        <!-- "AI" first, because it is the thing a person most needs to
+             know before they start typing about their income. -->
+        <span class="tjm-status"><i></i> AI advisor · <a href="/privacy">how your chat is used</a></span>
       </div>
       <button class="tjm-act" id="tjmHist" type="button" aria-label="Past conversations"><span data-icon="history"></span></button>
       <button class="tjm-act" id="tjmNew" type="button" aria-label="New chat">↺</button>
@@ -562,9 +572,19 @@
              where .tjm-back in the mobile bar carries it instead, so exactly
              one of the two is ever on screen. -->
         <div class="tj-head" data-cnav-back-slot>
-          <div class="tj-eyebrow">Your property advisor</div>
+          <div class="tj-eyebrow">Your AI property advisor</div>
           <div class="tj-title" role="heading" aria-level="1">Tayo <span style="position:relative" aria-hidden="true"><span class="tj-orb" data-lottie="orb-pulse" data-speed="0.8"></span><span class="tj-dot"></span></span></div>
           <div class="tj-trust">Every home shows its verification status. No need to sign up.</div>
+          <!-- The conflict, stated rather than implied. 0089 gives each agency
+               a negotiation floor and 0090 hands off when an offer breaches
+               it, so on a sale Tayo is bargaining inside a number the seller
+               chose. A buyer should know that before they say what they can
+               really afford. -->
+          <div class="tj-disclose">
+            Tayo is an AI. Your messages are processed by a third-party AI provider outside Nigeria.
+            On a sale it negotiates within a price floor each agency sets, so it is not a neutral
+            party on price. <a href="/privacy">What we do with your chat</a>
+          </div>
         </div>
         <!-- past conversations — every chat is kept; open one to pick it back up
              with the homes Tayo recommended still on its cards -->

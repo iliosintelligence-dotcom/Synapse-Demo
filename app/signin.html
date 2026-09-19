@@ -221,6 +221,21 @@
     .au-pw-t:hover { color: var(--ink); background: rgba(0,0,0,0.05); }
     .au-pw-t:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
     .au-hint { font-size: 12px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+
+    /* The consent block. Legible rather than fine print: this is the one
+       thing on the page somebody is supposed to read before they act, so it
+       is set at the same size as the hints rather than smaller, and the two
+       links are underlined like links instead of hidden in the run of text. */
+    .au-consent { margin-top: 14px; }
+    .au-consent-row { display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13px; line-height: 1.55; color: var(--ink); cursor: pointer; }
+    /* 18px and a 3px nudge so the box sits on the first line's optical centre
+       rather than its top edge. */
+    .au-consent-row input { flex: none; width: 18px; height: 18px; margin-top: 3px;
+      accent-color: var(--brand); cursor: pointer; }
+    .au-consent-row a { color: var(--ink); text-decoration: underline; }
+    .au-consent-note { margin: 8px 0 0 28px; font-size: 12px; line-height: 1.5;
+      color: var(--ink-dim); }
     .au-err { font-size: 12.5px; color: #7a271a; margin-top: 6px; font-weight: 600; }
 
     .au-submit { width: 100%; margin-top: 8px; padding: 14px; border-radius: 100px; border: none;
@@ -718,6 +733,24 @@
             <button type="button" class="au-linkbtn" id="codeBack" style="margin-top:10px">Use a different number</button>
           </div>
 
+          <!-- Shown for "Create account" only. The agreement is made once;
+               a box on every sign-in teaches people to tick without reading.
+               Never pre-ticked: a pre-ticked consent box is not consent, and
+               is specifically called out as not being it. -->
+          <div class="au-consent" id="consentBlock" hidden>
+            <label class="au-consent-row">
+              <input type="checkbox" id="auConsent" />
+              <span>I have read and agree to the
+                <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and the
+                <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+            </label>
+            <p class="au-consent-note">
+              Synapse uses an AI advisor. Your messages and the details you share are processed
+              by providers outside Nigeria — the Privacy Policy lists who, and what for.
+            </p>
+            <div class="au-err" id="errConsent" role="alert" hidden></div>
+          </div>
+
           <button class="au-submit" id="auGo" type="submit">Sign in</button>
           <div id="auNote"></div>
         </form>
@@ -876,6 +909,11 @@
         var spf = el('staffPhoneField');
         if (spf) spf.hidden = !(up && role === 'agency' && method !== 'phone');
         el('passHint').hidden = !up;
+        /* Here rather than in syncSubmitLabel, because this is where every
+           other field's visibility is decided and setMode does not route
+           through that function — hooking it left the block hidden while the
+           button already read "Create account". */
+        syncConsent();
         el('auH').textContent = up
           ? (role === 'agency' ? 'Create your agency account' : 'Create your account')
           : 'Welcome back';
@@ -1066,6 +1104,22 @@
       function syncSubmitLabel() {
         if (method === 'phone') go.textContent = codeSent ? 'Confirm code' : 'Send me a code';
         else go.textContent = mode === 'up' ? 'Create account' : 'Sign in';
+        syncConsent();
+      }
+
+      /* Visibility drives requiredness here too. The block is only asked for
+         when an account is being created; a returning visitor agreed to this
+         when they signed up and the record of that is what we keep. */
+      function syncConsent() {
+        var block = el('consentBlock');
+        if (!block) return;
+        block.hidden = mode !== 'up';
+        if (block.hidden) {
+          var box = el('auConsent');
+          if (box) box.checked = false;      // never carries across a mode switch
+          var err = el('errConsent');
+          if (err) err.hidden = true;
+        }
       }
 
       el('methodEmail').addEventListener('click', function () { if (!busy) setMethod('email'); });
@@ -1136,6 +1190,23 @@
             }
           } else if (code.replace(/[^0-9]/g, '').length !== 6) {
             fieldError('auCode', 'errCode', 'The code is six digits.');
+            return;
+          }
+        }
+
+        /* Refused in JavaScript rather than by a native `required`, for the
+           reason setMethod() already gives about hidden invalid fields: the
+           browser declines to submit and says nothing visible, which reads as
+           a dead button. */
+        if (mode === 'up') {
+          var cBox = el('auConsent');
+          if (cBox && !cBox.checked) {
+            var cErr = el('errConsent');
+            if (cErr) {
+              cErr.textContent = 'Please read and accept the Terms and the Privacy Policy to continue.';
+              cErr.hidden = false;
+            }
+            cBox.focus();
             return;
           }
         }
@@ -1228,6 +1299,17 @@
           var fallback = role === 'agency'
             ? (mode === 'up' ? 'agency.html?welcome=agency' : 'agency.html')
             : 'toju.html';
+
+          /* Written here because this is the first point at which a session
+             exists -- consent_records' RLS requires profile_id = auth.uid(),
+             and a consent record attributed to nobody is not a record.
+
+             Fire-and-forget on purpose: the redirect does not wait for it.
+             Trapping somebody at the sign-in screen because an audit row did
+             not insert would be protecting the wrong thing, and a missing row
+             can be reconciled where an abandoned signup cannot. */
+          if (mode === 'up' && !demoRequested) recordConsent();
+
           window.location.href = SynAuth.safeNext(next, fallback);
         }).catch(function (err) {
           showNote('bad', friendly(err));
@@ -1236,6 +1318,44 @@
           syncSubmitLabel();
         });
       });
+
+      /* ── what they agreed to, and which version of it ─────────────────
+         The version is a date because a date IS the version, and it lives
+         next to the documents it names: publishing new terms means changing
+         this line in the same commit. "They accepted the terms" stops meaning
+         anything the moment the terms change; "they accepted 2026-09-19" does
+         not, and that is the question an enquiry actually asks.
+
+         Three rows rather than one. Terms and privacy are separate documents
+         accepted as separate things, and AI processing is separate again
+         because it is the one somebody is most likely to withdraw later -- a
+         withdrawal has to be able to name what it withdraws. */
+      var POLICY_VERSION = '2026-09-19';
+
+      function recordConsent() {
+        try {
+          if (!window.SynAuth || !SynAuth.client) return;
+          SynAuth.client().then(function (c) {
+            return c.auth.getUser().then(function (u) {
+              var id = u && u.data && u.data.user && u.data.user.id;
+              if (!id) return null;
+              return c.from('consent_records').insert(
+                ['terms_of_service', 'privacy_policy', 'ai_processing'].map(function (k) {
+                  return {
+                    profile_id: id, kind: k, version: POLICY_VERSION,
+                    granted: true, context: 'signup',
+                  };
+                }));
+            });
+          }).then(function (r) {
+            if (r && r.error && window.console) {
+              console.warn('[consent] not recorded:', r.error.message);
+            }
+          }).catch(function (e) {
+            if (window.console) console.warn('[consent] not recorded:', e && e.message);
+          });
+        } catch (e) { /* never block the journey over an audit row */ }
+      }
 
       /* ── forgot password ─────────────────────────────────────────────── */
       el('forgotBtn').addEventListener('click', function () {
