@@ -151,3 +151,58 @@ business login in practice — can work on a per-device credential at all.
 **Decide before building:** whether login IDs replace email or sit alongside
 it. If they replace it, the retention decision above changes shape, because
 there would no longer be an email to keep.
+
+---
+
+## Decided: syndication is paid, Greenlight is grandfathered
+
+**Eden, 2026-09-19. Implemented and live.**
+
+The pricing page published hard limits — 20/100/unlimited listings, 2/5/unlimited
+seats, syndication and AI captions from Accelerate, proximity on Leader — and
+**none of it was enforced**. The only line in the system reading
+`subscription_tier` was the proximity ordering in `0098`.
+
+Now enforced in the database (not the portal — a check in `agency.html` is a
+suggestion to anyone with an anon key):
+
+- **Listing and seat caps** — `plan_limits()` + triggers on `properties` and
+  `agency_members`. Never retroactive; the service role passes; a reactivation
+  trigger stops archive/un-archive laundering the cap.
+- **Syndication** — gated on `social_posts.leg = 'agency'` only.
+  `agency_can(agency, feature)` answers by plan *or* grant.
+- **Greenlight** holds an open-ended `syndication` grant in
+  `agency_feature_grants`, with the reason recorded.
+
+### The leg distinction is the whole design
+
+`leg = 'agency'` is publishing to the agency's own connected account — the
+"Publish once, reach everywhere" sold at ₦75k. `leg = 'synapse'` is our own
+channel carrying their listing, which `0103` calls free amplification. Only the
+first is gated. Charging for the second would be charging an agency to appear
+on our feed.
+
+Worth knowing: **all 52 free-amplification posts are synapse-leg**, and every
+agency-leg attempt has failed for want of a connected account. So the
+grandfather protects something Greenlight has not yet used — it matters on the
+day they connect Meta.
+
+### Open: AI captions are also a paid feature and are not gated
+
+`plan_features('accelerator')` includes `ai_captions`, and the pricing page
+sells "AI writes and posts for you" from Accelerate. Nothing enforces it, and
+`agency_can(greenlight, 'ai_captions')` is **false** — their grant covers
+syndication only.
+
+So Greenlight is generating captions on the free plan today, and gating it
+would stop that. Three options, and it is a commercial call:
+
+1. **Extend the grant** to `ai_captions` — consistent with grandfathering, and
+   one row.
+2. **Gate it and tell them** — they are a design partner; an honest "this moves
+   to Accelerate on X" may land fine.
+3. **Move captions to free** — captions are what make a listing postable at
+   all, and a listing nobody can post is worth less to us too.
+
+Enforcement point would be `social-generate`, not a trigger — it is an edge
+function, so the check is `agency_can()` before the model call.
