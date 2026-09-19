@@ -455,8 +455,20 @@
       overflow: hidden; display: flex; flex-direction: column;
       overscroll-behavior: none; }
     .pdp { flex: 1; min-height: 0; position: relative; z-index: 1; max-width: 460px; width: 100%; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-direction: column; }
-    .pdp .hero { height: 230px; flex: none; }
+    /* A quarter of the window rather than 230px. On a 768px laptop that is
+       184px and hands 46px straight to the deck; on a tall screen it grows to
+       300 and stops, because a hero that keeps growing is just a smaller
+       card. The floor of 140 is roughly where a photograph stops being worth
+       showing at all. */
+    .pdp .hero { height: clamp(140px, 24vh, 300px); flex: none; }
     .pdp .thumbs { flex: none; }
+    /* Height drives, aspect-ratio follows, so they stay the right shape as
+       they shrink instead of being squashed -- the fault this strip already
+       had once, when flex-shrink crushed eight photos to different widths. */
+    .pdp .thumbs img, .pdp .thumbs .th-v {
+      height: clamp(34px, 5.2vh, 54px);
+      width: auto; aspect-ratio: 74 / 54;
+    }
     .deckbar { display: flex; align-items: center; gap: 10px; padding: 12px 2px 6px; flex: none; }
     .deckbar .arrow { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--ink); flex: none; transition: transform var(--m-micro, .1s) ease, background-color var(--m-micro, .1s) ease, color var(--m-micro, .1s) ease, backdrop-filter var(--m-micro, .1s) ease; }
     .deckbar .arrow:active { transform: scale(0.9); }
@@ -477,6 +489,27 @@
     .deck > .card { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; margin: 0 !important; overflow-y: auto; overflow-x: hidden; max-height: 100%; scrollbar-width: none; }
     .deck > .card::-webkit-scrollbar { display: none; }
     .dots { display: flex; gap: 6px; justify-content: center; padding: 9px 0 8px; flex: none; }
+
+    /* ── short screens ─────────────────────────────────────────────────
+       Everything here was a pixel value picked on a tall display. On a 768px
+       laptop they added up to 62% of the page and left the deck a third of
+       the space to show a card half again taller than the room it had. */
+    @media (max-height: 820px) {
+      .deckbar { padding: 7px 2px 4px; }
+      .deckbar .arrow { width: 34px; height: 34px; font-size: 16px; }
+      .dots { padding: 5px 0 5px; }
+      .pdp { padding-top: 8px; }
+      .pdp .cta-dock { padding: 7px 0 9px; }
+    }
+    @media (max-height: 620px) {
+      /* The strip is the one piece of pure redundancy up there: the counter
+         already says which photo this is, the hero already swipes, and a tap
+         already opens the viewer. Losing it costs a convenience and buys back
+         a visible card. The arrows and dots stay -- they are how you move
+         between cards at all. */
+      .pdp .thumbs { display: none; }
+      .deckbar .arrow { width: 30px; height: 30px; }
+    }
     .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(0,0,0,0.16); transition: background-color .2s ease; cursor: pointer; }
     .dots i.on { background: var(--brand); width: 18px; border-radius: 100px; }
     .pdp .cta-dock { position: static; flex: none; padding: 10px 0 14px; background: none; }
