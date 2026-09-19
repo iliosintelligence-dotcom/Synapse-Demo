@@ -429,7 +429,13 @@
     var legal = document.createElement('div');
     legal.className = 'cnav-legal';
     legal.innerHTML =
-      '<a href="/privacy" role="menuitem">Privacy</a>'
+      /* "Your data" first: it is the one of the three that DOES something
+         rather than explains something, and it is the route by which a
+         right actually gets exercised. A rights page nobody can find is
+         the same problem as a policy nobody can reach. */
+      '<a href="/your-data" role="menuitem">Your data</a>'
+      + '<span aria-hidden="true">·</span>'
+      + '<a href="/privacy" role="menuitem">Privacy</a>'
       + '<span aria-hidden="true">·</span>'
       + '<a href="/terms" role="menuitem">Terms</a>';
     sheet.appendChild(legal);

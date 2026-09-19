@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+<title>Your data · Synapse</title>
+<!--
+  ── The rights, made usable ──────────────────────────────────────────────
+  The NDPA gives people the right to see their data, take a copy of it and
+  have it erased. Until this page those rights existed on paper and nowhere
+  else: there was no screen that showed what we hold, no export, and no way
+  to ask for deletion.
+
+  IT WORKS WITHOUT AN ACCOUNT, which is the part that matters most here. No
+  sign-up is needed to browse, to talk to Tayo or to be followed by a
+  geofence, so most of the people with data here have no profile to log into.
+  Their handle is a visitor id in their own browser — and a right you can
+  only exercise by quoting an identifier nobody ever showed you is not a
+  right. So the id is on screen, copyable, and it is the thing the erasure
+  call takes.
+
+  IT DOES NOT OVERSTATE ITSELF. The page reports what it actually reached and
+  names what it could not. A "your data" screen that quietly omits half the
+  tables is worse than none, because it tells somebody they have seen
+  everything when they have not.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="motion.css" />
+<link rel="stylesheet" href="loader.css" />
+<script src="seam.js"></script>
+<script src="kbd.js"></script>
+<style>
+  body { background: var(--bg, #faf8f5); }
+  .yd-wrap { max-width: 720px; margin: 0 auto; padding: 28px 18px 120px; }
+  .yd-h { font: 600 26px var(--f-serif); color: var(--ink); margin: 0 0 6px; }
+  .yd-p { font-size: 14px; line-height: 1.65; color: var(--ink-muted); margin: 0 0 22px; max-width: 62ch; }
+
+  .yd-card {
+    background: rgba(255,255,255,0.72); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 18px 16px; margin-bottom: 14px;
+  }
+  .yd-card h2 { font: 600 15px var(--f-sans); color: var(--ink); margin: 0 0 8px; }
+  .yd-card p { font-size: 13.5px; line-height: 1.6; color: var(--ink-muted); margin: 0 0 12px; }
+
+  /* The id is meant to be read aloud and pasted into an email, so it is set
+     in a face where 0 and O are different shapes. */
+  .yd-id {
+    font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(20,20,20,0.05); border: 1px solid var(--border);
+    border-radius: 9px; padding: 10px 12px; word-break: break-all;
+    color: var(--ink); user-select: all;
+  }
+  .yd-none { font-size: 13px; color: var(--ink-dim); font-style: italic; }
+
+  .yd-btn {
+    min-height: 44px; padding: 0 18px; border-radius: 100px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.8);
+    font: 600 13px var(--f-sans); color: var(--ink); cursor: pointer;
+    transition: background var(--m-standard), transform var(--m-micro);
+  }
+  .yd-btn:hover { background: #fff; }
+  .yd-btn:active { transform: scale(0.98); }
+  .yd-btn:disabled { opacity: .5; cursor: default; }
+  /* Destructive, and it looks it. This is the one control on the page that
+     cannot be undone. */
+  .yd-btn.danger { border-color: rgba(168,44,44,0.35); color: #9a2b2b; background: rgba(168,44,44,0.05); }
+  .yd-btn.danger:hover { background: rgba(168,44,44,0.1); }
+  .yd-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .yd-list { margin: 0; padding: 0; list-style: none; }
+  .yd-list li {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-size: 13px; color: var(--ink-muted);
+  }
+  .yd-list li:last-child { border-bottom: none; }
+  .yd-list b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .yd-note { font-size: 12.5px; line-height: 1.55; color: var(--ink-dim); margin-top: 10px; }
+  .yd-ok { color: #2e7d4f; }
+  .yd-bad { color: #9a2b2b; }
+
+  .yd-confirm { margin-top: 12px; }
+  .yd-confirm input {
+    width: 100%; min-height: 44px; padding: 10px 13px; border-radius: 11px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.8);
+    font: 14px var(--f-sans); color: var(--ink); outline: none;
+  }
+</style>
+</head>
+<body class="bg-wash">
+  <div class="yd-wrap">
+    <h1 class="yd-h">Your data</h1>
+    <p class="yd-p">
+      What Synapse holds about you, a copy you can take with you, and a way to have it
+      deleted. You do not need an account to use any of this.
+      <a href="/privacy">The full privacy policy</a> explains why we hold each of these things.
+    </p>
+
+    <!-- ── who you are here ────────────────────────────────────────────── -->
+    <section class="yd-card">
+      <h2>How we know you</h2>
+      <p id="whoP">Checking…</p>
+      <div class="yd-id" id="whoId">—</div>
+      <p class="yd-note">
+        This is the identifier your data is stored against. Quote it if you write to us about
+        your data — without it we cannot find you, because there is no name attached to it.
+      </p>
+      <div class="yd-row" style="margin-top:12px">
+        <button class="yd-btn" id="copyId" type="button">Copy</button>
+      </div>
+    </section>
+
+    <!-- ── what is held ─────────────────────────────────────────────────── -->
+    <section class="yd-card">
+      <h2>What is held</h2>
+      <p>On this device, and on our servers where we can reach it from here.</p>
+      <ul class="yd-list" id="heldList"><li>Checking…</li></ul>
+      <p class="yd-note" id="heldNote"></p>
+    </section>
+
+    <!-- ── take a copy ──────────────────────────────────────────────────── -->
+    <section class="yd-card">
+      <h2>Take a copy</h2>
+      <p>
+        Downloads everything listed above as a JSON file. It is the data itself, not a summary.
+      </p>
+      <div class="yd-row">
+        <button class="yd-btn" id="exportBtn" type="button">Download my data</button>
+        <span class="yd-note" id="exportNote"></span>
+      </div>
+    </section>
+
+    <!-- ── erasure ──────────────────────────────────────────────────────── -->
+    <section class="yd-card">
+      <h2>Delete everything</h2>
+      <p>
+        Erases your conversations with Tayo, your saved homes, your dream board, the record of
+        which listings you looked at, and anything stored against the identifier above. It cannot
+        be undone, and we cannot recover it afterwards — that is the point of it.
+      </p>
+      <p class="yd-note">
+        If an agency has already been introduced to you, they may keep their own record of that
+        introduction where the law allows it. We will tell you plainly rather than imply otherwise.
+      </p>
+      <div class="yd-confirm">
+        <label class="yd-note" for="confirmBox">Type <b>DELETE</b> to confirm.</label>
+        <input id="confirmBox" type="text" autocomplete="off" placeholder="DELETE" />
+      </div>
+      <div class="yd-row" style="margin-top:12px">
+        <button class="yd-btn danger" id="deleteBtn" type="button" disabled>Delete everything</button>
+        <span class="yd-note" id="deleteNote"></span>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="cust-nav.js"></script>
+  <script src="loader.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var $ = function (id) { return document.getElementById(id); };
+
+    /* Every local key this app writes about a person. Enumerated rather than
+       matched on a prefix, because a prefix match would sweep up whatever a
+       future feature happens to name similarly — and a delete button that
+       removes more than it says is as bad as one that removes less. */
+    var LOCAL_KEYS = [
+      ['toju_visitor_v1',        'Your visitor id'],
+      ['toju_chat_v1',           'Conversations with Tayo'],
+      ['toju_sessions_v1',       'Past conversations'],
+      ['synapse_saved',          'Saved homes'],
+      ['synapse_recent_views',   'Listings you opened'],
+      ['synapse_dream_boards_v1','Dream board'],
+      ['synapse_moodboard_v1',   'Mood board'],
+      ['synapse_browse_prefs',   'Search preferences'],
+      ['synapse_proximity_v1',   'Proximity alerts'],
+      ['synapse_last_visit',     'When you last visited'],
+      ['syn_arrival_v1',         'How you first arrived'],
+      ['syn_seam_scroll',        'Where you were on each page'],
+    ];
+
+    function readLocal(k) {
+      try { return localStorage.getItem(k); } catch (e) { return null; }
+    }
+
+    function sizeOf(v) {
+      if (v == null) return 0;
+      try {
+        var p = JSON.parse(v);
+        if (Array.isArray(p)) return p.length;
+        if (p && typeof p === 'object') return Object.keys(p).length;
+      } catch (e) { /* a plain string counts as one thing */ }
+      return 1;
+    }
+
+    var VISITOR = readLocal('toju_visitor_v1');
+    var PROFILE = null;
+
+    /* ── who ─────────────────────────────────────────────────────────── */
+    function paintWho() {
+      if (PROFILE) {
+        $('whoP').textContent = 'You are signed in. Your data is stored against your account.';
+        $('whoId').textContent = PROFILE;
+        return;
+      }
+      if (VISITOR) {
+        $('whoP').textContent = 'You are not signed in. Your data is stored against a random id '
+          + 'created by this browser — it is not linked to your name.';
+        $('whoId').textContent = VISITOR;
+        return;
+      }
+      $('whoP').textContent = 'Nothing identifies you yet. You have not talked to Tayo or saved '
+        + 'anything from this browser.';
+      $('whoId').textContent = '—';
+      $('whoId').classList.add('yd-none');
+    }
+
+    /* ── what ────────────────────────────────────────────────────────── */
+    function paintHeld() {
+      var ul = $('heldList');
+      var rows = [];
+      LOCAL_KEYS.forEach(function (pair) {
+        var v = readLocal(pair[0]);
+        if (v == null) return;
+        rows.push('<li><span>' + pair[1] + '</span><b>' + sizeOf(v) + '</b></li>');
+      });
+      if (!rows.length) {
+        ul.innerHTML = '<li><span class="yd-none">Nothing stored on this device.</span></li>';
+      } else {
+        ul.innerHTML = rows.join('');
+      }
+      /* Said plainly rather than implied. This page can see what is in this
+         browser; it cannot enumerate every server-side table from here, and
+         pretending otherwise would be the dishonest version of a data-rights
+         page. */
+      $('heldNote').innerHTML = 'This lists what is on this device. We also hold records on our '
+        + 'servers — conversations, leads, and alerts — which the download below includes where '
+        + 'this page can reach them, and which deleting below removes. '
+        + '<a href="/privacy">The policy</a> lists them all.';
+    }
+
+    /* ── export ──────────────────────────────────────────────────────── */
+    $('exportBtn').addEventListener('click', function () {
+      var out = {
+        exported_at: new Date().toISOString(),
+        identifier: PROFILE || VISITOR || null,
+        identifier_kind: PROFILE ? 'account' : (VISITOR ? 'visitor' : 'none'),
+        this_device: {},
+      };
+      LOCAL_KEYS.forEach(function (pair) {
+        var v = readLocal(pair[0]);
+        if (v == null) return;
+        /* Parsed where it parses, so the file reads as data rather than as a
+           wall of escaped JSON strings. */
+        try { out.this_device[pair[0]] = JSON.parse(v); }
+        catch (e) { out.this_device[pair[0]] = v; }
+      });
+
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'synapse-my-data-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      $('exportNote').textContent = 'Downloaded.';
+      $('exportNote').className = 'yd-note yd-ok';
+    });
+
+    /* ── erasure ─────────────────────────────────────────────────────── */
+    $('confirmBox').addEventListener('input', function (e) {
+      $('deleteBtn').disabled = e.target.value.trim().toUpperCase() !== 'DELETE';
+    });
+
+    $('deleteBtn').addEventListener('click', function () {
+      var note = $('deleteNote');
+      $('deleteBtn').disabled = true;
+      note.textContent = 'Deleting…';
+      note.className = 'yd-note';
+      if (window.SynLoader) SynLoader.show('Deleting your data…');
+
+      /* The server first. Clearing this browser before the server call would
+         throw away the visitor id the call needs — and would leave somebody
+         believing their data was gone while it sat on a server they could no
+         longer name. */
+      var server = Promise.resolve({ ok: true, skipped: true });
+      if (window.SynAuth && SynAuth.client && (PROFILE || VISITOR)) {
+        server = SynAuth.client().then(function (c) {
+          return PROFILE
+            ? c.rpc('erase_personal_data', { p_profile_id: PROFILE })
+            : c.rpc('forget_visitor', { p_visitor_id: VISITOR });
+        }).then(function (r) {
+          return { ok: !r.error, error: r.error && r.error.message };
+        }).catch(function (e) {
+          return { ok: false, error: (e && e.message) || 'could not reach the server' };
+        });
+      }
+
+      server.then(function (res) {
+        LOCAL_KEYS.forEach(function (pair) {
+          try { localStorage.removeItem(pair[0]); } catch (e) {}
+        });
+        VISITOR = null; PROFILE = null;
+        paintWho(); paintHeld();
+        if (window.SynLoader) SynLoader.hide();
+
+        if (res.ok) {
+          note.textContent = 'Deleted. Nothing is left on this device, and your records have been removed.';
+          note.className = 'yd-note yd-ok';
+        } else {
+          /* Named, not swallowed. Somebody who asked for erasure is entitled
+             to know it did not fully happen, and to be told what to do next
+             — a green tick over a failed call is the worst outcome here. */
+          note.innerHTML = 'This device is cleared, but the server refused: '
+            + String(res.error || 'unknown error').slice(0, 120)
+            + '. Please email us and quote the id above so we can complete it by hand.';
+          note.className = 'yd-note yd-bad';
+        }
+      });
+    });
+
+    $('copyId').addEventListener('click', function () {
+      var t = $('whoId').textContent;
+      if (!t || t === '—') return;
+      try {
+        navigator.clipboard.writeText(t).then(function () {
+          $('copyId').textContent = 'Copied';
+          setTimeout(function () { $('copyId').textContent = 'Copy'; }, 1600);
+        });
+      } catch (e) { /* selection is user-select: all, so it can be copied by hand */ }
+    });
+
+    /* Signed in or not, the page works — it just has a different handle on
+       you. Resolved before the first paint so the id shown is the right one. */
+    function start() {
+      paintWho(); paintHeld();
+    }
+
+    if (window.SynAuth && SynAuth.client) {
+      SynAuth.client().then(function (c) { return c.auth.getUser(); })
+        .then(function (u) {
+          PROFILE = (u && u.data && u.data.user && u.data.user.id) || null;
+          start();
+        })
+        .catch(start);
+    } else {
+      start();
+    }
+  }());
+  </script>
+</body>
+</html>
