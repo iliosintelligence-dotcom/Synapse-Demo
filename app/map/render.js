@@ -48,9 +48,44 @@
 
   var SRC = 'syn-properties';
 
+  /* ── how big is this map, really ──────────────────────────────────────
+     Every size below is authored for a map with a screen to itself. The
+     Overview map is 300px tall, and the same numbers there cover the ground
+     they are meant to describe.
+
+     Measured from the SMALLER dimension on purpose: a map 900 wide and 300
+     tall is constrained by its height, and a factor taken from the width
+     would decide it had plenty of room.
+
+     Clamped at both ends. Above 520px nothing changes, so the full-screen
+     maps render exactly as they did. Below, it falls to 0.62 -- enough to
+     matter, not so far that a pin becomes a dot you cannot press. */
+  function scaleFor(el) {
+    /* Accepts an element or an id, because the constructor does and a
+       helper that silently disagrees with its caller about types is how
+       this threw on every map the first time it ran. */
+    if (typeof el === 'string') el = document.getElementById(el);
+    if (!el || typeof el.getBoundingClientRect !== 'function') return 1;
+    var r = el.getBoundingClientRect();
+    var small = Math.min(r.width || 0, r.height || 0);
+    if (!small) return 1;                       // not laid out yet: assume full
+    if (small >= 520) return 1;
+    if (small <= 260) return 0.62;
+    return 0.62 + (small - 260) / (520 - 260) * 0.38;
+  }
+
+  /* Rounded to something MapLibre will not blur. Half-pixel radii and text
+     sizes render soft, which on a small map reads as a rendering fault
+     rather than a deliberate size. */
+  function px(n, k) { return Math.round(n * k * 2) / 2; }
+
   function Renderer(el, opts) {
     this.el = typeof el === 'string' ? document.getElementById(el) : el;
     this.opts = opts || {};
+    /* this.el, not el: the line above resolves a string id into a node, and
+       measuring the raw argument threw for every caller that passes an id --
+       which is all of them. */
+    this._k = scaleFor(this.el);
     this.map = null;
     this._handlers = { viewport: [], select: [], cluster: [] };
     this._sel = null;
@@ -120,6 +155,19 @@
      thing missing from the Leaflet build, where every pin was a DOM node. */
   Renderer.prototype._addPropertyLayers = function () {
     var map = this.map, C = window.SynMapStyle.COLOURS;
+    /* Re-measured here rather than trusting the value taken at construction:
+       a map is routinely created before its container has been laid out, and
+       a rect of 0 would have been read as "full size". */
+    var k = this._k = scaleFor(this.el);
+    /* The card is DOM, not a map layer, so it scales through the custom
+       property it already exposed -- --syn-mcard-w existed and was only
+       ever set to one value. A second stylesheet for "small" would be a
+       second set of numbers to keep in step, and keeping two sets in step
+       is how the mismatch being fixed here happened in the first place. */
+    if (this.el && this.el.style) {
+      this.el.style.setProperty('--syn-mcard-w', Math.round(320 * k) + 'px');
+      this.el.style.setProperty('--syn-mcard-k', String(k));
+    }
     if (map.getSource(SRC)) return;
 
     map.addSource(SRC, {
@@ -134,8 +182,9 @@
       id: 'syn-cluster', type: 'circle', source: SRC, filter: ['has', 'point_count'],
       paint: {
         'circle-color': C.ink,
-        'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 26],
-        'circle-stroke-width': 2.5,
+        'circle-radius': ['step', ['get', 'point_count'],
+          px(17, k), 10, px(21, k), 50, px(26, k)],
+        'circle-stroke-width': px(2.5, k),
         'circle-stroke-color': '#fff',
       },
     });
@@ -143,7 +192,7 @@
       id: 'syn-cluster-count', type: 'symbol', source: SRC, filter: ['has', 'point_count'],
       layout: {
         'text-field': ['get', 'point_count_abbreviated'],
-        'text-font': ['Stadia Semibold'], 'text-size': 12.5,
+        'text-font': ['Stadia Semibold'], 'text-size': px(12.5, k),
       },
       paint: { 'text-color': '#fff' },
     });
@@ -166,7 +215,7 @@
       filter: ['all', ['!', ['has', 'point_count']], ['<', ['zoom'], 13]],
       paint: {
         'circle-color': C.ink,
-        'circle-radius': ['case', ['==', ['get', 'sel'], true], 7, 5],
+        'circle-radius': ['case', ['==', ['get', 'sel'], true], px(7, k), px(5, k)],
         'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
       },
     });
@@ -199,7 +248,7 @@
           ['get', 'price'],
           15.5, ['concat', ['get', 'price'], '\n', ['get', 'beds']]],
         'text-font': ['Stadia Semibold'],
-        'text-size': 11.5,
+        'text-size': px(11.5, k),
         'text-line-height': 1.15,
         'text-justify': 'center',
         'text-padding': 2,
