@@ -93,21 +93,41 @@ nobody outside Meta does. It is a real risk, it argues for Phases 2 and 3 being
 worth more than this one, and it is measurable — we have per-post click and
 impression data, so run Phase 1 on half the posts for two weeks and compare.
 
-### Phase 2 — the Page's own button points at Synapse
+### Phase 2 — the Page's own button ~~points at~~ **is reported to** the agency
 
-**This is the fix for what actually happened.**
+**DONE 2026-09-25, and not as written above.**
 
-A Facebook Page's action button is settable through the Graph API
-(`/{page-id}/call_to_actions`) and needs `pages_manage_metadata`, which we
-already request and already hold on every connected Page.
+The original plan was to SET the button through the Graph API. It cannot be
+done. Meta's reference for the write endpoint says, in as many words, *"This
+endpoint is deprecated and can no longer be used"*, and
+`/{page-id}/call_to_actions` answers `GET` while refusing `POST`, `PUT` and
+`DELETE`. I recommended this phase first without checking that, which was the
+wrong order.
 
-- Button becomes **"Learn More"** or **"View Listings"** → the agency's
-  `/go/<handle>` page
-- The phone number **stays on the Page** — trust preserved
-- The most prominent control on every post now leads somewhere measured
+**What survives is reading it, and it is the half that would have prevented the
+incident.** The button beat our caption link, and nobody at Synapse or at the
+agency knew it was there — it is set once in Page settings, often years
+earlier, and appears on no screen anybody looks at while posting. The route
+that beat us was invisible to us.
 
-Offer it in the portal as a switch after connecting, not silently: changing an
-agency's Page button is their decision, and one they should be able to reverse.
+Shipped:
+
+- `social-connect` reads `/{page-id}/call_to_actions` after connecting each
+  Page and stores `page_cta_type` / `page_cta_url` on `social_accounts`
+- Three outcomes stay distinct: `NULL` = we could not look (the portal says
+  nothing), `NONE` = read, no button, anything else = the button
+- The portal shows an **"Only you can do these"** card carrying the two steps
+  that are genuinely the agency's: the `/go/<handle>` bio link with a copy
+  button, and the Page button when it diverts
+
+**The warning rule is the URL, not a list of types.** A button with no web
+address goes somewhere we cannot follow — a call, a WhatsApp thread, a
+Messenger window — and the buyer arrives with no listing attached. One
+condition, rather than Meta's type names duplicated across SQL and JavaScript,
+and it stays correct when Meta adds a type nobody here has heard of.
+
+The advice never says remove the phone number. It says move it: the button
+leads to the listings, the listings page carries the number.
 
 ### Phase 3 — Instagram: comment-to-DM
 
@@ -185,10 +205,11 @@ solved it.
 
 ## 6. Recommendation
 
-Do **Phase 2 first**, then **Phase 3**. Phase 2 removes the trap that caused
-the incident, takes no new permission, and cannot hurt reach. Phase 3 is where
-Instagram — the platform Nigerian agencies actually live on — stops being a
-dead end.
+Phase 2 is **done** — reduced, by Meta, to reporting rather than setting.
+
+**Phase 3 is now the highest-value remaining item**, and by some distance. It
+is where Instagram — the platform Nigerian agencies actually live on — stops
+being a dead end, and the comment sweep it depends on already runs.
 
 Phase 1 is cheap and worth doing, but it is the one with a downside, and it
 should be measured rather than assumed.
