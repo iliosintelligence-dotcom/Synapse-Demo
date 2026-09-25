@@ -374,6 +374,24 @@
     /* Its own full-width line under the three. grid-column overrides
        grid-template-areas below, so this holds in both layouts without
        naming a fifth area in the narrow one. */
+    /* The findings. Set as prose rather than as tiles: these are sentences
+       to be read once, and a tile invites the eye to compare numbers that
+       were not put there to be compared. */
+    /* Under the caption it belongs to, quiet enough to be advice. Empty most
+       of the time, and collapsing when empty so a clean caption looks clean. */
+    .cap-warn { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
+    .cap-warn:empty { display: none; }
+    .cap-warn span { font-size: 11.5px; line-height: 1.45; color: var(--gold); }
+    .mkdg { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 18px; }
+    .mkdg-i { border-left: 2px solid var(--border); padding: 2px 0 2px 12px; }
+    .mkdg-i.good { border-left-color: var(--success); }
+    .mkdg-i.todo { border-left-color: var(--gold); }
+    .mkdg-t { font: 400 14px/1.55 var(--f-serif); color: var(--ink); max-width: 68ch; }
+    .mkdg-t b { font-weight: 600; }
+    .mkdg-n { font-size: 12px; color: var(--ink-dim); margin-top: 3px; }
+    .mkdg-i .cmp-ch-btn { margin-top: 7px; }
+    .mkdg-quiet { font: 400 13.5px/1.6 var(--f-serif); color: var(--ink-dim);
+      max-width: 62ch; margin: 4px 0 18px; }
     .sch-camp { display: flex; align-items: center; gap: 10px; margin-top: 12px;
       font-size: 12.5px; color: var(--ink-muted); }
     .sch-camp select { flex: 1; min-height: 38px; padding: 8px 10px; border-radius: 10px;
@@ -3732,9 +3750,13 @@
         <section class="pane" id="pane-marketing">
           <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
             <div>
-              <div class="eyebrow">AI ad studio</div>
+              <div class="eyebrow">What your posts did</div>
               <div class="h1">Marketing</div>
-              <p class="muted" style="font-size:14px;margin-top:4px">Every campaign generates its own ad creatives, learns which ones win, scales them — and pauses the rest.</p>
+              <!-- Was: "Every campaign generates its own ad creatives, learns
+                   which ones win, scales them — and pauses the rest." Nothing
+                   generated, learned, scaled or paused; that sentence
+                   described the invented creatives deleted today. -->
+              <p class="muted" style="font-size:14px;margin-top:4px">What each listing earned once it went out — taps, listings opened, enquiries. Counted from your own links, not estimated.</p>
             </div>
             <button class="btn btn-primary" id="newCampBtn">+ New campaign</button>
           </div>
@@ -3744,9 +3766,13 @@
                 <button class="seg-b on" data-mv="board"><span data-icon="chart"></span> Leaderboard</button>
                 <button class="seg-b" data-mv="campaigns"><span data-icon="card"></span> Campaigns</button>
               </div>
-              <button class="tbtn" id="mkSort"><span data-icon="sliders"></span> Sort: CTR</button>
+              <!-- CTR needs impressions and nobody reports them to us. The
+                   handler has sorted by enquiries since the creatives went;
+                   this label had not caught up. -->
+              <button class="tbtn" id="mkSort"><span data-icon="sliders"></span> Sort: Enquiries</button>
             </div>
           </div>
+          <div id="mkDigest"></div>
           <div id="mkBoard"></div>
           <div id="campaigns" style="display:none"></div>
         </section>
@@ -9086,9 +9112,15 @@
           .filter((p) => p.status === 'published')
           .map((p) => {
             const st = (stats || {})[p.id] || {};
+            /* The subject social-generate chose for this post. Six of them
+               rotate -- space, location, value, trust, fit, moment -- and it
+               is recorded at queue time in the payload. Joined to leads it
+               answers which subject actually sells, which is a question only
+               this product holds both halves of. */
+            const angle = (p.payload && (p.payload.angle || p.payload.angleKey)) || null;
             return {
               id: p.id, propertyId: p.property_id, platform: p.platform,
-              when: p.published_at,
+              when: p.published_at, angle: angle,
               clicks: st.clicks || 0, visits: st.visits || 0, leads: st.leads || 0,
               caption: p.caption || '',
             };
@@ -9101,7 +9133,140 @@
     }
 
     const rankColor = i => i === 0 ? '#C9A227' : i === 1 ? '#9AA0A6' : i === 2 ? '#B08D57' : 'var(--ink-dim)';
+    /* ── the findings, at most three, in plain sentences ─────────────────
+       Fifty posts is already more than anybody reads. So the page leads with
+       conclusions and keeps the evidence underneath.
+
+       EVERY FINDING HAS A FLOOR. Two posts on an angle, two channels with
+       traffic, a difference big enough to not be noise. Below it they say
+       nothing at all -- because five confident panels reporting zero is
+       exactly what this page is being rescued from. */
+    const ANGLE_WORDS = {
+      space: 'the rooms and the space', location: 'the area',
+      value: 'the price and the value', trust: 'the checks and the paperwork',
+      fit: 'who the home suits', moment: 'the timing',
+      custom: 'your own wording',
+    };
+
+    function digestFindings() {
+      const rows = MKB.rows;
+      const out = [];
+      if (!rows.length) return out;
+
+      /* ── which angle sells ──────────────────────────────────────────── */
+      const byAngle = {};
+      rows.forEach((r) => {
+        if (!r.angle) return;
+        const a = byAngle[r.angle] || (byAngle[r.angle] = { n: 0, leads: 0, clicks: 0 });
+        a.n++; a.leads += r.leads; a.clicks += r.clicks;
+      });
+      /* Per post, not in total: three posts on one angle and one on another
+         would otherwise crown whichever was used more often. */
+      const angles = Object.keys(byAngle)
+        .filter((k) => byAngle[k].n >= 2)
+        .map((k) => ({ k, per: byAngle[k].leads / byAngle[k].n, n: byAngle[k].n }))
+        .sort((x, y) => y.per - x.per);
+      if (angles.length >= 2 && angles[0].per > 0 && angles[0].per >= angles[angles.length - 1].per * 2) {
+        const best = angles[0], worst = angles[angles.length - 1];
+        out.push({
+          tone: 'good',
+          text: 'Posts about <b>' + esc2(ANGLE_WORDS[best.k] || best.k) + '</b> bring '
+            + 'the most enquiries \u2014 ' + best.per.toFixed(1) + ' per post against '
+            + worst.per.toFixed(1) + ' for ' + esc2(ANGLE_WORDS[worst.k] || worst.k) + '.',
+          note: 'Based on ' + best.n + ' and ' + byAngle[worst.k].n + ' posts.',
+        });
+      }
+
+      /* ── which channel pays ─────────────────────────────────────────── */
+      const byCh = {};
+      rows.forEach((r) => {
+        const c = byCh[r.platform] || (byCh[r.platform] = { n: 0, leads: 0, clicks: 0 });
+        c.n++; c.leads += r.leads; c.clicks += r.clicks;
+      });
+      const chans = Object.keys(byCh).filter((k) => byCh[k].n >= 2)
+        .sort((x, y) => (byCh[y].leads - byCh[x].leads) || (byCh[y].clicks - byCh[x].clicks));
+      if (chans.length >= 2 && (byCh[chans[0]].leads > 0 || byCh[chans[0]].clicks > 0)) {
+        const top = chans[0], low = chans[chans.length - 1];
+        out.push({
+          tone: 'good',
+          text: '<b>' + esc2(CH_LABEL[top] || top) + '</b> is doing the work: '
+            + byCh[top].leads + ' ' + (byCh[top].leads === 1 ? 'enquiry' : 'enquiries')
+            + ' and ' + byCh[top].clicks + ' taps from ' + byCh[top].n + ' posts, against '
+            + byCh[low].leads + ' from ' + byCh[low].n + ' on '
+            + esc2(CH_LABEL[low] || low) + '.',
+          note: 'Every channel here is free, so this is only about where the effort goes.',
+        });
+      }
+
+      /* ── what is going stale ────────────────────────────────────────── */
+      if (typeof LISTINGS_DATA !== 'undefined' && LISTINGS_DATA.length) {
+        const lastPost = {};
+        rows.forEach((r) => {
+          const t = r.when ? new Date(r.when).getTime() : 0;
+          if (t > (lastPost[r.propertyId] || 0)) lastPost[r.propertyId] = t;
+        });
+        const cutoff = Date.now() - 14 * 86400000;
+        /* Active listings only: an archived home not being posted is correct
+           behaviour, and flagging it would train people to ignore this. */
+        const stale = LISTINGS_DATA.filter((l) =>
+          l && l.id && l.is_active !== false && (lastPost[l.id] || 0) < cutoff);
+        if (stale.length) {
+          const one = stale[0];
+          out.push({
+            tone: 'todo',
+            text: stale.length === 1
+              ? '<b>' + esc2(one.t || one.title || 'One listing') + '</b> has not been posted in over two weeks.'
+              : '<b>' + stale.length + ' listings</b> have not been posted in over two weeks, '
+                + 'starting with ' + esc2(one.t || one.title || 'one of them') + '.',
+            note: 'A listing nobody has seen recently cannot produce an enquiry.',
+            act: { label: 'Post it', id: one.id },
+          });
+        }
+      }
+
+      return out.slice(0, 3);
+    }
+
+    function renderDigest() {
+      const el = document.getElementById('mkDigest'); if (!el) return;
+      if (!MKB.loaded) { el.innerHTML = ''; return; }
+
+      const f = digestFindings();
+      if (!f.length) {
+        /* SAYS HOW MUCH MORE IS NEEDED rather than showing an empty chart.
+           The published count is the honest measure of how close the page is
+           to being able to tell them anything. */
+        const n = MKB.rows.length;
+        el.innerHTML = '<div class="mkdg mkdg-quiet">'
+          + (n
+              ? 'Nothing conclusive yet from ' + n + ' published '
+                + (n === 1 ? 'post' : 'posts') + '. A few more and this will '
+                + 'tell you which subjects and which channels are earning enquiries.'
+              : 'Once listings start going out, what worked appears here \u2014 '
+                + 'in a sentence, not a spreadsheet.')
+          + '</div>';
+        return;
+      }
+      el.innerHTML = '<div class="mkdg">' + f.map((x) =>
+        '<div class="mkdg-i ' + x.tone + '">'
+        + '<div class="mkdg-t">' + x.text + '</div>'
+        + (x.note ? '<div class="mkdg-n">' + esc2(x.note) + '</div>' : '')
+        + (x.act ? '<button class="cmp-ch-btn" data-dg-post="' + esc2(x.act.id) + '">'
+            + esc2(x.act.label) + '</button>' : '')
+        + '</div>').join('') + '</div>';
+    }
+
+    document.addEventListener('click', function (e) {
+      const b = e.target.closest && e.target.closest('[data-dg-post]');
+      if (!b) return;
+      /* Straight into the composer for that listing, which is the action the
+         finding is asking for. A finding that only tells you something is a
+         report again. */
+      if (typeof openComposer === 'function') openComposer(b.dataset.dgPost);
+    });
+
     function renderBoard(){
+      renderDigest();
       const el = document.getElementById('mkBoard'); if (!el) return;
       const rows = MKB.rows.slice().sort((x, y) => MK.sort === 'leads'
         /* Taps break a tie on leads: two posts with one enquiry each are not
@@ -12094,7 +12259,7 @@
       if (cmp.captions) {
         html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
         Object.keys(cmp.captions).forEach((ch) => {
-          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea></div>`;
+          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea><div class="cap-warn" data-warn="${ch}">${capWarnHtml(ch, cmp.captions[ch])}</div></div>`;
         });
         if (cmp.hashtags.length) html += `<div class="cmp-tags">${cmp.hashtags.map(escT).join('  ')}</div>`;
         if (cmp.note) html += `<div class="cmp-note"><b>Tayo's tip:</b> ${escT(cmp.note)}</div>`;
@@ -12248,6 +12413,66 @@
        subject this listing has already used.
 
        Scheduling happens afterwards, from the card, once a human has looked. */
+    /* ── what a caption is missing ────────────────────────────────────────
+       Checked against the listing in front of it, which is the part a generic
+       linter cannot do: this one knows the price and the area because the
+       property row is right there.
+
+       WARNINGS, NEVER A BLOCK. An agent posting without a price may know
+       something the check does not -- "on application" is a real answer in
+       this market. A linter that refuses is a linter people route around.
+
+       Only speaks when it knows: the price check runs only where the listing
+       has a price, the area check only where it has a neighbourhood. A
+       warning derived from a field we do not hold would be the product
+       inventing requirements. */
+    const CAP_FOLD = { instagram: 125, facebook: 250, x: 200, telegram: 400,
+                       tiktok: 120, whatsapp: 300, youtube: 150 };
+
+    function capWarnHtml(ch, text) {
+      const t = String(text || '');
+      if (!t.trim()) return '';
+      const l = POST_LISTINGS[cmp.li];
+      const full = fullListing(l && l.id) || l || {};
+      const out = [];
+
+      /* The price, in any of the shapes a caption might write it. Digits are
+         the reliable signal -- "4.5m", "N4,500,000" and "4500000" are all
+         somebody having said the number. */
+      if (full.price && !/\d/.test(t)) {
+        out.push('No price in this one \u2014 "how much?" is the comment you will get.');
+      }
+
+      const area = full.neighbourhood || full.city || '';
+      if (area && t.toLowerCase().indexOf(String(area).toLowerCase()) === -1) {
+        out.push('Does not name ' + esc2(area) + '. "3 bed, serviced" describes half of Lagos.');
+      }
+
+      /* The fold. Measured to the first line break as well as by length,
+         because a caption whose opening line runs long is collapsed just the
+         same. */
+      const fold = CAP_FOLD[ch] || 200;
+      if (t.length > fold * 3) {
+        out.push('Long \u2014 ' + esc2(CH_LABEL[ch] || ch) + ' hides everything after about '
+          + fold + ' characters behind "more".');
+      }
+
+      const tags = (t.match(/#[\w\u00c0-\u024f]+/g) || []).length;
+      /* Instagram rejects the whole call over thirty rather than trimming, so
+         this one is a real failure and not a matter of taste. */
+      if (ch === 'instagram' && tags > 30) {
+        out.push(tags + ' hashtags \u2014 Instagram refuses a post over 30.');
+      }
+
+      const letters = t.replace(/[^A-Za-z]/g, '');
+      if (letters.length > 24 && letters === letters.toUpperCase()) {
+        out.push('All capitals reads as an advert in a feed of photographs.');
+      }
+
+      if (!out.length) return '';
+      return out.map((w) => '<span>\u26a0 ' + w + '</span>').join('');
+    }
+
     function scheduleFromComposer(){
       const l = POST_LISTINGS[cmp.li];
       cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
@@ -12291,6 +12516,15 @@
         console.error('saveGeneration failed', err);
       });
     }
+    /* Live as it is typed, and only the one box being edited is redrawn --
+       re-rendering the composer on every keystroke would move the caret. */
+    document.addEventListener('input', function (e) {
+      const t = e.target.closest && e.target.closest('textarea[data-cap]');
+      if (!t) return;
+      const box = t.parentElement && t.parentElement.querySelector('[data-warn]');
+      if (box) box.innerHTML = capWarnHtml(t.dataset.cap, t.value);
+    });
+
     // toast + wire the remaining action buttons so every CTA responds
     function toast(msg){
       let t = document.getElementById('toast');
