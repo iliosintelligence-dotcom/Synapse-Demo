@@ -7700,6 +7700,11 @@
          uploader that fills it and the save that writes it, so it belongs to
          the form, not to one of its widgets. */
       let photos = [];
+      /* The branded copies, keyed by the original url. Declared HERE and
+         not inside the uploader for the reason the comment above gives:
+         it is shared between the uploader that fills it and the save that
+         writes it, so it belongs to the form. */
+      let BRANDED = {};
 
       /* Grouped so the dropdown reads as a checklist of the questions
          buyers actually ask, in the order they ask them. Power and water come
@@ -8054,6 +8059,18 @@
            one thing is a drift risk, so the mirror is written in exactly one
            place -- syncPhotos(). */
         photos = (l.media || []).map(m => m.url).filter(Boolean);
+        /* The branded copies, alongside rather than inside `photos`. That
+           array is read as a list of strings by the gallery, the reorder, the
+           cover-image rule and the save, and turning it into objects to carry
+           three extra fields would touch all of them for a nicety. */
+        BRANDED = {};
+        (l.media || []).forEach((m) => {
+          if (m && m.url && m.branded_url) {
+            BRANDED[m.url] = { branded_url: m.branded_url,
+                               branded_price: m.branded_price,
+                               branded_verified: m.branded_verified };
+          }
+        });
         if (!photos.length && (l.img || '').trim()) photos = [(l.img || '').trim()];
         const galEl = g('lfGal');
 
@@ -8126,11 +8143,29 @@
           const label = files.length === 1 ? 'file' : 'files';
           galNote(`Uploading ${files.length} ${label}…`);
 
+          /* DRAWN WITH WHAT IS ON SCREEN. The price is whatever is in the
+             form, which may not be saved yet — and that is the right value:
+             it is the price this listing is about to have. Verification is
+             not the agency's to type, so it comes from the saved row. */
+          const brandOpts = (window.BRAND && (window.BRAND.logo_url || '').trim())
+            ? {
+              logoUrl: window.BRAND.logo_url,
+              price: Number((document.getElementById('lfPrice') || {}).value) || 0,
+              /* `l`, the listing this form was opened on. `current` is not
+                 in scope here, and verification is not the agency's to
+                 type -- unlike the price, it comes from the saved row. */
+              verified: (l && l.verification_status) === 'verified',
+            }
+            : null;
+
           SynListings.uploadPropertyPhotos(files, (done, total, name) => {
             pick.textContent = done >= total ? 'Finishing…' : `Uploading ${done + 1} of ${total}…`;
             if (name) galNote(`Uploading ${done + 1} of ${total} — ${name}`);
-          })
-            .then(({ urls, failed }) => {
+          }, brandOpts)
+            .then(({ urls, items, failed }) => {
+              (items || []).forEach((it) => {
+                if (it && it.branded_url) BRANDED[it.url] = it;
+              });
               /* Appended, not replaced: an agency adding three more photos to
                  six has not asked to lose the six. */
               photos = photos.concat(urls);
@@ -8259,7 +8294,12 @@
           /* Every photo, in gallery order. This sent only the cover, so an
              agency that added eight had seven silently dropped on save --
              writeMedia has always accepted a list. */
-          media: photos.map((u, i) => ({ url: u, is_primary: i === 0, display_order: i })),
+          media: photos.map((u, i) => Object.assign(
+            { url: u, is_primary: i === 0, display_order: i },
+            /* Carried back onto the row it belongs to. A photograph reordered
+               or one that arrived before branding existed simply has nothing
+               to merge. */
+            BRANDED[u] || {})),
         };
         if (isNew) {
           const item = deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 }));

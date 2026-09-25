@@ -181,12 +181,23 @@
            passes a bare URL string, so before this every video was being
            filed as an image -- and the column has been able to say 'video'
            since 0002. */
-        return {
+        var row = {
           property_id: propertyId,
           url: m.url,
           media_type: m.media_type || mediaTypeFromUrl(m.url),
           display_order: i,
         };
+        /* The branded copy and WHAT WAS DRAWN ON IT. The second part is the
+           point: comparing branded_price to the listing's price now is how a
+           stale mark becomes detectable instead of silently wrong. Only set
+           when there is one, so a plain photograph writes plain columns. */
+        if (m.branded_url) {
+          row.branded_url = m.branded_url;
+          row.branded_price = m.branded_price || null;
+          row.branded_verified = !!m.branded_verified;
+          row.branded_at = new Date().toISOString();
+        }
+        return row;
       });
     return c.from('property_media').delete().eq('property_id', propertyId).then(function () {
       if (!rows.length) return { data: [], error: null };
@@ -207,7 +218,11 @@
          agency every other agency's inventory. RLS is the security floor; the
          query still has to ask the right question. */
       return c1.from('properties')
-        .select('*, property_media(url, media_type, display_order)')
+        .select('*, property_media(url, media_type, display_order, '
+              /* Without these the mark is LOST on the next save:
+                 writeMedia is delete-then-insert, so a column it never
+                 read is a column it silently drops. */
+              + 'branded_url, branded_price, branded_verified)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -456,6 +471,12 @@
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id).is('deleted_at', null);
     }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Photographs whose printed mark no longer matches the listing. */
+  function staleBrandedMedia() {
+    return client().then(function (c) { return c.rpc('media_brand_stale'); })
+      .then(function (r) { if (r.error) throw r.error; return r.data || []; });
   }
 
   function listCampaigns() {
@@ -1472,6 +1493,163 @@
     }
   }
 
+  /* ── the agency's mark, drawn onto a copy ─────────────────────────────
+     What agencies do by hand in Canva before every post. All three pieces
+     are already ours: agencies.logo_url, properties.price, and whether the
+     listing passed verification.
+
+     A SECOND FILE, never a replacement. The original stays in
+     property_media.url and the listing page keeps showing it. This copy is
+     read only by social posts, so a price drawn onto a picture can never
+     reach the property page -- and an agency that dislikes the result has
+     lost nothing.
+
+     Returns null for every failure, and there are many: no logo, a logo that
+     will not load, no createImageBitmap, a canvas that will not export, a
+     cross-origin taint. The caller then uploads the plain photograph.
+     Branding is a nicety; losing an upload because a logo 404'd would arrive
+     as "your photo did not save", which is not a trade worth making. */
+  var BRAND_BAR = 0.13;       // bar height, as a fraction of the shorter edge
+  var BRAND_PAD = 0.035;      // breathing room, same basis
+
+  function naira(n) {
+    var v = Number(n);
+    if (!isFinite(v) || v <= 0) return '';
+    /* The same shape media_brand_stale() formats for comparison. If these two
+       ever disagree, every image reads as stale for ever. */
+    if (v >= 1000000) return '\u20a6' + (v / 1000000).toFixed(1).replace(/\.0$/, '.0') + 'm';
+    return '\u20a6' + v.toLocaleString('en-NG');
+  }
+
+  function loadLogo(url) {
+    if (!url) return Promise.resolve(null);
+    return new Promise(function (res) {
+      var img = new Image();
+      /* The logo is in another bucket. Without this the draw taints the
+         canvas and toBlob throws SecurityError -- which is the one failure
+         here that looks like a bug in the photograph rather than in the
+         logo. */
+      img.crossOrigin = 'anonymous';
+      img.onload = function () { res(img); };
+      img.onerror = function () { res(null); };
+      img.src = url;
+      /* A logo that never resolves must not hold an upload open. */
+      setTimeout(function () { res(img.complete && img.naturalWidth ? img : null); }, 4000);
+    });
+  }
+
+  /** opts: { logoUrl, price, verified, agencyName } → a File, or null. */
+  function brandImage(file, opts) {
+    var o = opts || {};
+    try {
+      if (!file || typeof createImageBitmap !== 'function') return Promise.resolve(null);
+      if (typeof document.createElement('canvas').toBlob !== 'function') return Promise.resolve(null);
+      var priceText = naira(o.price);
+      /* Nothing to say, nothing to draw. A copy identical to the original is
+         storage and confusion for no gain. */
+      if (!priceText && !o.verified && !o.logoUrl) return Promise.resolve(null);
+
+      return Promise.all([createImageBitmap(file), loadLogo(o.logoUrl)])
+        .then(function (both) {
+          var bmp = both[0], logo = both[1];
+          var w = bmp.width, h = bmp.height;
+          var cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          var x = cv.getContext('2d');
+          x.drawImage(bmp, 0, 0, w, h);
+          if (bmp.close) bmp.close();
+
+          /* PROPORTIONAL TO THE SHORTER EDGE. A 4000px photograph and a 900px
+             one are both uploaded here, and a fixed 42px bar that reads well
+             on one is invisible on the other. */
+          var base = Math.min(w, h);
+          var barH = Math.round(base * BRAND_BAR);
+          var pad = Math.round(base * BRAND_PAD);
+
+          /* A gradient, not a solid bar: a hard edge across a photograph
+             reads as damage, and the point is to stay legible over whatever
+             happens to be at the bottom of the frame. */
+          var g = x.createLinearGradient(0, h - barH * 1.9, 0, h);
+          g.addColorStop(0, 'rgba(12,12,14,0)');
+          g.addColorStop(1, 'rgba(12,12,14,0.72)');
+          x.fillStyle = g;
+          x.fillRect(0, h - barH * 1.9, w, barH * 1.9);
+
+          if (priceText) {
+            var fs = Math.round(barH * 0.52);
+            x.font = '700 ' + fs + 'px Georgia, "Times New Roman", serif';
+            x.fillStyle = '#fff';
+            x.textBaseline = 'alphabetic';
+            x.fillText(priceText, pad, h - pad);
+          }
+
+          if (o.verified) {
+            var vs = Math.round(barH * 0.32);
+            x.font = '600 ' + vs + 'px system-ui, -apple-system, sans-serif';
+            var label = '\u2713 Verified';
+            var tw = x.measureText(label).width;
+            var bx = w - pad - tw - vs, by = h - pad - vs * 1.5;
+            x.fillStyle = 'rgba(31,122,74,0.92)';
+            /* roundRect is recent; a plain rectangle is the fallback rather
+               than no badge at all. */
+            if (x.roundRect) {
+              x.beginPath(); x.roundRect(bx, by, tw + vs, vs * 2, vs); x.fill();
+            } else {
+              x.fillRect(bx, by, tw + vs, vs * 2);
+            }
+            x.fillStyle = '#fff';
+            x.fillText(label, bx + vs / 2, by + vs * 1.35);
+          }
+
+          if (logo) {
+            /* Top corner, opposite the price, capped so a wide wordmark and a
+               square badge both sit sensibly. */
+            var lh = Math.round(base * 0.075);
+            var lw = Math.round(lh * (logo.naturalWidth / logo.naturalHeight || 1));
+            var maxW = Math.round(w * 0.32);
+            if (lw > maxW) { lw = maxW; lh = Math.round(lw / (logo.naturalWidth / logo.naturalHeight || 1)); }
+            x.globalAlpha = 0.92;
+            x.drawImage(logo, w - pad - lw, pad, lw, lh);
+            x.globalAlpha = 1;
+          }
+
+          return new Promise(function (res) {
+            try {
+              cv.toBlob(function (blob) {
+                if (!blob) return res(null);
+                var nm = String(file.name || 'photo').replace(/[.][^.]+$/, '');
+                try {
+                  res(new File([blob], nm + '-branded.jpg',
+                    { type: 'image/jpeg', lastModified: Date.now() }));
+                } catch (e) { res(null); }
+              }, 'image/jpeg', 0.9);
+            } catch (e) {
+              /* SecurityError: the logo tainted the canvas. The plain
+                 photograph is the right outcome, not a failed upload. */
+              res(null);
+            }
+          });
+        }).catch(function () { return null; });
+    } catch (e) {
+      return Promise.resolve(null);
+    }
+  }
+
+  /** Upload a branded copy beside the original. Resolves to { url, price,
+   *  verified } describing what was drawn, or null if nothing was. The caller
+   *  writes those onto property_media so drift is detectable later. */
+  function uploadBrandedCopy(file, opts) {
+    var o = opts || {};
+    return brandImage(file, o).then(function (branded) {
+      if (!branded) return null;
+      return uploadPropertyPhoto(branded).then(function (url) {
+        return { url: url, price: naira(o.price) || null, verified: !!o.verified };
+      /* The original is already up by now. A failed branded upload costs the
+         mark, not the photograph. */
+      }, function () { return null; });
+    });
+  }
+
   /* Upload one listing photograph. Resolves to its public URL, which the
      caller stores in property_media.url. */
   function uploadPropertyPhoto(file) {
@@ -2457,22 +2635,41 @@
      A file that fails does not stop the rest. The caller is handed both lists
      and decides what to say; losing seven good photos because the eighth was a
      screenshot of a PDF would be its own bug. */
-  function uploadPropertyPhotos(files, onProgress) {
+  /** brand: { logoUrl, price, verified } — optional. When given, a marked
+   *  copy of each photograph is uploaded beside the original and described in
+   *  `items`. `urls` keeps its old shape so every existing caller is
+   *  untouched. */
+  function uploadPropertyPhotos(files, onProgress, brand) {
     var list = Array.prototype.slice.call(files || []);
-    if (!list.length) return Promise.resolve({ urls: [], failed: [] });
-    var urls = [], failed = [];
+    if (!list.length) return Promise.resolve({ urls: [], items: [], failed: [] });
+    var urls = [], items = [], failed = [];
     return list.reduce(function (chain, file, i) {
       return chain.then(function () {
         if (typeof onProgress === 'function') onProgress(i, list.length, file.name);
         return uploadPropertyPhoto(file)
-          .then(function (url) { urls.push(url); })
+          .then(function (url) {
+            urls.push(url);
+            var item = { url: url };
+            items.push(item);
+            /* Only photographs. brandImage draws a video's first frame into a
+               canvas, so branding one would produce a still with a price on
+               it filed as the walkthrough. */
+            if (!brand || mediaTypeFromUrl(url) === 'video') return null;
+            return uploadBrandedCopy(file, brand).then(function (b) {
+              if (!b) return null;
+              item.branded_url = b.url;
+              item.branded_price = b.price;
+              item.branded_verified = b.verified;
+              return null;
+            });
+          })
           .catch(function (err) {
             failed.push({ name: file.name, reason: (err && err.message) || 'upload failed' });
           });
       });
     }, Promise.resolve()).then(function () {
       if (typeof onProgress === 'function') onProgress(list.length, list.length, null);
-      return { urls: urls, failed: failed };
+      return { urls: urls, items: items, failed: failed };
     });
   }
 
@@ -2542,6 +2739,9 @@
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
+    brandImage: brandImage,
+    staleBrandedMedia: staleBrandedMedia,
+    uploadBrandedCopy: uploadBrandedCopy,
     listHashtagGroups: listHashtagGroups,
     saveHashtagGroup: saveHashtagGroup,
     deleteHashtagGroup: deleteHashtagGroup,
