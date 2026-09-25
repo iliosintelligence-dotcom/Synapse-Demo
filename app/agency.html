@@ -389,6 +389,33 @@
     .pcard .m b { color: var(--ink); }
     .pcard .rsn { font-size: 10.5px; color: var(--gold); line-height: 1.4; margin-top: 8px; }
 
+    /* ── what somebody else said, quoted ─────────────────────────────────
+       The only text on this card Synapse did not write, and it is set as a
+       quotation: inset behind a rule, in the reading face, so it never reads
+       as the product talking. Gold on the rule because that is already this
+       board's word for "this one wants you", and a new accent for a new
+       feature is how a colour system stops meaning anything. */
+    .pcard .cmts { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .pcard .cmt {
+      border-left: 2px solid var(--gold); padding: 5px 0 5px 8px;
+      background: rgba(0,0,0,0.015); border-radius: 0 8px 8px 0;
+    }
+    .pcard .cmt-who { font: 600 10px var(--f-sans); color: var(--ink-muted); }
+    /* Wraps and breaks. A handle with no spaces in it is a single 40-character
+       word, and a card that a stranger can widen is a card a stranger can
+       break. */
+    .pcard .cmt-body {
+      font: 11px/1.45 var(--f-serif); color: var(--ink); margin-top: 2px;
+      overflow-wrap: anywhere;
+    }
+    /* Quiet, and out of the way of the card's real actions. Dismissing a
+       comment is bookkeeping, not a decision, and it should not compete with
+       the button that sends a listing out. */
+    .pcard .act.cmt-done {
+      margin-top: 5px; padding: 3px 9px; min-height: 0;
+      font: 600 10px var(--f-sans); width: auto; align-self: flex-start;
+    }
+
     /* ══════ Social studio: bento overview · view switcher · kanban + calendar ══════ */
     .chan .st { font-size: 12px; }
     .chan .tog { width: 42px; height: 24px; transition: background var(--m-standard); }
@@ -452,6 +479,9 @@
     .pcard .m { font-size: 12px; margin-top: 9px; }
     .pcard .m b { font-size: 13px; }
     .pcard .rsn { font-size: 12px; color: #7a5410; }
+    .pcard .cmt-who { font-size: 11.5px; }
+    .pcard .cmt-body { font-size: 13px; }
+    .pcard .act.cmt-done { font-size: 11.5px; padding: 4px 11px; }
     .s-cal { display: grid; grid-template-columns: repeat(7,1fr); gap: 10px; margin-top: 4px; }
     .s-cal .cday { background: rgba(0,0,0,0.015); border: 1px solid var(--border); border-radius: 14px; padding: 10px; min-height: 150px; }
     .s-cal .cday.today { border-color: rgba(54,54,54,0.4); background: rgba(54,54,54,0.04); }
@@ -5127,7 +5157,7 @@
        'generating' stays a client-side moment while the composer runs; it has
        no database state because nothing is persisted until a caption exists. */
     let posts = [];
-    const PIPE = { loaded: false, error: null, drafts: [], social: [], stats: {} };
+    const PIPE = { loaded: false, error: null, drafts: [], social: [], stats: {}, comments: {} };
 
     /* content_type is per-format; a platform can have more than one (a post and
        a reel are both Instagram). Scheduling only cares about the platform. */
@@ -5389,6 +5419,12 @@
              put this on Instagram" live on the twin, not on this row. */
           familyIds: [r.id].concat(twinLive.map(t => t.id)),
           engage: engageAcross(r, twins),
+          /* ACROSS THE FAMILY, like the engagement above it. One listing goes
+             out on the agency's account and on Synapse's; a comment on either
+             is a comment about this listing, and the agent answering it does
+             not care which row it hangs off. */
+          comments: [r.id].concat(twinLive.map(t => t.id))
+            .reduce((all, id) => all.concat((PIPE.comments || {})[id] || []), []),
           clicks: c.human + twinClicks,
           clicksRaw: c.total + twins.reduce((a, t) => a + clicksOf(t).total, 0),
           /* The family's totals. A twin is the same listing on a Synapse
@@ -5444,9 +5480,22 @@
         SynListings.socialPostStats
           ? SynListings.socialPostStats().catch((e) => { console.error('stats', e); return {}; })
           : Promise.resolve({}),
-      ]).then(([drafts, social, stats]) => {
+        /* Same fail-soft rule as the stats above, and for a stronger reason:
+           this table is new, so a portal deployed ahead of its migration
+           would otherwise lose the entire pipeline to a 404 on a feature
+           nobody has used yet. */
+        SynListings.listSocialComments
+          ? SynListings.listSocialComments().catch((e) => { console.error('comments', e); return []; })
+          : Promise.resolve([]),
+      ]).then(([drafts, social, stats, comments]) => {
         PIPE.drafts = drafts || []; PIPE.social = social || [];
         PIPE.stats = stats || {};
+        /* Grouped by the post they were written under, once, rather than
+           filtering the whole list again for every card on the board. */
+        PIPE.comments = (comments || []).reduce((m, c) => {
+          (m[c.social_post_id] = m[c.social_post_id] || []).push(c);
+          return m;
+        }, {});
         PIPE.loaded = true; PIPE.error = null;
       }).catch((err) => {
         PIPE.loaded = true;
@@ -5593,12 +5642,59 @@
         + bits.join(' \u00b7 ') + '</div>';
     }
 
+    /* THE COMMENTS THEMSELVES, under the count that promised them.
+       Only the ones still waiting: a comment somebody has already answered is
+       not work, and a board that keeps showing it teaches people to stop
+       reading the board. Three at a time, because four is a wall of text on a
+       card that also has to show a listing, and the rest are counted. */
+    const CMT_SHOWN = 3;
+    function commentList(p) {
+      const all = p.comments || [];
+      if (!all.length) {
+        /* A count with nothing under it. Two causes, and they want different
+           reactions -- the sweep has not run yet, or this went out on a
+           channel that will never give us the words. Saying which is the
+           difference between waiting and giving up. */
+        const e = p.engage || {};
+        if (!e.comments) return '';
+        return '<div class="w" style="margin-top:4px;color:var(--ink-dim)">'
+          + (p.mineLive
+              ? 'The words arrive with the next sweep.'
+              : 'Synapse\u2019s channels report the count only \u2014 open the post to read them.')
+          + '</div>';
+      }
+      const waiting = all.filter(c => !c.handled_at);
+      if (!waiting.length) {
+        return '<div class="w" style="margin-top:4px;color:var(--ink-dim)">'
+          + 'All ' + all.length + ' answered.</div>';
+      }
+      const show = waiting.slice(0, CMT_SHOWN);
+      const more = waiting.length - show.length;
+      return '<div class="cmts">' + show.map(c =>
+        '<div class="cmt">'
+          + '<div class="cmt-who">'
+            + esc2(c.author_handle ? '@' + c.author_handle : 'Someone')
+            + (c.commented_at ? ' \u00b7 ' + esc2(fmtWhen(c.commented_at)) : '')
+          + '</div>'
+          /* The platform's text, escaped. It is a stranger's sentence arriving
+             from outside and going straight into our DOM -- the one place on
+             this board where the content is genuinely untrusted. */
+          + '<div class="cmt-body">' + esc2(c.body || '') + '</div>'
+          + '<button class="act gh cmt-done" data-act="cmtdone" data-cid="'
+            + esc2(c.id) + '">Done</button>'
+        + '</div>').join('')
+        + (more ? '<div class="w" style="color:var(--ink-dim)">and ' + more
+            + ' more waiting</div>' : '')
+      + '</div>';
+    }
+
     function liveBody(p) {
       return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
         + esc2(p.when || 'Published') + '</div>'
         + carriedBy(p)
         + clickLine(p)
         + engageLine(p)
+        + commentList(p)
         + (p.token ? '<button class="act gh" data-act="openlink" data-id="' + p.id + '">Open the link</button>' : '');
     }
 
@@ -6438,6 +6534,24 @@
     document.getElementById('pipeline').addEventListener('click', (e) => {
       const b = e.target.closest('[data-act]');
       if (!b) { const card = e.target.closest('.pcard'); if (card) openPropPreview(posts.find(x => x.id === card.dataset.pid)); return; }
+
+      /* BEFORE the post lookup, deliberately. A comment button carries a
+         COMMENT id, and the line below searches the posts array -- so routing
+         this after it would find nothing and return silently, which is a
+         button that does nothing for a reason no one can see. */
+      if (b.dataset.act === 'cmtdone') {
+        const cid = b.dataset.cid;
+        if (!cid || !SynListings.markCommentHandled) return;
+        b.disabled = true; b.textContent = '\u2026';
+        SynListings.markCommentHandled(cid, true)
+          .then(() => loadPipeline())
+          .catch((err) => {
+            b.disabled = false; b.textContent = 'Done';
+            toast((err && err.message) || 'Could not mark that answered');
+          });
+        return;
+      }
+
       const p = posts.find(x => x.id === b.dataset.id); if (!p) return;
       const act = b.dataset.act;
 

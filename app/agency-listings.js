@@ -1663,6 +1663,43 @@
     });
   }
 
+  /** What people said back. Written by the metrics sweep against the
+   *  agency's own connected account -- so these exist only for posts that
+   *  went out on the agency's Instagram or Page, not for Synapse's own
+   *  channels, where the provider reports counts and no text.
+   *
+   *  RLS is social_comments_read (is_agency_member), and there is no write
+   *  policy at all: the one field a person may move goes through
+   *  mark_comment_handled. An agency editing the words a stranger wrote
+   *  would make our copy a forgery of somebody else's sentence. */
+  function listSocialComments() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_comments')
+        .select('id, social_post_id, property_id, platform, author_handle, '
+              + 'body, commented_at, handled_at')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        /* Newest first: the board's question is what is waiting now. */
+        .order('commented_at', { ascending: false, nullsFirst: false })
+        .limit(300);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Mark one dealt with, or put it back. Not an update: the table has no
+   *  write policy, and this is the only column a member is allowed to move. */
+  function markCommentHandled(id, handled) {
+    if (!id) return Promise.reject(new Error('no comment'));
+    return client().then(function (c) {
+      return c.rpc('mark_comment_handled', {
+        p_comment_id: id, p_handled: handled !== false });
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
   /** Captions generated but not yet approved -- the review queue.
    *  Joins the property so a card can show what it is advertising. */
   function listPendingContent() {
@@ -2400,6 +2437,8 @@
     listPendingContent: listPendingContent,
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
+    listSocialComments: listSocialComments,
+    markCommentHandled: markCommentHandled,
     schedulePost: schedulePost,
     updateSocialPost: updateSocialPost,
     deleteSocialPost: deleteSocialPost,
