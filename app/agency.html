@@ -408,6 +408,24 @@
       background: rgba(0,0,0,0.015); border-radius: 0 8px 8px 0;
     }
     .cmp-ch-note { font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); margin: 2px 0 10px; max-width: 62ch; }
+    /* Outstanding work, not a status panel: it appears only when there is
+       something to do and disappears when there is not. */
+    .cmp-setup { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: 14px; background: rgba(0,0,0,0.015); }
+    .cmp-setup-hd { font: 600 12px var(--f-sans); color: var(--ink); margin-bottom: 8px;
+      text-transform: uppercase; letter-spacing: .05em; }
+    .cmp-setup ul { margin: 0; padding: 0; list-style: none; display: flex;
+      flex-direction: column; gap: 12px; }
+    .cmp-setup li { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); }
+    .cmp-setup li b { color: var(--ink); font-weight: 600; }
+    /* The one that cost a lead. Gold is this product's word for "this wants
+       you", and it is the same rule the pipeline card uses. */
+    .cmp-setup li.warn { border-left: 2px solid var(--gold); padding-left: 10px; }
+    .cmp-setup-why { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-dim); }
+    .cmp-setup-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    .cmp-setup code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(20,20,20,0.05); border: 1px solid var(--border);
+      border-radius: 7px; padding: 4px 8px; color: var(--ink); overflow-wrap: anywhere; }
     .cmp-ch-note b { color: var(--ink-muted); font-weight: 600; }
     .pcard .cmt-who { font: 600 10px var(--f-sans); color: var(--ink-muted); }
     /* Wraps and breaks. A handle with no spaces in it is a single 40-character
@@ -10495,6 +10513,7 @@
           if (!t) { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
               + '?select=id,platform,platform_username,is_active,token_expires_at,connected_at'
+              + ',page_cta_type,page_cta_url'
               + '&is_active=eq.true&deleted_at=is.null', {
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
             })
@@ -10672,8 +10691,85 @@
             + '<span class="cmp-ch-at">' + esc(SOON[pl][1]) + '</span></div>';
         });
 
-        html += '</div>';
+        html += '</div>' + setupHtml();
         box.innerHTML = html;
+      }
+
+      /* Must match bio_slug() in 0106 exactly: strip a leading @, lowercase,
+         and replace every run of anything outside [a-z0-9._-] with a hyphen.
+         A slug computed differently here points at a /go/ page that does not
+         resolve, which is a broken link in somebody's Instagram bio -- the
+         single worst place in this product for one. */
+      function bioSlug(handle) {
+        return String(handle || '').replace(/^\s*@/, '').trim().toLowerCase()
+          .replace(/[^a-z0-9._-]+/g, '-');
+      }
+
+      /* ── what is still outstanding, and only they can do ────────────────
+         A connection is reported as finished when two steps remain, both
+         outside anything we can reach. Rendered only when there is something
+         to say: a permanent checklist that is usually all ticks trains people
+         to stop reading it. */
+      function setupHtml() {
+        var items = [];
+
+        accounts.forEach(function (ac) {
+          if (!ac.is_active) return;
+          var slug = bioSlug(ac.platform_username);
+          var who = ac.platform_username ? '@' + ac.platform_username : CONNECTABLE[ac.platform] || ac.platform;
+
+          /* THE BIO LINK. The only route off Instagram, and it needs a human
+             to paste it once. */
+          if (slug) {
+            var url = 'synapsecore.dev/go/' + slug;
+            items.push('<li><b>' + esc(who) + '</b> \u2014 put this link in the profile bio, '
+              + 'so the posts have somewhere to send people:'
+              + '<div class="cmp-setup-row"><code>' + esc(url) + '</code>'
+              + '<button class="cmp-ch-btn" data-copy="https://' + esc(url) + '">Copy</button></div>'
+              + '<span class="cmp-setup-why">It lists the homes this account has posted, newest '
+              + 'first, and each one opens the right listing.</span></li>');
+          }
+
+          /* THE PAGE BUTTON. Read at connect time; null means we could not
+             look, and then this says nothing at all. */
+          if (ac.platform !== 'facebook' || !ac.page_cta_type) return;
+
+          if (ac.page_cta_type === 'NONE') {
+            items.push('<li><b>' + esc(who) + '</b> \u2014 this Page has no action button. '
+              + 'Adding one that points at your listings puts a tappable route under '
+              + 'every post, in the spot Facebook makes most prominent.</li>');
+            return;
+          }
+
+          /* NO WEB ADDRESS means a call, a WhatsApp thread or a Messenger
+             window -- the buyer arrives with no listing attached and the
+             enquiry belongs to nothing. One condition instead of a list of
+             Meta's type names kept in step across two languages. */
+          if (!ac.page_cta_url) {
+            items.push('<li class="warn"><b>' + esc(who) + '</b> \u2014 your Page button ('
+              + esc(String(ac.page_cta_type).toLowerCase().replace(/_/g, ' '))
+              + ') sends people straight to a message or a call. Facebook puts it '
+              + 'directly under every post, above your caption link, so most people '
+              + 'tap it instead \u2014 and it arrives with no listing attached, so '
+              + 'nobody can tell which home it was about.'
+              + '<span class="cmp-setup-why">Point it at your listings instead. Keep the '
+              + 'phone number on the Page and on the listing \u2014 anyone who wants to '
+              + 'call still can, and you will know what they were looking at. '
+              + 'Meta Business Suite \u2192 Page \u2192 Edit action button.</span></li>');
+            return;
+          }
+
+          if (ac.page_cta_url.indexOf('synapsecore.dev') === -1) {
+            items.push('<li><b>' + esc(who) + '</b> \u2014 your Page button goes to '
+              + '<code>' + esc(ac.page_cta_url) + '</code>. That is fine if it is meant to; '
+              + 'pointing it at your Synapse listings instead means the taps are '
+              + 'counted against the homes they were about.</li>');
+          }
+        });
+
+        if (!items.length) return '';
+        return '<div class="cmp-setup"><div class="cmp-setup-hd">Only you can do these</div>'
+          + '<ul>' + items.join('') + '</ul></div>';
       }
 
       /* Re-render once the role is known. Without this the strip is whatever
@@ -10682,6 +10778,24 @@
       document.addEventListener('syn:role', function () { renderChannels(); });
 
       document.addEventListener('click', function (e) {
+        /* clipboard.writeText is unavailable on insecure origins and can be
+           refused outright, and a Copy button that silently does nothing is
+           worse than none -- the link is visible either way, so the fallback
+           is to say "select it yourself" rather than to pretend. */
+        var cp = e.target.closest && e.target.closest('[data-copy]');
+        if (cp) {
+          e.preventDefault();
+          var text = cp.dataset.copy, was = cp.textContent;
+          var done = function (ok) {
+            cp.textContent = ok ? 'Copied' : 'Select it above';
+            setTimeout(function () { cp.textContent = was; }, 1800);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); },
+                                                     function () { done(false); });
+          } else { done(false); }
+          return;
+        }
         var c = e.target.closest && e.target.closest('[data-connect]');
         if (c) { e.preventDefault(); startConnect(c.dataset.connect, c); return; }
         var d = e.target.closest && e.target.closest('[data-disconnect]');
