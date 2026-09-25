@@ -325,6 +325,29 @@
       });
     });
   }
+  /* ── a fresh confirmation link ─────────────────────────────────────────
+     Until 2026-09-25 the project's Site URL was http://localhost:3000 with an
+     EMPTY redirect allow-list, so every confirmation email ever sent opened
+     localhost on the reader's phone. Somebody who signed up in that window
+     holds a link that can never work, and the sign-in page was telling them
+     to "check your email for the link we sent" -- the broken one.
+
+     So a new link can be asked for, built through mailOrigin() like every
+     other emailed link, with the role carried as signUp carries it. */
+  function resendConfirmation(email, opts) {
+    opts = opts || {};
+    return client().then(function (c) {
+      return c.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: mailOrigin() + '/app/signin.html?role='
+            + (opts.role === 'agency' ? 'agency' : 'customer'),
+        },
+      });
+    });
+  }
+
   /* ── phone ──────────────────────────────────────────────────────────────
      Nigerian numbers get typed every way there is: 0803..., 234803...,
      +234803..., with spaces and dashes. GoTrue wants strict E.164 and rejects
@@ -501,6 +524,7 @@
     client: client, ready: ready, user: function () { return cachedUser; },
     getUser: getUser, roleOf: roleOf, safeNext: safeNext,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
+    resendConfirmation: resendConfirmation,
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     normalisePhone: normalisePhone,
     signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,

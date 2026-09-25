@@ -1314,7 +1314,33 @@
 
           window.location.href = SynAuth.safeNext(next, fallback);
         }).catch(function (err) {
-          showNote('bad', friendly(err));
+          /* UNCONFIRMED: OFFER A NEW LINK, don't just point at the old one.
+             Every confirmation email sent before 2026-09-25 opened localhost,
+             so "check your email for the link we sent" sent people back to a
+             link that could never work. This is not an enumeration leak:
+             GoTrue returns email_not_confirmed only when the password was
+             RIGHT, so only the account's owner ever sees the offer. */
+          /* Read the way friendly() reads it -- code OR error_code. The SDK
+             has used both, and checking only one would silently skip this
+             offer for whichever version sends the other. */
+          var errCode = (err && (err.code || err.error_code)) || '';
+          if (errCode === 'email_not_confirmed' && email && SynAuth.resendConfirmation) {
+            showNote('bad', 'That account still needs confirming. '
+              + '<button type="button" class="au-linkbtn" id="auResend">Send a new confirmation link</button>');
+            var rb = el('auResend');
+            if (rb) rb.addEventListener('click', function () {
+              rb.disabled = true; rb.textContent = 'Sending…';
+              SynAuth.resendConfirmation(email, { role: role })
+                .then(function (r) {
+                  if (r && r.error) throw r.error;
+                  showNote('ok', 'A new link is on its way. Open it on any device — '
+                    + 'it goes to synapsecore.dev now, not to this computer.');
+                })
+                .catch(function (e2) { showNote('bad', friendly(e2)); });
+            });
+          } else {
+            showNote('bad', friendly(err));
+          }
         }).then(function () {
           busy = false; go.disabled = false;
           syncSubmitLabel();
