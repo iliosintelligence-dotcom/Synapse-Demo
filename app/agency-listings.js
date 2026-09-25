@@ -387,10 +387,13 @@
      than an error -- so every writer below treats an empty result as failure
      instead of reporting a success that did not happen. */
 
+  /* NO campaign_creatives EMBED. Nothing renders those rows any more, so
+     fetching them was a join pulling fabricated headlines and an unmeasured
+     CTR on every campaign load. The rows are left in the table rather than
+     deleted -- that is an irreversible act and a separate decision. */
   var CAMPAIGN_SELECT =
     'id, name, persona, status, budget_naira, spend_naira, target_platforms, ' +
-    'target_audience_description, start_date, end_date, created_at, ' +
-    'campaign_creatives(id, headline, image_url, channel, status, ctr, leads_count, display_order)';
+    'target_audience_description, start_date, end_date, created_at';
 
   /** What each campaign actually did, keyed by campaign id. Summed in the
    *  database from social_post_stats() -- the same per-post measurement the
@@ -429,13 +432,7 @@
         .order('created_at', { ascending: false });
     }).then(function (r) {
       if (r.error) throw r.error;
-      return (r.data || []).map(function (c) {
-        c.creatives = (c.campaign_creatives || []).slice().sort(function (a, b) {
-          return a.display_order - b.display_order;
-        });
-        delete c.campaign_creatives;
-        return c;
-      });
+      return r.data || [];
     });
   }
 
