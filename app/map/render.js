@@ -643,17 +643,55 @@
   Renderer.prototype.onCluster = function (fn) { this._handlers.cluster.push(fn); return this; };
   Renderer.prototype.resize = function () { if (this.map) this.map.resize(); return this; };
 
-  /* ── carried over from the Leaflet build, because they were right ──────
-     One finger scrolls the PAGE, two fingers move the map. Leaflet needed a
-     capture-phase fight to achieve this; MapLibre exposes it directly, but the
-     reasoning is unchanged: a map that eats the page scroll is a hole in the
-     page, and every phone user has already learnt the two-finger convention
-     from Google Maps. */
+  /* ── one finger, when the map IS the screen ────────────────────────────
+     The old rule was: one finger scrolls the PAGE, two fingers move the map.
+     Carried over from the Leaflet build with this reasoning, which is worth
+     keeping because half of it is still right:
+
+         a map that eats the page scroll is a hole in the page
+
+     True of a map EMBEDDED in a scrolling page. False of a map that IS the
+     screen -- there is no page behind it to scroll, so the rule protects
+     nothing and costs the one gesture everybody reaches for first. Reported
+     as a bug, and it was one: Google Maps does not ask for two fingers when
+     it is the whole screen.
+
+     DECIDED BY SIZE, not by a flag somebody has to remember to pass. A map
+     covering most of the viewport owns the gesture; a card in a page keeps
+     the two-finger rule and the hint that explains it.
+
+     MEASURED AT TOUCH TIME. The Overview map goes from 300px to full screen
+     with no reload, so a decision taken once at construction would be wrong
+     immediately after the first expand -- the same mistake the mini-map
+     scaling made, pointing the other way. */
   Renderer.prototype._gestures = function () {
     if (!('ontouchstart' in window)) return;
-    this.map.dragPan.disable();
     var map = this.map, el = this.map.getContainer();
-    el.style.touchAction = 'pan-y';
+
+    /* Most of the viewport, not all of it: a full-screen map still sits under
+       a header and over a taskbar, so it is never the entire height. 70%
+       clears every embedded card in this app and every full-bleed map. */
+    function ownsGesture() {
+      var r = el.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      return vh > 0 && r.height >= vh * 0.7;
+    }
+
+    /* touch-action moves with the rule. 'pan-y' hands vertical scrolling to
+       the browser, which is what an embedded map wants and is exactly what
+       stops a full-screen map following a finger -- and what made pinch feel
+       unavailable, because the browser claimed the gesture before MapLibre
+       saw it. */
+    function apply(full) {
+      el.style.touchAction = full ? 'none' : 'pan-y';
+      if (full) map.dragPan.enable(); else map.dragPan.disable();
+    }
+    apply(ownsGesture());
+    /* Re-applied when the map is expanded or the phone is turned. */
+    window.addEventListener('resize', function () { apply(ownsGesture()); });
+    window.addEventListener('orientationchange', function () {
+      setTimeout(function () { apply(ownsGesture()); }, 200);
+    });
 
     var hint = document.createElement('div');
     hint.className = 'syn-gesture-hint';
@@ -662,17 +700,29 @@
     var timer = null;
 
     el.addEventListener('touchstart', function (e) {
+      if (ownsGesture()) {
+        /* One finger pans, two fingers pinch. touchZoomRotate has been on the
+           whole time -- only its rotation was disabled -- so the pinch needs
+           nothing here beyond not having touch-action take it first. */
+        apply(true);
+        hint.classList.remove('on');
+        return;
+      }
+      apply(false);
       if (e.touches.length >= 2) { map.dragPan.enable(); hint.classList.remove('on'); }
-      else map.dragPan.disable();
     }, { passive: true, capture: true });
+
     el.addEventListener('touchmove', function (e) {
+      if (ownsGesture()) return;
       if (e.touches.length < 2) {
         hint.classList.add('on');
         clearTimeout(timer);
         timer = setTimeout(function () { hint.classList.remove('on'); }, 1400);
       }
     }, { passive: true });
+
     el.addEventListener('touchend', function (e) {
+      if (ownsGesture()) return;
       if (e.touches.length < 2) map.dragPan.disable();
     }, { passive: true, capture: true });
   };

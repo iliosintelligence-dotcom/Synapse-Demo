@@ -441,6 +441,17 @@
     .cmp-tg-in { flex: 1; min-width: 160px; min-height: 38px; padding: 8px 10px;
       border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
       font: 400 12.5px var(--f-sans); color: var(--ink); }
+    /* Shut: one line, the way every other row in this strip reads. */
+    .cmp-reply-shut { display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 10px 14px; }
+    .cmp-reply-sum { display: flex; align-items: center; gap: 9px; font-size: 12.5px;
+      color: var(--ink-muted); min-width: 0; }
+    .cmp-reply-sum b { color: var(--ink); font-weight: 600; }
+    /* State as a shape, not only as words: on and off are read at a glance
+       here, and grey-vs-green does it faster than a sentence. */
+    .cmp-reply-dot { width: 7px; height: 7px; border-radius: 50%; flex: none;
+      background: var(--ink-dim); }
+    .cmp-reply-dot.on { background: var(--success); }
     .cmp-reply-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
       color: var(--ink-muted); margin-bottom: 8px; cursor: pointer; }
     .cmp-reply-lbl { display: block; font: 600 11px var(--f-sans); color: var(--ink-muted);
@@ -10828,6 +10839,11 @@
          so it is off until an owner or admin says otherwise, and the exact
          message is on screen before it can ever go anywhere. */
       var replyCfg = null;
+      /* Open while the decision is being made, shut once it has been. Kept
+         out of replyCfg because it is about this screen, not about the
+         agency's settings -- reloading the settings must not reopen a box
+         somebody just closed. */
+      var replyOpen = false;
 
       function canSetReplies() {
         var r = document.body.dataset.role;
@@ -10860,6 +10876,28 @@
         var on = !!replyCfg.enabled;
         var kw = replyCfg.keyword || 'PRICE';
         var msg = replyCfg.message || '';
+
+        /* SAVED MEANS A ROW CAME BACK, not that the fields hold values.
+           Somebody who deliberately saved the defaults has made the decision
+           and gets the same one line as anybody else. */
+        var saved = !!replyCfg.agency_id;
+        if (saved && !replyOpen) {
+          /* Off is SAID, not implied by absence. A collapsed row silent about
+             being off reads as on, and this is the control that messages
+             strangers -- the one place here where assuming the more active
+             state is the wrong way to be wrong. */
+          return '<div class="cmp-setup cmp-reply cmp-reply-shut">'
+            + '<div class="cmp-reply-sum">'
+            +   '<span class="cmp-reply-dot' + (on ? ' on' : '') + '"></span>'
+            +   '<span>' + (on
+                  ? 'Answering comments that say <b>' + esc(kw) + '</b> with the listing link'
+                  : 'Comment replies are <b>off</b>')
+            +   '</span>'
+            + '</div>'
+            + '<button class="cmp-ch-btn" id="rpEdit">Edit</button>'
+            + '</div>';
+        }
+
         return '<div class="cmp-setup cmp-reply">'
           + '<div class="cmp-setup-hd">Answer comments with the link</div>'
           + '<p class="cmp-ch-note">Instagram captions cannot be tapped. When somebody '
@@ -10880,6 +10918,11 @@
       }
 
       function wireReply() {
+        var edit = document.getElementById('rpEdit');
+        if (edit) {
+          edit.addEventListener('click', function () { replyOpen = true; renderChannels(); });
+          return;
+        }
         var msg = document.getElementById('rpMsg');
         var prev = document.getElementById('rpPrev');
         if (!msg || !prev) return;
@@ -10901,6 +10944,10 @@
             return loadReplySettings();
           }).then(function () {
             btn.disabled = false;
+            /* Shut on the way out of a successful save -- which is the moment
+               the decision stops being one. A failed save leaves it open, so
+               nobody loses what they typed to a collapse. */
+            replyOpen = false;
             renderChannels();
           }).catch(function (err) {
             btn.disabled = false;
@@ -13008,7 +13055,30 @@
       const items = list.map(ovItem);
       if (window.SynMatches) SynMatches.drawMatchMap(OV.map, 'ovMap', items,
         /* No areaSearch: this map is this agency's own stock. */
-        { sb: { url: SB_URL, anon: SB_KEY } });
+        { sb: { url: SB_URL, anon: SB_KEY },
+          /* THIS IS THE AGENCY'S MAP, so it stays in the agency's app. The
+             defaults in matches-shared are the buyer's -- the consumer
+             listing page, and a chat with Tayo about the home -- which is
+             how tapping a pin here used to end up in the customer's chat. */
+          ask: null,
+          href: function (id) { return '#listing-' + encodeURIComponent(id); } });
+
+      /* The card's link is an anchor, so the hash above is never followed:
+         it is intercepted here and turned into the portal's own listing
+         view. "Check the property details" for an agency means the record
+         they can edit, not the page their buyers see. */
+      var ovHost = document.getElementById('ovMap');
+      if (ovHost && !ovHost.__ovOpenBound) {
+        ovHost.__ovOpenBound = true;
+        ovHost.addEventListener('click', function (e) {
+          var a = e.target.closest && e.target.closest('[data-open]');
+          if (!a) return;
+          var href = a.getAttribute('href') || '';
+          if (href.indexOf('#listing-') !== 0) return;
+          e.preventDefault();
+          openListingById(decodeURIComponent(href.slice('#listing-'.length)));
+        });
+      }
       syncOvSheetA11y();
     }
     /* ── the sheet itself: open/close, not selection ──────────────────

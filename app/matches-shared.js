@@ -367,8 +367,23 @@
       st.opts = opts || {};
       st.r.ready().then(function () {
         st.card = SynMapCard.attach(st.r, host, {
-          href: function (id) { return propertyHref(id); },
-          ask: function (id) { return 'toju.html?reply=' + encodeURIComponent(id); },
+          /* WHERE A CARD GOES IS THE PAGE'S QUESTION, not this file's. Three
+             pages draw this map and two of them are the buyer's app, so
+             hardcoding these handed the agency portal the buyer's
+             destinations -- its own map opened the consumer listing page and
+             offered to start a chat with Tayo about a home the agency is
+             selling.
+
+             Defaults unchanged, so browse and Tayo's canvas behave exactly as
+             they did. `'ask' in opts` rather than a truthiness test: null is
+             a real answer -- "no button at all" -- and a falsy check would
+             read it as "not specified" and hand back the buyer's chat. */
+          href: typeof st.opts.href === 'function'
+            ? st.opts.href
+            : function (id) { return propertyHref(id); },
+          ask: ('ask' in st.opts)
+            ? st.opts.ask
+            : function (id) { return 'toju.html?reply=' + encodeURIComponent(id); },
           /* Without this the card cannot ask what is near a home. Absent, the
              Nearby block simply does not render -- it degrades to the card it
              was, rather than to a broken one. */
