@@ -470,21 +470,12 @@
     }).then(function (r) {
       if (r.error) throw r.error;
       if (!r.data) throw new Error('You do not have permission to create campaigns');
-      var id = r.data.id;
-      var rows = (data.creatives || []).map(function (cr, i) {
-        return {
-          campaign_id: id, headline: cr.headline, image_url: cr.imageUrl || null,
-          channel: cr.channel, display_order: i,
-        };
-      });
-      if (!rows.length) return id;
-      return c1.from('campaign_creatives').insert(rows).select('id').then(function (r2) {
-        if (r2.error) {
-          // Roll back rather than leave a campaign with no creatives in it.
-          return c1.from('campaigns').delete().eq('id', id).then(function () { throw r2.error; });
-        }
-        return id;
-      });
+      /* A campaign is created and that is all. It used to write three
+         fabricated creatives here and roll the campaign back if they failed
+         -- "rather than leave a campaign with no creatives in it", which is
+         now exactly what every campaign correctly is until posts are
+         scheduled into it. */
+      return r.data.id;
     });
   }
 
@@ -503,39 +494,9 @@
     });
   }
 
-  /* creatives: [{ headline, imageUrl, channel }] appended after the existing
-     ones, so display_order continues rather than restarting. */
-  function addCreatives(campaignId, creatives, startOrder) {
-    var c1;
-    return client().then(function (c) {
-      c1 = c;
-      return c1.from('campaign_creatives').insert(creatives.map(function (cr, i) {
-        return {
-          campaign_id: campaignId, headline: cr.headline, image_url: cr.imageUrl || null,
-          channel: cr.channel, display_order: (startOrder || 0) + i,
-        };
-      })).select('id, headline, image_url, channel, status, ctr, leads_count, display_order');
-    }).then(function (r) {
-      if (r.error) throw r.error;
-      if (!r.data || !r.data.length) throw new Error('You do not have permission to add creatives');
-      return r.data;
-    });
-  }
-
-  function setCreativeStatus(id, status) {
-    var ok = ['learning', 'scaling', 'pausedai'];
-    if (ok.indexOf(status) < 0) return Promise.reject(new Error('Unknown status: ' + status));
-    return client().then(function (c) {
-      return c.from('campaign_creatives')
-        .update({ status: status })
-        .eq('id', id).is('deleted_at', null)
-        .select('id, status').maybeSingle();
-    }).then(function (r) {
-      if (r.error) throw r.error;
-      if (!r.data) throw new Error('You do not have permission to change this creative');
-      return r.data;
-    });
-  }
+  /* addCreatives() and setCreativeStatus() lived here and wrote to
+     campaign_creatives -- invented headlines, and a status moving between
+     'learning' and 'scaling' that nothing acted on. Deleted with the table. */
 
   /* ── the agency's own people ─────────────────────────────────────────────
      Needed by the CRM's Assign action. profiles used to be readable only by
@@ -2557,8 +2518,6 @@
     postMetrics: postMetrics,
     createCampaign: createCampaign,
     setCampaignStatus: setCampaignStatus,
-    addCreatives: addCreatives,
-    setCreativeStatus: setCreativeStatus,
     LEAD_STAGES: LEAD_STAGES,
     create: create,
     update: update,
