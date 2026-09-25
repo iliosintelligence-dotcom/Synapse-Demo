@@ -374,6 +374,13 @@
     /* Its own full-width line under the three. grid-column overrides
        grid-template-areas below, so this holds in both layouts without
        naming a fifth area in the narrow one. */
+    .sch-story { display: flex; gap: 9px; align-items: flex-start; margin-top: 12px;
+      font-size: 12.5px; color: var(--ink-muted); cursor: pointer; }
+    .sch-story input { margin-top: 2px; flex: none; }
+    /* The limitation, set quieter than the offer but on the same control --
+       far enough down to be an explanation, close enough to be read. */
+    .sch-story em { display: block; font-style: normal; font-size: 11.5px;
+      color: var(--ink-dim); line-height: 1.5; margin-top: 2px; }
     .slot-acct { grid-column: 1 / -1; }
     /* No account to choose between: the div is empty and takes no
        space, gap included. */
@@ -6206,6 +6213,14 @@
         +   (mode === 'reschedule' ? ''
               : '<button type="button" class="btn" id="schNow" style="flex:1">Post now</button>')
         + '</div>'
+        /* SAYS WHAT A STORY CANNOT DO. Meta's publishing API attaches no
+           link sticker, so this is reach and nothing else -- and an agency
+           that ticks it believing Stories drive traffic will decide the
+           tracking is broken when no clicks arrive. */
+        + '<label class="sch-story"><input type="checkbox" id="schStory">'
+        +   '<span>Also put the first photo on Instagram Stories'
+        +   '<em>24 hours, and no tappable link \u2014 Instagram does not allow one '
+        +   'on a Story posted through the API. Reach, not clicks.</em></span></label>'
         + '<div class="sch-note" id="schNote"></div>'
         + '<button class="btn btn-primary btn-block" id="schSave" style="margin-top:12px">'
         +   esc2(mode === 'reschedule' ? 'Save' : 'Add to schedule') + '</button>';
@@ -6300,6 +6315,9 @@
                    one photo where there were eight -- because that array is
                    rebuilt from four places and any of them can drop it. */
                 caption: p.caption || '', mediaUrls: null, slots: extra,
+                /* Read at commit rather than captured when the sheet opened:
+                   somebody can tick it after adding a second row. */
+                stories: !!(document.getElementById('schStory') || {}).checked,
                 /* BOTH BUTTONS ARE REAL NOW; they differ only in WHEN. This
                    used to pass true for the scheduled case, which is what made
                    "schedule it for 8pm" mean "go to the mock at 8pm and stop".

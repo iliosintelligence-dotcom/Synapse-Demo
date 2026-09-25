@@ -1875,6 +1875,27 @@
         .update({ content_id: o.contentId })
         .in('id', made.map(function (m) { return m.id; }))
         .then(function () { return made; }, function () { return made; });
+    }).then(function () {
+      /* A STORY BESIDE EACH INSTAGRAM POST, when asked for. Instagram only:
+         queue_story_twin refuses anything else, and Facebook Stories are a
+         different product with different endpoints.
+
+         Fails soft for the same reason content_id above does -- the feed post
+         is what the agency asked for, and a Story that could not be queued
+         must not take it down. Sequential, because the RPC is idempotent per
+         source post but the rate limit is not. */
+      if (!o.stories || !made.length) return made;
+      var igs = made.filter(function (m) { return m.platform === 'instagram'; });
+      return igs.reduce(function (chain, m) {
+        return chain.then(function () {
+          return c1.rpc('queue_story_twin', { p_source_post: m.id })
+            .then(function (r) {
+              if (r.error) console.error('story twin', r.error.message);
+              else made.push({ id: r.data, platform: 'instagram', story: true,
+                               scheduled_at: m.scheduled_at });
+            }, function (e) { console.error('story twin', e); });
+        });
+      }, Promise.resolve()).then(function () { return made; });
     });
   }
 
