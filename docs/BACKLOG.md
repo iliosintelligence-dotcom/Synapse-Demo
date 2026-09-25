@@ -14,7 +14,8 @@ from a query run tonight, not from memory.
 
 | | Unblocks |
 |---|---|
-| **Facebook Connect**, signed in as someone who administers the Page. The new account must first be added under App roles → **Testers** and accept — Development Mode refuses anyone without a role on the app. | Everything in section 2 |
+| **Meta App Review → Live mode.** THE gate for real agencies. While the app is in Development Mode, Meta itself refuses the Connect dialog to anybody without a role on the app — no agency should ever have to be given one. `platform-review-pack.md` was written 3 Sep and covers **2 of the 11** permissions the code now requests. | Any agency connecting at all |
+| **Facebook Connect rehearsal**, signed in as a test agency account. Until review passes, that account must be added under App roles → **Testers** by the app owner — a rehearsal-only step, not part of the agency's flow, which is otherwise identical. | Everything in section 2 |
 | `TELEGRAM_BOT_TOKEN` via @BotFather | Telegram posting, and the founder signup alerts |
 | Founder Telegram chat id → `platform_settings.founder_telegram_chat_id` | Signup / arrival alerts |
 | `pages_messaging` on configuration 2272646810190199, then **Advanced Access** | Comment-to-DM replies, and any agency other than ourselves |
