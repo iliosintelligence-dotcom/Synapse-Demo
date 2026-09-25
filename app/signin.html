@@ -969,6 +969,22 @@
            message tests, then the broad ones. */
         var code = (err && (err.code || err.error_code)) || '';
 
+        /* THE LIVE RESET PAGE'S "SOMETHING WENT WRONG" (2026-09-26). GoTrue
+           refuses a new password that matches the current one, with code
+           same_password and the sentence "New password should be different
+           from the old password." A mapping further down was meant for this,
+           but it looks for the word "same" -- which that sentence does not
+           contain -- so it fell through to the catch-all. Matched by code
+           first, and by the words GoTrue actually uses. */
+        if (code === 'same_password' || m.indexOf('different from the old password') > -1)
+          return 'That is already your password — choose a different one, or simply sign in with it.';
+        /* The server states the actual rule it applied, which is more useful
+           than any paraphrase of it. Escaped: it goes into innerHTML. */
+        if (code === 'weak_password')
+          return escHtml((err && err.message) || 'That password is too weak — choose a stronger one.');
+        if (code === 'reauthentication_needed')
+          return 'For security, sign in again before changing your password.';
+
         /* Supabase's built-in email sender allows only a handful of messages
            an hour and is not meant for production. Signing up three or four
            times is enough to hit it single-handed, which is why this reads as
@@ -1021,7 +1037,15 @@
           return 'Please wait a few seconds before trying that again.';
         if (m.indexOf('rate') > -1 || m.indexOf('too many') > -1)
           return 'Too many attempts just now. Wait a minute and try again.';
-        return 'Something went wrong. Please try again.';
+        return GENERIC_ERR;
+      }
+      /* Named so a caller can tell "nothing matched" apart from a real
+         sentence, and say something more useful where it is safe to. */
+      var GENERIC_ERR = 'Something went wrong. Please try again.';
+      function escHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (ch) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
       }
 
       /* ── THE DEMO ACCOUNTS ────────────────────────────────────
@@ -1464,7 +1488,36 @@
           })
           .catch(function (err) {
             rpBusy = false; rpGo.disabled = false; rpGo.textContent = 'Set new password';
-            el('rpNote').innerHTML = '<div class="au-note bad" role="status">' + friendly(err) + '</div>';
+            /* Logged whole, because the page used to keep the only clue to
+               itself and show "Something went wrong" on the live site. */
+            if (window.console) console.error('password update failed', err);
+
+            /* ALREADY THEIR PASSWORD. Nothing needs fixing: they have typed a
+               password that works, and the recovery link has already signed
+               them in. Refusing them and asking for another one would make
+               them solve a problem they no longer have -- so offer the door. */
+            var rc = (err && (err.code || err.error_code)) || '';
+            if (rc === 'same_password'
+                || /different from the old password/i.test(String((err && err.message) || ''))) {
+              el('rpNote').innerHTML = '<div class="au-note ok" role="status">That is already your '
+                + 'password, so there is nothing to change. '
+                + '<button type="button" class="au-linkbtn" id="rpContinue">Continue to Synapse</button></div>';
+              el('rpContinue').addEventListener('click', function () {
+                var fb = role === 'agency' ? 'agency.html' : 'toju.html';
+                window.location.href = SynAuth.safeNext(next, fb);
+              });
+              return;
+            }
+
+            /* ANYTHING ELSE UNRECOGNISED: the server's own words. This person
+               is already signed in by the recovery link, so there is nothing
+               to protect by hiding them, and "Something went wrong" is what
+               made this failure impossible to diagnose. */
+            var msg = friendly(err);
+            if (msg === GENERIC_ERR && err && err.message) {
+              msg = 'That did not work: ' + escHtml(err.message);
+            }
+            el('rpNote').innerHTML = '<div class="au-note bad" role="status">' + msg + '</div>';
           });
       });
 
