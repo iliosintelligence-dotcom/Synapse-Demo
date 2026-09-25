@@ -10454,6 +10454,25 @@
         x: ['X', 'not built yet'],
       };
       var accounts = [];
+      /* Which platforms this PROJECT can connect at all -- our setup, not the
+         agency's. Empty means "not asked yet or the ask failed", and every
+         platform renders as it always did: a status endpoint having a bad
+         minute must not strip working buttons out of the portal. */
+      var ready = null;
+
+      function platformReady(pl) {
+        if (!ready) return true;                  // unknown: behave as before
+        return !ready[pl] || ready[pl].ready !== false;
+      }
+
+      function loadConnectStatus() {
+        return fetch(SB_URL + '/functions/v1/social-connect?action=status', {
+          headers: { apikey: SB_KEY },
+        })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { ready = (j && j.platforms) || null; })
+          .catch(function () { ready = null; });
+      }
 
       function token() {
         if (!window.SynAuth) return Promise.resolve(null);
@@ -10467,7 +10486,10 @@
       function loadChannels() {
         var box = document.getElementById('cmpChannels');
         if (!box) return Promise.resolve();
-        return token().then(function (t) {
+        /* The status first, so the strip is drawn once and correctly. Drawing
+           it twice -- buttons, then buttons removed a moment later -- is worse
+           than drawing it late. */
+        return loadConnectStatus().then(function () { return token(); }).then(function (t) {
           if (!t) { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
               + '?select=id,platform,platform_username,is_active,token_expires_at,connected_at'
@@ -10604,7 +10626,20 @@
           /* The add row. Says "Connect" on an empty platform and "Add another"
              where one is already there, because those are different actions to
              the person pressing them even though they run the same code. */
-          if (canConnect()) {
+          if (!platformReady(pl)) {
+            /* OURS TO FIX, SO NOT THEIR BUTTON. Synapse has not finished
+               setting this product up with Meta. An agency can do nothing
+               about that, so they are told the state rather than handed a
+               control that refuses. Hidden entirely once something IS
+               connected: the existing accounts keep working and a "not
+               available" note beside them would be a lie. */
+            if (!list.length) {
+              html += '<div class="cmp-ch soon">'
+                + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+                + esc(CONNECTABLE[pl]) + '</span>'
+                + '<span class="cmp-ch-at">not available yet</span></div>';
+            }
+          } else if (canConnect()) {
             html += '<div class="cmp-ch">'
               + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
               + esc(CONNECTABLE[pl]) + '</span>'
