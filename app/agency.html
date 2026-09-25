@@ -8599,12 +8599,11 @@
        The audience is the half we can genuinely name; the place comes from
        the listing. Diaspora keeps its own geography because that one IS
        about where the buyers are, not where the house is. */
-    const PERSONAS = {
-      family: 'Family buyers',
-      investor: 'Yield investors',
-      diaspora: 'Diaspora buyers, UK & Canada',
-      firsthome: 'First-home buyers',
-    };
+    /* PERSONAS lived here: four audiences a campaign was said to be aimed
+       at. Nothing filtered, routed or wrote differently because of one -- it
+       produced a label. The campaign's own name says the same thing without
+       implying the platform is targeting anybody, and 20260926140000 records
+       the two values that existed before the columns went. */
     /** "Old Bodija, Ibadan" -- as much of the listing's location as it really
      *  carries, never a placeholder for the part it does not.
      *
@@ -8627,12 +8626,9 @@
         || (l && l.neighbourhood && l.neighbourhood.name) || '';
       return hood || parts[parts.length - 1] || '';
     };
-    const listingWhere = (l) => !l ? ''
-      : [listingArea(l), (l.city || '').trim()].filter(Boolean).join(', ');
-    const personaLabel = (key, l) => {
-      const where = listingWhere(l);
-      return PERSONAS[key] + (where ? ' \u00b7 ' + where : '');
-    };
+    /* listingWhere and personaLabel went with it. The first dug an area out
+       of `address` for the second, which labelled an audience; nothing else
+       asked either of them anything. */
     /* HEADLINES lived here: a pool of invented ad copy that every new campaign
        was launched with, which the leaderboard then ranked by a CTR nobody
        measured. Deleted rather than left unused -- a function that fabricates
@@ -8673,18 +8669,11 @@
     let CAMPAIGNS = [];
     const MKST = { loaded: false, error: null };
 
-    // Database row -> the shape this pane renders. Budget and spend are stored
-    // in naira and shown in thousands, which is how the form collects them.
+    // Database row -> the shape this pane renders.
     const mapCampaign = (c) => ({
       id: c.id,
       nm: c.name,
-      persona: c.persona || 'family',
       live: c.status === 'active',
-      /* The audience as it was recorded, not as PERSONAS spells it now.
-         PERSONAS lost its location half when the form started taking that from
-         the listing, so reading it here would have shown every campaign as a
-         bare "Family buyers" -- including ones saved with a real place. */
-      aud: c.target_audience_description || PERSONAS[c.persona] || '',
       until: c.end_date || null,
       chans: (c.target_platforms || []).length ? c.target_platforms : ['instagram'],
       /* `ads` is gone. It mapped campaign_creatives -- invented headlines,
@@ -8849,7 +8838,7 @@
         <div class="card campaign">
           <div class="chd">
             <span class="nm">${c.nm}</span>
-            <span class="aud">${esc2(c.aud)}</span>
+
             <span class="bdg ${c.live ? 'live' : 'paused'}">${c.live ? '● Live' : 'Paused'}</span>
             <span class="spend">${c.until ? 'Runs to ' + esc2(new Date(c.until + 'T00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })) : ''}</span>
           </div>
@@ -8888,8 +8877,7 @@
                above it, and the budget's unit moves out of the label and into
                the field — where it reads as ₦15k / day, the same way the
                campaign card already states it. -->
-          <div class="field"><label>Audience</label>
-            <select id="cfA">${Object.keys(PERSONAS).map(p => `<option value="${p}">${esc2(personaLabel(p, LISTINGS_DATA[0]))}</option>`).join('')}</select></div>
+
           <!-- WAS "Daily budget", ₦15k/day. Synapse does not buy advertising:
                nothing debits an account, spend_naira is never written to, and
                the number went straight onto the card as "₦15k/day · ₦0k spent"
@@ -8916,20 +8904,16 @@
       /* The audience names a place, so it has to follow the listing rather
          than sit there stating the location of whichever property happened to
          be first in the list. */
-      const cfL = document.getElementById('cfL'), cfA = document.getElementById('cfA');
-      function syncAudience() {
-        const l = LISTINGS_DATA[+cfL.value];
-        const keep = cfA.value;
-        cfA.innerHTML = Object.keys(PERSONAS).map(p =>
-          '<option value="' + p + '">' + esc2(personaLabel(p, l)) + '</option>').join('');
-        if (keep) cfA.value = keep;
-      }
-      if (cfL && cfA) { cfL.addEventListener('change', syncAudience); syncAudience(); }
+      /* syncAudience lived here, repopulating the audience dropdown with the
+         chosen listing's location. Both the dropdown and the PERSONAS it read
+         are gone, and it would have thrown a ReferenceError the instant
+         anybody opened New campaign -- which node --check cannot see, because
+         it is a missing name rather than bad syntax. */
 
       document.getElementById('cfSave').addEventListener('click', () => {
         const nm = document.getElementById('cfN').value.trim();
         if (!nm) { toast('Name the campaign first'); return; }
-        const persona = document.getElementById('cfA').value;
+
         const li = LISTINGS_DATA[+document.getElementById('cfL').value];
         const chans = [...document.querySelectorAll('#cfC input:checked')].map(x => x.value);
         if (!chans.length) { toast('Pick at least one channel'); return; }
@@ -8937,8 +8921,6 @@
         btn.disabled = true; btn.textContent = 'Launching…';
         SynListings.createCampaign({
           name: nm,
-          persona,
-          audience: personaLabel(persona, li),
           endDate: document.getElementById('cfEnd').value || null,
           channels: chans,
           /* NO CREATIVES. Three headlines used to be copied out of a hardcoded
@@ -9210,11 +9192,10 @@
       if (!Array.isArray(old) || !old.length) return Promise.resolve(false);
       const jobs = old.map((c) => SynListings.createCampaign({
         name: c.nm || 'Imported campaign',
-        persona: c.persona || null,
-        /* The bare persona, with no place after it: these came out of
-           localStorage and carry no listing to take a location from. Any
-           budget they were saved with is dropped -- nothing spends it. */
-        audience: PERSONAS[c.persona] || null,
+        /* The persona, the audience and any budget these carried are
+           dropped: none of the three columns exist any more, and nothing
+           acted on them while they did. The name and the channels are the
+           parts worth importing. */
         channels: c.chans || [],
         /* The creatives these carried were the same invented headlines.
            The campaign is worth keeping; the fake ads inside it are not. */

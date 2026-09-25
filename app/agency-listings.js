@@ -408,9 +408,13 @@
      fetching them was a join pulling fabricated headlines and an unmeasured
      CTR on every campaign load. The rows are left in the table rather than
      deleted -- that is an irreversible act and a separate decision. */
+  /* A campaign is a name, a window, the channels it went out on, and the
+     posts filed under it. budget_naira, spend_naira, persona and
+     target_audience_description were dropped in 20260926140000: nothing in
+     this product spends money, and nothing filtered, routed or wrote
+     differently because of an audience. */
   var CAMPAIGN_SELECT =
-    'id, name, persona, status, budget_naira, spend_naira, target_platforms, ' +
-    'target_audience_description, start_date, end_date, created_at';
+    'id, name, status, target_platforms, start_date, end_date, created_at';
 
   /** What each campaign actually did, keyed by campaign id. Summed in the
    *  database from social_post_stats() -- the same per-post measurement the
@@ -570,12 +574,9 @@
         start_date: today.toISOString().slice(0, 10),
         end_date: end.toISOString().slice(0, 10),
         target_platforms: data.channels || [],
-        target_audience_description: data.audience || null,
         /* Synapse buys no advertising, so this stays 0 rather than carrying
            a number an agency was asked to invent. The column stays for the day
            there is a real media buy behind it. */
-        budget_naira: 0,
-        persona: data.persona || null,
       }).select('id').maybeSingle();
     }).then(function (r) {
       if (r.error) throw r.error;
