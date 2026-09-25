@@ -1782,6 +1782,13 @@
           return c1.rpc('queue_social_post', {
             p_property_id: o.propertyId,
             p_platform: sl.platform,
+            /* WHICH of the agency's accounts on that platform. null means
+               "the agency's default", which is what every post queued before
+               an agency could have two already means -- so this is additive
+               and nothing already scheduled changes its destination.
+               queue_social_post checks the account is the agency's own and
+               matches the platform; it is not trusted from here. */
+            p_social_account_id: sl.accountId || null,
             /* Per slot, falling back to the shared one. The captions are
                genuinely different per channel -- different subjects, not
                retoned copies -- so putting one of them on every row would post
@@ -1844,6 +1851,10 @@
       if (!SCHEDULABLE[patch.platform]) return Promise.reject(new Error('We do not publish to that yet'));
       row.platform = patch.platform;
     }
+    /* undefined, not falsy: null is a real value here -- it means "go back
+       to the agency's default account" -- and `if (patch.accountId)` would
+       silently refuse to set it. */
+    if (patch.accountId !== undefined) row.social_account_id = patch.accountId || null;
     if (patch.caption != null) row.caption = String(patch.caption);
     if (patch.status) {
       row.status = patch.status;

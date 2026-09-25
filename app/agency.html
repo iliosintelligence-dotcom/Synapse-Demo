@@ -371,6 +371,13 @@
     .slot-x { min-height: 40px; border: 1px solid var(--border); border-radius: 10px;
       background: none; color: var(--ink-dim); font-size: 16px; line-height: 1; cursor: pointer; }
     .slot-x:hover { color: var(--danger, #c0392b); }
+    /* Its own full-width line under the three. grid-column overrides
+       grid-template-areas below, so this holds in both layouts without
+       naming a fifth area in the narrow one. */
+    .slot-acct { grid-column: 1 / -1; }
+    /* No account to choose between: the div is empty and takes no
+       space, gap included. */
+    .slot-acct:empty { display: none; }
     @media (max-width: 420px) {
       .slot { grid-template-columns: 1fr 30px; grid-template-areas: 'p x' 'd d' 't t'; }
       .slot-p { grid-area: p; } .slot-d { grid-area: d; } .slot-t { grid-area: t; }
@@ -6075,7 +6082,36 @@
     const dateVal = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     const timeVal = (d) => pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 
-    function slotRow(plat, d) {
+    /* ── which accounts this agency has on a platform ────────────────────
+       Read off window rather than a lexical const on purpose. The fetch lives
+       inside the composer's IIFE and this function is outside it -- the same
+       boundary that made generateCaptions report a network fault for a
+       ReferenceError, and broke Post now before that. A window property reads
+       the same from every scope in this file and has no dead zone. */
+    function acctsFor(platform) {
+      return (window.SOCIAL_ACCOUNTS || []).filter(function (a) {
+        return a && a.platform === platform && a.is_active;
+      });
+    }
+    function acctLabel(a) {
+      return a.platform_username ? '@' + a.platform_username : 'Connected account';
+    }
+
+    /* ONLY WHEN THERE IS SOMETHING TO CHOOSE. One account is a fact, not a
+       decision, and a select with a single option is furniture every agency
+       looks past forever. The empty string means "the agency's default",
+       which is also what a row with no picker sends. */
+    function acctSelect(plat, chosen) {
+      const list = acctsFor(plat);
+      if (list.length < 2) return '';
+      return '<select class="slot-a" aria-label="Account">'
+        + list.map(a => '<option value="' + esc2(a.id) + '"'
+            + (a.id === chosen ? ' selected' : '') + '>'
+            + esc2(acctLabel(a)) + '</option>').join('')
+        + '</select>';
+    }
+
+    function slotRow(plat, d, acct) {
       return '<div class="slot" data-slot>'
         + '<select class="slot-p" aria-label="Channel">'
         + SCHED_PLATS.map(c => '<option value="' + c + '"' + (c === plat ? ' selected' : '') + '>'
@@ -6084,6 +6120,10 @@
         + '<input type="date" class="slot-d" value="' + dateVal(d) + '" aria-label="Date">'
         + '<input type="time" class="slot-t" value="' + timeVal(d) + '" aria-label="Time">'
         + '<button type="button" class="slot-x" aria-label="Remove this time">\u00d7</button>'
+        /* Its own line under the three, because it is the answer to a
+           different question and a fourth control on one row is unreadable on
+           a phone. Absent entirely when the platform has fewer than two. */
+        + '<div class="slot-acct">' + acctSelect(plat, acct) + '</div>'
         + '</div>';
     }
 
@@ -6163,6 +6203,19 @@
         x.closest('.slot').remove();
       });
 
+      /* THE ACCOUNTS FOLLOW THE CHANNEL. Switch a row from Instagram to
+         Facebook and the Instagram accounts it was offering are not merely
+         wrong, they are refused: queue_social_post checks that the account
+         matches the platform. Rebuilding the picker on change is what stops
+         the sheet offering a choice the server will reject. */
+      slots.addEventListener('change', (e) => {
+        const p = e.target.closest('.slot-p');
+        if (!p) return;
+        const row = p.closest('.slot');
+        const box = row && row.querySelector('.slot-acct');
+        if (box) box.innerHTML = acctSelect(p.value, '');
+      });
+
       /* `now` is the only difference between the two buttons: it overrides
          every row's time and clears dry_run, then drains the queue rather than
          waiting for the minute-by-minute cron. Everything else -- the rows,
@@ -6171,6 +6224,9 @@
       function commitSchedule(now) {
         const rows = [...slots.querySelectorAll('[data-slot]')].map(r => ({
           platform: r.querySelector('.slot-p').value,
+          /* Absent when the platform has one account or none, and then null
+             means the agency's default -- which is the same account. */
+          accountId: (r.querySelector('.slot-a') || {}).value || null,
           /* The channel still comes from the row; only the time is replaced.
              Somebody who added three rows to reach three channels means all
              three, and only stopped caring about when. */
@@ -6195,7 +6251,8 @@
            one behind next to the new one. */
         const extra = mode === 'reschedule' ? rows.slice(1) : rows;
         const first = mode === 'reschedule'
-          ? SynListings.updateSocialPost(p.postId, { at: rows[0].at, platform: rows[0].platform })
+          ? SynListings.updateSocialPost(p.postId, {
+              at: rows[0].at, platform: rows[0].platform, accountId: rows[0].accountId })
           : Promise.resolve();
 
         first
@@ -10411,15 +10468,23 @@
         var box = document.getElementById('cmpChannels');
         if (!box) return Promise.resolve();
         return token().then(function (t) {
-          if (!t) { accounts = []; publishConnected(); renderChannels(); return; }
+          if (!t) { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
-              + '?select=id,platform,platform_username,is_active,token_expires_at'
+              + '?select=id,platform,platform_username,is_active,token_expires_at,connected_at'
               + '&is_active=eq.true&deleted_at=is.null', {
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
             })
             .then(function (r) { return r.ok ? r.json() : []; })
-            .then(function (rowsIn) { accounts = rowsIn || []; publishConnected(); renderChannels(); })
-            .catch(function () { accounts = []; publishConnected(); renderChannels(); });
+            .then(function (rowsIn) {
+              accounts = rowsIn || [];
+              /* Published for the scheduler, which is outside this IIFE and
+                 must not fetch the same rows again -- two copies of the same
+                 list drift, and the one that drifts is always the one deciding
+                 where a post goes. */
+              window.SOCIAL_ACCOUNTS = accounts;
+              publishConnected(); renderChannels();
+            })
+            .catch(function () { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); });
         });
       }
 
@@ -10452,11 +10517,25 @@
           .map(function (a) { return a.platform; });
       }
 
+      /* Kept: liveCount() and the publish-readiness checks ask "is there one
+         at all", which is still a fair question with several. */
       function connectedTo(platform) {
         for (var i = 0; i < accounts.length; i++) {
           if (accounts[i].platform === platform) return accounts[i];
         }
         return null;
+      }
+
+      /* All of them, oldest first -- the same order social-publish uses to
+         choose the default when a post names no account, so the first one
+         listed here IS the one an unnamed post goes to. A different order in
+         the UI than in the publisher would make this screen quietly wrong
+         about where things go. */
+      function accountsOn(platform) {
+        return accounts.filter(function (a) { return a.platform === platform; })
+          .sort(function (x, y) {
+            return String(x.connected_at || '').localeCompare(String(y.connected_at || ''));
+          });
       }
 
       function expired(a) {
@@ -10476,9 +10555,16 @@
          reads the same source the nav does rather than asking again. Unknown
          role -> treated as an agent, which is the least privileged thing we
          know about. */
+      /* ANY MEMBER, changed 2026-09-25. It was owner/admin because a Meta
+         token speaks for the whole agency -- true while there was one account
+         per platform. An agency can now hold several and a post names which
+         one it goes to, so an agent connecting the account they already run is
+         not a claim to speak for anybody. social-connect enforces the same
+         three roles server-side; this only decides whether the button is
+         drawn. */
       function canConnect() {
         var r = document.body.dataset.role;
-        return r === 'agency_owner' || r === 'agency_admin';
+        return r === 'agent' || r === 'agency_owner' || r === 'agency_admin';
       }
 
       /* The logos live in SynIcons.BRAND, not the data-icon set -- hydrate()
@@ -10493,29 +10579,44 @@
         if (!box) return;
         var html = '<div class="cmp-ch-hd">Channels</div><div class="cmp-ch-row">';
 
+        /* EVERY ACCOUNT, not the first one found. connectedTo() returned
+           accounts[i] on the first platform match, so a second Instagram
+           account was invisible in the one place an agency looks to see what
+           is connected -- and invisible is indistinguishable from absent. */
         Object.keys(CONNECTABLE).forEach(function (pl) {
-          var a = connectedTo(pl);
-          /* A token with an expiry in the past is worse than no token: the
-             publish attempt fails at the provider, which reads as our bug. */
-          var stale = expired(a);
-          html += '<div class="cmp-ch' + (a && !stale ? ' on' : '') + '">'
-            + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
-            + esc(CONNECTABLE[pl]) + '</span>'
-            + (a
-                ? '<span class="cmp-ch-at">' + esc(stale ? 'session expired' : '@' + (a.platform_username || 'connected')) + '</span>'
-                  + '<button class="cmp-ch-btn" data-disconnect="' + esc(a.id) + '">'
-                  + (stale ? 'Reconnect' : 'Disconnect') + '</button>'
-                : (canConnect()
-                    ? '<button class="cmp-ch-btn primary" data-connect="' + pl + '">Connect</button>'
-                    /* NOT a disabled Connect button. social-connect answers an
-                       agent with 403 -- correctly, since a Meta token belongs
-                       to the agency and not to one person -- and this file's
-                       own rule is that a control which is shown and then
-                       refuses reads as a broken product rather than a
-                       boundary. So an agent is told who can do it instead of
-                       being handed a button that says no. */
-                    : '<span class="cmp-ch-at">an owner or admin connects this</span>'))
-            + '</div>';
+          var list = accountsOn(pl);
+
+          list.forEach(function (a) {
+            /* A token with an expiry in the past is worse than no token: the
+               publish attempt fails at the provider, which reads as our bug. */
+            var stale = expired(a);
+            html += '<div class="cmp-ch' + (stale ? '' : ' on') + '">'
+              + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+              + esc(CONNECTABLE[pl]) + '</span>'
+              + '<span class="cmp-ch-at">'
+                + esc(stale ? 'session expired' : '@' + (a.platform_username || 'connected'))
+              + '</span>'
+              + '<button class="cmp-ch-btn" data-disconnect="' + esc(a.id) + '">'
+              + (stale ? 'Reconnect' : 'Disconnect') + '</button>'
+              + '</div>';
+          });
+
+          /* The add row. Says "Connect" on an empty platform and "Add another"
+             where one is already there, because those are different actions to
+             the person pressing them even though they run the same code. */
+          if (canConnect()) {
+            html += '<div class="cmp-ch">'
+              + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+              + esc(CONNECTABLE[pl]) + '</span>'
+              + '<button class="cmp-ch-btn primary" data-connect="' + pl + '">'
+              + (list.length ? 'Add another' : 'Connect') + '</button>'
+              + '</div>';
+          } else if (!list.length) {
+            html += '<div class="cmp-ch">'
+              + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+              + esc(CONNECTABLE[pl]) + '</span>'
+              + '<span class="cmp-ch-at">sign in as a member of this agency</span></div>';
+          }
         });
 
         Object.keys(SOON).forEach(function (pl) {
