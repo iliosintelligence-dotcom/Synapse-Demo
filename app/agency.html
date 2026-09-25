@@ -391,6 +391,13 @@
     .tagchip i { font-style: normal; font-size: 10px; color: var(--ink-dim); }
     .tagchip.add { border-style: dashed; }
     .tagchip:disabled { opacity: .5; cursor: default; }
+    /* Gold, the same word this product uses everywhere for "this wants
+       you". Above the gallery rather than below it, because it is about the
+       photographs you are looking at. */
+    .lf-brandnote { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      border-left: 2px solid var(--gold); padding: 8px 0 8px 10px; margin-bottom: 10px;
+      font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); }
+    .lf-brandnote b { color: var(--ink); font-weight: 600; }
     .cap-warn { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
     .cap-warn:empty { display: none; }
     .cap-warn span { font-size: 11.5px; line-height: 1.45; color: var(--gold); }
@@ -8066,7 +8073,8 @@
         BRANDED = {};
         (l.media || []).forEach((m) => {
           if (m && m.url && m.branded_url) {
-            BRANDED[m.url] = { branded_url: m.branded_url,
+            BRANDED[m.url] = { id: m.id,
+                               branded_url: m.branded_url,
                                branded_price: m.branded_price,
                                branded_verified: m.branded_verified };
           }
@@ -8084,6 +8092,93 @@
           n.textContent = msg || '';
         }
 
+        /* ── when the price moves, the photographs say so ─────────────────
+           The mark is drawn once at upload and the price changes afterwards.
+           Recording what was drawn made that detectable; this tells somebody.
+
+           COMPARED HERE, NOT BY THE DATABASE. Both strings come from the same
+           naira(), so the comparison is consistent by construction — and
+           asking the server would add a round trip to answer a question
+           already in hand, plus a second formatter that has to agree with the
+           first. */
+        function nairaNow() {
+          var v = Number((document.getElementById('lfPrice') || {}).value) || 0;
+          if (!(v > 0)) return '';
+          if (v >= 1000000) return '\u20a6' + (v / 1000000).toFixed(1) + 'm';
+          return '\u20a6' + v.toLocaleString('en-NG');
+        }
+
+        function staleMarks() {
+          var priceNow = nairaNow();
+          var verifiedNow = (l && l.verification_status) === 'verified';
+          return photos.filter(function (u) {
+            var b = BRANDED[u];
+            if (!b || !b.branded_url || !b.id) return false;
+            return (b.branded_price || '') !== priceNow
+                || !!b.branded_verified !== verifiedNow;
+          });
+        }
+
+        function syncBrandNote() {
+          var host = galEl.parentElement;
+          var n = host.querySelector('.lf-brandnote');
+          var stale = staleMarks();
+          /* Only when something has actually drifted, which for most listings
+             is never. A permanent panel reporting "all correct" is furniture
+             that teaches people to stop reading this area. */
+          if (!stale.length) { if (n) n.remove(); return; }
+          if (!n) {
+            n = document.createElement('div');
+            n.className = 'lf-brandnote';
+            galEl.insertAdjacentElement('beforebegin', n);
+          }
+          var was = (BRANDED[stale[0]] || {}).branded_price || 'no price';
+          var now = nairaNow() || 'no price';
+          n.innerHTML = '<span>'
+            + (stale.length === 1 ? 'One photo still shows ' : stale.length + ' photos still show ')
+            + '<b>' + esc2(was) + '</b>'
+            + (was !== now ? ' \u2014 this listing is now <b>' + esc2(now) + '</b>.' : '.')
+            + ' They go out on social as they are.</span>'
+            + '<button type="button" class="cmp-ch-btn" id="lfRedraw">Redraw '
+            + (stale.length === 1 ? 'it' : 'them') + '</button>';
+          n.querySelector('#lfRedraw').addEventListener('click', redrawStale);
+        }
+
+        function redrawStale() {
+          var btn = document.getElementById('lfRedraw');
+          var stale = staleMarks();
+          if (!stale.length || !window.SynListings || !SynListings.redrawBrandedMedia) return;
+          if (!window.BRAND || !(window.BRAND.logo_url || '').trim()) {
+            galNote('Add your logo under Brand first \u2014 there is nothing to draw.', true);
+            return;
+          }
+          btn.disabled = true; btn.textContent = 'Redrawing\u2026';
+          var opts = {
+            logoUrl: window.BRAND.logo_url,
+            price: Number((document.getElementById('lfPrice') || {}).value) || 0,
+            verified: (l && l.verification_status) === 'verified',
+          };
+          var failed = 0;
+          /* One at a time. Each fetch, draw and upload is independent, so a
+             photograph that fails keeps its old mark and is counted rather
+             than taking the others with it. */
+          stale.reduce(function (chain, u) {
+            return chain.then(function () {
+              var b = BRANDED[u];
+              return SynListings.redrawBrandedMedia(b.id, u, opts).then(function (res) {
+                if (!res) { failed++; return; }
+                BRANDED[u] = { id: b.id, branded_url: res.url,
+                               branded_price: res.price, branded_verified: res.verified };
+              });
+            });
+          }, Promise.resolve()).then(function () {
+            syncBrandNote();
+            galNote(failed
+              ? (stale.length - failed) + ' redrawn, ' + failed + ' could not be.'
+              : 'Redrawn with the current price.', !!failed);
+          });
+        }
+
         function syncPhotos() {
           /* display_order 0 is the cover, and #lfImg is that same photo. */
           urlEl.value = photos[0] || '';
@@ -8093,6 +8188,7 @@
           const isVid = (u) => (window.SynListings && SynListings.isVideoUrl)
             ? SynListings.isVideoUrl(u)
             : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ''));
+          syncBrandNote();
           galEl.innerHTML = photos.map((u, i) =>
             `<div class="lf-ph${isVid(u) ? ' is-vid' : ''}" data-i="${i}">`
             + (isVid(u)

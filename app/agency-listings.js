@@ -222,7 +222,9 @@
               /* Without these the mark is LOST on the next save:
                  writeMedia is delete-then-insert, so a column it never
                  read is a column it silently drops. */
-              + 'branded_url, branded_price, branded_verified)')
+              /* id, because a redraw updates the row in place rather than
+                 waiting for a save. */
+              + 'id, branded_url, branded_price, branded_verified)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -471,6 +473,56 @@
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id).is('deleted_at', null);
     }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Redraw the mark on one photograph and record it against the row.
+   *
+   *  The original file is long gone from the browser, so it is fetched back
+   *  as a Blob and composited again -- and a Blob is same-origin as far as
+   *  the canvas is concerned, which sidesteps the taint the logo has to work
+   *  around.
+   *
+   *  Resolves to the new descriptor, or null if anything at all went wrong:
+   *  the old mark then stays, which is stale but not broken. */
+  function redrawBrandedMedia(mediaId, originalUrl, opts) {
+    if (!mediaId || !originalUrl) return Promise.resolve(null);
+    var c1;
+    return fetch(originalUrl, { mode: 'cors' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('could not fetch the original');
+        return r.blob();
+      })
+      .then(function (blob) {
+        /* brandImage reads .name for the output filename and a Blob has
+           none. Wrapped so the uploaded copy is not called "undefined". */
+        var f = blob;
+        try { f = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }); }
+        catch (e) { /* no File constructor: the Blob works, the name does not */ }
+        return uploadBrandedCopy(f, opts || {});
+      })
+      .then(function (b) {
+        if (!b) return null;
+        return client().then(function (c) {
+          c1 = c;
+          /* Updated in place rather than at save. A redraw is not an edit to
+             the listing -- nothing to review, nothing to cancel -- and
+             requiring Save afterwards would mean somebody who pressed Redraw
+             and closed the drawer had silently done nothing. */
+          return c1.from('property_media').update({
+            branded_url: b.url,
+            branded_price: b.price,
+            branded_verified: b.verified,
+            branded_at: new Date().toISOString(),
+          }).eq('id', mediaId);
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          return b;
+        });
+      })
+      .catch(function (e) {
+        console.error('redraw failed', e);
+        return null;
+      });
   }
 
   /** Photographs whose printed mark no longer matches the listing. */
@@ -1517,7 +1569,7 @@
     if (!isFinite(v) || v <= 0) return '';
     /* The same shape media_brand_stale() formats for comparison. If these two
        ever disagree, every image reads as stale for ever. */
-    if (v >= 1000000) return '\u20a6' + (v / 1000000).toFixed(1).replace(/\.0$/, '.0') + 'm';
+    if (v >= 1000000) return '\u20a6' + (v / 1000000).toFixed(1) + 'm';
     return '\u20a6' + v.toLocaleString('en-NG');
   }
 
@@ -2741,6 +2793,7 @@
     listSocialComments: listSocialComments,
     brandImage: brandImage,
     staleBrandedMedia: staleBrandedMedia,
+    redrawBrandedMedia: redrawBrandedMedia,
     uploadBrandedCopy: uploadBrandedCopy,
     listHashtagGroups: listHashtagGroups,
     saveHashtagGroup: saveHashtagGroup,
