@@ -204,16 +204,31 @@ the comment itself, the reply must be a single message with no follow-ups, and
 it must be obvious it is automated. Those constraints belong in the build, not
 in a review afterwards.
 
-### Phase 4 — Stories, with a real link sticker
+### Phase 4 — Stories, ~~with a real link sticker~~ ⚠️
 
-Instagram Stories carry a genuinely tappable link sticker, and Stories are
-publishable through the API (`media_type: STORIES`). This is the only fully
-tappable Instagram surface there is.
+**DONE 2026-09-25, and the premise above was wrong.**
 
-A listing that goes to the feed can go to Stories the same hour with the link
-attached. Lower effort than Phase 3, lower ceiling — Stories expire in 24
-hours and reach a narrower audience — but it needs no new permission beyond
-what publishing already has.
+Stories carry a tappable link sticker. Stories **published through the API**
+do not. Meta's Content Publishing reference offers `media_type: STORIES` with
+`image_url` or `video_url` and nothing else — no link sticker, no poll, no
+mention, no hashtag. Checked before building, because the same assumption
+killed Phase 2 that morning.
+
+So it shipped without the thing it was for:
+
+| | |
+|---|---|
+| What a Story gets | the top strip of the Instagram app, where Nigerian agencies get most of their attention, for a listing that would otherwise only sit in the feed |
+| What it does not | a tap. No route out except the profile bio, and nothing to attribute |
+
+**No short link is minted for a Story row.** Every other post gets one, and
+doing it here out of symmetry would create a link nobody can click, a channel
+that can never convert, and a permanently-zero row in the click report for a
+reason no one reading it would guess. A Story is reach and is recorded as
+reach — the scheduler's checkbox says so in as many words.
+
+The agency can still add the sticker by hand, in the app, on the Story we
+published. That is more than they could do before.
 
 ---
 
@@ -254,8 +269,9 @@ solved it.
 
 Phase 2 is **done** — reduced, by Meta, to reporting rather than setting.
 
-**All four buildable phases are done** (Phase 4, Stories, remains). What is
-left is not code:
+**All four phases are done** — two of them smaller than the plan promised,
+because the plan was wrong about what Meta's API allows. What is left is not
+code:
 
 1. Tick `pages_messaging` on the Login for Business configuration
 2. Submit for **Advanced Access** and the **Human Agent** feature — until then
