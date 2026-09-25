@@ -392,6 +392,32 @@
     'target_audience_description, start_date, end_date, created_at, ' +
     'campaign_creatives(id, headline, image_url, channel, status, ctr, leads_count, display_order)';
 
+  /** What each campaign actually did, keyed by campaign id. Summed in the
+   *  database from social_post_stats() -- the same per-post measurement the
+   *  pipeline card reads -- so a campaign can never disagree with the posts
+   *  inside it. Replaces five stored columns nothing ever wrote. */
+  function campaignPerformance() {
+    return client().then(function (c) { return c.rpc('campaign_performance'); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return (r.data || []).reduce(function (m, row) {
+          m[row.campaign_id] = row; return m;
+        }, {});
+      });
+  }
+
+  /** File posts under a campaign. The RPC scopes the update to the campaign's
+   *  own agency, so the id array being client-supplied cannot reach another
+   *  agency's posts, and it carries the Synapse twins along -- their clicks
+   *  are clicks the campaign produced. */
+  function assignPostsToCampaign(campaignId, postIds) {
+    if (!campaignId || !(postIds || []).length) return Promise.resolve(0);
+    return client().then(function (c) {
+      return c.rpc('assign_posts_to_campaign', {
+        p_campaign_id: campaignId, p_post_ids: postIds });
+    }).then(function (r) { if (r.error) throw r.error; return r.data || 0; });
+  }
+
   function listCampaigns() {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -1885,6 +1911,19 @@
          is what the agency asked for, and a Story that could not be queued
          must not take it down. Sequential, because the RPC is idempotent per
          source post but the rate limit is not. */
+      /* FILED UNDER THE CAMPAIGN, if one was chosen. After the rows exist,
+         and fails soft for the same reason content_id above does: the posts
+         are what the agency asked for, and a label that did not stick must
+         not take them down. */
+      if (!o.campaignId || !made.length) return made;
+      return c1.rpc('assign_posts_to_campaign', {
+        p_campaign_id: o.campaignId,
+        p_post_ids: made.map(function (m) { return m.id; }),
+      }).then(function (r) {
+        if (r.error) console.error('campaign assign', r.error.message);
+        return made;
+      }, function (e) { console.error('campaign assign', e); return made; });
+    }).then(function () {
       if (!o.stories || !made.length) return made;
       var igs = made.filter(function (m) { return m.platform === 'instagram'; });
       return igs.reduce(function (chain, m) {
@@ -2508,6 +2547,8 @@
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
+    campaignPerformance: campaignPerformance,
+    assignPostsToCampaign: assignPostsToCampaign,
     getReplySettings: getReplySettings,
     saveReplySettings: saveReplySettings,
     markCommentHandled: markCommentHandled,

@@ -374,6 +374,17 @@
     /* Its own full-width line under the three. grid-column overrides
        grid-template-areas below, so this holds in both layouts without
        naming a fifth area in the narrow one. */
+    .sch-camp { display: flex; align-items: center; gap: 10px; margin-top: 12px;
+      font-size: 12.5px; color: var(--ink-muted); }
+    .sch-camp select { flex: 1; min-height: 38px; padding: 8px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      font: 400 12.5px var(--f-sans); color: var(--ink); }
+    /* Real figures, set apart from the invented creative tiles below them. */
+    .cperf { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 2px;
+      font-size: 12px; color: var(--ink-muted); }
+    .cperf b { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .cperf-q { color: var(--ink-dim); }
+    .cperf-none { color: var(--ink-dim); font-size: 12px; margin: 10px 0 2px; display: block; }
     .sch-story { display: flex; gap: 9px; align-items: flex-start; margin-top: 12px;
       font-size: 12.5px; color: var(--ink-muted); cursor: pointer; }
     .sch-story input { margin-top: 2px; flex: none; }
@@ -6239,6 +6250,18 @@
            link sticker, so this is reach and nothing else -- and an agency
            that ticks it believing Stories drive traffic will decide the
            tracking is broken when no clicks arrive. */
+        /* WHICH CAMPAIGN, beside the account and the time, because that is
+           the moment a post gets a destination and this is the same kind of
+           question. Absent when the agency has no campaigns -- an empty
+           select is furniture. */
+        + (typeof CAMPAIGNS !== 'undefined' && CAMPAIGNS.length
+            ? '<label class="sch-camp"><span>Campaign</span>'
+              + '<select id="schCamp"><option value="">None</option>'
+              + CAMPAIGNS.map(function (c) {
+                  return '<option value="' + esc2(c.id) + '">' + esc2(c.nm) + '</option>';
+                }).join('')
+              + '</select></label>'
+            : '')
         + '<label class="sch-story"><input type="checkbox" id="schStory">'
         +   '<span>Also put the first photo on Instagram Stories'
         +   '<em>24 hours, and no tappable link \u2014 Instagram does not allow one '
@@ -6340,6 +6363,7 @@
                 /* Read at commit rather than captured when the sheet opened:
                    somebody can tick it after adding a second row. */
                 stories: !!(document.getElementById('schStory') || {}).checked,
+                campaignId: (document.getElementById('schCamp') || {}).value || null,
                 /* BOTH BUTTONS ARE REAL NOW; they differ only in WHEN. This
                    used to pass true for the scheduled case, which is what made
                    "schedule it for 8pm" mean "go to the mock at 8pm and stop".
@@ -8607,6 +8631,44 @@
       </div>`;
     }
     const byId = (id) => CAMPAIGNS.find((c) => c.id === id);
+    /* Real performance, keyed by campaign id. Empty until the first load
+       finishes, and every reader below treats absent as "not counted yet"
+       rather than as zero -- the distinction this whole page got wrong. */
+    let CAMP_PERF = {};
+    function loadCampaignPerformance() {
+      if (!window.SynListings || !SynListings.campaignPerformance) return Promise.resolve();
+      return SynListings.campaignPerformance()
+        .then(function (m) { CAMP_PERF = m || {}; renderCampaigns(); })
+        /* The campaigns themselves still render. A failed rollup must not
+           empty a page that has real content on it. */
+        .catch(function (e) { console.error('campaign performance', e); });
+    }
+
+    /* WHAT IS COUNTED, AND NOTHING ELSE. No impressions and no reach: nobody
+       measures those for us, the stored columns for them were always zero,
+       and a dash is a better answer than a number we cannot stand behind.
+
+       A campaign with no posts gets a sentence, not five zeros -- zero clicks
+       on a campaign that has posted is a result, and zero on one that never
+       posted is a different fact entirely. */
+    function campPerfHtml(id) {
+      const p = CAMP_PERF[id];
+      if (!p) return '<div class="cperf cperf-none">Counting\u2026</div>';
+      if (!p.posts) {
+        return '<div class="cperf cperf-none">No posts in this campaign yet \u2014 '
+          + 'schedule one and pick this campaign to start measuring it.</div>';
+      }
+      const cell = (n, label) => '<span><b>' + n + '</b> ' + label + '</span>';
+      return '<div class="cperf">'
+        + cell(p.published, p.published === 1 ? 'post live' : 'posts live')
+        + cell(p.clicks, 'taps')
+        + cell(p.visits, 'opened the listing')
+        + cell(p.leads, p.leads === 1 ? 'enquiry' : 'enquiries')
+        + (p.posts > p.published
+            ? '<span class="cperf-q">' + (p.posts - p.published) + ' still to go out</span>' : '')
+        + '</div>';
+    }
+
     function renderCampaigns() {
       const host = document.getElementById('campaigns');
       if (!CAMPAIGNS.length) {
@@ -8634,6 +8696,7 @@
             <span class="bdg ${c.live ? 'live' : 'paused'}">${c.live ? '● Live' : 'Paused'}</span>
             <span class="spend">${c.until ? 'Runs to ' + esc2(new Date(c.until + 'T00:00').toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })) : ''}</span>
           </div>
+          ${campPerfHtml(c.id)}
           <div class="adgrid" id="ads-${c.id}">${c.ads.map(adTile).join('')}</div>
           <div class="cft">
             <button class="gen2" data-gen="${c.id}">✦ Generate variants</button>
@@ -8644,6 +8707,9 @@
       // refresh the leaderboard on any campaign change; guarded because the first
       // renderCampaigns() runs before the leaderboard's own consts initialize (TDZ).
       try { if (typeof renderBoard === 'function') renderBoard(); } catch (e) {}
+      /* Once per load, not per render: renderCampaigns runs on every card
+         change and the rollup is a database round trip over every post. */
+      if (!CAMP_PERF.__asked) { CAMP_PERF.__asked = 1; loadCampaignPerformance(); }
     }
     function generateVariants(id) {
       const c = byId(id); if (!c) return;
