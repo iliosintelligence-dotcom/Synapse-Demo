@@ -129,7 +129,7 @@ and it stays correct when Meta adds a type nobody here has heard of.
 The advice never says remove the phone number. It says move it: the button
 leads to the listings, the listings page carries the number.
 
-### Phase 3 — Instagram: comment-to-DM
+### Phase 3 — Instagram: comment-to-DM ✅
 
 **The highest-leverage item, and mostly built already.**
 
@@ -146,10 +146,33 @@ pattern that actually moves people is:
 - The caption stays link-free, which sidesteps the Phase 1 reach trade-off
   entirely
 
-**What it needs:** `instagram_manage_messages` added to the Login for Business
-configuration, and a rule engine — keyword, matching listing, reply template.
-Instagram allows a private reply within **7 days** of the comment, which our
-hourly sweep is comfortably inside.
+**DONE 2026-09-25 — built, deployed, and deliberately switched off.**
+
+**The permission is `pages_messaging`, not `instagram_manage_messages`.** That
+one belongs to the Instagram Login flow; our accounts arrive through Facebook
+Login holding a Page token. Read from Meta's reference rather than remembered,
+after two wrong assertions about Meta earlier the same day.
+
+The endpoint is `POST /{page-id}/messages` with
+`{"recipient":{"comment_id":"…"},"message":{"text":"…"}}` — the **Page** id,
+which is why `social_accounts.parent_account_id` now records which Page owns an
+Instagram account. While an agency had one Page that could be inferred; with
+two it cannot, and the wrong inference answers a comment on one brand's post
+from another brand's Page.
+
+Three hard limits shaped the build:
+
+- **One reply per comment, ever.** A retry does not send twice — it is refused
+  and the single chance is gone. Comments are *claimed* before any request is
+  made, in one statement inside Postgres, and a failed send is recorded failed
+  and never retried: Meta may have delivered it and failed afterwards, and a
+  retry cannot tell the difference.
+- **Seven days**, enforced in the claim rather than in the worker.
+- **Advanced Access and the Human Agent feature** — App Review. Nothing sends
+  until that exists.
+
+Still to do: tick `pages_messaging` on the Login for Business configuration,
+and submit for Advanced Access.
 
 **Worth saying plainly:** this is automated messaging to people who did not
 ask, and it is the kind of thing NDPA and the FCCPA care about. The consent is
@@ -207,9 +230,15 @@ solved it.
 
 Phase 2 is **done** — reduced, by Meta, to reporting rather than setting.
 
-**Phase 3 is now the highest-value remaining item**, and by some distance. It
-is where Instagram — the platform Nigerian agencies actually live on — stops
-being a dead end, and the comment sweep it depends on already runs.
+Phases 2 and 3 are **done**. What is left is not code:
+
+1. Tick `pages_messaging` on the Login for Business configuration
+2. Submit for **Advanced Access** and the **Human Agent** feature — until then
+   private replies cannot be sent to anyone outside the app's own testers
+3. An agency turns it on, in the portal, having read the message it will send
+
+Phase 1 and Phase 4 remain, and Phase 1 is still the one with a downside worth
+measuring rather than assuming.
 
 Phase 1 is cheap and worth doing, but it is the one with a downside, and it
 should be measured rather than assumed.
