@@ -62,7 +62,7 @@ in WhatsApp is not a small UX problem, it is the closed path reopening.
 Four phases, ordered by leverage rather than by effort. Phase 2 is the one that
 would have prevented the incident.
 
-### Phase 1 — the caption leads with the route
+### Phase 1 — the caption leads with the route ✅
 
 **Small, reversible, this week.**
 
@@ -82,10 +82,34 @@ synapsecore.dev/s/2VYusY
 The repeat at the end is deliberate and costs nothing: whoever reads to the
 bottom is the most motivated reader on the post.
 
-**Where:** `queue_social_post`, which today does `caption || tail`. It becomes
-`hook || url || caption || tail` for platforms that linkify. Instagram and
-TikTok are untouched — 0112 already established that a hand-typed
-case-sensitive token is not a route anybody takes.
+**DONE 2026-09-25 — and the invented hook was dropped.**
+
+The sketch above built an opener from columns. That would be a second voice
+arguing with the caption underneath it, duplicating whatever the caption
+already says in its own words. `social-generate`'s six angles already produce a
+hook as line one, so **the link goes after the caption's own first line** and no
+copy is invented.
+
+Assembly lives in one place, `caption_with_link()`, called by both
+`queue_social_post` and `queue_synapse_twins` — leaving Synapse's own posts
+appending at the bottom would mean the before/after below compares two
+treatments rather than one change.
+
+Exercised against the live function after applying:
+
+| case | result |
+|---|---|
+| Facebook, multi-line | first line, link, body, hashtags, link again |
+| Facebook, single line | first line, link — no pointless repeat |
+| 200-character opener | link first, on its own line |
+| Instagram | unchanged: `Link in bio 👆` |
+| no short link | caption alone |
+
+Past **180 characters** the opening line would bury the link, so it goes first
+instead. A bare URL as the opening line reads as spam, which is why that is the
+fallback and not the rule. Instagram and TikTok are detected by their tail not
+being the URL, rather than by naming the platforms a second time —
+`caption_link_tail` already owns that decision and two copies would drift.
 
 **The honest trade-off:** Meta has historically dampened reach on posts
 carrying outbound links. I do not know the current size of that effect and
@@ -230,15 +254,20 @@ solved it.
 
 Phase 2 is **done** — reduced, by Meta, to reporting rather than setting.
 
-Phases 2 and 3 are **done**. What is left is not code:
+**All four buildable phases are done** (Phase 4, Stories, remains). What is
+left is not code:
 
 1. Tick `pages_messaging` on the Login for Business configuration
 2. Submit for **Advanced Access** and the **Human Agent** feature — until then
    private replies cannot be sent to anyone outside the app's own testers
 3. An agency turns it on, in the portal, having read the message it will send
 
-Phase 1 and Phase 4 remain, and Phase 1 is still the one with a downside worth
-measuring rather than assuming.
+4. **Measure Phase 1 rather than trust it.** It is the one change with a
+   downside — outbound links may cost reach. The number is **leads per post**,
+   not clicks: a link above the fold that triples taps while halving reach has
+   moved the problem, not solved it. `social_post_stats()` already reports
+   both, so the comparison needs no new instrumentation — only two weeks of
+   posts.
 
 Phase 1 is cheap and worth doing, but it is the one with a downside, and it
 should be measured rather than assumed.
