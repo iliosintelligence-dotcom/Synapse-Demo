@@ -11603,8 +11603,12 @@
       cmp.loading = true; cmp.err = ''; renderComposer();
       try {
         const l = POST_LISTINGS[cmp.li];
-        /* Session token, for the same reason as the composer above. */
-        const tk = await token();
+        /* authToken(), NOT token() -- the same distinction as line 6230, and
+           this is the second time it has been got wrong. token() belongs to
+           the composer's IIFE, which closes at 11500; we are past it, so
+           calling it here threw ReferenceError into the catch below and every
+           press reported a network fault for a request that was never sent. */
+        const tk = await authToken();
         const res = await fetch(SB_URL + '/functions/v1/social-generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (tk || SB_KEY) },
           // Voice is the one brand field a fixed template cannot honour, so it
@@ -11641,7 +11645,21 @@
         cmp.angles = d.angles || {};
         rememberAngles(l && l.id, d.anglesUsed || []);
         renderComposer();
-      } catch (e) { cmp.loading = false; cmp.err = 'Network hiccup — please try again.'; renderComposer(); }
+      } catch (e) {
+        /* NAMED, not guessed. This catch covers the fetch AND every line of
+           setup around it, so "network hiccup" was being reported for a
+           ReferenceError in our own code -- which sent the operator to check
+           their connection while the bug sat in this function. A TypeError
+           from fetch is the only genuine transport fault; anything else is
+           ours and should say so and reach the console. */
+        cmp.loading = false;
+        const transport = e instanceof TypeError;
+        cmp.err = transport
+          ? 'Network hiccup \u2014 please try again.'
+          : 'Something went wrong on our side \u2014 please try again.';
+        if (!transport) console.error('generateCaptions', e);
+        renderComposer();
+      }
     }
     /* WHERE A GENERATED CAPTION GOES, which has been wrong twice.
        First it went nowhere: the button unshifted a card onto an in-memory
@@ -11932,9 +11950,16 @@
     // No Paystack key ever touches this page — the client only ever talks to
     // the paystack-checkout edge function, which holds the secret key and
     // does the real work. See synapse-platform/supabase/functions/paystack-*.
+    /* Resolves to null rather than throwing, on every path. It is called
+       from three places now, each inside a try or a .catch that would turn a
+       throw into a sentence about the network -- and a missing session is a
+       thing the caller can handle well (the endpoint answers "Sign in to
+       generate captions") while an exception is a thing it can only guess at. */
     function authToken() {
+      if (!window.SynAuth) return Promise.resolve(null);
       return SynAuth.client().then((c) => c.auth.getSession())
-        .then((r) => (r && r.data && r.data.session && r.data.session.access_token) || null);
+        .then((r) => (r && r.data && r.data.session && r.data.session.access_token) || null)
+        .catch(() => null);
     }
     function startCheckout(plan) {
       authToken().then((token) => {
