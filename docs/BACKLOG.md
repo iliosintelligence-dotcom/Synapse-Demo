@@ -5,6 +5,63 @@ An item here has been agreed as worth doing — it is not an idea list.
 
 ---
 
+## Open work — checked against the live database, 2026-09-25
+
+The sections further down carry the reasoning. This is the list. Numbers are
+from a query run tonight, not from memory.
+
+### 1. Blocked on Eden, not on code
+
+| | Unblocks |
+|---|---|
+| **Facebook Connect**, signed in as someone who administers the Page. The new account must first be added under App roles → **Testers** and accept — Development Mode refuses anyone without a role on the app. | Everything in section 2 |
+| `TELEGRAM_BOT_TOKEN` via @BotFather | Telegram posting, and the founder signup alerts |
+| Founder Telegram chat id → `platform_settings.founder_telegram_chat_id` | Signup / arrival alerts |
+| `pages_messaging` on configuration 2272646810190199, then **Advanced Access** | Comment-to-DM replies, and any agency other than ourselves |
+| Instagram product + `META_IG_APP_ID` / `META_IG_APP_SECRET` | Instagram for agencies with no Facebook Page. Lowest priority. |
+
+### 2. Built, never run against a real account
+
+`social_accounts` has **never held a row**. All of this is written, deployed and
+type-checked, and none of it has touched Meta: publishing to an agency's own
+Page and Instagram, the metrics sweep, comment ingest, comment replies, the
+multi-account picker, reading the Page's action button, Stories, and branded
+photographs going out. **Expect the first real connection to find something.**
+
+### 3. Approved, not built
+
+From `MARKETING_PAGE_FEATURE_MENU.md` — everything except A3 was approved, under
+the rule that the Marketing page must stay assimilable.
+
+- **A1** best time to post — held until there is real traffic (~100 clicks today, mostly crawlers)
+- **B1** unified inbox · **B3** recurring re-post · **B4** queue and time slots · **B5** bulk scheduling · **B6** media library
+- **C1** calendar performance overlay · **C3** listing → enquiry trail · **C4** export · **C5** arrivals → registrations for agencies
+- **D1** approval workflow · **D2** comments on drafts · **D3** per-agent leaderboard
+- Agency-wide view of stale branded photos (`media_brand_stale()` exists; no screen)
+
+### 4. Broken or unfinished from before
+
+| | Live state |
+|---|---|
+| WhatsApp agent handoffs | **2 queued, 0 ever sent** — Twilio delivery has never worked |
+| Listing verification | **0 of 3 active listings verified** — so the Verified badge, on cards and on branded photos, shows nowhere |
+| Comment notifications | Comments now land on the pipeline card with their text; nothing raises a bell notification |
+| Electricity bands on the map | See below |
+
+### 5. Compliance
+
+- Privacy and terms rewrite — blocked on 19 `[DECISION]` markers and 9 lawyer-only clauses (`POLICY_COPY_DRAFT.md`)
+- R-06 retention — the tables added this week purge themselves; **every older table still grows for ever**
+- Deleting the `auth.users` row is still a manual step, so full erasure is not self-serve
+- AGPL review — deferred by decision ("leave the lawyer for now")
+
+### 6. Commercial
+
+- Paywall **off**; `subscription_payments` has **never held a row**; Leader has no self-serve purchase
+- Passkeys and login IDs — considered, not started (below)
+
+---
+
 ## Electricity bands on the map
 
 **Agreed 2026-09-18. Deferred by the user: "we can maybe work on that later."**
@@ -58,6 +115,11 @@ refresh cadence should be settled before any of it renders.
 ---
 
 ## Comment and DM notifications from social
+
+**PARTLY DONE 2026-09-25.** Comment *text* is now fetched by `post-metrics`
+into `social_comments` and shown on the pipeline card with a Done button
+(90-day retention). What is still missing is a **bell notification** when one
+arrives. The history below predates that and is kept for the reasoning.
 
 **Raised twice by the user. Partly blocked on an external dependency.**
 
@@ -187,7 +249,12 @@ agency-leg attempt has failed for want of a connected account. So the
 grandfather protects something Greenlight has not yet used — it matters on the
 day they connect Meta.
 
-### Open: AI captions are also a paid feature and are not gated
+### ~~Open~~ Resolved: AI captions
+
+**Resolved 2026-09-19** — the grant was extended to `ai_captions`, and
+then the paywall was switched off entirely (`paywall_enabled = false`)
+because no payment has ever been taken. Kept for the reasoning.
+
 
 `plan_features('accelerator')` includes `ai_captions`, and the pricing page
 sells "AI writes and posts for you" from Accelerate. Nothing enforces it, and
