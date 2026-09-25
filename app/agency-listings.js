@@ -1663,6 +1663,43 @@
     });
   }
 
+  /** Whether this agency answers Instagram comments with a private reply,
+   *  and with what. Absent row means off, which is also the default when the
+   *  row exists -- nobody is enrolled by the row appearing. */
+  function getReplySettings() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_reply_settings')
+        .select('agency_id, enabled, keyword, message, updated_at')
+        .eq('agency_id', aid).limit(1);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && r.data[0]) || null;
+    });
+  }
+
+  /** Upsert, because the row may not exist yet and "turn it on" should not
+   *  fail for an agency that has never opened this screen. RLS restricts the
+   *  write to owner and admin. */
+  function saveReplySettings(patch) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        var row = { agency_id: aid, updated_at: new Date().toISOString(), updated_by: me || null };
+        if (patch.enabled !== undefined) row.enabled = !!patch.enabled;
+        if (patch.keyword != null) row.keyword = String(patch.keyword).trim();
+        if (patch.message != null) row.message = String(patch.message);
+        return c1.from('social_reply_settings').upsert(row, { onConflict: 'agency_id' });
+      })
+      .then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
   /** What people said back. Written by the metrics sweep against the
    *  agency's own connected account -- so these exist only for posts that
    *  went out on the agency's Instagram or Page, not for Synapse's own
@@ -2449,6 +2486,8 @@
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
+    getReplySettings: getReplySettings,
+    saveReplySettings: saveReplySettings,
     markCommentHandled: markCommentHandled,
     schedulePost: schedulePost,
     updateSocialPost: updateSocialPost,

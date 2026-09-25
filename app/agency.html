@@ -423,6 +423,20 @@
     .cmp-setup li.warn { border-left: 2px solid var(--gold); padding-left: 10px; }
     .cmp-setup-why { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-dim); }
     .cmp-setup-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    .cmp-reply-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
+      color: var(--ink-muted); margin-bottom: 8px; cursor: pointer; }
+    .cmp-reply-lbl { display: block; font: 600 11px var(--f-sans); color: var(--ink-muted);
+      text-transform: uppercase; letter-spacing: .04em; margin: 10px 0 4px; }
+    .cmp-reply-kw { width: 140px; }
+    .cmp-reply-msg { width: 100%; resize: vertical; }
+    .cmp-reply-kw, .cmp-reply-msg { min-height: 38px; padding: 8px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--surface);
+      font: 400 12.5px var(--f-sans); color: var(--ink); }
+    /* What will actually be sent, including the two things the server adds.
+       Pre-wrapped because the newlines are part of the message. */
+    .cmp-reply-prev { white-space: pre-wrap; margin-top: 8px; padding: 10px 12px;
+      border-radius: 10px; border: 1px dashed var(--border); background: rgba(0,0,0,0.02);
+      font: 12px/1.5 var(--f-serif); color: var(--ink-muted); overflow-wrap: anywhere; }
     .cmp-setup code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
       background: rgba(20,20,20,0.05); border: 1px solid var(--border);
       border-radius: 7px; padding: 4px 8px; color: var(--ink); overflow-wrap: anywhere; }
@@ -10509,7 +10523,9 @@
         /* The status first, so the strip is drawn once and correctly. Drawing
            it twice -- buttons, then buttons removed a moment later -- is worse
            than drawing it late. */
-        return loadConnectStatus().then(function () { return token(); }).then(function (t) {
+        return loadConnectStatus()
+          .then(function () { return loadReplySettings(); })
+          .then(function () { return token(); }).then(function (t) {
           if (!t) { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
               + '?select=id,platform,platform_username,is_active,token_expires_at,connected_at'
@@ -10691,8 +10707,100 @@
             + '<span class="cmp-ch-at">' + esc(SOON[pl][1]) + '</span></div>';
         });
 
-        html += '</div>' + setupHtml();
+        html += '</div>' + setupHtml() + replyHtml();
         box.innerHTML = html;
+        wireReply();
+      }
+
+      /* ── answering a comment with the link ───────────────────────────────
+         Instagram captions never linkify, so a listing posted there ends at a
+         dead end. Meta allows ONE private message to somebody who commented,
+         and it may carry a link -- the only route off an Instagram caption
+         there is.
+
+         It sends in the agency's name to somebody who has never used Synapse,
+         so it is off until an owner or admin says otherwise, and the exact
+         message is on screen before it can ever go anywhere. */
+      var replyCfg = null;
+
+      function canSetReplies() {
+        var r = document.body.dataset.role;
+        return r === 'agency_owner' || r === 'agency_admin';
+      }
+
+      function loadReplySettings() {
+        if (!window.SynListings || !SynListings.getReplySettings) return Promise.resolve();
+        return SynListings.getReplySettings()
+          .then(function (row) { replyCfg = row || { enabled: false, keyword: 'PRICE', message: '' }; })
+          /* A failed read must not remove the channel strip around it. */
+          .catch(function () { replyCfg = null; });
+      }
+
+      /* The two things the server adds, shown here rather than discovered in
+         somebody's inbox: the link when the template leaves {{link}} out, and
+         the automated notice when the wording does not already say so. */
+      function replyPreview(msg) {
+        var link = 'synapsecore.dev/s/\u2026';
+        var text = String(msg || '').replace(/\{\{\s*link\s*\}\}/g, link);
+        if (text.indexOf(link) === -1) text = text.trim() + '\n\n' + link;
+        if (!/automat|bot\b|auto-?reply/i.test(text)) {
+          text += '\n\n(Automated reply \u2014 say anything here and a real person will see it.)';
+        }
+        return text;
+      }
+
+      function replyHtml() {
+        if (!replyCfg || !canSetReplies()) return '';
+        var on = !!replyCfg.enabled;
+        var kw = replyCfg.keyword || 'PRICE';
+        var msg = replyCfg.message || '';
+        return '<div class="cmp-setup cmp-reply">'
+          + '<div class="cmp-setup-hd">Answer comments with the link</div>'
+          + '<p class="cmp-ch-note">Instagram captions cannot be tapped. When somebody '
+          + 'comments <b>' + esc(kw) + '</b> on one of your posts, Synapse sends them '
+          + 'one direct message with the link to that exact home. '
+          + '<b>The comment is the permission</b> \u2014 so the caption has to ask for it, '
+          + 'and nobody else is messaged.</p>'
+          + '<label class="cmp-reply-row"><input type="checkbox" id="rpOn"' + (on ? ' checked' : '') + '> '
+          + '<span>Send the link when somebody comments the word below</span></label>'
+          + '<div class="cmp-setup-row"><label for="rpKw">Word</label>'
+          + '<input id="rpKw" class="cmp-reply-kw" value="' + esc(kw) + '" maxlength="24"></div>'
+          + '<label class="cmp-reply-lbl" for="rpMsg">Message</label>'
+          + '<textarea id="rpMsg" class="cmp-reply-msg" rows="3">' + esc(msg) + '</textarea>'
+          + '<div class="cmp-reply-prev" id="rpPrev"></div>'
+          + '<div class="cmp-setup-row"><button class="cmp-ch-btn primary" id="rpSave">Save</button>'
+          + '<span class="cmp-setup-why" id="rpNote"></span></div>'
+          + '</div>';
+      }
+
+      function wireReply() {
+        var msg = document.getElementById('rpMsg');
+        var prev = document.getElementById('rpPrev');
+        if (!msg || !prev) return;
+        var paint = function () { prev.textContent = replyPreview(msg.value); };
+        paint();
+        msg.addEventListener('input', paint);
+
+        document.getElementById('rpSave').addEventListener('click', function () {
+          var btn = this, note = document.getElementById('rpNote');
+          var kw = (document.getElementById('rpKw').value || '').trim();
+          if (!kw) { note.textContent = 'Give it a word to listen for.'; return; }
+          btn.disabled = true; note.textContent = 'Saving\u2026';
+          SynListings.saveReplySettings({
+            enabled: document.getElementById('rpOn').checked,
+            keyword: kw,
+            message: msg.value,
+          }).then(function () {
+            note.textContent = 'Saved';
+            return loadReplySettings();
+          }).then(function () {
+            btn.disabled = false;
+            renderChannels();
+          }).catch(function (err) {
+            btn.disabled = false;
+            note.textContent = (err && err.message) || 'Could not save that';
+          });
+        });
       }
 
       /* Must match bio_slug() in 0106 exactly: strip a leading @, lowercase,
