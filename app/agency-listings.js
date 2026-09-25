@@ -421,6 +421,43 @@
     }).then(function (r) { if (r.error) throw r.error; return r.data || 0; });
   }
 
+  /** The agency's saved hashtag sets. Tags come back WITHOUT the leading
+   *  '#', which the composer adds -- storing it would make #Lekki and Lekki
+   *  two different tags. */
+  function listHashtagGroups() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('hashtag_groups')
+        .select('id, name, tags, updated_at')
+        .eq('agency_id', aid).is('deleted_at', null)
+        .order('name', { ascending: true });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Save or update one. Through the RPC because the normalising -- stripping
+   *  the #, dropping punctuation, folding duplicates by case -- has to happen
+   *  in one place, or a second caller quietly adds a duplicate nobody can
+   *  tell apart in the picker. */
+  function saveHashtagGroup(name, tags, id) {
+    if (!String(name || '').trim()) return Promise.reject(new Error('Name the group first'));
+    return client().then(function (c) {
+      return c.rpc('save_hashtag_group', {
+        p_name: String(name).trim(), p_tags: tags || [], p_id: id || null });
+    }).then(function (r) { if (r.error) throw r.error; return r.data; });
+  }
+
+  function deleteHashtagGroup(id) {
+    return client().then(function (c) {
+      return c.from('hashtag_groups')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id).is('deleted_at', null);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
   function listCampaigns() {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -2505,6 +2542,9 @@
     setContentStatus: setContentStatus,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
+    listHashtagGroups: listHashtagGroups,
+    saveHashtagGroup: saveHashtagGroup,
+    deleteHashtagGroup: deleteHashtagGroup,
     campaignPerformance: campaignPerformance,
     assignPostsToCampaign: assignPostsToCampaign,
     getReplySettings: getReplySettings,

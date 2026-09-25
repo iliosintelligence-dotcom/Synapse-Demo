@@ -379,6 +379,18 @@
        were not put there to be compared. */
     /* Under the caption it belongs to, quiet enough to be advice. Empty most
        of the time, and collapsing when empty so a clean caption looks clean. */
+    /* Quiet until wanted. These sit under a caption that is the point of the
+       screen, so they are chips rather than buttons and carry their size as a
+       superscript rather than a second line. */
+    .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .tagchip { border: 1px solid var(--border); background: rgba(255,255,255,0.6);
+      border-radius: 100px; padding: 4px 10px; cursor: pointer;
+      font: 500 11.5px var(--f-sans); color: var(--ink-muted);
+      transition: background var(--m-micro), color var(--m-micro); }
+    .tagchip:hover { background: #fff; color: var(--ink); }
+    .tagchip i { font-style: normal; font-size: 10px; color: var(--ink-dim); }
+    .tagchip.add { border-style: dashed; }
+    .tagchip:disabled { opacity: .5; cursor: default; }
     .cap-warn { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; }
     .cap-warn:empty { display: none; }
     .cap-warn span { font-size: 11.5px; line-height: 1.45; color: var(--gold); }
@@ -12262,7 +12274,7 @@
       if (cmp.captions) {
         html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
         Object.keys(cmp.captions).forEach((ch) => {
-          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea><div class="cap-warn" data-warn="${ch}">${capWarnHtml(ch, cmp.captions[ch])}</div></div>`;
+          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea><div class="cap-warn" data-warn="${ch}">${capWarnHtml(ch, cmp.captions[ch])}</div>${tagRowHtml(ch)}</div>`;
         });
         if (cmp.hashtags.length) html += `<div class="cmp-tags">${cmp.hashtags.map(escT).join('  ')}</div>`;
         if (cmp.note) html += `<div class="cmp-note"><b>Tayo's tip:</b> ${escT(cmp.note)}</div>`;
@@ -12295,6 +12307,14 @@
       if (!POST_LISTINGS.length) { toast('Add an active listing first'); return; }
       cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', angles: {}, loading: false, err: '' };
       renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on');
+      /* Not awaited: the composer opens now and the chips arrive a beat
+         later, re-rendering themselves. Blocking a modal on a list of
+         hashtags is the wrong trade in any session where it is slow.
+         Re-read each time rather than cached for the page: somebody
+         else on the team may have saved a group since this tab loaded. */
+      loadTagGroups().then(function () {
+        if (cmpModal.classList.contains('on')) renderComposer();
+      });
     }
     function closeComposer(){ cmpScrim.classList.remove('on'); cmpModal.classList.remove('on'); }
     /* WHICH ANGLES THIS LISTING HAS ALREADY SPENT.
@@ -12475,6 +12495,86 @@
       if (!out.length) return '';
       return out.map((w) => '<span>\u26a0 ' + w + '</span>').join('');
     }
+
+    /* ── hashtag groups ───────────────────────────────────────────────────
+       Under every caption rather than in one toolbar above them: the captions
+       are genuinely different per channel -- different subjects, not retoned
+       copies -- so the tags that belong on the Instagram one are not always
+       the ones for Facebook.
+
+       Loaded once with the composer and kept; they change rarely and a round
+       trip per keystroke would be absurd. */
+    let TAG_GROUPS = [];
+    function loadTagGroups() {
+      if (!window.SynListings || !SynListings.listHashtagGroups) return Promise.resolve();
+      return SynListings.listHashtagGroups()
+        .then(function (g) { TAG_GROUPS = g || []; })
+        /* A failed load costs the chips, not the composer. */
+        .catch(function (e) { TAG_GROUPS = []; console.error('hashtag groups', e); });
+    }
+
+    function tagRowHtml(ch) {
+      const chips = TAG_GROUPS.map((g) =>
+        '<button type="button" class="tagchip" data-tag-add="' + esc2(g.id) + '" '
+        + 'data-tag-ch="' + esc2(ch) + '" title="' + esc2((g.tags || []).map((t) => '#' + t).join(' ')) + '">'
+        + esc2(g.name) + ' <i>' + (g.tags || []).length + '</i></button>').join('');
+      return '<div class="tagrow">' + chips
+        + '<button type="button" class="tagchip add" data-tag-save="' + esc2(ch) + '">'
+        + '\uff0b Save these</button></div>';
+    }
+
+    /* Whatever is already in this caption, without the hash, lowercased for
+       comparison only. */
+    function tagsIn(text) {
+      return (String(text || '').match(/#[\w\u00c0-\u024f]+/g) || [])
+        .map((t) => t.slice(1));
+    }
+
+    document.addEventListener('click', function (e) {
+      const add = e.target.closest && e.target.closest('[data-tag-add]');
+      if (add) {
+        const g = TAG_GROUPS.find((x) => x.id === add.dataset.tagAdd);
+        const ch = add.dataset.tagCh;
+        const box = cmpModal.querySelector('textarea[data-cap="' + ch + '"]');
+        if (!g || !box) return;
+        /* SKIPS WHAT IS ALREADY THERE. Tapping twice, or tapping two groups
+           that overlap, must not produce #lekki #lekki -- and Instagram reads
+           those as one tag, so the agency should not have to notice. */
+        const have = tagsIn(box.value).map((t) => t.toLowerCase());
+        const fresh = (g.tags || []).filter((t) => have.indexOf(String(t).toLowerCase()) === -1);
+        if (!fresh.length) { toast('Already in this caption'); return; }
+        box.value = box.value.replace(/\s+$/, '') + '\n\n'
+          + fresh.map((t) => '#' + t).join(' ');
+        cmp.captions[ch] = box.value;
+        /* The caption check is directly below and counts hashtags, so going
+           past thirty shows immediately rather than at publish. */
+        const warn = box.parentElement.querySelector('[data-warn]');
+        if (warn) warn.innerHTML = capWarnHtml(ch, box.value);
+        return;
+      }
+
+      const save = e.target.closest && e.target.closest('[data-tag-save]');
+      if (save) {
+        const ch = save.dataset.tagSave;
+        const box = cmpModal.querySelector('textarea[data-cap="' + ch + '"]');
+        if (!box) return;
+        const tags = tagsIn(box.value);
+        if (!tags.length) { toast('No hashtags in this caption to save'); return; }
+        /* The group is made FROM the caption already written, which is the
+           whole interaction -- nobody opens a settings screen to type
+           hashtags. */
+        const name = window.prompt('Name this group of ' + tags.length + ' hashtags', '');
+        if (!name || !name.trim()) return;
+        save.disabled = true;
+        SynListings.saveHashtagGroup(name, tags)
+          .then(loadTagGroups)
+          .then(function () { save.disabled = false; renderComposer(); toast('Saved \u2014 tap it on any caption'); })
+          .catch(function (err) {
+            save.disabled = false;
+            toast((err && err.message) || 'Could not save that group');
+          });
+      }
+    });
 
     function scheduleFromComposer(){
       const l = POST_LISTINGS[cmp.li];
