@@ -407,6 +407,8 @@
       border-left: 2px solid var(--gold); padding: 5px 0 5px 8px;
       background: rgba(0,0,0,0.015); border-radius: 0 8px 8px 0;
     }
+    .cmp-ch-note { font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); margin: 2px 0 10px; max-width: 62ch; }
+    .cmp-ch-note b { color: var(--ink-muted); font-weight: 600; }
     .pcard .cmt-who { font: 600 10px var(--f-sans); color: var(--ink-muted); }
     /* Wraps and breaks. A handle with no spaces in it is a single 40-character
        word, and a card that a stranger can widen is a card a stranger can
@@ -10599,7 +10601,17 @@
       function renderChannels() {
         var box = document.getElementById('cmpChannels');
         if (!box) return;
-        var html = '<div class="cmp-ch-hd">Channels</div><div class="cmp-ch-row">';
+        /* WHOSE ACCOUNT, said before the button and not after the mistake.
+           Facebook offers the Pages of whoever is signed into facebook.com in
+           this browser. Sign in as the company and you are shown the company's
+           Pages, connect one, and the dialog reports success -- for an account
+           that is not the agency's at all. Nothing downstream can detect that;
+           the only place to prevent it is here, before the redirect. */
+        var html = '<div class="cmp-ch-hd">Channels</div>'
+          + '<div class="cmp-ch-note">You will be sent to the platform to sign in. '
+          + 'Use the account that administers <b>this agency’s</b> page — '
+          + 'you are only ever offered the pages that account manages.</div>'
+          + '<div class="cmp-ch-row">';
 
         /* EVERY ACCOUNT, not the first one found. connectedTo() returned
            accounts[i] on the first platform match, so a second Instagram
