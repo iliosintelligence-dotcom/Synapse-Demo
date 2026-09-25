@@ -1635,7 +1635,8 @@
    *  against these five, and social_platform now carries all five. linkedin
    *  and x exist in the enum but nothing generates or checks content for them,
    *  so they are deliberately not offered. */
-  var SCHEDULABLE = { instagram: 1, tiktok: 1, youtube: 1, facebook: 1, whatsapp: 1, x: 1 };
+  var SCHEDULABLE = { instagram: 1, tiktok: 1, youtube: 1, facebook: 1, whatsapp: 1, x: 1,
+                      telegram: 1 };
 
   /** Everything this agency has queued, publishing or published. */
   function listSocialPosts() {

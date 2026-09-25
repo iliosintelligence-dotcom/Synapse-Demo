@@ -430,6 +430,17 @@
     .cmp-setup li.warn { border-left: 2px solid var(--gold); padding-left: 10px; }
     .cmp-setup-why { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-dim); }
     .cmp-setup-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    /* The Telegram row is taller than the others because it carries an
+       instruction the agency cannot get anywhere else. Stacked rather than
+       squeezed into the one-line shape its neighbours use. */
+    .cmp-ch.cmp-tg { flex-direction: column; align-items: stretch; gap: 8px; }
+    .cmp-tg-body { display: flex; flex-direction: column; gap: 6px; }
+    .cmp-tg-how { font-size: 11.5px; line-height: 1.55; color: var(--ink-muted); }
+    .cmp-tg-how code { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(20,20,20,0.05); border-radius: 6px; padding: 2px 6px; }
+    .cmp-tg-in { flex: 1; min-width: 160px; min-height: 38px; padding: 8px 10px;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+      font: 400 12.5px var(--f-sans); color: var(--ink); }
     .cmp-reply-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px;
       color: var(--ink-muted); margin-bottom: 8px; cursor: pointer; }
     .cmp-reply-lbl { display: block; font: 600 11px var(--f-sans); color: var(--ink-muted);
@@ -10449,7 +10460,7 @@
     }
     rebuildPostListings();
     document.addEventListener('syn:listings', rebuildPostListings);
-    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X' };
+    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X', telegram: 'Telegram' };
 
     /* ── Campaign generator ────────────────────────────────────────────────
        Pulls real verified listings from the database, fans each into every
@@ -10499,7 +10510,11 @@
          build one out of a real token. */
       var LINK_PREVIEW = 'synapsecore.dev/s/\u2022\u2022\u2022\u2022\u2022\u2022';
 
-      var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook' };
+      var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook', telegram: 'Telegram' };
+      /* Telegram has no OAuth for posting. A bot is added as an administrator
+         of a channel and may then post there, so this row is a field rather
+         than a button -- there is nowhere to send anybody. */
+      var TG_BOT = '@SynapseListingsBot';
       var SOON = {
         tiktok: ['TikTok', 'not built yet'],
         linkedin: ['LinkedIn', 'not built yet'],
@@ -10704,6 +10719,30 @@
                 + esc(CONNECTABLE[pl]) + '</span>'
                 + '<span class="cmp-ch-at">not available yet</span></div>';
             }
+          } else if (pl === 'telegram' && canConnect()) {
+            /* A FIELD, NOT A BUTTON. The work happens inside Telegram and the
+               instruction above the field is the whole of it -- an agency
+               cannot discover "add the bot as an admin" anywhere else, and
+               doing it without Post Messages produces a channel that looks
+               connected and fails at the first post. */
+            html += '<div class="cmp-ch cmp-tg">'
+              + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
+              + esc(CONNECTABLE[pl]) + '</span>'
+              + '<div class="cmp-tg-body">'
+              +   '<div class="cmp-tg-how">In Telegram, open your channel \u2192 '
+              +     '<b>Administrators</b> \u2192 add <code>' + esc(TG_BOT) + '</code> '
+              +     'and allow <b>Post Messages</b>. Then paste the channel here.'
+              +   '</div>'
+              +   '<div class="cmp-setup-row">'
+              +     '<input id="tgChan" class="cmp-tg-in" placeholder="@yourchannel" '
+              +       'autocomplete="off" spellcheck="false">'
+              +     '<button class="cmp-ch-btn primary" id="tgGo">'
+              +       (list.length ? 'Add another' : 'Connect') + '</button>'
+              +   '</div>'
+              +   '<div class="cmp-setup-why" id="tgNote">Telegram is the only channel '
+              +     'where a listing gets a real \u201cView this home\u201d button under '
+              +     'the photos \u2014 one tap, no link in bio.</div>'
+              + '</div></div>';
           } else if (canConnect()) {
             html += '<div class="cmp-ch">'
               + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
@@ -10728,6 +10767,55 @@
         html += '</div>' + setupHtml() + replyHtml();
         box.innerHTML = html;
         wireReply();
+        wireTelegram();
+      }
+
+      /* One POST, and everything it can go wrong with is answered by the
+         server in words: channel not found, bot not an admin, Post Messages
+         off. Shown as they arrive rather than replaced with a generic
+         failure -- those three want three different actions. */
+      function wireTelegram() {
+        var go = document.getElementById('tgGo');
+        var input = document.getElementById('tgChan');
+        if (!go || !input) return;
+
+        var submit = function () {
+          var chan = (input.value || '').trim();
+          var note = document.getElementById('tgNote');
+          if (!chan) { note.textContent = 'Paste the channel\u2019s @name or link.'; return; }
+          var was = go.textContent;
+          go.disabled = true; go.textContent = 'Checking\u2026';
+          note.textContent = 'Asking Telegram whether the bot can post there\u2026';
+          token().then(function (t) {
+            if (!t) throw new Error('Sign in again to connect a channel.');
+            return fetch(SB_URL + '/functions/v1/social-connect?action=telegram', {
+              method: 'POST',
+              headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t,
+                         'Content-Type': 'application/json' },
+              body: JSON.stringify({ channel: chan }),
+            });
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok) throw new Error(j.error || ('Could not connect (' + r.status + ').'));
+              return j;
+            });
+          }).then(function (j) {
+            toastOrAlert('Connected ' + (j.channel || 'the channel'));
+            return loadChannels();
+          }).catch(function (err) {
+            go.disabled = false; go.textContent = was;
+            /* textContent, not innerHTML: this string comes from Telegram by
+               way of our function, and it is the one place on this screen
+               where the words are not ours. */
+            document.getElementById('tgNote').textContent =
+              err.message || 'Could not connect that channel.';
+          });
+        };
+
+        go.addEventListener('click', submit);
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); submit(); }
+        });
       }
 
       /* ── answering a comment with the link ───────────────────────────────
