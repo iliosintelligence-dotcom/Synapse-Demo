@@ -223,6 +223,12 @@
     .apc-ag-logo { width: 22px; height: 22px; flex: none; border-radius: 6px; background: rgba(54,54,54,0.12);
       display: flex; align-items: center; justify-content: center; font: 700 10px var(--f-sans); color: var(--brand); }
     .apc-ag-nm { font-weight: 600; }
+    /* The agency's own logo over its initial; removed if it will not load,
+       which uncovers the initial instead of a broken image. */
+    .apc-ag-logo { position: relative; overflow: hidden; }
+    .apc-ag-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; opacity: 0; transition: opacity .2s; }
+    .apc-ag-logo img.on { opacity: 1; }
+    .apc-ag-tag { font-size: 12px; line-height: 1.45; color: var(--ink-muted); margin-top: 4px; }
     .apc-ag-meta { color: var(--ink-dim); font-size: 11.5px; }
 
     .apc-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
@@ -1146,6 +1152,7 @@
             <span class="apc-ag-nm" id="pvAgencyName">—</span>
             <span class="apc-ag-meta" id="pvAgencyMeta"></span>
           </div>
+          <div class="apc-ag-tag" id="pvAgencyTag" hidden></div>
           <!-- Touring lives on the agent's card because the agent is who you
                would be meeting, and it is the LAST step of priming: it appears
                only once Tayo has actually qualified this buyer for this home.
@@ -1923,6 +1930,49 @@
         set('pvAgencyName', nm);
         const ini = document.getElementById('pvAgencyInitial');
         if (ini) ini.textContent = (nm[0] || '\u2014').toUpperCase();
+
+        /* The agency as it designed itself on its Brand page: its colour
+           behind the initial, its logo over it, its typeface on its name,
+           its tagline underneath. Each is the agency's own input and is
+           checked before use; anything that fails keeps the default. */
+        if (a) {
+          const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(a.brand_color || '').trim())
+            ? String(a.brand_color).trim() : '';
+          if (ini && hex) {
+            let h = hex.slice(1);
+            if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+            const lin = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16) / 255)
+              .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+            const lum = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+            ini.style.background = hex;
+            ini.style.color = lum > 0.4 ? '#1C1C1E' : '#fff';
+          }
+          const logo = String(a.logo_url || '').trim();
+          if (ini && /^https?:\/\//i.test(logo)) {
+            const im = document.createElement('img');
+            im.alt = ''; im.loading = 'lazy';
+            im.onload = () => im.classList.add('on');   // the initial shows until then
+            im.onerror = () => im.remove();
+            im.src = logo;
+            ini.appendChild(im);
+          }
+          const fam = String(a.brand_font || '').trim().replace(/\s+/g, ' ');
+          const nmEl = document.getElementById('pvAgencyName');
+          if (nmEl && /^[A-Za-z0-9][A-Za-z0-9 ]{1,39}$/.test(fam)) {
+            if (!/^(arial|helvetica|georgia|times|times new roman|verdana|tahoma|trebuchet ms|courier new|garamond)$/i.test(fam)) {
+              const lk = document.createElement('link');
+              lk.rel = 'stylesheet';
+              lk.href = 'https://fonts.googleapis.com/css2?family=' + fam.replace(/ /g, '+') + '&display=swap';
+              document.head.appendChild(lk);
+            }
+            nmEl.style.fontFamily = "'" + fam + "', var(--f-sans)";
+          }
+          const tag = document.getElementById('pvAgencyTag');
+          if (tag && a.tagline && String(a.tagline).trim()) {
+            tag.textContent = String(a.tagline).trim();
+            tag.hidden = false;
+          }
+        }
         const tier = a && a.verification_tier;
         AGENCY_VERIFIED = tier === 'verified';
         set('pvAgencyMeta', tier === 'verified' ? '\u00b7 Verified'
@@ -2304,7 +2354,7 @@
     (function hydrate() {
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
       const q = SUPABASE_URL + '/rest/v1/properties'
-        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier)'
+        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline)'
         // The neighbourhood record this listing is actually attached to.
         // Without it the section below had nothing to draw from, which is
         // why it was hardcoded to Lekki Phase 1 on every property.

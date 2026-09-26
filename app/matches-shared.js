@@ -15,6 +15,84 @@
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  /* ── who listed it, as they designed themselves ─────────────────────────
+     An agency sets a logo, a colour and a typeface on its Brand page, and a
+     buyer never saw any of it: the card named no agency at all. This is the
+     one place the card draws that identity, so browse and Tayo cannot drift.
+
+     Everything here is the agency's own input, so it is checked rather than
+     trusted: a colour must be a hex, a logo an http(s) URL, a typeface a
+     plain family name. Anything else is left out and the default stands. */
+  const WEB_SAFE_FONT = /^(arial|helvetica|georgia|times|times new roman|verdana|tahoma|trebuchet ms|courier new|garamond)$/i;
+  const FONTS_ASKED = new Set();
+  /* The typeface as a font-family stack, fetched from Google Fonts on first
+     use. A family Google does not have simply fails to load and the fallback
+     draws, which is the right failure for a name somebody typed. */
+  function brandFontStack(name) {
+    const n = String(name || '').trim().replace(/\s+/g, ' ');
+    if (!/^[A-Za-z0-9][A-Za-z0-9 ]{1,39}$/.test(n)) return '';
+    if (!WEB_SAFE_FONT.test(n) && !FONTS_ASKED.has(n) && document.head) {
+      FONTS_ASKED.add(n);
+      const lk = document.createElement('link');
+      lk.rel = 'stylesheet';
+      lk.href = 'https://fonts.googleapis.com/css2?family=' + n.replace(/ /g, '+') + '&display=swap';
+      document.head.appendChild(lk);
+    }
+    return "'" + n + "', ";
+  }
+  function brandHex(c) {
+    const v = String(c || '').trim();
+    return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? v : '';
+  }
+  /* White or near-black, whichever reads on the agency's colour: a pale
+     brand colour with white initials is a blank square. */
+  function inkOn(hex) {
+    let h = hex.slice(1);
+    if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+    const lin = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    return (0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]) > 0.4 ? '#1C1C1E' : '#fff';
+  }
+  function httpUrl(u) {
+    const v = String(u || '').trim();
+    return /^https?:\/\//i.test(v) ? v : '';
+  }
+  function agencyCss() {
+    if (document.getElementById('syn-agy-css')) return;
+    const s = document.createElement('style');
+    s.id = 'syn-agy-css';
+    s.textContent =
+      '.listing .agy{display:flex;align-items:center;gap:8px;min-width:0;margin-top:10px;padding-top:9px;'
+      + 'border-top:1px solid rgba(255,255,255,0.7);}'
+      + '.listing .agy-mark{position:relative;width:28px;height:28px;flex:none;border-radius:7px;overflow:hidden;'
+      + 'display:inline-flex;align-items:center;justify-content:center;background:rgba(54,54,54,0.12);'
+      + 'color:#363636;font:700 12px/1 var(--f-sans,sans-serif);}'
+      /* The logo sits over the initial and is removed if it will not load,
+         which uncovers the initial rather than leaving a broken image. */
+      + '.listing .agy-mark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;'
+      + 'opacity:0;transition:opacity .2s;}'
+      /* Shown once it has loaded: a large logo arriving slowly otherwise
+         reads as an empty white square where the initial was. */
+      + '.listing .agy-mark img.on{opacity:1;}'
+      + '.listing .agy-nm{min-width:0;font-size:12.5px;font-weight:600;color:var(--ink,#1C1C1E);'
+      + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}';
+    document.head.appendChild(s);
+  }
+  /* `a` is { name, logo, color, font }. Nothing is drawn without a name. */
+  function agencyRowHtml(a) {
+    if (!a || !a.name) return '';
+    agencyCss();
+    const col = brandHex(a.color), logo = httpUrl(a.logo), font = brandFontStack(a.font);
+    const ini = String(a.name).trim().charAt(0).toUpperCase();
+    return '<div class="agy" title="Listed by ' + esc(a.name) + '">'
+      + '<span class="agy-mark"' + (col ? ' style="background:' + col + ';color:' + inkOn(col) + '"' : '') + '>'
+      +   '<span aria-hidden="true">' + esc(ini) + '</span>'
+      +   (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">' : '')
+      + '</span>'
+      + '<span class="agy-nm"' + (font ? ' style="font-family:' + esc(font) + 'var(--f-sans,sans-serif)"' : '') + '>'
+      +   esc(a.name) + '</span></div>';
+  }
+
   /* ── Money, in whatever the listing is priced in ────────────────────────
      This was naira(): it hardcoded ₦ and the ₦-scale shorthand, so a London or
      Nairobi listing would have rendered as naira. Prices now format from the
@@ -144,6 +222,8 @@
       // the row — hardcoding 'verified' here would stamp the badge on listings
       // nobody has checked, which is the single worst thing this UI could do.
       vstatus: m.verificationStatus || (m.verified ? 'verified' : 'unverified'),
+      // { name, logo, color, font } from the agency's Brand page, or null.
+      agency: m.agencyBrand || null,
       deal: m.room != null ? 'Shared room' : m.listingType === 'rent' ? 'For rent' : 'For sale',
       priceN: Number(m.price) || 0,
       ttl: m.title || '',
@@ -243,6 +323,7 @@
           <div class="loc">${esc(l.loc)}</div>
           ${l.why ? `<div class="why">${l.why}</div>` : ''}
           ${score}
+          ${agencyRowHtml(l.agency)}
         </div>
         <div class="img">
           ${img
@@ -570,5 +651,6 @@
   }
 
   window.SynMatches = { focusUnlessTouch, esc, money, naira, IMG_POOL, GEO, coords, propertyHref, verifyChip, shapeTojuMatch, listingCardHtml, drawMatchMap,
+    agencyRowHtml, brandFontStack, brandHex, inkOn,
     readSaves, toggleSave, onSavesChanged, SAVES_KEY, readViews, recordView, VIEWS_KEY };
 })();

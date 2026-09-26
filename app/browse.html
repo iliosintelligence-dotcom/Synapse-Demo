@@ -1099,7 +1099,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,property_media(url,display_order),neighbourhoods(name)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,property_media(url,display_order),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1137,6 +1137,12 @@
         priceN: Number(p.price) || 0,
         ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
+        /* Who listed it, as they designed themselves on their Brand page --
+           drawn by listingCardHtml, which checks every field before using it. */
+        agency: (function (a) {
+          a = Array.isArray(a) ? a[0] : a;
+          return a && a.name ? { name: a.name, logo: a.logo_url, color: a.brand_color, font: a.brand_font } : null;
+        })(p.agencies),
         // Where the pin goes. `loc` above is the label; these are the place.
         lat: p.latitude == null ? null : Number(p.latitude),
         lng: p.longitude == null ? null : Number(p.longitude),
