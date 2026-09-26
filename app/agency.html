@@ -14287,10 +14287,11 @@
           });
           /* Typing something the list lacks offers it as a tap target, not
              only as "press Enter" -- a phone keyboard's Enter key is not an
-             obvious way to confirm a choice. */
+             obvious way to confirm a choice. Last, so a partial match
+             ("short" -> Short-lets) is what the eye lands on first. */
           if (typed && !exact && !has(typed)) {
-            html = '<div class="amen-opt amen-add" role="option" data-v="' + esc2(typed)
-              + '" aria-selected="false">Add \u201c' + esc2(typed) + '\u201d</div>' + html;
+            html += '<div class="amen-opt amen-add" role="option" data-v="' + esc2(typed)
+              + '" aria-selected="false">Add \u201c' + esc2(typed) + '\u201d</div>';
           }
           menu.innerHTML = html || '<div class="amen-none">Already added.</div>';
           hi = -1;
