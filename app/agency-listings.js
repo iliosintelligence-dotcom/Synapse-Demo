@@ -2026,6 +2026,28 @@
     }).then(function (r) { if (r.error) throw r.error; return true; });
   }
 
+  /** The agency's own edit to a caption awaiting approval. Written to the
+   *  draft itself, so what gets approved is what was read. `.select` makes a
+   *  refused or already-moved row an error rather than a silent zero-row
+   *  update that looks like success. */
+  function updateContentText(id, text) {
+    var t = String(text == null ? '' : text).replace(/\s+$/, '');
+    if (!id) return Promise.reject(new Error('No caption to save'));
+    if (!t.trim()) return Promise.reject(new Error('A caption cannot be empty'));
+    return client().then(function (c) {
+      return c.from('generated_content')
+        .update({ generated_text: t })
+        .eq('id', id)
+        .select('id');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.length) {
+        throw new Error('That caption could not be changed — it may already have been approved or removed.');
+      }
+      return true;
+    });
+  }
+
   /**
    * Queue one caption across platforms and times.
    *
@@ -2790,6 +2812,7 @@
     uploadAvatar: uploadAvatar,
     listPendingContent: listPendingContent,
     setContentStatus: setContentStatus,
+    updateContentText: updateContentText,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
     brandImage: brandImage,

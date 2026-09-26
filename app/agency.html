@@ -1580,6 +1580,57 @@
     .cap-card .rec { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.3); border-radius: 100px; padding: 2px 8px; }
     .cap-card textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.02); padding: 9px 11px; font: 13px var(--f-sans); color: var(--ink); resize: vertical; min-height: 66px; outline: none; }
     .cap-card textarea:focus { border-color: rgba(54,54,54,0.4); }
+    /* The caption as a thing to open, not a box to scroll. Five lines are
+       enough to recognise it; the whole of it is one tap away. */
+    .cap-open { display: block; width: 100%; text-align: left; cursor: pointer; min-height: 0;
+      border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.02);
+      padding: 10px 12px; font: 13px/1.5 var(--f-sans); color: var(--ink);
+      transition: border-color var(--m-standard), background var(--m-standard); }
+    .cap-open:hover { border-color: rgba(54,54,54,0.4); background: #fff; }
+    .cap-open:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    .cap-prev { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5;
+      overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .cap-hint { display: block; margin-top: 7px; font: 600 11.5px var(--f-sans); color: var(--brand-text); }
+
+    /* ── the caption editor ─────────────────────────────────────────────
+       Above the composer (91) and the property preview (90): it opens from
+       either the composer or a card on the board. */
+    .ced-scrim { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center;
+      padding: 12px; background: rgba(20,22,26,0.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .ced-scrim.on { display: flex; }
+    .ced { width: min(680px, 100%); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; gap: 12px;
+      box-sizing: border-box; background: var(--surface); border-radius: 18px; padding: 16px 18px;
+      box-shadow: 0 30px 80px rgba(20,26,38,0.35); }
+    .ced-head { display: flex; align-items: center; gap: 9px; }
+    .ced-head h3 { flex: 1; margin: 0; font: 700 16px var(--f-sans); color: var(--ink); }
+    .ced-x { width: 40px; height: 40px; flex: none; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.05); color: var(--ink); font-size: 20px; line-height: 1; }
+    .ced-text { flex: 1 1 auto; width: 100%; min-height: 34vh; box-sizing: border-box; resize: none;
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; outline: none;
+      background: #fff; font: 14px/1.6 var(--f-sans); color: var(--ink); }
+    .ced-text:focus { border-color: rgba(54,54,54,0.45); }
+    .ced-text[aria-busy="true"] { opacity: .55; }
+    .ced-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+    .ced-ask { display: grid; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .ced-ask label { font: 700 10.5px var(--f-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-dim); }
+    .ced-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ced-quick button { min-height: 36px; padding: 6px 13px; border-radius: 100px; cursor: pointer;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.85); font: 600 12.5px var(--f-sans); color: var(--ink); }
+    .ced-quick button:hover { border-color: rgba(54,54,54,0.4); }
+    .ced-askrow { display: flex; gap: 8px; }
+    .ced-askrow input { flex: 1; min-width: 0; min-height: 44px; box-sizing: border-box; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: 10px; background: #fff; font: 13.5px var(--f-sans); color: var(--ink); outline: none; }
+    .ced-askrow input:focus { border-color: rgba(54,54,54,0.45); }
+    .ced-note { min-height: 1.2em; font-size: 12.5px; color: var(--ink-muted); }
+    .ced-note.err { color: var(--danger); }
+    .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ced-foot .sp { flex: 1; }
+    .ced button[disabled] { opacity: .5; cursor: default; }
+    /* On the board, the caption opens the same editor. */
+    .pcard .cap[data-capedit] { cursor: pointer; border-radius: 6px; }
+    .pcard .cap[data-capedit]:hover { background: rgba(0,0,0,0.03); }
+    .pcard .cap[data-capedit]:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    .pcard .cap-edit { display: inline-block; margin: 4px 0 2px; font: 600 11px var(--f-sans); color: var(--brand-text); }
     .cmp-tags { margin-top: 12px; font-size: 12px; color: var(--brand); font-weight: 500; line-height: 1.6; }
     .cmp-note { margin-top: 12px; font-size: 12px; color: var(--ink-muted); background: rgba(54,54,54,0.06); border: 1px solid rgba(54,54,54,0.18); border-radius: 10px; padding: 9px 12px; line-height: 1.5; }
     .cmp-note b { color: var(--brand); }
@@ -5891,7 +5942,8 @@
       /* Keep or discard — the two answers a review actually has. Approving
          opens the scheduler rather than silently picking a time, because "when"
          is the decision the agency was asking to make. */
-      else if (stage === 'approval') body = `<div class="cap">${esc2((p.caption || '').slice(0, 260))}</div>
+      else if (stage === 'approval') body = `<div class="cap" data-capedit="${esc2(p.id)}" role="button" tabindex="0" aria-label="Open this caption to edit">${esc2((p.caption || '').slice(0, 260))}</div>
+        <span class="cap-edit" aria-hidden="true">\u270e Edit caption</span>
         <button class="act pri" data-act="approve" data-id="${p.id}">Keep &amp; schedule</button>
         <button class="act gh" data-act="discard" data-id="${p.id}">Discard</button>`;
       /* A RETRY IS NOT A FRESH SCHEDULE.
@@ -6760,7 +6812,33 @@
       else openPropPreview(p);
     });
 
+    /* A caption awaiting approval is edited where it is reviewed. The edit is
+       written to the draft itself, so what is approved is what was read. */
+    function openBoardCaption(pid) {
+      const p = posts.find((x) => x.id === pid);
+      if (!p || !p.contentId) return;
+      const ch = (p.channels && p.channels[0]) || 'instagram';
+      const L = fullListing(p.propertyId);
+      openCaptionEditor({
+        ch: ch, text: p.caption || '', property: L, listing: L, title: p.listing,
+        onSave: (text) => SynListings.updateContentText(p.contentId, text).then(() => {
+          const row = PIPE.drafts.find((d) => d.id === p.contentId);
+          if (row) row.generated_text = text;
+          buildPosts(); renderPipeline();
+          toast('Caption saved');
+        }),
+      });
+    }
+    document.getElementById('pipeline').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const ce = e.target.closest && e.target.closest('[data-capedit]');
+      if (!ce) return;
+      e.preventDefault(); openBoardCaption(ce.dataset.capedit);
+    });
+
     document.getElementById('pipeline').addEventListener('click', (e) => {
+      const ce = e.target.closest('[data-capedit]');
+      if (ce) { openBoardCaption(ce.dataset.capedit); return; }
       const b = e.target.closest('[data-act]');
       if (!b) { const card = e.target.closest('.pcard'); if (card) openPropPreview(posts.find(x => x.id === card.dataset.pid)); return; }
 
@@ -12619,7 +12697,15 @@
       if (cmp.captions) {
         html += `<div class="cmp-step">3 · Captions — edit anything, then schedule</div>`;
         Object.keys(cmp.captions).forEach((ch) => {
-          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div><textarea data-cap="${ch}">${escT(cmp.captions[ch])}</textarea><div class="cap-warn" data-warn="${ch}">${capWarnHtml(ch, cmp.captions[ch])}</div>${tagRowHtml(ch)}</div>`;
+          /* The textarea stays as the caption's store -- the hashtag chips
+             and the send both read it -- but hidden: editing happens in the
+             full-size editor, not in a box you scroll three lines at a time. */
+          html += `<div class="cap-card"><div class="ch">${chnBadge(ch)} ${CH_LABEL[ch]} ${ch === cmp.rec ? '<span class="rec">✦ recommended</span>' : ''}</div>`
+            + `<button type="button" class="cap-open" data-capopen="${ch}" aria-label="Open the ${escT(CH_LABEL[ch] || ch)} caption to edit">`
+            + `<span class="cap-prev" data-prev="${ch}">${escT(cmp.captions[ch])}</span>`
+            + `<span class="cap-hint">Tap to edit, or ask for it shorter, longer, warmer\u2026</span></button>`
+            + `<textarea data-cap="${ch}" hidden>${escT(cmp.captions[ch])}</textarea>`
+            + `<div class="cap-warn" data-warn="${ch}">${capWarnHtml(ch, cmp.captions[ch])}</div>${tagRowHtml(ch)}</div>`;
         });
         if (cmp.hashtags.length) html += `<div class="cmp-tags">${cmp.hashtags.map(escT).join('  ')}</div>`;
         if (cmp.note) html += `<div class="cmp-note"><b>Tayo's tip:</b> ${escT(cmp.note)}</div>`;
@@ -12797,11 +12883,13 @@
     const CAP_FOLD = { instagram: 125, facebook: 250, x: 200, telegram: 400,
                        tiktok: 120, whatsapp: 300, youtube: 150 };
 
-    function capWarnHtml(ch, text) {
+    function capWarnHtml(ch, text, listing) {
       const t = String(text || '');
       if (!t.trim()) return '';
+      /* The composer's listing unless told otherwise: a caption opened from
+         a card on the board belongs to that card's listing. */
       const l = POST_LISTINGS[cmp.li];
-      const full = fullListing(l && l.id) || l || {};
+      const full = listing || fullListing(l && l.id) || l || {};
       const out = [];
 
       /* The price, in any of the shapes a caption might write it. Digits are
@@ -12839,6 +12927,200 @@
 
       if (!out.length) return '';
       return out.map((w) => '<span>\u26a0 ' + w + '</span>').join('');
+    }
+
+    /* One caption, everywhere it is shown in the composer. */
+    function setComposerCaption(ch, text) {
+      cmp.captions[ch] = text;
+      const box = cmpModal.querySelector('textarea[data-cap="' + ch + '"]');
+      if (box) box.value = text;
+      const prev = cmpModal.querySelector('[data-prev="' + ch + '"]');
+      if (prev) prev.textContent = text;
+      const warn = cmpModal.querySelector('[data-warn="' + ch + '"]');
+      if (warn) warn.innerHTML = capWarnHtml(ch, text);
+    }
+
+    /* The brand block social-generate honours. Only what the agency actually
+       filled in -- an absent voice must not become an invented one. */
+    function brandPayload() {
+      return window.BRAND ? {
+        name: window.BRAND.name || null,
+        tagline: window.BRAND.tagline || null,
+        voice: window.BRAND.brand_voice || null,
+        handle: (window.BRAND.social && window.BRAND.social.instagram) || null,
+      } : null;
+    }
+
+    /* ── the caption editor ───────────────────────────────────────────────
+       A caption is a page of text -- the Facebook form alone is a headline,
+       a spec list, the charges and a next step -- and it was edited through a
+       three-line box you scrolled inside. This is the whole caption at a
+       readable size, and a place to ask for it to be changed in words:
+       "shorter", "lead with the service charge". The rewrite goes through the
+       same writer as the first draft, with the same rules about facts, prices
+       and addresses; the request steers it, it does not unlock anything.
+
+       Nothing is kept until Save. A rewrite can be undone, and Cancel leaves
+       the caption exactly as it was. */
+    let CED = null;
+    function openCaptionEditor(o) {
+      if (!CED) {
+        const el = document.createElement('div');
+        el.className = 'ced-scrim';
+        el.innerHTML = '<div class="ced" role="dialog" aria-modal="true" aria-labelledby="cedTitle">'
+          + '<div class="ced-head"><span id="cedBadge"></span><h3 id="cedTitle">Caption</h3>'
+          + '<button type="button" class="ced-x" id="cedX" aria-label="Close">\u00d7</button></div>'
+          + '<textarea class="ced-text" id="cedText" spellcheck="true" aria-label="Caption"></textarea>'
+          + '<div class="ced-meta"><span id="cedCount"></span></div>'
+          + '<div class="cap-warn" id="cedWarn"></div>'
+          + '<div class="ced-ask"><label for="cedAsk">Ask for a change</label>'
+          + '<div class="ced-quick">'
+          +   '<button type="button" data-ask="Make it shorter.">Shorter</button>'
+          +   '<button type="button" data-ask="Make it longer, with more of what the listing actually offers.">Longer</button>'
+          +   '<button type="button" data-ask="Make it warmer and more personal.">Warmer</button>'
+          +   '<button type="button" data-ask="Make it more formal.">More formal</button>'
+          + '</div>'
+          + '<div class="ced-askrow"><input id="cedAsk" type="text" autocomplete="off" maxlength="600"'
+          +   ' placeholder="e.g. lead with the service charge, fewer emojis">'
+          +   '<button type="button" class="btn btn-ghost" id="cedGo">Rewrite</button></div>'
+          + '<div class="ced-note" id="cedNote" role="status" aria-live="polite"></div></div>'
+          + '<div class="ced-foot"><button type="button" class="btn btn-ghost" id="cedUndo" hidden>Undo rewrite</button>'
+          + '<span class="sp"></span><button type="button" class="btn btn-ghost" id="cedCancel">Cancel</button>'
+          + '<button type="button" class="btn btn-primary" id="cedSave">Save caption</button></div></div>';
+        document.body.appendChild(el);
+        const q = (id) => el.querySelector('#' + id);
+        CED = { el: el, text: q('cedText'), count: q('cedCount'), warn: q('cedWarn'), ask: q('cedAsk'),
+                go: q('cedGo'), note: q('cedNote'), undo: q('cedUndo'), save: q('cedSave'),
+                badge: q('cedBadge'), title: q('cedTitle'), o: null, orig: '', history: [], busy: false };
+
+        const meta = () => {
+          const t = CED.text.value, ch = CED.o.ch;
+          const fold = CAP_FOLD[ch] || 200;
+          CED.count.textContent = t.length.toLocaleString() + ' characters \u00b7 '
+            + (CH_LABEL[ch] || ch) + ' shows about the first ' + fold + ' before \u201cmore\u201d';
+          CED.warn.innerHTML = capWarnHtml(ch, t, CED.o.listing);
+        };
+        CED.meta = meta;
+        const close = (force) => {
+          if (!force && !CED.busy && CED.text.value !== CED.orig
+              && !window.confirm('Close without saving? Your changes to this caption will be lost.')) return;
+          el.classList.remove('on');
+          CED.o = null;
+          if (CED.opener && CED.opener.focus) CED.opener.focus();
+        };
+        CED.close = close;
+        const setBusy = (b) => {
+          CED.busy = b;
+          CED.text.setAttribute('aria-busy', String(b));
+          [CED.go, CED.save, CED.undo].concat([].slice.call(el.querySelectorAll('.ced-quick button')))
+            .forEach((x) => { x.disabled = b; });
+        };
+        CED.setBusy = setBusy;
+
+        async function rewrite(instruction) {
+          instruction = String(instruction || '').trim();
+          if (!instruction) { CED.ask.focus(); CED.note.className = 'ced-note'; CED.note.textContent = 'Say what to change first \u2014 or tap one of the buttons above.'; return; }
+          if (CED.busy || !CED.o) return;
+          const o = CED.o, before = CED.text.value;
+          if (!before.trim()) { CED.note.className = 'ced-note err'; CED.note.textContent = 'There is no caption to change yet.'; return; }
+          setBusy(true);
+          CED.note.className = 'ced-note'; CED.note.textContent = 'Rewriting\u2026';
+          try {
+            const tk = await authToken();
+            const res = await fetch(SB_URL + '/functions/v1/social-generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (tk || SB_KEY) },
+              body: JSON.stringify({
+                property: o.property || { title: o.title || 'Listing' },
+                channels: [o.ch],
+                brand: brandPayload(),
+                revise: { channel: o.ch, caption: before, instruction: instruction },
+              }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (CED.o !== o) return;              // closed or reopened meanwhile
+            if (!res.ok || d.error || typeof d.caption !== 'string' || !d.caption.trim()) {
+              CED.note.className = 'ced-note err';
+              CED.note.textContent = (d && d.error) || 'Could not rewrite it just now \u2014 please try again.';
+              return;
+            }
+            CED.history.push(before);
+            CED.text.value = d.caption;
+            CED.undo.hidden = false;
+            CED.ask.value = '';
+            meta();
+            CED.note.className = 'ced-note';
+            CED.note.textContent = 'Rewritten. Edit anything, ask again, or undo.';
+          } catch (err) {
+            if (CED.o !== o) return;
+            CED.note.className = 'ced-note err';
+            CED.note.textContent = err instanceof TypeError
+              ? 'Network hiccup \u2014 please try again.'
+              : 'Something went wrong on our side \u2014 please try again.';
+            if (!(err instanceof TypeError)) console.error('caption rewrite', err);
+          } finally {
+            if (CED.o === o) setBusy(false);
+          }
+        }
+
+        CED.text.addEventListener('input', meta);
+        el.querySelector('.ced-quick').addEventListener('click', (e) => {
+          const b = e.target.closest('[data-ask]'); if (b) rewrite(b.dataset.ask);
+        });
+        CED.go.addEventListener('click', () => rewrite(CED.ask.value));
+        CED.ask.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); rewrite(CED.ask.value); } });
+        CED.undo.addEventListener('click', () => {
+          if (!CED.history.length) return;
+          CED.text.value = CED.history.pop();
+          CED.undo.hidden = !CED.history.length;
+          meta();
+          CED.note.className = 'ced-note'; CED.note.textContent = 'Back to the version before the rewrite.';
+        });
+        q('cedX').addEventListener('click', () => close(false));
+        q('cedCancel').addEventListener('click', () => close(false));
+        el.addEventListener('mousedown', (e) => { if (e.target === el) close(false); });
+        /* Escape closes the editor and nothing under it: the composer and the
+           property preview both listen for Escape on the document. */
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') { e.stopPropagation(); close(false); }
+        });
+        CED.save.addEventListener('click', () => {
+          if (!CED.o || CED.busy) return;
+          const text = CED.text.value.replace(/\s+$/, '');
+          if (!text.trim()) { CED.note.className = 'ced-note err'; CED.note.textContent = 'A caption cannot be empty.'; return; }
+          const done = CED.o.onSave(text);
+          if (done && typeof done.then === 'function') {
+            setBusy(true); CED.note.className = 'ced-note'; CED.note.textContent = 'Saving\u2026';
+            const o = CED.o;
+            done.then(() => { if (CED.o === o) { setBusy(false); close(true); } })
+              .catch((err) => {
+                if (CED.o !== o) return;
+                setBusy(false);
+                CED.note.className = 'ced-note err';
+                CED.note.textContent = (err && err.message) || 'That caption was not saved.';
+              });
+          } else {
+            close(true);
+          }
+        });
+      }
+
+      CED.o = o;
+      CED.opener = document.activeElement;
+      CED.orig = String(o.text || '');
+      CED.history = [];
+      CED.text.value = CED.orig;
+      CED.ask.value = '';
+      CED.undo.hidden = true;
+      CED.note.className = 'ced-note'; CED.note.textContent = '';
+      CED.setBusy(false);
+      CED.badge.innerHTML = chnBadge(o.ch);
+      CED.title.textContent = (CH_LABEL[o.ch] || o.ch) + ' caption';
+      CED.meta();
+      CED.el.classList.add('on');
+      CED.text.focus();
+      CED.text.setSelectionRange(0, 0);
+      CED.text.scrollTop = 0;
     }
 
     /* ── hashtag groups ───────────────────────────────────────────────────
@@ -12888,13 +13170,11 @@
         const have = tagsIn(box.value).map((t) => t.toLowerCase());
         const fresh = (g.tags || []).filter((t) => have.indexOf(String(t).toLowerCase()) === -1);
         if (!fresh.length) { toast('Already in this caption'); return; }
-        box.value = box.value.replace(/\s+$/, '') + '\n\n'
-          + fresh.map((t) => '#' + t).join(' ');
-        cmp.captions[ch] = box.value;
-        /* The caption check is directly below and counts hashtags, so going
-           past thirty shows immediately rather than at publish. */
-        const warn = box.parentElement.querySelector('[data-warn]');
-        if (warn) warn.innerHTML = capWarnHtml(ch, box.value);
+        /* Through the one setter, so the preview, the store and the caption
+           check below (which counts hashtags -- going past thirty shows now,
+           not at publish) all move together. */
+        setComposerCaption(ch, box.value.replace(/\s+$/, '') + '\n\n'
+          + fresh.map((t) => '#' + t).join(' '));
         return;
       }
 
@@ -13000,6 +13280,16 @@
       const chan = e.target.closest('[data-chan]'); if (chan) { const id = chan.dataset.chan; cmp.chans.has(id) ? cmp.chans.delete(id) : cmp.chans.add(id); renderComposer(); return; }
       if (e.target.closest('#cmpGen')) { generateCaptions(); return; }
       if (e.target.closest('#cmpSchedule')) { scheduleFromComposer(); return; }
+      const open = e.target.closest('[data-capopen]');
+      if (open) {
+        const ch = open.dataset.capopen;
+        const l = POST_LISTINGS[cmp.li];
+        openCaptionEditor({
+          ch: ch, text: cmp.captions[ch] || '',
+          property: fullListing(l && l.id) || l,
+          onSave: (text) => { setComposerCaption(ch, text); },
+        });
+      }
     });
 
     // ── Pricing (config-driven; edit PRICING to change plans) ──
