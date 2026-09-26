@@ -4249,6 +4249,7 @@
       youtube:   { label: 'YouTube',   color: '#FF0000', short: 'YT' },
       whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
       x:         { label: 'X',         color: '#161616', short: 'X'  },
+      telegram:  { label: 'Telegram',  color: '#229ED9', short: 'TG' },
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
       /* The database's attribution_channel enum has ten values and this map
@@ -4272,6 +4273,7 @@
       whatsapp_campaign: 'whatsapp', proximity_alert: 'proximity',
       ai_recommendation: 'tayo', referral: 'referral',
       website: 'web', organic: 'organic', direct_search: 'direct',
+      telegram: 'telegram',
     };
     const uiChannel = (c) => ATTR_CHANNEL[c] || 'direct';
     /* A channel's badge content. The platforms get their own logo; proximity
@@ -6277,7 +6279,9 @@
        social_posts. Several slots is how the same caption goes out to
        Instagram at nine and Facebook at six, which is the thing an agency
        wants and had no way to ask for. */
-    const SCHED_PLATS = ['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp'];
+    /* Telegram was connectable for a day before it was schedulable: an agency
+       could add its channel and then find nowhere to send a post to it. */
+    const SCHED_PLATS = ['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp', 'telegram'];
     const pad2 = (n) => String(n).padStart(2, '0');
     const dateVal = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     const timeVal = (d) => pad2(d.getHours()) + ':' + pad2(d.getMinutes());
