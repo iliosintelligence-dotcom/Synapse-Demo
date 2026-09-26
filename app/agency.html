@@ -955,6 +955,16 @@
     .st-chip.verified { color: var(--success); background: rgba(46,125,79,0.1); border-color: rgba(46,125,79,0.25); }
     .st-chip.pending { color: #7a5410; background: var(--warn-tint); border-color: rgba(156,122,30,0.3); }
     .st-chip.inactive { color: var(--ink-dim); background: rgba(0,0,0,0.03); border-color: var(--border); }
+    .st-chip.draft { color: var(--ink-muted); background: rgba(0,0,0,0.03); border-color: var(--border); border-style: dashed; }
+    /* A draft is not a listing, and should not look like one at a glance:
+       dashed, like a placeholder, until it is saved. */
+    .lcard.ldraft { border: 1.5px dashed rgba(54,54,54,0.28); background: rgba(255,255,255,0.5); }
+    .lcard .fresh.draft { background: rgba(255,255,255,0.9); color: var(--ink); }
+    .lf-restored { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 12px;
+      padding: 10px 12px; border-radius: 12px; background: var(--brand-tint); font-size: 12.5px; color: var(--ink); }
+    .lf-linkbtn { border: none; background: none; padding: 0; min-height: 0; cursor: pointer;
+      font: 600 12.5px var(--f-sans); color: var(--brand-text); text-decoration: underline; text-underline-offset: 2px; }
+    .lf-draftnote { font-size: 11.5px; color: var(--ink-dim); margin: 8px 0 0; text-align: center; min-height: 1em; }
     .lcard .ld { font-size: 12.5px; color: var(--ink-muted); }
     .lcard .ld b { color: var(--ink); font-size: 14px; }
 
@@ -6923,6 +6933,58 @@
        any browser still holding the old demo listings in localStorage drops
        them rather than resurrecting properties that were deleted. */
     const L_KEY = 'synapse_agency_listings_v5';
+
+    /* ── an unsaved new listing ─────────────────────────────────────────
+       A listing is ten minutes of typing and photographs, and one reload,
+       a dropped connection or a closed tab threw all of it away. The form
+       now keeps what it has as it goes, and New listing picks it back up.
+
+       In THIS browser, deliberately. A half-written listing is not a
+       listing: the table behind the portal requires the fields that make one
+       complete, and a row that fails them is not something to put on the
+       server where buyers' searches run. One draft at a time -- the new
+       listing in progress -- which is the one there is to lose. */
+    const DRAFT_KEY = 'synapse_listing_draft_v1';
+    /* ME is declared further down and filled in after sign-in; read before
+       then it is either not yet declared or null, and both mean "unknown". */
+    function draftOwner() { try { return ME || null; } catch (e) { return null; } }
+    function readListingDraft() {
+      let v = null;
+      try { v = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (e) { return null; }
+      if (!v || typeof v !== 'object' || !v.data || typeof v.data !== 'object') return null;
+      /* A shared office computer: somebody else's half-written listing is
+         not yours to open. A draft written before sign-in resolved carries no
+         owner and is offered to whoever is here. */
+      const me = draftOwner();
+      if (v.owner && me && v.owner !== me) return null;
+      return v;
+    }
+    function writeListingDraft(data, floor) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          owner: draftOwner(), at: Date.now(), data: data, floor: floor || null }));
+        return true;
+      } catch (e) { return false; }   // storage full or blocked: the form still works
+    }
+    function clearListingDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+    function draftAgo(at) {
+      const mins = Math.max(0, Math.round((Date.now() - Number(at || 0)) / 60000));
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + ' min ago';
+      if (mins < 1440) return Math.round(mins / 60) + ' h ago';
+      return new Date(Number(at)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+    /* Which form is current. The draft listeners belong to one render of the
+       form, and the drawer is shared -- a lead or another listing may be in it
+       by the time a timer fires. */
+    let LISTING_FORM_SEQ = 0;
+    let LISTING_DRAFT_FLUSH = null;
+    /* A reload or a closed tab gives no warning beyond these two, and the
+       debounce may be holding the last few keystrokes. */
+    window.addEventListener('pagehide', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH();
+    });
     const L_DEFAULT = [];
     // enum option sets mirror the `properties` schema (supabase/migrations/0002_schema.sql)
     const PROP_TYPES = ['apartment','house','duplex','terrace','penthouse','bungalow','land','commercial'];
@@ -7170,6 +7232,29 @@
       else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
       return a;
     }
+    function draftCardHtml(dr) {
+      const x = dr.data || {};
+      const cover = ((x.media || [])[0] || {}).url || '';
+      const price = Number(x.price) > 0
+        ? '\u20a6' + Number(x.price).toLocaleString('en-NG') : 'No price yet';
+      return `
+        <div class="card lcard ldraft">
+          <div class="media">
+            <span class="fresh draft">Not saved yet</span>
+            ${photoHtml(cover)}
+          </div>
+          <div class="bd">
+            <div class="pr">${esc2(price)}</div>
+            <div class="tt">${esc2(x.title || 'Untitled listing')}</div>
+            <div class="ft"><span class="st-chip draft">Draft</span><span class="ld">Edited ${esc2(draftAgo(dr.at))}</span></div>
+            <div class="acts">
+              <button class="edit" data-draft-open>Continue</button>
+              <button class="relist" data-draft-discard>Discard</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderListings() {
       syncRelistAll();          // the bulk button appears, and counts, with the grid
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
@@ -7181,8 +7266,16 @@
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
       const rows = listFiltered(), grid = document.getElementById('lgrid');
-      if (!rows.length) { grid.innerHTML = '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>'; return; }
-      grid.innerHTML = rows.map(({ l, oi }) => {
+      /* The unsaved listing, first, on the unfiltered view. It is not a
+         listing yet, so the Verified / Pending / Expiring views -- which are
+         questions about listings -- do not show it. */
+      const dr = (LIST.f === 'all' && !LIST.q) ? readListingDraft() : null;
+      const draftCard = dr ? draftCardHtml(dr) : '';
+      if (!rows.length) {
+        grid.innerHTML = draftCard || '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>';
+        return;
+      }
+      grid.innerHTML = draftCard + rows.map(({ l, oi }) => {
         const f = freshness(l);
         const leftPct = Math.max(0, Math.min(100, (14 - l.days) / 14 * 100));
         const vb = l.st === 'verified' ? '<span class="vbadge verified">✓ Verified</span>'
@@ -7220,7 +7313,11 @@
     // edit / create in the shared drawer
     function listingForm(l, idx) {
       const isNew = idx === -1;
-      const d = isNew ? blankListing() : l;
+      /* A new listing opens on the one left unsaved, if there is one. `l`
+         carries it too because the gallery seeds its photos from l.media. */
+      const draft = isNew ? readListingDraft() : null;
+      if (draft) l = Object.assign({}, l, draft.data);
+      const d = isNew ? Object.assign(blankListing(), draft ? draft.data : {}) : l;
       const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
       const opt = (arr, cur, lbl) => arr.map(v => `<option value="${v}" ${v === cur ? 'selected' : ''}>${lbl[v] || v}</option>`).join('');
       const primary = (d.media && d.media[0] && d.media[0].url) || '';
@@ -7230,6 +7327,8 @@
         <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">${isNew ? 'New listing' : 'Edit listing'}</div>
         <p class="muted" style="font-size:12px;margin:6px 0 12px">Complete every required field (<b style="color:var(--brand-text)">*</b>) so Tayo can match this property accurately. ${isNew ? 'New listings enter the 7-check verification queue.' : 'Edits must keep the listing complete.'}</p>
+        ${draft ? `<div class="lf-restored" role="status"><span>Picking up the listing you had not saved, from ${draftAgo(draft.at)}.</span>
+          <button type="button" class="lf-linkbtn" id="lfDraftFresh">Start a blank one</button></div>` : ''}
         <div class="lf">
           <fieldset class="lf-sec"><legend>Basics</legend>
             <div class="field"><label>Title *</label><input id="lfTitle" value="${esc(d.title)}" placeholder="3-Bed Apartment, Lekki Phase 1"><span class="ferr" id="e_title" role="alert"></span></div>
@@ -7382,10 +7481,10 @@
           <fieldset class="lf-sec"><legend>Negotiation</legend>
             <div class="row2">
               <div class="field"><label>Tayo&#39;s floor (₦)</label>
-                <input id="lfFloor" type="number" inputmode="numeric" min="1" placeholder="${isNew ? 'Save the listing first' : 'No floor set'}" ${isNew ? 'disabled' : ''}>
+                <input id="lfFloor" type="number" inputmode="numeric" min="1" placeholder="No floor set">
                 <span class="ferr" id="e_floor" role="alert"></span></div>
               <div class="field"><label>Negotiation</label>
-                <select id="lfFloorActive" ${isNew ? 'disabled' : ''}>
+                <select id="lfFloorActive">
                   <option value="on">Tayo may negotiate down to the floor</option>
                   <option value="off">Tayo may not negotiate this listing</option>
                 </select></div>
@@ -7393,8 +7492,7 @@
             <p class="muted" style="font-size:11.5px;margin:2px 0 0">
               The lowest Tayo will agree to. An offer under it stops the
               negotiation and messages the assigned agent instead. Buyers never
-              see this figure${isNew ? ', and it can be set once the listing exists' : ''}.
-              Only an owner or admin can change it.
+              see this figure. Only an owner or admin can set it.
             </p>
           </fieldset>
           <fieldset class="lf-sec"><legend>Trust &amp; documents</legend>
@@ -7440,6 +7538,7 @@
             </div>
           </fieldset>
           <button class="btn btn-primary btn-block" id="lfSave" style="margin-top:6px">${isNew ? 'Create listing' : 'Save changes'}</button>
+          ${isNew ? '<p class="lf-draftnote" id="lfDraftNote" aria-live="polite"></p>' : ''}
           ${isNew ? '' : '<button class="btn btn-ghost btn-block" id="lfDel" style="margin-top:8px">Delete listing</button>'}
         </div>`;
       scrim.classList.add('on'); drawer.classList.add('on');
@@ -7845,7 +7944,10 @@
           if (list[hi]) list[hi].scrollIntoView({ block: 'nearest' });
         }
 
-        box.addEventListener('click', () => { input.focus(); });
+        /* Opens on a click as well as on focus. After Escape the input is
+           still focused, so a click that only focused it did nothing, and the
+           way back was to click away and click in again. */
+        box.addEventListener('click', () => { input.focus(); if (!menu.classList.contains('on')) open(); });
         input.addEventListener('focus', () => { box.classList.add('on'); open(); });
         input.addEventListener('input', () => { if (!menu.classList.contains('on')) open(); else paint(); });
 
@@ -7879,8 +7981,15 @@
           input.value = ''; sync(); paint(); input.focus();
         });
 
+        /* THE MENU SHUT AFTER EVERY PICK. Picking repaints the menu, and the
+           repaint detaches the option that was clicked -- before this
+           listener, which runs later in the same event, got to look at it.
+           host.contains() of a detached node is false, so every pick read as
+           a click outside, and the list closed under the agent's finger. The
+           event's path was recorded at dispatch, while the option was still
+           in the menu, so it is the question to ask. */
         document.addEventListener('mousedown', (e) => {
-          if (host.contains(e.target)) return;
+          if (e.composedPath().indexOf(host) !== -1) return;
           box.classList.remove('on'); shut();
         });
 
@@ -8222,6 +8331,10 @@
             + '</div>').join('');
           if (photos.length) imgProbeCache[photos[0]] = 'ok';
           validate();
+          /* Uploads finish long after the click that started them, so the
+             draft hears about the gallery from here rather than from the
+             click. */
+          galEl.dispatchEvent(new CustomEvent('lf:changed', { bubbles: true }));
         }
 
         galEl.addEventListener('click', (e) => {
@@ -8365,17 +8478,12 @@
         }).catch(() => { /* the pin is a bonus; the listing is the work */ });
       }
 
-      // save
-      g('lfSave').addEventListener('click', () => {
-        if (!validate()) {
-          revealAllErrors = true; validate();
-          const first = document.querySelector('.lf .ferr[style*="block"]');
-          if (first) first.closest('.field')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          toast('Fill in the required fields (*) first');
-          return;
-        }
+      /* What the form says, in the shape the save writes. Shared by the save
+         and the draft, so a restored draft is exactly what Save would have
+         sent. */
+      function collectListing() {
         const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
-        const data = {
+        return {
           title: g('lfTitle').value.trim(), description: g('lfDesc').value.trim(),
           property_type: g('lfType').value, listing_type: g('lfListing').value,
           price: num(g('lfPrice').value), price_period: g('lfPeriod').value,
@@ -8413,7 +8521,36 @@
                to merge. */
             BRANDED[u] || {})),
         };
+      }
+
+      // save
+      g('lfSave').addEventListener('click', () => {
+        /* Read now, not when the create returns. The drawer is shared, and by
+           the time the server answers it may hold a lead or another listing,
+           whose floor field is not this one. */
+        const floor = readFloor();
+        if (floor && floor.error) {
+          const fe = g('e_floor');
+          if (fe) { fe.textContent = floor.error; fe.style.display = 'block'; }
+          g('lfFloor').closest('.field').scrollIntoView({ block: 'center', behavior: 'smooth' });
+          toast(floor.error);
+          return;
+        }
+        if (!validate()) {
+          revealAllErrors = true; validate();
+          const first = document.querySelector('.lf .ferr[style*="block"]');
+          if (first) first.closest('.field')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          toast('Fill in the required fields (*) first');
+          return;
+        }
+        const data = collectListing();
         if (isNew) {
+          /* The draft steps aside while the create is in flight and comes
+             back if it fails -- a refused save must not cost the agent the
+             listing they just finished typing. */
+          LISTING_DRAFT_FLUSH = null; LISTING_FORM_SEQ++;
+          const kept = { data: data, floor: draftFloor() };
+          clearListingDraft();
           const item = deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 }));
           LISTINGS_DATA.unshift(item);
           if (dbBacked) {
@@ -8421,14 +8558,22 @@
             SynListings.create(data).then((id) => {
               item.id = id;
               toast('Listing created — saved, and unverified until the desk checks it');
-              // The field is disabled until the listing exists, so this only
-              // does anything if it was filled in after a create.
-              saveFloor(id);
+              /* The floor needs the listing's id -- it lives in its own table
+                 -- so it follows the create rather than riding on it. */
+              saveFloor(id, floor);
               ensurePin(id, data);
               /* The row now has its server id; anything keyed by id (the
                  campaign picker, the archive) needs to see that. */
               announceListings();
-            }).catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
+            }).catch((e) => {
+              /* Not a listing, then: take the card back down and put the
+                 draft back, so it is one tap from a second attempt. */
+              const k = LISTINGS_DATA.indexOf(item);
+              if (k >= 0) LISTINGS_DATA.splice(k, 1);
+              writeListingDraft(kept.data, kept.floor);
+              saveListings(); renderListings();
+              toast('Not saved to the server: ' + ((e && e.message) || e) + ' — kept as a draft in Listings');
+            });
           } else {
             toast('Listing created here only — sign in as an agency to save it');
           }
@@ -8444,7 +8589,7 @@
             SynListings.update(id, data)
               .then(() => { toast('Listing updated'); announceListings(); ensurePin(id, data); })
               .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
-            saveFloor(id);
+            saveFloor(id, floor);
           } else {
             toast(dbBacked ? 'Updated here only — this listing has no server record' : 'Listing updated');
           }
@@ -8469,14 +8614,73 @@
          refused the floor -- so folding it into the listing result would
          report one outcome for two different things. A function declaration,
          so the save handler above can reach it. */
-      function saveFloor(id) {
+      /* Null when the field is absent or blank -- leaving it blank is not
+         setting zero. */
+      function readFloor() {
         const fEl = g('lfFloor'), aEl = g('lfFloorActive');
-        if (!fEl || !id || !window.SynListings) return;
+        if (!fEl) return null;
         const raw = fEl.value.trim();
-        if (raw === '') return;             // leaving it blank is not setting zero
+        if (raw === '') return null;
         const amount = parseFloat(raw);
-        if (!isFinite(amount) || amount <= 0) { toast('A floor has to be a positive amount'); return; }
-        const active = !aEl || aEl.value !== 'off';
+        if (!isFinite(amount) || amount <= 0) return { error: 'A floor has to be a positive amount' };
+        return { amount: amount, active: !aEl || aEl.value !== 'off' };
+      }
+      /* The floor as typed, for the draft: raw, because a half-typed amount
+         is still what the agent was in the middle of. */
+      function draftFloor() {
+        const fEl = g('lfFloor'), aEl = g('lfFloorActive');
+        return { raw: fEl ? fEl.value.trim() : '', active: aEl ? aEl.value : 'on' };
+      }
+      const floorEl = g('lfFloor');
+      if (floorEl) floorEl.addEventListener('input', () => {
+        const fe = g('e_floor'); if (fe) fe.style.display = 'none';
+      });
+
+      if (isNew) {
+        if (draft && draft.floor) {
+          if (floorEl && draft.floor.raw) floorEl.value = draft.floor.raw;
+          const fa = g('lfFloorActive');
+          if (fa) fa.value = draft.floor.active === 'off' ? 'off' : 'on';
+        }
+        const fresh = g('lfDraftFresh');
+        if (fresh) fresh.addEventListener('click', () => {
+          if (!window.confirm('Start a blank listing? The one you had not saved will be discarded.')) return;
+          LISTING_DRAFT_FLUSH = null;
+          clearListingDraft(); renderListings();
+          listingForm({ st: 'pending' }, -1);
+        });
+
+        const seq = ++LISTING_FORM_SEQ;
+        const note = g('lfDraftNote');
+        let timer = null;
+        const snapshot = () => {
+          clearTimeout(timer);
+          const saveBtn = g('lfSave');
+          if (seq !== LISTING_FORM_SEQ || !saveBtn || !drawer.contains(saveBtn)) return;
+          const data = collectListing();
+          const fl = draftFloor();
+          /* Nothing typed is nothing to keep -- opening the form and closing
+             it again must not leave an empty "draft" on the Listings page. */
+          const empty = !data.title && !data.description && !data.address
+            && data.price == null && !(data.media || []).length && !fl.raw;
+          if (empty) return;
+          const first = !readListingDraft();
+          if (!writeListingDraft(data, fl)) return;
+          if (note) note.textContent = 'Kept on this device as you type — close this and it will be here when you come back.';
+          if (first) renderListings();
+        };
+        const soon = () => { clearTimeout(timer); timer = setTimeout(snapshot, 600); };
+        const root = drawer.querySelector('.lf');
+        if (root) ['input', 'change', 'click', 'lf:changed'].forEach((t) => root.addEventListener(t, soon));
+        LISTING_DRAFT_FLUSH = snapshot;
+      } else {
+        /* An edit form is open; nothing of a new listing's is at stake. */
+        LISTING_FORM_SEQ++; LISTING_DRAFT_FLUSH = null;
+      }
+
+      function saveFloor(id, fl) {
+        if (!fl || fl.error || !id || !window.SynListings) return;
+        const amount = fl.amount, active = fl.active;
         SynListings.setNegotiationFloor(id, amount, active)
           .then(function () {
             toast(active
@@ -8524,6 +8728,12 @@
           if (typeof openComposer === 'function') openComposer(id);
           else toast('The composer did not load');
         }, 260);
+        return;
+      }
+      if (e.target.closest('[data-draft-open]')) { listingForm({ st: 'pending' }, -1); return; }
+      if (e.target.closest('[data-draft-discard]')) {
+        if (!window.confirm('Discard this unsaved listing? It cannot be brought back.')) return;
+        clearListingDraft(); renderListings(); toast('Draft discarded');
         return;
       }
       const ed = e.target.closest('[data-edit]');
@@ -14307,7 +14517,7 @@
           if (list[hi]) list[hi].scrollIntoView({ block: 'nearest' });
         }
 
-        box.addEventListener('click', () => { input.focus(); });
+        box.addEventListener('click', () => { input.focus(); if (!menu.classList.contains('on')) open(); });
         input.addEventListener('focus', () => { box.classList.add('on'); open(); });
         input.addEventListener('input', () => { if (!menu.classList.contains('on')) open(); else paint(); });
         input.addEventListener('keydown', (e) => {
@@ -14332,8 +14542,10 @@
           else chosen.push(v);
           input.value = ''; sync(); paint(); input.focus();
         });
+        // The path, not contains(): a pick detaches the option it clicked
+        // (the amenities combobox had the same bug).
         document.addEventListener('mousedown', (e) => {
-          if (host.contains(e.target)) return;
+          if (e.composedPath().indexOf(host) !== -1) return;
           box.classList.remove('on'); shut();
         });
         // Tabbing away closes it too; a click on a chip's x stays inside.
