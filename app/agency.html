@@ -11200,7 +11200,13 @@
           headers: { apikey: SB_KEY },
         })
           .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (j) { ready = (j && j.platforms) || null; })
+          .then(function (j) {
+            ready = (j && j.platforms) || null;
+            /* The handle of the bot actually holding our token, so the
+               instruction names the account Telegram will check for. */
+            var b = ready && ready.telegram && ready.telegram.bot;
+            if (typeof b === 'string' && /^@[A-Za-z0-9_]{5,32}$/.test(b)) TG_BOT = b;
+          })
           .catch(function () { ready = null; });
       }
 
