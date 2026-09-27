@@ -12587,7 +12587,15 @@
         if (outcome === 'choose' && /^[0-9a-f-]{36}$/i.test(detail)) {
           FBP = { id: detail, data: null, chosen: {}, busy: false, note: '' };
           ADD.open = true; ADD.pick = 'facebook';
-          if (typeof goToPane === 'function') goToPane('social');
+          /* AFTER START-UP, NOT DURING IT. This runs while the page's script
+             is still executing, and goToPane reads `tpanel`, a const declared
+             further down -- calling it here threw, and the throw stopped the
+             rest of the portal from starting: no chooser, no channel list.
+             That is how "Greenlight did not connect" happened on 28 Sept with
+             the Page sitting in the stash, waiting for a tick. */
+          setTimeout(function () {
+            try { if (typeof goToPane === 'function') goToPane('social'); } catch (e) { /* stay put */ }
+          }, 0);
           fbpLoad();
           return;
         }
