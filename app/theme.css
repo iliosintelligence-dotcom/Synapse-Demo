@@ -1,0 +1,371 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SYNAPSE APP THEME — warm, white, flat (2026-09-29)
+
+   Eden, with a CRM screenshot as the reference: "the foreground is white with
+   some orange elements the way it is in the image ... a sort of off-white
+   tone in the background ... more colorful, but I don't want any gradients.
+   I want it to be more professionally looking, look like it was designed by
+   a human being."
+
+   Sampled from the reference: a warm off-white ground (#FAF5EE), a sand
+   header (#F7EBDF), white working surfaces, pale peach under icons
+   (#FDF3E6), warm hairlines rather than grey ones, orange as the one accent,
+   and flat colour everywhere -- no glass, no glow.
+
+   Loaded LAST on every app page except sign-in (which Eden asked to keep as
+   it was), so it wins over each page's own style block without !important,
+   except where it switches something off everywhere (glass, the grain).
+
+   ORANGE STILL NEVER CARRIES WORDS (app.css, brand system: #FF8A2D is 2.2:1
+   on white). It fills, marks, underlines and colours icons; the reference's
+   orange tab label becomes a charcoal label with an orange marker.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --canvas:      #FAF6F0;   /* the ground: warm off-white */
+  --canvas-2:    #F4ECE2;   /* trays and strips that sit on the ground */
+  --sand:        #F7EBDF;   /* the app bar */
+  --line:        #ECE2D6;   /* hairlines: warm, not grey */
+  --line-2:      #E1D3C2;   /* stronger edge: inputs, hover */
+  --peach:       #FDF1E3;   /* behind icons */
+  --accent-tint: #FFE9D6;   /* active fills */
+  --badge:       #D9434A;   /* counts that need attention; white on it is 4.6:1 */
+  --flat-shadow: 0 1px 2px rgba(74, 52, 30, 0.05);
+
+  /* The existing tokens, pointed at the new ground and edges. */
+  --bg: var(--canvas);
+  --cloud: var(--canvas);
+  --surface: #FFFFFF;
+  --glass: #FFFFFF;
+  --border: var(--line);
+  --border-strong: var(--line-2);
+  --border-glass: var(--line);
+  --mist: var(--line);
+  --brand-tint: var(--canvas-2);
+  --grad-glow: var(--orange);
+  --grad-depth: var(--graphite);
+  --surface-2: #FBF7F2;         /* raised / hover on a surface */
+  --btn-solid-bg: var(--charcoal);
+  --btn-solid-fg: #FFFFFF;
+  --ink-dim-strong: #616161;    /* quiet text on the warm trays */
+}
+
+html, body { background: var(--canvas); }
+
+/* No grain, no glass. The grain made the ground read grey; frosted glass
+   over a flat ground is just a blurred grey box. */
+body::before, body::after { content: none !important; }
+*, *::before, *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ── surfaces ─────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--flat-shadow);
+}
+.appbar {
+  background: var(--sand);
+  border-bottom: 1px solid var(--line-2);
+}
+
+/* ── controls ─────────────────────────────────────────────────────────────── */
+.btn-primary, .btn-primary:hover, .btn-primary:active { box-shadow: none; }
+
+/* App bar controls: surfaces like everything else in front of the ground. */
+.topsearch, .appbar .bell { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.btn-ghost:hover { border-color: var(--line-2); }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select, textarea {
+  border-color: var(--line-2);
+}
+
+/* Segmented control: a warm strip, the chosen option a white pill with an
+   orange marker -- the reference's active tab, with the word left charcoal. */
+.seg { background: var(--canvas-2); }
+.seg-b.on { background: var(--surface); box-shadow: var(--flat-shadow); }
+.seg-b.on::before {
+  content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange); margin-right: 7px; vertical-align: 1px;
+}
+.ovtab.on { border-bottom-color: var(--orange); }
+
+.bell-badge { background: var(--badge); color: #FFFFFF; }
+
+/* ══ AGENCY PORTAL ══════════════════════════════════════════════════════════ */
+body.portal .content { background: var(--canvas); }
+body.portal .side {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+body.portal .side a.on { background: var(--accent-tint); color: var(--charcoal); }
+body.portal .side a.on .syn-i { color: var(--orange); opacity: 1; }
+body.portal .side a:hover:not(.on) { background: var(--canvas); }
+
+/* Page-level tools, search, tiles and tables: white on the ground. */
+body.portal .content :is(.crm-tools, .pane-search, .pr-table-wrap, .s-tile, .ag-kpi, .stat) {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--flat-shadow);
+}
+body.portal .content .card :is(.crm-tools, .pane-search, .s-tile, .ag-kpi, .stat) { box-shadow: none; }
+
+/* The verification checklist was rows on the bare page. */
+body.portal .content #vfBody {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 2px 20px; box-shadow: var(--flat-shadow);
+}
+body.portal .content #vfBody > .vf-row:first-child { border-top: none; }
+
+/* Empty states: a white card, the icon on a peach disc in orange. */
+body.portal .ov-blank {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--flat-shadow);
+}
+body.portal .content .card .ov-blank { border: none; box-shadow: none; }
+body.portal .ov-blank .ov-blank-i {
+  width: 56px; height: 56px; border-radius: 50%; opacity: 1;
+  display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;
+  background: var(--peach); color: var(--orange);
+}
+body.portal .ov-blank .ov-blank-i .syn-i { width: 24px; height: 24px; }
+body.portal .bk-empty { background: var(--surface); border: 1px solid var(--line); }
+body.portal .insight-empty { border-style: solid; background: var(--surface); }
+
+/* The content pipeline: warm trays holding white cards. */
+body.portal .col {
+  background: var(--canvas-2);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+body.portal .col .ct { background: var(--surface); color: var(--charcoal); }
+body.portal .pcard { border-color: var(--line); box-shadow: var(--flat-shadow); }
+body.portal .col-blank { background: var(--surface); border: 1px solid var(--line); }
+body.portal .col-blank .col-blank-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%; opacity: 1;
+  background: var(--peach); color: var(--orange);
+}
+
+/* The portal's decorative gradients, made flat. (Photo scrims, the loading
+   shimmer, rating stars and brand logos keep theirs: those are doing a job.) */
+body.portal .roi { background: var(--peach); border-color: var(--line); }
+body.portal .brand-hero { background: var(--surface); }
+body.portal .sec.nba { background: var(--peach); border-color: var(--line-2); }
+body.portal .acard .topbadge { background: #C9A227; }
+body.portal .lbribbon::after { content: none; }
+
+/* The "Tayo has no way to reach you" notice: a white card with an orange
+   bar, not a black slab. Still the loudest thing on the page, but in the
+   page's own colours. */
+body.portal .need-phone {
+  background: var(--surface); color: var(--charcoal);
+  border: 1px solid var(--line); border-left: 4px solid var(--orange);
+  box-shadow: var(--flat-shadow);
+}
+body.portal .need-phone .np-txt span { color: var(--ink-muted); }
+body.portal .need-phone input {
+  border: 1px solid var(--line-2); background: var(--surface); color: var(--charcoal);
+}
+body.portal .need-phone input::placeholder { color: var(--ink-dim); }
+body.portal .need-phone button { background: var(--btn-solid-bg); color: var(--btn-solid-fg); }
+body.portal .need-phone .np-err { color: var(--error-ink); }
+
+/* Plans: the recommended one on a warm tint, its tag in the brand orange
+   with a graphite label (orange buttons and tags carry graphite, 8.25:1). */
+body.portal .pr-head.feature, body.portal .pr-cell.feature { background: var(--peach); }
+body.portal .pr-pop { background: var(--orange); color: var(--graphite); }
+
+/* ══ CUSTOMER PAGES ═════════════════════════════════════════════════════════
+   Tayo and Browse stood on a full-bleed interior photograph, with frosted
+   glass keeping the panels readable over it. The brief is an off-white ground
+   with white on it on every page, and glass is gone, so the photograph and
+   its washes step aside and the panels become solid white. */
+/* Elements only: Your data puts bg-wash on <body> itself, and hiding that
+   hid the whole page. */
+div:is(.tj-bg, .tj-wash, .bg-scene, .bg-wash) { display: none !important; }
+/* The customer pages' own top navigation: the current page on the warm
+   tint, its icon in orange, like the portal's menu. */
+.appbar nav a.active { background: var(--accent-tint); color: var(--charcoal); }
+.appbar nav a.active :is(.nav-i, .syn-i) { color: var(--orange); }
+
+/* Measured, not assumed: the quiet grey (#717171) is 4.17:1 on the warm
+   trays and 4.39:1 on the peach plan column. Inside those two it is
+   darkened to clear 4.5:1. */
+body.portal .col,
+body.portal :is(.pr-head, .pr-cell).feature { --ink-dim: var(--ink-dim-strong); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE (2026-09-29)
+
+   Eden: "similar to the dark mode of Twitter, which is very, very dark, plain
+   black. And the elements on it ... just a lighter shade of black", and
+   Mobbin's dark mode.
+
+   X's "Lights out": the ground is pure black, a card is #16181C, a raised or
+   hovered thing #202327, every edge #2F3336, words #E7E9EA (never pure white:
+   it vibrates on black) and quiet words a cool grey. Depth on black comes
+   from stepping to a lighter black, not from shadows -- a shadow on #000 is
+   invisible -- so every shadow is off. Orange stays the one accent, and the
+   warm peach tints become their dark equivalents: orange at low strength on
+   black.
+
+   Chosen by theme.js: the device's own setting unless the moon/sun button in
+   the app bar has been used, which is remembered. Sign-in has no theme at
+   all, so no dark mode, by Eden's earlier call.
+
+   Measured: #E7E9EA on #16181C 14:1; #8B9096 on #16181C 5.5:1 and on black
+   6.5:1; #80868C on #16181C 4.8:1.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas:      #000000;
+  --canvas-2:    #0B0C0E;
+  --sand:        #000000;
+  --line:        #2F3336;
+  --line-2:      #3E4247;
+  --peach:       #2B1D12;
+  --accent-tint: #2B1D12;
+  --badge:       #F4212E;
+  --flat-shadow: none;
+
+  --surface:   #16181C;
+  --surface-2: #202327;
+  --glass:     #16181C;
+  --white:     #16181C;
+
+  --ink:        #E7E9EA;
+  --charcoal:   #E7E9EA;
+  --brand:      #E7E9EA;
+  --brand-deep: #E7E9EA;
+  --brand-text: #E7E9EA;
+  --brand-dim:  #FFFFFF;
+  --ink-muted:  #8B9096;
+  --stone:      #8B9096;
+  --ink-dim:    #80868C;
+  --ink-dim-strong: #8B9096;
+
+  --btn-solid-bg: #E7E9EA;
+  --btn-solid-fg: #000000;
+
+  --success-ink: #4ADE80;
+  --error-ink:   #F87171;
+  --warn-ink:    #E0B25C;
+  --info-ink:    #60A5FA;
+}
+
+/* The primary button stays the brand orange with graphite words: orange on
+   black is the one warm thing on the page, which is what an accent is for. */
+
+/* The mark is a black-on-white photograph of the logo, blended with multiply
+   so its white box vanishes on a light page. On black, multiply erases the
+   mark instead, so it is inverted and screened: white mark, no box. */
+html[data-theme="dark"] .syn-mark { filter: invert(1); mix-blend-mode: screen; }
+
+/* Hovers step up a shade of black instead of darkening. */
+html[data-theme="dark"] body.portal .side a:hover:not(.on) { background: var(--surface-2); }
+html[data-theme="dark"] .appbar nav a:hover { background: var(--surface-2); }
+
+/* ── the switch in the app bar ──────────────────────────────────────────── */
+.syn-theme-btn {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  cursor: pointer; margin-right: 8px;
+}
+.syn-theme-btn:hover { border-color: var(--line-2); }
+.syn-theme-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.syn-theme-btn svg { width: 17px; height: 17px; }
+
+/* ── Dark: black, white or orange. No grey. ───────────────────────────────
+   Eden: "all the text boxes, input boxes should be black and the things you
+   type should be white, the way it is on Twitter ... All the gray buttons
+   should be changed to pure white with the text on them being black. You can
+   keep the orange buttons ... no gray, it's either black, white, or orange."
+
+   Text boxes: black, white words, X's quiet grey for the hint, a hairline that
+   turns orange while you type. Buttons: white with black words, or the brand
+   orange. Round icon buttons (bell, call, the light/dark switch, back, close):
+   black with a white icon and a hairline -- a white disc per icon would shout.
+   Disabled: black and quiet, so "not yet" still reads as not yet.
+   Panels and cards keep the lighter black Eden asked for first. */
+html[data-theme="dark"] {
+  --btn-solid-bg: #FFFFFF;
+  --btn-solid-fg: #000000;
+}
+html[data-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    textarea, select) {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #2F3336 !important;
+  caret-color: var(--orange);
+}
+html[data-theme="dark"] :is(input, textarea)::placeholder { color: #71767B !important; opacity: 1; }
+html[data-theme="dark"] :is(input, textarea, select):focus { border-color: var(--orange) !important; }
+/* The boxes drawn around a borderless input are the text box, as far as
+   anybody looking can tell. */
+html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) {
+  background-color: #000000 !important;
+  border-color: #2F3336 !important;
+  color: #FFFFFF;
+}
+html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) :is(input, textarea) {
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] :is(.btn-ghost, .btn-secondary, .seg-b.on, .need-phone button, .cmp-ch-btn:not(.primary),
+    .ch-add-btn, .ytask-btn:not(.primary)) {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] :is(.appbar .bell, .syn-theme-btn, .cnav-back, .cnav-back-float, .cnav-sclose) {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #2F3336 !important;
+}
+html[data-theme="dark"] .appbar.appbar { background-color: #000000 !important; border-bottom-color: #2F3336; }
+
+/* Doubled :root so it outranks the generated per-button rules: a disabled
+   button stays black at full strength (a faded white one reads as grey). */
+:root:root[data-theme="dark"] body :is(button, .btn, .tbtn):is([disabled], :disabled) {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #71767B !important;
+  border-color: #2F3336 !important;
+  opacity: 1 !important;
+}
+/* App-bar text links (History, New chat, Back to site): black, white words. */
+html[data-theme="dark"] .home {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #2F3336 !important;
+}
+
+/* The Tayo panel's header was a faint gradient; flat, like everything else. */
+body.portal .tpanel .thd { background: var(--surface); }
+/* Tayo's round "T" marks are dark discs: on black they vanish, so in dark
+   mode they turn white with a black letter, like every other dark control. */
+html[data-theme="dark"] :is(.tpanel .thd .o, .advisor .orb, .flow .toju .o, .handoff .hh .o, .handoff .stamp .o) {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+/* The last two gradients: the Browse search bar and the round Tayo button.
+   The button is the ink colour, which is charcoal in light mode and the
+   off-white ink in dark mode, with its icon in the page's own ground colour,
+   so it is a dark disc on light and a white disc on black. */
+.searchbar { background-image: none !important; background-color: var(--surface); }
+html[data-theme="dark"] .searchbar { background-color: #000000 !important; }
+body.portal .toju-fab {
+  background: var(--charcoal) !important;
+  color: var(--canvas) !important;
+}
