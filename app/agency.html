@@ -11459,13 +11459,12 @@
          build one out of a real token. */
       var LINK_PREVIEW = 'synapsecore.dev/s/\u2022\u2022\u2022\u2022\u2022\u2022';
 
-      var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook', telegram: 'Telegram' };
+      var CONNECTABLE = { instagram: 'Instagram', facebook: 'Facebook', telegram: 'Telegram', tiktok: 'TikTok' };
       /* Telegram has no OAuth for posting. A bot is added as an administrator
          of a channel and may then post there, so this row is a field rather
          than a button -- there is nowhere to send anybody. */
       var TG_BOT = '@SynapseListingsBot';
       var SOON = {
-        tiktok: ['TikTok', 'not built yet'],
         linkedin: ['LinkedIn', 'not built yet'],
         x: ['X', 'not built yet'],
       };
@@ -11712,6 +11711,7 @@
         h += '</div><div class="ch-soon">Coming later: '
           + Object.keys(SOON).map(function (k) { return esc(SOON[k][0]); }).join(' · ') + '</div>';
         if (ADD.pick === 'facebook' || ADD.pick === 'instagram') h += metaStepHtml(ADD.pick);
+        else if (ADD.pick === 'tiktok') h += tiktokStepHtml();
         else if (ADD.pick === 'telegram') h += tgStepHtml();
         h += '</div>';
         el.innerHTML = h;
@@ -11737,6 +11737,19 @@
           + 'you are only ever offered the pages that account manages.</div>'
           + '<div><button class="cmp-ch-btn primary" data-connect="' + pl + '">Continue to '
           + esc(CONNECTABLE[pl]) + ' →</button></div></div>';
+      }
+
+      /* TIKTOK SENDS TO THE INBOX. A post arrives in the agent's TikTok app
+         as a draft to finish -- they add a sound, which decides most of a
+         TikTok's reach -- so the agent should know that before they connect,
+         not discover it on the first post. */
+      function tiktokStepHtml() {
+        return '<div class="ch-step">'
+          + '<div class="cmp-ch-note">You will be sent to TikTok to sign in. Use the TikTok '
+          + 'account you post listings from.</div>'
+          + '<div class="cmp-ch-note">Posts arrive in that account’s <b>TikTok inbox</b> as drafts: '
+          + 'open TikTok, add a sound, and post. The sound is most of what decides how far a TikTok goes.</div>'
+          + '<div><button class="cmp-ch-btn primary" data-connect="tiktok">Continue to TikTok →</button></div></div>';
       }
 
       /* TELEGRAM IN THREE STEPS, and the first one is the proof. Linking says
@@ -12241,8 +12254,13 @@
           ? 'Connection cancelled' + (detail ? ': ' + detail : '.')
           : outcome === 'error'
             ? 'Could not connect' + (detail ? ': ' + detail : '.')
-            : (CONNECTABLE[outcome] || outcome) + ' connected'
-              + (detail ? ' as ' + detail : '') + '. Posts to it are real from now on.';
+            : outcome === 'tiktok'
+              /* Not "real from now on": a TikTok post is a draft until the
+                 agent finishes it in the app. */
+              ? 'TikTok connected' + (detail ? ' as ' + detail : '')
+                + '. Posts will arrive in that account’s TikTok inbox to finish and post.'
+              : (CONNECTABLE[outcome] || outcome) + ' connected'
+                + (detail ? ' as ' + detail : '') + '. Posts to it are real from now on.';
 
         /* A FAILURE STAYS ON SCREEN. Success is fine as a toast -- you can
            see the result in the channel strip either way. A failure is the
