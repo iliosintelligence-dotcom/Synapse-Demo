@@ -3664,6 +3664,60 @@
       }
     }
 
+
+    /* ══ PURE WHITE, CLEARLY SEPARATE (2026-09-28) ═══════════════════════════
+       Eden: "the background we keep the same, but I need the elements on the
+       foreground to be pure white. And well differentiated. Separate from
+       the background color." (A grey ground was tried first and reverted --
+       the page stays Cloud, #F7F7F8.)
+
+       The surfaces were frosted glass or #FCFBF9, so on a near-white page a
+       card's edge had to be guessed. They are #FFFFFF now, with no blur, and
+       since white on #F7F7F8 is only about 1.06:1, what separates them is
+       drawn: a hairline border and a soft two-step shadow. Text colours are
+       unchanged; the ground they sit on is.
+
+       Scoped to body.portal: the customer app's .card is not touched. */
+    body.portal {
+      --surface: #FFFFFF;
+      --edge: rgba(15, 17, 20, 0.11);
+      --lift: 0 1px 2px rgba(15, 17, 20, 0.06), 0 6px 18px rgba(15, 17, 20, 0.07);
+    }
+    body.portal .card {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border: 1px solid var(--edge);
+      box-shadow: var(--lift);
+    }
+    /* The things that sit on the page rather than inside a card: page-level
+       tools and search, empty states, the pipeline's columns, the price
+       table, the verification checklist. */
+    body.portal .content :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap, #vfBody) {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border-color: var(--edge);
+      box-shadow: var(--lift);
+    }
+    body.portal .content #vfBody {
+      border: 1px solid var(--edge); border-radius: var(--radius); padding: 2px 20px;
+    }
+    body.portal .content #vfBody > .vf-row:first-child { border-top: none; }
+    /* Inside a card they are part of it: no second shadow. */
+    body.portal .content .card :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap) {
+      box-shadow: none;
+    }
+    body.portal .content .btn-ghost {
+      background: #FFFFFF;
+      border-color: var(--edge);
+    }
+    body.portal .appbar,
+    body.portal .side {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
   </style>
 </head>
 <body class="portal">
