@@ -1483,7 +1483,11 @@
           .then(function (res) {
             if (res && res.error) throw res.error;
             el('rpNote').innerHTML = '<div class="au-note ok" role="status">Password updated. Taking you in…</div>';
-            var fallback = role === 'agency' ? 'agency.html' : 'toju.html';
+            /* The reset link carries no role, so the page assumes a customer;
+               the account itself knows better. An agency resetting its
+               password belongs in the portal, not in Tayo. */
+            var who = res && res.data && res.data.user;
+            var fallback = (role === 'agency' || SynAuth.roleOf(who) === 'agency') ? 'agency.html' : 'toju.html';
             setTimeout(function () { window.location.href = SynAuth.safeNext(next, fallback); }, 900);
           })
           .catch(function (err) {
@@ -1596,7 +1600,41 @@
         });
       });
 
-      var decided = false;
+      /* THE RESET LINK THAT WORKS ON ANY DEVICE (28 September 2026).
+         auth.js signs in with PKCE, and a PKCE reset link can only be redeemed
+         by the browser that asked for it: that browser holds the one-time
+         verifier. Asked for on a laptop and opened on a phone -- or inside the
+         Gmail or Outlook app's own browser, which has separate storage -- the
+         exchange fails in silence, no PASSWORD_RECOVERY ever fires, and this
+         page showed a plain sign-in form. It looked fixed whenever it was
+         tested in the browser that asked, and broken whenever it was not.
+
+         The reset email (supabase/templates/recovery.html, applied by
+         auth-urls.yml) now links here with ?type=recovery&token_hash=, and the
+         token is verified from this page. A token_hash needs no verifier, so
+         any browser can redeem it. It also survives mail scanners that open
+         links to check them: they fetch the page, but only a browser running
+         this script spends the token. */
+      var recoveryToken = params.get('type') === 'recovery' ? params.get('token_hash') : null;
+      var decided = !!recoveryToken;   // the token decides, not the first auth event
+      if (recoveryToken) {
+        /* Off the address bar straight away: it is a one-use credential, and a
+           reload must not try to spend it twice. */
+        history.replaceState(null, '', location.pathname);
+        SynAuth.client().then(function (c) {
+          return c.auth.verifyOtp({ token_hash: recoveryToken, type: 'recovery' });
+        }).then(function (res) {
+          if (res && res.error) throw res.error;
+          enterRecoverMode();
+        }).catch(function (err) {
+          if (window.console) console.error('recovery link failed', err);
+          var rc = (err && (err.code || err.error_code)) || '';
+          showNote('bad', (rc === 'otp_expired' || /expired|invalid/i.test(String((err && err.message) || '')))
+            ? 'That reset link has expired or has already been used. Request a fresh one below.'
+            : 'That reset link did not work. Request a fresh one below.');
+        });
+      }
+
       SynAuth.client().then(function (c) {
         c.auth.onAuthStateChange(function (event, session) {
           if (decided) return;
@@ -1610,7 +1648,20 @@
             enterRecoverMode();
           } else if (event === 'INITIAL_SESSION') {
             decided = true;
-            if (!session) return;
+            if (!session) {
+              /* A link that finished with ?code= and still no session: a
+                 PKCE link opened in a different browser from the one that
+                 asked for it (see THE RESET LINK above). Emails sent before
+                 28 September are like this. The email address may well be
+                 confirmed; the sign-in could not complete here. */
+              if (params.get('code') && !oauthReturn) {
+                showNote('bad', 'That link was opened in a different browser from the one it was '
+                  + 'requested in, so it could not sign you in here. If it was a confirmation link, '
+                  + 'your email is confirmed: sign in below. If it was a password reset, request a new '
+                  + 'one: new reset links work on any phone or browser.');
+              }
+              return;
+            }
             // THE LOOP THIS FIXES: this used to redirect on session EXISTENCE
             // alone. Someone signed in on the customer side, then sent to
             // signin.html?role=agency by agency.html's own requireAuth() (it
