@@ -1099,7 +1099,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,property_media(url,display_order),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,property_media(url,display_order),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1135,7 +1135,10 @@
         currency: p.currency || null,    // price formats in the listing's own currency
         deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'rent' ? 'For rent' : 'For sale',
         priceN: Number(p.price) || 0,
-        ttl: p.title, loc: (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
+        /* The Area the agency typed, then the linked zone, then the city. It
+           is also what the search box matches, so "Agbowo" now finds it. */
+        ttl: p.title, loc: (p.area_name && p.area_name.trim()) ? (p.area_name.trim() + ', ' + p.city)
+          : (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
         /* Who listed it, as they designed themselves on their Brand page --
            drawn by listingCardHtml, which checks every field before using it. */

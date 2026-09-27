@@ -35,6 +35,9 @@
        in social-generate — the listing page shows them, a post does not. */
     'agency_fee', 'legal_fee',
     'address', 'city', 'state', 'country', 'latitude', 'longitude',
+    /* The Area field. The form and every card call it `neighbourhood`;
+       scrub() renames it on the way out. */
+    'area_name',
     'bedrooms', 'bathrooms', 'area_sqm', 'amenities',
     'title_type', 'yield_pct', 'is_active', 'is_negotiable',
     'toilets', 'parking_spaces', 'floor_level', 'total_floors',
@@ -91,6 +94,15 @@
   var absent = Object.create(null);
 
   function scrub(data) {
+    /* The Area the agent typed. It was sent as `neighbourhood`, which is not
+       a column, so it was dropped here on every save and the listing knew
+       only its city. It is stored as area_name -- free text, not
+       neighbourhood_id, which only a curated zone may fill (0048). Renamed
+       only when the caller sent it, so a partial update never clears it;
+       and it wins over a stale area_name riding along on a row from list(). */
+    if (typeof data.neighbourhood === 'string') {
+      data = Object.assign({}, data, { area_name: data.neighbourhood.trim().slice(0, 120) });
+    }
     var out = {};
     WRITABLE.forEach(function (k) {
       if (!(k in data)) return;
@@ -225,10 +237,8 @@
               /* id, because a redraw updates the row in place rather than
                  waiting for a save. */
               + 'id, branded_url, branded_price, branded_verified)'
-              /* The area's NAME. properties has no area text column, only
-                 neighbourhood_id, so without this every caption and card
-                 built from these rows knew the city and not the area --
-                 "Ibadan" where the market writes "Agbowo, Ibadan". */
+              /* The linked zone's NAME, the fallback when the agent left the
+                 Area blank. What they typed comes back in `*` as area_name. */
               + ', neighbourhoods(name)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
@@ -240,8 +250,12 @@
           .slice()
           .sort(function (a, b) { return a.display_order - b.display_order; });
         delete p.property_media;
+        /* Without this every caption and card built from these rows knew the
+           city and not the area -- "Ibadan" where the market writes "Agbowo,
+           Ibadan". The agent's own word first, then the linked zone. */
         var hood = Array.isArray(p.neighbourhoods) ? p.neighbourhoods[0] : p.neighbourhoods;
-        if (!p.neighbourhood && hood && hood.name) p.neighbourhood = hood.name;
+        var typed = typeof p.area_name === 'string' ? p.area_name.trim() : '';
+        if (!p.neighbourhood) p.neighbourhood = typed || (hood && hood.name) || '';
         delete p.neighbourhoods;
         return p;
       });

@@ -2368,6 +2368,11 @@
             return;
           }
           PROP = rows[0];
+          /* The Area the agency typed arrives in `*` as area_name; this page
+             reads it as `neighbourhood`, as the portal does. */
+          if (!PROP.neighbourhood && typeof PROP.area_name === 'string' && PROP.area_name.trim()) {
+            PROP.neighbourhood = PROP.area_name.trim();
+          }
           paintProperty(PROP);
           document.dispatchEvent(new CustomEvent('syn:property', { detail: PROP }));
         })
@@ -3177,7 +3182,7 @@
       var noteEl = document.getElementById('nbNote');
       if (!title || !scoresEl) return;
 
-      var area = (nb && nb.name) || p.neighbourhood || p.city || '';
+      var area = p.neighbourhood || (nb && nb.name) || p.city || '';
       title.textContent = area ? ('Around ' + area) : 'Around this property';
 
       /* The address, because "which property is this actually about?" was
@@ -4285,7 +4290,7 @@
              line, so appending them again reads "Agbowo, Oyo, Ibadan, Oyo".
              Same de-duplication the header line does. */
           var base = String(p.address || '');
-          var addr = [base].concat([nb && nb.name, p.city, p.state].filter(Boolean)
+          var addr = [base].concat([p.neighbourhood || (nb && nb.name), p.city, p.state].filter(Boolean)
             .filter(function (part) {
               return base.toLowerCase().indexOf(String(part).toLowerCase()) === -1;
             })).filter(Boolean).join(', ');

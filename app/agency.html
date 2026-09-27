@@ -7573,7 +7573,7 @@
             <div class="row2">
               <div class="field"><label>Neighbourhood</label>
                 <div class="combo" id="lfHoodCombo">
-                  <input id="lfHood" value="${esc(d.neighbourhood)}" autocomplete="off"
+                  <input id="lfHood" value="${esc(d.neighbourhood)}" autocomplete="off" maxlength="120"
                          role="combobox" aria-expanded="false" aria-autocomplete="list"
                          placeholder="Start typing or tap…">
                   <button type="button" class="combo-toggle" tabindex="-1" aria-label="Show areas">▾</button>
@@ -9045,8 +9045,9 @@
     /** "Old Bodija, Ibadan" -- as much of the listing's location as it really
      *  carries, never a placeholder for the part it does not.
      *
-     *  The area has to be dug out of `address`, because `neighbourhood` is
-     *  undefined on every row the portal actually holds. Address is written by
+     *  The Area field is the answer when there is one. It was not stored
+     *  until 27 Sep 2026, so older listings have none and the area has to be
+     *  dug out of `address` instead. Address is written by
      *  hand and arrives three different ways: a bare area ("Akobo"), a street
      *  ("13 Aafin Iyanu, Ologuneru") and one that already names the city
      *  ("Ikolaba GRA, Ibadan"). So: drop any segment that is just the city or
