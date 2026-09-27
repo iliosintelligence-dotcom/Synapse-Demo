@@ -526,6 +526,10 @@
     .ch-tg .ch-tg-cmd { flex: 1; min-width: 0; padding: 0; background: none; overflow-wrap: anywhere;
       font: 600 15px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; color: var(--ink); }
     .ch-tg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fbp-item { cursor: pointer; }
+    .fbp-item input { width: 18px; height: 18px; flex: none; accent-color: var(--brand); cursor: pointer; }
+    .fbp-item.dim { opacity: .6; cursor: default; }
+    .fbp-help summary { cursor: pointer; font-size: 12px; color: var(--brand-text); min-height: 28px; }
     .ch-tg-opt { border-top: 1px dashed var(--border); padding-top: 10px; }
     .ch-tt-who a { color: var(--brand-text); font-weight: 600; }
     .cmp-tg-add { display: inline-flex; align-items: center; min-height: 38px; box-sizing: border-box;
@@ -11722,6 +11726,9 @@
          code/exp/st: the "/connect CODE" this person was given, when it runs
          out, and what the server last said about it (waiting, working,
          connected, error, expired). */
+      /* The Pages Facebook shared, waiting for this agency to say which are
+         its own (social-connect action=facebook-pick). id is the stash. */
+      var FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
       var TGS = { linked: undefined, note: '', busy: '', poll: null, until: 0, sig: '',
                   code: '', exp: 0, st: '', channel: '', deleted: true, linkWait: false };
 
@@ -11804,12 +11811,103 @@
            code's status changes, and a keyboard user should not be thrown
            back to the top of the page. */
         var had = document.activeElement && el.contains(document.activeElement) ? document.activeElement : null;
-        var hadKey = had ? ['data-ch-pick', 'data-tg-copy', 'data-tg-new', 'data-tg-link', 'data-ch-close', 'data-tg-again']
+        var hadKey = had ? ['data-ch-pick', 'data-tg-copy', 'data-tg-new', 'data-tg-link', 'data-ch-close', 'data-tg-again', 'data-fbp', 'data-fbp-go']
           .filter(function (a) { return had.hasAttribute(a); }).map(function (a) {
             return '[' + a + (had.getAttribute(a) ? '="' + had.getAttribute(a) + '"' : '') + ']';
           })[0] : '';
         el.innerHTML = h;
         if (hadKey) { var back = el.querySelector(hadKey); if (back) back.focus(); }
+      }
+
+      /* ── WHICH PAGES ARE THIS AGENCY'S (2026-09-28) ─────────────────────
+         Facebook's answer is not a decision about this agency. It shares
+         whatever Pages the account allowed Synapse before, and on a second
+         connect it skips its own list -- so connecting as Greenlight quietly
+         attached Iteriba's Page again. Now nothing is connected until the
+         person ticks it here. A Page whose name shares a word with the
+         agency's is ticked for them; nothing else is. */
+      function fbPickHtml() {
+        var h = '<div class="ch-step">';
+        if (!FBP.data) {
+          if (FBP.note) {
+            return h + '<div class="cmp-setup-why" role="status">' + esc(FBP.note) + '</div>'
+              + '<div><button type="button" class="cmp-ch-btn primary" data-connect="facebook">Connect Facebook again</button></div></div>';
+          }
+          return h + '<div class="ch-tg-wait">Loading the Pages Facebook shared…</div></div>';
+        }
+        var d = FBP.data, pages = d.pages || [];
+        var who = d.agency ? esc(d.agency) + '’s' : 'this agency’s';
+        h += '<div class="cmp-ch-note"><b>Which of these are ' + who + '?</b> Facebook shared '
+          + pages.length + ' Page' + (pages.length === 1 ? '' : 's') + '. Tick only ' + who
+          + '; anything left unticked is not connected.</div><div class="ch-tg-list">';
+        pages.forEach(function (pg) {
+          var elsewhere = pg.connected && pg.connected !== 'here';
+          h += '<label class="ch-tg-item fbp-item' + (elsewhere ? ' dim' : '') + '">'
+            + '<input type="checkbox" data-fbp="' + esc(pg.id) + '"'
+            + (FBP.chosen[pg.id] ? ' checked' : '') + (elsewhere || FBP.busy ? ' disabled' : '') + '>'
+            + '<span class="cmp-ch-ic">' + mark('facebook') + '</span>'
+            + '<span class="ch-tg-nm">' + esc(pg.name || pg.id)
+            + (pg.instagram ? ' <i>+ Instagram ' + esc(pg.instagram) + '</i>' : '') + '</span>'
+            + (pg.connected ? '<span class="cmp-ch-at">' + (pg.connected === 'here' ? 'already here'
+                : 'on ' + esc(pg.connected)) + '</span>' : '')
+            + '</label>';
+        });
+        var n = Object.keys(FBP.chosen).filter(function (k) { return FBP.chosen[k]; }).length;
+        h += '</div><div class="ch-tg-acts">'
+          + '<button type="button" class="cmp-ch-btn primary" data-fbp-go' + (n && !FBP.busy ? '>' : ' disabled>')
+          + (FBP.busy ? 'Connecting…' : n ? 'Connect ' + n + ' Page' + (n === 1 ? '' : 's') : 'Tick a Page')
+          + '</button><button type="button" class="cmp-ch-btn" data-ch-close>Cancel</button></div>'
+          + '<details class="fbp-help"><summary>The Page you want is not here?</summary>'
+          + '<div class="cmp-ch-note">Facebook only shares the Pages you allowed Synapse before, and on a '
+          + 'second connect it skips asking. To choose afresh: on Facebook, Settings &amp; privacy → Settings → '
+          + '<b>Business integrations</b> → remove Synapse. Then Add channel → Facebook here, and tick every Page '
+          + 'you run. You still choose which are this agency’s on this screen.</div></details>'
+          + '<div class="cmp-setup-why" role="status" aria-live="polite">' + esc(FBP.note || '') + '</div>';
+        return h + '</div>';
+      }
+
+      function fbpLoad() {
+        FBP.data = null; FBP.note = ''; FBP.chosen = {};
+        renderAdd();
+        tgApi('facebook-pick&pick=' + encodeURIComponent(FBP.id)).then(function (j) {
+          FBP.data = j;
+          /* Tick a Page that shares a word with the agency's name -- the
+             distinctive word, not "real" or "estate". */
+          var COMMON = ['real', 'estate', 'estates', 'property', 'properties', 'homes', 'realty',
+            'limited', 'agency', 'group', 'the', 'and'];
+          var words = String(j.agency || '').toLowerCase().split(/[^a-z0-9]+/)
+            .filter(function (w) { return w.length >= 3 && COMMON.indexOf(w) === -1; });
+          (j.pages || []).forEach(function (pg) {
+            if (pg.connected && pg.connected !== 'here') return;
+            var nm = String(pg.name || '').toLowerCase();
+            if (words.some(function (w) { return nm.indexOf(w) > -1; })) FBP.chosen[pg.id] = true;
+          });
+        }).catch(function (e) {
+          FBP.data = null;
+          FBP.note = e.message || 'Could not load the Pages Facebook shared.';
+        }).then(renderAdd);
+      }
+
+      function fbpConnect() {
+        var ids = Object.keys(FBP.chosen).filter(function (k) { return FBP.chosen[k]; });
+        if (!ids.length || FBP.busy) return;
+        FBP.busy = true; FBP.note = '';
+        renderAdd();
+        tgApi('facebook-pick', { method: 'POST', body: JSON.stringify({ pick: FBP.id, page_ids: ids }) })
+          .then(function (j) {
+            /* Names the agency, so a Page attached to the wrong one is
+               obvious the moment it happens. */
+            toastOrAlert('Connected ' + (j.connected || []).join(', ') + ' to ' + (j.agency || 'this agency')
+              + ((j.problems || []).length ? '. Not saved: ' + j.problems.join('; ') : '.'));
+            FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
+            ADD.open = false; ADD.pick = '';
+            return loadChannels();
+          })
+          .catch(function (e) {
+            FBP.busy = false;
+            FBP.note = e.message || 'Could not connect those Pages.';
+            renderAdd();
+          });
       }
 
       /* WHOSE ACCOUNT, said before the redirect and not after the mistake.
@@ -11818,6 +11916,7 @@
          for an account that is not the agency's. Nothing downstream can
          detect that, so it is said here, where the button is. */
       function metaStepHtml(pl) {
+        if (FBP.id) return fbPickHtml();
         /* INSTAGRAM THROUGH FACEBOOK. "Instagram is not available" was true
            of Instagram's own login and false of the thing agencies actually
            need: the Facebook connection returns the Page AND the Instagram
@@ -12101,12 +12200,21 @@
       }
       window.openAddChannel = openAddChannel;
 
+      document.addEventListener('change', function (e) {
+        var box = e.target && e.target.closest && e.target.closest('input[data-fbp]');
+        if (!box) return;
+        FBP.chosen[box.getAttribute('data-fbp')] = box.checked;
+        renderAdd();
+      });
+
       document.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
         if (t.closest('[data-ch-add]')) { ADD.open = true; renderAdd(); return; }
+        if (t.closest('[data-fbp-go]')) { fbpConnect(); return; }
         if (t.closest('[data-ch-close]')) {
           ADD.open = false; ADD.pick = ''; tgWatch(false);
+          FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
           if (TGS.st === 'connected') { TGS.st = ''; TGS.channel = ''; }
           renderAdd(); return;
         }
@@ -12475,6 +12583,14 @@
         var detail = q.get('detail') || '';
         q.delete('connected'); q.delete('detail');
         history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+        /* Facebook shared some Pages; this agency now says which are its own. */
+        if (outcome === 'choose' && /^[0-9a-f-]{36}$/i.test(detail)) {
+          FBP = { id: detail, data: null, chosen: {}, busy: false, note: '' };
+          ADD.open = true; ADD.pick = 'facebook';
+          if (typeof goToPane === 'function') goToPane('social');
+          fbpLoad();
+          return;
+        }
         var msg = outcome === 'cancelled'
           ? 'Connection cancelled' + (detail ? ': ' + detail : '.')
           : outcome === 'error'
