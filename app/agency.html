@@ -5670,6 +5670,12 @@
       };
 
       const LIVE = { published: 1 };
+      /* SENT, NOT LIVE. A post that goes through TryPost is 'published' once
+         TryPost accepts it, and TryPost then posts it from its own queue --
+         which has taken hours on Instagram. Until the delivery check hears
+         that it is actually up, payload.delivery is 'pending' and the card
+         says so instead of claiming it is live. */
+      const waiting = (x) => !!(x && LIVE[x.status] && x.payload && x.payload.delivery === 'pending');
       const DAY2 = 48 * 60 * 60 * 1000;
 
       /* WHAT STAGE A POST IS REALLY IN, which was one ternary:
@@ -5692,6 +5698,12 @@
         const anyTwinLive = twins.some(t => LIVE[t.status]);
         if (!mineLive && !anyTwinLive) {
           return r.status === 'failed' ? 'attention' : 'scheduled';
+        }
+        /* Handed over but not up anywhere yet: it stays in Published with a
+           "not live yet" line, and is never judged on clicks -- nobody can tap
+           a post that is not there. */
+        if (!(mineLive && !waiting(r)) && !twins.some(t => LIVE[t.status] && !waiting(t))) {
+          return 'published';
         }
         /* Live. The only thing that can pull it back out is nobody clicking:
            two days up, a link that anyone could have tapped, and not one human
@@ -5742,13 +5754,17 @@
           failure: r.failure_reason || '',
           /* Whether the agency's OWN account carried it, which is a different
              question from whether it went out at all. */
-          mineLive: !!LIVE[r.status],
+          mineLive: !!LIVE[r.status] && !waiting(r),
+          waitMine: waiting(r),
+          waitAmp: twinLive.filter(waiting).map(t => t.platform),
+          sentWhen: fmtWhen((r.payload && r.payload.sent_at) || r.published_at
+            || ((twinLive.find(waiting) || {}).payload || {}).sent_at || null),
           isSynapseOnly: isOrphanTwin || (!LIVE[r.status] && twinLive.length > 0),
           /* What Synapse is doing with it, carried on the card rather than
              beside it. Without this the amplification is invisible to the
              agency it is being given to. */
           amp: twins.map(t => t.platform),
-          ampLive: twinLive.map(t => t.platform),
+          ampLive: twinLive.filter(t => !waiting(t)).map(t => t.platform),
           /* The family by id. Engagement is fetched per post and the twins are
              separate posts on trypost exactly as they are here, so the panel
              has to ask about all of them -- the platform numbers for "Synapse
@@ -5931,6 +5947,19 @@
       return '<div class="w" style="margin-top:4px;color:var(--ink-muted)">' + bits.join(' \u00b7 ') + '</div>';
     }
 
+    /* Which platforms have the post handed over but not showing yet, said
+       plainly: where it went, when, and that the card will change on its own
+       when it is up. */
+    function waitLine(p) {
+      const w = (p.waitMine ? [p.channels[0]] : []).concat(p.waitAmp || []);
+      if (!w.length) return '';
+      const names = w.map(c => (CH[c] && CH[c].label) || c);
+      const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+      return '<div class="w" style="margin-top:4px;color:var(--warn-ink)">Sent to ' + esc2(list)
+        + (p.sentWhen ? ' ' + esc2(p.sentWhen) : '') + ', not showing there yet. TryPost posts it from '
+        + 'its own queue; this updates by itself when it is live.</div>';
+    }
+
     /* Clicks read as a sentence rather than a stat block: at these numbers
        "3 people" is the whole story and a dashboard tile would be dressing up
        single digits. Zero says so plainly instead of hiding -- a live post
@@ -6038,9 +6067,13 @@
           + 'it is a draft only you can see.</div>'
           + carriedBy(p);
       }
-      return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
-        + esc2(p.when || 'Published') + '</div>'
+      const up = p.mineLive || (p.ampLive && p.ampLive.length);
+      return (up
+          ? '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
+            + esc2(p.when || 'Published') + '</div>'
+          : '<div class="w" style="margin-top:8px;color:var(--warn-ink)">Sent \u00b7 not live yet</div>')
         + carriedBy(p)
+        + waitLine(p)
         + clickLine(p)
         + engageLine(p)
         + commentList(p)
