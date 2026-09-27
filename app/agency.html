@@ -5765,6 +5765,10 @@
           lastClick: c.last,
           token: c.token,
           when: fmtWhen(r.published_at || (twinLive[0] || {}).published_at || r.scheduled_at),
+          /* A TikTok sent with post_mode MEDIA_UPLOAD sits in the agent's
+             TikTok inbox until they finish it there. */
+          inbox: r.platform === 'tiktok' && !!LIVE[r.status]
+            && !!(r.payload && r.payload.delivered === 'inbox'),
           reach: estReach(chans) });
       });
       /* PER-COLUMN ORDER, because the two columns want opposite things.
@@ -6018,6 +6022,15 @@
     }
 
     function liveBody(p) {
+      /* A TikTok "published" is a draft delivered to the agent's TikTok
+         inbox, not a public post, and the card must not claim otherwise. */
+      if (p.inbox) {
+        return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
+          + 'In your TikTok inbox \u00b7 ' + esc2(p.when || '') + '</div>'
+          + '<div class="w" style="margin-top:4px">Open TikTok, add a sound and post it \u2014 until then '
+          + 'it is a draft only you can see.</div>'
+          + carriedBy(p);
+      }
       return '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
         + esc2(p.when || 'Published') + '</div>'
         + carriedBy(p)
@@ -6492,6 +6505,11 @@
 
            Reschedule shows no Post now: that sheet moves a post which already
            exists, and its pipeline card already carries a send-now. */
+        /* Said before the press: a TikTok goes to the inbox as a draft, and
+           somebody expecting it on their profile would think it had failed.
+           Shown only while a row is set to TikTok. */
+        + '<div class="sch-note" id="schTt" hidden>TikTok: this goes to your TikTok inbox as a draft. '
+        +   'Open TikTok, add a sound, and post it from there.</div>'
         + '<div class="sch-more" style="display:flex;gap:8px;margin-top:8px">'
         +   '<button type="button" class="btn" id="schAdd" style="flex:1">+ Add another time</button>'
         +   (mode === 'reschedule' ? ''
@@ -6553,13 +6571,19 @@
          wrong, they are refused: queue_social_post checks that the account
          matches the platform. Rebuilding the picker on change is what stops
          the sheet offering a choice the server will reject. */
+      const syncTtNote = () => {
+        const tt = document.getElementById('schTt');
+        if (tt) tt.hidden = ![...slots.querySelectorAll('.slot-p')].some((sel) => sel.value === 'tiktok');
+      };
       slots.addEventListener('change', (e) => {
         const p = e.target.closest('.slot-p');
         if (!p) return;
         const row = p.closest('.slot');
         const box = row && row.querySelector('.slot-acct');
         if (box) box.innerHTML = acctSelect(p.value, '');
+        syncTtNote();
       });
+      syncTtNote();
 
       /* `now` is the only difference between the two buttons: it overrides
          every row's time and clears dry_run, then drains the queue rather than
@@ -6688,8 +6712,10 @@
                  would hide the amplification exactly when it is the part that
                  worked. */
               const n2 = sent.published;
+              const tt = rows.some((r) => r.platform === 'tiktok');
               toast(n2
                 ? n2 + (n2 === 1 ? ' post is live' : ' posts are live')
+                  + (tt ? ' · TikTok: open the app, it is in your inbox to finish' : '')
                   + (sent.failed ? ' \u00b7 ' + sent.failed + ' could not go out \u2014 see Needs attention' : '')
                 : (sent.failed
                     ? sent.failed + ' could not go out \u2014 see Needs attention'
