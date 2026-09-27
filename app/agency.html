@@ -3718,6 +3718,63 @@
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
+
+    /* ══ A LIGHTER PAGE, AND EMPTY STATES WITHOUT THE DASHES (2026-09-28) ════
+       Eden: "Remove the broken lines ... surrounding the empty states. Maybe
+       find another way to make it more immersive ... Then the background.
+       Make it a little lighter, a little less gray."
+
+       THE PAGE read grey because of the brand grain (app.css body::before, a
+       fixed noise layer at .55) laid over Cloud. In the portal the grain is
+       halved and the ground lifted a shade, so it is lighter and less grey
+       while still not flat.
+
+       EMPTY STATES were dashed outlines, which read as a hole cut in the
+       page. They are now whole white surfaces, the same edge as every other
+       card, with the brand's warmth arriving the way the brand sheets use it:
+       a faint orange wash from the top and a soft glow behind the icon. An
+       empty pipeline column gets the same glow on a quiet tint, no outline. */
+    body.portal { --bg: #FAFAFB; background-color: #FAFAFB; }
+    body.portal::before { opacity: .26; }
+
+    body.portal .ov-blank {
+      border: 1px solid var(--edge);
+      background:
+        radial-gradient(ellipse 75% 60% at 50% 0%, rgba(255, 138, 45, 0.075), rgba(255, 138, 45, 0) 70%),
+        #FFFFFF;
+    }
+    body.portal .content .card .ov-blank { border: none; box-shadow: none; }
+    body.portal .ov-blank .ov-blank-i {
+      width: 64px; height: 64px; border-radius: 50%; opacity: 1;
+      align-items: center; justify-content: center; margin-bottom: 12px;
+      background: radial-gradient(circle, rgba(255, 138, 45, 0.20) 0%, rgba(255, 138, 45, 0.07) 55%, rgba(255, 138, 45, 0) 72%);
+      color: var(--ink);
+    }
+    body.portal .ov-blank .ov-blank-i .syn-i { width: 26px; height: 26px; opacity: .8; }
+
+    /* The two other empty states that were dashed: an empty brand, and an
+       insight row with no figure to lead with. */
+    body.portal .bk-empty {
+      border: 1px solid var(--edge);
+      background:
+        radial-gradient(ellipse 75% 60% at 50% 0%, rgba(255, 138, 45, 0.075), rgba(255, 138, 45, 0) 70%),
+        #FFFFFF;
+      box-shadow: var(--lift);
+    }
+    body.portal .insight-empty { border-style: solid; background: #FFFFFF; }
+
+    body.portal .col-blank {
+      border: none;
+      background:
+        radial-gradient(ellipse 80% 70% at 50% 0%, rgba(255, 138, 45, 0.07), rgba(255, 138, 45, 0) 70%),
+        rgba(15, 17, 20, 0.025);
+    }
+    body.portal .col-blank .col-blank-i {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 50%; opacity: 1;
+      background: radial-gradient(circle, rgba(255, 138, 45, 0.18) 0%, rgba(255, 138, 45, 0) 70%);
+      color: var(--ink);
+    }
   </style>
 </head>
 <body class="portal">
