@@ -1419,7 +1419,17 @@
           // Deliberately unconditional — confirming whether the address exists
           // would leak account membership.
           showNote('ok', 'If there is an account for that email, a reset link is on its way.');
-        }).catch(function () {
+        }).catch(function (e) {
+          /* Logged, and a sending limit is said out loud. The limit is on the
+             project's email, not on this address, so naming it leaks nothing
+             about who has an account -- and swallowing it told people a link
+             was on its way when none was going to be sent. */
+          if (window.console) console.warn('reset request failed', e);
+          var rc = (e && e.code) || '';
+          if ((e && e.status === 429) || /rate_limit/.test(rc)) {
+            showNote('bad', 'Too many reset emails have gone out in the last hour. Try again later.');
+            return;
+          }
           showNote('ok', 'If there is an account for that email, a reset link is on its way.');
         }).then(function () { busy = false; });
       });
@@ -1616,14 +1626,15 @@
          links to check them: they fetch the page, but only a browser running
          this script spends the token. */
       var recoveryToken = params.get('type') === 'recovery' ? params.get('token_hash') : null;
-      var decided = !!recoveryToken;   // the token decides, not the first auth event
-      if (recoveryToken) {
-        /* Off the address bar straight away: it is a one-use credential, and a
-           reload must not try to spend it twice. */
-        history.replaceState(null, '', location.pathname);
-        SynAuth.client().then(function (c) {
-          return c.auth.verifyOtp({ token_hash: recoveryToken, type: 'recovery' });
-        }).then(function (res) {
+      /* Until an email template can be changed (it needs a custom SMTP
+         provider), reset links are requested in implicit form and arrive with
+         the session in the fragment. auth.js lifts it off the URL before the
+         PKCE client can reject it; this page redeems it. */
+      var hashRecovery = (!recoveryToken && SynAuth.takeRecovery) ? SynAuth.takeRecovery() : null;
+      var decided = !!(recoveryToken || hashRecovery);   // the link decides, not the first auth event
+
+      function redeemRecovery(spend) {
+        SynAuth.client().then(spend).then(function (res) {
           if (res && res.error) throw res.error;
           enterRecoverMode();
         }).catch(function (err) {
@@ -1633,6 +1644,14 @@
             ? 'That reset link has expired or has already been used. Request a fresh one below.'
             : 'That reset link did not work. Request a fresh one below.');
         });
+      }
+      if (recoveryToken) {
+        /* Off the address bar straight away: it is a one-use credential, and a
+           reload must not try to spend it twice. */
+        history.replaceState(null, '', location.pathname);
+        redeemRecovery(function (c) { return c.auth.verifyOtp({ token_hash: recoveryToken, type: 'recovery' }); });
+      } else if (hashRecovery) {
+        redeemRecovery(function (c) { return c.auth.setSession(hashRecovery); });
       }
 
       SynAuth.client().then(function (c) {

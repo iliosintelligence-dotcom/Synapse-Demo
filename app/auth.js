@@ -23,6 +23,24 @@
   var PUBLISHABLE_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
   var CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
 
+  /* A RESET LINK'S SESSION, TAKEN BEFORE THE CLIENT SEES IT (28 Sept 2026).
+     resetPassword() below asks for an implicit-flow link, which comes back
+     to signin.html with the session in the fragment. The client here is
+     PKCE and would reject a fragment like that, so it is lifted off the URL
+     now, while this file runs, before any client exists -- and handed to
+     signin.html through takeRecovery(). Only a recovery fragment is touched. */
+  var pendingRecovery = null;
+  (function () {
+    try {
+      var h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      if (h.get('type') === 'recovery' && h.get('access_token') && h.get('refresh_token')) {
+        pendingRecovery = { access_token: h.get('access_token'), refresh_token: h.get('refresh_token') };
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+    } catch (e) { /* no URL API: nothing taken, the page behaves as before */ }
+  })();
+  function takeRecovery() { var r = pendingRecovery; pendingRecovery = null; return r; }
+
   var clientPromise = null;
   var cachedUser = null;      // last known user; refreshed by onAuthStateChange
   var readyResolvers = [];
@@ -426,9 +444,28 @@
       .catch(function () { /* cleared below whatever happened */ })
       .then(function () { cachedUser = null; paintAll(); });
   }
+  /* IMPLICIT, ON PURPOSE (28 September 2026). The SDK's resetPasswordForEmail
+     sends a PKCE challenge, and a PKCE reset link can only be redeemed by the
+     browser that asked for it -- so a reset requested on a laptop and opened
+     on a phone, or in the Gmail or Outlook app's own browser, failed silently
+     and showed a plain sign-in page. Asked for without a challenge, the link
+     carries the session itself and works wherever it is opened; takeRecovery()
+     above catches it on arrival. (The better fix is a token_hash email
+     template, which signin.html already understands, but Supabase allows
+     template changes only with a custom SMTP provider.) */
   function resetPassword(email) {
-    return client().then(function (c) {
-      return c.auth.resetPasswordForEmail(email, { redirectTo: mailOrigin() + '/app/signin.html' });
+    var to = mailOrigin() + '/app/signin.html';
+    return fetch(SUPABASE_URL + '/auth/v1/recover?redirect_to=' + encodeURIComponent(to), {
+      method: 'POST',
+      headers: { apikey: PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    }).then(function (r) {
+      if (r.ok) return { data: {}, error: null };
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        var e = new Error(j.msg || j.message || j.error_description || ('Reset request failed (' + r.status + ')'));
+        e.code = j.error_code || j.code || ''; e.status = r.status;
+        throw e;
+      });
     });
   }
 
@@ -524,6 +561,7 @@
     client: client, ready: ready, user: function () { return cachedUser; },
     getUser: getUser, roleOf: roleOf, safeNext: safeNext,
     signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
+    takeRecovery: takeRecovery,
     resendConfirmation: resendConfirmation,
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     normalisePhone: normalisePhone,
