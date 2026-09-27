@@ -1797,6 +1797,8 @@
     facebook: 'facebook_post',
     whatsapp: 'whatsapp_message',
     x: 'x_post',
+    /* Needs 20260927090000 -- the enum value came after the platform. */
+    telegram: 'telegram_post',
   };
   /* narrative_angle values a generation may be filed under. 'custom' is what
      an agency's own template files as -- it has no enum value it could

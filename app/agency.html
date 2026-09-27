@@ -484,6 +484,9 @@
     .cmp-ch.cmp-tg { flex-direction: column; align-items: stretch; gap: 8px; }
     .cmp-tg-body { display: flex; flex-direction: column; gap: 6px; }
     .cmp-tg-how { font-size: 11.5px; line-height: 1.55; color: var(--ink-muted); }
+    .cmp-tg-add { display: inline-flex; align-items: center; min-height: 38px; box-sizing: border-box;
+      border-color: #229ED9; color: #1c7fb0; }
+    .cmp-tg-add:hover { background: rgba(34,158,217,0.08); }
     .cmp-tg-how code { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
       background: rgba(20,20,20,0.05); border-radius: 6px; padding: 2px 6px; }
     .cmp-tg-in { flex: 1; min-width: 160px; min-height: 38px; padding: 8px 10px;
@@ -5373,7 +5376,7 @@
       instagram_post: 'instagram', instagram_reel: 'instagram',
       tiktok_script: 'tiktok', youtube_short: 'youtube',
       facebook_post: 'facebook', whatsapp_message: 'whatsapp',
-      linkedin_post: 'linkedin', x_post: 'x',
+      linkedin_post: 'linkedin', x_post: 'x', telegram_post: 'telegram',
     };
 
     /** "Today 5:00 PM" near at hand, a real date further out. */
@@ -11402,10 +11405,17 @@
               + '<span class="cmp-ch-nm"><span class="cmp-ch-ic">' + mark(pl) + '</span>'
               + esc(CONNECTABLE[pl]) + '</span>'
               + '<div class="cmp-tg-body">'
-              +   '<div class="cmp-tg-how">In Telegram, open your channel \u2192 '
-              +     '<b>Administrators</b> \u2192 add <code>' + esc(TG_BOT) + '</code> '
-              +     'and allow <b>Post Messages</b>. Then paste the channel here.'
+              /* ONE TAP INTO TELEGRAM'S OWN "ADD ADMIN" SCREEN. t.me's
+                 startchannel link opens the channel picker with Post Messages
+                 already ticked, so nobody hunts through Administrators menus.
+                 It cannot carry anything back -- Telegram allows no payload on
+                 a channel link -- which is why the @name is still pasted. */
+              +   '<div class="cmp-tg-how">Add <code>' + esc(TG_BOT) + '</code> to your channel '
+              +     'as an administrator with <b>Post Messages</b>, then paste the channel here.'
               +   '</div>'
+              +   '<div><a class="cmp-ch-btn cmp-tg-add" target="_blank" rel="noopener" href="https://t.me/'
+              +     encodeURIComponent(TG_BOT.replace(/^@/, '')) + '?startchannel&amp;admin=post_messages">'
+              +     'Open Telegram and add the bot ↗</a></div>'
               +   '<div class="cmp-setup-row">'
               +     '<input id="tgChan" class="cmp-tg-in" placeholder="@yourchannel" '
               +       'autocomplete="off" spellcheck="false">'
@@ -12202,6 +12212,7 @@
         tiktok_script: 'TikTok', youtube_short: 'YouTube',
         facebook_post: 'Facebook', whatsapp_message: 'WhatsApp',
         linkedin_post: 'LinkedIn', brochure_copy: 'Brochure', email_body: 'Email',
+        x_post: 'X', telegram_post: 'Telegram',
       };
 
       function whenAgo(iso) {
@@ -12701,7 +12712,7 @@
              and reworded, because no agency was ever offered the chance to
              write one for it. Reported exactly that way: "X is not an option
              but the app is posting to all the connected platforms." -->
-        <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp', 'x'].map(chanChip).join('')}</div>
+        <div class="cmp-chans">${['instagram', 'tiktok', 'youtube', 'facebook', 'whatsapp', 'x', 'telegram'].map(chanChip).join('')}</div>
         <button class="btn btn-primary cmp-gen" id="cmpGen"${cmp.chans.size === 0 ? ' disabled style="opacity:.5"' : ''}>${cmp.loading ? '<span class="spin2"></span>Writing captions…' : '<span data-icon="spark"></span> Generate captions with AI'}</button>`;
       if (cmp.err) html += `<div class="cmp-err" role="alert">${cmp.err}</div>`;
       if (cmp.captions) {
