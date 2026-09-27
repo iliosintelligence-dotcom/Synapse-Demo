@@ -519,8 +519,15 @@
       font-weight: 600; color: var(--ink); }
     .ch-tg-nm i { font-style: normal; font-weight: 400; color: var(--ink-dim); margin-left: 4px; }
     .ch-tg-wait { font-size: 12px; color: var(--ink-dim); }
-    .ch-tg-manual summary { cursor: pointer; font-size: 12px; color: var(--brand-text); min-height: 28px; }
-    .ch-tg-manual .cmp-setup-row { margin-top: 8px; }
+    .ch-tg code { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(20,20,20,0.05); border-radius: 6px; padding: 1px 5px; }
+    .ch-tg-code { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 6px 6px 12px;
+      border: 1px dashed rgba(34,158,217,0.6); border-radius: 10px; background: rgba(34,158,217,0.06); }
+    .ch-tg .ch-tg-cmd { flex: 1; min-width: 0; padding: 0; background: none; overflow-wrap: anywhere;
+      font: 600 15px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; color: var(--ink); }
+    .ch-tg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ch-tg-opt { border-top: 1px dashed var(--border); padding-top: 10px; }
+    .ch-tt-who a { color: var(--brand-text); font-weight: 600; }
     .cmp-tg-add { display: inline-flex; align-items: center; min-height: 38px; box-sizing: border-box;
       border-color: #229ED9; color: #1c7fb0; }
     .cmp-tg-add:hover { background: rgba(34,158,217,0.08); }
@@ -11373,7 +11380,7 @@
       if (!t) { TASKS.el.classList.remove('on'); return; }
       var n = TASKS.queue.length;
       TASKS.el.innerHTML =
-        '<div class="ytask-top"><span class="ytask-eye">Only you can do this</span>'
+        '<div class="ytask-top"><span class="ytask-eye">' + esc2(t.eye || 'Only you can do this') + '</span>'
         + (n > 1 ? '<span class="ytask-n">' + (TASKS.idx + 1) + ' of ' + n + '</span>' : '')
         + '<button type="button" class="ytask-x" data-ytask-later aria-label="Close for now">×</button></div>'
         + '<div class="ytask-title" id="ytaskTitle">' + esc2(t.title) + '</div>'
@@ -11387,8 +11394,13 @@
         + (t.where ? '<div class="ytask-where">' + esc2(t.where) + '</div>' : '')
         + '<div class="ytask-acts">'
         +   (t.once ? '' : '<button type="button" class="ytask-btn" data-ytask-later>Later</button>')
-        +   '<button type="button" class="ytask-btn primary" data-ytask-done>'
-        +     (t.once ? 'Got it' : 'Done') + '</button></div>'
+        /* A task that can be started from here offers that instead of Done:
+           "Done" is for things finished elsewhere, and this one finishes
+           itself when it stops being true. */
+        +   (t.action
+              ? '<button type="button" class="ytask-btn primary" data-ytask-act>' + esc2(t.action.label) + '</button>'
+              : '<button type="button" class="ytask-btn primary" data-ytask-done>' + (t.once ? 'Got it' : 'Done') + '</button>')
+        + '</div>'
         + '<span class="sr-only" role="status" id="ytaskSay"></span>';
       TASKS.el.classList.add('on');
     }
@@ -11404,6 +11416,12 @@
       var t = TASKS.queue[TASKS.idx];
       if (!t) return;
       if (e.target.closest('[data-ytask-done]')) { if (!t.once) taskMark('done', t.id); nextTask(); return; }
+      /* Started, not done: put away for this visit, and still in the bell. */
+      if (e.target.closest('[data-ytask-act]')) {
+        taskMark('later', t.id); nextTask();
+        if (t.action && typeof t.action.run === 'function') t.action.run();
+        return;
+      }
       if (e.target.closest('[data-ytask-later]')) { if (!t.once) taskMark('later', t.id); nextTask(); return; }
       var cb = e.target.closest('[data-ytask-copy]');
       if (!cb) return;
@@ -11495,6 +11513,10 @@
         x: ['X', 'not built yet'],
       };
       var accounts = [];
+      /* True once the account list has actually been read. An empty list
+         from a failed fetch is not "no channels", and must not trigger the
+         getting-started ask. */
+      var accountsKnown = false;
       /* Which platforms this PROJECT can connect at all -- our setup, not the
          agency's. Empty means "not asked yet or the ask failed", and every
          platform renders as it always did: a status endpoint having a bad
@@ -11539,14 +11561,14 @@
         return loadConnectStatus()
           .then(function () { return loadReplySettings(); })
           .then(function () { return token(); }).then(function (t) {
-          if (!t) { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
+          if (!t) { accounts = []; accountsKnown = false; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); return; }
           return fetch(SB_URL + '/rest/v1/social_accounts'
               + '?select=id,platform,platform_username,is_active,token_expires_at,connected_at'
               + ',page_cta_type,page_cta_url'
               + '&is_active=eq.true&deleted_at=is.null', {
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
             })
-            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (r) { accountsKnown = r.ok; return r.ok ? r.json() : []; })
             .then(function (rowsIn) {
               accounts = rowsIn || [];
               /* Published for the scheduler, which is outside this IIFE and
@@ -11556,7 +11578,7 @@
               window.SOCIAL_ACCOUNTS = accounts;
               publishConnected(); renderChannels();
             })
-            .catch(function () { accounts = []; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); });
+            .catch(function () { accounts = []; accountsKnown = false; window.SOCIAL_ACCOUNTS = []; publishConnected(); renderChannels(); });
         });
       }
 
@@ -11657,8 +11679,12 @@
          and redrawing those every time Telegram is polled would wipe
          whatever an owner was typing there. */
       var ADD = { open: false, pick: '' };
-      /* linked: undefined = not asked yet, null = not linked, object = linked */
-      var TGS = { linked: undefined, channels: [], note: '', busy: '', poll: null, until: 0, sig: '' };
+      /* linked: undefined = not asked yet, null = not linked, object = linked.
+         code/exp/st: the "/connect CODE" this person was given, when it runs
+         out, and what the server last said about it (waiting, working,
+         connected, error, expired). */
+      var TGS = { linked: undefined, note: '', busy: '', poll: null, until: 0, sig: '',
+                  code: '', exp: 0, st: '', channel: '', deleted: true, linkWait: false };
 
       function renderChannels() {
         var box = document.getElementById('cmpChannels');
@@ -11707,14 +11733,6 @@
       function renderAdd() {
         var el = document.getElementById('chAdd');
         if (!el) return;
-        /* What somebody was typing survives a redraw: the channel list is
-           polled while this is open. */
-        var inEl = document.getElementById('tgChan');
-        var keepVal = inEl ? inEl.value : '';
-        var keepFocus = !!(inEl && document.activeElement === inEl);
-        var man = el.querySelector('.ch-tg-manual');
-        var keepOpen = !!(man && man.open);
-
         if (!ADD.open) {
           el.innerHTML = '<button type="button" class="ch-add-btn" data-ch-add aria-expanded="false">'
             + '<span aria-hidden="true">+</span> Add channel</button>';
@@ -11740,15 +11758,16 @@
         else if (ADD.pick === 'tiktok') h += tiktokStepHtml();
         else if (ADD.pick === 'telegram') h += tgStepHtml();
         h += '</div>';
+        /* Focus survives a redraw: the Telegram panel is repainted as the
+           code's status changes, and a keyboard user should not be thrown
+           back to the top of the page. */
+        var had = document.activeElement && el.contains(document.activeElement) ? document.activeElement : null;
+        var hadKey = had ? ['data-ch-pick', 'data-tg-copy', 'data-tg-new', 'data-tg-link', 'data-ch-close', 'data-tg-again']
+          .filter(function (a) { return had.hasAttribute(a); }).map(function (a) {
+            return '[' + a + (had.getAttribute(a) ? '="' + had.getAttribute(a) + '"' : '') + ']';
+          })[0] : '';
         el.innerHTML = h;
-
-        var after = document.getElementById('tgChan');
-        if (after) {
-          after.value = keepVal;
-          var m2 = el.querySelector('.ch-tg-manual');
-          if (m2 && (keepOpen || keepVal)) m2.open = true;
-          if (keepFocus) after.focus();
-        }
+        if (hadKey) { var back = el.querySelector(hadKey); if (back) back.focus(); }
       }
 
       /* WHOSE ACCOUNT, said before the redirect and not after the mistake.
@@ -11773,61 +11792,96 @@
         return '<div class="ch-step">'
           + '<div class="cmp-ch-note">You will be sent to TikTok to sign in. Use the TikTok '
           + 'account you post listings from.</div>'
+          /* WHICH ACCOUNT, BEFORE AND NOT AFTER. TikTok authorises whoever
+             is already signed in -- on tiktok.com in this browser, or in the
+             app on a phone -- and does not stop to ask. Connecting the wrong
+             one looks exactly like success until the first draft lands in
+             somebody else's inbox. */
+          + '<div class="cmp-ch-note ch-tt-who"><b>Check which account first.</b> TikTok connects whichever '
+          + 'account is signed in to TikTok in this browser (or in the TikTok app, on a phone) without asking. '
+          + '<a href="https://www.tiktok.com/" target="_blank" rel="noopener">Open TikTok ↗</a> and look at the '
+          + 'profile picture; if it is not the listings account, switch there first, then come back.</div>'
           + '<div class="cmp-ch-note">Posts arrive in that account’s <b>TikTok inbox</b> as drafts: '
           + 'open TikTok, add a sound, and post. The sound is most of what decides how far a TikTok goes.</div>'
           + '<div><button class="cmp-ch-btn primary" data-connect="tiktok">Continue to TikTok →</button></div></div>';
       }
 
-      /* TELEGRAM IN THREE STEPS, and the first one is the proof. Linking says
-         who this person is on Telegram; Telegram then says whether that
-         account runs the channel. Without it, anyone who knew a channel's
-         @name could connect it once the bot was in it. */
+      /* TELEGRAM IN TWO STEPS: add the bot, post a code. Posting in a channel
+         needs the right to post there, so a code that arrives FROM a channel
+         is the proof the channel is theirs -- no Telegram account to link
+         first and no list to wait for. TryPost's method; it replaced a
+         link-then-add-then-pick flow on 2026-09-27, after the comparison
+         showed ours was the slowest of the three. The bot deletes the code
+         post, which is the only thing its Delete right is for.
+
+         Linking a Telegram account is still offered, lower down and
+         optional: bots cannot post Stories, so a Story kit is sent privately
+         to whoever connected the channel, and that needs to know who they
+         are on Telegram. */
+      function tgMinsLeft() {
+        return TGS.exp ? Math.max(0, Math.ceil((TGS.exp - Date.now()) / 60000)) : 0;
+      }
+
       function tgStepHtml() {
         var bot = TG_BOT.replace(/^@/, '');
         var h = '<div class="ch-step ch-tg">';
-        if (TGS.linked === undefined) {
-          h += '<div class="ch-tg-s">Checking your Telegram link…</div>';
-        } else if (!TGS.linked) {
-          h += '<div class="ch-tg-s"><span><b>1. Link your Telegram.</b> Telegram opens: press <b>Start</b>, '
-            + 'then come back here. This is how Telegram confirms a channel is yours.</span>'
-            + '<div><button type="button" class="cmp-ch-btn primary" data-tg-link'
-            + (TGS.busy === 'link' ? ' disabled>Opening…' : '>Link Telegram ↗') + '</button></div></div>';
+
+        if (TGS.st === 'connected') {
+          h += '<div class="ch-tg-s ok">✓ Connected <b>' + esc(TGS.channel || 'your channel') + '</b></div>';
+          if (!TGS.deleted) {
+            h += '<div class="ch-tg-s"><span>The bot could not delete the <code>/connect</code> post. '
+              + 'Delete it from the channel yourself, so your followers do not see it.</span></div>';
+          }
+          h += '<div class="ch-tg-acts"><button type="button" class="cmp-ch-btn primary" data-ch-close>Done</button>'
+            + '<button type="button" class="cmp-ch-btn" data-tg-again>Connect another channel</button></div>';
         } else {
+          h += '<div class="ch-tg-s"><span><b>1. Add the bot to your channel.</b> Telegram opens and asks which '
+            + 'channel. <b>Post Messages</b> and <b>Delete Messages</b> are already ticked; Delete is only used '
+            + 'to remove the code you post in step 2.</span>'
+            + '<div><a class="cmp-ch-btn cmp-tg-add" target="_blank" rel="noopener" href="https://t.me/'
+            + encodeURIComponent(bot) + '?startchannel&amp;admin=post_messages+delete_messages">Add '
+            + esc(TG_BOT) + ' ↗</a></div></div>';
+
+          h += '<div class="ch-tg-s"><span><b>2. Post this in the channel.</b> As an ordinary post in the '
+            + 'channel itself, not in a chat with the bot. It connects the channel and disappears.</span>';
+          var lapsed = TGS.st === 'expired' || TGS.st === 'unknown'
+            || (TGS.code && (TGS.st === 'waiting' || TGS.st === 'error') && Date.now() > TGS.exp);
+          if (TGS.busy === 'code' || (!TGS.code && !TGS.note)) {
+            h += '<div class="ch-tg-wait">Getting your code…</div>';
+          } else if (lapsed) {
+            h += '<div class="ch-tg-wait">That code has expired. '
+              + '<button type="button" class="lf-linkbtn" data-tg-new>Get a new one</button></div>';
+          } else if (TGS.code) {
+            h += '<div class="ch-tg-code"><code class="ch-tg-cmd" id="tgCmd">/connect ' + esc(TGS.code) + '</code>'
+              + '<button type="button" class="cmp-ch-btn" data-tg-copy>Copy</button></div>'
+              + '<div class="ch-tg-wait">'
+              + (TGS.st === 'working' ? 'Got it. Connecting…'
+                : TGS.st === 'error' ? 'Fix that, then post the same code again.'
+                : 'Watching for it · expires in ' + tgMinsLeft() + ' min')
+              + ' · <button type="button" class="lf-linkbtn" data-tg-new>New code</button></div>';
+          } else {
+            h += '<div><button type="button" class="cmp-ch-btn" data-tg-new>Try again</button></div>';
+          }
+          h += '</div>';
+        }
+
+        /* Story kits: offered once the channel part is on screen, and only
+           while this person is not linked. */
+        if (TGS.linked === null) {
+          h += '<div class="ch-tg-s ch-tg-opt"><span><b>Optional: Story kits.</b> Bots cannot post Telegram '
+            + 'Stories, so after each post we can send you the photo and link to share as a Story in a tap. '
+            + 'Link your Telegram to get them.</span>'
+            + '<div><button type="button" class="cmp-ch-btn" data-tg-link'
+            + (TGS.busy === 'link' ? ' disabled>Opening…' : '>Link Telegram ↗') + '</button>'
+            + (TGS.linkWait ? ' <span class="ch-tg-wait">Press Start in Telegram, then come back.</span>' : '')
+            + '</div></div>';
+        } else if (TGS.linked) {
           var who = TGS.linked.telegram_username ? '@' + TGS.linked.telegram_username
             : (TGS.linked.first_name || 'your Telegram account');
-          h += '<div class="ch-tg-s ok">✓ Linked as <b>' + esc(who) + '</b></div>';
+          h += '<div class="ch-tg-s ch-tg-opt ok">✓ Story kits come to you on Telegram as <b>' + esc(who) + '</b></div>';
         }
 
-        h += '<div class="ch-tg-s' + (TGS.linked ? '' : ' dim') + '"><span><b>2. Add the bot to your channel.</b> '
-          + 'Pick the channel in Telegram; <b>Post Messages</b> is already ticked.</span>'
-          + '<div><a class="cmp-ch-btn cmp-tg-add" target="_blank" rel="noopener" href="https://t.me/'
-          + encodeURIComponent(bot) + '?startchannel&amp;admin=post_messages">Add ' + esc(TG_BOT) + ' ↗</a></div></div>';
-
-        if (TGS.linked) {
-          h += '<div class="ch-tg-s"><span><b>3. Connect it.</b></span>';
-          if (!TGS.channels.length) {
-            h += '<div class="ch-tg-wait">Channels you add the bot to appear here by themselves. '
-              + '<button type="button" class="lf-linkbtn" data-tg-refresh>Check now</button></div>';
-          } else {
-            h += '<div class="ch-tg-list">';
-            TGS.channels.forEach(function (c) {
-              var busy = TGS.busy === c.chat_id;
-              h += '<div class="ch-tg-item"><span class="cmp-ch-ic">' + mark('telegram') + '</span>'
-                + '<span class="ch-tg-nm">' + esc(c.title || c.username || 'Channel')
-                + (c.username ? ' <i>' + esc(c.username) + '</i>' : '') + '</span>'
-                + (c.connected ? '<span class="cmp-ch-at">connected</span>'
-                  : '<button type="button" class="cmp-ch-btn primary" data-tg-connect="' + esc(c.chat_id) + '"'
-                    + (busy ? ' disabled>Checking…' : '>Connect') + '</button>')
-                + '</div>';
-            });
-            h += '</div>';
-          }
-          h += '<details class="ch-tg-manual"><summary>Not listed? Enter its @name</summary>'
-            + '<div class="cmp-setup-row"><input id="tgChan" class="cmp-tg-in" placeholder="@yourchannel" '
-            + 'autocomplete="off" spellcheck="false"><button type="button" class="cmp-ch-btn primary" data-tg-manual'
-            + (TGS.busy === 'manual' ? ' disabled>Checking…' : '>Connect') + '</button></div></details></div>';
-        }
-        /* The server's own words: they name which of the checks failed. */
+        /* The server's own words: they name what went wrong. */
         h += '<div class="cmp-setup-why" role="status" aria-live="polite">' + esc(TGS.note || '') + '</div>';
         return h + '</div>';
       }
@@ -11849,43 +11903,95 @@
         });
       }
 
-      /* Redrawn only when something changed, so a five-second poll does not
-         flicker the panel or move anything under a pointer. */
+      function tgBot(j) {
+        if (j && typeof j.bot === 'string' && /^@[A-Za-z0-9_]{5,32}$/.test(j.bot)) TG_BOT = j.bot;
+      }
+
+      /* Redrawn only when something changed, so a three-second poll does not
+         flicker the panel or move anything under a pointer. The minutes left
+         are part of it, so the countdown moves once a minute. */
       function tgPaint() {
-        var sig = JSON.stringify([TGS.linked, TGS.channels, TGS.note, TGS.busy]);
+        var sig = JSON.stringify([TGS.linked, TGS.note, TGS.busy, TGS.code, TGS.st, TGS.channel,
+          TGS.deleted, TGS.linkWait, TG_BOT, tgMinsLeft()]);
         if (sig === TGS.sig) return;
         TGS.sig = sig;
         if (ADD.open && ADD.pick === 'telegram') renderAdd();
       }
 
-      function tgRefresh() {
+      function tgNewCode() {
+        TGS.busy = 'code'; TGS.note = ''; TGS.st = ''; TGS.code = ''; TGS.channel = '';
+        tgPaint();
+        return tgApi('telegram-code', { method: 'POST', body: '{}' }).then(function (j) {
+          TGS.code = j.code || '';
+          TGS.exp = Date.now() + (j.expires_in || 900) * 1000;
+          TGS.st = 'waiting';
+          tgBot(j);
+          tgWatch(true);
+        }).catch(function (e) {
+          TGS.note = e.message || 'Could not get a code just now.';
+        }).then(function () { TGS.busy = ''; tgPaint(); });
+      }
+
+      /* Has the code been posted, and what came of it. Only asked while
+         there is something to wait for. */
+      function tgCheck() {
+        var code = TGS.code;
+        if (!code || !(TGS.st === 'waiting' || TGS.st === 'working' || TGS.st === 'error')) {
+          tgPaint(); return Promise.resolve();
+        }
+        return tgApi('telegram-code-status?code=' + encodeURIComponent(code)).then(function (j) {
+          if (code !== TGS.code) return;              // a new code was issued meanwhile
+          TGS.st = j.status || 'waiting';
+          TGS.note = j.status === 'error' ? (j.error || 'That did not work.') : '';
+          if (j.status === 'connected') {
+            TGS.channel = j.channel || '';
+            TGS.deleted = j.code_post_deleted !== false;
+            TGS.code = '';
+            tgWatch(false);
+            return loadChannels();
+          }
+        }).catch(function () { /* a missed poll is retried in three seconds */ }).then(tgPaint);
+      }
+
+      function tgLinkState() {
         return tgApi('telegram-link').then(function (j) {
           TGS.linked = j.linked || null;
-          if (typeof j.bot === 'string' && /^@[A-Za-z0-9_]{5,32}$/.test(j.bot)) TG_BOT = j.bot;
-          if (!TGS.linked) return;
-          return tgApi('telegram-channels').then(function (c) { TGS.channels = c.channels || []; });
-        }).catch(function (e) {
+          if (TGS.linked) TGS.linkWait = false;
+          tgBot(j);
+        }).catch(function () {
           if (TGS.linked === undefined) TGS.linked = null;
-          TGS.note = e.message || 'Could not reach Telegram just now.';
         }).then(tgPaint);
       }
 
-      /* WATCHED WHILE OPEN. The two things we wait for -- Start pressed, the
-         bot added -- happen in another app, so the panel checks every few
-         seconds while it is open and visible, and the moment the tab regains
-         focus. Ten minutes, then it stops asking. */
+      /* WATCHED WHILE OPEN. The code is posted in another app, so the panel
+         asks every few seconds while it is open and visible, and the moment
+         the tab regains focus. It stops when the code runs out. */
       function tgWatch(on) {
         clearInterval(TGS.poll); TGS.poll = null;
         if (!on) return;
-        TGS.until = Date.now() + 600000;
+        TGS.until = Math.max(Date.now() + 60000, (TGS.exp || 0) + 10000);
         TGS.poll = setInterval(function () {
-          if (!ADD.open || ADD.pick !== 'telegram' || Date.now() > TGS.until) { tgWatch(false); return; }
-          if (document.visibilityState === 'visible') tgRefresh();
-        }, 5000);
+          if (!ADD.open || ADD.pick !== 'telegram' || Date.now() > TGS.until) { tgWatch(false); tgPaint(); return; }
+          if (document.visibilityState !== 'visible') return;
+          tgCheck();
+          if (TGS.linkWait) tgLinkState();
+        }, 3000);
       }
       window.addEventListener('focus', function () {
-        if (ADD.open && ADD.pick === 'telegram') tgRefresh();
+        if (!ADD.open || ADD.pick !== 'telegram') return;
+        tgCheck();
+        if (TGS.linkWait) tgLinkState();
       });
+
+      /* Opening Telegram's pick: a fresh code unless the last one is still
+         good, and the link state once, for the Story-kit line. */
+      function tgOpen() {
+        TGS.sig = '';
+        if (TGS.st === 'connected') { TGS.st = ''; TGS.channel = ''; }
+        if (TGS.linked === undefined) tgLinkState();
+        if (!TGS.code || Date.now() > TGS.exp - 60000) { tgNewCode(); return; }
+        tgWatch(true); tgCheck();
+      }
 
       function tgLinkStart() {
         /* Opened now, inside the click, and pointed at Telegram once the
@@ -11893,62 +11999,75 @@
            phones block those. */
         var w = null;
         try { w = window.open('', '_blank'); } catch (e) { w = null; }
-        TGS.busy = 'link'; TGS.note = ''; tgPaint();
+        TGS.busy = 'link'; tgPaint();
         tgApi('telegram-link-start', { method: 'POST', body: '{}' }).then(function (j) {
           if (w && !w.closed) w.location.href = j.url; else window.location.href = j.url;
-          TGS.note = 'Press Start in Telegram, then come back here.';
-          tgWatch(true);
+          TGS.linkWait = true;
+          if (!TGS.poll) tgWatch(true);
         }).catch(function (e) {
           if (w && !w.closed) w.close();
           TGS.note = e.message || 'Could not start the link.';
         }).then(function () { TGS.busy = ''; tgPaint(); });
       }
 
-      function tgConnect(channel, busyKey) {
-        TGS.busy = busyKey;
-        TGS.note = 'Asking Telegram whether the bot can post there, and whether the channel is yours…';
-        tgPaint();
-        tgApi('telegram', { method: 'POST', body: JSON.stringify({ channel: channel }) }).then(function (j) {
-          toastOrAlert('Connected ' + (j.channel || 'the channel'));
-          TGS.note = ''; TGS.busy = '';
-          ADD.open = false; ADD.pick = ''; tgWatch(false);
-          return loadChannels();
-        }).catch(function (e) {
-          TGS.busy = '';
-          TGS.note = e.message || 'Could not connect that channel.';
-          if (e.body && e.body.needs_link) TGS.linked = null;
-          tgPaint();
-        });
+      /* clipboard.writeText is missing on insecure origins and refused in some
+         in-app browsers; the fallback selects the command so a long-press or
+         Ctrl+C still works. */
+      function tgCopy(btn) {
+        var text = '/connect ' + TGS.code;
+        var said = function (w) { btn.textContent = w; setTimeout(function () { btn.textContent = 'Copy'; }, 2200); };
+        var selectIt = function () {
+          try {
+            var r = document.createRange(); r.selectNodeContents(document.getElementById('tgCmd'));
+            var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+            said('Selected');
+          } catch (err) { said('Select it'); }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () { said('Copied'); }, selectIt);
+        } else selectIt();
       }
+
+      /* Somewhere else on the page (the "connect your channels" pop-up) can
+         send somebody straight here: Social studio, the add panel open. */
+      function openAddChannel(pl) {
+        if (typeof goToPane === 'function') goToPane('social');
+        ADD.open = true;
+        if (pl && CONNECTABLE[pl]) { ADD.pick = pl; }
+        renderAdd();
+        if (ADD.pick === 'telegram') tgOpen();
+        setTimeout(function () {
+          var el = document.getElementById('chAdd');
+          if (!el) return;
+          if (el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          var b = el.querySelector('.ch-pick:not([disabled])');
+          if (b) { try { b.focus({ preventScroll: true }); } catch (e) { b.focus(); } }
+        }, 380);
+      }
+      window.openAddChannel = openAddChannel;
 
       document.addEventListener('click', function (e) {
         var t = e.target;
         if (!t || !t.closest) return;
         if (t.closest('[data-ch-add]')) { ADD.open = true; renderAdd(); return; }
-        if (t.closest('[data-ch-close]')) { ADD.open = false; ADD.pick = ''; tgWatch(false); renderAdd(); return; }
+        if (t.closest('[data-ch-close]')) {
+          ADD.open = false; ADD.pick = ''; tgWatch(false);
+          if (TGS.st === 'connected') { TGS.st = ''; TGS.channel = ''; }
+          renderAdd(); return;
+        }
         var p = t.closest('[data-ch-pick]');
         if (p) {
           if (p.disabled) return;
           ADD.pick = p.dataset.chPick;
           renderAdd();
-          if (ADD.pick === 'telegram') { TGS.sig = ''; tgRefresh(); tgWatch(true); } else tgWatch(false);
+          if (ADD.pick === 'telegram') tgOpen(); else tgWatch(false);
           return;
         }
         if (t.closest('[data-tg-link]')) { tgLinkStart(); return; }
-        if (t.closest('[data-tg-refresh]')) { tgRefresh(); return; }
-        var c = t.closest('[data-tg-connect]');
-        if (c) { tgConnect(c.dataset.tgConnect, c.dataset.tgConnect); return; }
-        if (t.closest('[data-tg-manual]')) {
-          var v = ((document.getElementById('tgChan') || {}).value || '').trim();
-          if (!v) { TGS.note = 'Enter the channel’s @name or link.'; tgPaint(); return; }
-          tgConnect(v, 'manual');
-        }
-      });
-      document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter' || !e.target || e.target.id !== 'tgChan') return;
-        e.preventDefault();
-        var v = (e.target.value || '').trim();
-        if (v) tgConnect(v, 'manual');
+        if (t.closest('[data-tg-new]')) { tgNewCode(); return; }
+        if (t.closest('[data-tg-again]')) { tgNewCode(); return; }
+        var cp = t.closest('[data-tg-copy]');
+        if (cp) tgCopy(cp);
       });
 
       /* ── answering a comment with the link ───────────────────────────────
@@ -12178,8 +12297,33 @@
           }
         });
 
+        /* GETTING SET UP. An agency that has just signed up has nowhere for
+           a post to go, and nothing on the page says so until they open
+           Social studio. This asks once, straight after the brand checklist
+           (the brand is what Tayo writes the captions from, so it comes
+           first, and two getting-started asks at once is one too many). It
+           stays in the bell until a channel is connected, and then it is no
+           longer true, so it goes. */
+        if (accountsKnown && !accounts.length && canConnect() && window.SYN_BRAND_ONBOARDING === false) {
+          var ready = Object.keys(CONNECTABLE).filter(platformReady).map(function (k) { return CONNECTABLE[k]; });
+          if (ready.length) {
+            tasks.push({
+              id: 'onboard:channels',
+              eye: 'Getting set up',
+              title: 'Connect your social channels',
+              body: 'Synapse writes the captions and posts your listings to your own '
+                + esc(ready.length > 1 ? ready.slice(0, -1).join(', ') + ' or ' + ready[ready.length - 1] : ready[0])
+                + ', and every enquiry that comes back is counted against the home it was about. '
+                + 'Connect the accounts you already post from.',
+              where: 'Social studio → Channels → Add channel',
+              action: { label: 'Add a channel', run: function () { openAddChannel(); } },
+            });
+          }
+        }
+
         setTasks('channels', tasks);
       }
+      document.addEventListener('syn:brand-onboard', function () { publishTasks(); });
 
       /* Re-render once the role is known. Without this the strip is whatever
          it guessed before applyRole's round trip came back -- see the comment
@@ -15962,6 +16106,12 @@
         { k: 'Describe your voice', done: (b) => !!(b.brand_voice || '').trim() },
       ];
       const isFirstRun = (b) => STEPS.some(s => !s.done(b));
+      /* Told to the channels strip, which holds its "connect your channels"
+         ask until this checklist is out of the way. */
+      const tellBrandState = (on) => {
+        window.SYN_BRAND_ONBOARDING = on;
+        document.dispatchEvent(new Event('syn:brand-onboard'));
+      };
 
       function paintSteps(b) {
         stepsEl.innerHTML = STEPS.map(s => {
@@ -15978,6 +16128,7 @@
         // Show while anything is genuinely missing, unless they've dismissed it
         // and did not just arrive from signup.
         onboard.hidden = !firstRun || (skipped && !welcomed);
+        tellBrandState(!onboard.hidden);
 
         /* Do not make ?welcome=agency the only route here. Email confirmation
            destroys it: signup shows "check your email" and returns without
@@ -15997,6 +16148,7 @@
       if (skipBtn) skipBtn.addEventListener('click', () => {
         localStorage.setItem(SKIP_KEY, '1');
         onboard.hidden = true;
+        tellBrandState(false);
         toast('Skipped — your brand lives under Team → Brand whenever you want it');
       });
 
@@ -16021,6 +16173,7 @@
         if (editBtn) editBtn.hidden = true;
         gate.hidden = false;
         gate.textContent = 'Could not load your brand details — check your connection and reload.';
+        tellBrandState(false);
       });
 
       /* ── logo upload ──────────────────────────────────────────────────
