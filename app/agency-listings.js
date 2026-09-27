@@ -224,7 +224,12 @@
                  read is a column it silently drops. */
               /* id, because a redraw updates the row in place rather than
                  waiting for a save. */
-              + 'id, branded_url, branded_price, branded_verified)')
+              + 'id, branded_url, branded_price, branded_verified)'
+              /* The area's NAME. properties has no area text column, only
+                 neighbourhood_id, so without this every caption and card
+                 built from these rows knew the city and not the area --
+                 "Ibadan" where the market writes "Agbowo, Ibadan". */
+              + ', neighbourhoods(name)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
@@ -235,6 +240,9 @@
           .slice()
           .sort(function (a, b) { return a.display_order - b.display_order; });
         delete p.property_media;
+        var hood = Array.isArray(p.neighbourhoods) ? p.neighbourhoods[0] : p.neighbourhoods;
+        if (!p.neighbourhood && hood && hood.name) p.neighbourhood = hood.name;
+        delete p.neighbourhoods;
         return p;
       });
     });
