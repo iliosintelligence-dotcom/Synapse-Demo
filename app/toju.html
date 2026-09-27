@@ -693,6 +693,40 @@
     const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} };
     let saved = loadSaved();
 
+    /* ARRIVING FROM A POST OR A BIO LINK STARTS A NEW CONVERSATION.
+       Tayo reopened whatever this browser last said to it, so somebody who
+       tapped a Telegram bio link to ask about a home they had just seen landed
+       in the middle of an old, unrelated thread. An arrival is a new question:
+       it gets a clean chat, and a first line that asks what caught their eye.
+
+       The old thread is not lost -- it is set aside here and filed in chat
+       history once history is available below, exactly as New chat files it.
+       arrival.js has already read the channel from this URL (it runs in the
+       head), so the parameters are taken off it now: a reload must not start
+       yet another conversation. */
+    const ARRIVAL = (function () {
+      const q = new URLSearchParams(location.search);
+      const via = q.get('via');
+      const names = { telegram: 'Telegram', instagram: 'Instagram', facebook: 'Facebook',
+                      tiktok: 'TikTok', x: 'X', whatsapp: 'WhatsApp', whatsapp_campaign: 'WhatsApp' };
+      const fresh = q.get('new') === '1' || via === 'bio';
+      const from = names[String(q.get('ch') || '').toLowerCase()] || '';
+      if (fresh) {
+        ['new', 'via', 'ch'].forEach((k) => q.delete(k));
+        const rest = q.toString();
+        try { history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) {}
+      }
+      return { fresh, from };
+    })();
+    let SET_ASIDE = null;
+    if (ARRIVAL.fresh) {
+      if (saved.some((m) => m.role === 'user')) {
+        SET_ASIDE = { visitorId: VISITOR, messages: saved };
+        VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {}
+      }
+      saved = []; persist();
+    }
+
     // shared with browse.html — see matches-shared.js + docs/STATE_CONTRACT.md
     const { esc, naira } = window.SynMatches;
     const convoScroll = document.querySelector('.convo-scroll');
@@ -1432,6 +1466,13 @@
       GREETING_TEMPLATE.replace('{{LISTING_COUNT}}',
         Number.isFinite(n) && n > 0 ? 'the ' + n.toLocaleString() + ' ' : 'the ');
     const GREETING = greetingWith(null);
+    /* For somebody who arrived from a post: they already have a home in mind,
+       so the first question is which one, not what is prompting the move. */
+    const arrivalGreeting = (from) =>
+      "I'm Tayo, Synapse's property advisor. "
+      + (from ? 'Did a home on our ' + from + ' catch your eye?' : 'Did one of our posts catch your eye?')
+      + ' Tell me which one — the area or the price is enough — or tell me what you’re looking for.';
+    const FIRST_GREETING = ARRIVAL.fresh ? arrivalGreeting(ARRIVAL.from) : GREETING;
 
     /* ── suggestions, from what is actually listed ──────────────────────────
        A suggested brief has to be answerable, or the opening move of the whole
@@ -1505,7 +1546,7 @@
     }
     // scrub any hidden context that leaked into storage before the filter existed
     if (saved.some(isDreamCtx)) { saved = saved.filter((m) => !isDreamCtx(m)); persist(); }
-    if (saved.length === 0) { saved = [{ role: 'assistant', content: GREETING }]; persist(); }
+    if (saved.length === 0) { saved = [{ role: 'assistant', content: FIRST_GREETING }]; persist(); }
     render();
     // Server restore — strictly a fallback for continuing on another device.
     // Guard rails: drop hidden dream-context messages, ignore the response if
@@ -1526,7 +1567,10 @@
       // Live inventory count → the greeting's placeholder. Only rewrites the
       // greeting while it is still the ONLY thing said; once a conversation has
       // started, editing Tayo's first line under the user would be dishonest.
-      if (Number.isFinite(d.listingCount) && saved.length === 1 && saved[0].role === 'assistant') {
+      /* Only the generic greeting carries a count; an arrival's greeting
+         asks a different question and is left as it is. */
+      if (Number.isFinite(d.listingCount) && saved.length === 1 && saved[0].role === 'assistant'
+          && saved[0].content === GREETING) {
         saved[0].content = greetingWith(d.listingCount);
         persist(); render();
       }
@@ -1618,18 +1662,21 @@
     const SESS = 'toju_sessions_v1';
     const loadSessions = () => { try { return JSON.parse(localStorage.getItem(SESS)) || []; } catch (e) { return []; } };
     const saveSessions = (s) => { try { localStorage.setItem(SESS, JSON.stringify(s.slice(0, 30))); } catch (e) {} };
-    function archiveCurrent() {
-      if (!saved.some((m) => m.role === 'user')) return; // nothing worth keeping
-      const first = saved.find((m) => m.role === 'user');
-      const sessions = loadSessions().filter((s) => s.visitorId !== VISITOR);
+    function archiveThread(visitorId, messages) {
+      if (!messages.some((m) => m.role === 'user')) return; // nothing worth keeping
+      const first = messages.find((m) => m.role === 'user');
+      const sessions = loadSessions().filter((s) => s.visitorId !== visitorId);
       sessions.unshift({
-        id: crypto.randomUUID(), visitorId: VISITOR, endedAt: Date.now(),
+        id: crypto.randomUUID(), visitorId: visitorId, endedAt: Date.now(),
         title: String(first.content).slice(0, 80),
-        homes: saved.reduce((n, m) => n + (Array.isArray(m.matches) ? m.matches.length : 0), 0),
-        messages: saved,
+        homes: messages.reduce((n, m) => n + (Array.isArray(m.matches) ? m.matches.length : 0), 0),
+        messages: messages,
       });
       saveSessions(sessions);
     }
+    function archiveCurrent() { archiveThread(VISITOR, saved); }
+    // The thread an arrival set aside, filed now that history exists.
+    if (SET_ASIDE) { archiveThread(SET_ASIDE.visitorId, SET_ASIDE.messages); SET_ASIDE = null; }
 
     const histPanel = document.getElementById('tjHistPanel');
     const histList = document.getElementById('tjHistList');

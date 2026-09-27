@@ -34,7 +34,12 @@
   var ALLOWED = {
     instagram: 1, facebook: 1, tiktok: 1, x: 1,
     whatsapp_campaign: 1, organic: 1, referral: 1,
+    /* Added to the enum with the Telegram channel (20260925230000) and
+       missing here, so a Telegram arrival was dropped as unrecognised. */
+    telegram: 1,
   };
+  /* What a person would put in a link, mapped to what the enum calls it. */
+  var ALIAS = { whatsapp: 'whatsapp_campaign', tg: 'telegram', ig: 'instagram', fb: 'facebook' };
 
   /* Referrer hosts we can read a channel from. Instagram sends people through
      l.instagram.com, Facebook through l.facebook.com and lm.facebook.com, and
@@ -49,6 +54,7 @@
     if (/(^|\.)tiktok\.com$/.test(host)) return 'tiktok';
     if (/(^|\.)(twitter|x)\.com$/.test(host) || host === 't.co') return 'x';
     if (/(^|\.)whatsapp\.com$/.test(host)) return 'whatsapp_campaign';
+    if (host === 't.me' || /(^|\.)telegram\.(org|me)$/.test(host)) return 'telegram';
     return '';
   }
 
@@ -68,6 +74,7 @@
     try { q = new URLSearchParams(location.search); } catch (e) { return; }
 
     var explicit = String(q.get('ch') || '').toLowerCase();
+    explicit = ALIAS[explicit] || explicit;
     var post = q.get('post') || null;
 
     /* THE IN-APP BROWSER PROBLEM. Instagram opens links in its own webview and

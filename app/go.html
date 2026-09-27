@@ -170,7 +170,10 @@
     </div>
 
     <div class="ft">
-      <a class="primary" href="/app/toju.html">Tell Tayo what you're looking for</a>
+      <!-- new=1: a fresh conversation, not whatever this phone last said to
+           Tayo. The channel is added once the listings say which platform
+           this account posts on. -->
+      <a class="primary" id="askTayo" href="/app/toju.html?new=1">Tell Tayo what you're looking for</a>
       <a class="ghost" href="/app/browse.html">See every home on Synapse</a>
       <p class="note">Every listing on Synapse expires unless it is re-confirmed,
         so nothing here has been sitting for months.</p>
@@ -340,6 +343,10 @@
   }).catch(function () { /* the heading stays generic; not worth a message */ });
 
   rpc('bio_page', { p_handle: handle, p_limit: 12 }).then(function (rows) {
+    var pl = rows && rows[0] && rows[0].platform;
+    if (pl && /^[a-z_]{1,24}$/.test(pl)) {
+      document.getElementById('askTayo').href = '/app/toju.html?new=1&ch=' + encodeURIComponent(pl);
+    }
     if (!rows || !rows.length) {
       /* TWO DIFFERENT NOTHINGS, and the reader deserves to know which.
          An unknown handle is our mistake; an account that has not posted
