@@ -3665,39 +3665,47 @@
     }
 
 
-    /* ══ GROUND AND SURFACE (2026-09-28) ══════════════════════════════════
-       Eden: "the foreground should be white, plain, while the background
-       should be gray, deep gray, not dark ... and it should be textured ...
-       different on different pages." It was near-white frosted glass on a
-       near-white page: about 1.05:1 between a card and what it sat on, so
-       the edge of every card had to be inferred.
+    /* ══ GROUND AND SURFACE (2026-09-28, second pass) ═══════════════════════
+       First pass: a flat #8C9097 with bold patterns. Eden: "too deep ... you
+       need a lighter shade of gray ... the background is not the background
+       I'm looking for", with a reference: a white card lifted off a light,
+       neutral grey lit from the top right. Sampled from it: #E4E4E4 where
+       the light falls, about #D0D0D0 across the middle, #A2A2A2 in the far
+       corner; no blue in it at all; and a deep, soft shadow falling down and
+       to the left under the card.
 
-       THE GROUND is #8C9097, a cool grey with the same blue bias as the ink.
-       Charcoal on it measures 5.5:1, so headings stay AA. The quiet greys do
-       not -- Stone #6A6A6F would be 1.7:1 -- so for text that sits on the
-       ground they are re-pointed at near-ink, and every white surface puts
-       the originals back for what it holds. White against the ground is
-       3.2:1: a card's edge is now seen.
+       THE GROUND is that light, drawn as two gradients (--ground-light) and
+       held still while the page scrolls, the way light in a room does not
+       move with the paper on the desk. Kept a little lighter than the
+       reference in its darkest corner, because text sits on it.
 
-       SURFACES are plain white: no glass and no blur (frosted glass over a
-       texture reads as dirty glass), a hairline and a short shadow.
+       TEXT on the ground: the ink stays; the quiet greys are re-pointed at
+       #45484D, which measures at least 4.8:1 even in the darkest corner, and
+       every white surface puts the originals back for what it holds.
 
-       THE TEXTURE changes with the pane (data-pane, set by goToPane), drawn
-       with gradients so there is nothing to download, each from the pane's
-       own world: survey dots on Overview, ledger rules on CRM, a blueprint
-       grid on Listings, contour rings on Tours. The marks are faint and live
-       on the ground only; nothing is drawn under a surface. */
+       SURFACES are plain white: no glass and no blur, a hairline, and the
+       reference's shadow -- offset down and to the left, soft and deep.
+
+       TEXTURE still changes with the pane (data-pane, set by goToPane), but
+       at a whisper over the light rather than a pattern on a flat grey. */
     body.portal {
-      --ground: #8C9097;
-      --ground-mark: rgba(16, 18, 22, 0.17);
-      --ground-lift: rgba(255, 255, 255, 0.12);
+      --ground: #CFCFCF;
+      --ground-light:
+        radial-gradient(ellipse 85% 75% at 92% 0%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 70%),
+        linear-gradient(200deg, #DEDEDE 0%, #D0D0D0 42%, #C2C2C2 100%);
+      --ground-mark: rgba(0, 0, 0, 0.055);
+      --ground-lift: rgba(255, 255, 255, 0.34);
+      --lift-shadow: 0 1px 1px rgba(0, 0, 0, 0.06),
+        -3px 8px 14px -4px rgba(0, 0, 0, 0.22),
+        -12px 26px 44px -14px rgba(0, 0, 0, 0.30);
       background-color: var(--ground);
     }
     body.portal .content {
       background-color: var(--ground);
-      --ink-muted: #24272B;
-      --ink-dim: #1F2226;
-      --brand-text: #1B1D21;
+      background-image: var(--ground-light);
+      --ink-muted: #45484D;
+      --ink-dim: #45484D;
+      --brand-text: #2A2C30;
       --surface: #FFFFFF;
     }
     body.portal .content :is(.card, [class*="card"], .crm-tools, .pane-search, .btn-ghost,
@@ -3711,8 +3719,8 @@
       background: #FFFFFF;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
-      border: 1px solid rgba(16, 18, 22, 0.07);
-      box-shadow: 0 1px 2px rgba(16, 18, 22, 0.12), 0 10px 26px rgba(16, 18, 22, 0.16);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: var(--lift-shadow);
     }
     /* The things that sit on the ground rather than in a card: page-level
        controls, the empty states, the pipeline's columns, the price table. */
@@ -3720,17 +3728,24 @@
       background: #FFFFFF;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
-      border-color: rgba(16, 18, 22, 0.08);
+      border-color: rgba(0, 0, 0, 0.07);
     }
-    body.portal .content .ov-blank { border-color: rgba(16, 18, 22, 0.24); }
+    body.portal .content :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap) {
+      box-shadow: var(--lift-shadow);
+    }
+    body.portal .content .ov-blank { border-color: rgba(0, 0, 0, 0.16); }
+    /* Lifted only when they sit on the ground: inside a card they are part
+       of it, and a second shadow reads as a card inside a card. */
+    body.portal .content .card :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap) {
+      box-shadow: none;
+    }
     /* The verification checklist was rows on the bare page, divided by rules. */
     body.portal .content #vfBody {
       background: #FFFFFF; border-radius: var(--radius); padding: 2px 20px;
-      border: 1px solid rgba(16, 18, 22, 0.07);
-      box-shadow: 0 1px 2px rgba(16, 18, 22, 0.12), 0 10px 26px rgba(16, 18, 22, 0.16);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: var(--lift-shadow);
     }
     body.portal .content #vfBody > .vf-row:first-child { border-top: none; }
-    body.portal .content .col { box-shadow: 0 1px 2px rgba(16, 18, 22, 0.10); }
     body.portal .appbar,
     body.portal .side {
       background: #FFFFFF;
@@ -3738,71 +3753,73 @@
       backdrop-filter: none;
     }
 
-    /* Overview (the default): survey dots. */
-    body.portal .content {
-      background-image: radial-gradient(circle at 1px 1px, var(--ground-mark) 1.1px, transparent 1.7px);
-      background-size: 18px 18px;
+    /* Per-pane texture, drawn over the light. Every rule lists the light's
+       two layers last, and sizes them to the box. */
+    body.portal .content {                                   /* Overview: survey dots */
+      background-image: radial-gradient(circle at 1px 1px, var(--ground-mark) 1.1px, transparent 1.7px),
+        var(--ground-light);
+      background-size: 18px 18px, 100% 100%, 100% 100%;
     }
-    /* CRM: ledger rules. */
-    body.portal[data-pane="crm"] .content {
-      background-image: repeating-linear-gradient(180deg, transparent 0 27px, var(--ground-mark) 27px 28px);
-      background-size: auto;
+    body.portal[data-pane="crm"] .content {                   /* CRM: ledger rules */
+      background-image: repeating-linear-gradient(180deg, transparent 0 27px, var(--ground-mark) 27px 28px),
+        var(--ground-light);
+      background-size: auto, 100% 100%, 100% 100%;
     }
-    /* Negotiator: a fine diagonal hatch. */
-    body.portal[data-pane="negotiator"] .content {
-      background-image: repeating-linear-gradient(135deg, var(--ground-mark) 0 1px, transparent 1px 11px);
-      background-size: auto;
+    body.portal[data-pane="negotiator"] .content {            /* Negotiator: diagonal hatch */
+      background-image: repeating-linear-gradient(135deg, var(--ground-mark) 0 1px, transparent 1px 11px),
+        var(--ground-light);
+      background-size: auto, 100% 100%, 100% 100%;
     }
-    /* Listings: a blueprint grid, minor lines light and major lines dark. */
-    body.portal[data-pane="listings"] .content {
+    body.portal[data-pane="listings"] .content {              /* Listings: blueprint grid */
       background-image:
         linear-gradient(var(--ground-mark) 1px, transparent 1px),
         linear-gradient(90deg, var(--ground-mark) 1px, transparent 1px),
         linear-gradient(var(--ground-lift) 1px, transparent 1px),
-        linear-gradient(90deg, var(--ground-lift) 1px, transparent 1px);
-      background-size: 96px 96px, 96px 96px, 16px 16px, 16px 16px;
+        linear-gradient(90deg, var(--ground-lift) 1px, transparent 1px),
+        var(--ground-light);
+      background-size: 96px 96px, 96px 96px, 16px 16px, 16px 16px, 100% 100%, 100% 100%;
     }
-    /* Social: offset dots, like a feed of posts. */
-    body.portal[data-pane="social"] .content {
+    body.portal[data-pane="social"] .content {                /* Social: offset dots */
       background-image:
         radial-gradient(var(--ground-mark) 1.3px, transparent 1.8px),
-        radial-gradient(var(--ground-lift) 1.3px, transparent 1.8px);
-      background-size: 22px 22px, 22px 22px;
-      background-position: 0 0, 11px 11px;
+        radial-gradient(var(--ground-lift) 1.3px, transparent 1.8px),
+        var(--ground-light);
+      background-size: 22px 22px, 22px 22px, 100% 100%, 100% 100%;
+      background-position: 0 0, 11px 11px, 0 0, 0 0;
     }
-    /* Marketing: halftone. */
-    body.portal[data-pane="marketing"] .content {
-      background-image: radial-gradient(var(--ground-lift) 1.7px, transparent 2.3px);
-      background-size: 12px 12px;
+    body.portal[data-pane="marketing"] .content {             /* Marketing: halftone */
+      background-image: radial-gradient(var(--ground-lift) 1.7px, transparent 2.3px),
+        var(--ground-light);
+      background-size: 12px 12px, 100% 100%, 100% 100%;
     }
-    /* Agents: a quiet check. */
-    body.portal[data-pane="agents"] .content {
-      background-image: conic-gradient(rgba(16, 18, 22, 0.07) 25%, transparent 0 50%,
-        rgba(16, 18, 22, 0.07) 0 75%, transparent 0);
-      background-size: 26px 26px;
+    body.portal[data-pane="agents"] .content {                /* Agents: a quiet check */
+      background-image: conic-gradient(rgba(0, 0, 0, 0.03) 25%, transparent 0 50%,
+          rgba(0, 0, 0, 0.03) 0 75%, transparent 0),
+        var(--ground-light);
+      background-size: 26px 26px, 100% 100%, 100% 100%;
     }
-    /* Tours: contour rings, as on a survey map. */
-    body.portal[data-pane="tours"] .content {
+    body.portal[data-pane="tours"] .content {                 /* Tours: contour rings */
       background-image: repeating-radial-gradient(circle at 14% 22%, transparent 0 23px,
-        var(--ground-mark) 23px 24px);
-      background-size: auto;
+          var(--ground-mark) 23px 24px),
+        var(--ground-light);
+      background-size: auto, 100% 100%, 100% 100%;
     }
-    /* Brand: pinstripe. */
-    body.portal[data-pane="brand"] .content {
-      background-image: repeating-linear-gradient(90deg, var(--ground-lift) 0 1px, transparent 1px 8px);
-      background-size: auto;
+    body.portal[data-pane="brand"] .content {                 /* Brand: pinstripe */
+      background-image: repeating-linear-gradient(90deg, var(--ground-lift) 0 1px, transparent 1px 8px),
+        var(--ground-light);
+      background-size: auto, 100% 100%, 100% 100%;
     }
-    /* Verification: a lattice, like security paper. */
-    body.portal[data-pane="verification"] .content {
+    body.portal[data-pane="verification"] .content {          /* Verification: lattice */
       background-image:
-        repeating-linear-gradient(45deg, rgba(16, 18, 22, 0.10) 0 1px, transparent 1px 17px),
-        repeating-linear-gradient(-45deg, rgba(16, 18, 22, 0.10) 0 1px, transparent 1px 17px);
-      background-size: auto;
+        repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 17px),
+        repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 17px),
+        var(--ground-light);
+      background-size: auto, auto, 100% 100%, 100% 100%;
     }
-    /* Subscription: wide dots. */
-    body.portal[data-pane="subscription"] .content {
-      background-image: radial-gradient(var(--ground-mark) 2px, transparent 2.6px);
-      background-size: 30px 30px;
+    body.portal[data-pane="subscription"] .content {          /* Subscription: wide dots */
+      background-image: radial-gradient(var(--ground-mark) 2px, transparent 2.6px),
+        var(--ground-light);
+      background-size: 30px 30px, 100% 100%, 100% 100%;
     }
   </style>
 </head>
