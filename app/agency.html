@@ -1598,6 +1598,38 @@
     .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* social composer modal */
+    /* ── the task pop-up: things only the agency can do ─────────────────
+       Bottom corner, clear of the floating buttons, and never a scrim: it
+       asks for something, it does not stop the page. */
+    .ytask { position: fixed; right: 20px; bottom: 88px; z-index: 95; display: none;
+      width: min(400px, calc(100vw - 32px)); box-sizing: border-box; padding: 14px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: 0 24px 60px rgba(20,26,38,0.28); }
+    .ytask.on { display: grid; gap: 9px; animation: ytaskIn .22s ease both; }
+    @keyframes ytaskIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .ytask.on { animation: none; } }
+    .ytask-top { display: flex; align-items: center; gap: 8px; }
+    .ytask-eye { font: 700 10.5px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--brand-text); }
+    .ytask-n { font-size: 11.5px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+    .ytask-x { margin-left: auto; width: 36px; height: 36px; flex: none; border-radius: 50%; border: none;
+      background: rgba(0,0,0,0.05); cursor: pointer; font-size: 18px; line-height: 1; color: var(--ink); }
+    .ytask-title { font: 700 15px/1.35 var(--f-sans); color: var(--ink); text-wrap: balance; }
+    .ytask-body { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); }
+    .ytask-body code { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .ytask-copy { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 5px 5px 5px 10px;
+      border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.02); }
+    .ytask-copy-l { flex: none; font: 600 11px var(--f-sans); color: var(--ink-dim); }
+    .ytask-copy-v { flex: 1; min-width: 0; overflow-wrap: anywhere; background: none;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+    .ytask-copy-b { flex: none; min-height: 36px; padding: 6px 13px; border-radius: 8px; cursor: pointer;
+      border: 1px solid rgba(54,54,54,0.25); background: #fff; font: 600 12px var(--f-sans); color: var(--ink); }
+    .ytask-where { font-size: 11.5px; color: var(--ink-dim); }
+    .ytask-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+    .ytask-btn { min-height: 40px; padding: 8px 16px; border-radius: 10px; cursor: pointer;
+      border: 1px solid rgba(54,54,54,0.25); background: transparent; font: 600 12.5px var(--f-sans); color: var(--ink); }
+    .ytask-btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .ytask-x:focus-visible, .ytask-btn:focus-visible, .ytask-copy-b:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    @media (max-width: 600px) { .ytask { left: 12px; right: 12px; width: auto; bottom: 84px; } }
     .modal-scrim { position: fixed; inset: 0; background: rgba(20,22,26,0.3); backdrop-filter: blur(2px); z-index: 90; opacity: 0; pointer-events: none; transition: opacity var(--m-standard); }
     .modal-scrim.on { opacity: 1; pointer-events: auto; }
     .modal { position: fixed; z-index: 91; left: 50%; top: 50%; transform: translate(-50%,-47%) scale(.98); opacity: 0; pointer-events: none;
@@ -11169,6 +11201,157 @@
     document.addEventListener('syn:listings', rebuildPostListings);
     const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X', telegram: 'Telegram' };
 
+    /* ═══ Things only a person can do — as pop-ups, not fixtures ═══════════
+       Eden: "things that need you to copy and paste, don't have them fixed on
+       the page. Let them come as a pop-up ... Don't have it permanently on the
+       page. Do this for every single page that has this sort of thing."
+
+       A standing checklist is furniture: read once, then scrolled past for
+       ever. A task that arrives when it becomes true, says exactly what to
+       paste where, and leaves when it is done gets read. Each one stays in the
+       bell under "To do" until it is marked done, so closing the card never
+       loses it.
+
+       Done is remembered on this device. Later hides it until the next visit;
+       it pops up again then, because it is still not done. A source (the
+       channels strip, a publish) hands over its whole current list each time
+       it knows its state, so a task that stops being true simply disappears.
+
+       `var`, not `let`: sources call in from IIFEs above and below, and a
+       call that arrived before this line ran must find an object, not a
+       temporal-dead-zone error. */
+    var TASKS = { bySource: {}, queue: [], idx: 0, el: null, popped: {} };
+    var TASK_DONE_KEY = 'syn_tasks_done_v1', TASK_LATER_KEY = 'syn_tasks_later_v1';
+
+    function taskMarks(kind) {
+      try {
+        var store = kind === 'done' ? localStorage : sessionStorage;
+        return JSON.parse(store.getItem(kind === 'done' ? TASK_DONE_KEY : TASK_LATER_KEY)) || {};
+      } catch (e) { return {}; }
+    }
+    function taskMark(kind, id) {
+      var m = taskMarks(kind); m[id] = Date.now();
+      try {
+        (kind === 'done' ? localStorage : sessionStorage)
+          .setItem(kind === 'done' ? TASK_DONE_KEY : TASK_LATER_KEY, JSON.stringify(m));
+      } catch (e) { /* storage blocked: the card still closes */ }
+    }
+    /* Everything outstanding, for the bell. One-off tasks (a publish's links)
+       are popped but never listed: they are about a moment, not a state. */
+    function openTasks() {
+      var done = taskMarks('done'), out = [];
+      Object.keys(TASKS.bySource).forEach(function (k) {
+        (TASKS.bySource[k] || []).forEach(function (t) { if (!t.once && !done[t.id]) out.push(t); });
+      });
+      return out;
+    }
+    function findTask(id) {
+      var all = [];
+      Object.keys(TASKS.bySource).forEach(function (k) { all = all.concat(TASKS.bySource[k] || []); });
+      return all.find(function (t) { return t.id === id; }) || TASKS.queue.find(function (t) { return t.id === id; }) || null;
+    }
+
+    function setTasks(source, list) {
+      TASKS.bySource[source] = list || [];
+      var done = taskMarks('done'), later = taskMarks('later');
+      var fresh = TASKS.bySource[source].filter(function (t) {
+        return !done[t.id] && !later[t.id] && !TASKS.popped[t.id];
+      });
+      if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) { /* bell not ready yet */ } }
+      if (fresh.length) showTasks(fresh);
+    }
+
+    function showTasks(list) {
+      if (!list || !list.length) return;
+      list.forEach(function (t) { TASKS.popped[t.id] = true; });
+      /* Joins a card already open rather than replacing what somebody is
+         in the middle of reading. */
+      var open = TASKS.el && TASKS.el.classList.contains('on');
+      if (open) {
+        list.forEach(function (t) { if (!TASKS.queue.some(function (q) { return q.id === t.id; })) TASKS.queue.push(t); });
+      } else {
+        TASKS.queue = list.slice(); TASKS.idx = 0;
+      }
+      paintTask();
+    }
+
+    function paintTask() {
+      if (!TASKS.el) {
+        TASKS.el = document.createElement('div');
+        TASKS.el.className = 'ytask';
+        TASKS.el.setAttribute('role', 'dialog');
+        TASKS.el.setAttribute('aria-labelledby', 'ytaskTitle');
+        document.body.appendChild(TASKS.el);
+        TASKS.el.addEventListener('click', onTaskClick);
+      }
+      var t = TASKS.queue[TASKS.idx];
+      if (!t) { TASKS.el.classList.remove('on'); return; }
+      var n = TASKS.queue.length;
+      TASKS.el.innerHTML =
+        '<div class="ytask-top"><span class="ytask-eye">Only you can do this</span>'
+        + (n > 1 ? '<span class="ytask-n">' + (TASKS.idx + 1) + ' of ' + n + '</span>' : '')
+        + '<button type="button" class="ytask-x" data-ytask-later aria-label="Close for now">×</button></div>'
+        + '<div class="ytask-title" id="ytaskTitle">' + esc2(t.title) + '</div>'
+        + (t.body ? '<div class="ytask-body">' + t.body + '</div>' : '')
+        + (t.copies || []).map(function (c, i) {
+            return '<div class="ytask-copy">'
+              + (c.label ? '<span class="ytask-copy-l">' + esc2(c.label) + '</span>' : '')
+              + '<code class="ytask-copy-v">' + esc2(c.text) + '</code>'
+              + '<button type="button" class="ytask-copy-b" data-ytask-copy="' + i + '">Copy</button></div>';
+          }).join('')
+        + (t.where ? '<div class="ytask-where">' + esc2(t.where) + '</div>' : '')
+        + '<div class="ytask-acts">'
+        +   (t.once ? '' : '<button type="button" class="ytask-btn" data-ytask-later>Later</button>')
+        +   '<button type="button" class="ytask-btn primary" data-ytask-done>'
+        +     (t.once ? 'Got it' : 'Done') + '</button></div>'
+        + '<span class="sr-only" role="status" id="ytaskSay"></span>';
+      TASKS.el.classList.add('on');
+    }
+
+    function nextTask() {
+      TASKS.queue.splice(TASKS.idx, 1);
+      if (TASKS.idx >= TASKS.queue.length) TASKS.idx = 0;
+      paintTask();
+      if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
+    }
+
+    function onTaskClick(e) {
+      var t = TASKS.queue[TASKS.idx];
+      if (!t) return;
+      if (e.target.closest('[data-ytask-done]')) { if (!t.once) taskMark('done', t.id); nextTask(); return; }
+      if (e.target.closest('[data-ytask-later]')) { if (!t.once) taskMark('later', t.id); nextTask(); return; }
+      var cb = e.target.closest('[data-ytask-copy]');
+      if (!cb) return;
+      var c = (t.copies || [])[+cb.getAttribute('data-ytask-copy')];
+      if (!c) return;
+      var say = document.getElementById('ytaskSay');
+      var said = function (word, spoken) {
+        cb.textContent = word; if (say) say.textContent = spoken;
+        setTimeout(function () { cb.textContent = 'Copy'; }, 2200);
+      };
+      /* clipboard.writeText is missing on insecure origins and refused in
+         some in-app browsers; the fallback selects the text so a long-press
+         or Ctrl+C still works. */
+      var selectIt = function () {
+        try {
+          var v = cb.parentNode.querySelector('.ytask-copy-v');
+          var r = document.createRange(); r.selectNodeContents(v);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          said('Selected', 'The text is selected. Copy it by hand.');
+        } catch (err) { said('Select it', 'Select the text and copy it by hand.'); }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(c.text).then(function () { said('Copied', 'Copied.'); }, selectIt);
+      } else selectIt();
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !TASKS.el || !TASKS.el.classList.contains('on')) return;
+      var t = TASKS.queue[TASKS.idx];
+      if (t && !t.once) taskMark('later', t.id);
+      nextTask();
+    });
+
     /* ── Campaign generator ────────────────────────────────────────────────
        Pulls real verified listings from the database, fans each into every
        angle × platform, and shows what passed validation before anything can
@@ -11430,10 +11613,11 @@
         if (canConnect()) html += '<div class="ch-add" id="chAdd"></div>';
         else if (!any) html += '<div class="ch-empty">Sign in as a member of this agency to add a channel.</div>';
 
-        html += setupHtml() + replyHtml();
+        html += replyHtml();
         box.innerHTML = html;
         wireReply();
         renderAdd();
+        publishTasks();
       }
 
       function renderAdd() {
@@ -11807,70 +11991,96 @@
       }
 
       /* ── what is still outstanding, and only they can do ────────────────
-         A connection is reported as finished when two steps remain, both
-         outside anything we can reach. Rendered only when there is something
-         to say: a permanent checklist that is usually all ticks trains people
-         to stop reading it. */
-      function setupHtml() {
-        var items = [];
+         A connection is reported as finished when steps remain that are
+         outside anything we can reach. They used to sit on the strip as a
+         standing checklist; they are handed to the task pop-ups now (see
+         "Things only a person can do"), which arrive once and live in the bell
+         until marked done. */
+      function publishTasks() {
+        if (typeof setTasks !== 'function') return;
+        var tasks = [];
 
         accounts.forEach(function (ac) {
           if (!ac.is_active) return;
           var slug = bioSlug(ac.platform_username);
-          var who = ac.platform_username ? '@' + ac.platform_username : CONNECTABLE[ac.platform] || ac.platform;
+          /* Telegram stores its own label -- an @name, or a title. */
+          var who = ac.platform === 'telegram'
+            ? (ac.platform_username || 'your channel')
+            : (ac.platform_username ? '@' + ac.platform_username : CONNECTABLE[ac.platform] || ac.platform);
+          var goUrl = slug ? 'https://synapsecore.dev/go/' + slug : '';
 
-          /* THE BIO LINK. The only route off Instagram, and it needs a human
-             to paste it once. */
-          if (slug) {
-            var url = 'synapsecore.dev/go/' + slug;
-            items.push('<li><b>' + esc(who) + '</b> \u2014 put this link in the profile bio, '
-              + 'so the posts have somewhere to send people:'
-              + '<div class="cmp-setup-row"><code>' + esc(url) + '</code>'
-              + '<button class="cmp-ch-btn" data-copy="https://' + esc(url) + '">Copy</button></div>'
-              + '<span class="cmp-setup-why">It lists the homes this account has posted, newest '
-              + 'first, and each one opens the right listing.</span></li>');
+          /* THE BIO LINK. On Telegram, straight into a new chat with Tayo --
+             the posts there carry their own button, so the description is for
+             somebody browsing the channel, and the useful thing is a
+             conversation. On Instagram, where captions cannot link, the page
+             of this account's homes is how a reader finds the one they saw. */
+          if (ac.platform === 'telegram') {
+            tasks.push({
+              id: 'bio:' + ac.id + ':tayo',
+              title: 'Put this link in ' + who + '\u2019s description',
+              body: 'Anyone browsing the channel can tap straight into a new chat with Tayo, '
+                + 'which asks which home caught their eye.',
+              copies: [{ text: 'https://synapsecore.dev/tayo/telegram' }],
+              where: 'Telegram \u2192 your channel \u2192 Edit \u2192 Description',
+            });
+          } else if (slug) {
+            tasks.push({
+              id: 'bio:' + ac.id + ':' + slug,
+              title: 'Put this link in ' + who + '\u2019s bio',
+              body: 'It lists the homes this account has posted, newest first, and each one opens '
+                + 'the right listing \u2014 so the posts have somewhere to send people.',
+              copies: [{ text: goUrl }],
+              where: ac.platform === 'instagram'
+                ? 'Instagram \u2192 Edit profile \u2192 Links'
+                : 'Facebook \u2192 your Page \u2192 Edit details \u2192 Website',
+            });
           }
 
           /* THE PAGE BUTTON. Read at connect time; null means we could not
              look, and then this says nothing at all. */
           if (ac.platform !== 'facebook' || !ac.page_cta_type) return;
+          var fix = 'Meta Business Suite \u2192 your Page \u2192 Edit action button';
 
           if (ac.page_cta_type === 'NONE') {
-            items.push('<li><b>' + esc(who) + '</b> \u2014 this Page has no action button. '
-              + 'Adding one that points at your listings puts a tappable route under '
-              + 'every post, in the spot Facebook makes most prominent.</li>');
+            tasks.push({
+              id: 'cta:' + ac.id + ':NONE',
+              title: 'Give ' + who + ' an action button',
+              body: 'This Page has none. One that points at your listings puts a tappable route '
+                + 'under every post, in the spot Facebook makes most prominent.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
             return;
           }
 
           /* NO WEB ADDRESS means a call, a WhatsApp thread or a Messenger
              window -- the buyer arrives with no listing attached and the
-             enquiry belongs to nothing. One condition instead of a list of
-             Meta's type names kept in step across two languages. */
+             enquiry belongs to nothing. */
           if (!ac.page_cta_url) {
-            items.push('<li class="warn"><b>' + esc(who) + '</b> \u2014 your Page button ('
-              + esc(String(ac.page_cta_type).toLowerCase().replace(/_/g, ' '))
-              + ') sends people straight to a message or a call. Facebook puts it '
-              + 'directly under every post, above your caption link, so most people '
-              + 'tap it instead \u2014 and it arrives with no listing attached, so '
-              + 'nobody can tell which home it was about.'
-              + '<span class="cmp-setup-why">Point it at your listings instead. Keep the '
-              + 'phone number on the Page and on the listing \u2014 anyone who wants to '
-              + 'call still can, and you will know what they were looking at. '
-              + 'Meta Business Suite \u2192 Page \u2192 Edit action button.</span></li>');
+            tasks.push({
+              id: 'cta:' + ac.id + ':' + ac.page_cta_type,
+              title: 'Point ' + who + '\u2019s Page button at your listings',
+              body: 'It is set to ' + esc(String(ac.page_cta_type).toLowerCase().replace(/_/g, ' '))
+                + ', so it sends people to a message or a call. Facebook puts it under every post, '
+                + 'above your caption link, so most people tap it \u2014 and it arrives with no listing '
+                + 'attached. Keep the phone number on the Page; anyone who wants to call still can.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
             return;
           }
 
           if (ac.page_cta_url.indexOf('synapsecore.dev') === -1) {
-            items.push('<li><b>' + esc(who) + '</b> \u2014 your Page button goes to '
-              + '<code>' + esc(ac.page_cta_url) + '</code>. That is fine if it is meant to; '
-              + 'pointing it at your Synapse listings instead means the taps are '
-              + 'counted against the homes they were about.</li>');
+            tasks.push({
+              id: 'cta:' + ac.id + ':url:' + ac.page_cta_url,
+              title: who + '\u2019s Page button goes somewhere else',
+              body: 'It opens <code>' + esc(ac.page_cta_url) + '</code>. That is fine if it is meant to; '
+                + 'pointing it at your Synapse listings means the taps are counted against the homes '
+                + 'they were about.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
           }
         });
 
-        if (!items.length) return '';
-        return '<div class="cmp-setup"><div class="cmp-setup-hd">Only you can do these</div>'
-          + '<ul>' + items.join('') + '</ul></div>';
+        setTasks('channels', tasks);
       }
 
       /* Re-render once the role is known. Without this the strip is whatever
@@ -12221,77 +12431,35 @@
           });
       }
 
+      /* THE TRACKED LINKS, as a pop-up. They were a block left under the
+         campaign after publishing -- read once and then in the way. Shown once
+         per publish, with a Copy on each, and gone when dismissed: they are
+         about that moment, not a standing state, so the bell does not keep
+         them. */
       function showLinks(links, problem) {
         var box = document.getElementById('cmpLinks');
-        if (!box) return;
+        if (box) box.innerHTML = '';
         if (problem) {
-          box.innerHTML = '<div class="cmp-lnk-hd">Tracked links</div>'
-            + '<p class="cmp-lnk-note">' + esc(problem) + ' The posts are queued either way \u2014 '
-            + 'this is the link that carries the channel into attribution, so it is worth '
-            + 'coming back for.</p>';
+          toast(problem + ' The posts are queued either way.');
           return;
         }
-        if (!links.length) { box.innerHTML = ''; return; }
-        var have = links.filter(function (l) { return l.url; });
-        var missing = links.length - have.length;
-        box.innerHTML = '<div class="cmp-lnk-hd">Tracked link'
-            + (have.length === 1 ? '' : 's') + ' \u00b7 ' + have.length + '</div>'
-          + (have.length
-              ? '<p class="cmp-lnk-note">Each link stamps its own channel onto the listing page, which '
-                + 'is what attributes the lead. A caption link is not tappable on Instagram or TikTok '
-                + '\u2014 paste this into the bio or a link sticker.</p>'
-              : '')
-          + have.map(function (l) {
-              return '<div class="cmp-lnk">'
-                + '<span class="cmp-lnk-pl">' + esc(l.platform) + '</span>'
-                + '<span class="cmp-lnk-u">' + esc(l.url) + '</span>'
-                + '<button type="button" class="cmp-ch-btn" data-link="' + esc(l.url) + '"'
-                + ' aria-label="Copy the ' + esc(l.platform) + ' link">Copy</button>'
-                + '</div>';
-            }).join('')
-          + (missing
-              ? '<p class="cmp-lnk-note">' + missing + ' of these posts came back without a link. '
-                + 'They still publish; clicks on them cannot be traced to a channel.</p>'
-              : '')
-          + '<span class="sr-only" role="status" id="cmpLinkSay"></span>';
-        /* Assignment, not addEventListener: publishing a second time without
-           regenerating re-renders this block into the same element, and a
-           second listener would copy twice on one press. */
-        box.onclick = copyLink;
-      }
-
-      /* Clipboard first, selection as the fallback, and a word either way. A
-         copy button that fails silently is worse than no button at all: the
-         operator walks off believing the link is on their clipboard. The word
-         goes to a live region as well as onto the button, because the button
-         it replaces is the thing a screen reader has just read out. */
-      function copyLink(e) {
-        var btn = e.target && e.target.closest ? e.target.closest('[data-link]') : null;
-        if (!btn) return;
-        var url = btn.getAttribute('data-link') || '';
-        function said(word, spoken) {
-          btn.textContent = word;
-          var say = document.getElementById('cmpLinkSay');
-          if (say) say.textContent = spoken;
-          setTimeout(function () { btn.textContent = 'Copy'; }, 2400);
+        var have = (links || []).filter(function (l) { return l.url; });
+        var missing = (links || []).length - have.length;
+        if (!have.length) {
+          if (missing) toast('These posts came back without a tracked link. They still publish; their clicks cannot be traced.');
+          return;
         }
-        function selectIt() {
-          try {
-            var span = btn.parentNode.querySelector('.cmp-lnk-u');
-            var range = document.createRange(); range.selectNodeContents(span);
-            var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-            var mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
-            said(mac ? '\u2318C' : 'Ctrl+C',
-              'The link is selected. Press ' + (mac ? 'Command C' : 'Control C') + ' to copy it.');
-          } catch (err) {
-            said('Select it', 'Could not copy. Select the link and copy it by hand.');
-          }
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url)
-            .then(function () { said('Copied', 'Copied ' + url); })
-            .catch(selectIt);
-        } else selectIt();
+        if (typeof showTasks !== 'function') return;
+        showTasks([{
+          id: 'links:' + Date.now(), once: true,
+          title: have.length === 1 ? 'Your post\u2019s tracked link' : 'Your posts\u2019 tracked links',
+          body: 'Each link records which channel a visitor came from, which is how a lead gets '
+            + 'credited. Instagram and TikTok do not make caption links tappable \u2014 paste it into '
+            + 'your bio or a Story link sticker.'
+            + (missing ? ' ' + missing + ' of these posts came back without a link; they still '
+              + 'publish, but their clicks cannot be traced.' : ''),
+          copies: have.map(function (l) { return { label: CH_LABEL[l.platform] || l.platform, text: l.url }; }),
+        }]);
       }
 
       /* Per-post outcomes, in the provider's own words. A failure that says
@@ -14523,6 +14691,12 @@
             sub: 'In the social studio', group: 'Today' });
         }
       }
+      /* Things only the agency can do, until marked done. Escaped here: a
+         Telegram channel title is whatever its owner typed. */
+      if (typeof openTasks === 'function') {
+        openTasks().forEach(t => out.push({ type: 'setup', tag: 'Only you', icon: 'pending', pane: '',
+          task: t.id, title: esc2(t.title), sub: esc2(t.where || 'Tap to see what to do'), group: 'To do' }));
+      }
       NOTI = out;
     }
 
@@ -14537,7 +14711,7 @@
         list.innerHTML = groups.map(g =>
           (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
           g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
-            data-noti-pane="${n.pane || ''}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}>
+            data-noti-pane="${n.pane || ''}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}>
             <span class="ico">${SynIcons.svg(n.icon)}</span>
             <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
           </div>`).join('')
@@ -14550,6 +14724,13 @@
     /* Clicking a notification goes where it points. Keyboard too: the rows are
        real buttons, so Enter and Space work and focus is visible. */
     function openNoti(el) {
+      const task = el.getAttribute('data-noti-task');
+      if (task) {
+        const t = typeof findTask === 'function' ? findTask(task) : null;
+        toggleNoti(false);
+        if (t) showTasks([t]);
+        return;
+      }
       const pane = el.getAttribute('data-noti-pane');
       if (!pane) return;
       goToPane(pane);
