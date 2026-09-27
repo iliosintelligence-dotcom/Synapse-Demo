@@ -11847,7 +11847,10 @@
             + (FBP.chosen[pg.id] ? ' checked' : '') + (elsewhere || FBP.busy ? ' disabled' : '') + '>'
             + '<span class="cmp-ch-ic">' + mark('facebook') + '</span>'
             + '<span class="ch-tg-nm">' + esc(pg.name || pg.id)
-            + (pg.instagram ? ' <i>+ Instagram ' + esc(pg.instagram) + '</i>' : '') + '</span>'
+            /* Said when absent too: a Page connecting without its Instagram
+               was silent, and read as "Instagram is not posting". */
+            + (pg.instagram ? ' <i>+ Instagram ' + esc(pg.instagram) + '</i>'
+                : ' <i>· no Instagram came with it</i>') + '</span>'
             + (pg.connected ? '<span class="cmp-ch-at">' + (pg.connected === 'here' ? 'already here'
                 : 'on ' + esc(pg.connected)) + '</span>' : '')
             + '</label>';
@@ -11897,8 +11900,10 @@
           .then(function (j) {
             /* Names the agency, so a Page attached to the wrong one is
                obvious the moment it happens. */
+            var gotIg = (j.connected || []).some(function (c) { return /^Instagram /.test(c); });
             toastOrAlert('Connected ' + (j.connected || []).join(', ') + ' to ' + (j.agency || 'this agency')
-              + ((j.problems || []).length ? '. Not saved: ' + j.problems.join('; ') : '.'));
+              + ((j.problems || []).length ? '. Not saved: ' + j.problems.join('; ') : '.')
+              + (gotIg ? '' : ' No Instagram came with it: Add channel → Instagram says how to link one.'));
             FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
             ADD.open = false; ADD.pick = '';
             return loadChannels();
