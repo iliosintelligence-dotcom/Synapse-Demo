@@ -24,6 +24,13 @@
   tables is worse than none, because it tells somebody they have seen
   everything when they have not.
 -->
+<!-- The page is also served at /your-data (vercel.json rewrite), where every
+     relative path -- app.css, auth.js, the nav's toju.html, signin.html --
+     resolved against the site root and 404'd: an unstyled page whose export
+     and erase buttons did nothing. That is the address in the privacy policy
+     and in Meta's data-deletion setting. The base makes both addresses
+     resolve the same way. There are no in-page #links for it to break. -->
+<base href="/app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
