@@ -11785,7 +11785,10 @@
           /* OURS TO FIX, SO NOT THEIR BUTTON: a platform Synapse has not
              finished setting up is shown, and said to be unavailable, rather
              than offered and then refused. */
-          var ok = platformReady(pl);
+          /* Instagram's own login is not set up, but an Instagram linked to
+             a Facebook Page comes through the Facebook connection -- so the
+             tile works whenever Facebook does, and says how. */
+          var ok = platformReady(pl) || (pl === 'instagram' && platformReady('facebook'));
           h += '<button type="button" class="ch-pick' + (ADD.pick === pl ? ' on' : '') + '"'
             + ' data-ch-pick="' + pl + '" aria-pressed="' + (ADD.pick === pl) + '"' + (ok ? '' : ' disabled') + '>'
             + '<span class="cmp-ch-ic">' + mark(pl) + '</span>' + esc(CONNECTABLE[pl])
@@ -11815,6 +11818,19 @@
          for an account that is not the agency's. Nothing downstream can
          detect that, so it is said here, where the button is. */
       function metaStepHtml(pl) {
+        /* INSTAGRAM THROUGH FACEBOOK. "Instagram is not available" was true
+           of Instagram's own login and false of the thing agencies actually
+           need: the Facebook connection returns the Page AND the Instagram
+           professional account linked to it, in one dialog. */
+        if (pl === 'instagram' && !platformReady('instagram')) {
+          return '<div class="ch-step">'
+            + '<div class="cmp-ch-note"><b>Instagram connects through Facebook.</b> Your Instagram has to be '
+            + 'a professional account linked to this agency’s Facebook Page (on Facebook: your Page → '
+            + 'Settings → Linked accounts). In the Facebook window, tick the Page <b>and</b> its Instagram '
+            + 'account: both are connected together.</div>'
+            + '<div class="cmp-ch-note">Sign in with the Facebook account that administers the Page.</div>'
+            + '<div><button class="cmp-ch-btn primary" data-connect="facebook">Continue to Facebook →</button></div></div>';
+        }
         return '<div class="ch-step">'
           + '<div class="cmp-ch-note">You will be sent to ' + esc(CONNECTABLE[pl]) + ' to sign in. '
           + 'Use the account that administers <b>this agency’s</b> page — '

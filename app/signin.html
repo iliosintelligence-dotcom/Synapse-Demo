@@ -822,6 +822,18 @@
       var role   = params.get('role') === 'agency' ? 'agency' : 'customer';
       var reason = params.get('reason') || '';
       var next   = params.get('next') || '';
+      /* A SIGN-IN LANDS ON OVERVIEW. Eden, 2026-09-28: "When I sign in, take
+         me to the overview page. Don't take me to the social." next can carry
+         the pane the session ended on (#social -- requireAuth keeps it on
+         purpose). That is right for the bounce further down, where a session
+         already exists and the visitor is only being returned to their place;
+         it is wrong after somebody has actually signed in. So every redirect
+         that follows a real sign-in goes through here, and a portal address
+         loses its pane. Customer pages keep theirs. */
+      function signedInDest(fallback) {
+        var d = SynAuth.safeNext(next, fallback);
+        return /(^|\/)agency\.html/.test(d) ? d.replace(/#.*$/, '') : d;
+      }
 
       // 'in' | 'up'. Honours ?mode=up so a "Create account" link elsewhere
       // actually lands on the create-account form — without this every entry
@@ -1336,7 +1348,7 @@
              can be reconciled where an abandoned signup cannot. */
           if (mode === 'up' && !demoRequested) recordConsent();
 
-          window.location.href = SynAuth.safeNext(next, fallback);
+          window.location.href = signedInDest(fallback);
         }).catch(function (err) {
           /* UNCONFIRMED: OFFER A NEW LINK, don't just point at the old one.
              Every confirmation email sent before 2026-09-25 opened localhost,
@@ -1498,7 +1510,7 @@
                password belongs in the portal, not in Tayo. */
             var who = res && res.data && res.data.user;
             var fallback = (role === 'agency' || SynAuth.roleOf(who) === 'agency') ? 'agency.html' : 'toju.html';
-            setTimeout(function () { window.location.href = SynAuth.safeNext(next, fallback); }, 900);
+            setTimeout(function () { window.location.href = signedInDest(fallback); }, 900);
           })
           .catch(function (err) {
             rpBusy = false; rpGo.disabled = false; rpGo.textContent = 'Set new password';
@@ -1518,7 +1530,7 @@
                 + '<button type="button" class="au-linkbtn" id="rpContinue">Continue to Synapse</button></div>';
               el('rpContinue').addEventListener('click', function () {
                 var fb = role === 'agency' ? 'agency.html' : 'toju.html';
-                window.location.href = SynAuth.safeNext(next, fb);
+                window.location.href = signedInDest(fb);
               });
               return;
             }
@@ -1568,7 +1580,7 @@
       }
 
       function finishOauth(session) {
-        var dest = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+        var dest = signedInDest(role === 'agency' ? 'agency.html' : 'toju.html');
         if (role !== 'agency') { window.location.href = dest; return; }
 
         /* Ask the database, do not infer. A business that signed in with
@@ -1595,14 +1607,14 @@
         b.disabled = true; b.textContent = 'Setting up\u2026';
         SynAuth.provisionAgency(name, el('agCity').value.trim()).then(function (res) {
           if (res && res.error) throw res.error;
-          window.location.href = SynAuth.safeNext(next, 'agency.html?welcome=agency');
+          window.location.href = signedInDest('agency.html?welcome=agency');
         }).catch(function (err) {
           busy = false; b.disabled = false; b.textContent = 'Finish setting up';
           /* "already belongs to an agency" means the server refused a second
              one -- which is the guard working. They simply go in. */
           var m = String((err && err.message) || '').toLowerCase();
           if (m.indexOf('already') > -1) {
-            window.location.href = SynAuth.safeNext(next, 'agency.html');
+            window.location.href = signedInDest('agency.html');
             return;
           }
           el('agNote').innerHTML = '<div class="au-note bad" role="status">'
