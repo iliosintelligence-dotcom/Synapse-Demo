@@ -3664,6 +3664,146 @@
       }
     }
 
+
+    /* ══ GROUND AND SURFACE (2026-09-28) ══════════════════════════════════
+       Eden: "the foreground should be white, plain, while the background
+       should be gray, deep gray, not dark ... and it should be textured ...
+       different on different pages." It was near-white frosted glass on a
+       near-white page: about 1.05:1 between a card and what it sat on, so
+       the edge of every card had to be inferred.
+
+       THE GROUND is #8C9097, a cool grey with the same blue bias as the ink.
+       Charcoal on it measures 5.5:1, so headings stay AA. The quiet greys do
+       not -- Stone #6A6A6F would be 1.7:1 -- so for text that sits on the
+       ground they are re-pointed at near-ink, and every white surface puts
+       the originals back for what it holds. White against the ground is
+       3.2:1: a card's edge is now seen.
+
+       SURFACES are plain white: no glass and no blur (frosted glass over a
+       texture reads as dirty glass), a hairline and a short shadow.
+
+       THE TEXTURE changes with the pane (data-pane, set by goToPane), drawn
+       with gradients so there is nothing to download, each from the pane's
+       own world: survey dots on Overview, ledger rules on CRM, a blueprint
+       grid on Listings, contour rings on Tours. The marks are faint and live
+       on the ground only; nothing is drawn under a surface. */
+    body.portal {
+      --ground: #8C9097;
+      --ground-mark: rgba(16, 18, 22, 0.17);
+      --ground-lift: rgba(255, 255, 255, 0.12);
+      background-color: var(--ground);
+    }
+    body.portal .content {
+      background-color: var(--ground);
+      --ink-muted: #24272B;
+      --ink-dim: #1F2226;
+      --brand-text: #1B1D21;
+      --surface: #FFFFFF;
+    }
+    body.portal .content :is(.card, [class*="card"], .crm-tools, .pane-search, .btn-ghost,
+        .ch-add-panel, .ytask, .modal, .drawer, .ov-blank, .col, .pr-table-wrap, #vfBody) {
+      --ink-muted: #6A6A6F;
+      --ink-dim: #717171;
+      --brand-text: #363636;
+    }
+
+    body.portal .card {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border: 1px solid rgba(16, 18, 22, 0.07);
+      box-shadow: 0 1px 2px rgba(16, 18, 22, 0.12), 0 10px 26px rgba(16, 18, 22, 0.16);
+    }
+    /* The things that sit on the ground rather than in a card: page-level
+       controls, the empty states, the pipeline's columns, the price table. */
+    body.portal .content :is(.crm-tools, .pane-search, .btn-ghost, .ov-blank, .col, .pr-table-wrap) {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border-color: rgba(16, 18, 22, 0.08);
+    }
+    body.portal .content .ov-blank { border-color: rgba(16, 18, 22, 0.24); }
+    /* The verification checklist was rows on the bare page, divided by rules. */
+    body.portal .content #vfBody {
+      background: #FFFFFF; border-radius: var(--radius); padding: 2px 20px;
+      border: 1px solid rgba(16, 18, 22, 0.07);
+      box-shadow: 0 1px 2px rgba(16, 18, 22, 0.12), 0 10px 26px rgba(16, 18, 22, 0.16);
+    }
+    body.portal .content #vfBody > .vf-row:first-child { border-top: none; }
+    body.portal .content .col { box-shadow: 0 1px 2px rgba(16, 18, 22, 0.10); }
+    body.portal .appbar,
+    body.portal .side {
+      background: #FFFFFF;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    /* Overview (the default): survey dots. */
+    body.portal .content {
+      background-image: radial-gradient(circle at 1px 1px, var(--ground-mark) 1.1px, transparent 1.7px);
+      background-size: 18px 18px;
+    }
+    /* CRM: ledger rules. */
+    body.portal[data-pane="crm"] .content {
+      background-image: repeating-linear-gradient(180deg, transparent 0 27px, var(--ground-mark) 27px 28px);
+      background-size: auto;
+    }
+    /* Negotiator: a fine diagonal hatch. */
+    body.portal[data-pane="negotiator"] .content {
+      background-image: repeating-linear-gradient(135deg, var(--ground-mark) 0 1px, transparent 1px 11px);
+      background-size: auto;
+    }
+    /* Listings: a blueprint grid, minor lines light and major lines dark. */
+    body.portal[data-pane="listings"] .content {
+      background-image:
+        linear-gradient(var(--ground-mark) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ground-mark) 1px, transparent 1px),
+        linear-gradient(var(--ground-lift) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ground-lift) 1px, transparent 1px);
+      background-size: 96px 96px, 96px 96px, 16px 16px, 16px 16px;
+    }
+    /* Social: offset dots, like a feed of posts. */
+    body.portal[data-pane="social"] .content {
+      background-image:
+        radial-gradient(var(--ground-mark) 1.3px, transparent 1.8px),
+        radial-gradient(var(--ground-lift) 1.3px, transparent 1.8px);
+      background-size: 22px 22px, 22px 22px;
+      background-position: 0 0, 11px 11px;
+    }
+    /* Marketing: halftone. */
+    body.portal[data-pane="marketing"] .content {
+      background-image: radial-gradient(var(--ground-lift) 1.7px, transparent 2.3px);
+      background-size: 12px 12px;
+    }
+    /* Agents: a quiet check. */
+    body.portal[data-pane="agents"] .content {
+      background-image: conic-gradient(rgba(16, 18, 22, 0.07) 25%, transparent 0 50%,
+        rgba(16, 18, 22, 0.07) 0 75%, transparent 0);
+      background-size: 26px 26px;
+    }
+    /* Tours: contour rings, as on a survey map. */
+    body.portal[data-pane="tours"] .content {
+      background-image: repeating-radial-gradient(circle at 14% 22%, transparent 0 23px,
+        var(--ground-mark) 23px 24px);
+      background-size: auto;
+    }
+    /* Brand: pinstripe. */
+    body.portal[data-pane="brand"] .content {
+      background-image: repeating-linear-gradient(90deg, var(--ground-lift) 0 1px, transparent 1px 8px);
+      background-size: auto;
+    }
+    /* Verification: a lattice, like security paper. */
+    body.portal[data-pane="verification"] .content {
+      background-image:
+        repeating-linear-gradient(45deg, rgba(16, 18, 22, 0.10) 0 1px, transparent 1px 17px),
+        repeating-linear-gradient(-45deg, rgba(16, 18, 22, 0.10) 0 1px, transparent 1px 17px);
+      background-size: auto;
+    }
+    /* Subscription: wide dots. */
+    body.portal[data-pane="subscription"] .content {
+      background-image: radial-gradient(var(--ground-mark) 2px, transparent 2.6px);
+      background-size: 30px 30px;
+    }
   </style>
 </head>
 <body class="portal">
@@ -15505,6 +15645,8 @@
        function is what stops a notification from highlighting a tab without
        actually switching the view, or vice versa. */
     function goToPane(pane) {
+      /* The ground's texture follows the pane (GROUND AND SURFACE). */
+      if (pane) document.body.dataset.pane = pane;
       if (pane === 'tours' && typeof loadTours === 'function') loadTours();
       // Recount on arrival -- a message queued in another tab, or one you sent
       // a minute ago, both change what this should say.
