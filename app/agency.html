@@ -1737,6 +1737,55 @@
     .lcard .lc-post:hover { background: var(--action-dim); }
     .lcard .lc-post [data-icon] { width: 13px; height: 13px; }
     .lcard.expired .lc-post { opacity: .55; }
+    .lcard .lc-acts2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 7px; }
+    .lcard .lc-acts2 .lc-post { margin-top: 0; }
+    .lcard .lc-share { border: 1px solid rgba(54,54,54,0.25); border-radius: 100px; padding: 8px;
+      background: transparent; color: var(--ink); font: 700 12.5px var(--f-sans); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .lcard .lc-share:hover { background: rgba(255,255,255,0.7); border-color: rgba(54,54,54,0.45); }
+    .lcard .lc-share [data-icon] { width: 13px; height: 13px; }
+
+    /* ── the share kit ────────────────────────────────────────────────────
+       A sheet from the bottom on a phone, where it is mostly used; a centred
+       card on a desk. Above the drawer and composer (91), below the task
+       pop-up's corner. */
+    .shk-scrim { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center;
+      padding: 12px; background: rgba(20,22,26,0.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .shk-scrim.on { display: flex; }
+    .shk { width: min(560px, 100%); max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain;
+      box-sizing: border-box; display: grid; gap: 12px; padding: 16px 18px 18px; border-radius: 18px;
+      background: var(--surface); box-shadow: 0 30px 80px rgba(20,26,38,0.35); }
+    .shk-head { display: flex; align-items: flex-start; gap: 10px; }
+    .shk-head > div { flex: 1; min-width: 0; }
+    .shk-head h3 { margin: 0; font: 700 17px var(--f-sans); color: var(--ink); }
+    .shk-sub { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; overflow-wrap: anywhere; }
+    .shk-x { width: 40px; height: 40px; flex: none; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.05); color: var(--ink); font-size: 20px; line-height: 1; }
+    .shk-dest { display: flex; flex-wrap: wrap; gap: 6px; }
+    .shk-chip { min-height: 38px; padding: 7px 14px; border-radius: 100px; cursor: pointer;
+      border: 1px solid rgba(54,54,54,0.22); background: #fff; font: 600 12.5px var(--f-sans); color: var(--ink); }
+    .shk-chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .shk-how { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); }
+    .shk-media { display: flex; gap: 12px; align-items: center; }
+    .shk-photo { width: 96px; height: 96px; flex: none; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.05); }
+    .shk-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .shk-photo.none { display: none; }
+    .shk-mbtns { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .shk-lbl { font: 700 10.5px var(--f-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-dim); }
+    .shk-text { width: 100%; min-height: 190px; box-sizing: border-box; resize: vertical; padding: 11px 13px;
+      border: 1px solid var(--border); border-radius: 12px; background: #fff; outline: none;
+      font: 13.5px/1.55 var(--f-sans); color: var(--ink); }
+    .shk-text:focus { border-color: rgba(54,54,54,0.45); }
+    .shk-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .shk-link { flex: 1; min-width: 140px; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--ink-muted); overflow-wrap: anywhere; }
+    .shk-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-dim); }
+    .shk button[disabled] { opacity: .5; cursor: default; }
+    .shk-x:focus-visible, .shk-chip:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+    @media (max-width: 600px) {
+      .shk-scrim { align-items: flex-end; padding: 0; }
+      .shk { width: 100%; max-height: 92dvh; border-radius: 18px 18px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+    }
 
     /* listing edit / new drawer form */
     .lf .field { margin-bottom: 13px; }
@@ -7457,8 +7506,15 @@
                  the thing being advertised; the button belongs on it. Full
                  width and under the pair above because it is the one action
                  here that makes something new. -->
-            <button class="lc-post" data-post="${esc2(l.id)}">
-              <span data-icon="spark"></span> Post</button>
+            <div class="lc-acts2">
+              <button class="lc-post" data-post="${esc2(l.id)}">
+                <span data-icon="spark"></span> Post</button>
+              <!-- Share: the agent's own WhatsApp, groups and contacts, with a
+                   link credited to them. Post is Synapse's channels; Share is
+                   theirs. -->
+              <button class="lc-share" data-share="${esc2(l.id)}">
+                <span data-icon="share"></span> Share</button>
+            </div>
           </div>
         </div>`;
       }).join('');
@@ -8874,6 +8930,8 @@
          opening it from Listings would otherwise put a dialog over a pane that
          has nothing to do with it, and closing it would leave you somewhere
          you never navigated to. */
+      const sh = e.target.closest('[data-share]');
+      if (sh) { openShareKit(sh.dataset.share); return; }
       const po = e.target.closest('[data-post]');
       if (po) {
         const id = po.dataset.post;
@@ -13478,6 +13536,282 @@
       CED.text.focus();
       CED.text.setSelectionRange(0, 0);
       CED.text.scrollTop = 0;
+    }
+
+    /* ═══ The share kit ═════════════════════════════════════════════════════
+       Posting to channels nobody follows yet is publishing, not reach. The
+       reach in Nigerian property is borrowed: an agent's WhatsApp Status and
+       contacts, the Facebook and Telegram housing groups they already sit in,
+       and the sites buyers already search. Synapse cannot post to any of
+       those, so the kit makes an agent doing it take one tap: the photo, a
+       caption written for where it is going, and a link that is THEIRS.
+
+       The link is the point. It is minted per agent, per listing, per
+       destination (create_short_link, 20260927130000), so a visit or a lead
+       that comes through it is credited to the person who shared it and the
+       place they shared it. "Whose shares work, and where" becomes a question
+       with an answer.
+
+       WHATSAPP IS STILL NEVER SYNAPSE MESSAGING A BUYER. This is an agent
+       sharing from their own phone, to their own contacts -- the same thing
+       they do today, with a better caption and a link that counts. */
+    const SHARE_DEST = [
+      { id: 'whatsapp', label: 'WhatsApp', channel: 'whatsapp_campaign', form: 'short',
+        how: 'For your Status or your broadcast list. Save the photo, post it to your Status, and paste the caption with it.' },
+      { id: 'facebook', label: 'Facebook groups', channel: 'facebook', form: 'full',
+        how: 'Paste it into the property groups for this area that you belong to. Groups set their own rules — some only allow listings on certain days.' },
+      { id: 'telegram', label: 'Telegram groups', channel: 'telegram', form: 'full',
+        how: 'Paste it into the Telegram groups you are in. Housing groups for students and corps members move fast.' },
+      { id: 'other', label: 'Anywhere else', channel: 'referral', form: 'full',
+        how: 'Nairaland, X, an email to a client — wherever it goes, the link still says it was yours.' },
+    ];
+    const FURN_LABEL = { unfurnished: 'Unfurnished', semi: 'Semi-furnished', fully: 'Fully furnished' };
+
+    /* The caption, from the listing's own fields. Written here rather than by
+       the model: it is instant, costs nothing, needs no plan, and every figure
+       in it is the row's figure. The address is never used -- the area and the
+       city only; a caption travels to strangers and somebody lives there. */
+    function shareCaption(l, form, link) {
+      const n = (v) => Number(v) || 0;
+      const money = (v) => '₦' + n(v).toLocaleString('en-NG');
+      const deal = l.listing_type === 'rent' ? 'FOR RENT' : l.listing_type === 'shortlet' ? 'SHORT-LET' : 'FOR SALE';
+      const beds = parseInt(l.bedrooms, 10);
+      const roomy = beds > 0 && l.property_type !== 'land' && l.property_type !== 'commercial';
+      const head = (roomy ? beds + '-BEDROOM ' : '') + String(TYPE_LABEL[l.property_type] || 'Property').toUpperCase() + ' ' + deal;
+      const where = [l.neighbourhood, l.city].map((x) => String(x || '').trim()).filter(Boolean).join(', ');
+      const per = { per_year: '/year', per_month: '/month', per_night: '/night' }[l.price_period] || '';
+      const price = n(l.price) ? money(l.price) + per : '';
+      const charges = [
+        n(l.service_charge) ? 'Service charge ' + money(l.service_charge) : '',
+        n(l.agency_fee) ? 'Agency fee ' + money(l.agency_fee) : '',
+        n(l.legal_fee) ? 'Legal fee ' + money(l.legal_fee) : '',
+      ].filter(Boolean);
+      const amen = (Array.isArray(l.amenities) ? l.amenities : []).slice(0, form === 'short' ? 3 : 6);
+      const out = [];
+
+      if (form === 'short') {
+        /* A Status is read in two seconds and screenshotted: what, where, how
+           much, what else it costs, and the link. */
+        out.push('🏡 ' + head);
+        if (where) out.push('📍 ' + where);
+        if (price) out.push('💰 ' + price);
+        if (charges.length) out.push(charges.join(' · '));
+        if (amen.length) out.push(amen.join(' · '));
+        out.push('', 'Photos, every cost and inspection booking 👇', link);
+        return out.join('\n');
+      }
+
+      /* A group post is read by somebody deciding whether to enquire, so it
+         carries the whole spec sheet -- the form the market uses. */
+      out.push(head);
+      if (where) out.push('📍 ' + where);
+      out.push('');
+      const baths = n(l.bathrooms), toilets = n(l.toilets);
+      const spec = [
+        roomy ? beds + ' bedroom' + (beds === 1 ? '' : 's') : '',
+        baths ? baths + ' bathroom' + (baths === 1 ? '' : 's') : '',
+        toilets ? toilets + ' toilet' + (toilets === 1 ? '' : 's') : '',
+      ].filter(Boolean);
+      if (spec.length) out.push('• ' + spec.join(' · '));
+      if (FURN_LABEL[l.furnished]) out.push('• ' + FURN_LABEL[l.furnished]);
+      amen.forEach((a) => out.push('• ' + a));
+      if (l.listing_type === 'sale' && TITLE_LABEL[l.title_type]) out.push('• Title: ' + TITLE_LABEL[l.title_type]);
+      out.push('');
+      if (price) out.push('💰 ' + (l.listing_type === 'rent' ? 'Rent' : 'Price') + ': ' + price);
+      if (charges.length) out.push('Other charges: ' + charges.join(' · '));
+      if (l.listing_type === 'rent' && n(l.move_in_cost)) out.push('Total to move in: ' + money(l.move_in_cost));
+      out.push('', 'Full details, photos and inspection booking:', link);
+      const agency = window.BRAND && window.BRAND.name;
+      if (agency) out.push('', '— ' + agency);
+      return out.join('\n');
+    }
+
+    /* The photo that travels: the branded copy where one was made -- it
+       carries the agency's mark and the price -- otherwise the cover.
+       Never a video: a Status caption rides on an image. */
+    function sharePhoto(l) {
+      const vid = (u) => (window.SynListings && SynListings.isVideoUrl)
+        ? SynListings.isVideoUrl(u) : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ''));
+      const m = (Array.isArray(l.media) ? l.media : []).find((x) => x && x.url && !vid(x.url));
+      return (m && (m.branded_url || m.url)) || (l.img && !vid(l.img) ? l.img : '');
+    }
+
+    let SHK = null;
+    function openShareKit(id) {
+      const l = fullListing(id);
+      if (!l || !l.id) { toast('Save the listing first — a share link needs the saved listing'); return; }
+      if (!SHK) {
+        const el = document.createElement('div');
+        el.className = 'shk-scrim';
+        el.innerHTML = '<div class="shk" role="dialog" aria-modal="true" aria-labelledby="shkTitle">'
+          + '<div class="shk-head"><div><h3 id="shkTitle">Share this listing</h3><div class="shk-sub" id="shkSub"></div></div>'
+          + '<button type="button" class="shk-x" id="shkX" aria-label="Close">×</button></div>'
+          + '<div class="shk-dest" id="shkDest" role="group" aria-label="Where it is going"></div>'
+          + '<p class="shk-how" id="shkHow"></p>'
+          + '<div class="shk-media"><div class="shk-photo" id="shkPhoto"></div><div class="shk-mbtns">'
+          +   '<button type="button" class="btn btn-primary" id="shkNative" hidden>Share photo + caption</button>'
+          +   '<button type="button" class="btn btn-ghost" id="shkSave">Save photo</button></div></div>'
+          + '<label class="shk-lbl" for="shkText">Caption</label>'
+          + '<textarea class="shk-text" id="shkText" spellcheck="true"></textarea>'
+          + '<div class="shk-row"><button type="button" class="btn btn-ghost" id="shkCopyCap">Copy caption</button>'
+          +   '<span class="shk-link" id="shkLink"></span>'
+          +   '<button type="button" class="btn btn-ghost" id="shkCopyLink">Copy link</button></div>'
+          + '<p class="shk-note" id="shkNote" role="status" aria-live="polite"></p>'
+          + '</div>';
+        document.body.appendChild(el);
+        const q = (x) => el.querySelector('#' + x);
+        SHK = { el, l: null, dest: SHARE_DEST[0], links: {}, edited: false,
+                title: q('shkSub'), destEl: q('shkDest'), how: q('shkHow'), photo: q('shkPhoto'),
+                native: q('shkNative'), save: q('shkSave'), text: q('shkText'), link: q('shkLink'),
+                copyCap: q('shkCopyCap'), copyLink: q('shkCopyLink'), note: q('shkNote') };
+
+        const close = () => { el.classList.remove('on'); SHK.l = null; };
+        q('shkX').addEventListener('click', close);
+        el.addEventListener('mousedown', (e) => { if (e.target === el) close(); });
+        el.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+        SHK.text.addEventListener('input', () => { SHK.edited = true; });
+        SHK.destEl.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-dest]'); if (!b) return;
+          const d = SHARE_DEST.find((x) => x.id === b.dataset.dest);
+          if (!d || d === SHK.dest) return;
+          if (SHK.edited && !window.confirm('Switch destination? The caption is rewritten for it, and your edits to this one are lost.')) return;
+          SHK.dest = d; SHK.edited = false; shkPaint();
+        });
+        SHK.copyCap.addEventListener('click', () => shkCopy(SHK.text.value, SHK.copyCap, 'Caption copied'));
+        SHK.copyLink.addEventListener('click', () => { const k = SHK.links[SHK.dest.id]; if (k) shkCopy(k.url, SHK.copyLink, 'Link copied'); });
+        SHK.save.addEventListener('click', shkSavePhoto);
+        SHK.native.addEventListener('click', shkNativeShare);
+      }
+
+      SHK.l = l; SHK.dest = SHARE_DEST[0]; SHK.links = {}; SHK.edited = false;
+      SHK.title.textContent = l.title || l.t || 'Listing';
+      const photo = sharePhoto(l);
+      SHK.photo.innerHTML = photo
+        ? '<img src="' + esc2(photo) + '" alt="" onerror="this.parentNode.classList.add(\'none\');this.remove()">'
+        : '';
+      SHK.photo.classList.toggle('none', !photo);
+      SHK.save.hidden = !photo;
+      /* The phone's own share sheet, with the photo attached, is the fastest
+         route to a Status. Offered only where the browser can attach a file. */
+      let canFiles = false;
+      try { canFiles = !!(photo && navigator.canShare && navigator.canShare({ files: [new File([''], 'x.jpg', { type: 'image/jpeg' })] })); } catch (e) { canFiles = false; }
+      SHK.native.hidden = !canFiles;
+      SHK.el.classList.add('on');
+      shkPaint();
+    }
+
+    function shkPaint() {
+      const d = SHK.dest, l = SHK.l;
+      SHK.destEl.innerHTML = SHARE_DEST.map((x) =>
+        '<button type="button" class="shk-chip' + (x === d ? ' on' : '') + '" data-dest="' + x.id + '" aria-pressed="' + (x === d) + '">'
+        + esc2(x.label) + '</button>').join('');
+      SHK.how.textContent = d.how;
+      const have = SHK.links[d.id];
+      if (have) { shkFill(have); return; }
+      SHK.text.value = shareCaption(l, d.form, '…');
+      SHK.link.textContent = 'Making your link…';
+      SHK.copyLink.disabled = true; SHK.copyCap.disabled = true;
+      SHK.note.textContent = '';
+      const forId = l.id, forDest = d.id;
+      const done = (k) => {
+        SHK.links[forDest] = k;
+        if (SHK.l && SHK.l.id === forId && SHK.dest.id === forDest) shkFill(k);
+      };
+      if (!window.SynListings || !SynListings.shareLink) {
+        done({ url: plainLink(l, d), token: null, plain: true });
+        return;
+      }
+      SynListings.shareLink(l.id, d.channel).then(done).catch((err) => {
+        /* Still shareable, just not credited: the plain listing link carries
+           the channel but not the person. Said, so nobody thinks it counts. */
+        done({ url: plainLink(l, d), token: null, plain: true, why: (err && err.message) || '' });
+      });
+    }
+
+    function plainLink(l, d) {
+      return 'https://www.synapsecore.dev/app/property.html?id=' + encodeURIComponent(l.id) + '&ch=' + encodeURIComponent(d.channel);
+    }
+
+    function shkFill(k) {
+      if (!SHK.edited) SHK.text.value = shareCaption(SHK.l, SHK.dest.form, k.url);
+      SHK.link.textContent = k.url.replace(/^https?:\/\//, '');
+      SHK.copyLink.disabled = false; SHK.copyCap.disabled = false;
+      if (k.plain) {
+        SHK.note.textContent = 'Your personal link could not be made'
+          + (k.why ? ' (' + k.why + ')' : '') + ', so this is the plain listing link — visits through it are not credited to you.';
+        return;
+      }
+      SHK.note.textContent = 'This link is yours: visits and leads that come through it are credited to you.';
+      if (k.token && SynListings.shareLinkOpens) {
+        SynListings.shareLinkOpens(k.token).then((opens) => {
+          if (!SHK.l || SHK.links[SHK.dest.id] !== k) return;
+          SHK.note.textContent = 'This link is yours: visits and leads that come through it are credited to you. '
+            + (opens ? 'Opened ' + opens + (opens === 1 ? ' time' : ' times') + ' so far.' : 'Nobody has opened it yet.');
+        }).catch(() => {});
+      }
+    }
+
+    function shkCopy(text, btn, said) {
+      const was = btn.textContent;
+      const ok = () => { btn.textContent = 'Copied'; toast(said); setTimeout(() => { btn.textContent = was; }, 1800); };
+      const fallback = () => {
+        /* The clipboard is refused on some in-app browsers: select the text
+           so a long-press still copies it. */
+        try { SHK.text.focus(); SHK.text.select(); toast('Selected — copy it with a long-press'); } catch (e) {}
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+      else fallback();
+    }
+
+    function shkBlob() {
+      const src = (SHK.photo.querySelector('img') || {}).src;
+      if (!src) return Promise.reject(new Error('no photo'));
+      return fetch(src, { mode: 'cors' }).then((r) => { if (!r.ok) throw new Error('photo ' + r.status); return r.blob(); })
+        .then(asJpeg);
+    }
+    /* WhatsApp takes a .webp as a STICKER, not a photo, and a Status will not
+       have it -- and uploads are stored as WebP. So anything that is not
+       already a JPEG or PNG is redrawn as a JPEG before it leaves. Fetched as
+       a blob, so the canvas is not tainted; if the redraw fails, the original
+       still goes. */
+    function asJpeg(blob) {
+      if (/jpe?g|png/i.test(blob.type || '') || !window.createImageBitmap) return Promise.resolve(blob);
+      return createImageBitmap(blob).then((bmp) => new Promise((resolve) => {
+        const c = document.createElement('canvas');
+        c.width = bmp.width; c.height = bmp.height;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);   // no transparent corners turning black
+        ctx.drawImage(bmp, 0, 0);
+        c.toBlob((jpg) => resolve(jpg || blob), 'image/jpeg', 0.9);
+      })).catch(() => blob);
+    }
+    function shkFileName(blob) {
+      const base = String(SHK.l.title || 'listing').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'listing';
+      const ext = /png/.test(blob.type) ? 'png' : /webp/.test(blob.type) ? 'webp' : 'jpg';
+      return base + '.' + ext;
+    }
+    function shkSavePhoto() {
+      shkBlob().then((b) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b); a.download = shkFileName(b);
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        toast('Photo saved');
+      }).catch(() => {
+        /* A photo that will not download still opens: long-press saves it. */
+        const src = (SHK.photo.querySelector('img') || {}).src;
+        if (src) window.open(src, '_blank', 'noopener');
+      });
+    }
+    function shkNativeShare() {
+      const text = SHK.text.value;
+      shkBlob().then((b) => {
+        const file = new File([b], shkFileName(b), { type: b.type || 'image/jpeg' });
+        return navigator.share({ files: [file], text: text });
+      }).catch((err) => {
+        if (err && err.name === 'AbortError') return;       // they closed the sheet
+        if (navigator.share) return navigator.share({ text: text }).catch(() => {});
+      });
     }
 
     /* ── hashtag groups ───────────────────────────────────────────────────

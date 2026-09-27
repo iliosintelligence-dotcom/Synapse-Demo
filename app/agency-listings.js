@@ -2028,6 +2028,34 @@
     }).then(function (r) { if (r.error) throw r.error; return true; });
   }
 
+  /** This person's own tracked link for a listing on one channel. The same
+   *  person, listing and channel always get the same token back
+   *  (create_short_link keys manual links on the caller since 20260927130000),
+   *  so opening the share kit twice never scatters one agent's visits across
+   *  two links. */
+  function shareLink(propertyId, channel) {
+    if (!propertyId || !channel) return Promise.reject(new Error('No listing to share'));
+    return client().then(function (c) {
+      return c.rpc('create_short_link', { p_property_id: propertyId, p_channel: channel });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.url) throw new Error('No link came back');
+      return { token: row.token, url: row.url };
+    });
+  }
+
+  /** How many people (not preview bots) have opened one link. */
+  function shareLinkOpens(token) {
+    if (!token) return Promise.resolve(0);
+    return client().then(function (c) {
+      return c.from('short_links').select('human_click_count').eq('token', token).maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && Number(r.data.human_click_count)) || 0;
+    });
+  }
+
   /** The agency's own edit to a caption awaiting approval. Written to the
    *  draft itself, so what gets approved is what was read. `.select` makes a
    *  refused or already-moved row an error rather than a silent zero-row
@@ -2815,6 +2843,8 @@
     listPendingContent: listPendingContent,
     setContentStatus: setContentStatus,
     updateContentText: updateContentText,
+    shareLink: shareLink,
+    shareLinkOpens: shareLinkOpens,
     listSocialPosts: listSocialPosts,
     listSocialComments: listSocialComments,
     brandImage: brandImage,
