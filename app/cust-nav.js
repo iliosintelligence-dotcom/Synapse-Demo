@@ -139,7 +139,9 @@
     }
     reflect();
 
-    var anchor = bar.querySelector('[data-auth-slot]');
+    /* Before the account menu if it has been built (the slot then lives inside
+       it, not in the bar), else before the bare slot. */
+    var anchor = bar.querySelector(':scope > .cnav-acct') || bar.querySelector(':scope > [data-auth-slot]');
     if (anchor) bar.insertBefore(wrap, anchor); else bar.appendChild(wrap);
     if (window.SynIcons && typeof window.SynIcons.hydrate === 'function') window.SynIcons.hydrate(wrap);
     return { btn: btn, pop: pop, wrap: wrap };
@@ -548,6 +550,69 @@
      is on the row that goes to the boards those homes are saved on. Pages that
      already own a count write it here rather than a second copy tracking its
      own state. */
+  /* ── Menus in the app bar ──────────────────────────────────────────────
+     Eden (2026-09-29): History, New chat, Sign in and Create account sat along
+     the top of Tayo as a row of loose words. Grouped instead: one button for
+     the chat (New chat, History), one for the account (Sign in, Create
+     account, or Sign out). A page marks a menu with [data-bar-menu] -- a
+     .cnav-desk holding a .cnav-dbtn and a .cnav-dpop.cnav-menu -- and this
+     opens and closes it. The account menu is built here for every page that
+     has an auth slot, so the sign-in links read the same everywhere. */
+  function wireBarMenu(wrap) {
+    if (!wrap || wrap.dataset.wired) return;
+    wrap.dataset.wired = '1';
+    var btn = wrap.querySelector('.cnav-dbtn');
+    var pop = wrap.querySelector('.cnav-dpop');
+    if (!btn || !pop) return;
+    var open = function (yes) {
+      wrap.classList.toggle('open', yes);
+      btn.setAttribute('aria-expanded', String(yes));
+    };
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var yes = !wrap.classList.contains('open');
+      // One menu at a time.
+      [].slice.call(document.querySelectorAll('[data-bar-menu].open')).forEach(function (w) {
+        if (w !== wrap) { w.classList.remove('open'); var b = w.querySelector('.cnav-dbtn'); if (b) b.setAttribute('aria-expanded', 'false'); }
+      });
+      open(yes);
+      if (yes) { var first = pop.querySelector('a, button'); if (first) first.focus({ preventScroll: true }); }
+    });
+    // Choosing anything in the menu closes it; the item's own handler runs.
+    pop.addEventListener('click', function (e) {
+      if (e.target.closest('a, button')) open(false);
+    });
+    document.addEventListener('click', function (e) {
+      if (wrap.classList.contains('open') && !wrap.contains(e.target)) open(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && wrap.classList.contains('open')) { open(false); btn.focus(); }
+    });
+  }
+
+  function buildAccountMenu() {
+    var bar = document.querySelector('.appbar');
+    var slot = bar && bar.querySelector(':scope > [data-auth-slot]');
+    if (!slot) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'cnav-desk cnav-mwrap cnav-acct';
+    wrap.setAttribute('data-bar-menu', '');
+    wrap.innerHTML =
+      '<button class="cnav-dbtn" type="button" aria-expanded="false" aria-haspopup="menu">'
+      + iconSpan('user') + '<span>Account</span></button>'
+      + '<div class="cnav-dpop cnav-menu" role="menu" aria-label="Account"></div>';
+    bar.insertBefore(wrap, slot);
+    // Moved, not copied: auth.js repaints the slot in place when the session
+    // changes, and finds it wherever it lives.
+    wrap.querySelector('.cnav-dpop').appendChild(slot);
+    if (window.SynIcons && typeof window.SynIcons.hydrate === 'function') window.SynIcons.hydrate(wrap);
+  }
+
+  function barMenus() {
+    buildAccountMenu();
+    [].slice.call(document.querySelectorAll('[data-bar-menu]')).forEach(wireBarMenu);
+  }
+
   window.CustNav = {
     /* Hand back control to the page for a view of its own; pass null to
        restore the default. */
@@ -561,9 +626,10 @@
     }
   };
 
+  function start() { build(); barMenus(); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', build);
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    build();
+    start();
   }
 })();

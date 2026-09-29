@@ -457,7 +457,10 @@
         border-right: none; margin: 0; flex: 1; min-height: 0;
       }
       .tj-canvas, body.has-canvas .tj-canvas { display: none; }
-      .tj-head { display: none; }                /* the bar carries the identity */
+      /* the bar carries the identity. Doubled with .tj-chat: the desktop
+         one-row header (.tj-chat .tj-head) outranked a bare .tj-head, so a
+         phone showed both headers stacked. */
+      .tj-head, .tj-chat .tj-head { display: none; }
 
       .tjm-bar {
         flex: none; display: flex; align-items: center; gap: 12px;
@@ -533,6 +536,13 @@
       }
     }
   </style>
+  <!-- Dark mode only. This page keeps its own look -- the photograph under
+       glass -- so it does not take the day theme (theme.css). scene.css swaps
+       in the night photograph and dark glass. -->
+  <link rel="stylesheet" href="theme-night.css" />
+  <link rel="stylesheet" href="theme-dark.css" />
+  <link rel="stylesheet" href="scene.css" />
+  <script src="theme.js"></script>
 </head>
 <body>
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -573,9 +583,19 @@
         <a href="dream.html">Dream Home</a>
       </nav>
       <span class="spacer"></span>
-      <button id="tjHist" class="home" style="background:none;border:none;cursor:pointer;font:inherit;margin-right:14px"><span data-icon="history"></span> History</button>
-      <button id="tjNew" class="home" style="background:none;border:none;cursor:pointer;font:inherit;margin-right:18px">↺ New chat</button>
-      <span data-auth-slot style="margin-right:16px"></span>
+      <!-- ONE BUTTON, NOT A ROW OF WORDS. History, New chat, Sign in and Create
+      account sat along the bar as four loose links; Eden asked for them
+      grouped behind buttons. The chat controls live in this menu (same ids,
+      so the handlers below and the phone bar's forwarding still find them);
+      cust-nav.js gives the sign-in links their own Account menu. -->
+      <div class="cnav-desk cnav-mwrap" data-bar-menu>
+        <button type="button" class="cnav-dbtn" aria-expanded="false" aria-haspopup="menu" aria-controls="tjChatMenu"><span data-icon="chat" aria-hidden="true"></span><span>Chats</span></button>
+        <div class="cnav-dpop cnav-menu" id="tjChatMenu" role="menu" aria-label="Chats">
+          <button id="tjNew" type="button" class="cnav-mi" role="menuitem"><span data-icon="plus" aria-hidden="true"></span>New chat</button>
+          <button id="tjHist" type="button" class="cnav-mi" role="menuitem"><span data-icon="history" aria-hidden="true"></span>History</button>
+        </div>
+      </div>
+      <span data-auth-slot></span>
       <a class="home" href="../buyers.html">← Back to site</a>
     </div>
 

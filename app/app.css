@@ -1094,6 +1094,33 @@ html.kb-open .cnav { opacity: 0; pointer-events: none; transform: translateY(8px
 
 @media (prefers-reduced-motion: reduce) { .cnav-dpop { transition: none; } }
 
+/* ── Menus in the app bar: Chats (New chat, History) and Account ──────────
+   The same button and popover as Nearby above, holding a short list of rows.
+   Opened and closed by cust-nav.js (wireBarMenu). Account holds the auth slot,
+   which auth.js paints as Sign in + Create account, or Sign out. */
+.cnav-mwrap { margin-right: 10px; }
+.cnav-mwrap.open .cnav-dpop { opacity: 1; transform: none; pointer-events: auto; }
+.cnav-menu { width: 224px; padding: 6px; }
+.cnav-menu [data-auth-slot] { display: flex; flex-direction: column; gap: 2px; margin: 0 !important; }
+.cnav-menu .auth-chip { display: block; }
+.cnav-menu :is(.cnav-mi, .auth-in, .auth-up, .auth-out) {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  min-height: 42px; padding: 0 12px; border-radius: 10px;
+  background: none; border: 0; text-align: left; text-decoration: none;
+  font: 600 13.5px var(--f-sans); color: var(--ink); cursor: pointer;
+}
+.cnav-menu :is(.auth-in, .auth-out)::before { content: none; }
+.cnav-menu :is(.cnav-mi, .auth-in, .auth-out):hover { background: rgba(0,0,0,0.05); color: var(--ink); }
+.cnav-menu .cnav-mi .syn-i { width: 16px; height: 16px; opacity: 0.8; }
+.cnav-menu .cnav-mi:focus-visible,
+.cnav-menu :is(.auth-in, .auth-up, .auth-out):focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+/* Creating an account is the one this menu exists to offer: a filled row. */
+.cnav-menu .auth-up { justify-content: center; margin-top: 4px; background: #121212; color: #FFFFFF; }
+.cnav-menu .auth-up:hover { background: #000000; color: #FFFFFF; }
+html[data-theme="dark"] .cnav-menu :is(.cnav-mi, .auth-in, .auth-out):hover { background: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .cnav-menu .auth-up,
+html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !important; color: #000000 !important; }
+
 /* A borrowed container is empty but still carries its own margins, so it has
    to be taken out of the flow while its contents are in the taskbar. Two
    classes deep to beat the page's own .toolbar rule. */
