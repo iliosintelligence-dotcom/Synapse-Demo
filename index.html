@@ -33,7 +33,7 @@
   <meta name="twitter:title" content="Grow your agency. Not your workload." />
   <meta name="twitter:description" content="Synapse helps Nigerian estate agencies publish a listing once and reach every channel, qualify enquiries with an AI advisor, and see which channels actually produce buyers. Free to start." />
   <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
-  <meta name="theme-color" content="#f5f5f5" />
+  <meta name="theme-color" content="#FAF6F0" />
   <!-- Organization + the plans, as structured data. Every value here is
        checkable on the page or in the product; nothing is asserted that the
        Terms do not already say. Deliberately no postalAddress and no legal
@@ -111,904 +111,383 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <!-- Both of the above come off a CDN we do not control. This runs after them
-       and marks the document only when they actually arrived; the reveal rules
-       in landing.css hide nothing without it. Placed inline in <head> so it
-       cannot itself fail to load, and so the class is set before first paint. -->
-  <script>if (window.gsap && window.ScrollTrigger) document.documentElement.classList.add('anim-ready');</script>
 
-<link rel="stylesheet" href="landing.css" />
-<link rel="stylesheet" href="landing-mobile.css" />
-<link rel="stylesheet" href="app/motion.css" />
-<link rel="stylesheet" href="app/seam.css" />
-<!-- In <head>, not at the end of <body>: pagereveal fires before a
-     body script has run, and seam.js has to be listening for it. -->
-<script src="app/seam.js"></script>
+  <!-- LIGHT BY DAY, DARK BY NIGHT. Eden asked for the landing page's dark mode
+       to follow the time of day rather than the device: dark from 7pm to 7am
+       on the visitor's own clock (Lagos sunset and sunrise sit near both ends
+       all year). Stamped here, before the stylesheet paints, so the page never
+       flashes the wrong ground. The switch in the bar overrides it for the
+       rest of the visit; ?theme=light|dark forces it for one load. -->
+  <script>
+    (function () {
+      var d = document.documentElement, chosen = null;
+      function byClock() { var h = new Date().getHours(); return (h >= 19 || h < 7) ? 'dark' : 'light'; }
+      try { chosen = new URLSearchParams(location.search).get('theme') || sessionStorage.getItem('syn_home_theme'); } catch (e) {}
+      if (chosen !== 'light' && chosen !== 'dark') chosen = null;
+      d.setAttribute('data-theme', chosen || byClock());
+      window.SynHome = { byClock: byClock, chosen: function () { return chosen; }, choose: function (t) { chosen = t; } };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
   <script src="app/arrival.js"></script>
 </head>
 <body>
-<script>
-  /* Always open the landing at the very top — never a restored mid-page
-     position (fixes returning from an app page landing you halfway down).
-     Handles first load, reloads, and bfcache back/forward. */
-  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  (function () {
-    function toTop() {
-      var b = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = 'auto';
-      window.scrollTo(0, 0);
-      document.documentElement.style.scrollBehavior = b;
-    }
-    window.addEventListener('load', toTop);
-    window.addEventListener('pageshow', function (e) { if (e.persisted) toTop(); });
-  })();
-</script>
+<a class="skip" href="#main">Skip to content</a>
 
-<!-- ══ NAV ══ -->
-<div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="images/brand/mark-black-on-white-tight.jpg" alt=""></div>
-<!-- ══════════════════════════════════════════════════════════════════════
-     MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
-     the desktop markup below. Shares the m- primitives in landing-mobile.css
-     with the customer landing so both pages read as one product.
-     ══════════════════════════════════════════════════════════════════════ -->
-<div class="m-page">
-
-  <!-- FIRST FOCUSABLE THING ON THE PAGE, and invisible until it is focused.
-       WCAG 2.4.1 asks for a way past blocks that repeat on every page; here
-       that is the bar with the wordmark, the audience toggle and the sign-in
-       link, which a keyboard has to walk through before reaching a word of
-       the page. The target carries tabindex="-1" because without it several
-       browsers move the URL fragment and leave focus where it was, which
-       makes the link look like it did nothing. -->
-  <a class="m-skip" href="#mMain">Skip to content</a>
-
-  <nav class="m-navbar" id="mNavbar">
-    <a href="index.html" class="m-logo">
-      <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
-      <span class="m-logo-word">Synapse</span>
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a href="index.html" class="logo" aria-label="Synapse home">
+      <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+      <span class="logo-word">Synapse</span>
     </a>
-    <div class="m-aud-toggle" role="tablist" aria-label="Audience">
-      <a class="m-aud-seg" href="buyers.html" role="tab" aria-selected="false">For Customers</a>
-      <a class="m-aud-seg active" href="index.html" role="tab" aria-selected="true" aria-current="page">For Agencies</a>
-    </div>
-    <a class="m-nav-signin" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
-  </nav>
+    <nav class="nav-links" aria-label="Page">
+      <a href="#product">Product</a>
+      <a href="#pricing">Pricing</a>
+      <a href="buyers.html">For customers</a>
+    </nav>
+    <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
+      <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+      <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    </button>
+    <a class="nav-signin" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+    <a class="btn btn-solid btn-sm" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
+  </div>
+</header>
 
-  <!-- THE MAIN LANDMARK, which this page did not have. A screen reader user
-       navigates by landmark before they navigate by heading, and without one
-       there is no "jump to the content" to jump to -- the bar and the footer
-       were labelled and everything between them was not.
+<main id="main" tabindex="-1">
 
-       Mobile only, deliberately. The desktop copy of this page is a run of
-       section elements that are DIRECT CHILDREN OF BODY, and the rule that
-       hides them on a phone is `body > section`. Wrapping them in a landmark
-       would stop them matching it and the desktop page would render on
-       phones underneath this one. That rule is worth more than the landmark;
-       the desktop landmark needs the rule changed with it, which is its own
-       change and not one to make in passing. -->
-  <main id="mMain" tabindex="-1">
-
-  <!-- ── HERO ── the portal filling with qualified leads is the pitch -->
-  <header class="m-hero m-wrap">
-    <div class="m-hero-eyebrow">For agencies &amp; developers</div>
-    <h1 class="m-hero-headline">Grow your agency.<br><em>Not your workload.</em></h1>
-    <p class="m-hero-sub">Every listing reaches more buyers, qualifies itself, and arrives ready to close.</p>
-
-    <div class="m-peek">
-      <div class="m-peek-bar">
-        <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Agency portal</span>
+  <!-- ── HERO: the promise, then the portal itself ── -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">For agencies &amp; developers</span>
+      <h1 class="h1">Grow your agency. <em>Not your workload.</em></h1>
+      <p class="lede">Every listing reaches more buyers, qualifies itself, and arrives as a warm, ready-to-close deal.</p>
+      <div class="hero-cta">
+        <a class="btn btn-solid" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">
+          Try free
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#pricing">See pricing</a>
       </div>
-      <div class="m-peek-head">
-        <span>Leads · today</span>
-        <span class="m-peek-live"><i></i> Live</span>
-      </div>
-      <div class="m-peek-body" data-peek-agency></div>
     </div>
+    <div class="wrap">
+      <div class="frame p-hero hero-frame">
+        <img class="shot lt" src="images/home/shot-overview-light.webp" width="2000" height="1250" loading="lazy" alt="The Synapse agency portal: an agency's listings with prices and photos, a map of Ibadan, and the chosen listing's details." />
+        <img class="shot dk" src="images/home/shot-overview-dark.webp" width="2000" height="1250" loading="lazy" alt="The Synapse agency portal: an agency's listings with prices and photos, a map of Ibadan, and the chosen listing's details." />
+      </div>
+    </div>
+  </section>
 
-  </header>
-
-  <!-- ── the promise, one hard beat ── -->
-  
-
-  <!-- ── THE PROBLEM ── the same paired cards, stacked. A horizontal swipe
-       inside a vertical scroll is a fight on a phone, so these do not slide;
-       each card still carries its own answer, which is the part that matters. -->
-
-  <!-- ── WHERE IT GOES ── same rail, narrower marks -->
-  <section class="m-logorail" aria-label="Channels Synapse publishes to">
-    <p class="m-lr-label">One upload, published to</p>
-    <div class="lr-viewport">
-      <ul class="lr-track">
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>
-          <span>Instagram</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>
-          <span>TikTok</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>
-          <span>YouTube</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>
-          <span>Facebook</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>
-          <span>WhatsApp</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>
-          <span>Synapse</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>
-          <span>Instagram</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>
-          <span>TikTok</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>
-          <span>YouTube</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>
-          <span>Facebook</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>
-          <span>WhatsApp</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>
-          <span>Synapse</span>
-        </li>
+  <!-- ── WHERE IT GOES. Monochrome marks: the page's one colour is orange. ── -->
+  <section class="rail" aria-label="Channels Synapse publishes to">
+    <div class="wrap">
+      <p>One upload, published to</p>
+      <ul>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
+        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
       </ul>
     </div>
   </section>
 
-  <section class="m-section m-wrap m-reality raised">
-    <div class="m-kicker">The reality</div>
-    <h2 class="m-h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
-    <p class="m-body">Both ways to grow are expensive: do the marketing and chasing yourself, or split the property with other agencies and pay for reach out of the fee.</p>
-    <!-- A swipe, not a stack. Four separate complaints read one at a time,
-         the way a carousel works everywhere else on a phone; stacked, the
-         fourth sat two screens down and nobody reached it. Native scroll-snap
-         does the sliding, the dots only report where you are. -->
-    <div class="m-car" id="mProbCar">
-      <div class="m-car-track" id="mProbTrack">
-      <article class="m-car-slide prob-card">
-        <div class="prob-half is-problem">
-          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">01</span></div>
-          <h3 class="prob-q">Are you working 97 dead ends to reach 3 live ones?</h3>
-          <p class="prob-b">Every &ldquo;is it still available?&rdquo; answered by hand.</p>
-        </div>
-      </article>
-      <article class="m-car-slide prob-card">
-        <div class="prob-half is-problem">
-          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">02</span></div>
-          <h3 class="prob-q">Are your evenings going on captions?</h3>
-          <p class="prob-b">Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in.</p>
-        </div>
-      </article>
-      <article class="m-car-slide prob-card">
-        <div class="prob-half is-problem">
-          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">03</span></div>
-          <h3 class="prob-q">Are you splitting the fee to get reach?</h3>
-          <p class="prob-b">The usual way to reach more buyers is to hand the property to 3 other agencies.</p>
-        </div>
-      </article>
-      <article class="m-car-slide prob-card">
-        <div class="prob-half is-problem">
-          <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">04</span></div>
-          <h3 class="prob-q">Is your best negotiator one person?</h3>
-          <p class="prob-b">Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them.</p>
-        </div>
-      </article>
+  <!-- ── THE REALITY ── -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">The reality</span>
+        <h2 class="h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
+        <p class="lede">That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.</p>
       </div>
-      <div class="m-car-foot">
-        <div class="m-car-dots" id="mProbDots" role="tablist" aria-label="Choose a problem"></div>
-        <span class="m-car-count" id="mProbCount">1 / 4</span>
+      <div class="probs">
+        <article class="prob">
+          <div class="prob-n">01</div>
+          <h3 class="h3">Are you working 97 dead ends to reach 3 live ones?</h3>
+          <p>Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
+        </article>
+        <article class="prob">
+          <div class="prob-n">02</div>
+          <h3 class="h3">Are your evenings going on captions?</h3>
+          <p>Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
+        </article>
+        <article class="prob">
+          <div class="prob-n">03</div>
+          <h3 class="h3">Are you splitting the fee to get reach?</h3>
+          <p>Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone&rsquo;s cut, or you take a fraction of what the work was worth.</p>
+        </article>
+        <article class="prob">
+          <div class="prob-n">04</div>
+          <h3 class="h3">Is your best negotiator one person?</h3>
+          <p>Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
+        </article>
       </div>
-    </div>
-
-    <p class="m-body" style="margin-top:18px">The customer pays more, or you earn less on the same work. Often both.</p>
-  </section>
-
-  <!-- ── INTRODUCING ── the same beat as the desktop plate, sized for a hand.
-       Ink, because it is the turn of the page. -->
-  <section class="m-section m-wrap m-intro" aria-labelledby="mIntroTitle">
-    <span class="intro-rule" aria-hidden="true"></span>
-    <p class="intro-eyebrow">Introducing</p>
-    <h2 class="intro-word" id="mIntroTitle">Synapse</h2>
-    <p class="intro-line">The work you have been doing by hand &mdash; the
-      posting, the chasing, the checking &mdash;
-      <em>done once, properly, and on its own.</em></p>
-    <div class="intro-foot" aria-hidden="true">
-      <span class="intro-mark"><img src="images/brand/mark-white-transparent.png" alt="" /></span>
-      <span class="intro-foot-t">An AI property advisor for Nigeria</span>
+      <p class="either"><b>Either way:</b> the customer pays more, or you earn less on the same work. Often both.</p>
     </div>
   </section>
 
-  <!-- ── UPLOAD ONCE ── -->
-  <section class="m-section m-wrap">
-    <div class="m-kicker">2× your reach</div>
-    <h2 class="m-h2">One listing. <em>Every channel.</em></h2>
-    <p class="m-body">Upload once. Synapse writes the copy in your voice, sizes it for each platform, checks it against that platform’s real limits, and publishes it everywhere your buyers already are.</p>
-    <div class="m-mock">
-      <div class="m-demo-head"><span>Publishing · 3-Bed, Lekki</span><span>Auto</span></div>
-      <div class="m-d-row" style="margin-bottom:10px">
-        <div class="m-d-thumb"></div>
-        <div style="flex:1;min-width:0">
-          <div class="m-d-price">₦165M</div>
-          <div class="m-d-meta">Uploaded 12 seconds ago</div>
-        </div>
-      </div>
-      <div data-fan-list></div>
+  <!-- ── INTRODUCING: the turn of the page, as one statement ── -->
+  <section class="sec intro" aria-labelledby="introTitle">
+    <div class="wrap">
+      <span class="eyebrow">Introducing</span>
+      <h2 class="intro-word" id="introTitle">Synapse</h2>
+      <p class="statement">The work you have been doing by hand &mdash; the posting, the chasing, the checking &mdash; <em>done once, properly, and on its own.</em></p>
     </div>
   </section>
 
-  <!-- ── TOJU ANSWERS FIRST ── dark band -->
-  <section class="m-proximity m-section">
-    <div class="m-wrap">
-      <div class="m-kicker">CRM</div>
-      <h2 class="m-h2">Every enquiry arrives <em>already worked.</em></h2>
-      <p class="m-body">A reply in seconds, day or night. The lead reaches your pipeline with the city, the budget and the brief attached — then five stages, assignment across your agents, and an outbox that only sends when somebody presses send.</p>
-      <p class="m-body" style="margin-top:14px">The other 97% stay with Tayo. You meet a customer when they are ready to pay, and not before.</p>
-      <div class="m-mock m-mock-dark">
-        <div class="m-demo-head"><span>Enquiry · 2:14 am</span><span>Tayo</span></div>
-        <div data-agency-chat></div>
+  <!-- ── WHAT IT DOES: words beside the screens that do it ── -->
+  <section class="sec" id="product">
+    <div class="wrap">
+
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">2&times; your reach</span>
+          <h2 class="h2">One listing. <em>Every channel.</em></h2>
+          <p class="lede">Upload once. Synapse writes the copy in your agency&rsquo;s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.</p>
+          <p class="lede">Each version is checked against that platform&rsquo;s real limits &mdash; caption length, aspect ratio, video duration &mdash; and it never claims &ldquo;verified&rdquo; on a listing that is not.</p>
+          <p class="lede">No agency retainer. No social media manager. No waiting on a designer.</p>
+        </div>
+        <div class="frame p-reach">
+          <img class="shot bleed lt" src="images/home/shot-social-light.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+          <img class="shot bleed dk" src="images/home/shot-social-dark.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+        </div>
       </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <span class="eyebrow">CRM</span>
+          <h2 class="h2">Every enquiry arrives <em>already worked.</em></h2>
+          <p class="lede">Every lead arrives with the city, the budget and the brief already attached &mdash; and Tayo&rsquo;s opening position with it.</p>
+          <p class="lede">Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.</p>
+          <p class="lede">The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.</p>
+        </div>
+        <div class="frame p-crm">
+          <img class="shot under lt" src="images/home/shot-crm-light.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+          <img class="shot under dk" src="images/home/shot-crm-dark.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+          <img class="phone lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+          <img class="phone dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">Proximity marketing</span>
+          <h2 class="h2">Reach the buyer <em>standing outside.</em></h2>
+          <p class="lede">Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.</p>
+          <p class="lede">Local intent, caught live, and delivered straight into your pipeline as a qualified lead.</p>
+        </div>
+        <div class="frame p-nearby">
+          <img class="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+          <img class="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+          <div class="ping" aria-hidden="true">
+            <span class="ping-icon"><img src="images/brand/mark-black-on-white-tight.jpg" alt="" /></span>
+            <span class="ping-top"><span>Synapse &middot; Nearby</span><span>now</span></span>
+            <span class="ping-t">A 4-bed duplex is 200&nbsp;m from you</span>
+            <span class="ping-s">&#8358;120M &middot; New Bodija. Tap to see it.</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <!-- ── PROXIMITY ── -->
-  <section class="m-section m-wrap raised">
-    <div class="m-kicker">Proximity marketing</div>
-    <h2 class="m-h2">Reach the buyer <em>standing outside.</em></h2>
-    <p class="m-body">Your verified listing, on their phone, while they are still on your street.</p>
-    <div class="m-phone-stage">
-      <div class="d-phone">
-        <div class="notch"></div>
-        <div class="d-push" data-push-card>
-          <div class="ph"><i></i> Synapse · Nearby</div>
-          <div class="pb">4-Bed Duplex, Lekki · ₦185M</div>
-          <div class="ps">You're 200m away. Verified 3 days ago — tap to view.</div>
-        </div>
+  <!-- ── ONE VIEW ── -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 class="h2">Built to make small teams <em>do big work.</em></h2>
+        <p class="lede">Every listing, lead and verification in a single view &mdash; with the next action already decided for each one.</p>
       </div>
-    </div>
-  </section>
-
-  <!-- ── ONE PORTAL ── -->
-  <section class="m-fresh m-section">
-    <div class="m-wrap">
-      <h2 class="m-h2">Built to make small teams <em>do big work.</em></h2>
-      <p class="m-body">Every listing, lead and verification in a single view.</p>
-      <div class="m-steps">
-        <div class="m-step">
-          <div class="n">CRM</div>
-          <div class="t">Nothing gets dropped</div>
-          <div class="d">Every lead ranked hot to cold, with the next action written for whoever picks it up.</div>
+      <div class="frame p-team wide">
+        <img class="shot lt" src="images/home/shot-listings-light.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons to post or share it." />
+        <img class="shot dk" src="images/home/shot-listings-dark.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons to post or share it." />
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-k">CRM</span>
+          <h3 class="h3">Nothing gets dropped</h3>
+          <p>Every lead ranked hot to cold, with the next best action written for whoever picks it up.</p>
         </div>
-        <div class="m-step">
-          <div class="n">TRUST</div>
-          <div class="t">Verification, tracked</div>
-          <div class="d">Where each property stands in verification, and what is still outstanding.</div>
+        <div class="step">
+          <span class="step-k">TRUST</span>
+          <h3 class="h3">Verification, tracked</h3>
+          <p>See where each property stands in verification, and what is still outstanding.</p>
         </div>
-        <div class="m-step">
-          <div class="n">GROWTH</div>
-          <div class="t">Know what worked</div>
-          <div class="d">Every closed deal traced back to the post that started it.</div>
+        <div class="step">
+          <span class="step-k">GROWTH</span>
+          <h3 class="h3">Know what worked</h3>
+          <p>Every closed deal traced back to the post that started it &mdash; so you spend on what actually sells.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── PRICING ── stacked, popular plan first on a phone -->
-  <section class="m-section m-wrap" id="m-pricing">
-    <div class="m-kicker">Pricing</div>
-    <h2 class="m-h2">Start free. Pay when it <em>pays you back.</em></h2>
-    <p class="m-body">No setup fee, no lock-in, no commission on your deals.</p>
+  <!-- ══ PRICING ══════════════════════════════════════════════════════════
+       The real tiers from the portal (PRICING in app/agency.html) -- keep the
+       two in step if either changes. -->
+  <section class="sec" id="pricing">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Pricing</span>
+        <h2 class="h2">Start free. Pay when it <em>pays you back.</em></h2>
+        <p class="lede">No setup fee, no lock-in, and no commission on your deals. Move up or down a tier whenever you like.</p>
+      </div>
 
-    <div class="pr-toggle m-pr-toggle" role="group" aria-label="Billing period">
-      <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
-      <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save"></span></button>
+      <!-- Billing period. Prices are written into the cards as monthly; the
+           toggle rewrites them, so there is one source of truth per plan. -->
+      <div class="pr-toggle" role="group" aria-label="Billing period">
+        <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
+        <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save"></span></button>
+      </div>
+
+      <div class="pr-grid">
+        <div class="pr-card">
+          <div class="pr-name">Free</div>
+          <div class="pr-price">&#8358;0<span>forever</span></div>
+          <p class="pr-best">New or small agencies getting started.</p>
+          <ul class="pr-list">
+            <li>Up to 20 active listings</li>
+            <li>2 team members</li>
+            <li>CRM with WhatsApp handoff</li>
+            <li>Tayo AI referrals</li>
+            <li>Standard verification queue</li>
+          </ul>
+          <p class="pr-not">No marketing automation or syndication.</p>
+        </div>
+
+        <div class="pr-card feature">
+          <span class="pr-badge">Most popular</span>
+          <div class="pr-name">Accelerate</div>
+          <div class="pr-price" data-monthly="75000">&#8358;75,000<span>per month</span></div>
+          <p class="pr-best">The plan almost every serious agency wants.</p>
+          <ul class="pr-list">
+            <li>Up to 100 listings &middot; 5 agent seats</li>
+            <li>Reviewed within 48 hours</li>
+            <li>Publish once, reach every channel</li>
+            <li>AI writes and schedules your posts</li>
+            <li>See which channels actually make buyers</li>
+          </ul>
+        </div>
+
+        <div class="pr-card">
+          <div class="pr-name">Leader</div>
+          <div class="pr-price" data-monthly="250000">&#8358;250,000<span>per month</span></div>
+          <p class="pr-best">Established agencies going for the top.</p>
+          <ul class="pr-list">
+            <li>Unlimited listings and seats</li>
+            <li>AI-generated campaigns, every channel</li>
+            <li>Proximity marketing</li>
+            <li>Dedicated verification desk</li>
+          </ul>
+          <p class="pr-not">Tayo still ranks purely on buyer fit &mdash; never on payment.</p>
+        </div>
+      </div>
+
+      <!-- Side-by-side comparison. Every row restates a claim already made on
+           the cards above -- this introduces no new promise. -->
+      <details class="pr-compare">
+        <summary>Compare the three plans side by side</summary>
+        <div class="pr-tablewrap">
+          <table class="pr-table">
+            <caption class="sr-only">Feature comparison across the Free, Accelerate and Leader plans</caption>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align:left">What you get</th>
+                <th scope="col">Free</th>
+                <th scope="col" class="hi">Accelerate</th>
+                <th scope="col">Leader</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Active listings</th><td>20</td><td class="hi">100</td><td>Unlimited</td></tr>
+              <tr><th scope="row">Team seats</th><td>2</td><td class="hi">5</td><td>Unlimited</td></tr>
+              <tr><th scope="row">CRM with WhatsApp handoff</th><td aria-label="Included">&#10003;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Tayo AI referrals</th><td aria-label="Included">&#10003;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Verification queue</th><td>Standard</td><td class="hi">48 hours</td><td>Dedicated desk</td></tr>
+              <tr><th scope="row">Social syndication</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">AI writes &amp; schedules posts</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Channel attribution</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Verification standard</th><td colspan="3" class="pr-neutral">Identical on every plan &mdash; verification is never for sale</td></tr>
+              <tr><th scope="row">Proximity marketing</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi no" aria-label="Not included">&mdash;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Commission on your deals</th><td>None</td><td class="hi">None</td><td>None</td></tr>
+              <tr><th scope="row">Tayo ranking</th><td colspan="3" class="pr-neutral">Always on buyer fit &mdash; never on what you pay</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
-
-    <div class="m-pr-stack">
-      <div class="m-pr-card feature">
-        <span class="m-pr-badge">Most popular</span>
-        <div class="m-pr-name">Accelerate</div>
-        <div class="pr-price m-pr-price" data-monthly="75000">₦75,000<span>per month</span></div>
-        <p class="m-pr-best">The plan almost every serious agency wants.</p>
-        <ul class="m-pr-list">
-          <li>Up to 100 listings &middot; 5 agent seats</li>
-          <li>Reviewed within 48 hours</li>
-          <li>Publish once, reach every channel</li>
-          <li>AI writes and schedules your posts</li>
-        </ul>
-      </div>
-
-      <div class="m-pr-card">
-        <div class="m-pr-name">Free</div>
-        <div class="m-pr-price">₦0<span>forever</span></div>
-        <p class="m-pr-best">New or small agencies getting started.</p>
-        <ul class="m-pr-list">
-          <li>Up to 20 active listings</li>
-          <li>2 team members</li>
-          <li>CRM with WhatsApp handoff</li>
-          <li>Standard verification queue</li>
-        </ul>
-      </div>
-
-      <div class="m-pr-card">
-        <div class="m-pr-name">Leader</div>
-        <div class="pr-price m-pr-price" data-monthly="250000">₦250,000<span>per month</span></div>
-        <p class="m-pr-best">Established agencies going for the top.</p>
-        <ul class="m-pr-list">
-          <li>Unlimited listings and seats</li>
-          <li>AI-generated campaigns, every channel</li>
-          <li>Proximity marketing</li>
-          <li>Dedicated verification desk</li>
-        </ul>
-      </div>
-    </div>
-    <p class="m-pr-note">Tayo always ranks on buyer fit — never on what you pay.</p>
   </section>
 
-  <!-- ── FINAL CTA ── -->
-  
+  <!-- ── THE LAST ASK, on paint ── -->
+  <section class="end">
+    <div class="wrap">
+      <div class="frame p-tayo">
+        <h2 class="h2">Put your next listing <em>to work.</em></h2>
+        <p class="lede">Free for up to 20 active listings. No setup fee, no lock-in, no commission on your deals.</p>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
+          <a class="btn btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
+</main>
 
-
-  </main>
-
-  <!-- Phone footer. Same content as the desktop one; the .m-footer-* styles
-       it uses were sitting unused in landing-mobile.css too. -->
-  <footer class="m-footer m-wrap">
-    <p class="m-footer-tagline">Synapse &mdash; by ILIOS Digital.<br>
-      AI that finds buyers homes, and finds agencies buyers.</p>
-    <div class="m-footer-legal-row">
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <a href="index.html" class="logo" aria-label="Synapse home">
+        <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+        <span class="logo-word">Synapse</span>
+      </a>
+      <p class="foot-tag">Synapse &mdash; by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.</p>
+      <p class="foot-tag">Screens on this page are the Synapse portal and Tayo with real listings; the leads, posts and chat in them are samples.</p>
+    </div>
+    <div class="foot-links">
+      <a href="buyers.html">For customers</a>
+      <a href="#pricing">Pricing</a>
+      <a href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
-    </div>
-  </footer>
-
-</div>
-<!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
-
-<!-- ══ THE CALL TO ACTION. Not one of several — the only one.
-     There were thirteen on this page: four at the foot of each desktop band,
-     two more on mobile, six across the pricing cards, and this. Every one of
-     them pointed at the same URL and said the same sentence, so the page
-     asked the same question thirteen times and a reader learned to scroll
-     past the shape. One standing action, always on screen, is a stronger ask
-     than a dozen that read as furniture.
-
-     Two entry points, and they are different doors, which is why both stay:
-     "Sign in" in the nav for an agency that already has an account, and
-     "Try free" down here for one that does not (mode=up opens signup, not
-     the sign-in form).
-
-     No dismiss button any more. Dismissing the only way in leaves a page
-     with no call to action at all, and it persisted for the session, so a
-     reader could put the page in that state and never see it again. For the
-     same reason it no longer yields to an "end zone": the pricing CTAs it
-     used to step aside for do not exist. -->
-<div class="sticky-cta show" id="stickyCta">
-  <a class="sticky-cta-btn" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Try free
-  </a>
-</div>
-
-<nav id="navbar">
-  <a href="index.html" class="nav-logo">
-    <div class="nav-logo-mark">
-      <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
-    </div>
-    <span class="nav-logo-word">Synapse</span>
-  </a>
-  <div class="aud-toggle" role="tablist" aria-label="Audience">
-    <a class="aud-seg" href="buyers.html" role="tab" aria-selected="false">For Customers</a>
-    <a class="aud-seg active" href="index.html" role="tab" aria-selected="true" aria-current="page">For Agencies</a>
-  </div>
-  <!-- The CTAs down the page all say "Open the agency portal", which is where
-       a NEW agency starts. An agency that already has an account was reading
-       past all of them looking for the word they expect. -->
-  <a class="nav-signin" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
-</nav>
-
-<!-- ══ HERO · CUSTOMERS ══ -->
-
-<section id="hero-agency" class="hero-section" data-aud="agency">
-  <div class="container">
-    <div class="hero-grid">
-      <!-- Left — editorial typography -->
-      <div class="hero-copy">
-        <div class="hero-eyebrow">For agencies &amp; developers</div>
-        <!-- A div, not an h1: the phone copy of this heading above carries the
-           real h1 element, and two on one page is one too many for a
-           crawler, which reads the markup and not the CSS that hides one.
-           role/aria-level keep it a level-one heading for a screen reader. -->
-        <div class="hero-headline" role="heading" aria-level="1">
-          Grow your agency.<br><em>Not your workload.</em>
-        </div>
-        <p class="hero-sub">
-          Every listing reaches more buyers, qualifies itself, and arrives as a warm, ready-to-close deal.
-        </p>
-      </div>
-
-      <!-- Right — the portal itself: leads arriving, already qualified. -->
-      <div class="hero-media hero-peek">
-        <div class="peek" data-peek="agency">
-          <div class="peek-bar">
-            <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Agency portal</span>
-          </div>
-          <div class="peek-portal">
-            <div class="pp-head">
-              <span class="pp-title">Leads · today</span>
-              <span class="pp-live"><i></i> Live</span>
-            </div>
-            <div class="peek-body pp-leads" id="peekAgency"></div>
-          </div>
-        </div>
-        <div class="peek-shadow" aria-hidden="true"></div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<!-- ══ WHERE IT GOES ═══════════════════════════════════════════════════════
-     The five platforms the syndication engine actually validates against,
-     plus our own marketplace. Taken from PLATFORMS in syndication.js rather
-     than from the fan-out demo, which still lists X -- a channel the engine
-     has no entry for, so nothing could be checked against its limits.
-
-     Marks are monochrome. Six logos in their own brand colours would put more
-     colour on this page than the rest of the site has in total, and the whole
-     palette rests on one accent. -->
-<section class="logorail" data-aud="agency" aria-label="Channels Synapse publishes to">
-  <div class="container">
-    <p class="lr-label">One upload, published to</p>
-    <div class="lr-viewport">
-      <ul class="lr-track">
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>
-          <span>Instagram</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>
-          <span>TikTok</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>
-          <span>YouTube</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>
-          <span>Facebook</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>
-          <span>WhatsApp</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>
-          <span>Synapse</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>
-          <span>Instagram</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>
-          <span>TikTok</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>
-          <span>YouTube</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>
-          <span>Facebook</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>
-          <span>WhatsApp</span>
-        </li>
-        <li class="lr-item">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>
-          <span>Synapse</span>
-        </li>
-      </ul>
-    </div>
-  </div>
-</section>
-<!-- ══ AGENCY · THE PROBLEM ══════════════════════════════════
-     Each card carries the problem and its answer side by side, one at a time.
-     A grid of four problems followed by a separate grid of four solutions
-     makes the reader hold both lists in mind and pair them up; here the
-     pairing is the card. The dark half is the one they are meant to recognise
-     as their own week. -->
-<section class="s-band reality-band" data-aud="agency">
-  <div class="container">
-    <div class="s-lede reveal">
-      <div class="s-kicker">The reality</div>
-      <h2 class="s-h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
-      <p class="s-sub">That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.</p>
-    </div>
-
-    <div class="car reveal" id="probCar">
-      <div class="car-track" id="probTrack" role="group" aria-label="The problem, and what Synapse does about it">
-        <article class="car-slide prob-card">
-          <div class="prob-half is-problem">
-            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">01</span></div>
-            <h3 class="prob-q">Are you working 97 dead ends to reach 3 live ones?</h3>
-            <p class="prob-b">Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
-          </div>
-        </article>
-        <article class="car-slide prob-card">
-          <div class="prob-half is-problem">
-            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">02</span></div>
-            <h3 class="prob-q">Are your evenings going on captions?</h3>
-            <p class="prob-b">Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
-          </div>
-        </article>
-        <article class="car-slide prob-card">
-          <div class="prob-half is-problem">
-            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">03</span></div>
-            <h3 class="prob-q">Are you splitting the fee to get reach?</h3>
-            <p class="prob-b">Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone&rsquo;s cut, or you take a fraction of what the work was worth.</p>
-          </div>
-        </article>
-        <article class="car-slide prob-card">
-          <div class="prob-half is-problem">
-            <div class="prob-top"><span class="prob-tag">The problem</span><span class="prob-n">04</span></div>
-            <h3 class="prob-q">Is your best negotiator one person?</h3>
-            <p class="prob-b">Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
-          </div>
-        </article>
-      </div>
-      <div class="car-foot">
-        <div class="car-dots" id="probDots" role="tablist" aria-label="Choose a problem"></div>
-        <span class="car-count" id="probCount">1 / 4</span>
-      </div>
-    </div>
-
-    <p class="s-sub reveal" style="text-align:center;max-width:760px;margin:38px auto 0"><b style="color:var(--text)">Either way:</b> the customer pays more, or you earn less on the same work. Often both.</p>
-  </div>
-</section>
-
-<!-- ══ INTRODUCING ═════════════════════════════════════════════════════════
-     The page named the problem and then went straight to selling a feature.
-     Between "the customer pays more, or you earn less" and "2x your reach"
-     there was nothing: no moment where the product actually turns up. A
-     reader had to infer that the thing about to be described was the answer
-     to the thing just described.
-
-     Ink, because this is the loudest the page is allowed to be. The brand
-     rule is that you feel the warmth and never see orange, so the accent is
-     one hairline and the sparkle on the mark -- everything else is type on
-     black, which is the strongest instrument left and the one this palette
-     is actually built for.
-
-     It says what Synapse IS in one sentence and makes no claim about
-     outcomes: no yields, no guarantees, nothing the terms would have to walk
-     back. Flamboyance in the typography, not the promises. -->
-<section class="s-band dark intro-band" data-aud="agency" aria-labelledby="introTitle">
-  <div class="container">
-    <div class="intro-inner">
-      <span class="intro-rule" aria-hidden="true"></span>
-      <p class="intro-eyebrow">Introducing</p>
-      <h2 class="intro-word" id="introTitle">Synapse</h2>
-      <p class="intro-line">The work you have been doing by hand &mdash;
-        the posting, the chasing, the checking &mdash;
-        <em>done once, properly, and on its own.</em></p>
-      <div class="intro-foot" aria-hidden="true">
-        <span class="intro-mark"><img src="images/brand/mark-white-transparent.png" alt="" /></span>
-        <span class="intro-foot-t">An AI property advisor for Nigeria</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<section class="s-band turn-band" id="theTurn" data-aud="agency">
-  <div class="container">
-    <div class="s-split">
-      <div class="s-lede reveal">
-        <div class="s-kicker">2× your reach</div>
-        <h2 class="s-h2">One listing. <em>Every channel.</em></h2>
-        <p class="s-sub">Upload once. Synapse writes the copy in your agency’s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.</p>
-        <p class="s-sub" style="margin-top:16px">Each version is checked against that platform’s real limits — caption length, aspect ratio, video duration — and it never claims “verified” on a listing that is not. That is the one claim you cannot afford to get wrong.</p>
-        <p class="s-sub" style="margin-top:16px">No agency retainer. No social media manager. No waiting on a designer.</p>
-      </div>
-      <div class="demo reveal" id="demoSyndicate">
-        <div class="demo-head"><span class="demo-ttl">Publishing · 3-Bed, Lekki</span><span class="demo-live"><i></i> Auto</span></div>
-        <div class="demo-body">
-          <div class="d-row" style="margin-bottom:4px">
-            <div class="d-thumb"></div>
-            <div class="d-main"><div class="d-p">₦165M</div><div class="d-t">Uploaded 12 seconds ago</div></div>
-          </div>
-          <div class="d-fan" id="fanList"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<section class="s-band dark" data-aud="agency">
-  <div class="container">
-    <div class="s-split flip">
-      <div class="s-lede reveal">
-        <div class="s-kicker">CRM</div>
-        <h2 class="s-h2">Every enquiry arrives <em>already worked.</em></h2>
-        <p class="s-sub">Every lead arrives with the city, the budget and the brief already attached — and Tayo’s opening position with it.</p>
-        <p class="s-sub" style="margin-top:16px">Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.</p>
-        <p class="s-sub" style="margin-top:16px">The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.</p>
-      </div>
-      <div class="demo reveal">
-        <div class="demo-head"><span class="demo-ttl">Enquiry · 2:14 am</span><span class="demo-live"><i></i> Tayo</span></div>
-        <div class="demo-body" id="agencyChat"></div>
-      </div>
-    </div>
-  </div>
-</section>
-<section class="s-band raised" data-aud="agency">
-  <div class="container">
-    <div class="s-split">
-      <div class="s-lede reveal">
-        <div class="s-kicker">Proximity marketing</div>
-        <h2 class="s-h2">Reach the buyer <em>standing outside.</em></h2>
-        <p class="s-sub">Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.</p>
-        <p class="s-sub" style="margin-top:16px">Local intent, caught live, and delivered straight into your pipeline as a qualified lead.</p>
-      </div>
-      <div class="demo reveal" style="background:none;border:none;box-shadow:none;padding:14px 0" id="demoPush">
-        <div class="d-phone">
-          <div class="notch"></div>
-          <div class="d-push" id="pushCard">
-            <div class="ph"><i></i> Synapse · Nearby</div>
-            <div class="pb">4-Bed Duplex, Lekki · ₦185M</div>
-            <div class="ps">You're 200m away. Verified 3 days ago — tap to view.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<section class="s-band tinted" data-aud="agency">
-  <div class="container">
-    <div class="s-lede reveal">
-      <h2 class="s-h2">Built to make small teams <em>do big work.</em></h2>
-      <p class="s-sub">Every listing, lead and verification in a single view — with the next action already decided for each one.</p>
-
-    </div>
-    <div class="s-steps">
-      <div class="s-step reveal">
-        <div class="n">CRM</div>
-        <div class="t">Nothing gets dropped</div>
-        <div class="d">Every lead ranked hot to cold, with the next best action written for whoever picks it up.</div>
-      </div>
-      <div class="s-step reveal">
-        <div class="n">TRUST</div>
-        <div class="t">Verification, tracked</div>
-        <div class="d">See where each property stands in verification, and what is still outstanding.</div>
-      </div>
-      <div class="s-step reveal">
-        <div class="n">GROWTH</div>
-        <div class="t">Know what worked</div>
-        <div class="d">Every closed deal traced back to the post that started it — so you spend on what actually sells.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══ AGENCY · PRICING ════════════════════════════════════════════════════
-     Agencies will not start a conversation without knowing the number. These
-     are the real tiers from the portal (PRICING in agency.html) — keep the two
-     in step if either changes. -->
-<section id="pricing" class="s-band" data-aud="agency">
-  <div class="container">
-    <div class="s-lede reveal">
-      <div class="s-kicker">Pricing</div>
-      <h2 class="s-h2">Start free. Pay when it <em>pays you back.</em></h2>
-      <p class="s-sub">No setup fee, no lock-in, and no commission on your deals. Move up or down a tier whenever you like.</p>
-    </div>
-
-    <!-- Billing period. Prices are written into the cards as monthly; the
-         toggle rewrites them, so there is one source of truth per plan. -->
-    <div class="pr-toggle" role="group" aria-label="Billing period">
-      <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
-      <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save" id="prSave"></span></button>
-    </div>
-
-    <div class="pr-grid">
-      <div class="pr-card reveal">
-        <div class="pr-name">Free</div>
-        <div class="pr-price">₦0<span>forever</span></div>
-        <p class="pr-best">New or small agencies getting started.</p>
-        <ul class="pr-list">
-          <li>Up to 20 active listings</li>
-          <li>2 team members</li>
-          <li>CRM with WhatsApp handoff</li>
-          <li>Tayo AI referrals</li>
-          <li>Standard verification queue</li>
-        </ul>
-        <p class="pr-not">No marketing automation or syndication.</p>
-      </div>
-
-      <div class="pr-card feature reveal">
-        <span class="pr-badge">Most popular</span>
-        <div class="pr-name">Accelerate</div>
-        <div class="pr-price" data-monthly="75000">₦75,000<span>per month</span></div>
-        <p class="pr-best">The plan almost every serious agency wants.</p>
-        <ul class="pr-list">
-          <li>Up to 100 listings · 5 agent seats</li>
-          <li>Reviewed within 48 hours</li>
-          <li>Publish once, reach every channel</li>
-          <li>AI writes and schedules your posts</li>
-          <li>See which channels actually make buyers</li>
-        </ul>
-      </div>
-
-      <div class="pr-card reveal">
-        <div class="pr-name">Leader</div>
-        <div class="pr-price" data-monthly="250000">₦250,000<span>per month</span></div>
-        <p class="pr-best">Established agencies going for the top.</p>
-        <ul class="pr-list">
-          <li>Unlimited listings and seats</li>
-          <li>AI-generated campaigns, every channel</li>
-          <li>Proximity marketing</li>
-          <li>Dedicated verification desk</li>
-        </ul>
-        <p class="pr-not">Tayo still ranks purely on buyer fit — never on payment.</p>
-      </div>
-    </div>
-
-    <!-- Side-by-side comparison. Three cards with different feature lists force
-         the reader to hold all three in their head and diff them; a table does
-         that work for them. Every row restates a claim already made on the
-         cards above — this introduces no new promise. -->
-    <details class="pr-compare">
-      <summary>Compare the three plans side by side</summary>
-      <div class="pr-tablewrap">
-        <table class="pr-table">
-          <caption class="sr-only">Feature comparison across the Free, Accelerate and Leader plans</caption>
-          <thead>
-            <tr>
-              <th scope="col">What you get</th>
-              <th scope="col">Free</th>
-              <th scope="col" class="hi">Accelerate</th>
-              <th scope="col">Leader</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row">Active listings</th><td>20</td><td class="hi">100</td><td>Unlimited</td></tr>
-            <tr><th scope="row">Team seats</th><td>2</td><td class="hi">5</td><td>Unlimited</td></tr>
-            <tr><th scope="row">CRM with WhatsApp handoff</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">Tayo AI referrals</th><td aria-label="Included">✓</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">Verification queue</th><td>Standard</td><td class="hi">48 hours</td><td>Dedicated desk</td></tr>
-            <tr><th scope="row">Social syndication</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">AI writes &amp; schedules posts</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">Channel attribution</th><td class="no" aria-label="Not included">—</td><td class="hi" aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">Verification standard</th><td colspan="3" style="text-align:center">Identical on every plan — verification is never for sale</td></tr>
-            <tr><th scope="row">Proximity marketing</th><td class="no" aria-label="Not included">—</td><td class="hi no" aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
-            <tr><th scope="row">Commission on your deals</th><td>None</td><td class="hi">None</td><td>None</td></tr>
-            <tr><th scope="row">Tayo ranking</th><td colspan="3" class="pr-neutral">Always on buyer fit — never on what you pay</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </details>
-  </div>
-</section>
-
-<!-- Closing CTA removed. The pricing tiers already say Start free and
-     Start with Accelerate, and the pill follows the reader down the page,
-     so a fourth ask on the way out repeated buttons that never leave the
-     screen. -->
-
-<!-- ══ FOOTER ═══════════════════════════════════════════════
-     There was no footer on this page at all. landing.css has carried the
-     styles for one the whole time -- footer, .footer-bottom, .footer-tagline,
-     .footer-legal -- with no markup anywhere using them, so the rules were
-     orphaned and privacy.html and terms.html were reachable from nothing.
-     Publishing terms you never link to is worse than not having them.
-
-     Deliberately not the four-column .footer-grid those styles also allow.
-     The page now makes exactly one ask -- the pill that follows you down it --
-     and a wall of links on the way out would be a second one wearing a
-     different hat. Who built this, and the two documents a reader is
-     entitled to find. -->
-<footer>
-  <div class="container">
-    <div class="footer-bottom">
-      <p class="footer-tagline">Synapse &mdash; by ILIOS Digital.<br>
-        AI that finds buyers homes, and finds agencies buyers.</p>
-      <!-- A div, not a <nav>. landing.css styles the bare element -- `nav {
-           position: fixed; top: 0 }` for the appbar -- so a <nav> here is
-           torn out of the footer and pinned over the header, which is exactly
-           what it did. -->
-      <div class="footer-legal">
-        <a href="privacy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </div>
     </div>
   </div>
 </footer>
 
+<script src="home.js"></script>
 <script>
-/* ── Pricing: monthly ⇄ annual (item 43) ─────────────────────────────────
-   COMMERCIAL DECISION — confirm before this goes in front of agencies.
-   ANNUAL_MONTHS_FREE is the offer: pay for (12 − n) months, get 12. It is one
-   number in one place precisely so it is Eden's to set, not a rate buried in
-   markup. Set it to 0 and the toggle disappears rather than advertising a
-   discount that does not exist.
-
-   Monthly prices live in the cards' data-monthly attributes, so there is one
-   source of truth per plan and the toggle only ever re-renders it. */
+/* ── Pricing: monthly ⇄ annual ────────────────────────────────────────────
+   COMMERCIAL DECISION. ANNUAL_MONTHS_FREE is the offer: pay for (12 − n)
+   months, get 12. One number in one place, so it is Eden's to set. Set it to
+   0 and the toggle disappears rather than advertising a discount that does
+   not exist. Monthly prices live in the cards' data-monthly attributes. */
 (function () {
   var ANNUAL_MONTHS_FREE = 2;
-
-  /* Desktop and mobile each render their own toggle; both must drive the
-     same paint(), or whichever block is live gets a dead switch. */
   var wraps = [].slice.call(document.querySelectorAll('.pr-toggle'));
   var prices = [].slice.call(document.querySelectorAll('.pr-price[data-monthly]'));
   if (!wraps.length || !prices.length) return;
-
-  if (!ANNUAL_MONTHS_FREE) {                                  // no offer, no toggle
-    wraps.forEach(function (w) { w.hidden = true; });
-    return;
-  }
+  if (!ANNUAL_MONTHS_FREE) { wraps.forEach(function (w) { w.hidden = true; }); return; }
 
   var paidMonths = 12 - ANNUAL_MONTHS_FREE;
   [].slice.call(document.querySelectorAll('.pr-save')).forEach(function (el) {
     el.textContent = ANNUAL_MONTHS_FREE + ' months free';
   });
-
   var naira = function (n) { return '₦' + Math.round(n).toLocaleString('en-NG'); };
 
   function paint(period) {
     prices.forEach(function (el) {
       var monthly = Number(el.getAttribute('data-monthly')) || 0;
       if (period === 'annual') {
-        // Shown as the effective monthly rate, with the real yearly total
-        // underneath — an agency budgets per month but pays per year, and
-        // hiding the total is how pricing pages mislead.
-        var perMonth = (monthly * paidMonths) / 12;
-        el.innerHTML = naira(perMonth) + '<span>per month, billed yearly ('
+        // The effective monthly rate, with the real yearly total underneath:
+        // an agency budgets per month but pays per year.
+        el.innerHTML = naira((monthly * paidMonths) / 12) + '<span>per month, billed yearly ('
           + naira(monthly * paidMonths) + ')</span>';
       } else {
         el.innerHTML = naira(monthly) + '<span>per month</span>';
@@ -1022,7 +501,6 @@
       });
     });
   }
-
   wraps.forEach(function (wrap) {
     wrap.addEventListener('click', function (e) {
       var b = e.target.closest('[data-per]');
@@ -1032,654 +510,5 @@
   paint('monthly');
 })();
 </script>
-
-<!-- ══ HERO · AGENCIES ══ -->
-
-
-<!-- ══ AGENCY 01 · THE PROMISE · black band ═══════════════════════════════
-     One line, inverted, full stop. Gives the page its first hard beat. -->
-
-<!-- ══ AGENCY 02 · UPLOAD ONCE ════════════════════════════════════════════ -->
-
-<!-- ══ AGENCY 03 · TOJU QUALIFIES · black band ════════════════════════════ -->
-
-<!-- ══ AGENCY 04 · PROXIMITY ══════════════════════════════════════════════ -->
-
-<!-- ══ AGENCY 05 · THE PORTAL ═════════════════════════════════════════════ -->
-
-<!-- ══ AGENCY · FINAL CTA ══ -->
-
-<!-- ══ FOR EVERYONE ══ -->
-<!-- ══ 01 · FRESH ONLY (the 14-day rule) ══════════════════════════════════
-     The differentiator, and the first thing a nervous first-time buyer needs
-     to hear: nothing you see here is a ghost. One idea, one image. -->
-<!-- ══ 01 · WHAT YOU GET · swipeable ══════════════════════════════════════
-     Four promises in the footprint of one section. Freshness leads because it
-     is the reason to trust anything else here; shared living, flex plans and
-     investing follow for whoever they apply to. Native scroll-snap, so it
-     swipes on touch and drives from buttons, dots or arrow keys. -->
-
-<!-- ══ 02 · HOW IT WORKS · three steps, no more ═══════════════════════════ -->
-
-<!-- ══ 03 · PROXIMITY ══════════════════════════════════════════════════════
-     Replaces the old "Who it's for" persona list. Marked "Coming soon" is
-     NOT applied here per the product owner's decision — see commit notes. -->
-
-<!-- ══ 04 · WHY YOU CAN TRUST IT ══════════════════════════════════════════ -->
-
-<!-- ══ FINAL CTA ══ -->
-
-
-
-<script>
-/* Everything below this line animates with GSAP. Bailing out here rather
-   than throwing on line one keeps the rest of the page's scripts running —
-   this used to be the first statement in a 380-line block, so a CDN failure
-   took the whole block with it, including the fail-safe meant to catch it. */
-if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP unavailable — page renders without scroll animation.'); }
-else {
-gsap.registerPlugin(ScrollTrigger);
-
-/* ─── The problem carousel, on a phone ──────────────────────────────────
-   Its own instance, not shared with the desktop track: a swipe is the only
-   input here, so this just reads scroll position back into the dots. Scroll
-   stays the source of truth, so a flick, a dot and a momentum scroll agree. */
-(function () {
-  var track = document.getElementById('mProbTrack');
-  if (!track) return;
-  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
-  var dotsBox = document.getElementById('mProbDots');
-  var count = document.getElementById('mProbCount');
-  if (!slides.length || !dotsBox) return;
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
-
-  slides.forEach(function (sl, i) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
-    b.setAttribute('role', 'tab');
-    var q = sl.querySelector('.prob-q');
-    b.setAttribute('aria-label', q ? q.textContent.trim() : 'Problem ' + (i + 1));
-    b.addEventListener('click', function () {
-      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
-    });
-    dotsBox.appendChild(b);
-  });
-  var dots = [].slice.call(dotsBox.children);
-
-  function sync() {
-    var best = 0, bestD = Infinity;
-    slides.forEach(function (sl, i) {
-      var d = Math.abs(offset(i) - track.scrollLeft);
-      if (d < bestD) { bestD = d; best = i; }
-    });
-    dots.forEach(function (d, i) {
-      d.classList.toggle('on', i === best);
-      d.setAttribute('aria-selected', String(i === best));
-    });
-    if (count) count.textContent = (best + 1) + ' / ' + slides.length;
-  }
-
-  var raf = null;
-  track.addEventListener('scroll', function () {
-    if (raf) return;
-    raf = requestAnimationFrame(function () { raf = null; sync(); });
-  }, { passive: true });
-
-  sync();
-})();
-
-/* The scrubbed colour wipe that used to drive --turn on #theTurn is gone --
-   see landing.css. It animated a panel from #ededed up over a #f5f5f5 page,
-   which after the page went black and white read as a grey edge travelling up
-   the screen on its own rather than as a transition. Nothing replaces it: the
-   section simply keeps the page background. */
-
-/* ─── Section partitions ────────────────────────────────────────────────
-   Adds .in-view to each band so its top hairline can draw itself across.
-   Once only -- a partition that redraws every time you scroll back past it
-   turns scenery into a flicker. Bands already on screen at load are marked
-   without animating, so the page does not open mid-transition. */
-(function () {
-  var bands = [].slice.call(document.querySelectorAll('.s-band, .m-section'));
-  if (!bands.length) return;
-  if (!('IntersectionObserver' in window)) {
-    bands.forEach(function (b) { b.classList.add('in-view'); });
-    return;
-  }
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      e.target.classList.add('in-view');
-      io.unobserve(e.target);
-    });
-  }, { rootMargin: '0px 0px -12% 0px' });
-  bands.forEach(function (b) { io.observe(b); });
-})();
-
-/* ─── The standing call to action ───────────────────────────────────────
-   All of this used to be conditional: gated behind half a viewport of
-   scroll, hidden again whenever an "end zone" was on screen, and removable
-   for the session by a dismiss button. Every one of those rules existed to
-   keep it from colliding with the twelve other CTAs on the page. Those are
-   gone, so the rules have nothing left to arbitrate -- and each of them
-   could leave the page with no call to action at all, which is now a state
-   worth ruling out rather than managing.
-
-   It ships visible (the class is in the markup, so it is painted on the
-   first frame rather than after script runs) and it stays visible. There is
-   no JavaScript left to write. */
-
-// ─── NAV solid on scroll ───
-// Both bars are toggled: whichever is live needs its own backdrop, or page
-// content scrolls visibly underneath a transparent fixed bar.
-window.addEventListener('scroll', () => {
-  var solid = window.scrollY > 10;
-  document.querySelectorAll('#navbar, #mNavbar').forEach(function (b) {
-    b.classList.toggle('solid', solid);
-  });
-});
-
-// ─── GSAP hero entrance ───
-gsap.timeline({ delay: 0.1 })
-  .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
-  .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
-  .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
-  .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
-  .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
-  .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
-// ─── GSAP scroll reveals ───
-/* Siblings cascade instead of arriving as a block.
-   Every .reveal got its own ScrollTrigger at `top 87%`, so a row of elements
-   sitting at the same height crossed that line on the same frame and appeared
-   together -- the three pricing cards, the three CRM/TRUST/GROWTH columns. A
-   group that lands all at once reads as a repaint; the same group 60ms apart
-   reads as a list arriving. 60ms is inside the 30-80ms band, and the index is
-   capped so a long row never turns the cascade into a wait.
-
-   Grouped by parent rather than by measured Y: it survives a reflow, and it
-   is the same thing the eye is reading as "a row". */
-const revealSibs = new Map();
-document.querySelectorAll('.reveal').forEach(el => {
-  const key = el.parentElement;
-  if (!revealSibs.has(key)) revealSibs.set(key, []);
-  revealSibs.get(key).push(el);
-});
-document.querySelectorAll('.reveal').forEach(el => {
-  const group = revealSibs.get(el.parentElement) || [el];
-  const stagger = group.length > 1 ? Math.min(group.indexOf(el), 4) * 0.06 : 0;
-  gsap.fromTo(el, { opacity: 0, y: 48 }, {
-    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', delay: stagger,
-    scrollTrigger: {
-      trigger: el, start: 'top 87%', toggleActions: 'play none none none',
-      /* Claims the element the moment it is scheduled. The fail-safe below
-         reveals anything still at opacity 0, and a staggered element is
-         legitimately at 0 during its delay -- without this flag the fail-safe
-         would overwrite the tween and cancel the cascade it is waiting out. */
-      onEnter: () => { el.dataset.rv = '1'; }
-    }
-  });
-});
-document.querySelectorAll('.reveal-l').forEach(el => {
-  gsap.fromTo(el, { opacity: 0, x: -56 }, {
-    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
-  });
-});
-document.querySelectorAll('.reveal-r').forEach(el => {
-  gsap.fromTo(el, { opacity: 0, x: 56 }, {
-    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
-  });
-});
-
-// ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
-// Guarantees content is never left invisible if ScrollTrigger cannot detect
-// the scroller (e.g. embedded preview/iframe contexts) — which would leave
-// the lower page blank. Uses native scroll events + getBoundingClientRect,
-// which work everywhere, to reveal each element once it enters the viewport.
-// No-op when ScrollTrigger already revealed an element (opacity already 1).
-(function () {
-  var sel = '.reveal, .reveal-l, .reveal-r';
-  function revealInView() {
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    document.querySelectorAll(sel).forEach(function (el) {
-      if (el.dataset.rv) return;                 // ScrollTrigger has it
-      if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
-      var r = el.getBoundingClientRect();
-      if (r.top < vh * 0.92 && r.bottom > 0) {
-        gsap.to(el, { opacity: 1, x: 0, y: 0, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
-      }
-    });
-  }
-  window.addEventListener('scroll', revealInView, { passive: true });
-  window.addEventListener('resize', revealInView);
-  window.addEventListener('load', revealInView);
-  [100, 600, 1500, 3000].forEach(function (t) { setTimeout(revealInView, t); });
-  revealInView();
-})();
-
-// Hero image parallax — subtle, per hero so it works for either audience.
-document.querySelectorAll('.hero-section').forEach(function (sec) {
-  var img = sec.querySelector('.hero-media img');
-  if (img) gsap.to(img, {
-    y: 40, ease: 'none',
-    scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
-  });
-});
-} // end GSAP-dependent section — everything below runs with or without it
-/* ─── App glimpse — the product working, in the hero ────────────────────────
-   Plays a real interaction so a first-time visitor learns the interaction
-   model before committing to anything. Replays whenever the audience toggle
-   switches, so both landing pages demo themselves. Respects reduced-motion by
-   rendering the finished state immediately. */
-(function () {
-  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var timers = [];
-  function clear() { timers.forEach(clearTimeout); timers = []; }
-  function at(ms, fn) { timers.push(setTimeout(fn, REDUCED ? 0 : ms)); }
-  function show(el) { requestAnimationFrame(function () { el.classList.add('in'); }); }
-
-  function bubble(box, who, text) {
-    var d = document.createElement('div');
-    d.className = 'pk-msg ' + who;
-    d.innerHTML = '<div class="pk-bub">' + text + '</div>';
-    box.appendChild(d); show(d); return d;
-  }
-  function dots(box) {
-    var d = document.createElement('div');
-    d.className = 'pk-msg you';
-    d.innerHTML = '<div class="pk-bub pk-dots"><i></i><i></i><i></i></div>';
-    box.appendChild(d); show(d); return d;
-  }
-
-  function playCustomer() {
-    var box = document.getElementById('peekCustomer');
-    if (!box) return;
-    box.innerHTML = '';
-    at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
-    at(750,  function () { box.__t = dots(box); });
-    at(1900, function () {
-      if (box.__t) box.__t.remove();
-      bubble(box, 'you', 'Two fit. Both verified this week — here is the stronger one:');
-    });
-    at(2350, function () {
-      var c = document.createElement('div');
-      c.className = 'pk-card';
-      c.innerHTML = '<span class="d-thumb" style="width:54px;height:54px"></span>'
-        + '<div class="c1"><div class="c-p">₦165M</div>'
-        + '<div class="c-t">3-Bed Apartment · Lekki Phase 1</div>'
-        + '<div class="c-v">✓ Verified 2 days ago</div></div>';
-      box.appendChild(c); show(c);
-    });
-    at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
-  }
-
-  /* Desktop and mobile each own a copy of these panels and only one is ever
-     displayed, so each play() drives every instance it finds rather than the
-     first id it hits. */
-  function playAgency() {
-    [].slice.call(document.querySelectorAll('#peekAgency, [data-peek-agency]')).forEach(playAgencyIn);
-  }
-  function playAgencyIn(box) {
-    if (!box) return;
-    box.innerHTML = '';
-    var leads = [
-      { i: 'BA', n: 'Bola A.', m: '₦150–180M · Lekki · ready to view', s: 'Hot', c: '' },
-      { i: 'CO', n: 'Chidi O.', m: 'Rent · ₦8M/yr · Ikeja', s: 'Qualified', c: 'warm' },
-      { i: 'FM', n: 'Funke M.', m: 'Investment · Lekki', s: 'Qualified', c: 'warm' },
-    ];
-    leads.forEach(function (l, i) {
-      at(250 + i * 620, function () {
-        var d = document.createElement('div');
-        d.className = 'pk-lead';
-        d.innerHTML = '<div class="av">' + l.i + '</div>'
-          + '<div class="l1"><div class="l-n">' + l.n + '</div><div class="l-m">' + l.m + '</div></div>'
-          + '<span class="l-s ' + l.c + '">' + l.s + '</span>';
-        box.appendChild(d); show(d);
-      });
-    });
-    at(2350, function () {
-      var d = document.createElement('div');
-      d.className = 'pk-lead';
-      d.style.borderStyle = 'dashed';
-      d.innerHTML = '<div class="l1"><div class="l-m">Tayo qualified all three before your team opened the app.</div></div>';
-      box.appendChild(d); show(d);
-    });
-  }
-
-  /* pins landing on a board, one at a time (customer · boards section) */
-  function playVerify() {
-    var box = document.getElementById('verifyList');
-    if (!box) return;
-    box.innerHTML = '';
-    var checks = ['Title documents', 'Ground survey', 'Structure', 'Flood risk',
-                  'Legal status', 'Ownership confirmed', 'Photos match the house'];
-    checks.forEach(function (c, i) {
-      var d = document.createElement('div');
-      d.className = 'd-check';
-      d.innerHTML = '<span class="b">✓</span>' + c;
-      box.appendChild(d);
-      at(160 + i * 190, function () { d.classList.add('in'); });
-    });
-    at(160 + checks.length * 190 + 120, function () {
-      var d = document.createElement('div');
-      d.className = 'd-check';
-      d.innerHTML = '<span class="b wait">·</span>Still available — re-checked every 14 days';
-      box.appendChild(d);
-      requestAnimationFrame(function () { d.classList.add('in'); });
-    });
-  }
-
-  /* one upload fanning out to every channel (agency) */
-  function playSyndicate() {
-    [].slice.call(document.querySelectorAll('#fanList, [data-fan-list]')).forEach(playSyndicateIn);
-  }
-  function playSyndicateIn(box) {
-    if (!box) return;
-    box.innerHTML = '';
-    /* Matches PLATFORMS in syndication.js. X was in this list and is not in
-       the engine, so the demo was fanning out to a channel nothing could be
-       validated against.
-
-       These are the SAME drawings as the logo rail further down the page --
-       monochrome, stroked, inheriting the chip's colour. Two-letter chips
-       stood here before (IG / TT / YT), which is the look of a mock somebody
-       meant to finish, on the one section whose whole job is to convince an
-       agency we really do publish to these places. They are deliberately not
-       the portal's full-colour brand marks: the rail's note applies here too,
-       six logos in their own colours would put more colour on this page than
-       the rest of the site has together. Keep these in step with the rail. */
-    var MARK = {
-      Instagram: '<rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/>',
-      TikTok:    '<path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/>',
-      YouTube:   '<rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/>',
-      Facebook:  '<path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/>',
-      WhatsApp:  '<path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/>',
-      Synapse:   '<circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/>'
-    };
-    function markFor(name) {
-      var inner = MARK[name];
-      /* No mark rather than a stray letter: a channel we forgot to draw should
-         look like a channel with no icon, not like a broken one. */
-      if (!inner) return '';
-      return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"'
-        + ' stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-        + inner + '</svg>';
-    }
-    var chans = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'WhatsApp', 'Synapse'];
-    chans.forEach(function (name, i) {
-      var d = document.createElement('div');
-      d.className = 'd-chan';
-      d.innerHTML = '<span class="k">' + markFor(name) + '</span>' + name + '<span class="ok">✓</span>';
-      box.appendChild(d);
-      at(200 + i * 210, function () { d.classList.add('in'); });
-    });
-  }
-
-  /* a 2am enquiry Tayo handles alone (agency) */
-  function playAgencyChat() {
-    [].slice.call(document.querySelectorAll('#agencyChat, [data-agency-chat]')).forEach(playAgencyChatIn);
-  }
-  function playAgencyChatIn(box) {
-    if (!box) return;
-    box.innerHTML = '';
-    at(150,  function () { bubble(box, 'me', 'Is the Lekki duplex still available?'); });
-    at(700,  function () { box.__t = dots(box); });
-    at(1700, function () {
-      if (box.__t) box.__t.remove();
-      bubble(box, 'you', 'It is — verified 3 days ago. What is your budget range?');
-    });
-    at(2500, function () { bubble(box, 'me', 'Up to ₦190M, buying outright.'); });
-    at(3300, function () {
-      var c = document.createElement('div');
-      c.className = 'pk-card';
-      c.innerHTML = '<div class="c1"><div class="c-p">Qualified lead → your CRM</div>'
-        + '<div class="c-t">Cash buyer · ₦190M · viewing booked Sat 11am</div></div>'
-        + '<span class="d-tag">Hot</span>';
-      box.appendChild(c); show(c);
-    });
-  }
-
-  /* a proximity alert arriving on a phone (agency) */
-  function playPush() {
-    [].slice.call(document.querySelectorAll('#pushCard, [data-push-card]')).forEach(function (card) {
-      card.classList.remove('in');
-      at(400, function () { card.classList.add('in'); });
-    });
-  }
-
-  window.synPeek = function (aud) {
-    clear();
-    if (aud === 'agency') { playAgency(); playSyndicate(); playAgencyChat(); playPush(); }
-    else { playCustomer(); playVerify(); }
-  };
-  // one audience per page now — play whichever glimpse this page contains
-  function whichPeek() { return document.getElementById('peekAgency') ? 'agency' : 'customer'; }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.synPeek(whichPeek()); });
-  else window.synPeek(whichPeek());
-})();
-
-/* ─── Benefit carousel ──────────────────────────────────────────────────────
-   Scroll position is the single source of truth — the buttons, dots and keys
-   all just scroll, and the UI reads back from the scroll. That way a native
-   swipe and a button press can never disagree about which slide is showing. */
-(function () {
-  var track = document.getElementById('carTrack');
-  if (!track) return;
-  var slides = [].slice.call(track.querySelectorAll('.car-slide'));
-  var dotsBox = document.getElementById('carDots');
-  var count = document.getElementById('carCount');
-  var prev = document.getElementById('carPrev');
-  var next = document.getElementById('carNext');
-  var idx = 0;
-
-  slides.forEach(function (s, i) {
-    var b = document.createElement('button');
-    b.className = 'car-dot' + (i === 0 ? ' on' : '');
-    b.type = 'button';
-    b.setAttribute('role', 'tab');
-    b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
-    b.addEventListener('click', function () { go(i); });
-    dotsBox.appendChild(b);
-  });
-  var dots = [].slice.call(dotsBox.children);
-
-  // measure from the first slide, not the track: offsetLeft is relative to
-  // each element's own offsetParent, which is not necessarily the track
-  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
-
-  function go(i) {
-    idx = Math.max(0, Math.min(slides.length - 1, i));
-    track.scrollTo({ left: offset(idx), behavior: 'smooth' });
-  }
-  function sync() {
-    // nearest slide to the current scroll position wins
-    var best = 0, bestD = Infinity;
-    slides.forEach(function (s, i) {
-      var d = Math.abs(offset(i) - track.scrollLeft);
-      if (d < bestD) { bestD = d; best = i; }
-    });
-    idx = best;
-    dots.forEach(function (d, i) { d.classList.toggle('on', i === idx); d.setAttribute('aria-selected', i === idx); });
-    count.textContent = (idx + 1) + ' / ' + slides.length;
-    prev.disabled = idx === 0;
-    next.disabled = idx === slides.length - 1;
-    // fill any progress bars on the slide that just became visible
-    slides[idx].querySelectorAll('.d-bar i[data-fill]').forEach(function (el) {
-      el.style.width = el.getAttribute('data-fill') + '%';
-    });
-  }
-
-  prev.addEventListener('click', function () { go(idx - 1); });
-  next.addEventListener('click', function () { go(idx + 1); });
-  track.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
-    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(idx - 1); }
-  });
-  /* ── Scroll drives the slides ──────────────────────────────────────────
-     Bounded scroll-jacking, same design as the customer landing page's
-     carousel: engages only while the carousel is genuinely centred in the
-     viewport, RELEASES at both ends so the page can never get stuck inside
-     it, ignores horizontal gestures (native two-finger swipe already does
-     that better), and a cooldown means one flick of trackpad momentum
-     advances one slide, not five. An earlier, simpler version of this
-     (raw scrollLeft += deltaY, boundary check only on the "away" side)
-     could swallow a normal downward page-scroll the moment the section
-     scrolled into view — page appeared frozen. This one only ever
-     preventDefault()s a wheel tick that will actually move a slide. */
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var LOCK_MS = 520, lastAdvance = 0;
-  var car = track.closest('.car') || track;
-  function carouselCentred() {
-    var r = car.getBoundingClientRect();
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    var visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-    if (visible < Math.min(r.height, vh) * 0.7) return false;
-    var mid = r.top + r.height / 2;
-    return mid > vh * 0.2 && mid < vh * 0.8;
-  }
-  car.addEventListener('wheel', function (e) {
-    if (reduced.matches) return;
-    if (e.ctrlKey) return;
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    if (!carouselCentred()) return;
-    var dir = e.deltaY > 0 ? 1 : -1;
-    var atEnd = (dir > 0 && idx >= slides.length - 1) || (dir < 0 && idx <= 0);
-    if (atEnd) return;
-    e.preventDefault();
-    var now = Date.now();
-    if (now - lastAdvance < LOCK_MS) return;
-    lastAdvance = now;
-    go(idx + dir);
-  }, { passive: false });
-  var t;
-  track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
-  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
-  sync();
-})();
-
-// ─── FAQ accordion — one open at a time ───
-document.querySelectorAll('.faq-item').forEach(item => {
-  const btn = item.querySelector('.faq-q');
-  const ans = item.querySelector('.faq-a');
-  btn.addEventListener('click', () => {
-    const isOpen = item.classList.contains('open');
-    document.querySelectorAll('.faq-item.open').forEach(o => {
-      o.classList.remove('open');
-      o.querySelector('.faq-a').style.maxHeight = '0px';
-    });
-    if (!isOpen) {
-      item.classList.add('open');
-      ans.style.maxHeight = ans.scrollHeight + 'px';
-    }
-  });
-});
-
-// ─── Wire the CTA buttons to the application ───
-// CTAs open the actual app screens (clickable prototypes of the real
-// @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
-// primary/secondary buttons are handled by the audience toggle below.
-(function () {
-  // Every customer CTA funnels to Tayo. Only agency-audience actions and the
-  // explicit "Browse verified homes" button route elsewhere.
-  // Agency CTAs land on sign-in first — the portal has no anonymous mode.
-  var AGENCY_GATE = 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html');
-  var routes = [
-    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: AGENCY_GATE },
-    { match: /browse verified homes/i, target: 'app/browse.html' },
-  ];
-  var ctas = document.querySelectorAll(
-    '.panel-btn-primary, .panel-btn-secondary, ' +
-    '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
-  );
-  ctas.forEach(function (btn) {
-    var label = (btn.textContent || '').trim();
-    var route = routes.find(function (r) { return r.match.test(label); });
-    btn.style.cursor = 'pointer';
-    btn.addEventListener('click', function () {
-      if (route && route.target) window.location.href = route.target;
-      else if (route && route.scroll) {
-        var el = document.querySelector(route.scroll);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else window.location.href = 'app/toju.html';
-    });
-  });
-})();
-
-
-
-/* ─── The problem slider ────────────────────────────────────────────────────
-   Native scroll-snap does the sliding; this only reads the scroll position
-   back into the dots and the counter, so a swipe, a dot, an arrow key and a
-   trackpad all end up in the same place. Scroll stays the source of truth --
-   there is no separate index to fall out of step with what is on screen. */
-(function () {
-  var track = document.getElementById('probTrack');
-  if (!track) return;
-  var slides = [].slice.call(track.querySelectorAll('.car-slide'));
-  var dotsBox = document.getElementById('probDots');
-  var count = document.getElementById('probCount');
-  if (!slides.length || !dotsBox) return;
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
-  function go(i) {
-    track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
-  }
-
-  slides.forEach(function (s, i) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'car-dot' + (i === 0 ? ' on' : '');
-    b.setAttribute('role', 'tab');
-    /* Named, not numbered: "Problem 2 of 4" tells a screen-reader user where
-       they are; the question itself tells them what they are moving to. */
-    var q = s.querySelector('.prob-q');
-    b.setAttribute('aria-label', (q ? q.textContent.trim() : 'Problem ' + (i + 1)));
-    b.addEventListener('click', function () { go(i); });
-    dotsBox.appendChild(b);
-  });
-  var dots = [].slice.call(dotsBox.children);
-
-  function sync() {
-    var best = 0, bestD = Infinity;
-    slides.forEach(function (s, i) {
-      var d = Math.abs(offset(i) - track.scrollLeft);
-      if (d < bestD) { bestD = d; best = i; }
-    });
-    dots.forEach(function (d, i) {
-      d.classList.toggle('on', i === best);
-      d.setAttribute('aria-selected', String(i === best));
-    });
-    if (count) count.textContent = (best + 1) + ' / ' + slides.length;
-    return best;
-  }
-
-  var raf = null;
-  track.addEventListener('scroll', function () {
-    if (raf) return;
-    raf = requestAnimationFrame(function () { raf = null; sync(); });
-  }, { passive: true });
-
-  /* The track is focusable and takes arrow keys, so the slider is operable
-     without a pointer. Left and right only -- up and down still scroll the
-     page, which is what someone reading expects them to do. */
-  track.setAttribute('tabindex', '0');
-  track.addEventListener('keydown', function (e) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-    e.preventDefault();
-    var i = sync() + (e.key === 'ArrowRight' ? 1 : -1);
-    go(Math.max(0, Math.min(slides.length - 1, i)));
-  });
-
-  sync();
-})();
-
-</script>
-<script src="app/icons.js"></script>
-<script src="app/motion.js" data-motion-base="app/motion/"></script>
 </body>
 </html>

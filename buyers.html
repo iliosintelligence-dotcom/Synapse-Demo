@@ -33,558 +33,206 @@
   <meta name="twitter:title" content="Find a home that's actually right for you" />
   <meta name="twitter:description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
   <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-buyers.jpg" />
-  <meta name="theme-color" content="#f5f5f5" />
+  <meta name="theme-color" content="#FAF6F0" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <!-- Both of the above come off a CDN we do not control. This runs after them
-       and marks the document only when they actually arrived; the reveal rules
-       in landing.css hide nothing without it. Placed inline in <head> so it
-       cannot itself fail to load, and so the class is set before first paint. -->
-  <script>if (window.gsap && window.ScrollTrigger) document.documentElement.classList.add('anim-ready');</script>
 
-<link rel="stylesheet" href="landing.css" />
-<link rel="stylesheet" href="landing-mobile.css" />
-<link rel="stylesheet" href="app/motion.css" />
-<link rel="stylesheet" href="app/seam.css" />
-<!-- In <head>, not at the end of <body>: pagereveal fires before a
-     body script has run, and seam.js has to be listening for it. -->
-<script src="app/seam.js"></script>
+  <!-- LIGHT BY DAY, DARK BY NIGHT, as on the agency page: dark from 7pm to
+       7am on the visitor's own clock, stamped before the stylesheet paints.
+       The switch in the bar overrides it for the visit; ?theme= forces one
+       load. home.js keeps it in step while the page is open. -->
+  <script>
+    (function () {
+      var d = document.documentElement, chosen = null;
+      function byClock() { var h = new Date().getHours(); return (h >= 19 || h < 7) ? 'dark' : 'light'; }
+      try { chosen = new URLSearchParams(location.search).get('theme') || sessionStorage.getItem('syn_home_theme'); } catch (e) {}
+      if (chosen !== 'light' && chosen !== 'dark') chosen = null;
+      d.setAttribute('data-theme', chosen || byClock());
+      window.SynHome = { byClock: byClock, chosen: function () { return chosen; }, choose: function (t) { chosen = t; } };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
   <script src="app/arrival.js"></script>
 </head>
 <body>
-<script>
-  /* Always open the landing at the very top — never a restored mid-page
-     position (fixes returning from an app page landing you halfway down).
-     Handles first load, reloads, and bfcache back/forward. */
-  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-  (function () {
-    function toTop() {
-      var b = document.documentElement.style.scrollBehavior;
-      document.documentElement.style.scrollBehavior = 'auto';
-      window.scrollTo(0, 0);
-      document.documentElement.style.scrollBehavior = b;
-    }
-    window.addEventListener('load', toTop);
-    window.addEventListener('pageshow', function (e) { if (e.persisted) toTop(); });
-  })();
-</script>
+<a class="skip" href="#main">Skip to content</a>
 
-<!-- ══ NAV ══ -->
-<div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="images/brand/mark-black-on-white-tight.jpg" alt=""></div>
-<!-- ══════════════════════════════════════════════════════════════════════
-     MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
-     the desktop markup below. Every element is m- prefixed and owns its own
-     layout; landing.css's desktop rules are untouched and simply hidden at
-     this breakpoint. Styles live in landing-mobile.css.
-     ══════════════════════════════════════════════════════════════════════ -->
-<div class="m-page">
-
-  <!-- First focusable thing on the page, invisible until focused. WCAG 2.4.1:
-       a way past the blocks that repeat on every page -- here the bar with
-       the wordmark, the audience toggle and the sign-in link. -->
-  <a class="m-skip" href="#mMain">Skip to content</a>
-
-  <nav class="m-navbar" id="mNavbar">
-    <a href="buyers.html" class="m-logo">
-      <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
-      <span class="m-logo-word">Synapse</span>
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a href="buyers.html" class="logo" aria-label="Synapse home">
+      <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+      <span class="logo-word">Synapse</span>
     </a>
-    <div class="m-aud-toggle" role="tablist" aria-label="Audience">
-      <a class="m-aud-seg active" href="buyers.html" role="tab" aria-selected="true" aria-current="page">For Customers</a>
-      <a class="m-aud-seg" href="index.html" role="tab" aria-selected="false">For Agencies</a>
-    </div>
-    <a class="m-nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
-  </nav>
+    <nav class="nav-links" aria-label="Page">
+      <a href="#how">How it works</a>
+      <a href="app/browse.html">Your matches</a>
+      <a href="index.html">For agencies</a>
+    </nav>
+    <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
+      <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+      <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    </button>
+    <!-- Every other action on this page opens Tayo, which needs no account;
+         somebody who already has one still needs a way in. -->
+    <a class="nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
+    <a class="btn btn-solid btn-sm" href="app/toju.html">Talk to Tayo</a>
+  </div>
+</header>
 
-  <!-- The main landmark. Mobile only, for the reason set out on the agency
-       page: the desktop sections are direct children of body and the rule
-       that hides them on a phone is `body > section`, so wrapping them would
-       make the desktop page render underneath this one. -->
-  <main id="mMain" tabindex="-1">
+<main id="main" tabindex="-1">
 
-  <!-- ── HERO ── the composer IS the primary action; no competing pill -->
-  <header class="m-hero m-wrap">
-    <div class="m-hero-eyebrow">For buyers &amp; renters</div>
-    <h1 class="m-hero-headline">The property advisor who works <em>for you.</em></h1>
-    <p class="m-hero-sub">Tayo learns how you actually live, finds the homes that fit, and tells you why each one made the list.</p>
-
-    <div class="m-peek">
-      <div class="m-peek-bar">
-        <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-        <span class="m-peek-url">synapse.ng &nbsp;·&nbsp; Tayo</span>
-      </div>
-      <div class="m-peek-body" id="peekCustomerM" data-peek-customer></div>
-      <div class="m-hero-chips">
-        <a class="m-hero-chip" href="app/toju.html?ask=3-bed%20in%20Lekki%20under%20%E2%82%A6180M">3-bed in Lekki</a>
-      </div>
-      <form class="m-hero-composer" action="app/toju.html" method="get">
-        <input class="m-hero-field" name="ask" autocomplete="off" maxlength="300"
-               placeholder="Tell Tayo what you're looking for…"
-               aria-label="Tell Tayo what you're looking for" />
-        <button class="m-hero-send" type="submit" aria-label="Ask Tayo">↑</button>
+  <!-- ── HERO: the question, asked right here ── -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">For buyers &amp; renters</span>
+      <h1 class="h1 flow">Find the home you have been <em>picturing.</em></h1>
+      <p class="lede">Tayo learns how you actually live, finds the homes that fit, and tells you why each one made the list.</p>
+      <!-- The real front door: whatever is typed here is handed to Tayo
+           already sent, so the first thing a visitor does is the product
+           working, not a sign-up. -->
+      <form class="ask" action="app/toju.html" method="get">
+        <input name="ask" autocomplete="off" maxlength="300" placeholder="Tell Tayo what you're looking for…" aria-label="Tell Tayo what you're looking for" />
+        <button type="submit" aria-label="Ask Tayo">&uarr;</button>
       </form>
-    </div>
-    <a class="m-hero-ask-link" href="app/toju.html">Or just talk to Tayo →</a>
-
-    <div class="m-hero-trust">
-      <span class="m-hero-pip"><i></i> Free. No sign-up to start.</span>
-    </div>
-  </header>
-
-  <!-- ── THE NUMBERS ── its own section now rather than a band tacked to the
-       bottom of the hero, so the black runs the full width of the page on its
-       own terms instead of being faked from inside a light section. -->
-  <!-- ── THE THREE PROMISES ── each figure with the reason it matters. The
-       middle one is the argument: no ghost listings. -->
-  <section class="m-promise">
-    <div class="m-wrap">
-      <div class="m-promise-kicker">What you get</div>
-      <h2 class="m-promise-h2">Always awake. Always current. <em>Always free.</em></h2>
-
-      <div class="m-promise-item">
-        <div class="m-promise-fig">24/7</div>
-        <div class="m-promise-name">Tayo is awake when you are</div>
-        <p class="m-promise-why">Ask at two in the morning, get an answer at two in the morning. No form, no callback, no office hours.</p>
+      <div class="ask-foot">
+        <span class="pip">Free. No sign-up to start.</span>
+        <a href="app/toju.html">Or just talk to Tayo &rarr;</a>
       </div>
-
-      <div class="m-promise-item">
-        <div class="m-promise-fig">14 days</div>
-        <div class="m-promise-name">Or the listing disappears</div>
-        <p class="m-promise-why">Every home is re-confirmed by its agency every fortnight, or it comes off the site. You never fall for a house that sold last month.</p>
-      </div>
-
-      <div class="m-promise-item">
-        <div class="m-promise-fig">Free</div>
-        <div class="m-promise-name">For buyers and renters</div>
-        <p class="m-promise-why">No fee, no commission, no subscription, no card. Agencies pay for Synapse because it brings them buyers.</p>
+    </div>
+    <div class="wrap">
+      <div class="frame p-hero hero-frame">
+        <img class="shot lt" src="images/home/shot-tayo-desk-light.webp" width="2000" height="1250" loading="lazy" alt="Tayo in Synapse: a family asks for a two-bedroom in Ibadan around two million naira a year, Tayo answers with two homes and why, and the homes appear on a map beside the chat." />
+        <img class="shot dk" src="images/home/shot-tayo-desk-dark.webp" width="2000" height="1250" loading="lazy" alt="Tayo in Synapse: a family asks for a two-bedroom in Ibadan around two million naira a year, Tayo answers with two homes and why, and the homes appear on a map beside the chat." />
       </div>
     </div>
   </section>
 
-  </main>
-
-</div>
-<!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
-
-<nav id="navbar">
-  <a href="buyers.html" class="nav-logo">
-    <div class="nav-logo-mark">
-      <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
-    </div>
-    <span class="nav-logo-word">Synapse</span>
-  </a>
-  <!-- The familiar segmented control. Now that the two audiences live on
-       separate pages it navigates rather than filtering in place — same
-       control, same muscle memory, one page per journey. -->
-  <div class="aud-toggle" role="tablist" aria-label="Audience">
-    <a class="aud-seg active" href="buyers.html" role="tab" aria-selected="true" aria-current="page">For Customers</a>
-    <a class="aud-seg" href="index.html" role="tab" aria-selected="false">For Agencies</a>
-  </div>
-  <!-- Every call to action on this page opened Tayo, which needs no account.
-       That left somebody who already HAS one with nowhere to sign in, and
-       somebody who wanted one with no way to say so. One quiet link rather
-       than the pair of buttons that used to sit here. -->
-  <a class="nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
-</nav>
-
-<!-- ══ HERO · CUSTOMERS ══ -->
-
-<section id="hero" class="hero-section" data-aud="customer">
-  <div class="container">
-    <div class="hero-grid">
-      <!-- Left — editorial typography -->
-      <div class="hero-copy">
-        <div class="hero-eyebrow">For buyers &amp; renters</div>
-        <!-- A div, not an h1: the phone copy of this heading above carries the
-           real h1 element, and two on one page is one too many for a
-           crawler, which reads the markup and not the CSS that hides one.
-           role/aria-level keep it a level-one heading for a screen reader. -->
-        <div class="hero-headline" role="heading" aria-level="1">
-          Find the home you have been <em>picturing.</em>
-        </div>
-        <p class="hero-sub">
-          Tell Tayo how you actually live &mdash; where you work, how you get there, what you will not compromise on. It finds the homes that fit, and says why. Or pin the rooms and colours you love instead, and let your taste do the searching.
-        </p>
-        <!-- ONE decision on this screen (Hick's Law). Everything else is proof. -->
-        <div class="hero-ctas">
-          <button class="panel-btn-primary">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Talk to Tayo, it's free
-          </button>
-        </div>
-        <div class="hero-trust">
-          <span class="pip"><i></i> Free. No sign-up to start.</span>
-        </div>
+  <!-- ── THE THREE PROMISES: each figure with what it buys you ── -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">What you get</span>
+        <h2 class="h2">Always awake. Always current. <em>Always free.</em></h2>
       </div>
-
-      <!-- Right — the product itself, working. A real conversation types out
-           so a first-time visitor sees exactly what using Synapse looks like
-           before deciding anything. -->
-      <div class="hero-media hero-peek">
-        <div class="peek" data-peek="customer">
-          <div class="peek-bar">
-            <span class="pd"></span><span class="pd"></span><span class="pd"></span>
-            <span class="peek-url">synapse.ng &nbsp;·&nbsp; Tayo</span>
-          </div>
-          <div class="peek-body" id="peekCustomer"></div>
-          <!-- This was a mock: a <span> that looked like an input and did
-               nothing. It is now the real front door — whatever is typed here
-               is handed to Tayo already sent, so the first thing a visitor
-               does is the product working, not a sign-up. -->
-          <form class="peek-composer" id="heroAsk" action="app/toju.html" method="get">
-            <input class="peek-field" id="heroAskInput" name="ask" autocomplete="off"
-                   maxlength="300" placeholder="Tell Tayo what you're looking for…"
-                   aria-label="Tell Tayo what you're looking for" />
-            <button class="peek-send" type="submit" aria-label="Ask Tayo">↑</button>
-          </form>
+      <div class="promises">
+        <div class="promise">
+          <div class="promise-fig">24/7</div>
+          <h3 class="h3">Tayo is awake when you are</h3>
+          <p>Ask at two in the morning and get an answer at two in the morning. No form to fill in, no callback to wait for, no office hours to work around.</p>
         </div>
-        <div class="peek-shadow" aria-hidden="true"></div>
+        <div class="promise">
+          <div class="promise-fig">14 days</div>
+          <h3 class="h3">Or the listing disappears</h3>
+          <p>Every home is re-confirmed by its agency every fortnight, or it comes off the site. So you never make the call that starts &ldquo;actually, that one has gone.&rdquo;</p>
+        </div>
+        <div class="promise">
+          <div class="promise-fig">Free</div>
+          <h3 class="h3">For buyers and renters</h3>
+          <p>No fee, no commission, no subscription, and no card to enter. Agencies pay for Synapse because it brings them buyers. You are the reason it works, not the one being charged.</p>
+        </div>
       </div>
     </div>
+  </section>
 
-  </div>
-</section>
-<!-- ══ THE NUMBERS ════════════════════════════════════════
-     Its own section rather than a band inside the hero. In there it had to
-     fake full width with `box-shadow: 0 0 0 100vmax` and a clip-path, because
-     a child cannot escape its container; out here it is simply a black section
-     that is as wide as the page. Three figures that are true by definition,
-     not measurements we would have to invent. -->
-<!-- ══ THE THREE PROMISES ═══════════════════════════════════════════════════
-     Was three bare figures in a thin strip: "24/7", "14", "Free", each with a
-     caption and nothing else. A number on its own is trivia -- the reader has
-     to be told what it buys them. Each one now carries the reason it matters,
-     and 14 days carries the one that actually sells the product: no ghost
-     listings. That is the complaint about every property site in this market.
+  <!-- ── HOW IT WORKS: words beside the screens that do it ── -->
+  <section class="sec" id="how">
+    <div class="wrap">
 
-     Full section rather than a band, so the black has room to be deliberate
-     instead of looking like a rule that got thick. -->
-<section class="promise" data-aud="customer">
-  <div class="container">
-    <div class="promise-lede reveal">
-      <div class="promise-kicker">What you get</div>
-      <h2 class="promise-h2">Always awake. Always current. <em>Always free.</em></h2>
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">Tayo</span>
+          <h2 class="h2">Tell Tayo how you <em>actually live.</em></h2>
+          <p class="lede">Where you work, how you get there, what you will not compromise on. It finds the homes that fit, and says why.</p>
+          <p class="lede">Every home it suggests carries its verification status, so you can see which have been through Synapse&rsquo;s checks and which have not.</p>
+        </div>
+        <div class="frame p-crm">
+          <img class="phone solo lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone: the question, Tayo's answer, and the homes worth a look." />
+          <img class="phone solo dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone: the question, Tayo's answer, and the homes worth a look." />
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <span class="eyebrow">Your matches</span>
+          <h2 class="h2">Every home that fits, <em>in one place.</em></h2>
+          <p class="lede">What Tayo finds is kept for you, on a list or a map: each home with its price, where it is, and whether it has been verified yet.</p>
+        </div>
+        <div class="frame p-reach">
+          <img class="shot bleed lt" src="images/home/shot-matches-light.webp" width="1600" height="895" loading="lazy" alt="Your matches: homes in Ibadan with their prices, whether each is verified, and its photograph." />
+          <img class="shot bleed dk" src="images/home/shot-matches-dark.webp" width="1600" height="895" loading="lazy" alt="Your matches: homes in Ibadan with their prices, whether each is verified, and its photograph." />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">Dream boards</span>
+          <h2 class="h2">Or let your taste <em>do the searching.</em></h2>
+          <p class="lede">Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Tayo reads each board and finds real verified homes that feel like it.</p>
+        </div>
+        <div class="frame p-team">
+          <img class="shot bleed lt" src="images/home/shot-board-light.webp" width="1600" height="933" loading="lazy" alt="A dream board of kitchens: warm wood, deep green cabinetry, soft morning light." />
+          <img class="shot bleed dk" src="images/home/shot-board-dark.webp" width="1600" height="933" loading="lazy" alt="A dream board of kitchens: warm wood, deep green cabinetry, soft morning light." />
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <span class="eyebrow">Every home</span>
+          <h2 class="h2">Know the street <em>before you visit.</em></h2>
+          <p class="lede">Each home shows what is around it &mdash; hospitals, schools, markets, transport &mdash; on a map beside its photographs.</p>
+        </div>
+        <div class="frame p-nearby">
+          <img class="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A home on Synapse: the house, its price, and a map of what is around it." />
+          <img class="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A home on Synapse: the house, its price, and a map of what is around it." />
+        </div>
+      </div>
+
     </div>
+  </section>
 
-    <div class="promise-grid">
-      <div class="promise-item reveal">
-        <div class="promise-fig">24/7</div>
-        <div class="promise-name">Tayo is awake when you are</div>
-        <p class="promise-why">Ask at two in the morning and get an answer at two in the morning. No form to fill in, no callback to wait for, no office hours to work around.</p>
+  <!-- ── THE LAST ASK, on paint ── -->
+  <section class="end">
+    <div class="wrap">
+      <div class="frame p-tayo">
+        <h2 class="h2">The property advisor who works <em>for you.</em></h2>
+        <p class="lede">Free for buyers and renters. No fee, no commission, and no sign-up to start.</p>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="app/toju.html">Talk to Tayo, it&rsquo;s free</a>
+          <a class="btn btn-ghost" href="app/browse.html">See your matches</a>
+        </div>
       </div>
+    </div>
+  </section>
 
-      <div class="promise-item reveal">
-        <div class="promise-fig">14 days</div>
-        <div class="promise-name">Or the listing disappears</div>
-        <p class="promise-why">Every home is re-confirmed by its agency every fortnight, or it comes off the site. So you never make the call that starts &ldquo;actually, that one has gone.&rdquo;</p>
-      </div>
+</main>
 
-      <div class="promise-item reveal">
-        <div class="promise-fig">Free</div>
-        <div class="promise-name">For buyers and renters</div>
-        <p class="promise-why">No fee, no commission, no subscription, and no card to enter. Agencies pay for Synapse because it brings them buyers. You are the reason it works, not the one being charged.</p>
-      </div>
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <a href="buyers.html" class="logo" aria-label="Synapse home">
+        <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+        <span class="logo-word">Synapse</span>
+      </a>
+      <p class="foot-tag">Synapse &mdash; by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.</p>
+      <p class="foot-tag">Screens on this page are Tayo and Synapse with real listings; the conversation in them is a sample.</p>
+    </div>
+    <div class="foot-links">
+      <a href="index.html">For agencies</a>
+      <a href="app/browse.html">Your matches</a>
+      <a href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
     </div>
   </div>
-</section>
+</footer>
 
-<!-- The closing ask is the floating pill, not a section. On a page this short
-     a full CTA band restated a button that is already on screen. -->
-<div class="sticky-cta" id="stickyCta">
-  <a class="sticky-cta-btn" href="app/toju.html">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Talk to Tayo, free
-  </a>
-  <button class="sticky-cta-x" type="button" aria-label="Dismiss">✕</button>
-</div>
-
-<script>
-/* Everything below this line animates with GSAP. Bailing out here rather
-   than throwing on line one keeps the rest of the page's scripts running —
-   this used to be the first statement in a 380-line block, so a CDN failure
-   took the whole block with it, including the fail-safe meant to catch it. */
-if (!window.gsap || !window.ScrollTrigger) { console.warn('GSAP unavailable — page renders without scroll animation.'); }
-else {
-gsap.registerPlugin(ScrollTrigger);
-
-/* ─── The floating ask ──────────────────────────────────────────────────
-   Shown at every width. It is the standing action on the page and travels
-   with the reader once the hero has scrolled away.
-
-   Shown immediately rather than after a scroll threshold: it is the only
-   action on the page, and there is nothing to earn. Dismissal sticks for
-   the session -- someone who closed it does not want it back on the next
-   scroll. */
-(function () {
-  var bar = document.getElementById('stickyCta');
-  if (!bar) return;
-  var KEY = 'syn-sticky-cta-dismissed';
-  var dismissed = false;
-  try { dismissed = !!sessionStorage.getItem(KEY); } catch (e) {}
-
-  function update() { bar.classList.toggle('show', !dismissed); }
-
-  bar.querySelector('.sticky-cta-x').addEventListener('click', function () {
-    dismissed = true;
-    update();
-    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
-  });
-
-  update();
-})();
-
-
-// ─── NAV solid on scroll ───
-window.addEventListener('scroll', () => {
-  document.getElementById('navbar').classList.toggle('solid', window.scrollY > 10);
-});
-
-// ─── GSAP hero entrance ───
-gsap.timeline({ delay: 0.1 })
-  .from('.hero-eyebrow', { opacity: 0, y: 18, duration: 0.7, ease: 'power3.out' })
-  .from('.hero-headline', { opacity: 0, y: 30, duration: 0.9, ease: 'power3.out' }, '-=0.45')
-  .from('.hero-sub', { opacity: 0, y: 22, duration: 0.7, ease: 'power3.out' }, '-=0.55')
-  .from('.hero-ctas', { opacity: 0, y: 16, duration: 0.6, ease: 'power3.out' }, '-=0.4')
-  .from('.hero-trust', { opacity: 0, duration: 0.5 }, '-=0.3')
-  .from('.hero-media', { opacity: 0, x: 48, scale: 0.97, duration: 1.1, ease: 'power3.out' }, '-=1.1')
-  .from('.hero-stat', { opacity: 0, y: 24, duration: 0.7, stagger: 0.12, ease: 'power3.out' }, '-=0.5');
-// ─── GSAP scroll reveals ───
-document.querySelectorAll('.reveal').forEach(el => {
-  gsap.fromTo(el, { opacity: 0, y: 48 }, {
-    opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
-  });
-});
-document.querySelectorAll('.reveal-l').forEach(el => {
-  gsap.fromTo(el, { opacity: 0, x: -56 }, {
-    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
-  });
-});
-document.querySelectorAll('.reveal-r').forEach(el => {
-  gsap.fromTo(el, { opacity: 0, x: 56 }, {
-    opacity: 1, x: 0, duration: 1.0, ease: 'power3.out',
-    scrollTrigger: { trigger: el, start: 'top 87%', toggleActions: 'play none none none' }
-  });
-});
-
-// ─── Fail-safe reveal (independent of ScrollTrigger's scroll context) ───
-// Guarantees content is never left invisible if ScrollTrigger cannot detect
-// the scroller (e.g. embedded preview/iframe contexts) — which would leave
-// the lower page blank. Uses native scroll events + getBoundingClientRect,
-// which work everywhere, to reveal each element once it enters the viewport.
-// No-op when ScrollTrigger already revealed an element (opacity already 1).
-(function () {
-  var sel = '.reveal, .reveal-l, .reveal-r';
-  function revealInView() {
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    document.querySelectorAll(sel).forEach(function (el) {
-      if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
-      var r = el.getBoundingClientRect();
-      if (r.top < vh * 0.92 && r.bottom > 0) {
-        gsap.to(el, { opacity: 1, x: 0, y: 0, duration: 0.7, ease: 'power3.out', overwrite: 'auto' });
-      }
-    });
-  }
-  window.addEventListener('scroll', revealInView, { passive: true });
-  window.addEventListener('resize', revealInView);
-  window.addEventListener('load', revealInView);
-  [100, 600, 1500, 3000].forEach(function (t) { setTimeout(revealInView, t); });
-  revealInView();
-})();
-
-// Hero image parallax — subtle, per hero so it works for either audience.
-document.querySelectorAll('.hero-section').forEach(function (sec) {
-  var img = sec.querySelector('.hero-media img');
-  if (img) gsap.to(img, {
-    y: 40, ease: 'none',
-    scrollTrigger: { trigger: sec, start: 'top top', end: 'bottom top', scrub: 1.5 }
-  });
-});
-} // end GSAP-dependent section — everything below runs with or without it
-/* ─── App glimpse — the product working, in the hero ────────────────────────
-   Plays a real interaction so a first-time visitor learns the interaction
-   model before committing to anything. Respects reduced-motion by rendering
-   the finished state immediately. */
-(function () {
-  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var timers = [];
-  function clear() { timers.forEach(clearTimeout); timers = []; }
-  function at(ms, fn) { timers.push(setTimeout(fn, REDUCED ? 0 : ms)); }
-  function show(el) { requestAnimationFrame(function () { el.classList.add('in'); }); }
-
-  function bubble(box, who, text) {
-    var d = document.createElement('div');
-    d.className = 'pk-msg ' + who;
-    d.innerHTML = '<div class="pk-bub">' + text + '</div>';
-    box.appendChild(d); show(d); return d;
-  }
-  function dots(box) {
-    var d = document.createElement('div');
-    d.className = 'pk-msg you';
-    d.innerHTML = '<div class="pk-bub pk-dots"><i></i><i></i><i></i></div>';
-    box.appendChild(d); show(d); return d;
-  }
-
-  /* Desktop and mobile each own a peek box and only one is ever visible, so
-     this plays into whichever exist rather than the first id it finds. */
-  function playCustomer() {
-    [].slice.call(document.querySelectorAll('#peekCustomer, [data-peek-customer]'))
-      .forEach(playCustomerIn);
-  }
-  function playCustomerIn(box) {
-    if (!box) return;
-    /* Mobile's peek card is a shorter, fixed-height box (m-peek-body,
-       max-height:220px) — it gets the same visual language but a shorter
-       transcript (3 beats: ask → dots → answer+card) so nothing clips.
-       Desktop's taller card plays the fuller exchange. */
-    var compact = box.hasAttribute('data-peek-customer');
-    box.innerHTML = '';
-    at(150,  function () { bubble(box, 'me', '3-bed in Lekki, under ₦180M') ; });
-    at(750,  function () { box.__t = dots(box); });
-    at(1900, function () {
-      if (box.__t) box.__t.remove();
-      bubble(box, 'you', 'Two fit. Both verified this week — here is the stronger one:');
-    });
-    at(2350, function () {
-      var c = document.createElement('div');
-      c.className = 'pk-card';
-      c.innerHTML = '<span class="d-thumb" style="width:54px;height:54px"></span>'
-        + '<div class="c1"><div class="c-p">₦165M</div>'
-        + '<div class="c-t">3-Bed Apartment · Lekki Phase 1</div>'
-        + '<div class="c-v">✓ Verified 2 days ago</div></div>';
-      box.appendChild(c); show(c);
-    });
-    if (compact) return;
-    at(3200, function () { bubble(box, 'you', '₦12M below the area median. Want my full take?'); });
-  }
-
-  /* The agency glimpse used to live here too, back when one file served both
-     audiences and a toggle swapped between them. It is one audience per page
-     now: this page has no #peekAgency, #fanList, #agencyChat or #pushCard, so
-     playAgency / playSyndicate / playAgencyChat / playPush each found no box
-     and returned immediately, every load, forever. Dead weight is not free --
-     the copy of the fan-out list in it had drifted to advertise X, which the
-     syndication engine cannot publish to, and to omit YouTube, which it can.
-     The live version is in index.html. */
-  window.synPeek = function () {
-    clear();
-    playCustomer();
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.synPeek);
-  else window.synPeek();
-})();
-
-/* ─── Mobile carousel ───────────────────────────────────────────────────────
-   Its own instance, not a fork of the desktop one: native swipe is the only
-   input (no prev/next buttons, no auto-advance), so this is just "read the
-   scroll position back into the dots". Scroll stays the source of truth. */
-(function () {
-  var track = document.getElementById('mCarTrack');
-  if (!track) return;
-  var slides = [].slice.call(track.querySelectorAll('.m-car-slide'));
-  var dotsBox = document.getElementById('mCarDots');
-  var count = document.getElementById('mCarCount');
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var idx = 0;
-
-  slides.forEach(function (s, i) {
-    var b = document.createElement('button');
-    b.className = 'm-car-dot' + (i === 0 ? ' on' : '');
-    b.type = 'button';
-    b.setAttribute('role', 'tab');
-    b.setAttribute('aria-label', 'Benefit ' + (i + 1) + ' of ' + slides.length);
-    b.addEventListener('click', function () {
-      track.scrollTo({ left: offset(i), behavior: reduced.matches ? 'auto' : 'smooth' });
-    });
-    dotsBox.appendChild(b);
-  });
-  var dots = [].slice.call(dotsBox.children);
-
-  function offset(i) { return slides[i].offsetLeft - slides[0].offsetLeft; }
-
-  function sync() {
-    var best = 0, bestD = Infinity;
-    slides.forEach(function (s, i) {
-      var d = Math.abs(offset(i) - track.scrollLeft);
-      if (d < bestD) { bestD = d; best = i; }
-    });
-    idx = best;
-    dots.forEach(function (d, i) {
-      d.classList.toggle('on', i === idx);
-      d.setAttribute('aria-selected', i === idx);
-    });
-    count.textContent = (idx + 1) + ' / ' + slides.length;
-    slides[idx].querySelectorAll('.m-d-bar i[data-fill]').forEach(function (el) {
-      el.style.width = el.getAttribute('data-fill') + '%';
-    });
-  }
-
-  var t;
-  track.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(sync, 90); }, { passive: true });
-  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(sync, 120); });
-  sync();
-})();
-
-/* ─── Mobile navbar solidifies on scroll ─────────────────────────────────── */
-(function () {
-  var bar = document.getElementById('mNavbar');
-  if (!bar) return;
-  function upd() { bar.classList.toggle('solid', window.scrollY > 10); }
-  window.addEventListener('scroll', upd, { passive: true });
-  upd();
-})();
-
-// RESTORED TWICE, for two different reasons, both worth recording.
-//
-// First: this block was collateral damage when the freshness-demo driver was
-// removed. That cut ran from a comment marker to the closing script tag, and
-// this router happened to sit between them, so every orange CTA on the page
-// silently stopped navigating. A range delete between two markers has to be
-// told what it is allowed to swallow.
-//
-// Then the restoration itself broke it again: the comment explaining the
-// above contained a literal closing script tag. The HTML parser does not care
-// that it sits inside a JS comment -- it ends the script element right there,
-// and everything below became inert text. Never write that sequence inside an
-// inline script, not even in prose.
-// ─── Wire the CTA buttons to the application ───
-// CTAs open the actual app screens (clickable prototypes of the real
-// @synapse mobile/dashboard pages, served from /app/*.html). The nav's own
-// primary/secondary buttons are handled by the audience toggle below.
-(function () {
-  // Every customer CTA funnels to Tayo. Only agency-audience actions and the
-  // explicit "Browse verified homes" button route elsewhere.
-  // Agency CTAs land on sign-in first — the portal has no anonymous mode.
-  var AGENCY_GATE = 'app/signin.html?role=agency&reason=agency&next=' + encodeURIComponent('agency.html');
-  var routes = [
-    { match: /agency portal|open agency portal|book a demo|for agencies|list with synapse|partner/i, target: AGENCY_GATE },
-    { match: /browse verified homes/i, target: 'app/browse.html' },
-  ];
-  var ctas = document.querySelectorAll(
-    '.panel-btn-primary, .panel-btn-secondary, ' +
-    '.btn-large-brand, .btn-large-ghost, .btn-cta-primary, .btn-cta-ghost',
-  );
-  ctas.forEach(function (btn) {
-    var label = (btn.textContent || '').trim();
-    var route = routes.find(function (r) { return r.match.test(label); });
-    btn.style.cursor = 'pointer';
-    btn.addEventListener('click', function () {
-      if (route && route.target) window.location.href = route.target;
-      else if (route && route.scroll) {
-        var el = document.querySelector(route.scroll);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else window.location.href = 'app/toju.html';
-    });
-  });
-})();
-
-</script>
-<script src="app/icons.js"></script>
-<script src="app/motion.js" data-motion-base="app/motion/"></script>
+<script src="home.js"></script>
 </body>
 </html>
