@@ -3665,117 +3665,125 @@
     }
 
 
-    /* ══ PURE WHITE, CLEARLY SEPARATE (2026-09-28) ═══════════════════════════
-       Eden: "the background we keep the same, but I need the elements on the
-       foreground to be pure white. And well differentiated. Separate from
-       the background color." (A grey ground was tried first and reverted --
-       the page stays Cloud, #F7F7F8.)
 
-       The surfaces were frosted glass or #FCFBF9, so on a near-white page a
-       card's edge had to be guessed. They are #FFFFFF now, with no blur, and
-       since white on #F7F7F8 is only about 1.06:1, what separates them is
-       drawn: a hairline border and a soft two-step shadow. Text colours are
-       unchanged; the ground they sit on is.
+    /* ══ THE FLOATING DOCK (desktop, 2026-09-29) ═════════════════════════════
+       Eden, with a Miro board as the reference: the menu "floating against
+       the background", back and forward "underneath it", the expand / hide
+       switch "at the bottom", and "the horizontal level of each of the pages
+       ... the same when it's minimized and when it's expanded".
 
-       Scoped to body.portal: the customer app's .card is not touched. */
-    body.portal {
-      --surface: #FFFFFF;
-      --edge: rgba(15, 17, 20, 0.11);
-      --lift: 0 1px 2px rgba(15, 17, 20, 0.06), 0 6px 18px rgba(15, 17, 20, 0.07);
-    }
-    body.portal .card {
-      background: #FFFFFF;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-      border: 1px solid var(--edge);
-      box-shadow: var(--lift);
-    }
-    /* The things that sit on the page rather than inside a card: page-level
-       tools and search, empty states, the pipeline's columns, the price
-       table, the verification checklist. */
-    body.portal .content :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap, #vfBody) {
-      background: #FFFFFF;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-      border-color: var(--edge);
-      box-shadow: var(--lift);
-    }
-    body.portal .content #vfBody {
-      border: 1px solid var(--edge); border-radius: var(--radius); padding: 2px 20px;
-    }
-    body.portal .content #vfBody > .vf-row:first-child { border-top: none; }
-    /* Inside a card they are part of it: no second shadow. */
-    body.portal .content .card :is(.crm-tools, .pane-search, .ov-blank, .col, .pr-table-wrap) {
-      box-shadow: none;
-    }
-    body.portal .content .btn-ghost {
-      background: #FFFFFF;
-      border-color: var(--edge);
-    }
-    body.portal .appbar,
-    body.portal .side {
-      background: #FFFFFF;
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
+       Why the items used to jump: collapsed, the group headers (Main, Growth,
+       Team, Account) were squashed to nothing; expanded, they came back and
+       pushed every item beneath them down. Now each header keeps one height in
+       both states -- a short rule when collapsed, its name when expanded -- and
+       the groups no longer fold, so nothing moves vertically. Horizontally the
+       icons do not move either: the dock only grows to the right and the labels
+       fade in beside them.
 
-    /* ══ A LIGHTER PAGE, AND EMPTY STATES WITHOUT THE DASHES (2026-09-28) ════
-       Eden: "Remove the broken lines ... surrounding the empty states. Maybe
-       find another way to make it more immersive ... Then the background.
-       Make it a little lighter, a little less gray."
+       Expansion is the switch at the bottom, remembered on this device; it no
+       longer opens on hover (a menu that widens when the pointer passes over it
+       moves things under the pointer). Collapsed, hovering an icon still shows
+       its name. Phones keep their own dock (the 1024px block above). */
+    .side-dock, .side-toggle { display: none; }
+    @media (min-width: 1025px) {
+      body.portal .shell { padding-left: 88px; }
+      body.portal .side-dock {
+        display: flex; flex-direction: column; gap: 10px;
+        position: fixed; left: 16px; top: calc(61px + 16px); z-index: 40;
+        max-height: calc(100vh - 61px - 16px - 76px);
+      }
+      body.portal .side-dock .side,
+      body.portal .side-dock .side:hover,
+      body.portal .side-dock .side:focus-within {
+        position: relative; left: auto; top: auto; bottom: auto;
+        width: 56px; min-height: 0; flex: 0 1 auto;
+        padding: 8px; gap: 2px;
+        background: var(--surface);
+        border: 1px solid var(--line); border-radius: 16px;
+        box-shadow: 0 6px 22px rgba(74, 52, 30, 0.10), 0 1px 2px rgba(74, 52, 30, 0.06);
+        overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
+        transition: width var(--m-expanded) var(--m-ease-panel);
+      }
+      body.portal .side-dock .side::-webkit-scrollbar { display: none; }
+      body.portal .side-dock .side.expanded { width: 232px; }
 
-       THE PAGE read grey because of the brand grain (app.css body::before, a
-       fixed noise layer at .55) laid over Cloud. In the portal the grain is
-       halved and the ground lifted a shade, so it is lighter and less grey
-       while still not flat.
+      /* Every item one height, the icon at one x, in both states. */
+      body.portal .side-dock .side a {
+        height: 40px; padding: 0 12px; gap: 12px; border-radius: 11px;
+        white-space: nowrap; flex: none;
+      }
+      body.portal .side-dock .side a .syn-i { width: 16px; height: 16px; }
+      body.portal .side-dock .side .lbl-x { opacity: 0; transition: opacity var(--m-standard) var(--m-ease); }
+      body.portal .side-dock .side.expanded .lbl-x { opacity: 1; }
 
-       EMPTY STATES were dashed outlines, which read as a hole cut in the
-       page. They are now whole white surfaces, the same edge as every other
-       card, with the brand's warmth arriving the way the brand sheets use it:
-       a faint orange wash from the top and a soft glow behind the icon. An
-       empty pipeline column gets the same glow on a quiet tint, no outline. */
-    body.portal { --bg: #FAFAFB; background-color: #FAFAFB; }
-    body.portal::before { opacity: .26; }
+      /* Group headers: the same 22px in both states. */
+      body.portal .side-dock .side .grp-sec { flex: none; }
+      body.portal .side-dock .side .grp-sec .grp-items {
+        max-height: none !important; opacity: 1 !important; overflow: visible; gap: 2px;
+      }
+      body.portal .side-dock .side .grp,
+      body.portal .side-dock .side:not(:hover):not(:focus-within) .grp {
+        position: relative; height: 22px; padding: 0 12px; margin: 4px 0 0;
+        opacity: 1; overflow: hidden; pointer-events: none;
+        font: 700 10px var(--f-sans); letter-spacing: .12em; text-transform: uppercase;
+        color: var(--ink-dim); white-space: nowrap;
+      }
+      body.portal .side-dock .side .grp-sec:first-child .grp { margin-top: 0; }
+      body.portal .side-dock .side .grp .grp-chv { display: none; }
+      body.portal .side-dock .side .grp span { opacity: 0; transition: opacity var(--m-standard) var(--m-ease); }
+      body.portal .side-dock .side.expanded .grp span { opacity: 1; }
+      body.portal .side-dock .side .grp::before {
+        content: ''; position: absolute; left: 12px; top: 50%; width: 16px; height: 1px;
+        background: var(--line-2); transition: opacity var(--m-standard) var(--m-ease);
+      }
+      body.portal .side-dock .side.expanded .grp::before { opacity: 0; }
 
-    body.portal .ov-blank {
-      border: 1px solid var(--edge);
-      background:
-        radial-gradient(ellipse 75% 60% at 50% 0%, rgba(255, 138, 45, 0.075), rgba(255, 138, 45, 0) 70%),
-        #FFFFFF;
+      /* The agency's name lives in every pane's header; the dock stays tools. */
+      body.portal .side-dock .side .me { display: none; }
+
+      /* Back / forward: its own small card, like the reference's undo/redo. */
+      body.portal .side-hist {
+        display: flex; flex-direction: column; gap: 2px; flex: none;
+        width: 56px; padding: 8px; box-sizing: border-box;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+        box-shadow: 0 6px 22px rgba(74, 52, 30, 0.10), 0 1px 2px rgba(74, 52, 30, 0.06);
+      }
+      body.portal .side-hist button,
+      body.portal .side-toggle {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; border: none; border-radius: 11px;
+        background: transparent; color: var(--ink); cursor: pointer;
+      }
+      body.portal .side-hist button svg, body.portal .side-toggle svg { width: 18px; height: 18px; }
+      body.portal .side-hist button:hover:not(:disabled) { background: var(--canvas); }
+      body.portal .side-hist button:disabled { color: var(--ink-dim); opacity: .45; cursor: default; }
+
+      /* Expand / collapse: bottom left, on its own. */
+      body.portal .side-toggle {
+        position: fixed; left: 16px; bottom: 16px; z-index: 40;
+        width: 56px; height: 48px; border-radius: 16px;
+        background: var(--surface); border: 1px solid var(--line);
+        box-shadow: 0 6px 22px rgba(74, 52, 30, 0.10), 0 1px 2px rgba(74, 52, 30, 0.06);
+      }
+      body.portal .side-toggle:hover { border-color: var(--line-2); }
+      body.portal .side-toggle[aria-expanded="true"] { color: var(--orange); }
+
+      body.portal :is(.side-hist button, .side-toggle):focus-visible {
+        outline: 2px solid var(--orange); outline-offset: 2px;
+      }
     }
-    body.portal .content .card .ov-blank { border: none; box-shadow: none; }
-    body.portal .ov-blank .ov-blank-i {
-      width: 64px; height: 64px; border-radius: 50%; opacity: 1;
-      align-items: center; justify-content: center; margin-bottom: 12px;
-      background: radial-gradient(circle, rgba(255, 138, 45, 0.20) 0%, rgba(255, 138, 45, 0.07) 55%, rgba(255, 138, 45, 0) 72%);
-      color: var(--ink);
-    }
-    body.portal .ov-blank .ov-blank-i .syn-i { width: 26px; height: 26px; opacity: .8; }
-
-    /* The two other empty states that were dashed: an empty brand, and an
-       insight row with no figure to lead with. */
-    body.portal .bk-empty {
-      border: 1px solid var(--edge);
-      background:
-        radial-gradient(ellipse 75% 60% at 50% 0%, rgba(255, 138, 45, 0.075), rgba(255, 138, 45, 0) 70%),
-        #FFFFFF;
-      box-shadow: var(--lift);
-    }
-    body.portal .insight-empty { border-style: solid; background: #FFFFFF; }
-
-    body.portal .col-blank {
-      border: none;
-      background:
-        radial-gradient(ellipse 80% 70% at 50% 0%, rgba(255, 138, 45, 0.07), rgba(255, 138, 45, 0) 70%),
-        rgba(15, 17, 20, 0.025);
-    }
-    body.portal .col-blank .col-blank-i {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 40px; height: 40px; border-radius: 50%; opacity: 1;
-      background: radial-gradient(circle, rgba(255, 138, 45, 0.18) 0%, rgba(255, 138, 45, 0) 70%);
-      color: var(--ink);
+    /* Dark: no shadow on black -- the lighter black and the hairline do it. */
+    html[data-theme="dark"] body.portal :is(.side-dock .side, .side-hist, .side-toggle) { box-shadow: none; }
+    html[data-theme="dark"] body.portal .side-hist button:hover:not(:disabled) { background: var(--surface-2); }
+    :root:root[data-theme="dark"] body .side-hist button:disabled {
+      background: transparent !important; border-color: transparent !important;
     }
   </style>
+  <!-- The app theme, last so it wins: warm, white, flat (theme.css). Not on sign-in. -->
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="theme-night.css" />
+  <link rel="stylesheet" href="theme-dark.css" />
+  <script src="theme.js"></script>
 </head>
 <body class="portal">
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -3831,6 +3839,10 @@
   </div>
 
   <div class="shell">
+    <!-- THE DOCK (desktop). Floats off the left edge like a canvas tool's
+         toolbar: the menu, then back / forward beneath it, and the
+         expand-or-collapse switch at the bottom of the screen. -->
+    <div class="side-dock">
     <aside class="side" id="tabs">
       <div class="grp-sec open" data-sec="main">
         <button class="grp" aria-expanded="true" aria-controls="grp-main"><span>Main</span><span class="grp-chv" aria-hidden="true">›</span></button>
@@ -3877,6 +3889,18 @@
         <div class="who"><div class="nm2" data-agency-name>Your agency</div><div class="sub2" data-agency-tier></div></div>
       </div>
     </aside>
+    <div class="side-hist" role="group" aria-label="Pages you visited">
+      <button type="button" id="navBack" aria-label="Back to the previous page" title="Back" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+      </button>
+      <button type="button" id="navFwd" aria-label="Forward to the next page" title="Forward" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+      </button>
+    </div>
+    </div>
+    <button type="button" class="side-toggle" id="sideToggle" aria-controls="tabs" aria-expanded="false" title="Expand the menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg>
+    </button>
 
     <div class="content">
       <!-- Asked of people who were already here when registration started
@@ -15600,6 +15624,59 @@
        junk fragment, and a pane this account may not open. applyRole strips
        panes by role AFTER this runs, so restorePane() re-applies the hash on
        the syn:role event once that is settled. */
+    /* ── THE DOCK: back / forward, expand / collapse (2026-09-29) ──────────
+       Back and forward walk the panes visited in this portal, like a
+       browser's, without adding browser history (the pane lives in the hash
+       via replaceState, deliberately -- see rememberPane). `var`, because
+       goToPane can be called before this line has run. */
+    var NAVH = { list: [], i: -1, moving: false };
+    function navHistPaint() {
+      var b = document.getElementById('navBack'), f = document.getElementById('navFwd');
+      if (b) b.disabled = NAVH.i <= 0;
+      if (f) f.disabled = NAVH.i >= NAVH.list.length - 1;
+    }
+    function navHistRecord(pane) {
+      if (NAVH.moving || !pane || NAVH.list[NAVH.i] === pane) return;
+      NAVH.list = NAVH.list.slice(0, NAVH.i + 1);
+      NAVH.list.push(pane);
+      if (NAVH.list.length > 50) NAVH.list.shift();
+      NAVH.i = NAVH.list.length - 1;
+      navHistPaint();
+    }
+    function navHistStep(d) {
+      var j = NAVH.i + d;
+      if (j < 0 || j >= NAVH.list.length) return;
+      NAVH.i = j; NAVH.moving = true;
+      try { goToPane(NAVH.list[j]); } finally { NAVH.moving = false; }
+      navHistPaint();
+    }
+    (function dock() {
+      var back = document.getElementById('navBack'), fwd = document.getElementById('navFwd');
+      if (back) back.addEventListener('click', function () { navHistStep(-1); });
+      if (fwd) fwd.addEventListener('click', function () { navHistStep(1); });
+
+      var side = document.getElementById('tabs'), tog = document.getElementById('sideToggle');
+      var KEY = 'syn_side_open';
+      function setOpen(open, save) {
+        side.classList.toggle('expanded', open);
+        if (tog) {
+          tog.setAttribute('aria-expanded', String(open));
+          tog.title = open ? 'Collapse the menu' : 'Expand the menu';
+          tog.setAttribute('aria-label', tog.title);
+        }
+        if (save) { try { localStorage.setItem(KEY, open ? '1' : '0'); } catch (e) { /* stays for this visit */ } }
+      }
+      var saved = false;
+      try { saved = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      setOpen(saved, false);
+      if (tog) tog.addEventListener('click', function () { setOpen(!side.classList.contains('expanded'), true); });
+      /* In the dock the group headers are labels, not fold-up buttons, so
+         they leave the tab order there. */
+      if (window.matchMedia && window.matchMedia('(min-width: 1025px)').matches) {
+        side.querySelectorAll('.grp').forEach(function (g) { g.setAttribute('tabindex', '-1'); });
+      }
+    })();
+
     (function openInitialPane() {
       const want = (location.hash || '').replace(/^#/, '');
       const tab = want && document.querySelector('#tabs [data-pane="' + want + '"]');
@@ -15609,6 +15686,7 @@
       document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.pane === pane));
       const sec = (tab && tab.closest('.grp-sec')) || document.querySelector('.grp-sec[data-sec="main"]');
       if (sec) sec.classList.add('open');
+      navHistRecord(pane);
     })();
 
     /* One way to change pane, used by the sidebar AND by anything else that
@@ -15623,6 +15701,7 @@
       if (pane === 'verification' && typeof loadVerification === 'function') loadVerification();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
+      navHistRecord(pane);
       const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
       document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
       document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + pane));
@@ -15891,6 +15970,9 @@
     // they fall through the tab handler above; this handles the toggle separately.
     document.getElementById('tabs').addEventListener('click', (e) => {
       const g = e.target.closest('.grp'); if (!g) return;
+      /* The desktop dock keeps every group open, so nothing moves up or down
+         when it expands (THE FLOATING DOCK). */
+      if (window.matchMedia && window.matchMedia('(min-width: 1025px)').matches) return;
       const sec = g.closest('.grp-sec'); const open = sec.classList.toggle('open');
       g.setAttribute('aria-expanded', String(open));
     });

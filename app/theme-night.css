@@ -1,0 +1,171 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SYNAPSE NIGHT -- dark mode for every app page except sign-in.
+
+   Split out of theme.css (2026-09-29) so the pages that keep their own look
+   (Tayo and Your matches: a photograph under glass) can have dark mode without
+   the warm, flat day theme. Load order on a page:
+       theme.css (day theme; not on Tayo or Your matches)
+       theme-night.css (this: dark tokens and the black/white/orange rules)
+       theme-dark.css (generated per-selector dark overrides)
+       scene.css (Tayo and Your matches only: the night photograph and glass)
+   Everything here applies only under html[data-theme="dark"], except the
+   light/dark switch's own styles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE (2026-09-29)
+
+   Eden: "similar to the dark mode of Twitter, which is very, very dark, plain
+   black. And the elements on it ... just a lighter shade of black", and
+   Mobbin's dark mode.
+
+   X's "Lights out": the ground is pure black, a card is #16181C, a raised or
+   hovered thing #202327, every edge #2F3336, words #E7E9EA (never pure white:
+   it vibrates on black) and quiet words a cool grey. Depth on black comes
+   from stepping to a lighter black, not from shadows -- a shadow on #000 is
+   invisible -- so every shadow is off. Orange stays the one accent, and the
+   warm peach tints become their dark equivalents: orange at low strength on
+   black.
+
+   Chosen by theme.js: the device's own setting unless the moon/sun button in
+   the app bar has been used, which is remembered. Sign-in has no theme at
+   all, so no dark mode, by Eden's earlier call.
+
+   Measured: #E7E9EA on #16181C 14:1; #8B9096 on #16181C 5.5:1 and on black
+   6.5:1; #80868C on #16181C 4.8:1.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas:      #000000;
+  --canvas-2:    #0B0C0E;
+  --sand:        #000000;
+  --line:        #2F3336;
+  --line-2:      #3E4247;
+  --peach:       #2B1D12;
+  --accent-tint: #2B1D12;
+  --badge:       #F4212E;
+  --flat-shadow: none;
+
+  --surface:   #16181C;
+  --surface-2: #202327;
+  --glass:     #16181C;
+  --white:     #16181C;
+
+  --ink:        #E7E9EA;
+  --charcoal:   #E7E9EA;
+  --brand:      #E7E9EA;
+  --brand-deep: #E7E9EA;
+  --brand-text: #E7E9EA;
+  --brand-dim:  #FFFFFF;
+  --ink-muted:  #8B9096;
+  --stone:      #8B9096;
+  --ink-dim:    #80868C;
+  --ink-dim-strong: #8B9096;
+
+  --btn-solid-bg: #E7E9EA;
+  --btn-solid-fg: #000000;
+
+  --success-ink: #4ADE80;
+  --error-ink:   #F87171;
+  --warn-ink:    #E0B25C;
+  --info-ink:    #60A5FA;
+}
+
+/* The primary button stays the brand orange with graphite words: orange on
+   black is the one warm thing on the page, which is what an accent is for. */
+
+/* The mark is a black-on-white photograph of the logo, blended with multiply
+   so its white box vanishes on a light page. On black, multiply erases the
+   mark instead, so it is inverted and screened: white mark, no box. */
+html[data-theme="dark"] .syn-mark { filter: invert(1); mix-blend-mode: screen; }
+
+/* Hovers step up a shade of black instead of darkening. */
+html[data-theme="dark"] body.portal .side a:hover:not(.on) { background: var(--surface-2); }
+html[data-theme="dark"] .appbar nav a:hover { background: var(--surface-2); }
+
+/* ── the switch in the app bar ──────────────────────────────────────────── */
+.syn-theme-btn {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  cursor: pointer; margin-right: 8px;
+}
+.syn-theme-btn:hover { border-color: var(--line-2); }
+.syn-theme-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.syn-theme-btn svg { width: 17px; height: 17px; }
+
+/* ── Dark: black, white or orange. No grey. ───────────────────────────────
+   Eden: "all the text boxes, input boxes should be black and the things you
+   type should be white, the way it is on Twitter ... All the gray buttons
+   should be changed to pure white with the text on them being black. You can
+   keep the orange buttons ... no gray, it's either black, white, or orange."
+
+   Text boxes: black, white words, X's quiet grey for the hint, a hairline that
+   turns orange while you type. Buttons: white with black words, or the brand
+   orange. Round icon buttons (bell, call, the light/dark switch, back, close):
+   black with a white icon and a hairline -- a white disc per icon would shout.
+   Disabled: black and quiet, so "not yet" still reads as not yet.
+   Panels and cards keep the lighter black Eden asked for first. */
+html[data-theme="dark"] {
+  --btn-solid-bg: #FFFFFF;
+  --btn-solid-fg: #000000;
+}
+html[data-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+    textarea, select) {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #2F3336 !important;
+  caret-color: var(--orange);
+}
+html[data-theme="dark"] :is(input, textarea)::placeholder { color: #71767B !important; opacity: 1; }
+html[data-theme="dark"] :is(input, textarea, select):focus { border-color: var(--orange) !important; }
+/* The boxes drawn around a borderless input are the text box, as far as
+   anybody looking can tell. */
+html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) {
+  background-color: #000000 !important;
+  border-color: #2F3336 !important;
+  color: #FFFFFF;
+}
+html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) :is(input, textarea) {
+  background-color: transparent !important;
+}
+
+html[data-theme="dark"] :is(.btn-ghost, .btn-secondary, .seg-b.on, .need-phone button, .cmp-ch-btn:not(.primary),
+    .ch-add-btn, .ytask-btn:not(.primary)) {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border-color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] :is(.appbar .bell, .syn-theme-btn, .cnav-back, .cnav-back-float, .cnav-sclose) {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #2F3336 !important;
+}
+html[data-theme="dark"] .appbar.appbar { background-color: #000000 !important; border-bottom-color: #2F3336; }
+
+/* Doubled :root so it outranks the generated per-button rules: a disabled
+   button stays black at full strength (a faded white one reads as grey). */
+:root:root[data-theme="dark"] body :is(button, .btn, .tbtn):is([disabled], :disabled) {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #71767B !important;
+  border-color: #2F3336 !important;
+  opacity: 1 !important;
+}
+/* App-bar text links (History, New chat, Back to site): black, white words. */
+html[data-theme="dark"] .home {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border-color: #2F3336 !important;
+}
+
+/* Tayo's round "T" marks are dark discs: on black they vanish, so in dark
+   mode they turn white with a black letter, like every other dark control. */
+html[data-theme="dark"] :is(.tpanel .thd .o, .advisor .orb, .flow .toju .o, .handoff .hh .o, .handoff .stamp .o) {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+/* The Browse search bar is a text box too. */
+html[data-theme="dark"] .searchbar { background-color: #000000 !important; }
+
