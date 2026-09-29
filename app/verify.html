@@ -39,7 +39,20 @@
     .vd-count { font-size: 12px; color: var(--ink-dim); }
     .vd-empty { padding: 40px 4px; color: var(--ink-muted); font-size: 14px; }
     .vd-gate { padding: 40px 4px; font-size: 14px; line-height: 1.7; color: var(--ink-muted); max-width: 62ch; }
+    /* On a phone the three nav links, the theme button and sign-in did not
+       fit, and the page scrolled sideways. The links scroll inside the bar
+       instead; the bar itself stays the width of the screen. */
+    @media (max-width: 640px) {
+      .appbar nav { min-width: 0; flex: 0 1 auto; overflow-x: auto; scrollbar-width: none; }
+      .appbar nav::-webkit-scrollbar { display: none; }
+      .appbar nav a { white-space: nowrap; }
+      .appbar .brand { flex-shrink: 0; }
+    }
   </style>
+  <!-- The app theme, last so it wins: warm, white, flat (theme.css). Not on sign-in. -->
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="theme-dark.css" />
+  <script src="theme.js"></script>
 </head>
 <body>
   <div class="appbar">
