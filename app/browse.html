@@ -592,6 +592,11 @@
         <button data-deal="sale">Buy</button>
         <button data-deal="rent">Rent</button>
         <button data-deal="shared">Shared living</button>
+        <!-- Customers shop for more than buy or rent (Eden, 2026-10-02). -->
+        <button data-deal="land">Land</button>
+        <button data-deal="offplan">Off-plan</button>
+        <button data-deal="invest">Investment</button>
+        <button data-deal="shortlet">Short-let</button>
       </div>
       <select id="sortSel">
         <option value="match">Sort: Best match</option>
@@ -673,7 +678,7 @@
 
     function matchesDeal(l) {
       if (dealFilter === 'all') return true;
-      return (l.kind || 'sale') === dealFilter;
+      return (l.cats || [l.kind || 'sale']).includes(dealFilter);
     }
     function matchesVerify(l) {
       return !verifiedOnly || (l.vstatus || 'verified') === 'verified';
@@ -1043,7 +1048,7 @@
       let p; try { p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { p = {}; }
       const sel = document.getElementById('sortSel');
       if (p.sort && [...sel.options].some((o) => o.value === p.sort)) sel.value = p.sort;
-      if (['sale', 'rent', 'shared'].includes(p.deal)) {
+      if (['sale', 'rent', 'shared', 'land', 'offplan', 'invest', 'shortlet'].includes(p.deal)) {
         dealFilter = p.deal;
         document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
       }
@@ -1150,7 +1155,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1188,6 +1193,21 @@
         id: p.id,
         img: coverOf(p.property_media),
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
+        /* Every shelf this listing belongs on: a plot of land for sale is
+           both "Buy" and "Land"; an off-plan flat is "Buy" and "Off-plan". */
+        cats: (function () {
+          const c = [p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale'];
+          if (p.property_type === 'land') c.push('land');
+          if (p.listing_type === 'shortlet' || p.deal_structure === 'shortlet') c.push('shortlet');
+          if (p.deal_structure === 'off_plan' || p.build_stage === 'under_construction' || p.build_stage === 'not_started') c.push('offplan');
+          if (['joint_venture', 'development_financing', 'off_plan'].includes(p.deal_structure) || Number(p.min_investment) > 0) c.push('invest');
+          return c;
+        })(),
+        dealInfo: {
+          isLand: p.property_type === 'land', deal: p.deal_structure, stage: p.build_stage, handover: p.handover_date,
+          progress: p.build_progress_pct, plan: p.payment_plan, deposit: p.deposit_pct, months: p.instalment_months,
+          units: p.units_available, plots: p.plot_count, plotSize: p.plot_size_sqm, minInv: p.min_investment,
+        },
         per: p.listing_type === 'rent',
         vstatus: p.verification_status,
         // Drives the expiry chip. Real and enforced: the row disappears from
@@ -1199,7 +1219,8 @@
         priceN: Number(p.price) || 0,
         /* The Area the agency typed, then the linked zone, then the city. It
            is also what the search box matches, so "Agbowo" now finds it. */
-        ttl: p.title, loc: (p.area_name && p.area_name.trim()) ? (p.area_name.trim() + ', ' + p.city)
+        ttl: p.title, loc: (p.area_name && p.area_name.trim() && p.area_name.trim().length <= 40 && !/
+/.test(p.area_name.trim())) ? (p.area_name.trim() + ', ' + p.city)
           : (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
         /* Who listed it, as they designed themselves on their Brand page --

@@ -42,6 +42,8 @@
     'title_type', 'yield_pct', 'is_active', 'is_negotiable',
     'toilets', 'parking_spaces', 'floor_level', 'total_floors',
     'year_built', 'furnished', 'property_condition', 'electricity_band',
+    /* The deal, in fields (20261003090000_what_kind_of_deal). */
+    'deal_structure', 'build_stage', 'handover_date', 'build_progress_pct', 'payment_plan', 'deposit_pct', 'instalment_months', 'units_available', 'plot_count', 'plot_size_sqm', 'min_investment', 'investment_term_months', 'stated_return_pct',
   ];
 
   function client() {

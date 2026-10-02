@@ -106,6 +106,31 @@
      product as foreign. */
   const CURRENCY_FALLBACK = 'NGN';
 
+  /* THE DEAL, IN ONE LINE (Eden, 2026-10-02): "let it be shown whether
+     it's an investment, whether it's land ... off-plan". From the listing's
+     own deal fields; a plain completed sale or rental adds nothing. */
+  const DEAL_WORD = { off_plan: 'Off-plan', joint_venture: 'Joint venture', development_financing: 'Investment',
+    rent_to_own: 'Rent to own', lease: 'Long lease', shortlet: 'Short-let' };
+  function dealLine(d, currency) {
+    if (!d) return '';
+    const parts = [];
+    const month = (v) => { const t = new Date(v); return isNaN(t) ? '' : t.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); };
+    if (d.isLand) {
+      const n = Number(d.plots);
+      parts.push('Land' + (n > 0 ? ', ' + n + ' plot' + (n === 1 ? '' : 's') + (d.plotSize ? ' of ' + Number(d.plotSize) + ' sqm' : '') : ''));
+    }
+    if (DEAL_WORD[d.deal]) parts.push(DEAL_WORD[d.deal]);
+    if (d.stage === 'under_construction') parts.push('being built' + (d.progress != null ? ' (' + d.progress + '%)' : ''));
+    else if (d.stage === 'not_started' && d.deal !== 'off_plan') parts.push('not built yet');
+    if (d.handover && d.stage && d.stage !== 'completed' && month(d.handover)) parts.push('ready ' + month(d.handover));
+    if (d.plan === 'instalments') parts.push('instalments' + (d.deposit != null ? ', ' + Number(d.deposit) + '% down' : '') + (d.months ? ' over ' + d.months + ' months' : ''));
+    if (Number(d.minInv) > 0) parts.push('from ' + money(Number(d.minInv), currency));
+    if (Number(d.units) > 1) parts.push(Number(d.units) + ' available');
+    return parts.length
+      ? '<div class="deal" style="font-size:12.5px;font-weight:600;color:var(--ink);margin-top:4px;line-height:1.4">' + esc(parts.join(' \u00B7 ')) + '</div>'
+      : '';
+  }
+
   function money(n, currency) {
     n = Number(n) || 0;
     const code = /^[A-Za-z]{3}$/.test(currency || '') ? String(currency).toUpperCase() : CURRENCY_FALLBACK;
@@ -321,6 +346,7 @@
                click handler still works for everyone else. -->
           <div class="ttl"><a class="ttl-a" href="${propertyHref(l.id)}">${esc(l.ttl)}</a></div>
           <div class="loc">${esc(l.loc)}</div>
+          ${dealLine(l.dealInfo, l.currency)}
           ${l.why ? `<div class="why">${l.why}</div>` : ''}
           ${score}
           ${agencyRowHtml(l.agency)}

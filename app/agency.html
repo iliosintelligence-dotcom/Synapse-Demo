@@ -2603,6 +2603,11 @@
     .combo-empty { padding: 11px 12px; font-size: 13px; color: var(--ink-dim); }
 
     .lf-hint { font-size: 11.5px; color: var(--ink-dim); margin-top: 5px; line-height: 1.45; }
+    .lf-fill { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; min-height: 40px; padding: 0 16px; border-radius: 999px;
+      border: 0; background: var(--orange, #FF8A2D); color: #15120F; font: 700 12.5px var(--f-sans); cursor: pointer; }
+    .lf-fill[disabled] { opacity: .6; cursor: progress; }
+    .lf-filled { box-shadow: 0 0 0 2px var(--orange, #FF8A2D) !important; transition: box-shadow .3s; }
+    .lf-pinmap { height: 220px; border-radius: 14px; overflow: hidden; margin: 8px 0 6px; background: var(--surface-2, #eee); }
     .lf-hint:empty { display: none; }
 
     .lf-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
@@ -7572,11 +7577,18 @@
     });
     const L_DEFAULT = [];
     // enum option sets mirror the `properties` schema (supabase/migrations/0002_schema.sql)
-    const PROP_TYPES = ['apartment','house','duplex','terrace','penthouse','bungalow','land','commercial'];
+    const PROP_TYPES = ['apartment','house','duplex','terrace','penthouse','bungalow','land','commercial','shared'];
+    const DEAL_STRUCTURES = ['outright','rent','shortlet','lease','off_plan','joint_venture','development_financing','rent_to_own'];
+    const DEAL_STRUCTURE_LABEL = { outright: 'Outright sale', rent: 'Rent (yearly)', shortlet: 'Short-let', lease: 'Long lease',
+      off_plan: 'Off-plan (buy before it is built)', joint_venture: 'Joint venture (landowner + developer)',
+      development_financing: 'Development financing (investors fund a build)', rent_to_own: 'Rent to own' };
+    /* listing_type, which everything older reads, follows the deal. */
+    const DEAL_TO_LISTING = { outright: 'sale', rent: 'rent', shortlet: 'shortlet', lease: 'rent', off_plan: 'sale',
+      joint_venture: 'sale', development_financing: 'sale', rent_to_own: 'sale' };
     const LISTING_TYPES = ['sale','rent','shortlet'];
     const PRICE_PERIODS = ['total','per_year','per_month','per_night'];
     const TITLE_TYPES = ['c_of_o','governors_consent','registered_deed','excision','gazette','allocation'];
-    const TYPE_LABEL = { apartment:'Apartment', house:'House', duplex:'Duplex', terrace:'Terrace', penthouse:'Penthouse', bungalow:'Bungalow', land:'Land', commercial:'Commercial' };
+    const TYPE_LABEL = { apartment:'Apartment', house:'House', duplex:'Duplex', terrace:'Terrace', penthouse:'Penthouse', bungalow:'Bungalow', land:'Land', commercial:'Commercial', shared:'Room / self-contain' };
     const DEAL_LABEL = { sale:'For sale', rent:'For rent', shortlet:'Short-let' };
     const PERIOD_LABEL = { total:'Total price', per_year:'Per year', per_month:'Per month', per_night:'Per night' };
     const PERIOD_SUFFIX = { total:'', per_year:'/yr', per_month:'/mo', per_night:'/night' };
@@ -7627,6 +7639,7 @@
         latitude:'', longitude:'', bedrooms:'', bathrooms:'', toilets:'', parking_spaces:'',
         area_sqm:'', year_built:'', furnished:'', property_condition:'', electricity_band:'',
         amenities:[], title_type:'', yield_pct:'',
+        deal_structure:'outright', build_stage:'completed', units_available:1, payment_plan:'outright',
         verification_status:'unverified', is_active:true, media:[{ url:'', is_primary:true, display_order:0 }], leads:0, days:0 };
     }
 
@@ -7684,6 +7697,11 @@
           electricity_band: l.electricity_band,
           address: l.address, city: l.city, state: l.state, country: l.country, latitude: l.latitude, longitude: l.longitude,
           amenities: l.amenities || [], title_type: l.title_type, yield_pct: l.yield_pct,
+          deal_structure: l.deal_structure, build_stage: l.build_stage, handover_date: l.handover_date,
+          build_progress_pct: l.build_progress_pct, payment_plan: l.payment_plan, deposit_pct: l.deposit_pct,
+          instalment_months: l.instalment_months, units_available: l.units_available, plot_count: l.plot_count,
+          plot_size_sqm: l.plot_size_sqm, min_investment: l.min_investment, investment_term_months: l.investment_term_months,
+          stated_return_pct: l.stated_return_pct,
           verification_status: l.verification_status, is_active: l.is_active, // verification is system-owned, not agency-writable
         },
         media: (l.media || []).map((m, i) => ({ url: m.url, is_primary: i === 0, display_order: i })),
@@ -7940,9 +7958,54 @@
             <div class="field"><label>Title *</label><input id="lfTitle" value="${esc(d.title)}" placeholder="3-Bed Apartment, Lekki Phase 1"><span class="ferr" id="e_title" role="alert"></span></div>
             <div class="row2">
               <div class="field"><label>Property type *</label><select id="lfType">${opt(PROP_TYPES, d.property_type, TYPE_LABEL)}</select></div>
-              <div class="field"><label>Listing type *</label><select id="lfListing">${opt(LISTING_TYPES, d.listing_type, DEAL_LABEL)}</select></div>
+              <div class="field"><label>The deal *</label><select id="lfDeal">${opt(DEAL_STRUCTURES, d.deal_structure || ({ rent: 'rent', shortlet: 'shortlet' })[d.listing_type] || 'outright', DEAL_STRUCTURE_LABEL)}</select>
+                <select id="lfListing" hidden aria-hidden="true" tabindex="-1">${opt(LISTING_TYPES, d.listing_type, DEAL_LABEL)}</select></div>
             </div>
-            <div class="field"><label>Description *</label><textarea id="lfDesc" rows="3" placeholder="Condition, layout, neighbourhood, what's included…">${esc(d.description)}</textarea><span class="ferr" id="e_desc" role="alert"></span></div>
+            <div class="field"><label>Description *</label><textarea id="lfDesc" rows="3" placeholder="Condition, layout, neighbourhood, what's included…">${esc(d.description)}</textarea><span class="ferr" id="e_desc" role="alert"></span>
+              <button type="button" class="lf-fill" id="lfFill">Fill the form from my description</button>
+              <span class="lf-hint" id="lfFillNote">Paste or type everything you know, then press this: the price, rooms, units, payment terms and more go into their boxes for you to check.</span></div>
+          </fieldset>
+          <!-- THE DEAL (Eden, 2026-10-02). What used to live in the
+               description -- built or not, instalments, how many units,
+               investment terms -- as fields buyers can filter on, cards can
+               show and Tayo can reason about. Rows appear for the deal chosen. -->
+          <fieldset class="lf-sec" id="lfDealSec"><legend>The deal</legend>
+            <div class="row2">
+              <div class="field"><label>Units available *</label><input id="lfUnits" type="number" inputmode="numeric" min="1" max="10000" value="${esc(d.units_available || 1)}"><span class="lf-hint">Identical units or plots on this listing.</span><span class="ferr" id="e_units" role="alert"></span></div>
+              <div class="field" data-deal-row="stage"><label>Is it built?</label>
+                <select id="lfStage">
+                  <option value="completed" ${d.build_stage === 'completed' || !d.build_stage ? 'selected' : ''}>Completed, ready now</option>
+                  <option value="under_construction" ${d.build_stage === 'under_construction' ? 'selected' : ''}>Under construction</option>
+                  <option value="not_started" ${d.build_stage === 'not_started' ? 'selected' : ''}>Not started yet (off-plan)</option>
+                </select></div>
+            </div>
+            <div class="row2" data-deal-row="build">
+              <div class="field"><label>Expected handover</label><input id="lfHandover" type="month" value="${esc((d.handover_date || '').slice(0, 7))}"></div>
+              <div class="field"><label>Built so far (%)</label><input id="lfProgress" type="number" inputmode="numeric" min="0" max="100" value="${esc(d.build_progress_pct)}" placeholder="40"></div>
+            </div>
+            <div class="row2" data-deal-row="pay">
+              <div class="field"><label>Payment</label>
+                <select id="lfPlan">
+                  <option value="outright" ${d.payment_plan !== 'instalments' ? 'selected' : ''}>Outright</option>
+                  <option value="instalments" ${d.payment_plan === 'instalments' ? 'selected' : ''}>Instalments allowed</option>
+                </select></div>
+              <div class="field" data-deal-row="inst"><label>Initial deposit (%)</label><input id="lfDeposit" type="number" inputmode="decimal" min="0" max="100" value="${esc(d.deposit_pct)}" placeholder="30"></div>
+            </div>
+            <div class="row2" data-deal-row="inst">
+              <div class="field"><label>Spread over (months)</label><input id="lfMonths" type="number" inputmode="numeric" min="1" max="240" value="${esc(d.instalment_months)}" placeholder="12"></div>
+              <div></div>
+            </div>
+            <div class="row2" data-deal-row="land">
+              <div class="field"><label>Number of plots</label><input id="lfPlots" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.plot_count)}" placeholder="1"></div>
+              <div class="field"><label>Size of one plot (sqm)</label><input id="lfPlotSize" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.plot_size_sqm)}" placeholder="600"></div>
+            </div>
+            <div data-deal-row="invest">
+              <div class="row2">
+                <div class="field"><label>Minimum investment (₦)</label><input id="lfMinInv" type="number" inputmode="numeric" min="0" value="${esc(d.min_investment)}"></div>
+                <div class="field"><label>Term (months)</label><input id="lfTerm" type="number" inputmode="numeric" min="1" max="600" value="${esc(d.investment_term_months)}" placeholder="24"></div>
+              </div>
+              <div class="field"><label>Return you state (% over the term)</label><input id="lfReturn" type="number" inputmode="decimal" min="0" step="any" value="${esc(d.stated_return_pct)}"><span class="lf-hint">Shown to buyers as stated by your agency. Synapse does not forecast returns.</span></div>
+            </div>
           </fieldset>
           <fieldset class="lf-sec"><legend>Location</legend>
             <div class="field"><label>Address *</label><input id="lfAddr" value="${esc(d.address)}" placeholder="Street / estate"><span class="ferr" id="e_addr" role="alert"></span></div>
@@ -7969,7 +8032,7 @@
             <div class="row2">
               <div class="field"><label>Neighbourhood</label>
                 <div class="combo" id="lfHoodCombo">
-                  <input id="lfHood" value="${esc(d.neighbourhood)}" autocomplete="off" maxlength="120"
+                  <input id="lfHood" value="${esc(d.neighbourhood)}" autocomplete="off" maxlength="40"
                          role="combobox" aria-expanded="false" aria-autocomplete="list"
                          placeholder="Start typing or tap…">
                   <button type="button" class="combo-toggle" tabindex="-1" aria-label="Show areas">▾</button>
@@ -7987,7 +8050,13 @@
             <input type="hidden" id="lfLat" value="${esc(d.latitude)}">
             <input type="hidden" id="lfLng" value="${esc(d.longitude)}">
             <span class="ferr" id="e_lat" role="alert"></span>
-            <p class="lf-hint" id="lfGeoNote">The map pin is found from the address.</p>
+            <p class="lf-hint" id="lfGeoNote">The map pin is found from the address. Tap the map to move it.</p>
+            <!-- THE PIN IS REQUIRED (Eden, 2026-10-02: "in Nigeria every
+                 property has an address ... let that be a requirement"). The
+                 address lookup places it when it can; the agent can always
+                 tap or drag it, or use where they are standing. -->
+            <div class="lf-pinmap" id="lfPinMap" aria-label="Map: tap to place the listing's pin"></div>
+            <button type="button" class="lf-linkbtn" id="lfHere">I'm at the property: use my location</button>
           </fieldset>
           <fieldset class="lf-sec"><legend>Specifications</legend>
             <div class="row2">
@@ -8160,6 +8229,9 @@
       syncBeds();
       // listing type → default price period
       g('lfListing').addEventListener('change', function () { g('lfPeriod').value = { sale: 'total', rent: 'per_year', shortlet: 'per_night' }[this.value] || 'total'; });
+      wireDealFields();
+      wirePinMap();
+      wireFillFromDescription();
       // price echo
       /* The echo under the price box said "(₦0M)" for anything under a
          million -- telling an agency its ₦450,000 rent was worth nothing while
@@ -8206,7 +8278,7 @@
       const ERR_OF = {
         lfTitle: 'e_title', lfDesc: 'e_desc', lfAddr: 'e_addr', lfCity: 'e_city',
         lfState: 'e_state', lfPrice: 'e_price', lfBeds: 'e_beds', lfImg: 'e_img',
-        lfLat: 'e_lat', lfLng: 'e_lat',
+        lfLat: 'e_lat', lfLng: 'e_lat', lfUnits: 'e_units',
       };
       const setErrGated = (id, msg) => setErr(id, (revealAllErrors || touched[id]) ? msg : '');
       /* Image URL validation.
@@ -8259,7 +8331,8 @@
           e_price: parseFloat(g('lfPrice').value) > 0 ? '' : 'Enter a price in naira',
           e_beds: (isLand || (g('lfBeds').value !== '' && +g('lfBeds').value >= 0)) ? '' : 'Required',
           e_img: imgUrlError(g('lfImg').value.trim()),   // set by upload or paste
-          e_lat: ((la && lo) || (!la && !lo)) ? '' : 'Enter both latitude and longitude, or neither',
+          e_lat: (la && lo) ? '' : 'Place the pin: tap the map where the property is',
+          e_units: (g('lfUnits') && +g('lfUnits').value >= 1) ? '' : 'At least 1',
         };
         let ok = true;
         Object.keys(checks).forEach(k => { setErrGated(k, checks[k]); if (checks[k]) ok = false; });
@@ -8393,17 +8466,18 @@
         ask(0).then((found) => {
           if (run !== geoRun) return;            // a newer lookup owns the field
           if (!found) {
-            g('lfLat').value = ''; g('lfLng').value = '';
-            /* Says what it means for the listing, not what failed. The agency
-               can do nothing about a geocoder miss, so it is told the
-               consequence and left alone. */
-            if (note) note.textContent = 'No map pin for this address — the listing still works without one.';
+            /* A pin the agent placed by hand is kept: the lookup missing the
+               street says nothing about where they put it. */
+            if (note) note.textContent = (g('lfLat').value && g('lfLng').value)
+              ? 'That address is not on the map, so your pin stays where it is.'
+              : 'That address is not on the map. Tap the map below where the property is.';
             validate();
             return;
           }
           g('lfLat').value = Number(found.hit.lat).toFixed(6);
           g('lfLng').value = Number(found.hit.lon).toFixed(6);
           if (note) note.textContent = GEO_SAYS[found.how](found.said);
+          syncPinMap();
           validate();
         });
       }
@@ -9087,6 +9161,168 @@
       /* What the form says, in the shape the save writes. Shared by the save
          and the draft, so a restored draft is exactly what Save would have
          sent. */
+      /* ── THE DEAL ──────────────────────────────────────────────────────
+         Rows that apply to the deal chosen, and nothing else: a rental is
+         not asked about instalments, a finished house not about handover. */
+      function showDeal(row, on) { document.querySelectorAll('#lfDealSec [data-deal-row="' + row + '"]')
+        .forEach((el) => { el.style.display = on ? '' : 'none'; }); }
+      function syncDealRows() {
+        if (!g('lfDeal')) return;
+        const deal = g('lfDeal').value, isLand = g('lfType').value === 'land';
+        const rentish = ['rent', 'shortlet', 'lease'].includes(deal);
+        if (deal === 'off_plan' && g('lfStage').value === 'completed') g('lfStage').value = 'not_started';
+        const st = g('lfStage').value, plan = g('lfPlan').value;
+        showDeal('stage', !isLand);
+        showDeal('build', !isLand && st !== 'completed');
+        g('lfProgress').closest('.field').style.display = st === 'under_construction' ? '' : 'none';
+        showDeal('pay', !rentish);
+        showDeal('inst', !rentish && plan === 'instalments');
+        showDeal('land', isLand);
+        showDeal('invest', ['joint_venture', 'development_financing'].includes(deal));
+      }
+      function wireDealFields() {
+        if (!g('lfDeal')) return;
+        g('lfDeal').addEventListener('change', () => {
+          const lt = DEAL_TO_LISTING[g('lfDeal').value] || 'sale';
+          if (g('lfListing').value !== lt) { g('lfListing').value = lt; g('lfListing').dispatchEvent(new Event('change')); }
+          syncDealRows();
+        });
+        ['lfType', 'lfStage', 'lfPlan'].forEach((id) => g(id).addEventListener('change', syncDealRows));
+        g('lfUnits').addEventListener('input', () => { touched.e_units = true; validate(); });
+        syncDealRows();
+      }
+      function collectDeal(num) {
+        if (!g('lfDeal')) return {};
+        const deal = g('lfDeal').value, isLand = g('lfType').value === 'land';
+        const rentish = ['rent', 'shortlet', 'lease'].includes(deal);
+        const inv = ['joint_venture', 'development_financing'].includes(deal);
+        const st = g('lfStage').value, plan = g('lfPlan').value, hand = g('lfHandover').value;
+        const int = (id) => (g(id).value === '' ? null : parseInt(g(id).value, 10));
+        const inst = !rentish && plan === 'instalments';
+        return {
+          deal_structure: deal,
+          build_stage: isLand ? null : st,
+          handover_date: (!isLand && st !== 'completed' && /^\d{4}-\d{2}$/.test(hand)) ? hand + '-01' : null,
+          build_progress_pct: (!isLand && st === 'under_construction') ? int('lfProgress') : null,
+          payment_plan: rentish ? null : plan,
+          deposit_pct: inst ? num(g('lfDeposit').value) : null,
+          instalment_months: inst ? int('lfMonths') : null,
+          units_available: Math.max(1, parseInt(g('lfUnits').value, 10) || 1),
+          plot_count: isLand ? num(g('lfPlots').value) : null,
+          plot_size_sqm: isLand ? num(g('lfPlotSize').value) : null,
+          min_investment: inv ? num(g('lfMinInv').value) : null,
+          investment_term_months: inv ? int('lfTerm') : null,
+          stated_return_pct: inv ? num(g('lfReturn').value) : null,
+        };
+      }
+
+      /* ── THE PIN, BY HAND ──────────────────────────────────────────────
+         The address lookup places it when it can. When it cannot -- most
+         Nigerian streets are not on the free map -- the agent taps where the
+         property is, drags the pin, or uses their phone's location while
+         standing there. A live listing cannot be saved without it. */
+      var pinMap = null, pinMarker = null;
+      function syncPinMap() {
+        if (!pinMap) return;
+        const la = parseFloat(g('lfLat').value), lo = parseFloat(g('lfLng').value);
+        if (!isFinite(la) || !isFinite(lo)) return;
+        if (!pinMarker) {
+          pinMarker = L.marker([la, lo], { draggable: true }).addTo(pinMap);
+          pinMarker.on('dragend', () => { const p = pinMarker.getLatLng(); setPin(p.lat, p.lng, 'moved'); });
+        } else {
+          pinMarker.setLatLng([la, lo]);
+        }
+        pinMap.setView([la, lo], Math.max(pinMap.getZoom(), 15));
+      }
+      function setPin(la, lo, how) {
+        g('lfLat').value = Number(la).toFixed(6);
+        g('lfLng').value = Number(lo).toFixed(6);
+        touched.e_lat = true;
+        const note = g('lfGeoNote');
+        if (note) note.textContent = how === 'here' ? 'Pinned where you are standing. Drag it if that is not the property.'
+          : 'Pin placed. Drag it, or tap the map again, to adjust.';
+        syncPinMap();
+        validate();
+      }
+      function wirePinMap() {
+        const el = g('lfPinMap');
+        if (!el || !window.L) return;
+        pinMap = null; pinMarker = null;
+        pinMap = L.map(el, { zoomControl: true }).setView([9.06, 7.49], 6);
+        if (window.SynTiles && SynTiles.add) SynTiles.add(pinMap);
+        else L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(pinMap);
+        pinMap.on('click', (e) => setPin(e.latlng.lat, e.latlng.lng, 'tap'));
+        setTimeout(() => { if (pinMap) { pinMap.invalidateSize(); syncPinMap(); } }, 350);
+        const here = g('lfHere');
+        if (here) here.addEventListener('click', () => {
+          if (!navigator.geolocation) { toast('This browser cannot share its location. Tap the map instead.'); return; }
+          here.textContent = 'Finding you…';
+          navigator.geolocation.getCurrentPosition(
+            (p) => { here.textContent = 'I’m at the property: use my location'; setPin(p.coords.latitude, p.coords.longitude, 'here'); },
+            () => { here.textContent = 'I’m at the property: use my location'; toast('Location not shared. Tap the map where the property is instead.'); },
+            { enableHighAccuracy: true, timeout: 12000 });
+        });
+      }
+
+      /* ── FILL FROM THE DESCRIPTION ─────────────────────────────────────
+         Agents write everything in one paragraph. listing-extract reads it
+         and returns only what the text states; each filled box is marked so
+         the agent checks it before saving. Nothing is saved by this. */
+      var FILL_TO = {
+        property_type: 'lfType', deal_structure: 'lfDeal', build_stage: 'lfStage', payment_plan: 'lfPlan',
+        handover_date: 'lfHandover', build_progress_pct: 'lfProgress', deposit_pct: 'lfDeposit', instalment_months: 'lfMonths',
+        units_available: 'lfUnits', price: 'lfPrice', price_period: 'lfPeriod', bedrooms: 'lfBeds', bathrooms: 'lfBaths',
+        toilets: 'lfToilets', parking_spaces: 'lfParking', area_sqm: 'lfArea', plot_count: 'lfPlots', plot_size_sqm: 'lfPlotSize',
+        title_type: 'lfTitleType', furnished: 'lfFurnished', service_charge: 'lfService', agency_fee: 'lfAgencyFee',
+        legal_fee: 'lfLegalFee', min_investment: 'lfMinInv', investment_term_months: 'lfTerm', stated_return_pct: 'lfReturn',
+        address: 'lfAddr',
+      };
+      function wireFillFromDescription() {
+        const btn = g('lfFill');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+          const desc = g('lfDesc').value.trim();
+          const note = g('lfFillNote');
+          if (desc.length < 20) { toast('Write or paste the description first.'); return; }
+          const label = btn.textContent;
+          btn.disabled = true; btn.textContent = 'Reading your description…';
+          const done = () => { btn.disabled = false; btn.textContent = label; };
+          (typeof authToken === 'function' ? authToken() : Promise.resolve(null)).then((token) => {
+            if (!token) throw new Error('Sign in again to use this.');
+            return fetch(SB_URL + '/functions/v1/listing-extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
+              body: JSON.stringify({ title: g('lfTitle').value, description: desc }),
+            }).then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })));
+          }).then(({ ok, d }) => {
+            done();
+            if (!ok || !d.fields) throw new Error(d.error || 'Could not read the description just now.');
+            const f = d.fields;
+            let n = 0;
+            Object.keys(FILL_TO).forEach((k) => {
+              if (f[k] == null || f[k] === '') return;
+              const el = g(FILL_TO[k]);
+              if (!el) return;
+              if (k === 'address' && el.value.trim()) return;      // never overwrite a typed address
+              const v = k === 'handover_date' ? String(f[k]).slice(0, 7) : String(f[k]);
+              if (el.tagName === 'SELECT' && ![].some.call(el.options, (o) => o.value === v)) return;
+              el.value = v;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+              el.classList.add('lf-filled');
+              setTimeout(() => el.classList.remove('lf-filled'), 6000);
+              n++;
+            });
+            if (f.address && g('lfAddr').classList.contains('lf-filled')) g('lfAddr').dispatchEvent(new Event('blur'));
+            syncDealRows();
+            validate();
+            if (note) note.textContent = n
+              ? 'Filled ' + n + ' box' + (n > 1 ? 'es' : '') + ' from your description (highlighted). Check them before saving.'
+              : 'Nothing in the description could go into a box. Fill them in below.';
+          }).catch((err) => { done(); toast(err && err.message ? err.message : 'Could not read the description just now.'); });
+        });
+      }
+
       function collectListing() {
         const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
         return {
@@ -9116,6 +9352,7 @@
           // amenity, which looks fine in the form and breaks every filter.
           amenities: g('lfAmen').value.split(/[|,\n;]+/).map(s => s.trim()).filter(Boolean),
           title_type: g('lfTitleType').value || null, yield_pct: num(g('lfYield').value),
+          ...collectDeal(num),
           is_active: actSw.classList.contains('on'),
           /* Every photo, in gallery order. This sent only the cover, so an
              agency that added eight had seven silently dropped on save --

@@ -275,6 +275,11 @@
     .apc-ag-tag { font-size: 12px; line-height: 1.45; color: var(--ink-muted); margin-top: 4px; }
     .apc-ag-web { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
     .apc-ag-web[hidden] { display: none; }
+    .pv-deal { display: grid; gap: 10px; margin: 6px 0 0; }
+    .pv-deal div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px; font-size: 14px; }
+    .pv-deal dt { color: var(--ink-muted); }
+    .pv-deal dd { margin: 0; color: var(--ink); font-weight: 600; }
+    .pv-deal-note { font-size: 12.5px; color: var(--ink-muted); margin: 12px 0 0; line-height: 1.5; }
     a.apc-ag-open { text-decoration: none; color: inherit; border-radius: 10px; margin-left: -6px; padding: 4px 6px; }
     a.apc-ag-open:hover { background: rgba(54,54,54,0.06); }
     .apc-ag-go { margin-left: auto; font-size: 18px; color: var(--ink-muted); }
@@ -1078,6 +1083,15 @@
          asserted a match percentage, a commute delta, a median comparison and a
          yield benchmark — none of which the database holds for a new listing.
          hydrate() reveals this only when property_enrichment supplies it. -->
+    <!-- THE DEAL (Eden, 2026-10-02): built or not, how it is paid for,
+         how many are left, the terms of an investment -- from the listing's
+         own fields, so a buyer does not have to dig it out of the prose. -->
+    <div class="card section" id="pvDealCard" hidden>
+      <div class="lbl"><span data-icon="costs"></span> The deal</div>
+      <dl class="pv-deal" id="pvDeal"></dl>
+      <p class="pv-deal-note" id="pvDealNote" hidden></p>
+    </div>
+
     <div class="card section" id="pvTakeCard" hidden>
       <div class="lbl"><span data-icon="spark"></span> Tayo's take</div>
       <p class="reason" id="pvTake"></p>
@@ -2022,6 +2036,42 @@
         if (days > 14) el.classList.add('stale');
       })();
 
+      (function paintDeal() {
+        const D = { outright: 'Outright sale', rent: 'Rent', shortlet: 'Short-let', lease: 'Long lease',
+          off_plan: 'Off-plan: you buy before it is built', joint_venture: 'Joint venture',
+          development_financing: 'Development financing', rent_to_own: 'Rent to own' };
+        const S = { completed: 'Completed, ready now', under_construction: 'Under construction', not_started: 'Not started yet' };
+        const month = (v) => { const t = new Date(v); return isNaN(t) ? '' : t.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); };
+        const rows = [];
+        if (p.deal_structure && p.deal_structure !== 'outright' && p.deal_structure !== 'rent' && D[p.deal_structure]) rows.push(['Deal', D[p.deal_structure]]);
+        if (p.property_type !== 'land' && p.build_stage && p.build_stage !== 'completed') {
+          rows.push(['Built', S[p.build_stage] + (p.build_progress_pct != null ? ' (' + p.build_progress_pct + '% done)' : '')]);
+          if (p.handover_date && month(p.handover_date)) rows.push(['Handover', 'Expected ' + month(p.handover_date)]);
+        }
+        if (p.payment_plan === 'instalments') {
+          rows.push(['Payment', 'Instalments' + (p.deposit_pct != null ? ': ' + Number(p.deposit_pct) + '% deposit' : '')
+            + (p.instalment_months ? ', the rest over ' + p.instalment_months + ' months' : '')]);
+        } else if (p.payment_plan === 'outright' && p.listing_type === 'sale') {
+          rows.push(['Payment', 'Outright']);
+        }
+        if (Number(p.plot_count) > 0) rows.push(['Plots', Number(p.plot_count) + (p.plot_size_sqm ? ' \u00D7 ' + Number(p.plot_size_sqm) + ' sqm' : '')]);
+        if (Number(p.units_available) > 1) rows.push(['Available', Number(p.units_available) + ' identical units']);
+        if (Number(p.min_investment) > 0) rows.push(['Minimum stake', naira(p.min_investment)]);
+        if (p.investment_term_months) rows.push(['Term', p.investment_term_months + ' months']);
+        if (p.stated_return_pct != null) rows.push(['Return', Number(p.stated_return_pct) + '% over the term, as stated by the agency']);
+        if (!rows.length) return;
+        document.getElementById('pvDeal').innerHTML = rows.map(([k, v]) => '<div><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>').join('');
+        const note = document.getElementById('pvDealNote');
+        if (p.deal_structure === 'off_plan' || ['under_construction', 'not_started'].includes(p.build_stage)) {
+          note.textContent = 'Buying before completion: ask Tayo what to check. Who the developer is, what happens if handover is late, and how payments are tied to progress matter most.';
+          note.hidden = false;
+        } else if (p.stated_return_pct != null || ['joint_venture', 'development_financing'].includes(p.deal_structure)) {
+          note.textContent = 'Returns are the agency\u2019s own figures. Synapse does not forecast prices or returns.';
+          note.hidden = false;
+        }
+        show('pvDealCard', true);
+      })();
+
       // Listed by. Real agency, real tier, and nothing else -- we store no
       // star rating and no transaction count.
       (function paintAgency() {
@@ -2497,7 +2547,11 @@
           PROP = rows[0];
           /* The Area the agency typed arrives in `*` as area_name; this page
              reads it as `neighbourhood`, as the portal does. */
-          if (!PROP.neighbourhood && typeof PROP.area_name === 'string' && PROP.area_name.trim()) {
+          /* An area is a place name. Agencies have pasted whole landmark lists into
+             this box; anything longer than a name is not used as one. */
+          if (!PROP.neighbourhood && typeof PROP.area_name === 'string' && PROP.area_name.trim()
+              && PROP.area_name.trim().length <= 40 && !/
+/.test(PROP.area_name.trim())) {
             PROP.neighbourhood = PROP.area_name.trim();
           }
           paintProperty(PROP);
