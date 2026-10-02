@@ -172,9 +172,14 @@
        information until something is full, and only then as a warning. */
     /* Stays until dismissed, and the text is selectable: this is the sentence
        somebody pastes to whoever can fix the Meta app. */
+    /* Centred by auto margins between two 16px insets, not left:50% plus a
+       transform: a fixed box with left:50% may only be as wide as the half of
+       the screen to its right, which on a phone made it 187px wide and taller
+       than the screen once it carried steps. */
     .connect-err {
-      position: fixed; left: 50%; transform: translateX(-50%);
-      bottom: 22px; z-index: 200; max-width: min(620px, calc(100vw - 32px));
+      position: fixed; left: 16px; right: 16px; margin-inline: auto; width: fit-content;
+      bottom: 22px; z-index: 200; max-width: 620px;
+      max-height: calc(100vh - 44px); overflow-y: auto; box-sizing: border-box;
       display: flex; align-items: flex-start; gap: 12px;
       padding: 13px 14px 13px 16px; border-radius: 13px;
       background: #fff; border: 1px solid rgba(168,44,44,0.34);
@@ -187,6 +192,15 @@
       color: var(--ink-dim); font-size: 14px; line-height: 1; padding: 2px 4px;
       min-height: 0;
     }
+    /* A failure we recognise gets steps, not one long sentence: what happened
+       in the bar's red, what to do in ordinary ink, the platform's words
+       small underneath for whoever has to fix it, and the next step as a
+       button. */
+    .connect-err .ce-what { display: block; font-weight: 600; }
+    .connect-err .ce-steps { margin: 6px 0 0; padding-left: 20px; color: var(--ink); }
+    .connect-err .ce-steps li + li { margin-top: 4px; }
+    .connect-err .ce-said { margin-top: 8px; font-size: 12px; color: var(--ink-dim); overflow-wrap: anywhere; }
+    .connect-err .ce-acts { margin-top: 10px; }
 
     .plan-usage {
       display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
@@ -12068,14 +12082,32 @@
             + 'Settings → Linked accounts). In the Facebook window, tick the Page <b>and</b> its Instagram '
             + 'account: both are connected together.</div>'
             + '<div class="cmp-ch-note">Sign in with the Facebook account that administers the Page.</div>'
-            + '<div><button class="cmp-ch-btn primary" data-connect="facebook">Continue to Facebook →</button></div></div>';
+            + '<div><button class="cmp-ch-btn primary" data-connect="facebook">Continue to Facebook →</button></div>'
+            + appNotActiveHtml() + '</div>';
         }
         return '<div class="ch-step">'
           + '<div class="cmp-ch-note">You will be sent to ' + esc(CONNECTABLE[pl]) + ' to sign in. '
           + 'Use the account that administers <b>this agency’s</b> page — '
           + 'you are only ever offered the pages that account manages.</div>'
           + '<div><button class="cmp-ch-btn primary" data-connect="' + pl + '">Continue to '
-          + esc(CONNECTABLE[pl]) + ' →</button></div></div>';
+          + esc(CONNECTABLE[pl]) + ' →</button></div>'
+          + (pl === 'facebook' ? appNotActiveHtml() : '') + '</div>';
+      }
+
+      /* "APP NOT ACTIVE" IS FACEBOOK'S PAGE, NOT OURS. Nothing comes back
+         from it -- no redirect, no record in social_connect_failures -- so
+         this is the only place it can be explained. While Synapse's Meta app
+         is in Development mode, only Facebook accounts with a role on the app
+         may log in through it, and everyone else gets that page: an agency
+         before App Review, or the owner signed in on a phone as another
+         profile (the Facebook app's profile is the one used, and a Page
+         profile switched into counts as another profile). */
+      function appNotActiveHtml() {
+        return '<details class="fbp-help"><summary>Facebook says “App not active”?</summary>'
+          + '<div class="cmp-ch-note">Synapse’s Facebook app is not open to everyone yet, so for now only '
+          + 'Facebook accounts Synapse has added can connect. Check which Facebook profile you are signed in '
+          + 'as: on a phone it is the profile in the Facebook app, and if you have switched into your Page’s '
+          + 'profile, switch back to your own. If it is the right account, ask Synapse to add it.</div></details>';
       }
 
       /* TIKTOK SENDS TO THE INBOX. A post arrives in the agent's TikTok app
@@ -12713,6 +12745,58 @@
         if (typeof toast === 'function') toast(msg); else alert(msg);
       }
 
+      /* WHAT TO DO NEXT, IN FULL (2026-10-02). social-connect's detail is
+         cut at 180 characters on its way here, and on 2 Oct the "no Page"
+         message arrived as its first half -- the half about our Meta
+         configuration -- with the part saying what to do cut off. The
+         function now sends a fixed `reason` beside the detail, and the steps
+         live here, where there is room for them. Every reason is a Facebook
+         one; the function sends none for other platforms. */
+      var FB_RESET = 'On Facebook, go to Settings & privacy → Settings → Business integrations '
+        + '(search Settings for “Business integrations” if you can’t see it), find Synapse and remove it.';
+      var CONNECT_HELP = {
+        no_pages: {
+          what: 'Facebook connected, but no Page came with it, so nothing was connected.',
+          steps: [
+            'Press Connect Facebook again. In Facebook’s window, tick every Page you post from, '
+              + 'and its Instagram account, then continue.',
+            'If Facebook shows no list of Pages and only offers “Continue as …”, it is reusing an earlier '
+              + 'choice. If the window has a link to edit that choice, use it; otherwise: ' + FB_RESET
+              + ' Then come back and connect again.',
+            'You need full control of the Page on Facebook.'],
+          retry: true },
+        stale_pages: {
+          what: 'Facebook is still pointing Synapse at Pages that no longer exist (most likely deleted), '
+            + 'and it skipped asking about your current ones.',
+          steps: [FB_RESET,
+            'Come back here and press Connect Facebook again.',
+            'In Facebook’s window, tick your current Pages and their Instagram accounts, then continue.'],
+          retry: true },
+        no_token: {
+          what: 'Facebook named your Pages but gave Synapse no permission to post to them.',
+          steps: ['Press Connect Facebook again and leave every permission switched on in Facebook’s window.',
+            'You need full control of the Page on Facebook; partial access is not enough to post.'],
+          retry: true },
+        missing_permission: {
+          what: 'Facebook did not give Synapse the permission it needs to list your Pages.',
+          steps: ['This is set in Synapse’s own Facebook app, not on your side. Send the message below to Synapse.'],
+          retry: false },
+        pages_unreadable: {
+          what: 'Facebook would not tell Synapse which Pages you run.',
+          steps: ['Press Connect Facebook again.',
+            'If it happens again, send the message below to Synapse.'],
+          retry: true },
+        unknown: {
+          what: 'Facebook shared no Page, and Synapse could not tell why.',
+          steps: ['Press Connect Facebook again.',
+            'If it happens again, send the message below to Synapse.'],
+          retry: true },
+        user_denied: {
+          what: 'Facebook’s window was closed or Cancel was pressed, so nothing was connected.',
+          steps: ['Press Connect Facebook again and continue through Facebook’s window to the end.'],
+          retry: true }
+      };
+
       /* The portal returns from OAuth with ?connected= or ?connect_error= on
          the URL. Read it once, tell the agency what happened, and strip it --
          a reload should not replay a stale outcome. */
@@ -12721,8 +12805,13 @@
         var outcome = q.get('connected');
         if (!outcome) return;
         var detail = q.get('detail') || '';
-        q.delete('connected'); q.delete('detail');
+        var reason = q.get('reason') || '';
+        q.delete('connected'); q.delete('detail'); q.delete('reason');
         history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+        /* A function deployed before `reason` existed still says "shared no
+           Page" in words; recognise those, so the steps arrive whichever of
+           the portal and the function goes live first. */
+        if (!reason && outcome === 'error' && /shared no Page/i.test(detail)) reason = 'no_pages';
         /* Facebook shared some Pages; this agency now says which are its own. */
         if (outcome === 'choose' && /^[0-9a-f-]{36}$/i.test(detail)) {
           FBP = { id: detail, data: null, chosen: {}, busy: false, note: '' };
@@ -12764,7 +12853,36 @@
           bar.setAttribute('role', 'alert');
           bar.innerHTML = '<div class="ce-msg"></div>'
             + '<button type="button" class="ce-x" aria-label="Dismiss">&#10005;</button>';
-          bar.querySelector('.ce-msg').textContent = msg;   // Meta's words, unescaped by us
+          var help = Object.prototype.hasOwnProperty.call(CONNECT_HELP, reason) ? CONNECT_HELP[reason] : null;
+          var box = bar.querySelector('.ce-msg');
+          if (!help) {
+            box.textContent = msg;   // Meta's words, unescaped by us
+          } else {
+            /* Built from text nodes: the steps are ours, but the detail
+               underneath came in on the URL and is never treated as markup.
+               The button is the ordinary [data-connect] control, handled by
+               the document-wide click listener like the one in the panel. */
+            var what = document.createElement('span');
+            what.className = 'ce-what'; what.textContent = help.what;
+            var ol = document.createElement('ol');
+            ol.className = 'ce-steps';
+            help.steps.forEach(function (s) {
+              var li = document.createElement('li'); li.textContent = s; ol.appendChild(li);
+            });
+            box.appendChild(what); box.appendChild(ol);
+            if (detail) {
+              var said = document.createElement('div');
+              said.className = 'ce-said'; said.textContent = 'Details: ' + detail;
+              box.appendChild(said);
+            }
+            if (help.retry) {
+              var acts = document.createElement('div');
+              acts.className = 'ce-acts';
+              acts.innerHTML = '<button type="button" class="cmp-ch-btn primary" data-connect="facebook">'
+                + 'Connect Facebook again</button>';
+              box.appendChild(acts);
+            }
+          }
           bar.querySelector('.ce-x').addEventListener('click', function () { bar.remove(); });
           document.body.appendChild(bar);
           return;
