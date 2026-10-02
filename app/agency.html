@@ -279,6 +279,63 @@
     .pu-note { font-size: 11.5px; font-weight: 600; }
 
     .addons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-top: 16px; }
+
+    /* ── Billing ── */
+    .bl-link { display: inline-flex; gap: 6px; margin: 4px 0 18px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .bl-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 16px; margin-top: 20px; align-items: start; }
+    @media (max-width: 900px) { .bl-grid { grid-template-columns: minmax(0, 1fr); } }
+    .bl-grid .card { padding: 22px 22px 20px; border-radius: 18px; }
+    .bl-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+    .bl-plan { font: 600 30px/1.1 var(--f-serif); color: var(--ink); margin-top: 10px; letter-spacing: -0.01em; }
+    .bl-state { font-size: 14px; color: var(--ink); margin-top: 8px; }
+    .bl-state.warn { color: #9a2b2b; }
+    .bl-meta { font-size: 13px; color: var(--ink-muted); margin-top: 12px; line-height: 1.55; }
+    .bl-seg { display: inline-flex; gap: 4px; margin-top: 14px; padding: 4px; border-radius: 999px; background: var(--surface-2, rgba(13,13,15,0.05)); }
+    .bl-seg button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-muted); font: 600 13px var(--f-sans); cursor: pointer; }
+    .bl-seg button[aria-pressed="true"] { background: var(--surface, #fff); color: var(--ink); box-shadow: 0 1px 2px rgba(13,13,15,0.12); }
+    .bl-save { margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--orange); color: #15120F; font-size: 11px; }
+    .bl-opts { display: grid; gap: 10px; margin-top: 14px; }
+    .bl-opt { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border); background: transparent; color: var(--ink); font: inherit; cursor: pointer; }
+    .bl-opt[aria-checked="true"] { border-color: var(--orange); box-shadow: inset 0 0 0 1px var(--orange); background: rgba(255,138,45,0.06); }
+    .bl-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink-dim); }
+    .bl-opt[aria-checked="true"] .bl-dot { border-color: var(--orange); background: radial-gradient(circle, var(--orange) 0 4px, transparent 5px); }
+    .bl-opt b { display: block; font-size: 15px; }
+    .bl-opt small { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+    .bl-amt { font: 600 17px var(--f-serif); font-variant-numeric: tabular-nums lining-nums; text-align: right; white-space: nowrap; }
+    .bl-amt small { display: block; font: 600 11px var(--f-sans); color: var(--ink-dim); }
+    .bl-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; background: var(--surface-2, rgba(13,13,15,0.06)); color: var(--ink-muted); vertical-align: 1px; }
+    .bl-note { font-size: 13px; color: var(--ink-muted); margin-top: 12px; line-height: 1.55; }
+    .bl-pay { width: 100%; margin-top: 14px; justify-content: center; min-height: 48px; }
+    .bl-pay[disabled] { opacity: .6; cursor: progress; }
+    .bl-fine { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+    .bl-h2 { margin-top: 40px; }
+    .bl-addon .bl-held { font-size: 11.5px; color: var(--success-ink, #15803D); margin-top: 8px; line-height: 1.45; }
+    .bl-addon .bl-held.wait { color: var(--ink-muted); }
+    .bl-addon .abtn[disabled] { opacity: .55; cursor: default; }
+    .bl-hist { padding: 6px 0; border-radius: 18px; margin-top: 14px; overflow-x: auto; }
+    .bl-tbl { width: 100%; min-width: 520px; border-collapse: collapse; font-size: 13px; }
+    .bl-tbl th, .bl-tbl td { padding: 11px 18px; text-align: left; border-top: 1px solid var(--border); }
+    .bl-tbl thead th { border-top: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .bl-tbl td.num { text-align: right; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+    .bl-tbl th.num { text-align: right; }
+    .bl-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+    .bl-chip.paid { background: rgba(34,197,94,0.14); color: var(--success-ink, #15803D); }
+    .bl-chip.wait { background: var(--surface-2, rgba(13,13,15,0.06)); color: var(--ink-muted); }
+    .bl-chip.fail { background: rgba(154,43,43,0.12); color: #9a2b2b; }
+    .bl-empty { padding: 18px; font-size: 13px; color: var(--ink-muted); }
+    @media (max-width: 560px) {
+      .bl-tbl { min-width: 0; font-size: 12px; }
+      .bl-tbl th, .bl-tbl td { padding: 10px 8px; }
+      .bl-tbl th:first-child, .bl-tbl td:first-child { padding-left: 14px; }
+    }
+    .bl-foot { font-size: 12.5px; color: var(--ink-dim); margin-top: 14px; }
+    .bl-foot a { color: inherit; }
+    html[data-theme="dark"] .bl-opt { border-color: transparent; background: var(--surface-2); }
+    html[data-theme="dark"] .bl-opt[aria-checked="true"] { border-color: var(--orange); background: #2B1D12; }
+    html[data-theme="dark"] .bl-seg button[aria-pressed="true"] { background: #FFFFFF; color: #000000; box-shadow: none; }
+    html[data-theme="dark"] .bl-tbl th, html[data-theme="dark"] .bl-tbl td { border-top-color: transparent; }
+    html[data-theme="dark"] .bl-tbl tbody tr:nth-child(odd) td { background: #0B0C0E; }
+    html[data-theme="dark"] .bl-state.warn, html[data-theme="dark"] .bl-chip.fail { color: #F87171; }
     .addon { padding: 18px 18px 16px; border-radius: 16px; }
     .addon .aico { font-size: 20px; }
     .addon .aname { font-weight: 600; font-size: 13.5px; margin-top: 8px; }
@@ -3965,6 +4022,7 @@
         <div class="grp-items" id="grp-account">
           <a data-pane="verification" title="Verification"><span data-icon="legal"></span><span class="lbl-x">Verification</span></a>
           <a data-pane="subscription" title="Subscription"><span data-icon="card"></span><span class="lbl-x">Subscription</span></a>
+          <a data-pane="billing" title="Billing"><span data-icon="costs"></span><span class="lbl-x">Billing</span></a>
         </div>
       </div>
       <!-- The third initials disc was here, and this one was the worst of them:
@@ -4120,6 +4178,7 @@
                numbers: "0 of 20" is a confident claim about somebody's
                account that happens to be untrue. -->
           <div class="plan-usage" id="planUsage" hidden></div>
+          <a class="bl-link" href="#billing" data-open-billing>Billing, payments and add-ons <span aria-hidden="true">&rarr;</span></a>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
           <div class="pr-cards" id="pricingCards"></div>
@@ -4129,6 +4188,27 @@
           <div class="addons-grid" id="addonsGrid"></div>
 
           <div class="card roi" id="roiSection"></div>
+        </section>
+
+        <!-- ══ BILLING ══ (Eden, 2026-10-02) What the agency is on, paying for a
+             month or a year, add-ons, and every payment. Filled by loadBilling()
+             from agency_billing(), which prices from the same billing_prices()
+             the checkout charges. Owner only: ROLE_PANES leaves it out for
+             admins and agents, as it does Subscription. -->
+        <section class="pane" id="pane-billing">
+          <div class="eyebrow">Account</div>
+          <div class="h1">Billing</div>
+          <p class="sub">Your plan, what you have paid, and extras. Payments go through Paystack to ILIOS Digital, the company behind Synapse. Card details never touch Synapse.</p>
+          <div class="bl-grid">
+            <div class="card bl-now" id="blNow"><div class="bl-k">Your plan</div><div class="bl-state">Loading&hellip;</div></div>
+            <div class="card bl-buy" id="blBuy"></div>
+          </div>
+          <div class="h2 bl-h2" id="blAddonsHead">Add-ons</div>
+          <p class="sub">Top up without changing plan. A listing pack works the moment you pay. Boosts and the verification fast-track are done by our team, who contact you to set them up.</p>
+          <div class="addons-grid bl-addons" id="blAddons"></div>
+          <div class="h2 bl-h2">Payments</div>
+          <div class="card bl-hist" id="blHist"></div>
+          <p class="bl-foot">Paystack emails a receipt to whoever paid. A question about a payment? <a href="#" data-bl-talk>Talk to us</a>.</p>
         </section>
 
         <!-- ══ SOCIAL STUDIO ══ -->
@@ -14754,7 +14834,7 @@
           ] },
         { id: 'market-leader', name: 'Leader', headline: 'Dominate your local market.',
           price: 250000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
-          cta: 'Talk to sales', ctaStyle: 'ghost', features: [
+          cta: 'Choose Leader', ctaStyle: 'ghost', features: [
             ['Unlimited listings & seats', 'No ceiling on your growth'],
             ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
             ['Every marketing channel + AI campaigns', 'Tayo generates whole campaigns for you'],
@@ -14897,7 +14977,7 @@
         var u = r && r.data;
         if (!u || !u.tier) return;             // knows nothing, says nothing
 
-        var TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader' };
+        var TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader', enterprise: 'Enterprise' };
 
         function row(label, used, max) {
           /* null max is unlimited, which is not the same as a ceiling of
@@ -14952,7 +15032,13 @@
         .then((r) => (r && r.data && r.data.session && r.data.session.access_token) || null)
         .catch(() => null);
     }
-    function startCheckout(plan) {
+    /* what: 'accelerator' (a month of it, the old call), or
+       { plan, period } or { addon }. The function prices it, never the page. */
+    function startCheckout(what, btn) {
+      const req = typeof what === 'string' ? { plan: what, period: 'monthly' } : what;
+      const label = btn ? btn.textContent : '';
+      const done = () => { if (btn) { btn.disabled = false; btn.textContent = label; } };
+      if (btn) { btn.disabled = true; btn.textContent = 'Opening Paystack\u2026'; }
       authToken().then((token) => {
         if (!token) {
           /* With the hash, so paying from the Subscription pane returns you
@@ -14964,14 +15050,14 @@
         return fetch(SB_URL + '/functions/v1/paystack-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
-          body: JSON.stringify({ action: 'init', plan }),
+          body: JSON.stringify(Object.assign({ action: 'init' }, req)),
         })
-          .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+          .then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
           .then(({ ok, d }) => {
-            if (!ok || !d.authorization_url) { toast(d.error || 'Could not start checkout — please try again.'); return; }
+            if (!ok || !d.authorization_url) { done(); toast(d.error || 'Could not start checkout. Please try again.'); return; }
             window.location.href = d.authorization_url;
           })
-          .catch(() => toast('Network hiccup starting checkout — please try again.'));
+          .catch(() => { done(); toast('Network hiccup starting checkout. Please try again.'); });
       });
     }
     /* EVERY PLAN ANSWERS (Eden, 2026-10-02). The phone cards had no click
@@ -14979,8 +15065,10 @@
        could be chosen; and Leader's "Talk to sales" showed a thank-you toast
        that told nobody. Now one handler serves both, and a click anywhere on
        a plan's card (or its column in the table) does what its button says:
-         Accelerate          -> Paystack checkout
-         Leader, Enterprise  -> the Contact Synapse panel, with an email
+         Accelerate, Leader  -> Billing, with that plan chosen, to pay for
+                                a month or a year (Leader became buyable
+                                2026-10-02)
+         Enterprise          -> the Contact Synapse panel, with an email
                                 already written about that plan
          Free (when you pay) -> the same panel: there is no self-serve
                                 downgrade, so a person does it
@@ -14993,7 +15081,7 @@
       if (!b || b.disabled) return;
       const plan = PRICING.plans.find((p) => p.id === b.dataset.plan);
       if (!plan) return;
-      if (plan.id === 'accelerator') { startCheckout('accelerator'); return; }
+      if (plan.id === 'accelerator' || plan.id === 'market-leader') { openBilling(plan.id); return; }
       if (typeof toggleRm === 'function') { rmPlanAsk = plan.name; toggleRm(true); }
     }
     document.getElementById('pricingGrid').addEventListener('click', onPlanPick);
@@ -15016,8 +15104,16 @@
           headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
           body: JSON.stringify({ action: 'verify', reference: ref }),
         }).then((r) => r.json()).then((d) => {
-          if (d.ok) { toast('Accelerate is live on your account.'); refreshCurrentPlan(); }
-          else toast('Still processing — this updates automatically once Paystack confirms it.');
+          if (d.ok) {
+            const what = d.kind === 'addon'
+              ? ((BL_ADDON_INFO[d.addon] || {}).name || 'Your add-on') + ' is paid.'
+              : (BL_TIER_NAME[d.tier] || 'Your plan') + ' is live on your account.';
+            toast(what);
+            refreshCurrentPlan();
+          } else {
+            toast('Still processing. This updates by itself once Paystack confirms it.');
+          }
+          goToPane('billing');
         });
       }).catch(() => {});
     })();
@@ -15038,13 +15134,254 @@
           // Free has no self-serve downgrade, so for a paying agency its
           // button asks a person (the Contact Synapse panel) to move them.
           p.disabled = isCurrent;
-          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Move to Free' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : p.id === 'enterprise' ? 'Talk to us' : 'Talk to sales');
+          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Move to Free' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : p.id === 'enterprise' ? 'Talk to us' : 'Choose Leader');
           p.ctaStyle = isCurrent ? 'ghost' : (p.id === 'accelerator' ? 'primary' : 'ghost');
+          // Paid plans renew here too: the current one's button extends it.
+          if (isCurrent && (p.id === 'accelerator' || p.id === 'market-leader')) { p.cta = 'Renew or extend'; p.disabled = false; }
         });
         renderPricing();
       }).catch(() => {});
     }
     refreshCurrentPlan();
+
+    /* ══ BILLING ══════════════════════════════════════════════════════════
+       Eden, 2026-10-02: "build a billing page with our design elements and
+       put the add-ons as well". What the agency is on, paying for a month or
+       a year, add-ons, and every payment.
+
+       Every price shown here comes from agency_billing(), which reads the
+       same billing_prices() the checkout charges, so the page cannot show
+       one number and charge another. The annual offer is per agency: those
+       that joined before it closes (1 December 2026) keep two months free.
+
+       Owner only, like Subscription: ROLE_PANES leaves it out for admins and
+       agents, and the checkout refuses anyone but an owner or admin. */
+    const BL = { data: null, pays: [], adds: [], plan: null, period: null };
+    const BL_TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader', enterprise: 'Enterprise' };
+    const BL_PLANS = [
+      { code: 'accelerator',   name: 'Accelerate', line: '100 listings, 5 seats, every channel' },
+      { code: 'market_leader', name: 'Leader',     line: 'Unlimited listings and seats, campaigns, proximity' },
+    ];
+    const BL_ADDON_INFO = {
+      listing_pack:         { name: 'Extra Listing Pack',   ico: 'agency', desc: '+25 active listings for a month, added the moment you pay.' },
+      social_boost:         { name: 'Social Reach Boost',   ico: 'share',  desc: 'Paid reach behind one listing on social. Never affects Tayo’s ranking.' },
+      verification_credits: { name: 'Verification Credits', ico: 'shield', desc: 'Your next listings go to the front of the verification desk.' },
+      campaign_boost:       { name: 'Campaign Boost',       ico: 'chart',  desc: 'Extra reach behind a marketing campaign that’s working.' },
+      ai_credits:           { name: 'AI Marketing Credits', ico: 'spark',  desc: 'AI captions aren’t metered yet, so there is nothing to top up. On sale when they are.' },
+    };
+    const blEsc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const blNaira = (kobo) => '₦' + Math.round(Number(kobo) / 100).toLocaleString('en-NG');
+    const blDate = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const blShort = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+
+    function openBilling(planId) {
+      if (planId) BL.plan = planId === 'market-leader' ? 'market_leader' : planId;
+      goToPane('billing');
+    }
+
+    function loadBilling() {
+      const now = document.getElementById('blNow');
+      if (!now) return;
+      if (!window.SynAuth || !window.SynListings || !SynListings.agencyId) { blError('Sign in to see billing.'); return; }
+      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => {
+        if (!aid) throw new Error('No agency for this account');
+        return Promise.all([
+          c.rpc('agency_billing', { p_agency_id: aid }),
+          c.from('subscription_payments')
+            .select('created_at, kind, plan_tier, period, months, addon_code, amount_kobo, status')
+            .eq('agency_id', aid).order('created_at', { ascending: false }).limit(50),
+          c.from('agency_addons')
+            .select('addon_code, ends_at, applied_at, created_at')
+            .eq('agency_id', aid).order('created_at', { ascending: false }).limit(50),
+        ]);
+      })).then(([b, pays, adds]) => {
+        if (b.error || !b.data) {
+          /* The database side ships as a migration; until it is applied the
+             function does not exist. Say that, not "something went wrong". */
+          const missing = b.error && (b.error.code === 'PGRST202' || /could not find the function/i.test(b.error.message || ''));
+          blError(missing ? 'Billing is being switched on. Check back shortly.' : 'Billing couldn’t load.', !missing);
+          return;
+        }
+        BL.data = b.data;
+        BL.pays = (pays && pays.data) || [];
+        BL.adds = (adds && adds.data) || [];
+        const tier = BL.data.tier;
+        if (!BL.plan) BL.plan = tier === 'market_leader' ? 'market_leader' : 'accelerator';
+        if (!BL.period) BL.period = BL.data.annual_months_free > 0 ? 'annual' : 'monthly';
+        blRender();
+      }).catch((err) => { console.error('loadBilling failed', err); blError('Billing couldn’t load.', true); });
+    }
+
+    function blError(msg, retry) {
+      const now = document.getElementById('blNow');
+      if (!now) return;
+      now.innerHTML = '<div class="bl-k">Your plan</div><div class="bl-state">' + blEsc(msg) + '</div>'
+        + (retry ? '<button type="button" class="btn btn-ghost" style="margin-top:14px" data-bl-retry>Try again</button>' : '');
+      document.getElementById('blBuy').innerHTML = '';
+      document.getElementById('blAddons').innerHTML = '';
+      document.getElementById('blHist').innerHTML = '';
+    }
+
+    function blQuote(planCode, period) {
+      const plan = BL.data.prices.plans[planCode];
+      const month = Number(plan.monthly_kobo);
+      const free = Number(BL.data.annual_months_free) || 0;
+      return period === 'annual'
+        ? { amount: month * (12 - free), perMonth: month * (12 - free) / 12, unit: 'year' }
+        : { amount: month, perMonth: month, unit: 'month' };
+    }
+
+    function blRender() {
+      const d = BL.data;
+      const tier = d.tier;
+      const paidThrough = d.period_end ? new Date(d.period_end) : null;
+      const lapsed = paidThrough && paidThrough < new Date();
+
+      /* ── what you are on ── */
+      let state;
+      if (tier === 'enterprise') state = '<div class="bl-state">Terms agreed with you.</div>';
+      else if (tier === 'free') state = '<div class="bl-state">Free forever. Upgrade whenever you like.</div>';
+      else if (!paidThrough) state = '<div class="bl-state">Active.</div>';
+      else if (lapsed) state = '<div class="bl-state warn">Your paid period ended on ' + blDate(d.period_end) + '. Renew to keep it.</div>';
+      else state = '<div class="bl-state">Paid through ' + blDate(d.period_end) + '.</div>';
+      const packs = BL.adds.filter((a) => a.addon_code === 'listing_pack' && a.applied_at && (!a.ends_at || new Date(a.ends_at) > new Date())).length;
+      const limit = d.listings_max == null
+        ? 'Unlimited active listings.'
+        : d.listings_max + ' active listings' + (packs ? ', including ' + packs + ' listing pack' + (packs > 1 ? 's' : '') : '') + '.';
+      document.getElementById('blNow').innerHTML =
+        '<div class="bl-k">Your plan</div>'
+        + '<div class="bl-plan">' + blEsc(BL_TIER_NAME[tier] || tier) + '</div>'
+        + state
+        + '<div class="bl-meta">' + limit + '</div>';
+
+      /* ── paying for a plan ── */
+      const buy = document.getElementById('blBuy');
+      if (tier === 'enterprise') {
+        buy.innerHTML = '<div class="bl-k">Your terms</div>'
+          + '<p class="bl-note" style="font-size:14px;color:var(--ink)">Enterprise is priced with you: a monthly fee, per project, or a commission on closed deals. Invoices come from ILIOS Digital.</p>'
+          + '<button type="button" class="btn btn-ghost bl-pay" data-bl-talk>Talk to us about your terms</button>';
+      } else {
+        const free = Number(d.annual_months_free) || 0;
+        const q = blQuote(BL.plan, BL.period);
+        const chosen = BL_PLANS.find((p) => p.code === BL.plan) || BL_PLANS[0];
+        const verb = tier === BL.plan ? (lapsed ? 'Renew ' : 'Extend ') + chosen.name
+          : tier === 'free' ? 'Pay for ' + chosen.name
+          : 'Switch to ' + chosen.name;
+        const closes = d.offer_joined_before ? blDate(d.offer_joined_before) : null;
+        let note = BL.period === 'annual'
+          ? blNaira(q.perMonth) + ' a month, paid once a year.'
+          : 'Paid month by month. Each payment covers one month.';
+        if (BL.period === 'annual' && free > 0) {
+          note += ' Your agency joined before ' + (closes || 'the offer closed') + ', so annual stays at ' + (12 - free) + ' months’ price.';
+        }
+        if (tier !== 'free' && tier !== BL.plan) note += ' A different plan starts the day you pay.';
+        else if (tier === BL.plan && !lapsed && paidThrough) note += ' Time you have already paid for is kept: this adds to it.';
+        buy.innerHTML = '<div class="bl-k">Pay for a plan</div>'
+          + '<div class="bl-seg" role="group" aria-label="How often you pay">'
+          + '<button type="button" data-bl-period="monthly" aria-pressed="' + (BL.period === 'monthly') + '">Monthly</button>'
+          + '<button type="button" data-bl-period="annual" aria-pressed="' + (BL.period === 'annual') + '">Annual'
+          + (free > 0 ? '<span class="bl-save">' + free + ' months free</span>' : '') + '</button>'
+          + '</div>'
+          + '<div class="bl-opts" role="radiogroup" aria-label="Plan">'
+          + BL_PLANS.map((p) => {
+            const pq = blQuote(p.code, BL.period);
+            const on = p.code === BL.plan;
+            return '<button type="button" class="bl-opt" role="radio" aria-checked="' + on + '" data-bl-plan="' + p.code + '">'
+              + '<span class="bl-dot" aria-hidden="true"></span>'
+              + '<span><b>' + p.name + (tier === p.code ? '<span class="bl-tag">YOUR PLAN</span>' : '') + '</b><small>' + p.line + '</small></span>'
+              + '<span class="bl-amt">' + blNaira(pq.amount) + '<small>per ' + pq.unit + '</small></span>'
+              + '</button>';
+          }).join('')
+          + '</div>'
+          + '<div class="bl-note">' + note + '</div>'
+          + '<button type="button" class="btn btn-primary bl-pay" data-bl-pay>' + verb + ' · ' + blNaira(q.amount) + '</button>'
+          + '<div class="bl-fine">You pay on Paystack’s page by card, bank transfer or USSD. Bigger needs? <a href="#" data-bl-enterprise style="color:inherit">Enterprise</a> is priced with you.</div>';
+      }
+
+      /* ── add-ons ── */
+      const addons = d.prices.addons || {};
+      document.getElementById('blAddons').innerHTML = Object.keys(BL_ADDON_INFO).filter((k) => addons[k]).map((k) => {
+        const a = addons[k], info = BL_ADDON_INFO[k];
+        const mine = BL.adds.filter((x) => x.addon_code === k);
+        let held = '';
+        if (k === 'listing_pack') {
+          const live = mine.filter((x) => x.applied_at && x.ends_at && new Date(x.ends_at) > new Date());
+          if (live.length) {
+            const last = live.map((x) => x.ends_at).sort().pop();
+            held = '<div class="bl-held">' + live.length + ' active, until ' + blShort(last) + '</div>';
+          }
+        } else if (mine.length) {
+          const waiting = mine.filter((x) => !x.applied_at).length;
+          held = waiting
+            ? '<div class="bl-held wait">' + waiting + ' paid, we’ll contact you to set ' + (waiting > 1 ? 'them' : 'it') + ' up</div>'
+            : '<div class="bl-held">Done ' + blShort(mine[0].applied_at) + '</div>';
+        }
+        const onSale = a.on_sale === true;
+        return '<div class="card addon bl-addon">'
+          + '<div class="aico">' + (window.SynIcons ? SynIcons.svg(info.ico) : '') + '</div>'
+          + '<div class="aname">' + blEsc(a.name) + '</div>'
+          + '<div class="adesc">' + blEsc(info.desc) + '</div>'
+          + '<div class="aprice">' + blNaira(a.kobo) + '<small> ' + (a.unit === 'month' ? '/month' : a.unit === 'pack' ? 'pack' : 'each') + '</small></div>'
+          + held
+          + (onSale
+            ? '<button type="button" class="abtn" data-bl-addon="' + k + '">Buy · ' + blNaira(a.kobo) + '</button>'
+            : '<button type="button" class="abtn" disabled>Not on sale yet</button>')
+          + '</div>';
+      }).join('');
+
+      /* ── every payment ── */
+      const hist = document.getElementById('blHist');
+      if (!BL.pays.length) {
+        hist.innerHTML = '<div class="bl-empty">No payments yet. Each one will be listed here, and Paystack emails a receipt to whoever paid.</div>';
+      } else {
+        hist.innerHTML = '<table class="bl-tbl"><thead><tr><th>Date</th><th>What</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>'
+          + BL.pays.map((p) => {
+            const what = p.kind === 'addon'
+              ? ((BL_ADDON_INFO[p.addon_code] || {}).name || p.addon_code)
+              : (BL_TIER_NAME[p.plan_tier] || p.plan_tier) + ', ' + (p.period === 'annual' ? 'a year' : 'a month');
+            const age = Date.now() - new Date(p.created_at).getTime();
+            const chip = p.status === 'success' ? '<span class="bl-chip paid">Paid</span>'
+              : p.status === 'failed' ? '<span class="bl-chip fail">Failed</span>'
+              : age > 3600 * 1000 ? '<span class="bl-chip wait">Not completed</span>'
+              : '<span class="bl-chip wait">Waiting for Paystack</span>';
+            return '<tr><td>' + blShort(p.created_at) + '</td><td>' + blEsc(what) + '</td><td class="num">' + blNaira(p.amount_kobo) + '</td><td>' + chip + '</td></tr>';
+          }).join('')
+          + '</tbody></table>';
+      }
+    }
+
+    (function wireBilling() {
+      const pane = document.getElementById('pane-billing');
+      if (!pane) return;
+      pane.addEventListener('click', (e) => {
+        const t = e.target;
+        const period = t.closest('[data-bl-period]');
+        if (period) { BL.period = period.dataset.blPeriod; blRender(); return; }
+        const plan = t.closest('[data-bl-plan]');
+        if (plan) { BL.plan = plan.dataset.blPlan; blRender(); return; }
+        const pay = t.closest('[data-bl-pay]');
+        if (pay) { startCheckout({ plan: BL.plan, period: BL.period }, pay); return; }
+        const addon = t.closest('[data-bl-addon]');
+        if (addon) { startCheckout({ addon: addon.dataset.blAddon }, addon); return; }
+        if (t.closest('[data-bl-retry]')) { loadBilling(); return; }
+        const talk = t.closest('[data-bl-talk], [data-bl-enterprise]');
+        if (talk) {
+          e.preventDefault();
+          if (typeof toggleRm === 'function') { rmPlanAsk = 'Enterprise'; toggleRm(true); }
+        }
+      });
+    })();
+
+    /* Subscription's own doors into Billing: the link under the usage line,
+       and the add-on cards, whose "Add" buttons did nothing until now. */
+    document.addEventListener('click', (e) => {
+      const go = e.target.closest('[data-open-billing]');
+      const add = !go && e.target.closest('#addonsGrid .abtn');
+      if (!go && !add) return;
+      e.preventDefault();
+      openBilling();
+      if (add) setTimeout(() => { const h = document.getElementById('blAddonsHead'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 350);
+    });
 
     // ── persistent Ask-Tayo panel (context-aware per pane) ──
     // The AI commentary/summaries live here, not on the main panes. What the
@@ -15973,6 +16310,7 @@
       // a minute ago, both change what this should say.
       if (pane === 'crm' && window.paintOutboxWaiting) window.paintOutboxWaiting();
       if (pane === 'verification' && typeof loadVerification === 'function') loadVerification();
+      if (pane === 'billing' && typeof loadBilling === 'function') loadBilling();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
       navHistRecord(pane);

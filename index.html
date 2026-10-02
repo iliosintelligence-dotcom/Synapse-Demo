@@ -476,6 +476,7 @@
         <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
         <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save"></span></button>
       </div>
+      <p class="pr-note" id="prOffer" hidden>Annual is 10 months&rsquo; price for agencies that join before 1&nbsp;December&nbsp;2026, and it stays that way for them.</p>
 
       <div class="pr-grid">
         <div class="pr-card">
@@ -505,7 +506,7 @@
             <li>AI writes and schedules your posts</li>
             <li>See which channels actually make buyers</li>
           </ul>
-          <a class="btn btn-solid pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html%23subscription">Choose Accelerate</a>
+          <a class="btn btn-solid pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html%23billing">Choose Accelerate</a>
         </div>
 
         <div class="pr-card">
@@ -519,7 +520,7 @@
             <li>Dedicated verification desk</li>
           </ul>
           <p class="pr-not">Tayo still ranks purely on buyer fit &mdash; never on payment.</p>
-          <a class="btn btn-ghost pr-go" href="mailto:ilios.intelligence@gmail.com?subject=Leader%20plan">Talk to us</a>
+          <a class="btn btn-ghost pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html%23billing">Choose Leader</a>
         </div>
 
         <!-- ENTERPRISE (Eden, 2026-10-02): no list price. Terms are agreed
@@ -628,7 +629,15 @@
    0 and the toggle disappears rather than advertising a discount that does
    not exist. Monthly prices live in the cards' data-monthly attributes. */
 (function () {
-  var ANNUAL_MONTHS_FREE = 2;
+  /* The offer closes for NEW agencies on OFFER_CLOSES (Eden, 2026-10-02:
+     "in December we're going to remove the two months free"). It must match
+     platform_settings.annual_offer.joined_before, which is what the checkout
+     actually charges by; agencies that joined before it keep the offer.
+     After the date the toggle disappears rather than advertise it. */
+  var OFFER_CLOSES = new Date('2026-12-01T00:00:00+01:00');
+  var ANNUAL_MONTHS_FREE = new Date() < OFFER_CLOSES ? 2 : 0;
+  var offerNote = document.getElementById('prOffer');
+  if (offerNote) offerNote.hidden = !ANNUAL_MONTHS_FREE;
   var wraps = [].slice.call(document.querySelectorAll('.pr-toggle'));
   var prices = [].slice.call(document.querySelectorAll('.pr-price[data-monthly]'));
   if (!wraps.length || !prices.length) return;
