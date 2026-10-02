@@ -3,20 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Google tag (gtag.js), G-R7VX06N3ZY.
-       The address it reports is trimmed first: Google gets the page and any
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY -- only after consent.
+       Nothing is sent to Google until the visitor accepts analytics cookies
+       in the banner (/consent.js): the calls below are queued, and gtag.js is
+       loaded only when the stored choice is "granted". Advertising consent is
+       never granted -- Analytics is used for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
        campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
-       id, never the rest
-       of the query or the fragment. Those carry what visitors typed or were
-       sent -- a question to Tayo (?ask=), a search, a sign-in or password
-       reset code (?code=, ?token_hash=, #access_token) -- and none of that
-       belongs in an analytics account. The referrer is trimmed the same way. -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
     (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('js', new Date());
       var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
       function clean(href) {
         try {
@@ -30,8 +38,18 @@
         page_location: clean(location.href),
         page_referrer: document.referrer ? clean(document.referrer) : ''
       });
+      window.SynGtagLoad = function () {
+        if (window.SynGtagLoaded) return;
+        window.SynGtagLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY';
+        document.head.appendChild(s);
+      };
+      if (ok) window.SynGtagLoad();
     })();
   </script>
+  <script src="/consent.js" defer></script>
   <title>Verification desk · Synapse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

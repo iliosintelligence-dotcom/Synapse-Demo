@@ -3,20 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <!-- Google tag (gtag.js), G-R7VX06N3ZY.
-       The address it reports is trimmed first: Google gets the page and any
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY -- only after consent.
+       Nothing is sent to Google until the visitor accepts analytics cookies
+       in the banner (/consent.js): the calls below are queued, and gtag.js is
+       loaded only when the stored choice is "granted". Advertising consent is
+       never granted -- Analytics is used for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
        campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
-       id, never the rest
-       of the query or the fragment. Those carry what visitors typed or were
-       sent -- a question to Tayo (?ask=), a search, a sign-in or password
-       reset code (?code=, ?token_hash=, #access_token) -- and none of that
-       belongs in an analytics account. The referrer is trimmed the same way. -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
     (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('js', new Date());
       var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
       function clean(href) {
         try {
@@ -30,8 +38,18 @@
         page_location: clean(location.href),
         page_referrer: document.referrer ? clean(document.referrer) : ''
       });
+      window.SynGtagLoad = function () {
+        if (window.SynGtagLoaded) return;
+        window.SynGtagLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY';
+        document.head.appendChild(s);
+      };
+      if (ok) window.SynGtagLoad();
     })();
   </script>
+  <script src="/consent.js" defer></script>
   <title>Privacy Policy · Synapse</title>
   <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
        and nothing was there: a 404 on every page load of the whole site, and
@@ -167,7 +185,7 @@
       <li><strong>Account details</strong>, only if you create one: your email and password (handled by Supabase Auth, which we do not have direct access to in plain text), and optionally your name.</li>
       <li><strong>Approximate location</strong>, only if you explicitly turn on proximity alerts — see below.</li>
       <li><strong>Standard technical data</strong> any website receives: browser type, rough page-load performance, and error reports, used to keep the app working.</li>
-      <li><strong>How the site is used</strong>, measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it &mdash; your questions to Tayo, searches, and sign-in or password-reset links &mdash; so none of that reaches Google. Google Analytics sets cookies (named <code>_ga</code>) to tell one visit from the next. You can block them in your browser settings or with <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google&rsquo;s opt-out add-on</a>, and Synapse keeps working.</li>
+      <li><strong>How the site is used</strong>, measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it &mdash; your questions to Tayo, searches, and sign-in or password-reset links &mdash; so none of that reaches Google. Google Analytics only runs if you accept analytics cookies in the banner we show on your first visit &mdash; if you say no, nothing is sent to Google at all. When it runs, it sets cookies (named <code>_ga</code>) to tell one visit from the next. You can change your choice at any time with <a href="#" data-cookie-settings>Cookie settings</a>, or block the cookies in your browser settings or with <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google&rsquo;s opt-out add-on</a>, and Synapse keeps working.</li>
     </ul>
     <p>We do not buy data about you from anyone, and we do not sell yours.</p>
 
@@ -200,7 +218,7 @@
       <li><strong>An agency</strong> — only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that.</li>
       <li><strong>Service providers</strong> we use to run Synapse: Supabase (database, authentication, file storage), and our AI provider (Tayo's replies). Each only receives what its function requires.</li>
       <li><strong>Meta, TikTok and Telegram</strong>: the listing posts an agency asks us to publish, sent to that agency's own connected account.</li>
-      <li><strong>Google</strong> (Google Analytics): the usage measurements described above, so we can count visits and see which pages and channels are working. We use it for measurement only, not for advertising.</li>
+      <li><strong>Google</strong> (Google Analytics): the usage measurements described above, and only if you accept analytics cookies, so we can count visits and see which pages and channels are working. We use it for measurement only, not for advertising.</li>
       <li><strong>Nobody else.</strong> No advertising networks, no data brokers.</li>
     </ul>
 
@@ -248,7 +266,7 @@
       <li><strong>Account details</strong>, only if you create one: your email and password (handled by Supabase Auth, which we do not have direct access to in plain text), and optionally your name.</li>
       <li><strong>Approximate location</strong>, only if you explicitly turn on proximity alerts — see below.</li>
       <li><strong>Standard technical data</strong> any website receives: browser type, rough page-load performance, and error reports, used to keep the app working.</li>
-      <li><strong>How the site is used</strong>, measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it &mdash; your questions to Tayo, searches, and sign-in or password-reset links &mdash; so none of that reaches Google. Google Analytics sets cookies (named <code>_ga</code>) to tell one visit from the next. You can block them in your browser settings or with <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google&rsquo;s opt-out add-on</a>, and Synapse keeps working.</li>
+      <li><strong>How the site is used</strong>, measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it &mdash; your questions to Tayo, searches, and sign-in or password-reset links &mdash; so none of that reaches Google. Google Analytics only runs if you accept analytics cookies in the banner we show on your first visit &mdash; if you say no, nothing is sent to Google at all. When it runs, it sets cookies (named <code>_ga</code>) to tell one visit from the next. You can change your choice at any time with <a href="#" data-cookie-settings>Cookie settings</a>, or block the cookies in your browser settings or with <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener">Google&rsquo;s opt-out add-on</a>, and Synapse keeps working.</li>
     </ul>
     <p>We do not buy data about you from anyone, and we do not sell yours.</p>
 
@@ -281,7 +299,7 @@
       <li><strong>An agency</strong> — only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that.</li>
       <li><strong>Service providers</strong> we use to run Synapse: Supabase (database, authentication, file storage), and our AI provider (Tayo's replies). Each only receives what its function requires.</li>
       <li><strong>Meta, TikTok and Telegram</strong>: the listing posts an agency asks us to publish, sent to that agency's own connected account.</li>
-      <li><strong>Google</strong> (Google Analytics): the usage measurements described above, so we can count visits and see which pages and channels are working. We use it for measurement only, not for advertising.</li>
+      <li><strong>Google</strong> (Google Analytics): the usage measurements described above, and only if you accept analytics cookies, so we can count visits and see which pages and channels are working. We use it for measurement only, not for advertising.</li>
       <li><strong>Nobody else.</strong> No advertising networks, no data brokers.</li>
     </ul>
 
