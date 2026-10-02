@@ -3733,7 +3733,11 @@
        its name. Phones keep their own dock (the 1024px block above). */
     .side-dock, .side-toggle { display: none; }
     @media (min-width: 1025px) {
-      body.portal .shell { padding-left: 88px; }
+      /* Open, the dock pushes the page across instead of lying over it --
+         the way the sidebar in Claude's own app does (Eden). The padding
+         grows with the dock, on the same curve. */
+      body.portal .shell { padding-left: 88px; transition: padding-left var(--m-expanded) var(--m-ease-panel); }
+      body.portal.dock-open .shell { padding-left: 264px; }
       body.portal .side-dock {
         display: flex; flex-direction: column; gap: 10px;
         position: fixed; left: 16px; top: calc(61px + 16px); z-index: 40;
@@ -3791,7 +3795,8 @@
       /* Back / forward: its own small card, like the reference's undo/redo. */
       body.portal .side-hist {
         display: flex; flex-direction: column; gap: 2px; flex: none;
-        width: 56px; padding: 8px; box-sizing: border-box;
+        width: 56px; padding: 8px; box-sizing: border-box; overflow: hidden;
+        transition: width var(--m-expanded) var(--m-ease-panel);
         background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
         box-shadow: 0 6px 22px rgba(74, 52, 30, 0.10), 0 1px 2px rgba(74, 52, 30, 0.06);
       }
@@ -3801,7 +3806,16 @@
         width: 40px; height: 40px; border: none; border-radius: 11px;
         background: transparent; color: var(--ink); cursor: pointer;
       }
-      body.portal .side-hist button svg, body.portal .side-toggle svg { width: 18px; height: 18px; }
+      body.portal .side-hist button svg, body.portal .side-toggle svg { width: 18px; height: 18px; flex: none; }
+      /* Back, Forward and the switch widen with the dock and say what they
+         are, so the three cards read as one (Eden). The icons stay put; the
+         names fade in beside them, like the menu's own labels. */
+      body.portal.dock-open .side-hist { width: 232px; }
+      body.portal .side-hist button { width: 100%; justify-content: flex-start; gap: 12px; padding: 0 11px; white-space: nowrap; }
+      body.portal :is(.side-hist, .side-toggle) .lbl-x {
+        font: 600 13.5px var(--f-sans); opacity: 0; transition: opacity var(--m-standard) var(--m-ease);
+      }
+      body.portal.dock-open :is(.side-hist, .side-toggle) .lbl-x { opacity: 1; }
       body.portal .side-hist button:hover:not(:disabled) { background: var(--canvas); }
       body.portal .side-hist button:disabled { color: var(--ink-dim); opacity: .45; cursor: default; }
 
@@ -3809,11 +3823,14 @@
       body.portal .side-toggle {
         position: fixed; left: 16px; bottom: 16px; z-index: 40;
         width: 56px; height: 48px; border-radius: 16px;
+        justify-content: flex-start; gap: 12px; padding: 0 19px; overflow: hidden; white-space: nowrap;
+        transition: width var(--m-expanded) var(--m-ease-panel);
         background: var(--surface); border: 1px solid var(--line);
         box-shadow: 0 6px 22px rgba(74, 52, 30, 0.10), 0 1px 2px rgba(74, 52, 30, 0.06);
       }
       body.portal .side-toggle:hover { border-color: var(--line-2); }
-      body.portal .side-toggle[aria-expanded="true"] { color: var(--orange); }
+      body.portal .side-toggle[aria-expanded="true"] { width: 232px; }
+      body.portal .side-toggle[aria-expanded="true"] svg { color: var(--orange); }
 
       body.portal :is(.side-hist button, .side-toggle):focus-visible {
         outline: 2px solid var(--orange); outline-offset: 2px;
@@ -3939,14 +3956,17 @@
     <div class="side-hist" role="group" aria-label="Pages you visited">
       <button type="button" id="navBack" aria-label="Back to the previous page" title="Back" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        <span class="lbl-x">Back</span>
       </button>
       <button type="button" id="navFwd" aria-label="Forward to the next page" title="Forward" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        <span class="lbl-x">Forward</span>
       </button>
     </div>
     </div>
     <button type="button" class="side-toggle" id="sideToggle" aria-controls="tabs" aria-expanded="false" title="Expand the menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg>
+      <span class="lbl-x">Collapse</span>
     </button>
 
     <div class="content">
@@ -15706,6 +15726,9 @@
       var KEY = 'syn_side_open';
       function setOpen(open, save) {
         side.classList.toggle('expanded', open);
+        /* The page makes room rather than being covered (Eden: "I want it
+           to shift the things in the background"). */
+        document.body.classList.toggle('dock-open', open);
         if (tog) {
           tog.setAttribute('aria-expanded', String(open));
           tog.title = open ? 'Collapse the menu' : 'Expand the menu';
