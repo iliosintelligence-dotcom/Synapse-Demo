@@ -673,6 +673,10 @@
     let dealFilter = 'all'; // all | sale | rent | shared
     let verifiedOnly = false;
     let shownItems = [];
+    /* "Search this area" (Greptile, full review): the map's results replaced
+       its pins and nothing else, so the map and the list showed different
+       homes. The ids it found now filter the list too, until cleared. */
+    let areaIds = null;
     // declared before the first render(): render() and renderEmptyState() read it
     let hasSessionView = false;
 
@@ -766,8 +770,13 @@
       // Before two homes are ♥'d, the checkboxes and the bar are just noise.
       const compareOn = saves.size >= 2;
       if (!compareOn && picked.size) picked.clear();
-      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l));
-      grid.innerHTML = shownItems.map((l, i) =>
+      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l)
+        && (!areaIds || areaIds.has(l.id)));
+      grid.innerHTML = (areaIds
+        ? '<div class="area-note" style="grid-column:1/-1;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink-muted)">'
+          + 'Showing the homes in the map area. <button type="button" class="btn btn-ghost" data-area-clear style="min-height:34px;padding:0 12px">Show everywhere</button></div>'
+        : '')
+        + shownItems.map((l, i) =>
         SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
       renderFreshSince(compareOn);
       renderEmptyState();
@@ -850,8 +859,13 @@
          listing in the viewport. */
       SynMatches.drawMatchMap(mapState, 'map',
         shownItems.length || searchQ ? shownItems : items,
-        { areaSearch: true, sb: { url: SUPABASE_URL, anon: ANON_KEY } });
+        { areaSearch: true, sb: { url: SUPABASE_URL, anon: ANON_KEY },
+          onAreaResults: (rows) => { areaIds = new Set((rows || []).map((r) => r.id)); render(); } });
     }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-area-clear]')) return;
+      areaIds = null; render();
+    });
 
     /* ── List ⇄ Map (item 20) ────────────────────────────────────────────
        Both views render the same filtered set, so switching never changes

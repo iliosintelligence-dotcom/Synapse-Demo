@@ -213,9 +213,25 @@
         }
         return row;
       });
-    return c.from('property_media').delete().eq('property_id', propertyId).then(function () {
-      if (!rows.length) return { data: [], error: null };
-      return c.from('property_media').insert(rows);
+    /* NEW ROWS FIRST, OLD ROWS AFTER (Greptile, full review). This deleted
+       the listing's media and then inserted the replacements, checking
+       neither -- so a refused insert left a listing with no photos while the
+       portal said "Listing updated". Now the old rows are read, the new ones
+       inserted, and only once that has worked are the old ones removed; any
+       failure is thrown to the caller, which reports it, and the listing keeps
+       the photos it had. */
+    return c.from('property_media').select('id').eq('property_id', propertyId).then(function (old) {
+      if (old.error) throw old.error;
+      var oldIds = (old.data || []).map(function (r) { return r.id; });
+      var ins = rows.length ? c.from('property_media').insert(rows) : Promise.resolve({ data: [], error: null });
+      return Promise.resolve(ins).then(function (r) {
+        if (r && r.error) throw r.error;
+        if (!oldIds.length) return { data: [], error: null };
+        return c.from('property_media').delete().in('id', oldIds).then(function (d) {
+          if (d && d.error) throw d.error;
+          return { data: [], error: null };
+        });
+      });
     });
   }
 
