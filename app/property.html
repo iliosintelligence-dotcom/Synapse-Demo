@@ -2550,8 +2550,7 @@
           /* An area is a place name. Agencies have pasted whole landmark lists into
              this box; anything longer than a name is not used as one. */
           if (!PROP.neighbourhood && typeof PROP.area_name === 'string' && PROP.area_name.trim()
-              && PROP.area_name.trim().length <= 40 && !/
-/.test(PROP.area_name.trim())) {
+              && PROP.area_name.trim().length <= 40 && !/\n/.test(PROP.area_name.trim())) {
             PROP.neighbourhood = PROP.area_name.trim();
           }
           paintProperty(PROP);

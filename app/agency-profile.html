@@ -277,8 +277,7 @@
       el.innerHTML = list.map((p) => {
         const img = cover(p.property_media);
         const area = (p.area_name || '').trim();
-        const where = [area.length <= 40 && !/
-/.test(area) ? area : '', p.city].filter(Boolean).join(', ');
+        const where = [area.length <= 40 && !/\n/.test(area) ? area : '', p.city].filter(Boolean).join(', ');
         const meta = [p.bedrooms ? p.bedrooms + ' bed' : '', p.verification_status === 'verified' ? 'Verified' : 'Not yet verified'].filter(Boolean).join(' · ');
         return '<a class="ap-l" href="property.html?id=' + encodeURIComponent(p.id) + '">'
           + '<div class="ph">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : 'No photo yet') + '</div>'

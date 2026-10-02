@@ -1233,8 +1233,7 @@
         priceN: Number(p.price) || 0,
         /* The Area the agency typed, then the linked zone, then the city. It
            is also what the search box matches, so "Agbowo" now finds it. */
-        ttl: p.title, loc: (p.area_name && p.area_name.trim() && p.area_name.trim().length <= 40 && !/
-/.test(p.area_name.trim())) ? (p.area_name.trim() + ', ' + p.city)
+        ttl: p.title, loc: (p.area_name && p.area_name.trim() && p.area_name.trim().length <= 40 && !/\n/.test(p.area_name.trim())) ? (p.area_name.trim() + ', ' + p.city)
           : (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
         score: p.trust_score, match: null,
         /* Who listed it, as they designed themselves on their Brand page --
