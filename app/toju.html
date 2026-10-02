@@ -776,14 +776,20 @@
       const via = q.get('via');
       const names = { telegram: 'Telegram', instagram: 'Instagram', facebook: 'Facebook',
                       tiktok: 'TikTok', x: 'X', whatsapp: 'WhatsApp', whatsapp_campaign: 'WhatsApp' };
-      const fresh = q.get('new') === '1' || via === 'bio';
+      /* new=site: arriving from Synapse's own landing page. Eden: anything
+         asked from the landing page starts a fresh chat -- showing Tayo on
+         somebody else's laptop opened that laptop's last conversation. The
+         old thread is filed in History, as for any arrival, but the greeting
+         is the ordinary one: this visitor did not come from a post. */
+      const fromSite = q.get('new') === 'site';
+      const fresh = q.get('new') === '1' || fromSite || via === 'bio';
       const from = names[String(q.get('ch') || '').toLowerCase()] || '';
       if (fresh) {
         ['new', 'via', 'ch'].forEach((k) => q.delete(k));
         const rest = q.toString();
         try { history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) {}
       }
-      return { fresh, from };
+      return { fresh, from, social: fresh && !fromSite };
     })();
     let SET_ASIDE = null;
     if (ARRIVAL.fresh) {
@@ -1539,7 +1545,7 @@
       "I'm Tayo, Synapse's property advisor. "
       + (from ? 'Did a home on our ' + from + ' catch your eye?' : 'Did one of our posts catch your eye?')
       + ' Tell me which one — the area or the price is enough — or tell me what you’re looking for.';
-    const FIRST_GREETING = ARRIVAL.fresh ? arrivalGreeting(ARRIVAL.from) : GREETING;
+    const FIRST_GREETING = ARRIVAL.social ? arrivalGreeting(ARRIVAL.from) : GREETING;
 
     /* ── suggestions, from what is actually listed ──────────────────────────
        A suggested brief has to be answerable, or the opening move of the whole
