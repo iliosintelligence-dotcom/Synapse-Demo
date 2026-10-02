@@ -678,5 +678,59 @@
   paint('monthly');
 })();
 </script>
+
+<!-- ── after an agency deletes itself ───────────────────────────────────
+     app/agency.html (DELETE AGENCY) signs the owner out and sends them
+     here, leaving one line in sessionStorage that says what happened. It is
+     read once and removed, so a reload or a later visit says nothing, and it
+     never rides in the URL where it could be bookmarked or shared. -->
+<style>
+  .goodbye {
+    position: fixed; z-index: 60;
+    top: calc(80px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px;
+    margin-inline: auto; width: fit-content; max-width: 560px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 8px 12px 18px; border-radius: 16px;
+    background: var(--surface); color: var(--ink);
+    font: 500 15px/1.45 var(--f);
+    box-shadow: 0 16px 40px rgba(21, 18, 15, 0.16);
+  }
+  .goodbye button {
+    flex: none; width: 40px; height: 40px; border: none; border-radius: 50%;
+    background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer;
+  }
+  .goodbye button:hover { color: var(--ink); }
+  /* Night: the lighter black on black is the edge; a shadow on #000 is not. */
+  :root[data-theme="dark"] .goodbye { box-shadow: none; }
+</style>
+<script>
+(function () {
+  var g = null;
+  try {
+    g = JSON.parse(sessionStorage.getItem('synapse_goodbye_v1') || 'null');
+    sessionStorage.removeItem('synapse_goodbye_v1');
+  } catch (e) { return; }
+  if (!g || g.kind !== 'agency') return;
+
+  var box = document.createElement('div');
+  box.className = 'goodbye';
+  box.setAttribute('role', 'status');
+  var say = document.createElement('span');
+  /* Says what was done, not what sounds most final: when the login had to
+     stay (another agency, staff), the page does not claim it went. */
+  say.textContent = g.login === 'kept'
+    ? 'Your agency has been deleted. Your Synapse login was kept, because you still use it elsewhere on Synapse.'
+    : 'Your agency and your Synapse account have been deleted.';
+  var x = document.createElement('button');
+  x.type = 'button';
+  x.setAttribute('aria-label', 'Dismiss');
+  x.textContent = '×';
+  x.addEventListener('click', function () { box.remove(); });
+  box.appendChild(say);
+  box.appendChild(x);
+  document.body.appendChild(box);
+  setTimeout(function () { if (box.parentNode) box.remove(); }, 12000);
+})();
+</script>
 </body>
 </html>
