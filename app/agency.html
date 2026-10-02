@@ -178,6 +178,9 @@
       border-radius: 18px; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 6px;
     }
     .prc-card.pop { border-color: var(--ink); }
+    .prc-card.can { cursor: pointer; transition: border-color .15s, transform .15s; }
+    .prc-card.can:hover { border-color: var(--ink); transform: translateY(-1px); }
+    .pr-compare .pr-head[data-col], .pr-compare .pr-cell[data-col] { cursor: pointer; }
     .prc-name { font: 700 15px var(--f-sans); color: var(--ink); }
     .prc-head { font-size: 12.5px; color: var(--ink-muted); line-height: 1.45; }
     .prc-amt { font: 700 26px var(--f-sans); color: var(--ink); margin-top: 6px; letter-spacing: -0.01em; }
@@ -190,7 +193,7 @@
     /* A row that is simply included needs no value, just a mark. */
     .prc-feats li.yes .prc-k { color: var(--ink); }
     .prc-feats li.yes::after { content: '✓'; color: var(--success, #15803D); font-weight: 700; flex: none; }
-    .pr-compare { display: grid; grid-template-columns: minmax(190px,1.3fr) repeat(3, minmax(150px,1fr)); min-width: 680px; background: var(--surface); }
+    .pr-compare { display: grid; grid-template-columns: minmax(190px,1.3fr) repeat(4, minmax(140px,1fr)); min-width: 820px; background: var(--surface); }
     .pr-compare > div { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
     .pr-compare > div:nth-last-child(-n+4) { border-bottom: none; }
     .pr-row-label { font-size: 13px; font-weight: 600; color: var(--ink); position: sticky; left: 0; background: var(--surface); z-index: 1; }
@@ -9741,6 +9744,10 @@
        row). Enum lives in the database as subscription_tier. */
     const TOP_TIER = 'market_leader';
     let rmCache = null;
+    /* Set when a pricing card opened the panel (onPlanPick): the plan's name.
+       The panel then leads with an email about that plan, for every tier --
+       a sales conversation is not the top tier's support desk. */
+    let rmPlanAsk = null;
 
     /* A button that puts the value on the clipboard, with the value shown in
        full beside it. Sits under every mailto:/tel: so the panel always has an
@@ -9781,7 +9788,38 @@
         + rmCopyRow(RM_EMAIL);
     }
 
+    function rmPlanMail(plan, agencyName) {
+      const subject = plan + ' plan' + (agencyName ? ' \u2014 ' + agencyName : '');
+      const body = [
+        agencyName ? 'Agency: ' + agencyName : 'Agency:',
+        'Plan: ' + plan,
+        '',
+        'Roughly how many listings:',
+        'How many agents:',
+        plan === 'Enterprise' ? 'How you would like to pay (monthly, per project, or commission on closed deals):' : 'Best number to call you back:',
+        '',
+        '',
+        '\u2014 sent from the Synapse agency portal',
+      ].join('\n');
+      return '<div class="rm-role">' + esc2(plan) + ' plan</div>'
+        + '<div class="rm-none">' + (plan === 'Enterprise'
+          ? 'Enterprise terms are agreed with you: a monthly fee, per project, or a commission on closed deals.'
+          : plan === 'Free' ? 'Tell us and we will move you to Free at the end of your paid period.'
+          : 'Tell us about your agency and we will set it up with you.') + '</div>'
+        + '<a class="rm-mail" href="mailto:' + RM_EMAIL
+        + '?subject=' + encodeURIComponent(subject)
+        + '&body=' + encodeURIComponent(body) + '">Email us about ' + esc2(plan) + '</a>'
+        + '<div style="height:18px"></div>';
+    }
+
     function rmRender(rm, agencyName, tier) {
+      rmRenderContact(rm, agencyName, tier);
+      if (rmPlanAsk) {
+        document.getElementById('rmCard').insertAdjacentHTML('afterbegin', rmPlanMail(rmPlanAsk, agencyName));
+      }
+    }
+
+    function rmRenderContact(rm, agencyName, tier) {
       const card = document.getElementById('rmCard');
       const canEmail = tier === TOP_TIER;
 
@@ -9890,8 +9928,9 @@
       p.classList.toggle('on', on); sc.classList.toggle('on', on);
       b.setAttribute('aria-expanded', String(on));
       if (on) { toggleNoti(false); rmLoad(); }
+      else rmPlanAsk = null;
     }
-    document.getElementById('rmBtn').addEventListener('click', () => toggleRm());
+    document.getElementById('rmBtn').addEventListener('click', () => { rmPlanAsk = null; toggleRm(); });
     document.getElementById('rmScrim').addEventListener('click', () => toggleRm(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleRm(false); });
 
@@ -14660,7 +14699,6 @@
     const CTA_TOASTS = {
       '+ New listing': 'Listing upload — add photos and the 7-node verification kicks off automatically.',
       '+ New campaign': 'Campaign builder — target Tayo briefs by area, budget and intent.',
-      'Talk to sales': 'Thanks — our team will reach out about the Gold plan and proximity marketing.',
       'Current plan': 'You’re on Free — free forever. Upgrade any time.',
       'See how it works': 'A 2-minute tour of the agency portal is on the way.',
     };
@@ -14725,6 +14763,18 @@
             ['Dedicated verification desk + priority support', 'A team on standby for your deals'],
             ['Premium analytics', 'Attribution from first touch to closed ₦'],
           ] },
+        /* ENTERPRISE (Eden, 2026-10-02): no list price. Terms are agreed with
+           the agency -- a monthly fee, per project, or a commission on closed
+           deals -- so the card says "Negotiated" and its button opens a real
+           conversation (the Contact Synapse panel), not a checkout. */
+        { id: 'enterprise', name: 'Enterprise', headline: 'Terms built around your business.',
+          price: null, priceLabel: 'Negotiated', unit: '', best: 'Developers and large agencies. Pricing agreed with you, even as commission on closed deals.',
+          cta: 'Talk to us', ctaStyle: 'ghost', features: [
+            ['Everything in Leader', 'Unlimited listings, seats and channels'],
+            ['Pricing agreed with you', 'Monthly, per project, or a commission on closed deals'],
+            ['A dedicated relationship manager', 'One person who knows your portfolio'],
+            ['Onboarding and integrations', 'Your existing listings and team brought across'],
+          ] },
       ],
       addons: [
         { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
@@ -14747,27 +14797,27 @@
     // features/tradeoffs above into shared dimensions every plan has a
     // value for (true/false/a specific figure).
     const COMPARE_ROWS = [
-      { label: 'Active listings', vals: ['20', '100', 'Unlimited'] },
-      { label: 'Team seats', vals: ['2', '5', 'Unlimited'] },
-      { label: 'CRM with WhatsApp handoff', vals: [true, true, true] },
-      { label: 'Tayo AI buyer referrals', vals: [true, true, true] },
-      { label: 'Verification speed', vals: ['Standard queue', '48 hours', 'Dedicated desk'] },
-      { label: 'Verification badge', vals: ['Verified', 'Verified', 'Gold Verified'] },
-      { label: 'Publish once, reach every channel', vals: [false, true, true] },
-      { label: 'AI writes captions & auto-posts', vals: [false, true, true] },
-      { label: 'AI-generated marketing campaigns', vals: [false, false, true] },
-      { label: 'Proximity marketing', vals: [false, false, true] },
-      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium — full attribution'] },
-      { label: 'Support', vals: ['Standard', 'Standard', 'Priority'] },
+      { label: 'Active listings', vals: ['20', '100', 'Unlimited', 'Unlimited'] },
+      { label: 'Team seats', vals: ['2', '5', 'Unlimited', 'Unlimited'] },
+      { label: 'CRM with WhatsApp handoff', vals: [true, true, true, true] },
+      { label: 'Tayo AI buyer referrals', vals: [true, true, true, true] },
+      { label: 'Verification speed', vals: ['Standard queue', '48 hours', 'Dedicated desk', 'Dedicated desk'] },
+      { label: 'Verification badge', vals: ['Verified', 'Verified', 'Gold Verified', 'Gold Verified'] },
+      { label: 'Publish once, reach every channel', vals: [false, true, true, true] },
+      { label: 'AI writes captions & auto-posts', vals: [false, true, true, true] },
+      { label: 'AI-generated marketing campaigns', vals: [false, false, true, true] },
+      { label: 'Proximity marketing', vals: [false, false, true, true] },
+      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium — full attribution', 'Premium — full attribution'] },
+      { label: 'Support', vals: ['Standard', 'Standard', 'Priority', 'Dedicated manager'] },
     ];
     function pricingCellCls(p) { return (p.feature ? ' feature' : '') + (p.gold ? ' gold-plan' : ''); }
     function pricingCompareHTML(plans, rows) {
       let html = '<div class="pr-corner"></div>'
-        + plans.map((p) => `<div class="pr-head${pricingCellCls(p)}">${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}<div class="tname">${p.name}</div><div class="thead">${p.headline}</div></div>`).join('');
+        + plans.map((p) => `<div class="pr-head${pricingCellCls(p)}" data-col="${p.id}">${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}<div class="tname">${p.name}</div><div class="thead">${p.headline}</div></div>`).join('');
       html += '<div class="pr-row-label">Price</div>'
-        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}"><div class="amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div></div>`).join('');
+        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}"><div class="amt">${p.price == null ? (p.priceLabel || 'Let’s talk') : nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div></div>`).join('');
       html += '<div class="pr-row-label"></div>'
-        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}"><button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button></div>`).join('');
+        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}"><button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button></div>`).join('');
       rows.forEach((r) => {
         html += `<div class="pr-row-label">${r.label}</div>`
           + r.vals.map((v, i) => {
@@ -14775,7 +14825,7 @@
             const content = v === true ? '<span class="pr-check">✓</span>'
               : v === false ? '<span class="pr-dash">—</span>'
               : `<span class="pr-val">${v}</span>`;
-            return `<div class="pr-cell${pricingCellCls(p)}">${content}</div>`;
+            return `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}">${content}</div>`;
           }).join('');
       });
       return html;
@@ -14798,11 +14848,11 @@
           const val = v === true ? '' : `<span class="prc-v">${v}</span>`;
           return `<li${v === true ? ' class="yes"' : ''}><span class="prc-k">${r.label}</span>${val}</li>`;
         }).join('');
-        return `<div class="prc-card${p.badge ? ' pop' : ''}">
+        return `<div class="prc-card${p.badge ? ' pop' : ''}${(p.disabled ?? p.current) ? '' : ' can'}" data-col="${p.id}">
           ${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}
           <div class="prc-name">${p.name}</div>
           <div class="prc-head">${p.headline}</div>
-          <div class="prc-amt">${nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
+          <div class="prc-amt">${p.price == null ? (p.priceLabel || 'Let’s talk') : nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
           <button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button>
           <ul class="prc-feats">${feats}</ul>
         </div>`;
@@ -14924,10 +14974,31 @@
           .catch(() => toast('Network hiccup starting checkout — please try again.'));
       });
     }
-    document.getElementById('pricingGrid').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-plan="accelerator"]');
-      if (b && !b.disabled) startCheckout('accelerator');
-    });
+    /* EVERY PLAN ANSWERS (Eden, 2026-10-02). The phone cards had no click
+       handler at all -- only the desktop table did -- so on a phone no plan
+       could be chosen; and Leader's "Talk to sales" showed a thank-you toast
+       that told nobody. Now one handler serves both, and a click anywhere on
+       a plan's card (or its column in the table) does what its button says:
+         Accelerate          -> Paystack checkout
+         Leader, Enterprise  -> the Contact Synapse panel, with an email
+                                already written about that plan
+         Free (when you pay) -> the same panel: there is no self-serve
+                                downgrade, so a person does it
+       The plan you are on stays inert. */
+    function onPlanPick(e) {
+      const cell = e.target.closest('[data-col]');
+      if (!cell || e.target.closest('a')) return;
+      const b = cell.closest('#pricingCards') ? cell.querySelector('button[data-plan]')
+        : document.querySelector('#pricingGrid button[data-plan="' + cell.dataset.col + '"]');
+      if (!b || b.disabled) return;
+      const plan = PRICING.plans.find((p) => p.id === b.dataset.plan);
+      if (!plan) return;
+      if (plan.id === 'accelerator') { startCheckout('accelerator'); return; }
+      if (typeof toggleRm === 'function') { rmPlanAsk = plan.name; toggleRm(true); }
+    }
+    document.getElementById('pricingGrid').addEventListener('click', onPlanPick);
+    const pricingCardsEl = document.getElementById('pricingCards');
+    if (pricingCardsEl) pricingCardsEl.addEventListener('click', onPlanPick);
 
     // Paystack redirects back here as ?reference=... — that query param is
     // an untrusted browser redirect (spoofable), used only as a lookup key.
@@ -14961,12 +15032,13 @@
         PRICING.plans.forEach((p) => {
           const isCurrent = (tier === 'free' && p.id === 'foundation')
             || (tier === 'accelerator' && p.id === 'accelerator')
-            || (tier === 'market_leader' && p.id === 'market-leader');
+            || (tier === 'market_leader' && p.id === 'market-leader')
+            || (tier === 'enterprise' && p.id === 'enterprise');
           p.current = isCurrent;
-          // Free has no self-serve downgrade flow — its button stays
-          // inert rather than promising an action that doesn't exist.
-          p.disabled = isCurrent || p.id === 'foundation';
-          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Free tier' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : 'Talk to sales');
+          // Free has no self-serve downgrade, so for a paying agency its
+          // button asks a person (the Contact Synapse panel) to move them.
+          p.disabled = isCurrent;
+          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Move to Free' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : p.id === 'enterprise' ? 'Talk to us' : 'Talk to sales');
           p.ctaStyle = isCurrent ? 'ghost' : (p.id === 'accelerator' ? 'primary' : 'ghost');
         });
         renderPricing();
@@ -15717,7 +15789,7 @@
       if (typeof leads !== 'undefined' && Array.isArray(leads) && leads.length) {
         const fresh = leads.filter(x => x.stage === 'New');
         if (fresh.length) {
-          out.push({ type: 'lead', tag: 'Lead', icon: 'user', pane: 'leads',
+          out.push({ type: 'lead', tag: 'Lead', icon: 'user', pane: 'crm',
             title: fresh.length + ' new lead' + (fresh.length === 1 ? '' : 's'),
             sub: 'Waiting on a first response', group: 'Today' });
         }
@@ -15889,6 +15961,13 @@
        function is what stops a notification from highlighting a tab without
        actually switching the view, or vice versa. */
     function goToPane(pane) {
+      /* The leads notification asked for a pane called 'leads'; the CRM pane
+         is 'crm'. An unknown name switched every pane off and left the portal
+         blank, so the click looked dead (Eden: "the CRM notifications don't
+         take me to the CRM page"). Old names are translated, and a name with
+         no pane is ignored rather than blanking the screen. */
+      pane = ({ leads: 'crm', lead: 'crm', posts: 'social', post: 'social' })[pane] || pane;
+      if (pane && !document.getElementById('pane-' + pane)) return;
       if (pane === 'tours' && typeof loadTours === 'function') loadTours();
       // Recount on arrival -- a message queued in another tab, or one you sent
       // a minute ago, both change what this should say.

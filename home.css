@@ -258,6 +258,17 @@ a { color: inherit; }
 .rail-copy { display: none; }
 .rail li { display: inline-flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
 .rail svg { color: var(--ink); }
+/* Each channel in its own colour (Eden): the marks people already know.
+   Instagram's mark is a gradient; its single-colour brand pink stands in.
+   TikTok is its black (white at night) note with the cyan and red edges. */
+.rail li[data-brand="instagram"] svg { color: #E4405F; }
+.rail li[data-brand="facebook"] svg { color: #1877F2; }
+.rail li[data-brand="telegram"] svg { color: #26A5E4; }
+.rail li[data-brand="whatsapp"] svg { color: #25D366; }
+.rail li[data-brand="youtube"] svg { color: #FF0000; }
+.rail li[data-brand="synapse"] svg { color: var(--orange); }
+.rail li[data-brand="tiktok"] svg { color: #000000; filter: drop-shadow(-1.2px -1px 0 #25F4EE) drop-shadow(1.2px 1px 0 #FE2C55); }
+:root[data-theme="dark"] .rail li[data-brand="tiktok"] svg { color: #FFFFFF; }
 
 /* ── sections ─────────────────────────────────────────────────────────────── */
 .sec { padding: clamp(80px, 11vw, 150px) 0 0; }
@@ -443,18 +454,28 @@ a { color: inherit; }
 .pr-per.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(74, 52, 30, 0.08); }
 :root[data-theme="dark"] .pr-per.on { background: #FFFFFF; color: #000000; box-shadow: none; }
 .pr-save { margin-left: 6px; padding: 3px 8px; border-radius: 999px; background: var(--orange); color: #15120F; font-size: 12px; }
-.pr-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; align-items: stretch; }
+.pr-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; align-items: stretch; }
 .pr-card { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 30px 28px 32px; }
 .pr-card.feature { background: var(--tint); border-color: var(--orange); box-shadow: inset 0 0 0 1px var(--orange); }
 .pr-badge { position: absolute; top: -13px; left: 26px; padding: 5px 12px; border-radius: 999px; background: var(--orange); color: #15120F; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .pr-name { font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
-.pr-price { margin-top: 14px; font-size: clamp(34px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
+.pr-price { margin-top: 14px; font-size: clamp(30px, 2.7vw, 38px); line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums lining-nums; }
 .pr-price span { display: block; margin-top: 8px; font-size: 15px; letter-spacing: 0; color: var(--muted); }
 .pr-best { margin: 16px 0 0; color: var(--ink-2); font-size: 17px; }
 .pr-list { list-style: none; margin: 20px 0 0; padding: 20px 0 0; border-top: 1px solid var(--line); display: grid; gap: 10px; }
 .pr-list li { position: relative; padding-left: 26px; font-size: 16px; color: var(--ink-2); }
 .pr-list li::before { content: ''; position: absolute; left: 2px; top: 6px; width: 12px; height: 7px; border-left: 2px solid var(--orange); border-bottom: 2px solid var(--orange); transform: rotate(-45deg); }
-.pr-not { margin: auto 0 0; padding-top: 18px; font-size: 15px; color: var(--muted); }
+.pr-not { margin: 0; padding-top: 18px; font-size: 15px; color: var(--muted); }
+/* Every plan can be chosen (Eden, 2026-10-02): a button at the foot of each
+   card, and the whole card is that button -- the link's ::after covers it. */
+.pr-go { margin-top: auto; align-self: stretch; }
+.pr-list + .pr-go, .pr-not + .pr-go { margin-top: 24px; }
+.pr-card .pr-list { margin-bottom: auto; }
+.pr-go::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.pr-card { transition: transform .15s ease, border-color .15s ease; }
+.pr-card:has(.pr-go:hover) { transform: translateY(-2px); border-color: var(--line-2); }
+.pr-card.feature:has(.pr-go:hover) { border-color: var(--orange); }
+.pr-go:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
 .pr-compare { margin-top: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
 .pr-compare summary { cursor: pointer; padding: 18px 22px; font-weight: 600; font-size: 16px; list-style: none; display: flex; align-items: center; gap: 10px; }
 .pr-compare summary::-webkit-details-marker { display: none; }
@@ -512,12 +533,16 @@ a { color: inherit; }
 }
 
 /* ── narrower screens ─────────────────────────────────────────────────────── */
+@media (max-width: 1180px) and (min-width: 961px) {
+  .pr-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 960px) {
   .nav-links { display: none; }
   .row, .row.flip { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .row.flip .row-text { order: 0; }
   .pr-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
   .pr-card.feature { order: -1; }
+  .pr-price { font-size: 38px; }
   .steps { grid-template-columns: minmax(0, 1fr); }
   .promises { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
 }
