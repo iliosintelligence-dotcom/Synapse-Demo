@@ -710,6 +710,14 @@
     .pv-time button.on { background: #121212; color: #fff; border-color: #121212; }
     .pvo-eta { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink); margin: 6px 0; }
     .pvo-eta b { font-weight: 700; }
+    .pvo-name { font: 700 17px/1.25 var(--f-sans); color: var(--ink); margin: 2px 0 3px; text-wrap: balance; }
+    .pvo-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; }
+    .pvo-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .pvo-stat { padding: 10px 10px 9px; border-radius: 12px; background: rgba(54,54,54,0.06); }
+    html[data-theme="dark"] .pvo-stat { background: rgba(255,255,255,0.08); }
+    .pvo-stat b { display: block; font: 700 16px/1.15 var(--f-sans); color: var(--ink); font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+    .pvo-stat span { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 3px; }
+    .pvo-note { font-size: 11.5px; color: var(--ink-dim); margin: 10px 0 0; line-height: 1.4; }
     .pv-home-pin { background: #121212; color: #fff; width: 30px; height: 30px; border-radius: 50% 50% 50% 4px; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
     .pv-poi-pin { border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.28); border: 2px solid #fff; }
     /* tablet: drop the canvas, centre the deck (unchanged behaviour) */
@@ -4341,9 +4349,9 @@
 
       var head = '<button class="pvo-back" type="button" data-back-cat>\u2039 '
         + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + '</button>'
-        + '<div class="pvo-k">' + escHtml(poi.n) + '</div>'
-        + '<div class="pvo-eta"><span>' + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl)
-        + ' \u00b7 ' + escHtml(poi.d) + ' away</span></div>';
+        + '<div class="pvo-name">' + escHtml(poi.n) + '</div>'
+        + '<div class="pvo-sub">' + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl)
+        + ' \u00b7 ' + escHtml(poi.d) + ' away in a straight line</div>';
       overlay.innerHTML = head
         + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Working out the walking route\u2026</p>';
 
@@ -4371,11 +4379,17 @@
              network instead of cutting across a straight line. */
           var km = route.distance / 1000;
           var walk = walkMins(route.distance);
+          /* Three figures, each with its own label (Eden: "not readable" --
+             the sentence was laid out as a spaced flex row and split into
+             columns mid-phrase). */
+          var dr = driveMins(route.distance);
           overlay.innerHTML = head
-            + '<div class="pvo-eta">' + km.toFixed(1) + ' km by road \u00b7 '
-            + 'about <b>' + walk + ' min</b> on foot, '
-            + '<b>' + driveText(route.distance) + '</b> driving'
-            + '<span class="pvo-est"> \u00b7 estimated from distance</span></div>';
+            + '<div class="pvo-stats">'
+            +   '<div class="pvo-stat"><b>' + km.toFixed(1) + ' km</b><span>by road</span></div>'
+            +   '<div class="pvo-stat"><b>' + walk + ' min</b><span>on foot</span></div>'
+            +   '<div class="pvo-stat"><b>' + (dr.lo === dr.hi ? dr.lo : dr.lo + '\u2013' + dr.hi) + ' min</b><span>driving</span></div>'
+            + '</div>'
+            + '<p class="pvo-note">Times are estimated from distance, not live traffic.</p>';
           fit([PROP, poi.c]);
         })
         .catch(function () {
