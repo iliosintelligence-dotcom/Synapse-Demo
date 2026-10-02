@@ -3928,7 +3928,17 @@
     :root:root[data-theme="dark"] body .side-hist button:disabled {
       background: transparent !important; border-color: transparent !important;
     }
-  </style>
+      .sts-offer { position: fixed; z-index: 120; left: 50%; transform: translateX(-50%); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+      width: min(460px, calc(100vw - 24px)); display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px 12px; align-items: center;
+      padding: 14px 16px; border-radius: 18px; background: var(--surface, #fff); color: var(--ink);
+      box-shadow: 0 18px 48px -12px rgba(20,20,18,0.35), 0 0 0 1px rgba(20,20,18,0.06); }
+    html[data-theme="dark"] .sts-offer { box-shadow: 0 18px 48px -12px rgba(0,0,0,0.8); }
+    .sts-ic { width: 36px; height: 36px; border-radius: 50%; background: #25D366; color: #fff; display: grid; place-items: center; }
+    .sts-ic svg { width: 20px; height: 20px; }
+    .sts-t { font-size: 14px; line-height: 1.45; }
+    .sts-b { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+    .sts-b .btn { min-height: 40px; }
+</style>
   <!-- The app theme, last so it wins: warm, white, flat (theme.css). Not on sign-in. -->
   <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="theme-night.css" />
@@ -7082,6 +7092,7 @@
                     ? sent.failed + ' could not go out \u2014 see Needs attention'
                     : 'Queued \u2014 going out within the minute'));
             } else toast('Queued \u2014 going out within the minute');
+            if (now && mode !== 'reschedule') rememberStatusOffer(p.propertyId);
             loadPipeline();
             watchPipeline();
           })
@@ -14713,6 +14724,50 @@
     }
 
     let SHK = null;
+    /* ── "AND YOUR WHATSAPP STATUS?" (Eden, 2026-10-02) ───────────────────
+       "After a user makes a post, when they come back, ask them if they want
+       to also share it to their WhatsApp Status." Synapse cannot post to
+       anyone's Status, so the share kit does it the way agents already do:
+       the photo and a Status caption, through the phone's own share sheet.
+       Remembered when a post goes out now; offered the next time they come
+       back to the portal (not in the same moment); forgotten after 3 days
+       or once answered. */
+    const STATUS_OFFER_KEY = 'syn_status_offer_v1';
+    function rememberStatusOffer(id) {
+      if (!id) return;
+      try { localStorage.setItem(STATUS_OFFER_KEY, JSON.stringify({ id: id, at: Date.now() })); } catch (e) {}
+    }
+    function maybeOfferStatus() {
+      let o = null;
+      try { o = JSON.parse(localStorage.getItem(STATUS_OFFER_KEY) || 'null'); } catch (e) { o = null; }
+      if (!o || !o.id || document.getElementById('stsOffer')) return;
+      const age = Date.now() - Number(o.at || 0);
+      if (age > 3 * 864e5) { try { localStorage.removeItem(STATUS_OFFER_KEY); } catch (e) {} return; }
+      if (age < 20000) return;                       // coming back, not the same moment
+      const l = typeof fullListing === 'function' ? fullListing(o.id) : null;
+      if (!l || !l.id) return;                       // listings not loaded yet; asked again later
+      try { localStorage.removeItem(STATUS_OFFER_KEY); } catch (e) {}
+      const el = document.createElement('div');
+      el.className = 'sts-offer'; el.id = 'stsOffer'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Share to WhatsApp Status');
+      el.innerHTML = '<div class="sts-ic" aria-hidden="true">' + (window.SynIcons ? SynIcons.svg('whatsapp') : '') + '</div>'
+        + '<div class="sts-t"><b>Your post is out.</b> Share ' + esc2(l.title || 'it') + ' to your WhatsApp Status too?</div>'
+        + '<div class="sts-b"><button type="button" class="btn btn-ghost" data-sts="no">Not now</button>'
+        + '<button type="button" class="btn btn-primary" data-sts="yes">Share to Status</button></div>';
+      document.body.appendChild(el);
+      el.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-sts]'); if (!b) return;
+        el.remove();
+        if (b.dataset.sts !== 'yes') return;
+        openShareKit(o.id);
+        const wa = SHARE_DEST.find((d) => d.id === 'whatsapp');
+        if (SHK && wa && SHK.dest !== wa) { SHK.dest = wa; SHK.edited = false; if (typeof shkPaint === 'function') shkPaint(); }
+      });
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(maybeOfferStatus, 800); });
+    window.addEventListener('focus', () => setTimeout(maybeOfferStatus, 800));
+    setTimeout(maybeOfferStatus, 5000);
+    setTimeout(maybeOfferStatus, 12000);
+
     function openShareKit(id) {
       const l = fullListing(id);
       if (!l || !l.id) { toast('Save the listing first — a share link needs the saved listing'); return; }
