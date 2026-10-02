@@ -3,17 +3,20 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-  <!-- Google tag (gtag.js), G-R7VX06N3ZY -- only after consent.
-       Nothing is sent to Google until the visitor accepts analytics cookies
-       in the banner (/consent.js): the calls below are queued, and gtag.js is
-       loaded only when the stored choice is "granted". Advertising consent is
-       never granted -- Analytics is used for measurement only.
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
        The address it reports is trimmed first: Google gets the page plus any
        campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
        id, never the rest of the query or the fragment. Those carry what
        visitors typed or were sent -- a question to Tayo (?ask=), a search, a
        sign-in or password-reset code -- and none of that belongs in an
        analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
@@ -24,6 +27,7 @@
         analytics_storage: ok ? 'granted' : 'denied',
         ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
       });
+      gtag('set', 'ads_data_redaction', true);
       gtag('js', new Date());
       var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
       function clean(href) {
@@ -38,15 +42,8 @@
         page_location: clean(location.href),
         page_referrer: document.referrer ? clean(document.referrer) : ''
       });
-      window.SynGtagLoad = function () {
-        if (window.SynGtagLoaded) return;
-        window.SynGtagLoaded = true;
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY';
-        document.head.appendChild(s);
-      };
-      if (ok) window.SynGtagLoad();
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
     })();
   </script>
   <script src="/consent.js" defer></script>

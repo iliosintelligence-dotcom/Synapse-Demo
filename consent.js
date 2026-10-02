@@ -2,10 +2,11 @@
    COOKIE CONSENT (2026-10-02)
 
    Google Analytics is the only thing on Synapse that sets a non-essential
-   cookie, so it is the only thing this asks about. Nothing is sent to Google
-   until the visitor accepts: each page's inline Google tag queues its calls
-   but loads gtag.js only when the stored choice is "granted"
-   (window.SynGtagLoad). Declining means no script, no cookie, no request.
+   cookie, so it is the only thing this asks about. The tag runs in Google
+   Consent Mode (advanced), Eden's choice: it loads on every page, but sets
+   no cookie until the visitor accepts. Until then, and after "No thanks",
+   Google gets only cookieless signals with no stored identifier.
+   Accepting grants analytics_storage; advertising is never granted.
 
    The choice is remembered in localStorage (syn_consent_v1). Any element with
    [data-cookie-settings] reopens the banner, so the choice can be changed
