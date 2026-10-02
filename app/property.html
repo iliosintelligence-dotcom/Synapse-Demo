@@ -634,11 +634,22 @@
                    text-overflow: ellipsis; white-space: nowrap; }
     .pvo-row .n { flex: none; font: 600 12px var(--f-sans); color: var(--ink-muted);
                   font-variant-numeric: tabular-nums; }
+    /* A ROUND BACK BUTTON (Eden, 2026-10-03), not a small text link: an
+       orange circle with an arrow, the level it returns to beside it. */
     .pvo-back {
-      background: none; border: 0; padding: 0 0 6px; cursor: pointer;
-      font: 600 12px var(--f-sans); color: var(--ink-muted);
+      display: inline-flex; align-items: center; gap: 9px;
+      background: none; border: 0; padding: 0 0 10px; cursor: pointer; min-height: 44px;
+      font: 600 13px var(--f-sans); color: var(--ink);
     }
-    .pvo-back:hover { color: var(--ink); }
+    .pvo-back-ic {
+      width: 34px; height: 34px; flex: none; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--orange, #FF8A2D); color: #15120F;
+      box-shadow: 0 4px 12px rgba(255,138,45,0.35);
+    }
+    .pvo-back:hover .pvo-back-ic { filter: brightness(1.05); }
+    .pvo-back:focus-visible { outline: none; }
+    .pvo-back:focus-visible .pvo-back-ic { outline: 2px solid var(--ink); outline-offset: 2px; }
     .pvm-backpill { display: none; }
     .pvc-hint {
       flex-basis: 100%; margin: 6px 0 0;
@@ -4296,7 +4307,7 @@
       });
 
       overlay.className = 'pvc-overlay';
-      overlay.innerHTML = '<button class="pvo-back" type="button" data-back>\u2039 All nearby</button>'
+      overlay.innerHTML = '<button class="pvo-back" type="button" data-back aria-label="Back to all nearby"><span class="pvo-back-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span>All nearby</span></button>'
         + '<div class="pvo-k">' + escHtml(AMENITY_LABEL[t] || m.lbl) + ' \u00b7 ' + list.length + '</div>'
         + '<div class="pvo-rows">'
         + list.slice(0, 60).map(function (poi, i) {
@@ -4333,7 +4344,7 @@
       }).join('');
       var etas = DEST.map(function (d, i) { return '<div class="pvo-eta">' + escHtml(d.n) + ' <b>' + cg.etas[i] + '</b></div>'; }).join('');
       overlay.className = 'pvc-overlay';
-      overlay.innerHTML = '<button class="pvo-back" type="button" data-back>\u2039 All nearby</button>'
+      overlay.innerHTML = '<button class="pvo-back" type="button" data-back aria-label="Back to all nearby"><span class="pvo-back-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span>All nearby</span></button>'
         + '<div class="pvo-k">Traffic to key areas</div><div class="pv-time">' + toggle + '</div>' + etas
         + '<p style="font-size:12px;color:var(--ink-dim);margin-top:8px">Congestion-adjusted drive time. Red = heavy, amber = moderate.</p>';
       fit(pts);
@@ -4347,8 +4358,8 @@
       if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; }
       overlay.className = 'pvc-overlay';
 
-      var head = '<button class="pvo-back" type="button" data-back-cat>\u2039 '
-        + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + '</button>'
+      var head = '<button class="pvo-back" type="button" data-back-cat><span class="pvo-back-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span>'
+        + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl) + '</span></button>'
         + '<div class="pvo-name">' + escHtml(poi.n) + '</div>'
         + '<div class="pvo-sub">' + escHtml(AMENITY_LABEL[poi.t] || metaFor(poi.t).lbl)
         + ' \u00b7 ' + escHtml(poi.d) + ' away in a straight line</div>';
