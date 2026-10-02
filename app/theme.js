@@ -1,28 +1,52 @@
-/* ── Light or dark (2026-09-29) ──────────────────────────────────────────────
-   Loaded in <head>, straight after theme.css and before anything paints, so a
-   dark page never flashes white first. It stamps <html data-theme="light|dark">
-   and theme.css does the rest.
+/* ── Light or dark, by the clock (2026-10-02) ───────────────────────────────
+   Loaded in <head> before anything paints, so a dark page never flashes white
+   first. It stamps <html data-theme="light|dark">; the theme files do the rest.
 
-   The choice: the device's own setting, unless the moon/sun button in the app
-   bar has been pressed, which is remembered on this device (syn_theme). A
-   device that changes its setting while the page is open is followed, unless
-   a choice was made here. Storage can be blocked (private windows, some
-   in-app browsers): then it simply follows the device. */
+   Eden: every page switches by the time of day -- dark at 7pm, light at 7am,
+   Nigeria time -- not only the landing pages. Lagos is UTC+1 all year (no
+   daylight saving), so the hour is worked out from UTC and the two switches
+   never drift with the visitor's own clock or settings.
+
+   The moon/sun button in the app bar still works, but a choice made with it
+   holds only until the next 7am/7pm switch (syn_theme_pick: {t, until}); then
+   the clock takes over again. The landing pages read and write the same key,
+   so one choice carries across the site. A page left open turns over on the
+   minute. The old permanent choice (syn_theme) is dropped once, or it would
+   pin somebody to one mode forever. Storage can be blocked (private windows,
+   some in-app browsers): then it simply follows the clock. */
 (function () {
   'use strict';
-  var KEY = 'syn_theme';
+  var KEY = 'syn_theme_pick';
   var root = document.documentElement;
-  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-  function chosen() {
-    try { var v = localStorage.getItem(KEY); return v === 'dark' || v === 'light' ? v : ''; }
-    catch (e) { return ''; }
+  function lagosHour(now) { return (now.getUTCHours() + 1) % 24; }
+  function byClock() {
+    var h = lagosHour(new Date());
+    return (h >= 19 || h < 7) ? 'dark' : 'light';
   }
-  function current() {
-    return chosen() || (mq && mq.matches ? 'dark' : 'light');
+  /* 07:00 and 19:00 in Lagos are 06:00 and 18:00 UTC. */
+  function nextSwitch() {
+    var now = new Date();
+    var d = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    var times = [d + 6 * 3600e3, d + 18 * 3600e3, d + 30 * 3600e3];
+    for (var i = 0; i < times.length; i++) if (times[i] > now.getTime()) return times[i];
+    return d + 30 * 3600e3;
   }
+
+  try { localStorage.removeItem('syn_theme'); } catch (e) {}
+
+  function picked() {
+    try {
+      var p = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (p && (p.t === 'dark' || p.t === 'light') && p.until > Date.now()) return p.t;
+      if (p) localStorage.removeItem(KEY);
+    } catch (e) {}
+    return '';
+  }
+  function current() { return picked() || byClock(); }
   function apply() {
-    root.setAttribute('data-theme', current());
+    var t = current();
+    if (root.getAttribute('data-theme') !== t) root.setAttribute('data-theme', t);
     paint();
   }
 
@@ -48,7 +72,10 @@
   }
 
   function set(mode) {
-    try { localStorage.setItem(KEY, mode); } catch (e) { /* follows the device instead */ }
+    try {
+      if (mode === byClock()) localStorage.removeItem(KEY);   // back in step with the clock
+      else localStorage.setItem(KEY, JSON.stringify({ t: mode, until: nextSwitch() }));
+    } catch (e) { /* follows the clock instead */ }
     apply();
   }
 
@@ -68,13 +95,11 @@
   }
 
   apply();
-  if (mq) {
-    var onChange = function () { if (!chosen()) apply(); };
-    if (mq.addEventListener) mq.addEventListener('change', onChange);
-    else if (mq.addListener) mq.addListener(onChange);
-  }
+  setInterval(apply, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) apply(); });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) apply(); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
 
-  window.SynTheme = { get: current, set: set };
+  window.SynTheme = { get: current, set: set, byClock: byClock };
 })();

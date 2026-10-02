@@ -12,15 +12,36 @@
     if (btn) btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   }
   paint(d.getAttribute('data-theme') || 'light');
+  /* 07:00 and 19:00 in Lagos are 06:00 and 18:00 UTC. */
+  function nextSwitch() {
+    var now = new Date();
+    var day = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    var times = [day + 6 * 3600e3, day + 18 * 3600e3, day + 30 * 3600e3];
+    for (var i = 0; i < times.length; i++) if (times[i] > now.getTime()) return times[i];
+    return day + 30 * 3600e3;
+  }
+  /* A choice made with the switch holds until the next 7am/7pm switch, and
+     is shared with the app (app/theme.js reads the same key). */
+  var pickUntil = 0;
+  try {
+    var p0 = JSON.parse(localStorage.getItem('syn_theme_pick') || 'null');
+    if (p0 && p0.until > Date.now()) pickUntil = p0.until;
+  } catch (e) {}
   if (btn) btn.addEventListener('click', function () {
     var t = d.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    SynHome.choose(t);
-    try { sessionStorage.setItem('syn_home_theme', t); } catch (e) {}
+    var back = t === SynHome.byClock();
+    SynHome.choose(back ? null : t);
+    pickUntil = back ? 0 : nextSwitch();
+    try {
+      if (back) localStorage.removeItem('syn_theme_pick');
+      else localStorage.setItem('syn_theme_pick', JSON.stringify({ t: t, until: pickUntil }));
+    } catch (e) {}
     paint(t);
   });
-  /* Left open across 7pm or 7am, the page turns with the clock -- unless the
-     reader has chosen, which it then respects. */
+  /* Left open across 7pm or 7am, the page turns with the clock; a choice
+     made with the switch lapses at that moment too. */
   setInterval(function () {
+    if (SynHome.chosen() && pickUntil && Date.now() >= pickUntil) { SynHome.choose(null); pickUntil = 0; }
     if (!SynHome.chosen() && d.getAttribute('data-theme') !== SynHome.byClock()) paint(SynHome.byClock());
   }, 60000);
 

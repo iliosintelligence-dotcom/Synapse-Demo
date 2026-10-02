@@ -87,15 +87,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- LIGHT BY DAY, DARK BY NIGHT, as on the agency page: dark from 7pm to
-       7am on the visitor's own clock, stamped before the stylesheet paints.
+       7am Nigeria time, stamped before the stylesheet paints.
        The switch in the bar overrides it for the visit; ?theme= forces one
        load. home.js keeps it in step while the page is open. -->
   <script>
     (function () {
       var d = document.documentElement, chosen = null;
-      function byClock() { var h = new Date().getHours(); return (h >= 19 || h < 7) ? 'dark' : 'light'; }
-      try { chosen = new URLSearchParams(location.search).get('theme') || sessionStorage.getItem('syn_home_theme'); } catch (e) {}
-      if (chosen !== 'light' && chosen !== 'dark') chosen = null;
+      /* Nigeria time: Lagos is UTC+1 all year, so 7am and 7pm never drift. */
+      function byClock() { var h = (new Date().getUTCHours() + 1) % 24; return (h >= 19 || h < 7) ? 'dark' : 'light'; }
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') chosen = q;
+        else {
+          /* A choice made with the switch, here or in the app, holds until
+             the next 7am/7pm switch (app/theme.js writes the same key). */
+          var p = JSON.parse(localStorage.getItem('syn_theme_pick') || 'null');
+          if (p && (p.t === 'light' || p.t === 'dark') && p.until > Date.now()) chosen = p.t;
+        }
+      } catch (e) {}
       d.setAttribute('data-theme', chosen || byClock());
       window.SynHome = { byClock: byClock, chosen: function () { return chosen; }, choose: function (t) { chosen = t; } };
     })();
@@ -132,7 +141,7 @@
     <!-- Every other action on this page opens Tayo, which needs no account;
          somebody who already has one still needs a way in. -->
     <a class="nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
-    <a class="btn btn-solid btn-sm nav-cta" href="app/toju.html">Talk to Tayo</a>
+    <a class="btn btn-solid btn-sm nav-cta" href="app/toju.html?new=site">Talk to Tayo</a>
   </div>
 </header>
 
@@ -148,12 +157,13 @@
            already sent, so the first thing a visitor does is the product
            working, not a sign-up. -->
       <form class="ask" action="app/toju.html" method="get">
+        <input type="hidden" name="new" value="site" />
         <input name="ask" autocomplete="off" maxlength="300" placeholder="Tell Tayo what you're looking for…" aria-label="Tell Tayo what you're looking for" />
         <button type="submit" aria-label="Ask Tayo">&uarr;</button>
       </form>
       <div class="ask-foot">
         <span class="pip">Free. No sign-up to start.</span>
-        <a href="app/toju.html">Or just talk to Tayo &rarr;</a>
+        <a href="app/toju.html?new=site">Or just talk to Tayo &rarr;</a>
       </div>
     </div>
     <div class="wrap">
@@ -254,7 +264,7 @@
         <h2 class="h2">The property advisor who works <em>for you.</em></h2>
         <p class="lede">Free for buyers and renters. No fee, no commission, and no sign-up to start.</p>
         <div class="hero-cta">
-          <a class="btn btn-solid" href="app/toju.html">Talk to Tayo, it&rsquo;s free</a>
+          <a class="btn btn-solid" href="app/toju.html?new=site">Talk to Tayo, it&rsquo;s free</a>
           <a class="btn btn-ghost" href="app/browse.html">See your matches</a>
         </div>
       </div>
@@ -285,7 +295,7 @@
 </footer>
 
 <!-- The standing ask on a phone, as this page had before. -->
-<a class="float-cta" href="app/toju.html">Talk to Tayo, free</a>
+<a class="float-cta" href="app/toju.html?new=site">Talk to Tayo, free</a>
 
 <script src="home.js"></script>
 </body>
