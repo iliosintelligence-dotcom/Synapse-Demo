@@ -689,7 +689,13 @@
     }
     function sortItems() {
       const s = document.getElementById('sortSel').value;
-      items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? b.score - a.score : b.match - a.match);
+      /* Without match scores (every listing here, until Tayo scores them)
+         "Best match" compared equals and ranked nothing (Greptile). It falls
+         back to newest first, which is also how the feed was fetched. */
+      const scored = items.some((l) => typeof l.match === 'number');
+      const newest = (a, b) => String(b.listedAt || '').localeCompare(String(a.listedAt || ''));
+      items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? (b.score || 0) - (a.score || 0)
+        : scored ? (b.match || 0) - (a.match || 0) : newest(a, b));
     }
 
     // keyword search across title, area/city, deal, and price (e.g. "under 150m", "3-bed")
@@ -1081,7 +1087,9 @@
       const sel = items.filter((l) => picked.has(l.id));
       const rows = [
         ['Price', sel.map((l) => l.priceN), (v, b) => `<span class="${v === b ? 'best' : ''}">${naira(v)}</span>`, 'min'],
-        ['Match', sel.map((l) => l.match), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
+        ...(sel.some((l) => typeof l.match === 'number')
+          ? [['Match', sel.map((l) => l.match), (v, b) => typeof v !== 'number' ? '\u2014' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max']]
+          : []),
         ['Property confidence', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
         /* FLOOD RISK AND POWER RELIABILITY ARE GONE FROM THE COMPARISON.
            Both read off `neighbourhoods`, and both columns are seed_rand
@@ -1169,18 +1177,24 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
     // instead of clustering the prime Lagos areas at the top. Users re-rank
     // with the sort dropdown.
     Promise.all([
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=800', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=300', { headers: BROWSE_HDR }).then((r) => r.json()),
-      fetch(BROWSE_BASE + '&property_type=eq.shared&order=listed_at.desc&limit=200', { headers: BROWSE_HDR }).then((r) => r.json()),
+      /* A failed request is a failure, not an empty shop (Greptile): a 4xx/5xx
+         or a non-list answer used to read as "no homes fit". */
+      ...['&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=800',
+          '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=300',
+          '&property_type=eq.shared&order=listed_at.desc&limit=200'].map((q) =>
+        fetch(BROWSE_BASE + q, { headers: BROWSE_HDR }).then((r) => r.json().catch(() => null).then((d) => {
+          if (!r.ok || !Array.isArray(d)) throw new Error('listings ' + r.status);
+          return d;
+        }))),
     ]).then(([verifiedRows, unvRows, sharedRows]) => {
-      const rows = [...(Array.isArray(verifiedRows) ? verifiedRows : []), ...(Array.isArray(unvRows) ? unvRows : []), ...(Array.isArray(sharedRows) ? sharedRows : [])];
+      const rows = [...verifiedRows, ...unvRows, ...sharedRows];
       loadState = 'ready';
       if (hasSessionView) return;
       if (rows.length === 0) { render(); return; }   // truly nothing live — say so
@@ -1223,13 +1237,16 @@
           units: p.units_available, plots: p.plot_count, plotSize: p.plot_size_sqm, minInv: p.min_investment,
         },
         per: p.listing_type === 'rent',
+        /* The listing's own period (Greptile): monthly rent said "/yr". */
+        perLabel: ({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[p.price_period] || '',
         vstatus: p.verification_status,
         // Drives the expiry chip. Real and enforced: the row disappears from
         // this very query once it passes (properties_select_public).
         expiresAt: p.expires_at || null,
         listedAt: p.listed_at || null,   // "new since your last visit"
         currency: p.currency || null,    // price formats in the listing's own currency
-        deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'rent' ? 'For rent' : 'For sale',
+        deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'shortlet' ? 'Short-let'
+          : p.listing_type === 'rent' ? 'For rent' : 'For sale',
         priceN: Number(p.price) || 0,
         /* The Area the agency typed, then the linked zone, then the city. It
            is also what the search box matches, so "Agbowo" now finds it. */

@@ -242,6 +242,7 @@
          genuinely has no picture, and the card says so. */
       img: (typeof m.img === 'string' && m.img.trim()) ? m.img.trim() : null,
       kind: m.room != null ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
+      perLabel: ({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[m.pricePeriod] || '',
       /* The deal line on the card, from Tayo's match (toju-demo m.deal). */
       dealInfo: m.deal && typeof m.deal === 'object' ? {
         isLand: m.deal.propertyType === 'land', deal: m.deal.structure, stage: m.deal.stage, handover: m.deal.handover,
@@ -343,7 +344,7 @@
             ${expiryChip(l)}
             ${cmpBox}
           </div>
-          <div class="price">${money(l.priceN, l.currency)}${l.per ? '<span style="font-size:13px;color:var(--ink-muted)">/yr</span>' : ''}</div>
+          <div class="price">${money(l.priceN, l.currency)}${(l.perLabel || (l.per ? '/yr' : '')) ? '<span style="font-size:13px;color:var(--ink-muted)">' + esc(l.perLabel || '/yr') + '</span>' : ''}</div>
           <!-- A real link, not a div. The card carried its id in data-id and
                opened from a click handler, so the only thing a keyboard could
                reach inside a listing was the Save button: you could save a home

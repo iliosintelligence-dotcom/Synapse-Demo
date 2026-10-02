@@ -3315,7 +3315,12 @@
          and that holds harder now there are five parts rather than three: a
          total that quietly omitted the agency fee would be wrong in exactly
          the direction that costs somebody money. */
-      var parts = [p.price, p.service_charge, p.move_in_cost, p.agency_fee, p.legal_fee];
+      /* The rent for a YEAR (Greptile): monthly rent was added once, so the
+         total understated the year. Nightly rent has no honest year. */
+      var yearRent = p.price == null ? null
+        : p.price_period === 'per_month' ? Number(p.price) * 12
+        : p.price_period === 'per_night' ? null : Number(p.price);
+      var parts = [yearRent, p.service_charge, p.move_in_cost, p.agency_fee, p.legal_fee];
       if (isRent && parts.every(function (v) { return v != null; })) {
         var first = parts.reduce(function (a, v) { return a + Number(v); }, 0);
         rows.push(['First year, all in', money(first), true]);
