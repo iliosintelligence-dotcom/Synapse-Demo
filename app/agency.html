@@ -176,10 +176,19 @@
        transform: a fixed box with left:50% may only be as wide as the half of
        the screen to its right, which on a phone made it 187px wide and taller
        than the screen once it carried steps. */
+    /* The page draws under the notch and the home indicator
+       (viewport-fit=cover), so the bar keeps clear of the safe areas on every
+       side and never grows into them; the dismiss button stays pinned while
+       long steps scroll, so the bar can always be closed. */
     .connect-err {
-      position: fixed; left: 16px; right: 16px; margin-inline: auto; width: fit-content;
-      bottom: 22px; z-index: 200; max-width: 620px;
-      max-height: calc(100vh - 44px); overflow-y: auto; box-sizing: border-box;
+      position: fixed; margin-inline: auto; width: fit-content;
+      left: calc(16px + env(safe-area-inset-left, 0px));
+      right: calc(16px + env(safe-area-inset-right, 0px));
+      bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+      z-index: 200; max-width: 620px;
+      max-height: calc(100vh - 44px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      max-height: calc(100dvh - 44px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+      overflow-y: auto; box-sizing: border-box;
       display: flex; align-items: flex-start; gap: 12px;
       padding: 13px 14px 13px 16px; border-radius: 13px;
       background: #fff; border: 1px solid rgba(168,44,44,0.34);
@@ -188,6 +197,7 @@
     }
     .connect-err .ce-msg { user-select: text; }
     .connect-err .ce-x {
+      position: sticky; top: 0;
       flex: none; border: none; background: none; cursor: pointer;
       color: var(--ink-dim); font-size: 14px; line-height: 1; padding: 2px 4px;
       min-height: 0;
