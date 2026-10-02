@@ -3,6 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY.
+       The address it reports is trimmed first: Google gets the page and any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest
+       of the query or the fragment. Those carry what visitors typed or were
+       sent -- a question to Tayo (?ask=), a search, a sign-in or password
+       reset code (?code=, ?token_hash=, #access_token) -- and none of that
+       belongs in an analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    (function () {
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+    })();
+  </script>
   <title>Synapse · Find a home that's actually right for you</title>
   <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
        and nothing was there: a 404 on every page load of the whole site, and
@@ -73,8 +102,11 @@
     <nav class="nav-links" aria-label="Page">
       <a href="#how">How it works</a>
       <a href="app/browse.html">Your matches</a>
-      <a href="index.html">For agencies</a>
     </nav>
+    <div class="aud" role="group" aria-label="Who Synapse is for">
+      <a class="aud-seg" href="index.html">Agencies</a>
+      <a class="aud-seg on" href="buyers.html" aria-current="page">Customers</a>
+    </div>
     <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
       <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
       <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
@@ -82,7 +114,7 @@
     <!-- Every other action on this page opens Tayo, which needs no account;
          somebody who already has one still needs a way in. -->
     <a class="nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
-    <a class="btn btn-solid btn-sm" href="app/toju.html">Talk to Tayo</a>
+    <a class="btn btn-solid btn-sm nav-cta" href="app/toju.html">Talk to Tayo</a>
   </div>
 </header>
 
@@ -232,6 +264,9 @@
     </div>
   </div>
 </footer>
+
+<!-- The standing ask on a phone, as this page had before. -->
+<a class="float-cta" href="app/toju.html">Talk to Tayo, free</a>
 
 <script src="home.js"></script>
 </body>

@@ -3,6 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY.
+       The address it reports is trimmed first: Google gets the page and any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest
+       of the query or the fragment. Those carry what visitors typed or were
+       sent -- a question to Tayo (?ask=), a search, a sign-in or password
+       reset code (?code=, ?token_hash=, #access_token) -- and none of that
+       belongs in an analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    (function () {
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+    })();
+  </script>
   <title>Synapse for agencies · Grow your agency, not your workload</title>
   <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
        and nothing was there: a 404 on every page load of the whole site, and
@@ -110,7 +139,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- LIGHT BY DAY, DARK BY NIGHT. Eden asked for the landing page's dark mode
        to follow the time of day rather than the device: dark from 7pm to 7am
@@ -148,14 +177,19 @@
     <nav class="nav-links" aria-label="Page">
       <a href="#product">Product</a>
       <a href="#pricing">Pricing</a>
-      <a href="buyers.html">For customers</a>
     </nav>
+    <!-- Which side of Synapse you are on, and the way to the other one --
+         on a phone too, where the page links do not fit. -->
+    <div class="aud" role="group" aria-label="Who Synapse is for">
+      <a class="aud-seg on" href="index.html" aria-current="page">Agencies</a>
+      <a class="aud-seg" href="buyers.html">Customers</a>
+    </div>
     <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
       <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
       <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
     </button>
     <a class="nav-signin" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
-    <a class="btn btn-solid btn-sm" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
+    <a class="btn btn-solid btn-sm nav-cta" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
   </div>
 </header>
 
@@ -187,48 +221,120 @@
   <section class="rail" aria-label="Channels Synapse publishes to">
     <div class="wrap">
       <p>One upload, published to</p>
-      <ul>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
-        <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
-      </ul>
+      <div class="rail-vp">
+        <ul class="rail-list">
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
+        </ul>
+        <ul class="rail-list rail-copy" aria-hidden="true">
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
+          <li><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
+        </ul>
+      </div>
     </div>
   </section>
 
-  <!-- ── THE REALITY ── -->
-  <section class="sec">
+  <!-- ── THE REALITY ─────────────────────────────────────────────────────────
+       Eden, with Miro's "Innovation Workspace" row as the reference: the
+       problems slide past as you scroll, each with a picture of what it says.
+       On a wide screen the section holds still and the page's own scroll
+       carries the cards sideways (home.js); on a phone, or with reduced
+       motion, it is a swipe with arrows either side. The pictures are drawn,
+       not photographed: each one is the problem in one glance. -->
+  <section class="sec reality" id="reality" aria-labelledby="realityTitle">
+    <div class="rl-pin" id="rlPin">
+    <div class="rl-stage" id="rlStage">
+      <div class="rl-rail" id="rlRail">
+        <div class="rl-head">
+          <span class="eyebrow">The reality</span>
+          <h2 class="h2" id="realityTitle">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
+          <p class="lede">That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.</p>
+          <p class="rl-hint" aria-hidden="true">Keep scrolling &rarr;</p>
+        </div>
+        <div class="rl-track" id="rlTrack" role="group" aria-roledescription="carousel" aria-label="Four problems">
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="1 of 4">
+            <div class="rl-art p-crm" aria-hidden="true">
+              <div class="art-dots">
+                <div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="art-cap"><b>3</b> of 100 enquiries</div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <div class="rl-n">The problem &middot; 01</div>
+              <h3 class="h3">Are you working 97 dead ends to reach 3 live ones?</h3>
+              <p>Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="2 of 4">
+            <div class="rl-art p-tayo" aria-hidden="true">
+              <div class="art-stack">
+                <div class="art-clock">11:48 pm</div>
+                <div class="art-row"><span class="ic">IG</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">FB</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">WA</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">TT</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <div class="rl-n">The problem &middot; 02</div>
+              <h3 class="h3">Are your evenings going on captions?</h3>
+              <p>Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="3 of 4">
+            <div class="rl-art p-reach" aria-hidden="true">
+              <div class="art-fee">
+                <div class="art-fee-t">One property&rsquo;s fee</div>
+                <div class="art-bar"><span class="you">You</span><span>Agency 2</span><span>Agency 3</span><span>Agency 4</span></div>
+                <div class="art-fee-s">Reach bought by splitting it four ways</div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <div class="rl-n">The problem &middot; 03</div>
+              <h3 class="h3">Are you splitting the fee to get reach?</h3>
+              <p>Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone&rsquo;s cut, or you take a fraction of what the work was worth.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="4 of 4">
+            <div class="rl-art p-team" aria-hidden="true">
+              <div class="art-queue">
+                <div class="art-who"><span class="av">TA</span><span><b>Your best closer</b><em>On one call</em></span></div>
+                <div class="art-q"><span>Counter-offer, 4-bed</span><span class="w">waiting</span></div>
+                <div class="art-q"><span>Viewing request</span><span class="w">waiting</span></div>
+                <div class="art-q"><span>Price question</span><span class="w">waiting</span></div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <div class="rl-n">The problem &middot; 04</div>
+              <h3 class="h3">Is your best negotiator one person?</h3>
+              <p>Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
+            </div>
+          </article>
+
+        </div>
+      </div>
+      <div class="rl-ctrl">
+        <button type="button" class="rl-arrow prev" id="rlPrev" aria-label="Previous problem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="rl-count" id="rlCount" aria-live="polite">1 / 4</span>
+        <button type="button" class="rl-arrow next" id="rlNext" aria-label="Next problem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    </div>
     <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">The reality</span>
-        <h2 class="h2">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
-        <p class="lede">That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.</p>
-      </div>
-      <div class="probs">
-        <article class="prob">
-          <div class="prob-n">01</div>
-          <h3 class="h3">Are you working 97 dead ends to reach 3 live ones?</h3>
-          <p>Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
-        </article>
-        <article class="prob">
-          <div class="prob-n">02</div>
-          <h3 class="h3">Are your evenings going on captions?</h3>
-          <p>Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
-        </article>
-        <article class="prob">
-          <div class="prob-n">03</div>
-          <h3 class="h3">Are you splitting the fee to get reach?</h3>
-          <p>Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone&rsquo;s cut, or you take a fraction of what the work was worth.</p>
-        </article>
-        <article class="prob">
-          <div class="prob-n">04</div>
-          <h3 class="h3">Is your best negotiator one person?</h3>
-          <p>Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
-        </article>
-      </div>
       <p class="either"><b>Either way:</b> the customer pays more, or you earn less on the same work. Often both.</p>
     </div>
   </section>
@@ -460,6 +566,13 @@
     </div>
   </div>
 </footer>
+
+<!-- THE STANDING ASK ON A PHONE, as the page had before: one pill that
+     follows you down the page. The bar's Try free steps aside for it there. -->
+<a class="float-cta" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">
+  Try free
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</a>
 
 <script src="home.js"></script>
 <script>
