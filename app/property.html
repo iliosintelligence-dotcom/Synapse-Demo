@@ -276,6 +276,8 @@
     .apc-ag-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; opacity: 0; transition: opacity .2s; }
     .apc-ag-logo img.on { opacity: 1; }
     .apc-ag-tag { font-size: 12px; line-height: 1.45; color: var(--ink-muted); margin-top: 4px; }
+    .apc-ag-web { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .apc-ag-web[hidden] { display: none; }
     .apc-ag-meta { color: var(--ink-dim); font-size: 11.5px; }
 
     .apc-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
@@ -1205,6 +1207,8 @@
             <span class="apc-ag-meta" id="pvAgencyMeta"></span>
           </div>
           <div class="apc-ag-tag" id="pvAgencyTag" hidden></div>
+          <!-- The agency's own website, when it gave one (Brand page or sign-up). -->
+          <a class="apc-ag-web" id="pvAgencyWeb" href="#" target="_blank" rel="noopener nofollow" hidden>Visit website <span aria-hidden="true">&#8599;</span></a>
           <!-- Touring lives on the agent's card because the agent is who you
                would be meeting, and it is the LAST step of priming: it appears
                only once Tayo has actually qualified this buyer for this home.
@@ -2019,6 +2023,22 @@
             }
             nmEl.style.fontFamily = "'" + fam + "', var(--f-sans)";
           }
+          /* The website the agency gave us. Typed by the agency, so it is
+             checked: a bare domain gets https://, and anything that is not a
+             plain http(s) address (javascript:, data:) is never linked. */
+          const web = document.getElementById('pvAgencyWeb');
+          const site = (function (raw) {
+            let v = String(raw || '').trim();
+            if (!v) return '';
+            if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+            try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href : ''; }
+            catch (e) { return ''; }
+          })(a.social && a.social.website);
+          if (web && site) {
+            web.href = site;
+            web.title = site.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            web.hidden = false;
+          }
           const tag = document.getElementById('pvAgencyTag');
           if (tag && a.tagline && String(a.tagline).trim()) {
             tag.textContent = String(a.tagline).trim();
@@ -2406,7 +2426,7 @@
     (function hydrate() {
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
       const q = SUPABASE_URL + '/rest/v1/properties'
-        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline)'
+        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline,social)'
         // The neighbourhood record this listing is actually attached to.
         // Without it the section below had nothing to draw from, which is
         // why it was hardcoded to Lekki Phase 1 on every property.

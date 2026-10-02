@@ -738,6 +738,12 @@
             <input class="au-input" id="auAgencyName" name="agencyName" type="text" autocomplete="organization" />
             <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
           </div>
+          <!-- Optional. Buyers who open one of the agency's listings can go
+               straight to its own site from the "Listed by" card. -->
+          <div class="au-field" id="agencyWebField" hidden>
+            <label class="au-label" for="auAgencyWebsite">Agency website (optional)</label>
+            <input class="au-input" id="auAgencyWebsite" name="agencyWebsite" type="url" inputmode="url" autocomplete="url" placeholder="youragency.com" />
+          </div>
           <!-- Agency staff only. A Toju handoff arrives on somebody's WhatsApp
                and there is nowhere else for it to go, so an agency without a
                number here cannot be handed a lead at all. Nothing collected
@@ -831,6 +837,10 @@
           <div class="au-field">
             <label class="au-label" for="agCity">City (optional)</label>
             <input class="au-input" id="agCity" type="text" autocomplete="address-level2" placeholder="Lagos" />
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="agWebsite">Agency website (optional)</label>
+            <input class="au-input" id="agWebsite" type="url" inputmode="url" autocomplete="url" placeholder="youragency.com" />
           </div>
           <button class="au-submit" id="agGo" type="submit">Finish setting up</button>
           <div id="agNote"></div>
@@ -963,6 +973,7 @@
         el('tabIn').setAttribute('aria-selected', String(!up));
         el('nameField').hidden = !up;
         el('agencyNameField').hidden = !(up && role === 'agency');
+        el('agencyWebField').hidden = !(up && role === 'agency');
         /* Only asked of agency staff, and only when signing up. A buyer has
            no use for it and should not be asked; an agency without it cannot
            be handed a lead at all, because a Toju handoff goes to a person's
@@ -1252,6 +1263,7 @@
         var pass  = el('auPass').value;
         var name  = el('auName').value.trim();
         var agencyName = el('auAgencyName').value.trim();
+        var agencyWebsite = el('auAgencyWebsite') ? el('auAgencyWebsite').value.trim() : '';
       var staffPhone = el('auStaffPhone') ? el('auStaffPhone').value.trim() : '';
 
         var phone = el('auPhone').value.trim();
@@ -1329,9 +1341,9 @@
           : method === 'phone'
             ? (codeSent
                 ? SynAuth.verifyPhoneCode(pendingPhone, code)
-                : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName }))
+                : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName, agencyWebsite: agencyWebsite }))
             : (mode === 'up'
-                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, phone: staffPhone, next: next })
+                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, agencyWebsite: agencyWebsite, phone: staffPhone, next: next })
                 : SynAuth.signIn(email, pass));
 
         work.then(function (res) {
@@ -1652,8 +1664,14 @@
         busy = true;
         var b = el('agGo');
         b.disabled = true; b.textContent = 'Setting up\u2026';
+        var site = el('agWebsite') ? el('agWebsite').value.trim() : '';
         SynAuth.provisionAgency(name, el('agCity').value.trim()).then(function (res) {
           if (res && res.error) throw res.error;
+          /* The website, if one was given, goes on the agency the RPC just
+             made (the owner may update their own agency). A failure here is
+             not worth stopping for: it can be added on the Brand page. */
+          return (site ? SynAuth.saveAgencyWebsite(site).catch(function () {}) : Promise.resolve());
+        }).then(function () {
           window.location.href = signedInDest('agency.html?welcome=agency');
         }).catch(function (err) {
           busy = false; b.disabled = false; b.textContent = 'Finish setting up';

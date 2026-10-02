@@ -248,6 +248,34 @@
     });
   }
 
+  /* The agency's own website, saved onto the agency this account owns. Used
+     by sign-up flows that create the agency through the RPC (Google, phone),
+     where the database trigger that reads agency_website never runs. A bare
+     domain gets https://; anything that is not a plain http(s) address is
+     refused rather than stored. */
+  function saveAgencyWebsite(raw) {
+    var v = String(raw || '').trim();
+    if (!v) return Promise.resolve(null);
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+    try {
+      var u = new URL(v);
+      if (!/^https?:$/.test(u.protocol) || u.hostname.indexOf('.') < 0 || v.length > 200) throw new Error('bad url');
+      v = u.href;
+    } catch (e) { return Promise.reject(new Error('That does not look like a website address.')); }
+    return client().then(function (c) {
+      return getUser().then(function (user) {
+        if (!user) throw new Error('Not signed in.');
+        return c.from('agencies').select('id,social').eq('owner_id', user.id).limit(1).then(function (r) {
+          if (r.error) throw r.error;
+          var a = r.data && r.data[0];
+          if (!a) throw new Error('No agency yet.');
+          var social = Object.assign({}, a.social || {}, { website: v });
+          return c.from('agencies').update({ social: social }).eq('id', a.id);
+        });
+      });
+    });
+  }
+
   function signInWithProvider(provider, next, role) {
     if (OAUTH_PROVIDERS.indexOf(provider) === -1) {
       return Promise.reject(new Error('Unsupported sign-in provider: ' + provider));
@@ -306,6 +334,7 @@
       // The agency's display name, typed by the person signing up. Only the
       // trigger reads this; it is never invented on their behalf.
       if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+      if (opts.role === 'agency' && opts.agencyWebsite) meta.agency_website = opts.agencyWebsite;
       /* The number Synapse will reach this person on.
          Nothing collected it before, so profiles.phone was NULL for all 68
          accounts on the project -- and a Toju handoff has nowhere to go
@@ -399,6 +428,7 @@
       full_name: opts.name || null,
     };
     if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+    if (opts.role === 'agency' && opts.agencyWebsite) meta.agency_website = opts.agencyWebsite;
     return client().then(function (c) {
       return c.auth.signInWithOtp({
         phone: to,
@@ -566,7 +596,7 @@
     sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
     normalisePhone: normalisePhone,
     signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
-    hasAgency: hasAgency, provisionAgency: provisionAgency,
+    hasAgency: hasAgency, provisionAgency: provisionAgency, saveAgencyWebsite: saveAgencyWebsite,
     mailOrigin: mailOrigin,
     enabledProviders: enabledProviders,
     requireAuth: requireAuth, paint: paintAll,
