@@ -786,7 +786,15 @@ html.kb-open .cnav { opacity: 0; pointer-events: none; transform: translateY(8px
   bottom: calc(var(--cnav-bottom, 18px) + env(safe-area-inset-bottom));
 }
 .cnav > * { pointer-events: auto; }
-.cnav-triggers { display: flex; align-items: center; gap: 9px; }
+/* ...except the triggers row, which paints nothing. It is a flex box as wide
+   as the bar, so handing it events put the same invisible full-width strip
+   back one level down, holding only a 46px button. On a listing that strip
+   sat exactly over "Discuss with an agent": every tap landed on the empty
+   row and nothing happened (found 2026-10-02 from a Telegram link; on every
+   phone, not only Telegram). The row passes taps through; its buttons take
+   them. */
+.cnav-triggers { display: flex; align-items: center; gap: 9px; pointer-events: none; }
+.cnav-triggers > * { pointer-events: auto; }
 /* Pushed to the opposite end of the bar from the nav and filter triggers. */
 .cnav-sbtn { margin-left: auto; }
 
