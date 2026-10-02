@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY -- only after consent.
+       Nothing is sent to Google until the visitor accepts analytics cookies
+       in the banner (/consent.js): the calls below are queued, and gtag.js is
+       loaded only when the stored choice is "granted". Advertising consent is
+       never granted -- Analytics is used for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      window.SynGtagLoad = function () {
+        if (window.SynGtagLoaded) return;
+        window.SynGtagLoaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY';
+        document.head.appendChild(s);
+      };
+      if (ok) window.SynGtagLoad();
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <title>Terms of Service · Synapse</title>
+  <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
+       and nothing was there: a 404 on every page load of the whole site, and
+       a blank square in every tab. These are declared as well as sitting at
+       the root, so the browser takes the sharp one rather than scaling the
+       .ico. -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- ── Discovery ────────────────────────────────────────────────────────
+       There was none of this: no description, no card, no canonical, on any
+       page. A link pasted into WhatsApp — which is how this product actually
+       travels in Nigeria — rendered as a bare URL. og:image is absolute
+       because scrapers do not resolve relative paths. -->
+  <meta name="description" content="The terms that govern using Synapse: what the platform is, what “verified” means and does not mean, and what Synapse does not promise." />
+  <link rel="canonical" href="https://www.synapsecore.dev/terms.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Synapse" />
+  <meta property="og:locale" content="en_NG" />
+  <meta property="og:url" content="https://www.synapsecore.dev/terms.html" />
+  <meta property="og:title" content="Terms of Service" />
+  <meta property="og:description" content="The terms that govern using Synapse: what the platform is, what “verified” means and does not mean, and what Synapse does not promise." />
+  <meta property="og:image" content="https://www.synapsecore.dev/images/og-synapse.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Synapse — Terms of Service" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Terms of Service" />
+  <meta name="twitter:description" content="The terms that govern using Synapse: what the platform is, what “verified” means and does not mean, and what Synapse does not promise." />
+  <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-synapse.jpg" />
+  <meta name="theme-color" content="#f5f5f5" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css" />
+  <link rel="stylesheet" href="landing-mobile.css" />
+  <!-- motion.css carries the tokens seam.css animates on. -->
+  <link rel="stylesheet" href="app/motion.css" />
+  <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
+  <style>
+    body { background: var(--bg); }
+    .legal { max-width: 720px; margin: 0 auto; padding: 64px 24px 100px; }
+    .legal-back { font-size: 13px; color: var(--text-dim); }
+    .legal-back:hover { color: var(--text); }
+    /* .legal-title rides alongside h1 because the desktop title is now a div
+       carrying role="heading" -- see the note in the markup. Same rule, so the
+       two cannot drift apart. */
+    .legal h1, .legal .legal-title { font-family: var(--f-serif); font-weight: 600; font-size: clamp(30px,4vw,42px); letter-spacing: -0.02em; margin-top: 22px; }
+    .legal .updated { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
+    .legal-note { margin-top: 24px; padding: 14px 16px; border-radius: 12px; background: rgba(var(--tint),0.05); border: 1px solid rgba(var(--tint),0.18); font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+    .legal h2 { font-family: var(--f-serif); font-weight: 600; font-size: 21px; margin-top: 40px; letter-spacing: -0.01em; }
+    .legal h3 { font-size: 14.5px; font-weight: 700; margin-top: 22px; }
+    .legal p, .legal li { font-size: 15px; line-height: 1.75; color: var(--text-muted); margin-top: 12px; }
+    .legal ul { padding-left: 20px; }
+    .legal li { margin-top: 6px; }
+    .legal strong { color: var(--text); font-weight: 700; }
+    .legal a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+    .toc { margin-top: 28px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); }
+    .toc div { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+    /* These jump to a section and did not look like they did anything. The
+       only interactive signal was a colour change on hover, which a reader
+       has to already suspect a link to go looking for -- and on a touch
+       screen there is no hover at all, so it was invisible there by
+       definition. Underlined, in full-strength ink, each with the anchor
+       arrow that says "this moves you down the page" rather than "this leaves
+       the site". */
+    .toc a {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 13.5px; color: var(--text); padding: 7px 0;
+      text-decoration: underline; text-decoration-color: rgba(20,20,20,0.28);
+      text-underline-offset: 3px; text-decoration-thickness: 1px;
+    }
+    .toc a::before {
+      content: '\2193'; font-size: 11px; color: var(--text-dim);
+      flex: none; text-decoration: none;
+    }
+    .toc a:hover { text-decoration-color: currentColor; }
+    .toc a:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MOBILE PAGE (≤720px) — a structurally separate block, not a reflow of
+     the desktop .legal document below.
+
+     ⚠  IMPORTANT: the terms wording exists TWICE in this file — here and in
+     the desktop .legal block. THEY MUST BE EDITED TOGETHER. If you change a
+     clause in one and not the other, phone and desktop visitors are shown
+     different terms. Search for the same heading text in both blocks.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="m-page">
+
+  <nav class="m-navbar" id="mNavbar">
+    <a href="index.html" class="m-logo">
+      <img class="syn-mark" src="images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
+      <span class="m-logo-word">Synapse</span>
+    </a>
+    <a class="m-agencies-link" href="index.html">← Back</a>
+  </nav>
+
+  <header class="m-legal-hero m-wrap">
+    <h1 class="m-legal-title">Terms of Service</h1>
+    <p class="m-legal-updated">Last updated 30 July 2026</p>
+
+    <details class="m-legal-toc">
+      <summary>On this page</summary>
+      <div class="m-legal-toc-links">
+        <a href="#m-what-synapse-is">What Synapse is</a>
+        <a href="#m-verified">What "Verified" means</a>
+        <a href="#m-toju-terms">Tayo</a>
+        <a href="#m-buyers">If you're browsing or buying</a>
+        <a href="#m-agencies-terms">If you're an agency</a>
+        <a href="#m-no-guarantee">What we don't promise</a>
+        <a href="#m-accounts-terms">Accounts &amp; conduct</a>
+        <a href="#m-changes">Changes to these terms</a>
+        <a href="#m-contact-terms">Contact</a>
+      </div>
+    </details>
+  </header>
+
+  <main class="m-legal-doc m-wrap">
+    <h2 id="m-what-synapse-is">What Synapse is</h2>
+    <p>Synapse is a platform that helps people in Nigeria find real estate through an AI advisor (Tayo) and listings Synapse checks itself, and helps agencies reach buyers and manage their pipeline. Synapse is not a real estate agency, a broker, or a party to any transaction between a buyer and a seller or agency.</p>
+
+    <h2 id="m-verified">What "Verified" means</h2>
+    <p>Our verification standard covers seven points — title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.</p>
+    <p>Availability is a separate claim from verification, and we show it separately. A listing carries the date the agency last confirmed the home is still available. A home can be verified and no longer on the market, so we never present the two as the same thing. Listings that are not re-confirmed expire and stop being offered to buyers.</p>
+    <p><strong>Verified is a process, not a guarantee.</strong> It means those specific checks passed on that date. It does not mean Synapse guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review — including your own lawyer's title search — before paying for or committing to any property.</p>
+
+    <h2 id="m-toju-terms">Tayo</h2>
+    <p>Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess — but you should independently confirm anything material before making a decision.</p>
+
+    <h2 id="m-buyers">If you're browsing or buying</h2>
+    <ul>
+      <li>Browsing listings and talking to Tayo is free, with no obligation, and doesn't require an account.</li>
+      <li>Creating an account is required only when you choose to contact an agency about a specific home — at that point, your contact details are shared with that agency so they can respond to you.</li>
+      <li>Any transaction you enter into — a purchase, a rental, a payment plan — is between you and the agency or seller, not with Synapse. Synapse does not process, hold, or guarantee any funds. <span class="m-legal-flag">[NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches — none exists today.]</span></li>
+    </ul>
+
+    <h2 id="m-agencies-terms">If you're an agency</h2>
+    <ul>
+      <li>Listings you submit must be accurate and must be properties you are authorised to market. Misrepresenting a listing is grounds for removal from the platform.</li>
+      <li>Verification status is determined solely by Synapse's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs — never on payment.</li>
+      <li>Subscription tiers (Free, Accelerate, Leader) determine platform features — listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.</li>
+      <li>Leads delivered through Synapse are provided as-is; Synapse does not guarantee lead volume, quality, or conversion.</li>
+    </ul>
+
+    <h2 id="m-no-guarantee">What we don't promise</h2>
+    <p>To be direct about the limits of what Synapse does: we do not guarantee any property's title, condition, or price; we do not guarantee any transaction will complete; we do not currently hold or protect funds (no escrow service exists on the platform today); and Tayo's advice is not a substitute for a lawyer, surveyor, or licensed financial advisor.</p>
+
+    <h2 id="m-accounts-terms">Accounts &amp; conduct</h2>
+    <p>You're responsible for keeping your account credentials secure. You agree not to use Synapse to post fraudulent listings, misrepresent your identity or authority to sell/rent a property, or attempt to circumvent the verification process.</p>
+
+    <h2 id="m-changes">Changes to these terms</h2>
+    <p>We may update these terms as Synapse's features change. Material changes will be reflected by an updated "last updated" date above. <span class="m-legal-flag">[NEEDS LEGAL: a notice mechanism for material changes, and the governing law / dispute jurisdiction clause.]</span></p>
+
+    <h2 id="m-contact-terms">Contact</h2>
+    <p>Questions about these terms: <a href="mailto:ilios.intelligence@gmail.com">ilios.intelligence@gmail.com</a>.</p>
+  </main>
+
+</div>
+<!-- ════ END MOBILE PAGE · desktop markup follows ════ -->
+
+  <div class="legal">
+    <a class="legal-back" href="index.html">← Back to Synapse</a>
+    <!-- A div, not an h1: the phone copy of this heading above carries the
+     real h1 element, and two on one page is one too many for a
+     crawler, which reads the markup and not the CSS that hides one.
+     role/aria-level keep it a level-one heading for a screen reader. -->
+    <div class="legal-title" role="heading" aria-level="1">Terms of Service</div>
+    <p class="updated">Last updated 30 July 2026</p>
+
+    <div class="toc">
+      <div>On this page</div>
+      <a href="#what-synapse-is">What Synapse is</a>
+      <a href="#verified">What "Verified" means</a>
+      <a href="#toju-terms">Tayo</a>
+      <a href="#buyers">If you're browsing or buying</a>
+      <a href="#agencies-terms">If you're an agency</a>
+      <a href="#no-guarantee">What we don't promise</a>
+      <a href="#accounts-terms">Accounts &amp; conduct</a>
+      <a href="#changes">Changes to these terms</a>
+      <a href="#contact-terms">Contact</a>
+    </div>
+
+    <h2 id="what-synapse-is">What Synapse is</h2>
+    <p>Synapse is a platform that helps people in Nigeria find real estate through an AI advisor (Tayo) and listings Synapse checks itself, and helps agencies reach buyers and manage their pipeline. Synapse is not a real estate agency, a broker, or a party to any transaction between a buyer and a seller or agency.</p>
+
+    <h2 id="verified">What "Verified" means</h2>
+    <p>Our verification standard covers seven points — title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.</p>
+    <p>Availability is a separate claim from verification, and we show it separately. A listing carries the date the agency last confirmed the home is still available. A home can be verified and no longer on the market, so we never present the two as the same thing. Listings that are not re-confirmed expire and stop being offered to buyers.</p>
+    <p><strong>Verified is a process, not a guarantee.</strong> It means those specific checks passed on that date. It does not mean Synapse guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review — including your own lawyer's title search — before paying for or committing to any property.</p>
+
+    <h2 id="toju-terms">Tayo</h2>
+    <p>Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess — but you should independently confirm anything material before making a decision.</p>
+
+    <h2 id="buyers">If you're browsing or buying</h2>
+    <ul>
+      <li>Browsing listings and talking to Tayo is free, with no obligation, and doesn't require an account.</li>
+      <li>Creating an account is required only when you choose to contact an agency about a specific home — at that point, your contact details are shared with that agency so they can respond to you.</li>
+      <li>Any transaction you enter into — a purchase, a rental, a payment plan — is between you and the agency or seller, not with Synapse. Synapse does not process, hold, or guarantee any funds. <span style="background:rgba(var(--tint),0.12);padding:1px 4px;border-radius:4px">[NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches — none exists today.]</span></li>
+    </ul>
+
+    <h2 id="agencies-terms">If you're an agency</h2>
+    <ul>
+      <li>Listings you submit must be accurate and must be properties you are authorised to market. Misrepresenting a listing is grounds for removal from the platform.</li>
+      <li>Verification status is determined solely by Synapse's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs — never on payment.</li>
+      <li>Subscription tiers (Free, Accelerate, Leader) determine platform features — listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.</li>
+      <li>Leads delivered through Synapse are provided as-is; Synapse does not guarantee lead volume, quality, or conversion.</li>
+    </ul>
+
+    <h2 id="no-guarantee">What we don't promise</h2>
+    <p>To be direct about the limits of what Synapse does: we do not guarantee any property's title, condition, or price; we do not guarantee any transaction will complete; we do not currently hold or protect funds (no escrow service exists on the platform today); and Tayo's advice is not a substitute for a lawyer, surveyor, or licensed financial advisor.</p>
+
+    <h2 id="accounts-terms">Accounts &amp; conduct</h2>
+    <p>You're responsible for keeping your account credentials secure. You agree not to use Synapse to post fraudulent listings, misrepresent your identity or authority to sell/rent a property, or attempt to circumvent the verification process.</p>
+
+    <h2 id="changes">Changes to these terms</h2>
+    <p>We may update these terms as Synapse's features change. Material changes will be reflected by an updated "last updated" date above. <span style="background:rgba(var(--tint),0.12);padding:1px 4px;border-radius:4px">[NEEDS LEGAL: a notice mechanism for material changes, and the governing law / dispute jurisdiction clause.]</span></p>
+
+    <h2 id="contact-terms">Contact</h2>
+    <p>Questions about these terms: <a href="mailto:ilios.intelligence@gmail.com">ilios.intelligence@gmail.com</a>.</p>
+  </div>
+
+<script>
+  /* the mobile bar needs a backdrop once the document scrolls under it */
+  (function () {
+    var bar = document.getElementById('mNavbar');
+    if (!bar) return;
+    function upd() { bar.classList.toggle('solid', window.scrollY > 10); }
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  })();
+</script>
+</body>
+</html>

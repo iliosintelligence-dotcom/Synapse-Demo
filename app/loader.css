@@ -1,0 +1,75 @@
+/* ── The loading screen ────────────────────────────────────────────────────
+   The mark, still, over a slim indeterminate bar.
+
+   THE BOUNCE IS GONE. It was doing too much: a logo skidding across the
+   screen is the sort of thing that is charming once and tiresome on every
+   navigation, and it cost real framerate to draw. A loading state's whole job
+   is to say "still working, nothing is broken" and then get out of the way.
+
+   THE MARK IS A MASK, NOT AN IMAGE. It used to be the black-on-white JPG with
+   mix-blend-mode: multiply, which is how the rest of the app floats it off its
+   own background — and multiply only works when what is behind it is white.
+   Over the frosted overlay, over a photograph, in a browser that ignores the
+   blend, it drew a white card with a logo in it.
+
+   mark-white-transparent.png has a real alpha channel (RGBA, verified), so the
+   alpha can be used as a MASK and the colour painted underneath. The shape
+   comes from the file, the colour from a token, and there is no background at
+   all — nothing to show through, nothing to blend, and it inherits the theme
+   for free.
+   ─────────────────────────────────────────────────────────────────────── */
+
+.synload {
+  position: fixed; inset: 0; z-index: 950;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 20px;
+  background: rgba(250, 248, 245, 0.94);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.synload.on { display: flex; }
+
+/* The shape is the PNG's alpha; the colour is ours. No background, so there
+   is nothing that can render as a white box behind it. */
+.synload-mark {
+  width: 74px; height: 102px;         /* the asset is 164x227 */
+  background-color: var(--ink, #141412);
+  -webkit-mask-image: url('../images/brand/mark-white-transparent.png');
+          mask-image: url('../images/brand/mark-white-transparent.png');
+  -webkit-mask-repeat: no-repeat;  mask-repeat: no-repeat;
+  -webkit-mask-position: center;   mask-position: center;
+  -webkit-mask-size: contain;      mask-size: contain;
+}
+
+/* A track and a travelling segment. Indeterminate on purpose: we do not know
+   how long a page will take, and a bar that pretends to know is worse than
+   one that only says "still going". */
+.synload-bar {
+  position: relative; width: 132px; height: 2px; border-radius: 2px;
+  background: rgba(20, 20, 18, 0.10); overflow: hidden;
+}
+.synload-bar::after {
+  content: ''; position: absolute; inset: 0 auto 0 0;
+  width: 40%; border-radius: 2px;
+  background: var(--brand, #ff8a2d);
+  /* transform only — the one property that animates without repainting. The
+     bounce animated filter: blur() every frame, which is what made it stutter. */
+  animation: synload-slide 1150ms var(--m-ease-inout, cubic-bezier(.77,0,.175,1)) infinite;
+}
+
+@keyframes synload-slide {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(360%); }
+}
+
+.synload-msg {
+  font: 500 13px var(--f-sans, system-ui);
+  color: var(--ink-muted, #55555c);
+  letter-spacing: 0.01em;
+}
+.synload-msg:empty { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The bar stops and simply sits at a fixed width. Still visibly a loading
+     state; nothing moves. */
+  .synload-bar::after { animation: none; width: 100%; opacity: 0.5; }
+}
