@@ -534,8 +534,16 @@ a { color: inherit; }
   .hero { padding-top: 28px; }
   .lede { font-size: 17px; }
   .nav-cta { display: none; }
-  .aud-seg { padding: 6px 11px; font-size: 13px; }
-  .nav-in { gap: 8px; }
+  /* Which side you are on, said plainly: on a phone the switch gets its own
+     full-width row under the bar, the two halves as wide as the screen and
+     the current side filled, like the pill the page had before (Eden: the
+     way across "is not really obvious"). */
+  .nav-in { flex-wrap: wrap; gap: 8px; height: auto; padding-top: 10px; padding-bottom: 10px; }
+  .logo { order: 0; }
+  .aud { order: 5; flex: 1 0 100%; padding: 4px; margin-top: 2px; }
+  .aud-seg { flex: 1; text-align: center; padding: 10px 12px; font-size: 15px; }
+  .aud-seg.on { background: var(--btn); color: var(--btn-ink); box-shadow: none; }
+  :root[data-theme="dark"] .aud-seg.on { background: #FFFFFF; color: #000000; }
   /* The channels run past like a news ticker: two copies of the list moving
      together, so the loop has no seam. */
   .rail .wrap { padding: 0; }
