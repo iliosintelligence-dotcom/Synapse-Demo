@@ -242,6 +242,12 @@
          genuinely has no picture, and the card says so. */
       img: (typeof m.img === 'string' && m.img.trim()) ? m.img.trim() : null,
       kind: m.room != null ? 'shared' : m.listingType === 'rent' ? 'rent' : 'sale',
+      /* The deal line on the card, from Tayo's match (toju-demo m.deal). */
+      dealInfo: m.deal && typeof m.deal === 'object' ? {
+        isLand: m.deal.propertyType === 'land', deal: m.deal.structure, stage: m.deal.stage, handover: m.deal.handover,
+        plan: m.deal.paymentPlan, deposit: m.deal.depositPct, months: m.deal.instalmentMonths, units: m.deal.units,
+        plots: m.deal.plots, plotSize: m.deal.plotSizeSqm, minInv: m.deal.minInvestment,
+      } : null,
       per: m.listingType === 'rent',
       // Tayo shows every matching home and labels each one. This MUST come from
       // the row — hardcoding 'verified' here would stamp the badge on listings

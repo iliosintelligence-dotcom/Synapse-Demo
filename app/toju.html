@@ -579,7 +579,17 @@
         background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,253,250,0.88));
       }
     }
-  </style>
+      .ph-card { margin-top: 8px; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,0.86); color: #15120F; max-width: 520px; }
+    html[data-theme="dark"] .ph-card { background: rgba(30,32,37,0.9); color: #E7E9EA; }
+    .ph-k { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
+    .ph-scroll { overflow-x: auto; }
+    .ph-t { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums lining-nums; }
+    .ph-t th { text-align: left; font-size: 11px; font-weight: 700; opacity: .65; padding: 0 10px 6px 0; }
+    .ph-t td { padding: 6px 10px 6px 0; vertical-align: top; }
+    .ph-sum { font-size: 13px; line-height: 1.5; margin: 10px 0 0; }
+    .ph-src { font-size: 11.5px; opacity: .7; margin: 6px 0 0; line-height: 1.45; }
+    .ph-src a { color: inherit; }
+</style>
   <!-- Dark mode only. This page keeps its own look -- the photograph under
        glass -- so it does not take the day theme (theme.css). scene.css swaps
        in the night photograph and dark glass. -->
@@ -915,10 +925,23 @@
       close();
       return html || '<p>' + s + '</p>';
     }
-    function tojuMsg(text, matches) {
+    /* PAST PRICES, AS A TABLE (Eden, 2026-10-02). Tayo never forecasts; asked
+       whether prices will rise, it shows how they HAVE moved, with sources. */
+    function priceHistoryHtml(ph) {
+      if (!ph || !Array.isArray(ph.rows) || !ph.rows.length) return '';
+      const rows = ph.rows.map((r) => '<tr><td>' + esc(r.period) + '</td><td>' + esc(r.typical) + '</td><td>' + esc(r.change || '') + '</td></tr>').join('');
+      const src = (ph.sources || []).map((x) => '<a href="' + esc(x.url) + '" target="_blank" rel="noopener nofollow">' + esc(x.title) + '</a>').join(' · ');
+      return '<div class="ph-card">'
+        + '<div class="ph-k">Past prices · ' + esc(ph.area) + (ph.unit ? ' · ' + esc(ph.unit) : '') + '</div>'
+        + '<div class="ph-scroll"><table class="ph-t"><thead><tr><th>When</th><th>Typical price</th><th>Change</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        + (ph.summary ? '<p class="ph-sum">' + esc(ph.summary) + '</p>' : '')
+        + (src ? '<p class="ph-src">Sources: ' + src + '</p>' : '')
+        + '</div>';
+    }
+    function tojuMsg(text, matches, priceHistory) {
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + '</div>' + matchesHtml(matches) + '</div>';
+      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + '</div>' + priceHistoryHtml(priceHistory) + matchesHtml(matches) + '</div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -1318,7 +1341,7 @@
       clearError();
       const t = typing();
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort('timeout'), 25000);
+      const timer = setTimeout(() => ctrl.abort('timeout'), 50000);   // a price-history search can take ~30s
       try {
         if (!navigator.onLine) throw Object.assign(new Error('offline'), { kind: 'offline' });
         const outgoing = saved.slice(-14).map((m) => ({ role: m.role, content: m.content }));
@@ -1348,9 +1371,10 @@
         // show the canvas whenever the function returns matches (not only when it
         // sets showMatches) so asking "show me what you found" always renders them.
         const matches = Array.isArray(data.matches) ? data.matches : [];
-        saved.push({ role: 'assistant', content: data.reply, matches });
+        const priceHistory = data.priceHistory && Array.isArray(data.priceHistory.rows) ? data.priceHistory : null;
+        saved.push({ role: 'assistant', content: data.reply, matches, priceHistory });
         persist();
-        tojuMsg(data.reply, matches);
+        tojuMsg(data.reply, matches, priceHistory);
         collect(matches); renderCanvas();
         renderSuggest(data.suggestions);
         renderReply();   // the introduction unlocks once there is a conversation
@@ -1624,7 +1648,7 @@
 
     function render() {
       convo.innerHTML = '';
-      saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [])); });
+      saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [], m.priceHistory || null)); });
       rebuildCanvas();
     }
     // scrub any hidden context that leaked into storage before the filter existed
