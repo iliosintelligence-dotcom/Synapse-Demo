@@ -275,6 +275,11 @@
     .apc-ag-tag { font-size: 12px; line-height: 1.45; color: var(--ink-muted); margin-top: 4px; }
     .apc-ag-web { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
     .apc-ag-web[hidden] { display: none; }
+    a.apc-ag-open { text-decoration: none; color: inherit; border-radius: 10px; margin-left: -6px; padding: 4px 6px; }
+    a.apc-ag-open:hover { background: rgba(54,54,54,0.06); }
+    .apc-ag-go { margin-left: auto; font-size: 18px; color: var(--ink-muted); }
+    .apc-ag-page { display: inline-flex; gap: 6px; margin-top: 10px; margin-right: 14px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .apc-ag-page[hidden] { display: none; }
     .apc-ag-meta { color: var(--ink-dim); font-size: 11.5px; }
 
     .apc-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
@@ -629,6 +634,7 @@
       font: 600 12px var(--f-sans); color: var(--ink-muted);
     }
     .pvo-back:hover { color: var(--ink); }
+    .pvm-backpill { display: none; }
     .pvc-hint {
       flex-basis: 100%; margin: 6px 0 0;
       font-size: 11.5px; line-height: 1.4; color: var(--ink-muted);
@@ -920,6 +926,18 @@
       /* With the list up the pill is the button for the thing already on
          screen, so it stands down until the list is dismissed. */
       body.pv-map-open.pv-card-on .pvm-nearbtn { display: none; }
+      body.pv-map-open .pvm-backpill {
+        display: inline-flex; align-items: center; gap: 6px;
+        position: fixed; z-index: 72;
+        left: 70px; bottom: calc(18px + env(safe-area-inset-bottom));
+        height: 46px; padding: 0 18px 0 12px; border-radius: 100px; border: 0;
+        background: var(--orange, #FF8A2D); color: #15120F;
+        font: 700 14px var(--f-sans); cursor: pointer;
+        box-shadow: 0 10px 26px rgba(20,20,18,0.28);
+      }
+      body.pv-map-open .pvm-backpill:focus-visible { outline: 2px solid #15120F; outline-offset: 2px; }
+      /* The card's own back link gives way to the button. */
+      body.pv-map-open .pvo-back { display: none; }
       .pvo-rows { max-height: none; overflow: visible; }
       /* 40px was a mouse target. These are the page's primary controls on a
          phone -- every question about the neighbourhood is asked by pressing
@@ -1155,31 +1173,16 @@
       <input type="file" id="vfile" accept="image/*" hidden />
     </div>
 
-    <!-- Verification, and availability, deliberately as two separate claims.
-         This card used to be seven hardcoded rows reading "6 of 7 checks
-         passed" on EVERY property, including unverified ones. There are zero
-         rows in property_verification_checks and verification_nodes is empty
-         on every listing, so that ring was inventing the one thing a buyer is
-         least able to check for themselves. It is now rendered from data, and
-         says so plainly when there is none. -->
-    <div class="card section" id="pvChecksCard" hidden>
-      <div class="lbl"><span data-icon="shield"></span> What we checked</div>
-      <div class="verify-summary">
-        <div class="verify-ring" id="pvChecksRing"><span>—</span></div>
-        <div class="verify-summary-txt">
-          <b id="pvChecksHead">Not yet verified</b>
-          <p id="pvChecksNote"></p>
-        </div>
-      </div>
-      <div class="verify-list" id="pvChecksList"></div>
-      <!-- Availability is a separate claim from verification and is labelled
-           as one. A home can be verified in March and gone by August. -->
-      <div class="avail-row" id="pvAvailRow">
-        <span class="avail-lbl">Availability</span>
-        <span class="avail-val" id="pvAvailVal">—</span>
-      </div>
+    <!-- Was three hardcoded Lekki listings with invented "Confidence 91 ·
+         94% match" figures, shown under an Ibadan property. Now a real query
+         against the same city; the card hides itself when there is nothing
+         genuine to show, which at current inventory is often. -->
+    <div class="card section" id="pvSimCard" hidden>
+      <div class="lbl" id="pvSimLbl">More in this city</div>
+      <div class="sim" id="pvSim"></div>
     </div>
-
+    <!-- ORDER (Eden, 2026-10-02): similar homes, then who listed it, and
+         what we checked last. -->
     <div class="card section">
       <div class="lbl">Listed by</div>
       <!-- Was "Prestige Realty Ltd. · Gold Verified · 4.6 ★ · 60 transactions",
@@ -1198,11 +1201,15 @@
         <div class="apc-body">
           <div class="apc-nm"><span id="pvAgentName">—</span><span class="apc-vf" id="pvAgentVf" hidden>✓</span></div>
           <div class="apc-role" id="pvAgentMeta"></div>
-          <div class="apc-agency">
+          <!-- The agency opens its own page (Eden, 2026-10-02): brand, office,
+               website, and everything else it lists. -->
+          <a class="apc-agency apc-ag-open" id="pvAgencyLink" href="#">
             <span class="apc-ag-logo" id="pvAgencyInitial">—</span>
             <span class="apc-ag-nm" id="pvAgencyName">—</span>
             <span class="apc-ag-meta" id="pvAgencyMeta"></span>
-          </div>
+            <span class="apc-ag-go" aria-hidden="true">&rsaquo;</span>
+          </a>
+          <a class="apc-ag-page" id="pvAgencyPage" href="#" hidden>See the agency and all its listings <span aria-hidden="true">&rarr;</span></a>
           <div class="apc-ag-tag" id="pvAgencyTag" hidden></div>
           <!-- The agency's own website, when it gave one (Brand page or sign-up). -->
           <a class="apc-ag-web" id="pvAgencyWeb" href="#" target="_blank" rel="noopener nofollow" hidden>Visit website <span aria-hidden="true">&#8599;</span></a>
@@ -1231,14 +1238,31 @@
       </div>
     </div>
 
-    <!-- Was three hardcoded Lekki listings with invented "Confidence 91 ·
-         94% match" figures, shown under an Ibadan property. Now a real query
-         against the same city; the card hides itself when there is nothing
-         genuine to show, which at current inventory is often. -->
-    <div class="card section" id="pvSimCard" hidden>
-      <div class="lbl" id="pvSimLbl">More in this city</div>
-      <div class="sim" id="pvSim"></div>
+    <!-- Verification, and availability, deliberately as two separate claims.
+         This card used to be seven hardcoded rows reading "6 of 7 checks
+         passed" on EVERY property, including unverified ones. There are zero
+         rows in property_verification_checks and verification_nodes is empty
+         on every listing, so that ring was inventing the one thing a buyer is
+         least able to check for themselves. It is now rendered from data, and
+         says so plainly when there is none. -->
+    <div class="card section" id="pvChecksCard" hidden>
+      <div class="lbl"><span data-icon="shield"></span> What we checked</div>
+      <div class="verify-summary">
+        <div class="verify-ring" id="pvChecksRing"><span>—</span></div>
+        <div class="verify-summary-txt">
+          <b id="pvChecksHead">Not yet verified</b>
+          <p id="pvChecksNote"></p>
+        </div>
+      </div>
+      <div class="verify-list" id="pvChecksList"></div>
+      <!-- Availability is a separate claim from verification and is labelled
+           as one. A home can be verified in March and gone by August. -->
+      <div class="avail-row" id="pvAvailRow">
+        <span class="avail-lbl">Availability</span>
+        <span class="avail-val" id="pvAvailVal">—</span>
+      </div>
     </div>
+
     </div><!-- /deck -->
 
     <!-- ── one way forward, and it is Tayo ──────────────────────────────
@@ -1289,6 +1313,14 @@
       <button class="pvm-nearbtn" id="pvmNear" type="button">
         <span data-icon="pin"></span> What&#39;s nearby
       </button>
+      <!-- BACK, BESIDE THE MENU (Eden, 2026-10-02): on a phone the way back
+           was a small link at the top of the nearby card. It is a real button
+           now, next to the menu button, in orange so it reads against the map.
+           One level at a time: a place -> its kind -> the list -> off the map. -->
+      <button class="pvm-backpill" id="pvmBackPill" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+      </button>
     </div>
   </div><!-- /pv-split -->
 
@@ -1305,6 +1337,21 @@
        the publisher applies again when it decides between image_url and
        video_url. Asked of the same string in all three places on purpose: two
        different guesses is how a video gets posted as a photograph. */
+/* THE COVER IS A PHOTO (Eden, 2026-10-02): a listing whose first upload
+       was a video showed a blank card, because the video's URL went into an
+       <img>. The first photo in display order is the cover; a video-only
+       listing gets a still from its video; nothing else gets a stock image. */
+    const coverIsVideo = (m) => !!m && (m.media_type === 'video'
+      || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || '')));
+    const coverFrame = (u) => /res\.cloudinary\.com\/.+\/video\/upload\//.test(String(u || ''))
+      ? String(u).replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
+      : null;
+    const coverOf = (media) => {
+      const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url)
+        .slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      const photo = s.find((m) => !coverIsVideo(m));
+      return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+    };
     const isVid = (u) => (window.SynListings && SynListings.isVideoUrl)
       ? SynListings.isVideoUrl(u)
       : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ''));
@@ -1981,6 +2028,15 @@
         const a = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
         const nm = (a && a.name) || 'Agency not published';
         set('pvAgencyName', nm);
+        const agHref = p.agency_id ? 'agency-profile.html?id=' + encodeURIComponent(p.agency_id) : '';
+        const agLink = document.getElementById('pvAgencyLink');
+        const agPage = document.getElementById('pvAgencyPage');
+        if (agHref) {
+          if (agLink) agLink.href = agHref;
+          if (agPage) { agPage.href = agHref; agPage.hidden = false; }
+        } else if (agLink) {
+          agLink.removeAttribute('href');
+        }
         const ini = document.getElementById('pvAgencyInitial');
         if (ini) ini.textContent = (nm[0] || '\u2014').toUpperCase();
 
@@ -2337,7 +2393,7 @@
       (function paintSimilar() {
         if (!p.city) return;
         const q = SUPABASE_URL + '/rest/v1/properties'
-          + '?select=id,title,price,city,verification_status,property_media(url,display_order)'
+          + '?select=id,title,price,city,verification_status,property_media(url,display_order,media_type)'
           + '&city=eq.' + encodeURIComponent(p.city)
           + '&id=neq.' + encodeURIComponent(p.id)
           + '&status=eq.live&is_active=is.true&deleted_at=is.null&limit=3';
@@ -2346,9 +2402,7 @@
           .then((rows) => {
             if (!rows || !rows.length) return;
             document.getElementById('pvSim').innerHTML = rows.map((r) => {
-              const media = (r.property_media || []).slice()
-                .sort((x, y) => (x.display_order || 0) - (y.display_order || 0));
-              const img = media[0] && media[0].url;
+              const img = coverOf(r.property_media);
               return '<a href="property.html?id=' + encodeURIComponent(r.id) + '">'
                 + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '<div class="simph"></div>')
                 + '<div class="b"><div class="p">' + naira(r.price) + '</div>'
@@ -2370,6 +2424,10 @@
       PHOTOS = (p.property_media || [])
         .slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
         .map((m) => m.url).filter(Boolean);
+      /* The first photo leads; a video uploaded first comes straight after it
+         rather than opening the page on a player (Eden, 2026-10-02). */
+      const firstPhoto = PHOTOS.findIndex((u) => !isVid(u));
+      if (firstPhoto > 0) PHOTOS.unshift(PHOTOS.splice(firstPhoto, 1)[0]);
       renderGallery();
     }
 
@@ -2423,7 +2481,7 @@
     (function hydrate() {
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
       const q = SUPABASE_URL + '/rest/v1/properties'
-        + '?select=*,property_media(url,display_order),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline,social)'
+        + '?select=*,property_media(url,display_order,media_type),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline,social)'
         // The neighbourhood record this listing is actually attached to.
         // Without it the section below had nothing to draw from, which is
         // why it was hardcoded to Lekki Phase 1 on every property.
@@ -4306,6 +4364,15 @@
         /* The last step, and only where there is a way back in. */
         else if (PANEL.mode === 'cats' && PHONE_MQ.matches) hideCard();
       });
+    });
+
+    var backPill = document.getElementById('pvmBackPill');
+    if (backPill) backPill.addEventListener('click', function () {
+      if (PANEL.mode === 'detail') { showCat(PANEL.cat); return; }
+      if (PANEL.mode === 'places') { showCats(); return; }
+      if (PANEL.mode === 'cats' && document.body.classList.contains('pv-card-on')) { hideCard(); return; }
+      var out = document.getElementById('pvmBack');      // closes the map
+      if (out) out.click();
     });
 
     var nearBtn = document.getElementById('pvmNear');

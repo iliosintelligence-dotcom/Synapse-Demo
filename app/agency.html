@@ -7615,7 +7615,7 @@
       // photoHtml() renders that honestly. IMG.lekki here meant every
       // pictureless home in Overview, Listings and Marketing wore a
       // stranger's building.
-      l.img = (l.media && l.media[0] && l.media[0].url) || l.img || null;
+      l.img = listingCover(l.media) || l.img || null;
       l.st = !l.is_active ? 'inactive' : (l.verification_status === 'verified' ? 'verified' : 'pending');
       return l;
     }
@@ -7817,9 +7817,23 @@
       else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
       return a;
     }
+    /* A listing's cover is its first PHOTO, never a video's URL in an <img>
+       (Eden, 2026-10-02); a video-only listing gets a still of its video. */
+    function listingCover(media) {
+      const isV = (m) => !!m && (m.media_type === 'video'
+        || ((window.SynListings && SynListings.isVideoUrl) ? SynListings.isVideoUrl(m.url) : /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || ''))));
+      const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url);
+      const photo = s.find((m) => !isV(m));
+      if (photo) return photo.url;
+      const u = s.length ? String(s[0].url) : '';
+      return /res\.cloudinary\.com\/.+\/video\/upload\//.test(u)
+        ? u.replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
+        : null;
+    }
+
     function draftCardHtml(dr) {
       const x = dr.data || {};
-      const cover = ((x.media || [])[0] || {}).url || '';
+      const cover = listingCover(x.media) || '';
       const price = Number(x.price) > 0
         ? '\u20a6' + Number(x.price).toLocaleString('en-NG') : 'No price yet';
       return `
@@ -7912,7 +7926,7 @@
       const d = isNew ? Object.assign(blankListing(), draft ? draft.data : {}) : l;
       const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
       const opt = (arr, cur, lbl) => arr.map(v => `<option value="${v}" ${v === cur ? 'selected' : ''}>${lbl[v] || v}</option>`).join('');
-      const primary = (d.media && d.media[0] && d.media[0].url) || '';
+      const primary = listingCover(d.media) || '';
       const vLabel = d.verification_status === 'verified' ? '✓ Verified'
         : d.verification_status === 'in_progress' ? '◷ In progress' : 'Unverified · enters the 7-check queue';
       drawer.innerHTML = `
@@ -11671,7 +11685,7 @@
         listingType: l.listing_type || 'sale',
         trustScore: l.trust_score,
         verification_status: l.verification_status,
-        img: (l.media && l.media[0] && l.media[0].url) || l.img || '',
+        img: listingCover(l.media) || l.img || '',
       }));
     }
     rebuildPostListings();

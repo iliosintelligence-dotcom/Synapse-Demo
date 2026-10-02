@@ -1150,7 +1150,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,property_media(url,display_order),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1165,17 +1165,28 @@
       loadState = 'ready';
       if (hasSessionView) return;
       if (rows.length === 0) { render(); return; }   // truly nothing live — say so
+/* THE COVER IS A PHOTO (Eden, 2026-10-02): a listing whose first upload
+         was a video showed a blank card, because the video's URL went into an
+         <img>. The first photo in display order is the cover; a video-only
+         listing gets a still from its video; nothing else gets a stock image. */
+      const coverIsVideo = (m) => !!m && (m.media_type === 'video'
+        || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || '')));
+      const coverFrame = (u) => /res\.cloudinary\.com\/.+\/video\/upload\//.test(String(u || ''))
+        ? String(u).replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
+        : null;
+      const coverOf = (media) => {
+        const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url)
+          .slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+        const photo = s.find((m) => !coverIsVideo(m));
+        return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+      };
       items = rows.map((p, i) => ({
         /* The listing's own first photo. This query did not ask for
            property_media at all, so img was always null and the card renderer
            fell back to a pool of stock flats -- every home in Browse wore a
            photograph of a different building. */
         id: p.id,
-        img: ((p.property_media || [])
-                .slice()
-                .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-                .map((m) => m && m.url)
-                .filter(Boolean)[0]) || null,
+        img: coverOf(p.property_media),
         kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
         per: p.listing_type === 'rent',
         vstatus: p.verification_status,

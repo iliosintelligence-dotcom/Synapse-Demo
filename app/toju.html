@@ -1122,12 +1122,25 @@
        shapeTojuMatch needs no special case and the card is identical to every
        other card on the canvas -- which is the point: a home you asked about
        should not look like a different kind of object from a home Tayo found. */
+/* THE COVER IS A PHOTO (Eden, 2026-10-02): a listing whose first upload
+       was a video showed a blank card, because the video's URL went into an
+       <img>. The first photo in display order is the cover; a video-only
+       listing gets a still from its video; nothing else gets a stock image. */
+    const coverIsVideo = (m) => !!m && (m.media_type === 'video'
+      || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || '')));
+    const coverFrame = (u) => /res\.cloudinary\.com\/.+\/video\/upload\//.test(String(u || ''))
+      ? String(u).replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
+      : null;
+    const coverOf = (media) => {
+      const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url)
+        .slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      const photo = s.find((m) => !coverIsVideo(m));
+      return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+    };
     function replyMatch(p) {
-      const media = Array.isArray(p.property_media) ? p.property_media.slice() : [];
-      media.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
       return {
         id: p.id,
-        img: media.length ? media[0].url : null,
+        img: coverOf(p.property_media),
         title: p.title,
         price: p.price,
         listingType: p.listing_type,
@@ -1152,7 +1165,7 @@
              arriving from a listing showed no listing. */
           + '&select=id,title,price,price_period,currency,listing_type,city,bedrooms,'
           + 'bathrooms,area_sqm,latitude,longitude,verification_status,trust_score,'
-          + 'property_media(url,display_order)',
+          + 'property_media(url,display_order,media_type)',
           { headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY } });
         const rows = await r.json().catch(() => []);
         const p = Array.isArray(rows) ? rows[0] : null;
