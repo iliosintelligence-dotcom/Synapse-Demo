@@ -46,8 +46,8 @@
   --surface:   rgba(22, 24, 28, 0.86);
   --surface-2: rgba(32, 35, 39, 0.9);
   --glass:     rgba(22, 24, 28, 0.86);
-  --border:    rgba(255, 255, 255, 0.12);
-  --line:      rgba(255, 255, 255, 0.12);
+  --border:    transparent;   /* no hairlines at night (theme-night.css) */
+  --line:      transparent;
   --bg:        #000000;
 }
 :root:root[data-theme="dark"] body { background: #000000; }
@@ -71,12 +71,14 @@
 /* The grain stays -- it is the texture -- but softer on a dark room. */
 :root:root[data-theme="dark"] :is(.tj-wash, .bg-wash) { opacity: 0.45; }
 
-/* Smoked glass: the same frost, dark. */
+/* Smoked glass: the same frost, dark. With no rim to draw its edge, the
+   glass itself is a step lighter than the darkest part of the room, so a
+   bubble keeps its shape against the brick. */
 :root:root[data-theme="dark"] :is(.toju .bubble, .pcard, .tj-hint, .card, .tj-hist, .hist-row,
     .tj-memory, .cmpbar, .empty, .sk-card, .rc, .prox-card) {
-  background: linear-gradient(135deg, rgba(28, 30, 34, 0.76), rgba(14, 15, 18, 0.6)) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  background: linear-gradient(135deg, rgba(44, 47, 53, 0.84), rgba(30, 32, 37, 0.74)) !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45) !important;
   color: var(--ink);
 }
 :root:root[data-theme="dark"] .tj-hist { background: rgba(10, 11, 13, 0.9) !important; }
@@ -91,7 +93,7 @@
 /* Text boxes: black glass, white words. */
 :root:root[data-theme="dark"] :is(.chatbox, .searchbar) {
   background: rgba(0, 0, 0, 0.9) !important;
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: var(--edge, #2F3336) !important;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45) !important;
 }
 /* An id, because the dark input rule in theme-night.css is a long :not()
@@ -106,19 +108,19 @@
 /* Dark enough that the bright top of the photograph never turns it grey. */
 :root:root[data-theme="dark"] :is(.appbar, .appbar.appbar) {
   background: rgba(0, 0, 0, 0.9) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  border-bottom-color: transparent !important;
 }
 :root:root[data-theme="dark"] .appbar nav a:not(.active) { color: #C4C8CC !important; }
 /* On a black bar, "Back to site" is a word, not a black box. */
 :root:root[data-theme="dark"] .appbar .home { background: transparent !important; color: #FFFFFF !important; }
 :root:root[data-theme="dark"] .tjm-bar {
   background: rgba(0, 0, 0, 0.62) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  border-bottom-color: transparent !important;
 }
 
 /* Words that sat on light glass in near-black. */
 :root:root[data-theme="dark"] :is(.listing .why b, .pcard .watch b, .listing .match) { color: var(--ink) !important; }
-:root:root[data-theme="dark"] .listing .match { background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 255, 255, 0.16) !important; }
+:root:root[data-theme="dark"] .listing .match { background: rgba(255, 255, 255, 0.08) !important; border-color: transparent !important; }
 
 /* No rules between a card's readings at night: on smoked glass a hairline
    reads as a stripe (Eden: "the lines have to come out"). */

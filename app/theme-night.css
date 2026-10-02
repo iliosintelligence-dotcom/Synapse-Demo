@@ -19,7 +19,7 @@
    Mobbin's dark mode.
 
    X's "Lights out": the ground is pure black, a card is #16181C, a raised or
-   hovered thing #202327, every edge #2F3336, words #E7E9EA (never pure white:
+   hovered thing #202327, no hairlines (only text boxes keep a #2F3336 edge), words #E7E9EA (never pure white:
    it vibrates on black) and quiet words a cool grey. Depth on black comes
    from stepping to a lighter black, not from shadows -- a shadow on #000 is
    invisible -- so every shadow is off. Orange stays the one accent, and the
@@ -38,8 +38,15 @@ html[data-theme="dark"] {
   --canvas:      #000000;
   --canvas-2:    #0B0C0E;
   --sand:        #000000;
-  --line:        #2F3336;
-  --line-2:      #3E4247;
+  /* No hairlines at night (Eden: "you keep having white lines ...
+     partitioning sections ... The only white on the screen should be the
+     actual elements"). A line on pure black reads as white, whatever grey it
+     is drawn in. Panels are told apart by being a lighter black, rows by
+     their spacing; only text boxes keep an edge, because the edge is the
+     box. */
+  --line:        transparent;
+  --line-2:      transparent;
+  --edge:        #2F3336;   /* text boxes only */
   --peach:       #2B1D12;
   --accent-tint: #2B1D12;
   --badge:       #F4212E;
@@ -113,7 +120,7 @@ html[data-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not
     textarea, select) {
   background-color: #000000 !important;
   color: #FFFFFF !important;
-  border-color: #2F3336 !important;
+  border-color: var(--edge) !important;
   caret-color: var(--orange);
 }
 html[data-theme="dark"] :is(input, textarea)::placeholder { color: #71767B !important; opacity: 1; }
@@ -122,7 +129,7 @@ html[data-theme="dark"] :is(input, textarea, select):focus { border-color: var(-
    anybody looking can tell. */
 html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) {
   background-color: #000000 !important;
-  border-color: #2F3336 !important;
+  border-color: var(--edge) !important;
   color: #FFFFFF;
 }
 html[data-theme="dark"] :is(.topsearch, .pane-search, .lsearch, .searchbar, .cnav-sfield, .chatbox) :is(input, textarea) {
@@ -136,27 +143,28 @@ html[data-theme="dark"] :is(.btn-ghost, .btn-secondary, .seg-b.on, .need-phone b
   border-color: #FFFFFF !important;
 }
 
+/* Round icon buttons: a disc of the lighter black, not a ring. */
 html[data-theme="dark"] :is(.appbar .bell, .syn-theme-btn, .cnav-back, .cnav-back-float, .cnav-sclose) {
-  background-color: #000000 !important;
+  background-color: #16181C !important;
   color: #FFFFFF !important;
-  border: 1px solid #2F3336 !important;
+  border-color: transparent !important;
 }
-html[data-theme="dark"] .appbar.appbar { background-color: #000000 !important; border-bottom-color: #2F3336; }
+html[data-theme="dark"] .appbar.appbar { background-color: #000000 !important; border-bottom-color: transparent !important; }
 
 /* Doubled :root so it outranks the generated per-button rules: a disabled
    button stays black at full strength (a faded white one reads as grey). */
 :root:root[data-theme="dark"] body :is(button, .btn, .tbtn):is([disabled], :disabled) {
-  background-color: #000000 !important;
+  background-color: #16181C !important;
   background-image: none !important;
   color: #71767B !important;
-  border-color: #2F3336 !important;
+  border-color: transparent !important;
   opacity: 1 !important;
 }
 /* App-bar text links (History, New chat, Back to site): black, white words. */
 html[data-theme="dark"] .home {
   background: #000000 !important;
   color: #FFFFFF !important;
-  border-color: #2F3336 !important;
+  border-color: transparent !important;
 }
 
 /* Tayo's round "T" marks are dark discs: on black they vanish, so in dark
