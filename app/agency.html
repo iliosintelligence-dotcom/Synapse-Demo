@@ -6126,6 +6126,16 @@
            gone out. An orphan gets to be its own card. */
         if (r.leg === 'synapse' && twinClaimed[r.id]) return;
         const isOrphanTwin = r.leg === 'synapse';
+        /* A CITY-FEED POST is Synapse's own channel (@synapse_ibadan) carrying
+           this agency's listing, queued by feed_city_channels on a timer with
+           nobody asked. It holds the listing's agency_id, so it lands here --
+           and was drawn as "Your Telegram", which made the feed read as the
+           agency's own channel posting by itself, and a home the agency had
+           posted once read as posted twice (reported 2026-10-02). It is named
+           for what it is. */
+        const cityChannel = r.city_channel_id
+          ? (String((r.payload && r.payload.account) || '') || 'Synapse’s city channel') : '';
+        const ownLive = !!LIVE[r.status] && !waiting(r);
 
         const l = listingById(r.property_id);
         const chans = r.platform ? [r.platform] : [];
@@ -6145,7 +6155,8 @@
           failure: r.failure_reason || '',
           /* Whether the agency's OWN account carried it, which is a different
              question from whether it went out at all. */
-          mineLive: !!LIVE[r.status] && !waiting(r),
+          mineLive: ownLive && !cityChannel,
+          cityLive: ownLive && cityChannel ? cityChannel : '',
           waitMine: waiting(r),
           waitAmp: twinLive.filter(waiting).map(t => t.platform),
           sentWhen: fmtWhen((r.payload && r.payload.sent_at) || r.published_at
@@ -6336,6 +6347,13 @@
           ? '<b>Synapse\u2019s X</b>'
           : '<b>Your ' + esc2((CH[me] && CH[me].label) || me || 'account') + '</b>');
       }
+      /* Not theirs, and not something they did: Synapse's city channel
+         posts every live listing in the city by itself. Saying so is the
+         difference between "Synapse put my home in front of Ibadan" and "my
+         channel is posting on its own". */
+      if (p.cityLive) {
+        bits.push('<b>' + esc2(p.cityLive) + '</b>, Synapse’s city channel — posted automatically');
+      }
       if (p.ampLive && p.ampLive.length) {
         bits.push('Synapse on ' + esc2(p.ampLive.map(c => (CH[c] && CH[c].label) || c).join(', ')));
       }
@@ -6463,7 +6481,7 @@
           + 'it is a draft only you can see.</div>'
           + carriedBy(p);
       }
-      const up = p.mineLive || (p.ampLive && p.ampLive.length);
+      const up = p.mineLive || p.cityLive || (p.ampLive && p.ampLive.length);
       return (up
           ? '<div class="w" style="margin-top:8px;color:var(--success)"><span class="tick">\u2713</span> '
             + esc2(p.when || 'Published') + '</div>'
