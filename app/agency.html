@@ -3973,6 +3973,17 @@
     .sts-t { font-size: 14px; line-height: 1.45; }
     .sts-b { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
     .sts-b .btn { min-height: 40px; }
+    .pg-scrim { position: fixed; inset: 0; z-index: 200; background: rgba(13,13,15,0.42); display: grid; place-items: center; padding: 16px; }
+    .pg { position: relative; width: min(440px, 100%); border-radius: 20px; padding: 24px 22px 20px; background: var(--surface, #fff); color: var(--ink);
+      box-shadow: 0 24px 60px -16px rgba(13,13,15,0.45); }
+    .pg h3 { margin: 0 34px 8px 0; font: 700 19px/1.25 var(--f-sans); }
+    .pg p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
+    .pg .pg-n { margin-top: 12px; color: var(--ink); }
+    .pg-b { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+    .pg-x { position: absolute; right: 12px; top: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(54,54,54,0.07);
+      font-size: 20px; line-height: 1; cursor: pointer; color: var(--ink); }
+    html[data-theme="dark"] .pg { background: #16181C; }
+    html[data-theme="dark"] .pg-x { background: #202327; }
 </style>
   <!-- The app theme, last so it wins: warm, white, flat (theme.css). Not on sign-in. -->
   <link rel="stylesheet" href="theme.css" />
@@ -6813,7 +6824,7 @@
             })
             .catch((err) => {
               btn.disabled = false; btn.textContent = first ? 'Save and get started' : 'Save profile';
-              note.textContent = (err && err.message) || 'Could not save that.';
+              note.textContent = (err && err.message) || 'Could not save that.'; planGate(err && err.message);
             });
         });
       }).catch((err) => {
@@ -7149,7 +7160,7 @@
           .catch((err) => {
             btn.disabled = false; if (other) other.disabled = false;
             btn.textContent = was;
-            note.textContent = (err && err.message) || 'Could not save that.';
+            note.textContent = (err && err.message) || 'Could not save that.'; planGate(err && err.message);
             console.error('schedule failed', err);
           });
       }
@@ -13063,7 +13074,7 @@
             renderChannels();
           }).catch(function (err) {
             btn.disabled = false;
-            note.textContent = (err && err.message) || 'Could not save that';
+            note.textContent = (err && err.message) || 'Could not save that'; planGate(err && err.message);
           });
         });
       }
@@ -15631,6 +15642,10 @@
       else if (!paidThrough) state = '<div class="bl-state">Active.</div>';
       else if (lapsed) state = '<div class="bl-state warn">Your paid period ended on ' + blDate(d.period_end) + '. Renew to keep it.</div>';
       else state = '<div class="bl-state">Paid through ' + blDate(d.period_end) + '.</div>';
+      if (d.paywall_on && !d.enforced && d.free_until) {
+        state += '<div class="bl-state" style="color:var(--ink-muted)">Free for you until ' + blDate(d.free_until)
+          + '. After that, your plan\u2019s limits apply.</div>';
+      }
       const packs = BL.adds.filter((a) => a.addon_code === 'listing_pack' && a.applied_at && (!a.ends_at || new Date(a.ends_at) > new Date())).length;
       const limit = d.listings_max == null
         ? 'Unlimited active listings.'
@@ -15758,6 +15773,59 @@
         }
       });
     })();
+
+    /* ══ THE PAYWALL'S FACE (2026-10-03) ═════════════════════════════════
+       When a plan limit refuses something, the database says so in a
+       sentence ("Your free plan includes 20 active listings..."). That used
+       to arrive as a toast or a red note. Now it opens a prompt that says
+       what happened and offers the way through: plans, or a listing pack.
+       Only the owner pays, so others are told to ask their owner. */
+    const PLAN_GATE_RX = /plan includes \d+ (active listings|team seats)|on the Accelerate plan and above/i;
+    function planGate(msg) {
+      msg = String(msg || '');
+      if (!PLAN_GATE_RX.test(msg)) return false;
+      const listing = /active listings/i.test(msg), seats = /team seats/i.test(msg);
+      const owner = document.body.dataset.role === 'agency_owner';
+      const old = document.getElementById('planGate'); if (old) old.remove();
+      const el = document.createElement('div');
+      el.className = 'pg-scrim'; el.id = 'planGate';
+      el.innerHTML = '<div class="pg" role="dialog" aria-modal="true" aria-labelledby="pgT">'
+        + '<h3 id="pgT">' + (listing ? 'You\u2019ve reached your listing limit' : seats ? 'Your team is full on this plan' : 'That\u2019s on Accelerate and above') + '</h3>'
+        + '<p>' + esc2(msg.replace(/\s*(Upgrade|Subscription in the portal).*$/i, '')) + '</p>'
+        + (owner
+          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 25 listings</button>' : '')
+            + '<button type="button" class="btn btn-primary" data-pg="plans">See plans</button></div>'
+          : '<p class="pg-n">Only your agency\u2019s owner can change the plan. Ask them to upgrade.</p>')
+        + '<button type="button" class="pg-x" data-pg="close" aria-label="Close">\u00D7</button></div>';
+      document.body.appendChild(el);
+      el.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-pg]');
+        if (!b && e.target !== el) return;
+        el.remove();
+        if (!b) return;
+        if (b.dataset.pg === 'plans') goToPane('subscription');
+        if (b.dataset.pg === 'pack') { openBilling(); setTimeout(() => { const h = document.getElementById('blAddonsHead'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 350); }
+      });
+      return true;
+    }
+    (function hookToasts() {
+      const base = toast;
+      toast = function (msg) { if (planGate(msg)) return; return base.apply(this, arguments); };
+    })();
+
+    /* What the paywall says about THIS agency: on or not, enforced or still
+       in its free period, and until when. Read once at start; drives the
+       notification above. */
+    function loadPaywallInfo() {
+      if (!window.SynAuth || !window.SynListings || !SynListings.agencyId) return;
+      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('agency_plan_usage', { p_agency_id: aid }) : null))
+        .then((r) => {
+          if (!r || r.error || !r.data) return;
+          window.SYN_PAYWALL = r.data;
+          if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
+        }).catch(() => {});
+    }
+    setTimeout(loadPaywallInfo, 2500);
 
     /* Subscription's own doors into Billing: the link under the usage line,
        and the add-on cards, whose "Add" buttons did nothing until now. */
@@ -16532,6 +16600,15 @@
       if (typeof openTasks === 'function') {
         openTasks().forEach(t => out.push({ type: 'setup', tag: 'Only you', icon: 'pending', pane: '',
           task: t.id, title: esc2(t.title), sub: esc2(t.where || 'Tap to see what to do'), group: 'To do' }));
+      }
+      /* The sixty free days (Eden, 2026-10-03: "notify them about this").
+         Shown from the day the paywall switches on until the day it applies. */
+      const pw = window.SYN_PAYWALL;
+      if (pw && pw.paywall_on && !pw.enforced && pw.free_until) {
+        const until = new Date(pw.free_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        out.unshift({ type: 'billing', tag: 'Plans', icon: 'card', pane: 'billing',
+          title: 'Synapse is free for you until ' + until,
+          sub: 'After that, your plan\u2019s limits apply. See what each plan includes.', group: 'Today' });
       }
       NOTI = out;
     }
