@@ -15680,9 +15680,24 @@
       else if (!paidThrough) state = '<div class="bl-state">Active.</div>';
       else if (lapsed) state = '<div class="bl-state warn">Your paid period ended on ' + blDate(d.period_end) + '. Renew to keep it.</div>';
       else state = '<div class="bl-state">Paid through ' + blDate(d.period_end) + '.</div>';
-      if (d.paywall_on && !d.enforced && d.free_until) {
-        state += '<div class="bl-state" style="color:var(--ink-muted)">Free for you until ' + blDate(d.free_until)
-          + '. After that, your plan\u2019s limits apply.</div>';
+      /* AUTO BILLING: whether the plan renews itself, on which card, and what
+         happened if the last try failed. Owner and admin can turn it off or
+         drop the card; turning it off lets the plan end on its date. */
+      if (d.card && (tier === 'accelerator' || tier === 'market_leader')) {
+        const card = blEsc((d.card.brand || 'Card') + ' \u00b7\u00b7\u00b7\u00b7 ' + (d.card.last4 || ''));
+        const every = d.renew_period === 'annual' ? 'year' : 'month';
+        if (d.auto_renew) {
+          state += '<div class="bl-state">Renews on ' + (paidThrough ? blDate(d.period_end) : 'its end date') + ' to ' + card + ', every ' + every + '.</div>';
+          if (d.renew_failed_attempts > 0) {
+            state += '<div class="bl-state warn">The last renewal didn\u2019t go through' + (d.renew_error ? ': ' + blEsc(d.renew_error) : '') + '. '
+              + (d.renew_failed_attempts < 4 ? 'We\u2019ll try again. ' : 'We\u2019ve stopped trying. ') + 'Paying below with a working card puts it right.</div>';
+          }
+        } else {
+          state += '<div class="bl-state" style="color:var(--ink-muted)">Auto-renew is off. Your plan ends on ' + (paidThrough ? blDate(d.period_end) : 'its end date') + '.</div>';
+        }
+        state += '<div class="bl-state" style="margin-top:10px"><button type="button" class="btn btn-ghost" data-bl-renew="' + (d.auto_renew ? 'off' : 'on') + '">'
+          + (d.auto_renew ? 'Turn off auto-renew' : 'Turn on auto-renew') + '</button> '
+          + '<button type="button" class="btn btn-ghost" data-bl-forget>Remove card</button></div>';
       }
       const packs = BL.adds.filter((a) => a.addon_code === 'listing_pack' && a.applied_at && (!a.ends_at || new Date(a.ends_at) > new Date())).length;
       const limit = d.listings_max == null
@@ -15735,7 +15750,7 @@
           + '</div>'
           + '<div class="bl-note">' + note + '</div>'
           + '<button type="button" class="btn btn-primary bl-pay" data-bl-pay>' + verb + ' · ' + blNaira(q.amount) + '</button>'
-          + '<div class="bl-fine">You pay on Paystack’s page by card, bank transfer or USSD. Bigger needs? <a href="#" data-bl-enterprise style="color:inherit">Enterprise</a> is priced with you.</div>';
+          + '<div class="bl-fine">You pay on Paystack’s page by card, bank transfer or USSD. Paying by card renews your plan automatically each ' + (BL.period === 'annual' ? 'year' : 'month') + '; you can turn that off here at any time. Bigger needs? <a href="#" data-bl-enterprise style="color:inherit">Enterprise</a> is priced with you.</div>';
       }
 
       /* ── add-ons ── */
@@ -15804,6 +15819,23 @@
         const addon = t.closest('[data-bl-addon]');
         if (addon) { startCheckout({ addon: addon.dataset.blAddon }, addon); return; }
         if (t.closest('[data-bl-retry]')) { loadBilling(); return; }
+        const renew = t.closest('[data-bl-renew]');
+        const forget = t.closest('[data-bl-forget]');
+        if (renew || forget) {
+          if (forget && !window.confirm('Remove this card? Your plan will end on its date instead of renewing.')) return;
+          const btn = renew || forget;
+          btn.disabled = true;
+          SynAuth.client().then((c) => SynListings.agencyId().then((aid) => forget
+            ? c.rpc('remove_billing_card', { p_agency_id: aid })
+            : c.rpc('set_auto_renew', { p_agency_id: aid, p_on: renew.dataset.blRenew === 'on' })))
+            .then((r) => {
+              if (r && r.error) throw new Error(r.error.message);
+              toast(forget ? 'Card removed.' : (renew.dataset.blRenew === 'on' ? 'Auto-renew is on.' : 'Auto-renew is off.'));
+              loadBilling();
+            })
+            .catch(() => { btn.disabled = false; toast('That didn\u2019t save. Try again.'); });
+          return;
+        }
         const talk = t.closest('[data-bl-talk], [data-bl-enterprise]');
         if (talk) {
           e.preventDefault();
