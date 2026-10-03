@@ -1,0 +1,15 @@
+name: ZAP baseline scan
+# OWASP ZAP in passive mode against the public site: it reads pages and reports
+# missing headers, cookie flags and similar. It sends no attacks and changes
+# nothing. On demand only.
+on: { workflow_dispatch: {} }
+permissions: { contents: read }
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'https://www.synapsecore.dev'
+          fail_action: false
+          allow_issue_writing: false

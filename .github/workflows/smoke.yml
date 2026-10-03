@@ -1,0 +1,28 @@
+name: Smoke tests
+# Read-only checks of the live site: every page loads without a script error,
+# the key journeys show what they promise, security headers are present.
+# Daily, and on demand (Actions > Smoke tests > Run workflow).
+on:
+  schedule: [{ cron: '0 6 * * *' }]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Site to test'
+        default: 'https://www.synapsecore.dev'
+permissions: { contents: read }
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund
+        working-directory: tests
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests
+      - run: npx playwright test -c e2e/playwright.config.js
+        working-directory: tests
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || 'https://www.synapsecore.dev' }}
