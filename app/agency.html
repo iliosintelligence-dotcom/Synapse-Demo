@@ -15826,6 +15826,10 @@
         }).catch(() => {});
     }
     setTimeout(loadPaywallInfo, 2500);
+    /* Kept fresh (Greptile): a portal left open past the free date must not
+       go on saying it is free. */
+    setInterval(loadPaywallInfo, 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadPaywallInfo(); });
 
     /* Subscription's own doors into Billing: the link under the usage line,
        and the add-on cards, whose "Add" buttons did nothing until now. */
@@ -16604,7 +16608,7 @@
       /* The sixty free days (Eden, 2026-10-03: "notify them about this").
          Shown from the day the paywall switches on until the day it applies. */
       const pw = window.SYN_PAYWALL;
-      if (pw && pw.paywall_on && !pw.enforced && pw.free_until) {
+      if (pw && pw.paywall_on && !pw.enforced && pw.free_until && new Date(pw.free_until) > new Date()) {
         const until = new Date(pw.free_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
         out.unshift({ type: 'billing', tag: 'Plans', icon: 'card', pane: 'billing',
           title: 'Synapse is free for you until ' + until,
