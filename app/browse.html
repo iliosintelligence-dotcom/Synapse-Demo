@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <!-- This page already had 3 rules (the top inset, a floating bar, a sheet) written against
+       env(safe-area-inset-*), and every one computed 0: those functions
+       return 0 unless the viewport says viewport-fit=cover. The layout
+       was designed for the edges and never reached them. -->
+  <meta name="theme-color" content="#F7F7F8" />
+  <title>Your matches · Synapse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="loader.css" />
+  <link rel="stylesheet" href="seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="seam.js"></script>
+  <script src="loader.js" defer></script>
+  <!-- Before anything paints: it publishes --vvh, so a shell sized from it
+       never renders at the wrong height first and then corrects. -->
+  <script src="kbd.js"></script>
+  <script src="arrival.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* Not a catalogue — only the homes Tayo picked for this brief.
+       Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
+    body { background: var(--bg); }
+    /* WHY THE BACKGROUND JUMPED ON EVERY SCROLL.
+       These layers were `position: fixed; inset: 0`, which sounds like "cover
+       the viewport" and on a phone means "cover the LAYOUT viewport, whatever
+       it currently is". Scrolling down retracts the browser's URL bar, the
+       layout viewport grows by 60-100px, inset:0 recomputes, the layer
+       resizes -- and because the photo is sized `cover`, a taller box rescales
+       and re-centres it. So the picture visibly snapped to a new crop the
+       moment you started scrolling, snapped back when you scrolled up, and did
+       it again on every direction change. Nothing was animating; the image was
+       being re-laid-out under the glass.
+
+       100lvh is the LARGE viewport height -- the height with the chrome
+       retracted -- and it does not change. The layer is now always the tallest
+       it will ever need to be, the extra sitting behind the URL bar when that
+       bar is showing, and the crop is computed exactly once. 100vh first as
+       the fallback for anything that predates the unit.
+
+       translateZ(0) gives it its own compositor layer. Every card and bubble
+       on these two pages carries backdrop-filter: blur(28px), which resamples
+       whatever is painted behind it; without the promotion that is a full
+       repaint of a 1600px photograph on each scroll frame, under a dozen
+       simultaneous blurs, which is the other half of "the scroll isn't
+       smooth". */
+    .bg-scene, .bg-wash {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 0;
+      height: 100vh; height: 100lvh;
+      transform: translateZ(0);
+    }
+    .bg-scene {
+      background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
+    .bg-wash {
+      background-image: var(--grain);
+      background-repeat: repeat; }
+    .wrap { position: relative; z-index: 1; }
+    .appbar { background: rgba(245,245,245,0.55); backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
+    .card { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
+
+
+    /* map — the Zillow-parity view, but only YOUR pins */
+    #map { height: 250px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
+      border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13);
+      transition: height .28s cubic-bezier(.22,1,.36,1); }
+    @media (prefers-reduced-motion: reduce) { #map { transition: none; } }
+
+    /* View toggle (item 20) */
+    .viewseg { display: inline-flex; gap: 2px; padding: 3px; margin-bottom: 14px;
+      border-radius: 100px; border: 1px solid var(--border); background: rgba(0,0,0,0.03); }
+    .vseg { font: 600 12.5px var(--f-sans); cursor: pointer; border: none; background: none;
+      color: var(--ink-muted); padding: 7px 16px; border-radius: 100px; }
+    .vseg.on { background: var(--brand); color: #f5f5f5; }
+
+    /* Map view: the map becomes the page. The list, the novelty shelf and the
+       recently-viewed rail step aside rather than competing for the same
+       screen — but the toolbar stays, because filters must keep working. */
+    /* 100svh, not 100dvh. dvh tracks the viewport as the URL bar hides and
+       shows -- and #map carries `transition: height .28s`, so every scroll that
+       moved the chrome kicked off a 280ms height animation on a Leaflet canvas.
+       The map appeared to breathe while you scrolled. svh is the SMALL
+       viewport height: the height with the chrome fully shown, which never
+       changes, so the map fits without being cut off and holds still. */
+    body.view-map #map { height: calc(100svh - 210px); min-height: 340px; }
+    body.view-map .grid,
+    body.view-map .fresh-since,
+    body.view-map .recent,
+    body.view-map .empty { display: none; }
+
+    /* Stays on screen. Searching is how this page is operated, and it used to
+       scroll away with the title the moment you looked at the second result —
+       so refining a search meant scrolling back up to reach the box.
+
+       Sticks below the appbar, which is itself sticky at 64px. On a phone the
+       appbar collapses to zero height and the taskbar takes over, so the offset
+       drops to a small gap (see the ≤720px block). The z-index is scoped inside
+       .wrap, which is its own stacking context under the appbar — the bar can
+       never cover the appbar, only the cards it scrolls over. */
+    .searchbar { position: sticky; top: 72px; z-index: 40;
+      display: flex; align-items: center; gap: 10px; padding: 0 16px; margin-bottom: 16px; border-radius: 100px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46)); backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 14px 34px rgba(122,62,22,0.1); color: var(--ink-muted); }
+    .searchbar svg { flex: none; color: #121212; }
+    /* The input fills the bar's full height so the whole bar is the target.
+       It was 16px tall inside a 42px bar, and the surrounding padding had no
+       handler on it — tapping the obvious place to tap did nothing. */
+    .searchbar input { flex: 1; align-self: stretch; min-height: 44px; border: none; outline: none; background: transparent; font: 14.5px var(--f-sans); color: var(--ink); }
+    .searchbar input::placeholder { color: var(--ink-dim); }
+    .searchbar button { flex: none; border: none; background: rgba(0,0,0,0.05); color: var(--ink-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .toolbar select { font: 500 12.5px var(--f-sans); color: var(--ink); background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; outline: none; cursor: pointer; }
+    .dealfilter { display: flex; gap: 6px; }
+    .dealfilter button { font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: background-color var(--m-micro, .12s) ease, border-color var(--m-micro, .12s) ease, color var(--m-micro, .12s) ease, box-shadow var(--m-micro, .12s) ease; }
+    .dealfilter button:hover { color: var(--ink); }
+    .dealfilter button.on { color: #fff; background: var(--brand); border-color: transparent; box-shadow: 0 6px 16px rgba(54,54,54,0.3); }
+    .vtoggle { display: inline-flex; align-items: center; gap: 7px; font: 600 12.5px var(--f-sans); color: var(--ink-muted); background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 8px 14px; cursor: pointer; transition: background-color var(--m-micro, .12s) ease, border-color var(--m-micro, .12s) ease, color var(--m-micro, .12s) ease; }
+    .vtoggle .box { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--ink-dim); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; }
+    .vtoggle.on { color: var(--success); border-color: rgba(46,125,79,0.4); background: rgba(46,125,79,0.08); }
+    .vtoggle.on .box { background: var(--success); border-color: var(--success); }
+    .chip-unv { background: rgba(0,0,0,0.05); color: var(--ink-muted); border: 1px solid rgba(0,0,0,0.12); }
+    .chip-prog { background: rgba(176,125,43,0.1); color: var(--warn-ink); border: 1px solid rgba(176,125,43,0.28); }
+    .listing .score.unv { color: var(--ink-dim); }
+    .listing .ring.unv { border-color: rgba(0,0,0,0.22); color: var(--ink-dim); font-size: 12px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    .listing { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; position: relative;
+      transition: opacity var(--m-expanded) var(--m-ease), transform var(--m-expanded) var(--m-ease), box-shadow .25s, border-color .25s; }
+    @media (hover: hover) and (pointer: fine) {
+      .listing:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(122,62,22,0.16), inset 0 1px 0 rgba(255,255,255,0.9); border-color: rgba(54,54,54,0.4); }
+    }
+    .listing.cmp { border-color: rgba(54,54,54,0.55); box-shadow: 0 0 0 2px rgba(54,54,54,0.25), 0 26px 56px rgba(122,62,22,0.12); }
+    .listing .body { padding: 18px 18px 14px; }
+    .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
+    .listing .match { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.22); padding: 3px 9px; border-radius: 100px; }
+    /* Expiry chip. Uses the tint — the palette reserves it for pips, hairlines
+       and countdowns, which is exactly this — and stays quiet rather than
+       alarming: the listing is going, not the buyer's chance of a home. */
+    .listing .expiry { font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      color: #1C1C1E; background: rgba(255,138,45,0.12); border: 1px solid rgba(255,138,45,0.30);
+      padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+    .listing .cmpbox { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-dim); cursor: pointer; }
+    .listing .cmpbox input { accent-color: #121212; }
+    .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
+    .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
+    /* The title is a link now, so it has to look exactly as it did — the card
+       is the affordance, not blue underlined text. Focus is the exception: a
+       keyboard user needs to see where they are, which is the whole point of
+       making it a link. */
+    .listing .ttl-a { color: inherit; text-decoration: none; }
+    .listing .ttl-a:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .listing .ttl-a:focus-visible { outline: 2px solid var(--brand-deep); outline-offset: 3px; border-radius: 4px; }
+    .listing .loc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+    .listing .why { font-size: 12.5px; line-height: 1.55; color: var(--ink-muted); margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,0.7); }
+    .listing .why b { color: #1C1C1E; font-weight: 700; }
+    .listing .score { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--ink-muted); }
+    .listing .ring { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ink); }
+    .listing .img { position: relative; height: 170px; margin: 0 10px 10px; border-radius: 15px; overflow: hidden; }
+    .listing .img img { width: 100%; height: 100%; object-fit: cover; }
+    /* A listing with no photo of its own. Says so, rather than borrowing a
+       stock flat -- see listingCardHtml in matches-shared.js. */
+    .listing .img:not(:has(img)),
+    .listing .img.no-photo {
+      display: flex; align-items: center; justify-content: center;
+      background:
+        repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px);
+    }
+    .listing .img:not(:has(img))::after,
+    .listing .img.no-photo::after {
+      content: 'No photo yet';
+      font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      color: var(--ink-muted, #6B6B70);
+      background: rgba(255,255,255,0.86);
+      padding: 5px 11px; border-radius: 100px;
+    }
+    .listing .save { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.75);
+      display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
+    .listing .save.on { color: #121212; background: rgba(255,255,255,0.85); }
+    .listing .save:active { transform: scale(0.85); }
+    /* The heart stays 34px — bigger looks wrong sitting on the photo. The
+       TARGET grows to 44px underneath it instead, which costs nothing
+       visually and is the difference between hitting it and missing it. */
+    .listing .save::before { content: ''; position: absolute; top: 50%; left: 50%;
+      width: 44px; height: 44px; transform: translate(-50%, -50%); }
+
+    /* compare bar + overlay */
+    .cmpbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 20; display: none;
+      align-items: center; gap: 14px; padding: 12px 12px 12px 20px; border-radius: 100px;
+      background: rgba(255,255,255,0.75); backdrop-filter: blur(28px) saturate(1.6); border: 1px solid rgba(255,255,255,0.85);
+      box-shadow: 0 22px 54px rgba(122,62,22,0.22); font-size: 13px; color: var(--ink-muted); }
+    .cmpbar.on { display: flex; }
+    .cmpbar b { color: var(--ink); }
+    .cmpbar button { background: var(--brand); color: #fff; font: 600 13px var(--f-sans); border: none; border-radius: 100px; padding: 10px 18px; cursor: pointer; }
+    .cmpwrap { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .cmpwrap.on { display: flex; }
+    .cmpwrap .veil { position: absolute; inset: 0; background: rgba(40,20,8,0.3); backdrop-filter: blur(3px); }
+    .cmpsheet { position: relative; width: 100%; max-width: 760px; max-height: 86vh; overflow: auto; padding: 26px; border-radius: var(--radius); }
+    .cmpsheet h3 { font-family: var(--f-serif); font-weight: 500; font-size: 24px; margin-bottom: 4px; }
+    .cmpsheet .sub { font-size: 12.5px; color: var(--ink-muted); margin-bottom: 18px; }
+    .cmptable { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cmptable th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-dim); font-weight: 600; padding: 9px 10px; }
+    .cmptable td { padding: 9px 10px; border-top: 1px solid rgba(0,0,0,0.05); vertical-align: top; }
+    .cmptable td.h { color: var(--ink-muted); white-space: nowrap; font-weight: 500; }
+    .cmptable .best { color: var(--success); font-weight: 700; }
+    .cmptable .warn { color: #B91C1C; font-weight: 600; }
+    .cmpclose { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 17px; color: var(--ink-dim); cursor: pointer; }
+
+    /* visibility is owned by JS (the [hidden] attribute), not by :empty —
+       the copy differs for loading vs load-failed vs nothing-matched */
+    /* sits on its own frosted surface — this page has a photographic
+       background, and body copy must never be read against it directly */
+    .empty { display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 48px 28px; color: var(--ink-muted); font-size: 14px; text-align: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,251,246,0.72));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.9); border-radius: var(--radius);
+      box-shadow: 0 18px 44px rgba(122,62,22,0.12); }
+    .empty[hidden] { display: none; }
+    .empty-ttl { font-family: var(--f-serif); font-weight: 500; font-size: 20px; color: var(--ink); margin-top: 4px; }
+    .empty-sub { max-width: 380px; line-height: 1.6; margin-bottom: 8px; }
+    .empty-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .empty-acts .btn { font-size: 13px; padding: 10px 16px; }
+
+    /* ── skeleton cards — ONLY while the listings request is in flight ──
+       render() gates these on loadState === 'loading'; the moment the request
+       settles they are replaced by real cards or the honest .empty surface.
+       They never stand in for content that does not exist. Motion composes the
+       existing tokens only (opacity/transform, --m-* durations, 60ms stagger). */
+    .sk-card { border-radius: var(--radius); overflow: hidden; padding: 18px 18px 10px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.75); box-shadow: 0 16px 40px rgba(20,26,38,0.07);
+      opacity: 0; transform: translateY(14px);
+      animation: skIn var(--m-expanded) var(--m-ease) forwards;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    .sk-b { height: 13px; border-radius: 100px; background: rgba(20,20,20,0.07); margin-bottom: 10px;
+      animation: skPulse calc(var(--m-expanded) * 5) var(--m-ease) infinite alternate;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    .sk-b.sk-big { height: 24px; }
+    .sk-img { height: 170px; border-radius: 15px; background: rgba(20,20,20,0.06); margin: 14px 0 8px;
+      animation: skPulse calc(var(--m-expanded) * 5) var(--m-ease) infinite alternate;
+      animation-delay: calc(var(--sk-i, 0) * 60ms); }
+    @keyframes skIn { to { opacity: 1; transform: none; } }
+    @keyframes skPulse { from { opacity: 1; } to { opacity: 0.45; } }
+
+    /* ── save confirmation + saved counter (design-system pulse: 1→1.25→1) ── */
+    @keyframes savePop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+    .listing .save.pop { animation: savePop var(--m-expanded) var(--m-ease-spring); }
+    .nav-saved { display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--f-sans); color: var(--ink);
+      background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.85); border-radius: 100px; padding: 6px 13px; }
+    .nav-saved[hidden] { display: none; }
+    .nav-saved .nsh { font-size: 13px; line-height: 1; }
+    .nav-saved b { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    .nav-saved.pop { animation: savePop var(--m-expanded) var(--m-ease-spring); }
+
+    /* ── recently viewed rail — device-local history only; when there is no
+       history the whole section is [hidden] (no placeholder cards, ever) ── */
+    .recent { margin-bottom: 16px; }
+    .recent[hidden] { display: none; }
+    /* New since your last visit — same card grid, its own heading. Sits above
+       the full list because novelty is the reason to come back. */
+    .fresh-since { margin-bottom: 26px; }
+    .fresh-since[hidden] { display: none; }
+    .fresh-h { display: flex; align-items: baseline; gap: 9px; margin-bottom: 10px;
+      font-family: var(--f-accent); font-size: 12px; font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--brand-text); }
+    .fresh-h .fresh-n { font-size: 12px; letter-spacing: .06em; color: var(--ink-dim); }
+    .fresh-since + .sr-only + .grid { border-top: 1px solid var(--border); padding-top: 22px; }
+    .recent-h { font-family: var(--f-accent); font-size: 12px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--brand-text); margin-bottom: 8px; }
+    .recent-track { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 8px;
+      scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+    .rc { flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 1px;
+      min-width: 170px; max-width: 230px; padding: 11px 15px; border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.08);
+      transition: transform var(--m-standard) var(--m-ease); }  @media (hover: hover) and (pointer: fine) {
+    /* transform only — no shadow repaints */
+      .rc:hover { transform: translateY(-2px); }
+  }
+    .rc-price { font-weight: 600; font-size: 15.5px; color: var(--brand); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    .rc-price i { font-style: normal; font-size: 12px; color: var(--ink-muted); }
+    .rc-ttl { font-size: 12.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rc-loc { font-size: 12px; color: var(--ink-dim); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+    /* everything above stands down with the rest of the motion system */
+    @media (prefers-reduced-motion: reduce) {
+      .sk-card { animation: none; opacity: 1; transform: none; }
+      .sk-b, .sk-img { animation: none; }
+      .listing .save.pop, .nav-saved.pop { animation: none; }
+      .rc { transition: none; }
+      .rc:hover { transform: none; }
+    }
+
+    /* the mobile chrome never exists above the phone breakpoint */
+    /* The one-line count. It used to be the phone's stand-in for a summary
+       card that sat above the search box; the card is gone at both widths now,
+       and every fact it carried was already being written here in a line
+       instead of a paragraph.
+
+       It carries its own opaque surface because it sits directly on the
+       background photograph, and text on a photograph has no contrast ratio --
+       it has a different one over every pixel. A translucent chip does not fix
+       that either: white at 55% over a dark part of the image composites to
+       about #9F9F9F, which puts this grey near 2.2:1. Only an opaque ground
+       makes the number measurable, and therefore legible wherever the photo
+       happens to be dark. */
+    .bm-meta {
+      display: inline-flex; align-items: center; gap: 8px;
+      max-width: 100%; margin: 0 0 14px;
+      padding: 5px 13px; border-radius: 100px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .bm-count {
+      min-width: 0; font-size: 12.5px; color: var(--ink-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bm-count b { color: var(--ink); font-weight: 700; }
+    /* The map toggle is the phone-sized twin of .viewseg, so it only ever
+       belongs in the taskbar sheet -- never in the page, never in the desktop
+       popover. Keyed on where it is rather than where it came from, because it
+       moves between all three. */
+    #bmMap { display: none; }
+    .cnav-group #bmMap { display: flex; }
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       This page had no responsive rules at all — it was a desktop grid on a
+       phone. Rebuilt around what someone actually does here: search, scan a
+       single column of homes, and occasionally look at where they are.
+
+       The map is the biggest call. At 250px it sat between the search and
+       the first home, so the fold carried a map you can barely read and no
+       listings. The page already has a List/Map toggle, so on mobile the
+       list view drops the map entirely and Map view gives it the whole
+       screen — one thing at a time, properly, instead of two things badly. */
+    @media (max-width: 1024px) {
+      .appbar { display: none; }
+
+      /* ── cross-page nav ────────────────────────────────────────────────
+         Hiding .appbar took the only links to the other consumer pages with
+         it, so Tayo, Your matches and Dream Home became mutually unreachable
+         on a phone. This used to be solved by keeping .appbar in the layout
+         with everything except its <nav> stripped out, rendered as a row of
+         pills. That cost a strip of vertical space on every screen for links
+         people touch a few times a session, and it was three hand-maintained
+         copies of one list. cust-nav.js now injects a single floating taskbar
+         from one array of destinations, so .appbar can stay fully hidden. */
+
+      /* The mobile header that used to be here is gone, all three of its parts
+         accounted for. The back arrow pointed at Tayo, which the taskbar now
+         reaches from anywhere. The title repeated the h1 a few pixels below it.
+         The saved count moved onto the taskbar's Dream boards row, which is
+         where tapping it was going anyway. */
+
+      /* The removed header carried the notch clearance. Without it the heading
+         sat against the status bar. */
+      .wrap {
+        padding-left: 16px; padding-right: 16px;
+        padding-top: calc(20px + env(safe-area-inset-top));
+      }
+      .h1 { font-size: 27px; line-height: 1.15; }
+
+      /* The summary card and the List/Map segment are both gone: between
+         them they pushed the first home most of a screen down, so a page
+         whose whole job is showing homes opened on no homes. Everything
+         they carried — the live/verified counts, the route to Tayo, the
+         route to the map — moves into one line below the search. */
+      .viewseg { display: none; }
+
+      /* Same reasoning as the summary card: this is an opt-in prompt, not
+         reading material, and its explanation was 184px of paragraph ahead
+         of the first home. The offer and the button stay; the full
+         description belongs on the settings screen, not above the results. */
+      .prox-card { padding: 12px 14px; gap: 10px; align-items: center; }
+      .prox-txt span { display: none; }
+      .prox-txt b { font-size: 13.5px; }
+
+      /* 16px floor: below it iOS zooms the page on focus */
+      /* No appbar to clear on a phone — it collapses to 0 height here. */
+      .searchbar { top: 8px; padding: 0 14px; gap: 8px; }
+      .searchbar input { font-size: 16px; }
+      .searchbar button { width: 30px; height: 30px; }
+
+      /* list view: no map competing with the homes; Map view owns the screen */
+      body:not(.view-map) #map { display: none; }
+      body.view-map #map { height: calc(100svh - 260px); min-height: 300px; margin-bottom: 12px; }
+
+      .viewseg { margin-bottom: 12px; }
+      .vseg { min-height: 40px; padding: 0 18px; }
+
+      /* Fallback only: the taskbar's filter pill normally takes these over.
+         If it does not, they wrap into two rows here rather than doing what
+         they used to, which was scroll sideways -- half of them off-screen
+         with nothing saying so, reachable only by discovering you could swipe
+         a row that does not look swipeable. */
+      .toolbar {
+        flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+      }
+      .toolbar > * { flex: none; }
+      /* 40px here beat the 44px in app.css purely on specificity (#id vs
+         .class descendant) — the floor was declared and then silently
+         overridden. Kept as an id rule so the font-size override still
+         applies, but no longer below the touch minimum. */
+      #sortSel { min-height: 44px; font-size: 13px; }
+      .dealfilter button, .vtoggle { min-height: 40px; }
+
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .listing .img { height: 200px; }
+
+      /* Readability over the glass effect, same call as the chat page. A card
+         on a phone spans the full width, so the wallpaper runs directly under
+         the body copy — at 46% alpha the brief was barely legible.
+
+         MATCHED TO .rc, the recently-viewed tile, because the two sit inches
+         apart on this page and did not look related: .rc was 0.72 and this was
+         0.95, so the tiles read as frosted and the cards below them read as
+         plain white. Reported exactly that way.
+
+         The original fix was right about the problem and heavy-handed about
+         the remedy: it was the SECOND stop at 0.46 that made body copy hard to
+         read, and taking the whole card to 0.95 solved it by removing the
+         glass the comment claims survives. .rc is the proof of the middle
+         ground -- same wallpaper, same page, perfectly legible at 0.72. So:
+         its first stop, and a second stop well clear of 0.46. */
+      .bg-wash {
+        background-image: var(--grain);
+      background-repeat: repeat;
+      }
+      .card, .searchbar {
+        background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.62));
+      }
+
+      /* compare: a full-width bar and a full-screen sheet, not a floating
+         pill and a centred dialog */
+      .cmpbar {
+        left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: none; border-radius: 18px; padding: 12px 12px 12px 18px;
+        justify-content: space-between;
+      }
+      .cmpbar button { min-height: 44px; }
+      .cmpwrap { padding: 0; align-items: flex-end; }
+      .cmpsheet {
+        max-width: none; width: 100%; max-height: 92dvh;
+        padding: 22px 16px calc(24px + env(safe-area-inset-bottom));
+        border-radius: 22px 22px 0 0;
+      }
+      .cmpsheet h3 { font-size: 21px; }
+      /* the comparison is genuinely wide — let it scroll rather than crush */
+      #cmpTable { overflow-x: auto; }
+      .cmptable { min-width: 520px; }
+    }
+  </style>
+  <!-- Dark mode only. This page keeps its own look -- the photograph under
+       glass -- so it does not take the day theme (theme.css). scene.css swaps
+       in the night photograph and dark glass. -->
+  <link rel="stylesheet" href="theme-night.css" />
+  <link rel="stylesheet" href="theme-dark.css" />
+  <link rel="stylesheet" href="scene.css" />
+  <script src="theme.js"></script>
+</head>
+<body>
+  <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
+  <div class="bg-scene"></div>
+  <div class="bg-wash"></div>
+  <div class="appbar">
+    <a class="brand" href="../buyers.html">
+      <img class="syn-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
+      Synapse
+    </a>
+    <nav>
+      <a href="toju.html">Tayo</a>
+      <a href="browse.html" class="active">Your matches</a>
+      <a href="dream.html">Dream Home</a>
+    </nav>
+    <span class="spacer"></span>
+    <!-- true count read from the shared save store — hidden entirely at zero -->
+    <span class="nav-saved" id="navSaved" hidden title="Your saved homes"><span class="nsh" aria-hidden="true">♥</span><b id="navSavedN">0</b><span class="sr-only" id="navSavedSr">saved homes</span></span>
+    <span data-auth-slot style="margin-right:16px"></span>
+    <a class="home" href="../buyers.html">← Back to site</a>
+  </div>
+
+  <div class="wrap" data-cnav-back-slot role="main">
+    <div class="h1" id="pageTitle" role="heading" aria-level="1">Your matches</div>
+
+    <!-- data-cnav-search lends this whole row to the mobile taskbar, which
+         turns it into a bottom-anchored field. Below 1024px it moves; above,
+         it stays here as the sticky bar. See adoptSearch() in cust-nav.js. -->
+    <div class="searchbar" data-cnav-search>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="Search by area, city, type or price — e.g. Lekki, 3-bed, duplex, under 150M…" autocomplete="off" />
+      <button id="searchClear" hidden aria-label="Clear">✕</button>
+    </div>
+
+    <!-- ══ MOBILE CONTEXT ROW (≤720px) ══════════════════════════════════
+         Carries what the summary card and the map/list segment used to say,
+         in one line instead of two blocks — so the homes start at the top of
+         the screen. Counts are written by the same code that writes the
+         desktop summary; the buttons drive the existing controls. -->
+    <div class="bm-meta">
+      <span class="bm-count" id="bmCount">Loading homes…</span>
+    </div>
+
+
+    <div id="map"></div>
+
+    <!-- Lent to the taskbar on a phone, and left right here on desktop. The map
+         toggle and the location opt-in are both occasional, and on mobile they
+         sat between the search box and the first home -- pushing the homes off
+         the fold on the page whose whole job is showing homes. Desktop has the
+         room, and its own List/Map segment, so nothing moves there.
+         "Ask Tayo" used to sit alongside them and is simply gone: the taskbar
+         already lists Tayo as a destination, so it was the same link twice. -->
+    <div data-cnav-actions>
+      <button class="cnav-act" id="bmMap" type="button" aria-pressed="false">
+        <span data-icon="pin"></span> Map view
+      </button>
+      <div data-proximity-slot></div>
+    </div>
+
+    <!-- List ⇄ Map. Both show the same filtered set — the toggle changes how
+         you look at it, never what you are looking at. -->
+    <div class="viewseg" role="group" aria-label="View">
+      <button type="button" class="vseg on" data-view="list" aria-pressed="true">List</button>
+      <button type="button" class="vseg" data-view="map" aria-pressed="false">Map</button>
+    </div>
+
+    <!-- On a phone this whole toolbar is lent to the taskbar's filter pill and
+         hidden here; on desktop it stays exactly where it is. If cust-nav.js
+         never runs, nothing is hidden and the controls stay put, which is why
+         the mobile wrapping rules below are still worth keeping. -->
+    <div class="toolbar" data-cnav-filters>
+      <!-- Buy/Rent/Shared leads: it is the one control that changes what you
+           are shopping for rather than how the same set is arranged. -->
+      <div class="dealfilter" id="dealFilter">
+        <button data-deal="sale">Buy</button>
+        <button data-deal="rent">Rent</button>
+        <button data-deal="shared">Shared living</button>
+        <!-- Customers shop for more than buy or rent (Eden, 2026-10-02). -->
+        <button data-deal="land">Land</button>
+        <button data-deal="offplan">Off-plan</button>
+        <button data-deal="invest">Investment</button>
+        <button data-deal="shortlet">Short-let</button>
+      </div>
+      <select id="sortSel">
+        <option value="match">Sort: Best match</option>
+        <option value="price">Sort: Price (low → high)</option>
+        <option value="trust">Sort: Property confidence</option>
+      </select>
+      <button class="vtoggle" id="verifyToggle" title="Show only homes Synapse has checked"><span class="box"></span> Verified only</button>
+    </div>
+
+    <!-- homes this device actually opened — [hidden] whenever there is no history -->
+    <div class="recent" id="recentRail" hidden>
+      <div class="recent-h">Recently viewed</div>
+      <div class="recent-track" id="recentTrack"></div>
+    </div>
+
+    <!-- Listings that went up since this device last opened the page.
+         [hidden] on a first visit and whenever nothing is genuinely new — there
+         is no "0 new" state, because an empty novelty section is worse than
+         none. -->
+    <section class="fresh-since" id="freshSince" hidden aria-labelledby="freshSinceH">
+      <div class="fresh-h"><span id="freshSinceH">New since your last visit</span><span class="fresh-n" id="freshSinceN"></span></div>
+      <div class="grid" id="freshGrid"></div>
+    </section>
+
+    <span class="sr-only" id="gridStatus" role="status" aria-live="polite"></span>
+    <div class="grid" id="grid"></div>
+    <!-- filled by renderEmptyState(): loading · load-failed · nothing matched -->
+    <div class="empty" role="status" aria-live="polite" hidden></div>
+  </div>
+
+  <div class="cmpbar" id="cmpbar" data-cnav-clear>
+    <span><b id="cmpCount">0</b> selected</span>
+    <button id="cmpGo">Compare side by side</button>
+  </div>
+
+  <div class="cmpwrap" id="cmpwrap">
+    <div class="veil" id="cmpVeil"></div>
+    <div class="card cmpsheet">
+      <button class="cmpclose" id="cmpClose">✕</button>
+      <h3>Side by side</h3>
+      <p class="sub">Tayo's read: green = strongest of the set, terracotta = watch it.</p>
+      <div id="cmpTable"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="map-tiles.js"></script>
+  <!-- The map: style-synapse styles the world, render owns MapLibre and
+       nothing else may touch it, card is what opens when you press a home.
+       Must load BEFORE matches-shared.js, which calls into them. -->
+  <script src="map/style-synapse.js"></script>
+  <script src="map/render.js"></script>
+  <script src="map/card.js"></script>
+  <script src="map/query.js"></script>
+  <script src="matches-shared.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const VISITOR = localStorage.getItem('toju_visitor_v1');
+    // card markup, shaper, map and helpers shared with the Tayo canvas —
+    // matches-shared.js + docs/STATE_CONTRACT.md
+    const { naira, esc } = window.SynMatches;
+
+    // Start empty on purpose: we never show sample homes as if they were real
+    // inventory. The page opens in a loading state and only ever renders
+    // listings that actually came back from the server.
+    let items = [];
+    let loadState = 'loading';   // loading | ready | failed
+    let saves = SynMatches.readSaves();
+    // another tab hearted something — repaint from storage, do not drift
+    SynMatches.onSavesChanged(function (s) { saves = s; render(); });
+    let picked = new Set();
+    let searchQ = '';
+    let dealFilter = 'all'; // all | sale | rent | shared
+    let verifiedOnly = false;
+    let shownItems = [];
+    /* "Search this area" (Greptile, full review): the map's results replaced
+       its pins and nothing else, so the map and the list showed different
+       homes. The ids it found now filter the list too, until cleared. */
+    let areaIds = null;
+    // declared before the first render(): render() and renderEmptyState() read it
+    let hasSessionView = false;
+
+    function matchesDeal(l) {
+      if (dealFilter === 'all') return true;
+      return (l.cats || [l.kind || 'sale']).includes(dealFilter);
+    }
+    function matchesVerify(l) {
+      return !verifiedOnly || (l.vstatus || 'verified') === 'verified';
+    }
+    function sortItems() {
+      const s = document.getElementById('sortSel').value;
+      /* Without match scores (every listing here, until Tayo scores them)
+         "Best match" compared equals and ranked nothing (Greptile). It falls
+         back to newest first, which is also how the feed was fetched. */
+      const scored = items.some((l) => typeof l.match === 'number');
+      const newest = (a, b) => String(b.listedAt || '').localeCompare(String(a.listedAt || ''));
+      items.sort((a, b) => s === 'price' ? a.priceN - b.priceN : s === 'trust' ? (b.score || 0) - (a.score || 0)
+        : scored ? (b.match || 0) - (a.match || 0) : newest(a, b));
+    }
+
+    // keyword search across title, area/city, deal, and price (e.g. "under 150m", "3-bed")
+    function matchesSearch(l) {
+      if (!searchQ) return true;
+      const hay = (l.ttl + ' ' + l.loc + ' ' + (l.deal || '') + ' ' + naira(l.priceN)).toLowerCase();
+      return searchQ.split(/\s+/).every((term) => {
+        if (!term) return true;
+        const under = term.match(/^(?:under|below|<)?₦?(\d+)m?$/);
+        if (under && /\d/.test(term)) {
+          const cap = parseInt(under[1], 10) * (term.includes('m') || parseInt(under[1],10) < 10000 ? 1e6 : 1);
+          if (/^(under|below|<)/.test(searchQ) || searchQ.includes('under') || searchQ.includes('below')) return l.priceN <= cap;
+        }
+        return hay.includes(term);
+      });
+    }
+
+    /* ── "New since your last visit" (item 14) ────────────────────────────
+       The baseline is read ONCE at load and the clock is reset immediately, so
+       the comparison is always "since the previous visit" — not "since a moment
+       ago", which is what you get if you reset it on every render and the
+       section quietly empties while you are looking at it.
+
+       Honesty rules:
+       · A first visit has no baseline, so nothing is claimed. The section stays
+         hidden rather than declaring everything new.
+       · Only `listed_at` counts. A listing that existed before and was merely
+         re-listed is not new to this person, so re-listing cannot manufacture
+         novelty — which is exactly the fake-freshness the product exists to
+         replace.
+       · No "0 new" state. Nothing new means no section. */
+    const VISIT_KEY = 'synapse_last_visit';
+    const lastVisitAt = (function () {
+      let prev = null;
+      try {
+        const raw = localStorage.getItem(VISIT_KEY);
+        const t = raw ? Date.parse(raw) : NaN;
+        if (Number.isFinite(t)) prev = t;
+        localStorage.setItem(VISIT_KEY, new Date().toISOString());
+      } catch (e) { /* private mode: no baseline, so no claim */ }
+      return prev;
+    })();
+
+    function renderFreshSince(compareOn) {
+      const wrap = document.getElementById('freshSince');
+      const grid = document.getElementById('freshGrid');
+      if (!wrap || !grid) return;
+      if (!lastVisitAt) { wrap.hidden = true; return; }   // first visit — claim nothing
+
+      const fresh = shownItems.filter((l) => {
+        const t = l.listedAt ? Date.parse(l.listedAt) : NaN;
+        return Number.isFinite(t) && t > lastVisitAt;
+      });
+      if (!fresh.length) { wrap.hidden = true; grid.innerHTML = ''; return; }
+
+      document.getElementById('freshSinceN').textContent =
+        fresh.length === 1 ? '1 home' : fresh.length + ' homes';
+      grid.innerHTML = fresh.map((l, i) =>
+        SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
+      wrap.hidden = false;
+    }
+
+    function render() {
+      const grid = document.getElementById('grid');
+      // HARD RULE: skeletons only while the listings request is genuinely in
+      // flight. loadState flips to ready/failed the moment it settles, and the
+      // next render paints real cards or the honest empty state — a skeleton
+      // never stands in for content that does not exist.
+      if (loadState === 'loading' && !hasSessionView && items.length === 0) {
+        renderSkeletons(grid);
+        updateSavedNav();   // the counter is real data — it shouldn't wait for listings
+        return;
+      }
+      grid.removeAttribute('aria-busy');
+      setGridStatus('');
+      sortItems();
+      // Compare is a shortlist tool — it appears once a shortlist exists.
+      // Before two homes are ♥'d, the checkboxes and the bar are just noise.
+      const compareOn = saves.size >= 2;
+      if (!compareOn && picked.size) picked.clear();
+      shownItems = items.filter((l) => matchesSearch(l) && matchesDeal(l) && matchesVerify(l)
+        && (!areaIds || areaIds.has(l.id)));
+      grid.innerHTML = (areaIds
+        ? '<div class="area-note" style="grid-column:1/-1;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink-muted)">'
+          + 'Showing the homes in the map area. <button type="button" class="btn btn-ghost" data-area-clear style="min-height:34px;padding:0 12px">Show everywhere</button></div>'
+        : '')
+        + shownItems.map((l, i) =>
+        SynMatches.listingCardHtml(l, i, { saves, picked, compare: compareOn })).join('');
+      renderFreshSince(compareOn);
+      renderEmptyState();
+      if (window.synMotion) synMotion.refresh();
+      drawMap();
+      updateBar();
+      updateSavedNav();
+    }
+
+    function setGridStatus(msg) {
+      const s = document.getElementById('gridStatus');
+      if (s && s.textContent !== msg) s.textContent = msg;
+    }
+
+    /* Staggered placeholder cards for the in-flight request. Idempotent: while
+       loading, re-renders (typing in search, toggling filters) keep the same
+       skeletons rather than restarting the stagger. */
+    function renderSkeletons(grid) {
+      const empty = document.querySelector('.empty');
+      if (empty) empty.hidden = true;
+      if (grid.getAttribute('aria-busy') === 'true') return; // already up
+      grid.setAttribute('aria-busy', 'true');
+      setGridStatus('Finding homes…');
+      grid.innerHTML = Array.from({ length: 6 }, (_, i) =>
+        '<div class="sk-card" aria-hidden="true" style="--sk-i:' + i + '">'
+        + '<div class="sk-b" style="width:42%"></div>'
+        + '<div class="sk-b sk-big" style="width:58%"></div>'
+        + '<div class="sk-b" style="width:84%"></div>'
+        + '<div class="sk-b" style="width:36%"></div>'
+        + '<div class="sk-img"></div>'
+        + '</div>').join('');
+    }
+
+    /* The empty area speaks for whichever of three situations is true. It is
+       never filled with sample homes — an empty result is shown as empty. */
+    function renderEmptyState() {
+      const box = document.querySelector('.empty');
+      if (!box) return;
+      if (shownItems.length) { box.hidden = true; return; }
+      box.hidden = false;
+
+      // While the request is in flight the grid shows skeletons instead (render()
+      // returns early) — unless a real Tayo session already answered with an
+      // empty match list, in which case the honest "nothing fit" copy below is
+      // the truth and must not be replaced by shimmer.
+      if (loadState === 'loading' && !hasSessionView) {
+        box.innerHTML = '<div class="empty-ttl">Finding homes…</div>'
+          + '<p class="empty-sub">Checking every verified listing across Nigeria.</p>';
+        return;
+      }
+      if (loadState === 'failed') {
+        // an empty map of Nigeria is just noise when there's nothing to plot
+        const m = document.getElementById('map'); if (m) m.style.display = 'none';
+        setMobileCount('Couldn’t load homes');
+        box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
+          + '<p class="empty-sub">' + (navigator.onLine
+              ? 'We couldn’t reach our listings — nothing was found. This is on our side, not yours.'
+              : 'You’re offline, so nothing could be found. Reconnect and try again.') + '</p>'
+          + '<div class="empty-acts">'
+          + '<button class="btn btn-primary" type="button" id="retryLoad">Try again</button>'
+          + '<a class="btn btn-ghost" href="toju.html">Ask Tayo instead</a></div>';
+        const r = document.getElementById('retryLoad');
+        if (r) r.addEventListener('click', () => location.reload());
+        return;
+      }
+      // loaded fine — genuinely nothing matched this brief/filters
+      box.innerHTML = '<div class="empty-ttl">No homes fit this exact brief yet</div>'
+        + '<p class="empty-sub">That usually just means the brief is a little tight. Try one of these:</p>'
+        + '<div class="empty-acts">'
+        + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Widen my budget a little and show me what opens up') + '">Widen the budget</a>'
+        + '<a class="btn btn-ghost" href="toju.html?ask=' + encodeURIComponent('Show me good homes in nearby areas too') + '">Try a nearby area</a>'
+        + '<a class="btn btn-primary" href="toju.html?ask=' + encodeURIComponent('Help me find homes similar to what I asked for') + '">Ask Tayo to help</a></div>';
+    }
+
+    const mapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
+    function drawMap() {
+      /* Browse is the only map that opts into area search. Tayo's map shows
+         the homes Tayo picked and the portal's shows one agency's own stock --
+         on either, "search this area" would replace a curated set with every
+         listing in the viewport. */
+      SynMatches.drawMatchMap(mapState, 'map',
+        shownItems.length || searchQ ? shownItems : items,
+        { areaSearch: true, sb: { url: SUPABASE_URL, anon: ANON_KEY },
+          onAreaResults: (rows) => { areaIds = new Set((rows || []).map((r) => r.id)); render(); } });
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-area-clear]')) return;
+      areaIds = null; render();
+    });
+
+    /* ── List ⇄ Map (item 20) ────────────────────────────────────────────
+       Both views render the same filtered set, so switching never changes
+       which homes you are looking at — only how. The toolbar stays in map
+       view because filtering is the point of a map.
+
+       Leaflet caches its container size, so a map whose box just changed
+       renders into the old dimensions — grey tiles, pins in the wrong place.
+       invalidateSize() after the height transition is what keeps it honest. */
+    let viewMode = 'list';
+    function setView(mode, opts) {
+      viewMode = mode === 'map' ? 'map' : 'list';
+      document.body.classList.toggle('view-map', viewMode === 'map');
+      document.querySelectorAll('.vseg').forEach((b) => {
+        const on = b.dataset.view === viewMode;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      // re-measure after the height animation, and once more on settle
+      const nudge = () => { if (mapState.map) mapState.map.invalidateSize(); };
+      requestAnimationFrame(nudge);
+      setTimeout(nudge, 320);
+      if (!opts || !opts.silent) writePrefs();
+    }
+    document.querySelector('.viewseg').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]');
+      if (b) setView(b.dataset.view);
+    });
+
+    /* The mobile Map chip drives the same setView as the desktop segment —
+       one source of truth for the view, two ways in. */
+    (function () {
+      const chip = document.getElementById('bmMap');
+      if (!chip) return;
+      chip.addEventListener('click', () => {
+        const toMap = !document.body.classList.contains('view-map');
+        setView(toMap ? 'map' : 'list');
+        chip.setAttribute('aria-pressed', String(toMap));
+      });
+    })();
+
+    function updateBar() {
+      const bar = document.getElementById('cmpbar');
+      document.getElementById('cmpCount').textContent = picked.size;
+      bar.classList.toggle('on', picked.size >= 2);
+    }
+
+    /* One handler, both grids. The "new since your last visit" section renders
+       the same cards, so saving, comparing and opening a home must behave
+       identically there — a card that looks live but does nothing is worse than
+       no section at all. Fully delegated, so it works wherever it is attached. */
+    function onGridClick(e) {
+      const sv = e.target.closest('[data-save]');
+      if (sv) {
+        const id = sv.getAttribute('data-save');
+        const wasSaved = saves.has(id);
+        saves = SynMatches.toggleSave(id);   // re-reads storage; no lost updates
+        render();
+        if (!wasSaved) {
+          // design-system confirmation: one scale pulse on the freshly painted
+          // heart (render() replaced the node, so tag the new one)
+          const heart = document.querySelector('[data-save="' + id + '"]');
+          if (heart) heart.classList.add('pop');
+          toast('Saved — your ♥ homes stay on this device.');
+        } else {
+          toast('Removed from your saved homes.');
+        }
+        return;
+      }
+      const cb = e.target.closest('[data-cmp]');
+      if (cb) {
+        const id = cb.getAttribute('data-cmp');
+        picked.has(id) ? picked.delete(id) : picked.add(id);
+        if (picked.size > 4) { picked.delete(id); cb.checked = false; }
+        render(); return;
+      }
+      // A click on the "compare" label text fires here first, then the label
+      // re-dispatches a click on its checkbox (handled above). Swallow the
+      // label click so it can't fall through and navigate the card.
+      if (e.target.closest('.cmpbox')) return;
+      const card = e.target.closest('.listing');
+      if (card) {
+        const id = card.getAttribute('data-id');
+        // record the visit locally BEFORE navigating — this is the only writer
+        // of the recently-viewed history, so the rail can only ever show homes
+        // this device really opened
+        const viewed = shownItems.find((l) => l.id === id) || items.find((l) => l.id === id);
+        if (viewed) SynMatches.recordView(viewed);
+        /* The title is a real link now, and a link navigates itself — including
+           cmd/ctrl-click, which fires a click event AND opens a new tab. Falling
+           through to location.href would send this tab to the listing at the
+           same moment the new one opened. The visit is still recorded above,
+           because it happened either way. */
+        if (e.target.closest('a[href]')) return;
+        location.href = SynMatches.propertyHref(id);
+      }
+    }
+    document.getElementById('grid').addEventListener('click', onGridClick);
+    document.getElementById('freshGrid').addEventListener('click', onGridClick);
+
+    document.getElementById('sortSel').addEventListener('change', () => { writePrefs(); render(); });
+
+    // lightweight feedback toast — same voice + surface as property.html (#synToast in app.css)
+    function toast(msg, kind) {
+      let t = document.getElementById('synToast');
+      if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
+      t.className = kind === 'error' ? 'err' : '';
+      t.textContent = msg;
+      requestAnimationFrame(() => t.classList.add('show'));
+      clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
+    }
+
+    // ── saved counter in the appbar — a true count of the shared save store,
+    //    hidden entirely at zero (an empty counter is noise, not information) ──
+    let lastSavedCount = null;
+    function updateSavedNav() {
+      const el = document.getElementById('navSaved');
+      if (!el) return;
+      const n = saves.size;
+      el.hidden = n === 0;
+      document.getElementById('navSavedN').textContent = n;
+      document.getElementById('navSavedSr').textContent = ' saved home' + (n === 1 ? '' : 's');
+      // the mobile bar mirrors this rather than tracking saves itself
+      // the taskbar's Dream boards row mirrors this rather than tracking saves itself
+      if (window.CustNav) window.CustNav.setCount('dream.html', n);
+      if (lastSavedCount !== null && n !== lastSavedCount && n > 0) {
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      }
+      lastSavedCount = n;
+    }
+
+    // ── recently viewed rail — reads only the local view history; with no
+    //    history the section stays [hidden] (never placeholder cards) ──
+    function renderRecent() {
+      const rail = document.getElementById('recentRail');
+      const views = SynMatches.readViews();
+      rail.hidden = views.length === 0;
+      if (!views.length) return;
+      document.getElementById('recentTrack').innerHTML = views.map((v) =>
+        '<a class="rc" href="' + SynMatches.propertyHref(v.id) + '">'
+        + '<span class="rc-price">' + naira(v.priceN) + (v.per ? '<i>/yr</i>' : '') + '</span>'
+        + '<span class="rc-ttl">' + esc(v.ttl) + '</span>'
+        + '<span class="rc-loc">' + esc(v.loc) + '</span></a>').join('');
+    }
+    renderRecent();
+    // back-button (bfcache) returns should include the home just viewed
+    window.addEventListener('pageshow', (e) => { if (e.persisted) renderRecent(); });
+
+    // keyword search
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    searchInput.addEventListener('input', () => {
+      searchQ = searchInput.value.trim().toLowerCase();
+      searchClear.hidden = !searchQ;
+      render();
+    });
+    searchClear.addEventListener('click', () => { searchInput.value = ''; searchQ = ''; searchClear.hidden = true; render(); searchInput.focus(); });
+
+    // quick deal-type filters (Buy / Rent / Shared living) — click again to clear
+    document.getElementById('dealFilter').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-deal]'); if (!b) return;
+      const d = b.getAttribute('data-deal');
+      dealFilter = (dealFilter === d) ? 'all' : d;
+      document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
+      writePrefs();
+      render();
+    });
+
+    // "Verified only" — the customer's choice to hide unverified/in-progress homes
+    const verifyToggle = document.getElementById('verifyToggle');
+    verifyToggle.addEventListener('click', () => {
+      verifiedOnly = !verifiedOnly;
+      verifyToggle.classList.toggle('on', verifiedOnly);
+      verifyToggle.querySelector('.box').textContent = verifiedOnly ? '✓' : '';
+      writePrefs();
+      render();
+    });
+
+    /* ── sort + filter state persists across sessions (this device only) ──
+       Stores the user's own choices, nothing else; restored before the first
+       render so the page opens the way they left it. */
+    const PREFS_KEY = 'synapse_browse_prefs';
+    function writePrefs() {
+      try {
+        localStorage.setItem(PREFS_KEY, JSON.stringify({
+          sort: document.getElementById('sortSel').value,
+          deal: dealFilter,
+          verifiedOnly: verifiedOnly,
+          view: viewMode,
+        }));
+      } catch (e) {}
+    }
+    function restorePrefs() {
+      let p; try { p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') || {}; } catch (e) { p = {}; }
+      const sel = document.getElementById('sortSel');
+      if (p.sort && [...sel.options].some((o) => o.value === p.sort)) sel.value = p.sort;
+      if (['sale', 'rent', 'shared', 'land', 'offplan', 'invest', 'shortlet'].includes(p.deal)) {
+        dealFilter = p.deal;
+        document.querySelectorAll('#dealFilter button').forEach((x) => x.classList.toggle('on', x.getAttribute('data-deal') === dealFilter));
+      }
+      if (p.verifiedOnly === true) {
+        verifiedOnly = true;
+        verifyToggle.classList.add('on');
+        verifyToggle.querySelector('.box').textContent = '✓';
+      }
+      if (p.view === 'map') setView('map', { silent: true });
+    }
+    restorePrefs();
+
+    // ── compare overlay ──
+    function best(vals, dir) { const v = dir === 'min' ? Math.min(...vals) : Math.max(...vals); return v; }
+    document.getElementById('cmpGo').addEventListener('click', () => {
+      const sel = items.filter((l) => picked.has(l.id));
+      const rows = [
+        ['Price', sel.map((l) => l.priceN), (v, b) => `<span class="${v === b ? 'best' : ''}">${naira(v)}</span>`, 'min'],
+        ...(sel.some((l) => typeof l.match === 'number')
+          ? [['Match', sel.map((l) => l.match), (v, b) => typeof v !== 'number' ? '\u2014' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max']]
+          : []),
+        ['Property confidence', sel.map((l) => l.score), (v, b) => `<span class="${v === b ? 'best' : ''}">${v}</span>`, 'max'],
+        /* FLOOD RISK AND POWER RELIABILITY ARE GONE FROM THE COMPARISON.
+           Both read off `neighbourhoods`, and both columns are seed_rand
+           output from twin_seed.sql. This table is the single worst place in
+           the product to print an invented number: it exists so somebody can
+           put two homes side by side and choose, and it was rendering
+           "Flood risk 64/100 ⚠" -- a warning triangle, a denominator, a
+           winner highlighted in green -- off a random number. Somebody was
+           going to rule out a house on it. */
+        ['Gross yield', sel.map((l) => l.yield ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
+      ];
+      let html = '<table class="cmptable"><tr><th></th>' + sel.map((l) => `<th>${esc(l.ttl)}</th>`).join('') + '</tr>';
+      rows.forEach(([label, vals, fmt, dir]) => {
+        const nums = vals.filter((v) => typeof v === 'number');
+        const b = nums.length ? best(nums, dir) : null;
+        html += `<tr><td class="h">${label}</td>` + vals.map((v) => `<td>${fmt(v, b)}</td>`).join('') + '</tr>';
+      });
+      html += '</table>';
+      html += '<div style="margin-top:16px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">'
+        + '<button id="verdictBtn" class="btn btn-primary" style="padding:10px 18px;font-size:13px">Ask Tayo: which is better for me?</button>'
+        + '<div id="verdictBox" style="flex:1;min-width:240px;font-size:13.5px;line-height:1.6;color:var(--ink-muted)"></div></div>';
+      document.getElementById('cmpTable').innerHTML = html;
+      openCompare();
+
+      document.getElementById('verdictBtn').addEventListener('click', async () => {
+        const box = document.getElementById('verdictBox');
+        box.innerHTML = '<i>Tayo is weighing them against your brief…</i>';
+        try {
+          const r = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+            body: JSON.stringify({
+              action: 'compare', visitorId: VISITOR,
+              /* flood/power removed here too: handing them to the advisor
+                 just moves the invention into a sentence. */
+              items: sel.map((l) => ({ id: l.id, title: l.ttl, price: l.priceN, deal: l.per ? 'rent' : 'sale', trustScore: l.score, yieldPct: l.yield ?? null, area: l.loc })),
+            }),
+          });
+          const d = await r.json();
+          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">Tayo:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Tayo — try again.';
+        } catch (e) { box.textContent = 'Connection hiccup — try again.'; }
+      });
+    });
+    /* The compare sheet covers the screen, and the listing behind it was still
+       scrolling -- so dismissing it put you somewhere you never navigated to.
+       Locking <body> alone does not do it here: the scrolling element is
+       <html>. Pin the offset and restore it, rather than letting the page
+       silently move while it is hidden. */
+    let cmpLockedAt = 0;
+    function openCompare() {
+      cmpLockedAt = window.scrollY || document.documentElement.scrollTop || 0;
+      document.getElementById('cmpwrap').classList.add('on');
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeCompare() {
+      document.getElementById('cmpwrap').classList.remove('on');
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, cmpLockedAt);
+    }
+
+    document.getElementById('cmpClose').addEventListener('click', closeCompare);
+    document.getElementById('cmpVeil').addEventListener('click', closeCompare);
+    // a full-screen sheet should be dismissible without hunting for the X
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('cmpwrap').classList.contains('on')) closeCompare();
+    });
+
+    /* The mobile row replaces the summary card, so anything that writes the
+       summary has to write this too — the matched view updated only the card
+       and left the row stuck on "Loading homes…". */
+    function setMobileCount(html) {
+      const el = document.getElementById('bmCount');
+      if (el) el.innerHTML = html;
+    }
+
+    function setMatchedHeadings() {
+      document.getElementById('pageTitle').textContent = 'Your matches';
+    }
+
+    // ── default: EVERY live home in the dataset (browse-all) ──
+    // Verified AND unverified show, each clearly labelled; Tayo only recommends
+    // verified. Refines into "Your matches" after a real conversation.
+    render();
+    // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
+    // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+      + '&status=eq.live&is_active=is.true';
+    const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+    // Freshest-first (not trust-first) so the feed spans many neighbourhoods
+    // instead of clustering the prime Lagos areas at the top. Users re-rank
+    // with the sort dropdown.
+    Promise.all([
+      /* A failed request is a failure, not an empty shop (Greptile): a 4xx/5xx
+         or a non-list answer used to read as "no homes fit". */
+      ...['&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=800',
+          '&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=300',
+          '&property_type=eq.shared&order=listed_at.desc&limit=200'].map((q) =>
+        fetch(BROWSE_BASE + q, { headers: BROWSE_HDR }).then((r) => r.json().catch(() => null).then((d) => {
+          if (!r.ok || !Array.isArray(d)) throw new Error('listings ' + r.status);
+          return d;
+        }))),
+    ]).then(([verifiedRows, unvRows, sharedRows]) => {
+      const rows = [...verifiedRows, ...unvRows, ...sharedRows];
+      loadState = 'ready';
+      if (hasSessionView) return;
+      if (rows.length === 0) { render(); return; }   // truly nothing live — say so
+/* THE COVER IS A PHOTO (Eden, 2026-10-02): a listing whose first upload
+         was a video showed a blank card, because the video's URL went into an
+         <img>. The first photo in display order is the cover; a video-only
+         listing gets a still from its video; nothing else gets a stock image. */
+      const coverIsVideo = (m) => !!m && (m.media_type === 'video'
+        || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || '')));
+      const coverFrame = (u) => /res\.cloudinary\.com\/.+\/video\/upload\//.test(String(u || ''))
+        ? String(u).replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
+        : null;
+      const coverOf = (media) => {
+        const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url)
+          .slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+        const photo = s.find((m) => !coverIsVideo(m));
+        return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+      };
+      items = rows.map((p, i) => ({
+        /* The listing's own first photo. This query did not ask for
+           property_media at all, so img was always null and the card renderer
+           fell back to a pool of stock flats -- every home in Browse wore a
+           photograph of a different building. */
+        id: p.id,
+        img: coverOf(p.property_media),
+        kind: p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale',
+        /* Every shelf this listing belongs on: a plot of land for sale is
+           both "Buy" and "Land"; an off-plan flat is "Buy" and "Off-plan". */
+        cats: (function () {
+          const c = [p.property_type === 'shared' ? 'shared' : p.listing_type === 'rent' ? 'rent' : 'sale'];
+          if (p.property_type === 'land') c.push('land');
+          if (p.listing_type === 'shortlet' || p.deal_structure === 'shortlet') c.push('shortlet');
+          if (p.deal_structure === 'off_plan' || p.build_stage === 'under_construction' || p.build_stage === 'not_started') c.push('offplan');
+          if (['joint_venture', 'development_financing', 'off_plan'].includes(p.deal_structure) || Number(p.min_investment) > 0) c.push('invest');
+          return c;
+        })(),
+        dealInfo: {
+          isLand: p.property_type === 'land', deal: p.deal_structure, stage: p.build_stage, handover: p.handover_date,
+          progress: p.build_progress_pct, plan: p.payment_plan, deposit: p.deposit_pct, months: p.instalment_months,
+          units: p.units_available, plots: p.plot_count, plotSize: p.plot_size_sqm, minInv: p.min_investment,
+        },
+        per: p.listing_type === 'rent',
+        /* The listing's own period (Greptile): monthly rent said "/yr". */
+        perLabel: ({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[p.price_period] || '',
+        vstatus: p.verification_status,
+        // Drives the expiry chip. Real and enforced: the row disappears from
+        // this very query once it passes (properties_select_public).
+        expiresAt: p.expires_at || null,
+        listedAt: p.listed_at || null,   // "new since your last visit"
+        currency: p.currency || null,    // price formats in the listing's own currency
+        deal: p.property_type === 'shared' ? 'Shared room' : p.listing_type === 'shortlet' ? 'Short-let'
+          : p.listing_type === 'rent' ? 'For rent' : 'For sale',
+        priceN: Number(p.price) || 0,
+        /* The Area the agency typed, then the linked zone, then the city. It
+           is also what the search box matches, so "Agbowo" now finds it. */
+        ttl: p.title, loc: (p.area_name && p.area_name.trim() && p.area_name.trim().length <= 40 && !/\n/.test(p.area_name.trim())) ? (p.area_name.trim() + ', ' + p.city)
+          : (p.neighbourhoods && p.neighbourhoods.name) ? p.neighbourhoods.name : (p.city + ', ' + (p.state || '')),
+        score: p.trust_score, match: null,
+        /* Who listed it, as they designed themselves on their Brand page --
+           drawn by listingCardHtml, which checks every field before using it. */
+        agency: (function (a) {
+          a = Array.isArray(a) ? a[0] : a;
+          return a && a.name ? { name: a.name, logo: a.logo_url, color: a.brand_color, font: a.brand_font } : null;
+        })(p.agencies),
+        // Where the pin goes. `loc` above is the label; these are the place.
+        lat: p.latitude == null ? null : Number(p.latitude),
+        lng: p.longitude == null ? null : Number(p.longitude),
+        /* "independently verified" is not repeated here: the chip at the top
+           of the card already says Verified, and the score line below said it
+           a third time. One card, one statement of a fact. The unverified copy
+           below DOES stay long, because there it is carrying something the
+           chip cannot -- what unverified actually means and what to do next. */
+        /* Was "<b>3 beds</b> · ask Tayo if it fits your life" on every verified
+           card — the same sentence under every home, telling you nothing about
+           the one you are looking at. The card's job while you scan is to say
+           what this home IS, so it carries the facts: beds, baths, floor area.
+           Each part is dropped rather than guessed when the column is empty.
+
+           The unverified line keeps its prompt, because there the chip says
+           "Not verified" and cannot say what to do about it. */
+        why: (function () {
+          const bits = [];
+          if (p.bedrooms) bits.push('<b>' + p.bedrooms + ' bed' + (p.bedrooms > 1 ? 's' : '') + '</b>');
+          if (p.bathrooms) bits.push(p.bathrooms + ' bath' + (p.bathrooms > 1 ? 's' : ''));
+          if (p.area_sqm) bits.push(Math.round(Number(p.area_sqm)) + ' m²');
+          const facts = bits.join(' · ');
+          return p.verification_status === 'verified'
+            ? facts
+            : (facts ? facts + ' · ' : '') + 'Tayo can run the 7 checks before you commit';
+        })(),
+      }));
+      const vCount = rows.filter((p) => p.verification_status === 'verified').length;
+      setMobileCount('<b>' + rows.length + '</b> live · <b>' + vCount + '</b> verified');
+      render();
+    }).catch(() => {
+      // Nothing came back: show nothing. The empty state explains why, and
+      // no sample homes are ever passed off as live inventory.
+      if (hasSessionView) return;
+      loadState = 'failed'; items = []; render();
+    });
+    window.addEventListener('online', () => { if (loadState === 'failed') location.reload(); });
+
+    // ── real matches from this visitor's Tayo session ──
+    if (VISITOR) {
+      fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
+      }).then((r) => r.json()).then((d) => {
+        // A real session exists but nothing matched: show the honest empty
+        // state — never fall back to other homes silently.
+        if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
+          hasSessionView = true;
+          items = []; picked = new Set();
+          setMatchedHeadings();
+          setMobileCount('Nothing fits your brief yet');
+          document.getElementById('map').style.display = 'none';
+          render();
+          return;
+        }
+        if (!Array.isArray(d.matches) || d.matches.length === 0) return;
+        hasSessionView = true;
+        setMatchedHeadings();
+        // SAME shaper the Tayo canvas uses — the canvas is an exact preview of this page
+        items = d.matches.map(SynMatches.shapeTojuMatch);
+        picked = new Set();
+        setMobileCount('<b>' + items.length + '</b> match your brief');
+        render();
+      }).catch(() => {});
+    }
+  </script>
+  <script src="icons.js"></script>
+  <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
+       deferred and runs after icons.js has hydrated. Optional throughout:
+       if it does not load the icons swap as before. -->
+  <script type="module" src="icon-morph.js"></script>
+  <script src="cust-nav.js"></script>
+  <script src="auth.js"></script>
+  <script src="notify.js"></script>
+  <script src="motion.js"></script>
+</body>
+</html>

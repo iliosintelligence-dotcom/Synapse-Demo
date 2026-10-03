@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <title>Synapse · Find a home that's actually right for you</title>
+  <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
+       and nothing was there: a 404 on every page load of the whole site, and
+       a blank square in every tab. These are declared as well as sitting at
+       the root, so the browser takes the sharp one rather than scaling the
+       .ico. -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- ── Discovery ────────────────────────────────────────────────────────
+       There was none of this: no description, no card, no canonical, on any
+       page. A link pasted into WhatsApp — which is how this product actually
+       travels in Nigeria — rendered as a bare URL. og:image is absolute
+       because scrapers do not resolve relative paths. -->
+  <meta name="description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
+  <link rel="canonical" href="https://www.synapsecore.dev/buyers.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Synapse" />
+  <meta property="og:locale" content="en_NG" />
+  <meta property="og:url" content="https://www.synapsecore.dev/buyers.html" />
+  <meta property="og:title" content="Find a home that's actually right for you" />
+  <meta property="og:description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
+  <meta property="og:image" content="https://www.synapsecore.dev/images/og-buyers.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Synapse — Find a home that's actually right for you" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Find a home that's actually right for you" />
+  <meta name="twitter:description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
+  <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-buyers.jpg" />
+  <meta name="theme-color" content="#FAF6F0" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- LIGHT BY DAY, DARK BY NIGHT, as on the agency page: dark from 7pm to
+       7am Nigeria time, stamped before the stylesheet paints.
+       The switch in the bar overrides it for the visit; ?theme= forces one
+       load. home.js keeps it in step while the page is open. -->
+  <script>
+    (function () {
+      var d = document.documentElement, chosen = null;
+      /* Nigeria time: Lagos is UTC+1 all year, so 7am and 7pm never drift. */
+      function byClock() { var h = (new Date().getUTCHours() + 1) % 24; return (h >= 19 || h < 7) ? 'dark' : 'light'; }
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') chosen = q;
+        else {
+          /* A choice made with the switch, here or in the app, holds until
+             the next 7am/7pm switch (app/theme.js writes the same key). */
+          var p = JSON.parse(localStorage.getItem('syn_theme_pick') || 'null');
+          if (p && (p.t === 'light' || p.t === 'dark') && p.until > Date.now()) chosen = p.t;
+        }
+      } catch (e) {}
+      d.setAttribute('data-theme', chosen || byClock());
+      window.SynHome = { byClock: byClock, chosen: function () { return chosen; }, choose: function (t) { chosen = t; } };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
+  <script src="app/arrival.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a href="buyers.html" class="logo" aria-label="Synapse home">
+      <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+      <span class="logo-word">Synapse</span>
+    </a>
+    <nav class="nav-links" aria-label="Page">
+      <a href="#how">How it works</a>
+      <a href="app/browse.html">Your matches</a>
+    </nav>
+    <div class="aud" role="group" aria-label="Who Synapse is for">
+      <a class="aud-seg" href="index.html">For agencies</a>
+      <a class="aud-seg on" href="buyers.html" aria-current="page">For customers</a>
+    </div>
+    <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
+      <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+      <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    </button>
+    <!-- Every other action on this page opens Tayo, which needs no account;
+         somebody who already has one still needs a way in. -->
+    <a class="nav-signin" href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
+    <a class="btn btn-solid btn-sm nav-cta" href="app/toju.html?new=site">Talk to Tayo</a>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- ── HERO: the question, asked right here ── -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">For buyers &amp; renters</span>
+      <h1 class="h1 flow">Find the home you have been <em>picturing.</em></h1>
+      <p class="lede">Tayo learns how you actually live, finds the homes that fit, and tells you why each one made the list.</p>
+      <!-- The real front door: whatever is typed here is handed to Tayo
+           already sent, so the first thing a visitor does is the product
+           working, not a sign-up. -->
+      <form class="ask" action="app/toju.html" method="get">
+        <input type="hidden" name="new" value="site" />
+        <input name="ask" autocomplete="off" maxlength="300" placeholder="Tell Tayo what you're looking for…" aria-label="Tell Tayo what you're looking for" />
+        <button type="submit" aria-label="Ask Tayo">&uarr;</button>
+      </form>
+      <div class="ask-foot">
+        <span class="pip">Free. No sign-up to start.</span>
+        <a href="app/toju.html?new=site">Or just talk to Tayo &rarr;</a>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="frame p-hero hero-frame">
+        <img class="shot lt" src="images/home/shot-tayo-desk-light.webp" width="2000" height="1250" loading="lazy" alt="Tayo in Synapse: a family asks for a two-bedroom in Ibadan around two million naira a year, Tayo answers with two homes and why, and the homes appear on a map beside the chat." />
+        <img class="shot dk" src="images/home/shot-tayo-desk-dark.webp" width="2000" height="1250" loading="lazy" alt="Tayo in Synapse: a family asks for a two-bedroom in Ibadan around two million naira a year, Tayo answers with two homes and why, and the homes appear on a map beside the chat." />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── THE THREE PROMISES: each figure with what it buys you ── -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">What you get</span>
+        <h2 class="h2">Always awake. Always current. <em>Always free.</em></h2>
+      </div>
+      <div class="promises">
+        <div class="promise">
+          <div class="promise-fig">24/7</div>
+          <h3 class="h3">Tayo is awake when you are</h3>
+          <p>Ask at two in the morning and get an answer at two in the morning. No form to fill in, no callback to wait for, no office hours to work around.</p>
+        </div>
+        <div class="promise">
+          <div class="promise-fig">14 days</div>
+          <h3 class="h3">Or the listing disappears</h3>
+          <p>Every home is re-confirmed by its agency every fortnight, or it comes off the site. So you never make the call that starts &ldquo;actually, that one has gone.&rdquo;</p>
+        </div>
+        <div class="promise">
+          <div class="promise-fig">Free</div>
+          <h3 class="h3">For buyers and renters</h3>
+          <p>No fee, no commission, no subscription, and no card to enter. Agencies pay for Synapse because it brings them buyers. You are the reason it works, not the one being charged.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS: words beside the screens that do it ── -->
+  <section class="sec" id="how">
+    <div class="wrap">
+
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">Tayo</span>
+          <h2 class="h2">Tell Tayo how you <em>actually live.</em></h2>
+          <p class="lede">Where you work, how you get there, what you will not compromise on. It finds the homes that fit, and says why.</p>
+          <p class="lede">Every home it suggests carries its verification status, so you can see which have been through Synapse&rsquo;s checks and which have not.</p>
+        </div>
+        <div class="frame p-crm">
+          <img class="phone solo lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone: the question, Tayo's answer, and the homes worth a look." />
+          <img class="phone solo dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone: the question, Tayo's answer, and the homes worth a look." />
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <span class="eyebrow">Your matches</span>
+          <h2 class="h2">Every home that fits, <em>in one place.</em></h2>
+          <p class="lede">What Tayo finds is kept for you, on a list or a map: each home with its price, where it is, and whether it has been verified yet.</p>
+        </div>
+        <div class="frame p-reach">
+          <img class="shot bleed lt" src="images/home/shot-matches-light.webp" width="1600" height="895" loading="lazy" alt="Your matches: homes in Ibadan with their prices, whether each is verified, and its photograph." />
+          <img class="shot bleed dk" src="images/home/shot-matches-dark.webp" width="1600" height="895" loading="lazy" alt="Your matches: homes in Ibadan with their prices, whether each is verified, and its photograph." />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-text">
+          <span class="eyebrow">Dream boards</span>
+          <h2 class="h2">Or let your taste <em>do the searching.</em></h2>
+          <p class="lede">Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Tayo reads each board and finds real verified homes that feel like it.</p>
+        </div>
+        <div class="frame p-team">
+          <img class="shot bleed lt" src="images/home/shot-board-light.webp" width="1600" height="933" loading="lazy" alt="A dream board of kitchens: warm wood, deep green cabinetry, soft morning light." />
+          <img class="shot bleed dk" src="images/home/shot-board-dark.webp" width="1600" height="933" loading="lazy" alt="A dream board of kitchens: warm wood, deep green cabinetry, soft morning light." />
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <span class="eyebrow">Every home</span>
+          <h2 class="h2">Know the street <em>before you visit.</em></h2>
+          <p class="lede">Each home shows what is around it &mdash; hospitals, schools, markets, transport &mdash; on a map beside its photographs.</p>
+        </div>
+        <div class="frame p-nearby">
+          <img class="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A home on Synapse: the house, its price, and a map of what is around it." />
+          <img class="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A home on Synapse: the house, its price, and a map of what is around it." />
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── THE LAST ASK, on paint ── -->
+  <section class="end">
+    <div class="wrap">
+      <div class="frame p-tayo">
+        <h2 class="h2">The property advisor who works <em>for you.</em></h2>
+        <p class="lede">Free for buyers and renters. No fee, no commission, and no sign-up to start.</p>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="app/toju.html?new=site">Talk to Tayo, it&rsquo;s free</a>
+          <a class="btn btn-ghost" href="app/browse.html">See your matches</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <a href="buyers.html" class="logo" aria-label="Synapse home">
+        <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+        <span class="logo-word">Synapse</span>
+      </a>
+      <p class="foot-tag">Synapse &mdash; by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.</p>
+      <p class="foot-tag">Screens on this page are Tayo and Synapse with real listings; the conversation in them is a sample.</p>
+    </div>
+    <div class="foot-links">
+      <a href="index.html">For agencies</a>
+      <a href="app/browse.html">Your matches</a>
+      <a href="app/signin.html?role=customer&amp;next=toju.html">Sign in</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" data-cookie-settings>Cookie settings</a>
+    </div>
+  </div>
+</footer>
+
+<!-- The standing ask on a phone, as this page had before. -->
+<a class="float-cta" href="app/toju.html?new=site">Talk to Tayo, free</a>
+
+<script src="home.js"></script>
+</body>
+</html>

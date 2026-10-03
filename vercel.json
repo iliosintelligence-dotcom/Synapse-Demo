@@ -1,0 +1,65 @@
+{
+  "rewrites": [
+    {
+      "source": "/m/:path*",
+      "destination": "https://bhrhejpekmhbhwryjhgk.supabase.co/storage/v1/render/image/public/:path*?width=1080&height=1080&resize=contain&quality=85"
+    },
+    {
+      "source": "/s/:token",
+      "destination": "https://bhrhejpekmhbhwryjhgk.supabase.co/functions/v1/short-link/:token"
+    },
+    {
+      "source": "/go/:handle",
+      "destination": "/app/go.html?h=:handle"
+    },
+    {
+      "source": "/buyers",
+      "destination": "/buyers.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/your-data",
+      "destination": "/app/your-data.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/tayo",
+      "destination": "/app/toju.html?via=bio",
+      "permanent": false
+    },
+    {
+      "source": "/tayo/:ch",
+      "destination": "/app/toju.html?via=bio&ch=:ch",
+      "permanent": false
+    },
+    {
+      "source": "/agencies.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/agencies",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ]
+}
