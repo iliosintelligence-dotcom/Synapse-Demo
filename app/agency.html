@@ -6081,6 +6081,10 @@
          family reached a platform; saying "scheduled" is false in both
          directions. */
       function stageFor(r, twins) {
+        /* The agency's own post failed: that is what the card is about, even
+           if Synapse's copy went out (Greptile) -- it stays where its reason
+           and its retry are shown. */
+        if (r.status === 'failed') return 'attention';
         const mineLive = !!LIVE[r.status];
         const anyTwinLive = twins.some(t => LIVE[t.status]);
         if (!mineLive && !anyTwinLive) {
@@ -7039,6 +7043,16 @@
         const bad = rows.find(r => isNaN(new Date(r.at).getTime()));
         const note = document.getElementById('schNote');
         if (!rows.length || bad) { note.textContent = 'Give every row a date and a time.'; return; }
+        /* A caption is written for one channel (Greptile: adding Facebook to
+           an Instagram post sent the Instagram wording there). */
+        const cardPlat = p.platform || (Array.isArray(p.channels) && p.channels.length === 1 ? p.channels[0] : null);
+        const offPlat = cardPlat && p.caption && rows.find((r) => r.platform && r.platform !== cardPlat);
+        if (offPlat) {
+          const nm = (x) => String(x).charAt(0).toUpperCase() + String(x).slice(1);
+          note.textContent = 'This caption was written for ' + nm(cardPlat) + '. To post on ' + nm(offPlat.platform)
+            + ' too, write its own version in the composer.';
+          return;
+        }
         note.textContent = '';
 
         const btn = document.getElementById(now ? 'schNow' : 'schSave');
@@ -7100,7 +7114,8 @@
               headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t,
                          'Content-Type': 'application/json' },
               body: JSON.stringify({ live: true, limit: Math.min(50, rows.length * 4) }),
-            })).then((r) => r.json()).catch(() => null);
+            })).then((r) => r.json().catch(() => ({})).then((j) => (r.ok ? j : { drainFailed: true, error: j && j.error })))
+              .catch(() => ({ drainFailed: true }));
           })
           .then((sent) => {
             /* PASSES `sent` THROUGH, and that one word is the whole bug.
@@ -7152,8 +7167,17 @@
                 : (sent.failed
                     ? sent.failed + ' could not go out \u2014 see Needs attention'
                     : 'Queued \u2014 going out within the minute'));
+            } else if (sent && sent.drainFailed) {
+              /* The send did not start (Greptile): saying "going out within
+                 the minute" was a promise nothing was keeping. */
+              toast('Saved. Sending didn\u2019t start just now, so it goes out with the next queue run, within a few minutes.');
             } else toast('Queued \u2014 going out within the minute');
-            if (now && mode !== 'reschedule') rememberStatusOffer(p.propertyId);
+            /* "Your post is out" only after a post actually went out. */
+            if (now && mode !== 'reschedule' && sent && Number(sent.published) > 0) rememberStatusOffer(p.propertyId);
+            const probs = window.SYN_LAST_SCHEDULE_PROBLEMS || [];
+            window.SYN_LAST_SCHEDULE_PROBLEMS = [];
+            if (probs.length) setTimeout(() => toast('The post is saved, but ' + probs.join(' and ')
+              + (probs.length === 1 ? ' was' : ' were') + ' not added. Try again from the post card.'), 2800);
             loadPipeline();
             watchPipeline();
           })
@@ -14957,6 +14981,12 @@
 
     function shkFill(k) {
       if (!SHK.edited) SHK.text.value = shareCaption(SHK.l, SHK.dest.form, k.url);
+      else if (SHK.text.value.indexOf(k.url) < 0) {
+        /* Edited while the link was being made (Greptile): put the real link
+           where the placeholder was, or at the end, so the share still counts. */
+        const t = SHK.text.value;
+        SHK.text.value = t.indexOf('\u2026') >= 0 ? t.replace('\u2026', k.url) : t.replace(/\s*$/, '') + '\n' + k.url;
+      }
       SHK.link.textContent = k.url.replace(/^https?:\/\//, '');
       SHK.copyLink.disabled = false; SHK.copyCap.disabled = false;
       if (k.plain) {
@@ -15033,7 +15063,12 @@
         return navigator.share({ files: [file], text: text });
       }).catch((err) => {
         if (err && err.name === 'AbortError') return;       // they closed the sheet
-        if (navigator.share) return navigator.share({ text: text }).catch(() => {});
+        /* Said, not swallowed (Greptile): the phone would not take the photo. */
+        const fallback = 'Sharing didn\u2019t open. Use Save photo, then Copy caption, and post them yourself.';
+        if (!navigator.share) { toast(fallback); return; }
+        return navigator.share({ text: text })
+          .then(() => toast('Your phone shared the caption without the photo. Save the photo and add it in WhatsApp.'))
+          .catch((e2) => { if (!(e2 && e2.name === 'AbortError')) toast(fallback); });
       });
     }
 

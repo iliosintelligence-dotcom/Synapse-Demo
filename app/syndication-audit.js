@@ -16,6 +16,11 @@
        SynSyndicateAudit.run().then(SynSyndicateAudit.print)
 
    Reads listings; writes nothing, queues nothing, publishes nothing.
+
+   WHAT IT DOES NOT COVER (Greptile): it checks syndication.js's TEMPLATE
+   captions against each platform's limits. What agencies actually post is
+   AI-written (social-generate) with the listing's own photos, and that is
+   not what this measures. A clean run says the templates are sound, no more.
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -70,7 +75,10 @@
 
       rows.forEach(function (row) {
         var shaped = window.SynSyndicate.shape(row);
-        var out = window.SynSyndicate.generate(shaped, { platforms: platforms });
+        /* generate() shapes its own input; handing it a shaped listing shaped
+           it twice and lost the verification status and listing type
+           (Greptile), so verified homes were audited as unverified. */
+        var out = window.SynSyndicate.generate(row, { platforms: platforms });
 
         (out.skipped || []).forEach(function (s) {
           report.skippedAngles.push({ listing: shaped.title, angle: s.name, reason: s.reason });

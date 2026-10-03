@@ -2233,14 +2233,17 @@
          and fails soft for the same reason content_id above does: the posts
          are what the agency asked for, and a label that did not stick must
          not take them down. */
+      /* What the agency asked for that did not happen is collected and
+         reported by the portal, not only logged (Greptile). */
+      window.SYN_LAST_SCHEDULE_PROBLEMS = [];
       if (!o.campaignId || !made.length) return made;
       return c1.rpc('assign_posts_to_campaign', {
         p_campaign_id: o.campaignId,
         p_post_ids: made.map(function (m) { return m.id; }),
       }).then(function (r) {
-        if (r.error) console.error('campaign assign', r.error.message);
+        if (r.error) { console.error('campaign assign', r.error.message); window.SYN_LAST_SCHEDULE_PROBLEMS.push('the campaign label'); }
         return made;
-      }, function (e) { console.error('campaign assign', e); return made; });
+      }, function (e) { console.error('campaign assign', e); window.SYN_LAST_SCHEDULE_PROBLEMS.push('the campaign label'); return made; });
     }).then(function () {
       if (!o.stories || !made.length) return made;
       var igs = made.filter(function (m) { return m.platform === 'instagram'; });
@@ -2248,10 +2251,10 @@
         return chain.then(function () {
           return c1.rpc('queue_story_twin', { p_source_post: m.id })
             .then(function (r) {
-              if (r.error) console.error('story twin', r.error.message);
+              if (r.error) { console.error('story twin', r.error.message); (window.SYN_LAST_SCHEDULE_PROBLEMS || []).push('the Instagram Story'); }
               else made.push({ id: r.data, platform: 'instagram', story: true,
                                scheduled_at: m.scheduled_at });
-            }, function (e) { console.error('story twin', e); });
+            }, function (e) { console.error('story twin', e); (window.SYN_LAST_SCHEDULE_PROBLEMS || []).push('the Instagram Story'); });
         });
       }, Promise.resolve()).then(function () { return made; });
     });
