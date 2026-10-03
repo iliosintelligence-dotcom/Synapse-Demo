@@ -75,6 +75,30 @@
        of saved homes. The ACTIVE board is mirrored to synapse_moodboard_v1 so
        Tayo keeps reading your vibe. All local (synapse_dream_boards_v1). */
     body { background: var(--bg); }
+    /* THE SAME ROOM AS YOUR MATCHES (Eden, 2026-10-03: "make the background in
+       the dream boards main page the same as the your matches page so it feels
+       continuous"). The fixed photograph and grain layers are copied from
+       browse.html, 100lvh for the reason given there (the crop must not
+       re-compute when the phone's URL bar hides), and scene.css, loaded last,
+       swaps in the night interior in dark mode exactly as it does there. */
+    .bg-scene, .bg-wash { position: fixed; top: 0; left: 0; right: 0; z-index: 0; height: 100vh; height: 100lvh; transform: translateZ(0); }
+    .bg-scene { background: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; }
+    .bg-wash { background-image: var(--grain); background-repeat: repeat; }
+    .board-wrap, .appbar { position: relative; z-index: 1; }
+    .appbar { background: rgba(245,245,245,0.55); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border-bottom: 1px solid rgba(255,255,255,0.6); }
+    /* The boards' names and counts sit straight on the photograph, so each
+       card gets the same frosted glass a match card has. */
+    .bcard { background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,251,246,0.46));
+      backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
+      border-radius: 20px; padding: 8px 8px 12px; box-shadow: 0 14px 34px rgba(20,26,38,0.08); }
+    .bcard .bname, .bcard .bmeta { padding: 0 6px; }
+    .db-h1 { text-shadow: 0 1px 0 rgba(255,255,255,0.5); }
+    /* The one-line description sits on a frosted strip so it reads on any part
+       of the photograph. */
+    .board-wrap p.muted { display: inline-block; max-width: 100%; padding: 6px 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.62); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: var(--ink); }
+    :root:root[data-theme="dark"] .board-wrap p.muted { background: rgba(0,0,0,0.55); color: #C9CDD1; }
+    :root:root[data-theme="dark"] .db-h1 { text-shadow: none; }
     .board-wrap { max-width: none; margin: 0 auto; padding: 26px 34px 90px; }
     .db-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .db-h1 { font-family: var(--f-serif); font-weight: 500; font-size: 37px; line-height: 1.12; letter-spacing: -0.01em; }
@@ -319,12 +343,15 @@
     }
   </style>
   <!-- The app theme, last so it wins: warm, white, flat (theme.css). Not on sign-in. -->
-  <link rel="stylesheet" href="theme.css" />
+  <!-- Like Your matches, no day theme (theme.css): the photograph is the page. -->
   <link rel="stylesheet" href="theme-night.css" />
   <link rel="stylesheet" href="theme-dark.css" />
+  <link rel="stylesheet" href="scene.css" />
   <script src="theme.js"></script>
 </head>
 <body>
+  <div class="bg-scene"></div>
+  <div class="bg-wash"></div>
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
   <div class="appbar">
     <a class="brand" href="../buyers.html">
