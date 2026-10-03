@@ -15248,7 +15248,7 @@
         { id: 'foundation', name: 'Free', headline: 'Everything you need to start winning buyers.',
           price: 0, unit: 'forever', best: 'New or small agencies getting started.',
           cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
-            ['Up to 20 active listings', 'Room to grow your catalogue'],
+            ['Up to 3 active listings', 'Room to try Synapse with your best homes'],
             ['2 team members', 'Bring on a partner'],
             ['CRM with WhatsApp handoff', 'Never lose a lead — buyers land on your phone'],
             ['Tayo AI referrals', 'Get matched to buyers already looking for what you list'],
@@ -15258,7 +15258,7 @@
         { id: 'accelerator', name: 'Accelerate', headline: 'Grow faster with AI-powered marketing and verification.',
           price: 75000, unit: 'per month', best: 'The plan almost every serious agency wants.',
           cta: 'Upgrade to Accelerate', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
-            ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
+            ['Up to 10 active listings · 5 agent seats', 'Scale the whole team'],
             ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
             ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
             ['AI writes and posts for you', 'Captions and scheduling handled — no marketing hire'],
@@ -15268,7 +15268,7 @@
         { id: 'market-leader', name: 'Leader', headline: 'Dominate your local market.',
           price: 250000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
           cta: 'Choose Leader', ctaStyle: 'ghost', features: [
-            ['Unlimited listings & seats', 'No ceiling on your growth'],
+            ['Up to 20 active listings · unlimited seats', 'Room for a full portfolio'],
             ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
             ['Every marketing channel + AI campaigns', 'Tayo generates whole campaigns for you'],
             ['Proximity marketing', 'Reach buyers the moment they walk past your listing'],
@@ -15290,7 +15290,7 @@
           ] },
       ],
       addons: [
-        { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
+        { ico: 'agency', name: 'Extra Listing Pack', desc: '+5 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
         { ico: 'spark', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
         { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels — never affects Tayo\'s ranking.', price: '₦10k', unit: 'each' },
         { ico: 'shield', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
@@ -15310,7 +15310,7 @@
     // features/tradeoffs above into shared dimensions every plan has a
     // value for (true/false/a specific figure).
     const COMPARE_ROWS = [
-      { label: 'Active listings', vals: ['20', '100', 'Unlimited', 'Unlimited'] },
+      { label: 'Active listings', vals: ['3', '10', '20', 'Unlimited'] },
       { label: 'Team seats', vals: ['2', '5', 'Unlimited', 'Unlimited'] },
       { label: 'CRM with WhatsApp handoff', vals: [true, true, true, true] },
       { label: 'Tayo AI buyer referrals', vals: [true, true, true, true] },
@@ -15595,11 +15595,11 @@
     const BL = { data: null, pays: [], adds: [], plan: null, period: null };
     const BL_TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader', enterprise: 'Enterprise' };
     const BL_PLANS = [
-      { code: 'accelerator',   name: 'Accelerate', line: '100 listings, 5 seats, every channel' },
-      { code: 'market_leader', name: 'Leader',     line: 'Unlimited listings and seats, campaigns, proximity' },
+      { code: 'accelerator',   name: 'Accelerate', line: '10 listings, 5 seats, every channel' },
+      { code: 'market_leader', name: 'Leader',     line: '20 listings, unlimited seats, campaigns, proximity' },
     ];
     const BL_ADDON_INFO = {
-      listing_pack:         { name: 'Extra Listing Pack',   ico: 'agency', desc: '+25 active listings for a month, added the moment you pay.' },
+      listing_pack:         { name: 'Extra Listing Pack',   ico: 'agency', desc: '+5 active listings for a month, added the moment you pay.' },
       social_boost:         { name: 'Social Reach Boost',   ico: 'share',  desc: 'Paid reach behind one listing on social. Never affects Tayo’s ranking.' },
       verification_credits: { name: 'Verification Credits', ico: 'shield', desc: 'Your next listings go to the front of the verification desk.' },
       campaign_boost:       { name: 'Campaign Boost',       ico: 'chart',  desc: 'Extra reach behind a marketing campaign that’s working.' },
@@ -15814,7 +15814,7 @@
 
     /* ══ THE PAYWALL'S FACE (2026-10-03) ═════════════════════════════════
        When a plan limit refuses something, the database says so in a
-       sentence ("Your free plan includes 20 active listings..."). That used
+       sentence ("Your free plan includes 3 active listings..."). That used
        to arrive as a toast or a red note. Now it opens a prompt that says
        what happened and offers the way through: plans, or a listing pack.
        Only the owner pays, so others are told to ask their owner. */
@@ -15831,7 +15831,7 @@
         + '<h3 id="pgT">' + (listing ? 'You\u2019ve reached your listing limit' : seats ? 'Your team is full on this plan' : 'That\u2019s on Accelerate and above') + '</h3>'
         + '<p>' + esc2(msg.replace(/\s*(Upgrade|Subscription in the portal).*$/i, '')) + '</p>'
         + (owner
-          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 25 listings</button>' : '')
+          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 5 listings</button>' : '')
             + '<button type="button" class="btn btn-primary" data-pg="plans">See plans</button></div>'
           : '<p class="pg-n">Only your agency\u2019s owner can change the plan. Ask them to upgrade.</p>')
         + '<button type="button" class="pg-x" data-pg="close" aria-label="Close">\u00D7</button></div>';
@@ -15993,7 +15993,7 @@
         html: () => tpSummary('What each plan includes', [
           'Free: list, generate campaigns, and rehearse them.',
           'Accelerate: publish for real to your connected channels.',
-          'Leader: unlimited listings and syndication.',
+          'Leader: 20 active listings, campaigns and proximity marketing.',
         ], 'Ask below what your own numbers would look like on another plan — the answer uses your listings and leads, not an example.') },
     };
     const snapshotHTML = (pane) => STATS[pane]
