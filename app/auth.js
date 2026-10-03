@@ -472,7 +472,19 @@
       return Promise.race([global, fallback]);
     })
       .catch(function () { /* cleared below whatever happened */ })
-      .then(function () { cachedUser = null; paintAll(); });
+      .then(function () {
+        /* WHAT THE NEXT PERSON ON THIS BROWSER MUST NOT SEE (Greptile audit):
+           Tayo's saved chat, its archived chats, and the id that restores them
+           from the server. The id is kept only while proximity alerts are on,
+           because the alert watch is held under it. */
+        try {
+          localStorage.removeItem('toju_chat_v1');
+          localStorage.removeItem('toju_sessions_v1');
+          var prox = JSON.parse(localStorage.getItem('synapse_proximity_v1') || '{}');
+          if (prox.on !== true) localStorage.removeItem('toju_visitor_v1');
+        } catch (e) {}
+        cachedUser = null; paintAll();
+      });
   }
   /* IMPLICIT, ON PURPOSE (28 September 2026). The SDK's resetPasswordForEmail
      sends a PKCE challenge, and a PKCE reset link can only be redeemed by the

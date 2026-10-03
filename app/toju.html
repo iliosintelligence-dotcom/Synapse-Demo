@@ -930,7 +930,10 @@
     function priceHistoryHtml(ph) {
       if (!ph || !Array.isArray(ph.rows) || !ph.rows.length) return '';
       const rows = ph.rows.map((r) => '<tr><td>' + esc(r.period) + '</td><td>' + esc(r.typical) + '</td><td>' + esc(r.change || '') + '</td></tr>').join('');
-      const src = (ph.sources || []).map((x) => '<a href="' + esc(x.url) + '" target="_blank" rel="noopener nofollow">' + esc(x.title) + '</a>').join(' · ');
+      /* Only https links become links (Greptile audit): escaping HTML does not
+         make a javascript: URL safe. */
+      const src = (ph.sources || []).filter((x) => x && /^https:\/\/[^\s"'<>]+$/i.test(String(x.url || '')))
+        .map((x) => '<a href="' + esc(x.url) + '" target="_blank" rel="noopener nofollow">' + esc(x.title) + '</a>').join(' · ');
       return '<div class="ph-card">'
         + '<div class="ph-k">Past prices · ' + esc(ph.area) + (ph.unit ? ' · ' + esc(ph.unit) : '') + '</div>'
         + '<div class="ph-scroll"><table class="ph-t"><thead><tr><th>When</th><th>Typical price</th><th>Change</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
@@ -1322,12 +1325,16 @@
            that was leaking JSON to the screen. Salvage just the reply string,
            which is the only part the reader actually needs. */
         const m = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        let said = '';
         if (m) {
-          try { data.reply = JSON.parse('"' + m[1] + '"'); } catch (e2) { /* leave as-is */ }
+          try { said = JSON.parse('"' + m[1] + '"'); } catch (e2) { said = ''; }
         }
+        /* Nothing readable inside it: empty, so ask() shows its error and
+           never the envelope itself (Greptile audit). */
+        data.reply = said;
         return;
       }
-      if (!inner || typeof inner.reply !== 'string') return;
+      if (!inner || typeof inner.reply !== 'string') { data.reply = ''; return; }
       data.reply = inner.reply;
       if (!Array.isArray(data.matches) || !data.matches.length) {
         if (Array.isArray(inner.matches)) data.matches = inner.matches;

@@ -224,14 +224,17 @@
   function verifyChip(v) {
     if (v === 'unverified') return '<span class="chip chip-unv">' + icon('unverified', '◌') + ' Not verified</span>';
     if (v === 'in_progress') return '<span class="chip chip-prog">' + icon('pending', '◷') + ' Still checking</span>';
-    return '<span class="chip chip-pass">' + icon('verified', '✓') + ' Verified</span>';
+    /* Only an explicit 'verified' earns the badge (Greptile audit): a listing
+       whose status is missing or unrecognised used to be drawn as verified. */
+    if (v === 'verified') return '<span class="chip chip-pass">' + icon('verified', '✓') + ' Verified</span>';
+    return '<span class="chip chip-unv">' + icon('unverified', '◌') + ' Not verified</span>';
   }
 
   // Tayo API match (toju-demo `chat` / `matches` actions) → the card item both
   // pages render. ONE shape — if you need a new field, add it here, not inline.
   function shapeTojuMatch(m, i) {
     return {
-      id: m.id || 'r' + i,
+      id: (typeof m.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(m.id)) ? m.id : 'r' + i,
       /* THE LISTING'S OWN PHOTOGRAPH. This was hardcoded null with the note
          "renderer falls back to IMG_POOL", and that fallback is gone — it
          dressed a real home in a stock flat, which a buyer cannot tell from a
@@ -322,9 +325,9 @@
     // delegated grid handler ever saw it, so ticking compare never registered.
     // The browse handler now guards navigation on .cmpbox instead.
     const cmpBox = o.compare
-      ? `<label class="cmpbox"><input type="checkbox" data-cmp="${l.id}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
+      ? `<label class="cmpbox"><input type="checkbox" data-cmp="${esc(l.id)}" ${picked.has(l.id) ? 'checked' : ''}/>compare</label>`
       : '';
-    const isVerified = (l.vstatus || 'verified') === 'verified';
+    const isVerified = l.vstatus === 'verified';
     /* One rule: this line appears only when there is a score to show.
        It used to restate verification status in every case, which made each
        card say the same thing three times -- the chip at the top, the why-line
@@ -336,7 +339,7 @@
       ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
       : '';
     return `
-      <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${l.id}">
+      <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${esc(l.id)}">
         <div class="body">
           <div class="tags">
             ${verifyChip(l.vstatus)}
@@ -362,7 +365,7 @@
           ${img
             ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`
             : ''}
-          <button type="button" class="save${saves.has(l.id) ? ' on' : ''}" data-save="${l.id}"
+          <button type="button" class="save${saves.has(l.id) ? ' on' : ''}" data-save="${esc(l.id)}"
                   aria-pressed="${saves.has(l.id)}"
                   aria-label="${saves.has(l.id) ? 'Remove' : 'Save'} ${esc(l.ttl)}">${icon('heart', saves.has(l.id) ? '♥' : '♡')}</button>
         </div>
