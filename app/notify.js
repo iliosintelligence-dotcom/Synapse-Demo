@@ -119,6 +119,7 @@
       var m = e.data || {};
       if (m.type === 'syn:navigate' && m.route) window.location.href = m.route;
       if (m.type === 'syn:mute-proximity') setProximity(false);
+
     });
   }
 
@@ -174,12 +175,23 @@
         p256dh: j.keys && j.keys.p256dh,
         auth: j.keys && j.keys.auth,
       },
-    }).then(function () { return sub; });
+    }).then(function (res) {
+      if (!res || !res.ok) throw new Error('push subscription not saved');
+      return sub;
+    });
   }
+
+  /* The watch's secret (push-subscribe issues it the first time): only this
+     browser can change or switch off its own anonymous watch. */
+  var SECRET_KEY = 'synapse_watch_secret_v1';
+  function watchSecret() { try { return localStorage.getItem(SECRET_KEY); } catch (e) { return null; } }
+  function keepSecret(s) { if (s) { try { localStorage.setItem(SECRET_KEY, s); } catch (e) {} } }
 
   function callFn(action, extra) {
     return authHeaders().then(function (h) {
       var payload = { action: action, visitorId: visitorId() };
+      var sec = watchSecret();
+      if (sec) payload.watchSecret = sec;
       for (var k in extra) payload[k] = extra[k];
       return fetch(SUPABASE_URL + '/functions/v1/push-subscribe', {
         method: 'POST',
@@ -210,13 +222,29 @@
       s.on = !!on;
       localStorage.setItem(WATCH_KEY, JSON.stringify(s));
     } catch (e) {}
-    if (on) { startWatching(); } else {
-      stopWatching();
-      // The row stays behind otherwise, still enabled, and would resume the
-      // moment any page reported a position again.
-      callFn('disable', {}).catch(function () {});
+    if (on) {
+      startWatching();
+      document.dispatchEvent(new CustomEvent('syn:proximity', { detail: { on: true } }));
+      return Promise.resolve({ ok: true });
     }
-    document.dispatchEvent(new CustomEvent('syn:proximity', { detail: { on: !!on } }));
+    /* OFF IS OFF ON THE SERVER, OR IT IS NOT OFF (Greptile). This used to
+       say "off" and drop a failed request, leaving the server watch able to
+       send alerts. The control now says off only once the server agrees,
+       and says so plainly if it does not. */
+    stopWatching();
+    return callFn('disable', {}).then(function (res) {
+      if (!res || !res.ok) throw new Error('disable failed');
+      document.dispatchEvent(new CustomEvent('syn:proximity', { detail: { on: false } }));
+      return { ok: true };
+    }).catch(function () {
+      try {
+        var s2 = JSON.parse(localStorage.getItem(WATCH_KEY) || '{}');
+        s2.on = true; localStorage.setItem(WATCH_KEY, JSON.stringify(s2));
+      } catch (e) {}
+      document.dispatchEvent(new CustomEvent('syn:proximity', {
+        detail: { on: true, error: 'Couldn\u2019t switch alerts off. Check your connection and try again.' } }));
+      return { ok: false, reason: 'server' };
+    });
   }
 
   // Explicit opt-in, on a gesture. Location is sensitive: we ask plainly, we
@@ -224,17 +252,26 @@
   function enableProximity(criteria) {
     return askPermission().then(function (p) {
       if (p !== 'granted') return { ok: false, reason: p };
+      /* Both the push subscription and the watch must be saved before the
+         control says "on" (Greptile: it said on when neither was). */
       return subscribe({ side: 'customer' }).then(function () {
         return upsertWatch(criteria || {});
       }).then(function () {
         setProximity(true);
         return { ok: true };
+      }).catch(function () {
+        document.dispatchEvent(new CustomEvent('syn:proximity', {
+          detail: { on: false, error: 'Couldn\u2019t switch alerts on. Check your connection and try again.' } }));
+        return { ok: false, reason: 'server' };
       });
     });
   }
 
   function upsertWatch(c) {
-    return callFn('watch', { criteria: c || {} }).catch(function () {});
+    return callFn('watch', { criteria: c || {} }).then(function (res) {
+      if (!res || !res.ok) throw new Error('watch not saved');
+      return res.json().catch(function () { return {}; }).then(function (j) { keepSecret(j && j.watchSecret); return j; });
+    });
   }
 
   // While a page is open we report position; the SERVER decides everything
@@ -260,10 +297,21 @@
       return fetch(SUPABASE_URL + '/functions/v1/proximity-report', {
         method: 'POST',
         headers: Object.assign({ 'Content-Type': 'application/json' }, h),
-        body: JSON.stringify({ lat: lat, lon: lon, visitorId: visitorId() }),
+        body: JSON.stringify({ lat: lat, lon: lon, visitorId: visitorId(), watchSecret: watchSecret() }),
       });
     }).catch(function () { /* offline is fine — the next fix will report */ });
   }
+
+  /* "Not now" on a notification with no tab open: the service worker opens
+     the app with ?proximity=off, and this finishes the job (Greptile). */
+  try {
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('proximity') === 'off') {
+      qs.delete('proximity');
+      history.replaceState(null, '', location.pathname + (qs.toString() ? '?' + qs : '') + location.hash);
+      setTimeout(function () { setProximity(false); }, 0);
+    }
+  } catch (e) {}
 
   /* ── helpers ───────────────────────────────────────────────────────────── */
   function visitorId() { try { return localStorage.getItem('toju_visitor_v1'); } catch (e) { return null; } }
@@ -379,7 +427,14 @@
     if (blocked) { btn.disabled = true; return; }
 
     btn.addEventListener('click', function () {
-      if (proximityOn()) { setProximity(false); paint(slot); return; }
+      if (proximityOn()) {
+        btn.disabled = true; btn.textContent = 'Turning off…';
+        setProximity(false).then(function (r) {
+          paint(slot);
+          if (r && !r.ok) { var b2 = slot.querySelector('.prox-btn'); if (b2) b2.textContent = 'Couldn’t turn off — try again'; }
+        });
+        return;
+      }
       btn.disabled = true; btn.textContent = 'Asking…';
       enableProximity(readCriteria()).then(function (r) {
         btn.disabled = false;

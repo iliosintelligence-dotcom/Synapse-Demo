@@ -15445,11 +15445,14 @@
           window.location.href = 'signin.html?role=agency&reason=agency&next=' + encodeURIComponent(here);
           return;
         }
-        return fetch(SB_URL + '/functions/v1/paystack-checkout', {
+        /* Names the agency being paid for: someone in two agencies must
+           never be charged against the wrong one (Greptile). */
+        return (window.SynListings && SynListings.agencyId ? SynListings.agencyId().catch(() => null) : Promise.resolve(null))
+          .then((aid) => fetch(SB_URL + '/functions/v1/paystack-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + token },
-          body: JSON.stringify(Object.assign({ action: 'init' }, req)),
-        })
+          body: JSON.stringify(Object.assign({ action: 'init' }, aid ? { agencyId: aid } : {}, req)),
+        }))
           .then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
           .then(({ ok, d }) => {
             if (!ok || !d.authorization_url) { done(); toast(d.error || 'Could not start checkout. Please try again.'); return; }

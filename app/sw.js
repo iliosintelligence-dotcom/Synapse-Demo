@@ -53,9 +53,13 @@ self.addEventListener('notificationclick', function (event) {
   var n = event.notification;
   n.close();
   if (event.action === 'mute') {
-    // Best-effort: tell the app to pause this watch. Fire-and-forget by design;
-    // the authoritative mute happens in-app.
-    event.waitUntil(broadcast({ type: 'syn:mute-proximity' }));
+    /* An open tab switches the watch off. With none open, nobody was
+       listening and "Not now" did nothing (Greptile), so the app is opened
+       with ?proximity=off and finishes it there. */
+    event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      if (list.length) { list.forEach(function (c) { c.postMessage({ type: 'syn:mute-proximity' }); }); return; }
+      if (self.clients.openWindow) return self.clients.openWindow('/app/browse.html?proximity=off');
+    }));
     return;
   }
   var route = (n.data && n.data.route) || '/app/toju.html';
