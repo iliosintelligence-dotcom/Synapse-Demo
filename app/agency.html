@@ -1112,6 +1112,41 @@
     .lph-sm:not(:has(img))::after, .lph-sm.no-photo::after { content: none; }
 
     .lcard .media { position: relative; }
+    /* ── the calmer card ── */
+    .lc2 { cursor: pointer; }
+    .lc2:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 2px; }
+    .lc2 .media .lph, .lc2 .media img { height: 150px; }
+    .lc-st { position: absolute; left: 10px; bottom: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font: 600 11.5px var(--f-sans); background: rgba(255,255,255,0.94); color: var(--ink); }
+    .lc-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .lc-st.ok { color: #15803D; } .lc-st.rev { color: #8a5a0b; } .lc-st.off { color: #6b6b70; }
+    .lc-exp { position: absolute; right: 10px; top: 10px; z-index: 1; padding: 4px 10px; border-radius: 999px; font: 700 11.5px var(--f-sans); }
+    .lc-exp.warn { background: #FFF1DC; color: #8a5a0b; }
+    .lc-exp.dead { background: #FDE8E8; color: #9a2b2b; }
+    .lc2.expired .media img, .lc2.expired .media .lph { filter: grayscale(1) brightness(.9); }
+    .lc2 .bd { padding: 13px 14px 14px; }
+    .lc-meta { font-size: 12.5px; color: var(--ink-muted); margin-top: 4px; }
+    .lc-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+    .lc-main { flex: 1; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px;
+      background: var(--orange, #FF8A2D); color: #15120F; font: 700 13px var(--f-sans); cursor: pointer; }
+    .lc-main .syn-i { width: 15px; height: 15px; }
+    .lc-ic { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--border); background: transparent; color: var(--ink); font: 700 16px var(--f-sans); }
+    .lc-ic .syn-i { width: 16px; height: 16px; }
+    .lc-more { position: relative; }
+    .lc-menu { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 5; min-width: 180px; padding: 6px; border-radius: 12px;
+      background: var(--surface, #fff); box-shadow: 0 14px 34px -10px rgba(20,20,18,0.35), 0 0 0 1px rgba(20,20,18,0.06); }
+    .lc-menu[hidden] { display: none; }
+    .lc-menu button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: none;
+      color: var(--ink); font: 600 13px var(--f-sans); cursor: pointer; }
+    .lc-menu button:hover { background: rgba(54,54,54,0.07); }
+    html[data-theme="dark"] .lc-st { background: rgba(0,0,0,0.78); }
+    html[data-theme="dark"] .lc-st.ok { color: #4ADE80; } html[data-theme="dark"] .lc-st.rev { color: #F2A35E; } html[data-theme="dark"] .lc-st.off { color: #8B9096; }
+    html[data-theme="dark"] .lc-exp.warn { background: #2B1D12; color: #F2A35E; }
+    html[data-theme="dark"] .lc-exp.dead { background: #2A1414; color: #F87171; }
+    html[data-theme="dark"] .lc-ic { border-color: transparent; background: var(--surface-2); }
+    html[data-theme="dark"] .lc-menu { background: #202327; box-shadow: 0 14px 34px -10px rgba(0,0,0,0.8); }
+    html[data-theme="dark"] .lc-menu button:hover { background: rgba(255,255,255,0.08); }
     .lcard .media .lph { width: 100%; height: 132px; }
     .lcard .vbadge { position: absolute; top: 10px; right: 10px; z-index: 1; font: 700 12px var(--f-sans); padding: 4px 11px; border-radius: 100px; color: #fff; }
     .lcard .vbadge.verified { background: var(--success); }
@@ -7920,44 +7955,52 @@
       }
       grid.innerHTML = draftCard + rows.map(({ l, oi }) => {
         const f = freshness(l);
-        const leftPct = Math.max(0, Math.min(100, (14 - l.days) / 14 * 100));
-        const vb = l.st === 'verified' ? '<span class="vbadge verified">✓ Verified</span>'
-          : l.st === 'pending' ? '<span class="vbadge pending">Pending</span>' : '';
+        /* A CALMER CARD (Eden, 2026-10-03: "the card looks a little bit too
+           busy"). Status once, as one chip on the photo; expiry only when it
+           matters (near the end, or past it); one main action -- Post, or
+           Re-list when the listing is running out -- with Share beside it,
+           and Edit / Re-list in the menu. The whole card opens Edit. */
+        const id = esc2(l.id);
+        const st = l.st === 'verified' ? '<span class="lc-st ok">Verified</span>'
+          : l.st === 'pending' ? '<span class="lc-st rev">In review</span>'
+          : l.st === 'inactive' ? '<span class="lc-st off">Not live</span>' : '';
+        const exp = f.expired ? '<span class="lc-exp dead">Hidden from buyers</span>'
+          : f.warn ? '<span class="lc-exp warn">' + f.left + (f.left === 1 ? ' day' : ' days') + ' left</span>' : '';
+        const leads = Number(l.leads) || 0;
+        const meta = f.expired
+          ? (f.left === 0 ? 'Expired today' : 'Expired ' + (-f.left) + (f.left === -1 ? ' day' : ' days') + ' ago')
+          : [TYPE_LABEL[l.property_type] || '', leads + (leads === 1 ? ' lead' : ' leads')].filter(Boolean).join(' \u00B7 ');
+        const due = f.expired || f.warn;
+        const main = due
+          ? `<button class="lc-main" data-relist="${oi}">\u21BB Re-list</button>`
+          : `<button class="lc-main" data-post="${id}"><span data-icon="spark"></span> Post</button>`;
         return `
-        <div class="card lcard ${f.expired ? 'expired' : ''}">
+        <div class="card lcard lc2 ${f.expired ? 'expired' : ''}" data-card-edit="${oi}" tabindex="0" aria-label="${esc2(l.t)}: open to edit">
           <div class="media">
-            <span class="fresh ${f.cls}">${f.expired ? '⏱ ' : ''}${f.label}</span>
-            ${vb}
             ${photoHtml(l.img)}
-            <div class="fprog ${f.cls}"><i style="width:${leftPct}%"></i></div>
+            ${st}${exp}
           </div>
           <div class="bd">
             <div class="pr">${priceLabel(l)}</div>
             <div class="tt">${l.t}</div>
-            <div class="ft"><span class="st-chip ${l.st}">${ST_LABEL[l.st]}</span><span class="ld"><b>${l.leads}</b> leads</span></div>
-            <div class="acts">
-              <button class="edit" data-edit="${oi}">Edit</button>
-              <button class="relist ${f.expired || f.warn ? 'hot' : ''}" data-relist="${oi}">↻ Re-list</button>
-            </div>
-            <!-- WRITING POSTS STARTED IN THE WRONG PLACE. The composer lived
-                 only on the Social pane, behind a listing picker -- so the way
-                 to write about the home you were looking at was to leave it,
-                 change pane, and find it again in a dropdown. The listing is
-                 the thing being advertised; the button belongs on it. Full
-                 width and under the pair above because it is the one action
-                 here that makes something new. -->
-            <div class="lc-acts2">
-              <button class="lc-post" data-post="${esc2(l.id)}">
-                <span data-icon="spark"></span> Post</button>
-              <!-- Share: the agent's own WhatsApp, groups and contacts, with a
-                   link credited to them. Post is Synapse's channels; Share is
-                   theirs. -->
-              <button class="lc-share" data-share="${esc2(l.id)}">
-                <span data-icon="share"></span> Share</button>
+            <div class="lc-meta">${meta}</div>
+            <div class="lc-row">
+              ${main}
+              ${f.expired ? '' : `<button class="lc-ic" data-share="${id}" aria-label="Share" title="Share"><span data-icon="share"></span></button>`}
+              <div class="lc-more">
+                <button class="lc-ic" data-more aria-label="More actions" aria-expanded="false" title="More">\u22EF</button>
+                <div class="lc-menu" role="menu" hidden>
+                  <button role="menuitem" data-edit="${oi}">Edit listing</button>
+                  ${due ? `<button role="menuitem" data-post="${id}">Post about it</button>`
+                        : `<button role="menuitem" data-relist="${oi}">Re-list for 14 days</button>`}
+                </div>
+              </div>
             </div>
           </div>
         </div>`;
       }).join('');
+      // The spark and share glyphs are [data-icon] spans: fill them in.
+      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(grid);
     }
 
     // edit / create in the shared drawer
@@ -9583,14 +9626,31 @@
       listingForm({ ...LISTINGS_DATA[i] }, i);
     }
 
+    function closeLcMenus() {
+      document.querySelectorAll('#lgrid .lc-menu').forEach((m) => { m.hidden = true; });
+      document.querySelectorAll('#lgrid [data-more]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    }
+    document.addEventListener('click', (e) => { if (!e.target.closest('#lgrid .lc-more')) closeLcMenus(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLcMenus(); });
+    document.getElementById('lgrid').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.target.getAttribute('data-card-edit') == null) return;
+      const i = +e.target.dataset.cardEdit; listingForm({ ...LISTINGS_DATA[i] }, i);
+    });
     document.getElementById('lgrid').addEventListener('click', (e) => {
       /* Straight into the composer for THIS listing, on the pane that owns
          it. goToPane first because the composer's modal is anchored there;
          opening it from Listings would otherwise put a dialog over a pane that
          has nothing to do with it, and closing it would leave you somewhere
          you never navigated to. */
+      const mo = e.target.closest('[data-more]');
+      if (mo) {
+        const menu = mo.nextElementSibling, open = menu.hidden;
+        closeLcMenus();
+        menu.hidden = !open; mo.setAttribute('aria-expanded', String(open));
+        return;
+      }
       const sh = e.target.closest('[data-share]');
-      if (sh) { openShareKit(sh.dataset.share); return; }
+      if (sh) { closeLcMenus(); openShareKit(sh.dataset.share); return; }
       const po = e.target.closest('[data-post]');
       if (po) {
         const id = po.dataset.post;
@@ -9608,8 +9668,14 @@
         return;
       }
       const ed = e.target.closest('[data-edit]');
-      if (ed) { const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
+      if (ed) { closeLcMenus(); const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
       const rl = e.target.closest('[data-relist]');
+      /* The card itself opens Edit; its buttons and menu keep their own jobs. */
+      const cardEl = !rl && e.target.closest('[data-card-edit]');
+      if (cardEl && !e.target.closest('button, a, .lc-menu')) {
+        closeLcMenus();
+        const i = +cardEl.dataset.cardEdit; listingForm({ ...LISTINGS_DATA[i] }, i); return;
+      }
       if (rl) {
         const l = LISTINGS_DATA[+rl.dataset.relist];
         l.days = 0;
