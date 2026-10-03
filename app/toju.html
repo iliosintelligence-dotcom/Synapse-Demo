@@ -589,6 +589,19 @@
     .ph-sum { font-size: 13px; line-height: 1.5; margin: 10px 0 0; }
     .ph-src { font-size: 11.5px; opacity: .7; margin: 6px 0 0; line-height: 1.45; }
     .ph-src a { color: inherit; }
+    .tj-more { display: inline-block; margin-top: 6px; padding: 2px 0; border: 0; background: none; color: var(--ink-muted); font: 600 12.5px var(--f-sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+    .tj-more-body { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.08); font-size: 13.5px; color: var(--ink-muted); }
+    .tj-more-body[hidden] { display: none; }
+    .tj-checked { margin: 8px 0 2px; font-size: 12px; color: var(--ink-muted); }
+    .tj-acts { display: flex; gap: 14px; margin-top: 6px; }
+    .tj-acts button { border: 0; background: none; padding: 4px 0; min-height: 32px; font: 600 12px var(--f-sans); color: var(--ink-muted); cursor: pointer; }
+    .tj-acts button[aria-pressed="true"] { color: var(--ink); }
+    .tj-acts button:hover { color: var(--ink); }
+    .pin-row { cursor: default; align-items: flex-start; }
+    .pin-home { display: block; margin-top: 5px; font-size: 12.5px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .pin-acts { display: flex; flex-direction: column; gap: 4px; flex: none; }
+    .pin-acts button { border: 0; background: none; font: 600 12px var(--f-sans); color: var(--ink-muted); cursor: pointer; padding: 4px 6px; text-align: right; }
+    html[data-theme="dark"] .tj-more-body { border-top-color: transparent; }
 </style>
   <!-- Dark mode only. This page keeps its own look -- the photograph under
        glass -- so it does not take the day theme (theme.css). scene.css swaps
@@ -647,6 +660,7 @@
         <div class="cnav-dpop cnav-menu" id="tjChatMenu" role="menu" aria-label="Chats">
           <button id="tjNew" type="button" class="cnav-mi" role="menuitem"><span data-icon="plus" aria-hidden="true"></span>New chat</button>
           <button id="tjHist" type="button" class="cnav-mi" role="menuitem"><span data-icon="history" aria-hidden="true"></span>History</button>
+          <button id="tjPins" type="button" class="cnav-mi" role="menuitem"><span data-icon="heart" aria-hidden="true"></span>Pinned</button>
         </div>
       </div>
       <span data-auth-slot></span>
@@ -681,6 +695,15 @@
             <button id="tjHistClose" aria-label="Close history">×</button>
           </div>
           <div class="tj-hist-list" id="tjHistList"></div>
+        </div>
+        <!-- Pinned replies and homes (Eden, 2026-10-03: "allow users to pin and
+             share chat content"). Kept in this browser; shared as text and links. -->
+        <div class="tj-hist" id="tjPinPanel" hidden>
+          <div class="tj-hist-head">
+            <span><span data-icon="heart"></span> Pinned</span>
+            <button id="tjPinClose" aria-label="Close pinned">×</button>
+          </div>
+          <div class="tj-hist-list" id="tjPinList"></div>
         </div>
         <div class="convo-scroll" aria-live="polite"><div class="convo" id="convo"></div></div>
         <div class="composer" data-cnav-clear>
@@ -759,6 +782,7 @@
     const sendBtn = document.getElementById('tjSend');
     let busy = false;
     const STORE = 'toju_chat_v1';
+    const PINKEY = 'toju_pins_v1';   // pinned replies; defined here because saved chats render before the pin code below
     // stable anonymous visitor id -> server-side memory (continue anywhere this id exists)
     const VKEY = 'toju_visitor_v1';
     let VISITOR = localStorage.getItem(VKEY);
@@ -892,8 +916,10 @@
           ? '<div class="watch"><b>Worth checking —</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
         return '<a class="pcard" href="' + SynMatches.propertyHref(m.id) + '">'
-          + '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>'
-          + '<div><div class="price">' + naira(m.price) + (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '') + '</div>'
+          + (m.deal && m.deal.propertyType === 'land'
+            ? '<div class="pthumb"><b>' + (Number(m.deal.plots) > 0 ? Number(m.deal.plots) : 1) + '</b><span>PLOT</span></div>'
+            : '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>')
+          + '<div><div class="price">' + naira(m.price) + (({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[m.pricePeriod] ? '<span style="font-size:12px;color:var(--ink-muted)">' + ({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[m.pricePeriod] + '</span>' : (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '')) + '</div>'
           + '<div class="ttl">' + esc(m.title || '') + '</div>'
           // Verification state sits on every card. Tayo shows checked and
           // unchecked homes alike, so the label is what keeps that honest.
@@ -941,10 +967,36 @@
         + (src ? '<p class="ph-src">Sources: ' + src + '</p>' : '')
         + '</div>';
     }
-    function tojuMsg(text, matches, priceHistory) {
+    /* WHAT WAS CHECKED (Eden, 2026-10-03: it did not seem as though Tayo was
+       looking at the database). The server reports what it read; this says it,
+       above the homes, in plain words. */
+    function checkedHtml(sr) {
+      if (!sr || typeof sr !== 'object') return '';
+      const n = Number(sr.live) || 0, f = Number(sr.found) || 0;
+      const where = sr.where ? ' in ' + esc(sr.where) : '';
+      return '<div class="tj-checked">Checked our live listings' + where + ': '
+        + (n === 0 ? 'none there' : n + ' live' + (sr.kinds ? ' (' + esc(sr.kinds) + ')' : ''))
+        + (f ? ' · ' + f + ' shown below' : '') + '</div>';
+    }
+    /* PROGRESSIVE DISCLOSURE: the answer is short; the steps and caveats that
+       matter sit one tap away rather than being dropped. */
+    function moreHtml(more) {
+      if (!more) return '';
+      return '<button type="button" class="tj-more" aria-expanded="false">More</button>'
+        + '<div class="tj-more-body" hidden>' + md(more) + '</div>';
+    }
+    const slimMatch = (m) => ({ id: m.id, title: m.title, price: m.price, city: m.city, listingType: m.listingType,
+      pricePeriod: m.pricePeriod, bedrooms: m.bedrooms, deal: m.deal || null, verificationStatus: m.verificationStatus || null });
+    function tojuMsg(text, matches, priceHistory, extra) {
+      extra = extra || {};
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + '</div>' + priceHistoryHtml(priceHistory) + matchesHtml(matches) + '</div>';
+      el._payload = { text: String(text || ''), more: extra.more || null, matches: (Array.isArray(matches) ? matches : []).slice(0, 6).map(slimMatch), at: Date.now() };
+      el._payload.id = pinId(el._payload);
+      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + moreHtml(extra.more) + '</div>'
+        + priceHistoryHtml(priceHistory) + checkedHtml(extra.searched) + matchesHtml(matches)
+        + '<div class="tj-acts"><button type="button" data-act="pin" aria-pressed="' + isPinned(el._payload.id) + '">' + (isPinned(el._payload.id) ? 'Pinned' : 'Pin') + '</button>'
+        + '<button type="button" data-act="share">Share</button></div></div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -1379,9 +1431,10 @@
         // sets showMatches) so asking "show me what you found" always renders them.
         const matches = Array.isArray(data.matches) ? data.matches : [];
         const priceHistory = data.priceHistory && Array.isArray(data.priceHistory.rows) ? data.priceHistory : null;
-        saved.push({ role: 'assistant', content: data.reply, matches, priceHistory });
+        const extra = { more: typeof data.more === 'string' && data.more.trim() ? data.more.trim() : null, searched: data.searched || null };
+        saved.push({ role: 'assistant', content: data.reply, matches, priceHistory, more: extra.more, searched: extra.searched });
         persist();
-        tojuMsg(data.reply, matches, priceHistory);
+        tojuMsg(data.reply, matches, priceHistory, extra);
         collect(matches); renderCanvas();
         renderSuggest(data.suggestions);
         renderReply();   // the introduction unlocks once there is a conversation
@@ -1655,7 +1708,7 @@
 
     function render() {
       convo.innerHTML = '';
-      saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [], m.priceHistory || null)); });
+      saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [], m.priceHistory || null, { more: m.more || null, searched: m.searched || null })); });
       rebuildCanvas();
     }
     // scrub any hidden context that leaked into storage before the filter existed
@@ -1791,6 +1844,76 @@
     function archiveCurrent() { archiveThread(VISITOR, saved); }
     // The thread an arrival set aside, filed now that history exists.
     if (SET_ASIDE) { archiveThread(SET_ASIDE.visitorId, SET_ASIDE.messages); SET_ASIDE = null; }
+
+    /* ── PIN AND SHARE (Eden, 2026-10-03) ─────────────────────────────────
+       A pin keeps a Tayo reply, and the homes under it, in this browser.
+       Sharing sends the words and a link to each home through the phone's own
+       share sheet; where there is none, it copies them. Nothing is uploaded. */
+    function loadPins() { try { return JSON.parse(localStorage.getItem(PINKEY)) || []; } catch (e) { return []; } }
+    function savePins(p) { try { localStorage.setItem(PINKEY, JSON.stringify(p.slice(0, 100))); } catch (e) {} }
+    function pinId(pl) {
+      const src = String(pl.text || '') + '|' + (pl.matches || []).map((m) => m.id).join(',');
+      let h = 5381; for (let i = 0; i < src.length; i++) h = ((h << 5) + h + src.charCodeAt(i)) | 0;
+      return 'p' + (h >>> 0).toString(36);
+    }
+    function isPinned(id) { return loadPins().some((x) => x.id === id); }
+    function absLink(id) { return new URL(SynMatches.propertyHref(id), location.href).href; }
+    function shareText(pl) {
+      const homes = (pl.matches || []).map((m) => '\u2022 ' + (m.title || 'Listing') + (Number(m.price) > 0 ? ' \u00B7 ' + naira(m.price) : '') + '\n  ' + absLink(m.id));
+      return 'Tayo, Synapse\'s property advisor:\n\n' + pl.text + (pl.more ? '\n\n' + pl.more : '')
+        + (homes.length ? '\n\n' + homes.join('\n') : '') + '\n\n' + location.origin + '/app/toju.html?new=site';
+    }
+    function shareOut(text, btn) {
+      const was = btn.textContent;
+      const done = (w) => { btn.textContent = w; setTimeout(() => { btn.textContent = was; }, 1800); };
+      if (navigator.share) {
+        navigator.share({ title: 'Tayo on Synapse', text }).catch((e) => { if (e && e.name !== 'AbortError') done('Could not share'); });
+        return;
+      }
+      const copy = () => { try {
+        const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); document.body.removeChild(ta); if (ok) done('Copied'); else window.prompt('Copy this to share it:', text); } catch (e) { window.prompt('Copy this to share it:', text); } };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done('Copied'), copy); else copy();
+    }
+    convo.addEventListener('click', (e) => {
+      const more = e.target.closest('.tj-more');
+      if (more) {
+        const body = more.nextElementSibling; const open = body.hidden;
+        body.hidden = !open; more.setAttribute('aria-expanded', String(open)); more.textContent = open ? 'Less' : 'More';
+        return;
+      }
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const msg = b.closest('.msg'); const pl = msg && msg._payload; if (!pl) return;
+      if (b.dataset.act === 'share') { shareOut(shareText(pl), b); return; }
+      let pins = loadPins();
+      if (pins.some((x) => x.id === pl.id)) { pins = pins.filter((x) => x.id !== pl.id); b.textContent = 'Pin'; b.setAttribute('aria-pressed', 'false'); }
+      else { pins.unshift(pl); b.textContent = 'Pinned'; b.setAttribute('aria-pressed', 'true'); }
+      savePins(pins);
+    });
+    const pinPanel = document.getElementById('tjPinPanel');
+    const pinList = document.getElementById('tjPinList');
+    function renderPins() {
+      const pins = loadPins();
+      if (!pins.length) { pinList.innerHTML = '<div class="hist-empty">Nothing pinned yet.<br>Tap Pin under any reply from Tayo to keep it, and the homes with it, here.</div>'; return; }
+      pinList.innerHTML = '<button class="hist-row" data-pin-share-all type="button"><div class="mid"><div class="t">Share everything pinned</div><div class="d">' + pins.length + ' pinned</div></div></button>'
+        + pins.map((x) => '<div class="hist-row pin-row" data-pin="' + esc(x.id) + '"><div class="mid"><div class="t">' + esc(String(x.text).slice(0, 110)) + (String(x.text).length > 110 ? '\u2026' : '') + '</div>'
+          + '<div class="d">' + histDate(x.at) + (x.matches && x.matches.length ? ' \u00B7 ' + x.matches.length + ' home' + (x.matches.length === 1 ? '' : 's') : '') + '</div>'
+          + (x.matches || []).slice(0, 4).map((m) => '<a class="pin-home" href="' + esc(SynMatches.propertyHref(m.id)) + '">' + esc(m.title || 'Listing') + '</a>').join('')
+          + '</div><span class="pin-acts"><button type="button" data-pin-share="' + esc(x.id) + '">Share</button><button type="button" data-pin-del="' + esc(x.id) + '">Unpin</button></span></div>').join('');
+    }
+    function closePins() { pinPanel.hidden = true; }
+    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
+    document.getElementById('tjPinClose').addEventListener('click', closePins);
+    pinList.addEventListener('click', (e) => {
+      const pins = loadPins();
+      const del = e.target.closest('[data-pin-del]');
+      if (del) { savePins(pins.filter((x) => x.id !== del.dataset.pinDel)); renderPins(); return; }
+      const sh = e.target.closest('[data-pin-share]');
+      if (sh) { const pl = pins.find((x) => x.id === sh.dataset.pinShare); if (pl) shareOut(shareText(pl), sh); return; }
+      const all = e.target.closest('[data-pin-share-all]');
+      if (all) shareOut(pins.map(shareText).join('\n\n\u2014\n\n'), all);
+    });
 
     const histPanel = document.getElementById('tjHistPanel');
     const histList = document.getElementById('tjHistList');
