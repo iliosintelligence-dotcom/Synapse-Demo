@@ -1,0 +1,2922 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Synapse — agency listings persistence.
+
+   The agency dashboard kept listings in localStorage only: `toPropertyRow()`
+   existed in agency.html and was never called, so a listing an agency created
+   never reached the database and neither Tayo nor browse could see it. This
+   module is the real write path.
+
+   TRUST BOUNDARY (the important part):
+   An agency may create and edit its own listings. It may never certify them.
+   `verification_status`, `verification_nodes`, `trust_score` and `verified_at`
+   are omitted from every write here, and the database refuses them too — the
+   RLS insert policy pins verification to 'unverified' on creation and the
+   update policy forbids changing it afterwards. A listing an agency creates is
+   unverified and stays unverified until the platform says otherwise. Client
+   code is not the control; RLS is. This file simply never asks.
+
+   Consequence worth knowing: because Tayo only surfaces verified listings, a
+   freshly uploaded listing appears in the agency dashboard and in browse, but
+   NOT in Tayo's recommendations, until it is verified. That is correct, not a
+   bug.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  /* Columns an agency is allowed to write. Anything absent from this list is
+     system-owned or derived and is dropped before the request rather than sent
+     and rejected — a field silently stripped by RLS is far harder to debug
+     than one that was never sent. */
+  var WRITABLE = [
+    'title', 'description', 'property_type', 'listing_type',
+    'price', 'price_period', 'move_in_cost', 'service_charge',
+    /* The agency fee and the legal fee. Writable by the agency like every
+       other charge, and deliberately absent from the social caption payload
+       in social-generate — the listing page shows them, a post does not. */
+    'agency_fee', 'legal_fee',
+    'address', 'city', 'state', 'country', 'latitude', 'longitude',
+    /* The Area field. The form and every card call it `neighbourhood`;
+       scrub() renames it on the way out. */
+    'area_name',
+    'bedrooms', 'bathrooms', 'area_sqm', 'amenities',
+    'title_type', 'yield_pct', 'is_active', 'is_negotiable',
+    'toilets', 'parking_spaces', 'floor_level', 'total_floors',
+    'year_built', 'furnished', 'property_condition', 'electricity_band',
+    /* The deal, in fields (20261003090000_what_kind_of_deal). */
+    'deal_structure', 'build_stage', 'handover_date', 'build_progress_pct', 'payment_plan', 'deposit_pct', 'instalment_months', 'units_available', 'plot_count', 'plot_size_sqm', 'min_investment', 'investment_term_months', 'stated_return_pct',
+  ];
+
+  function client() {
+    if (!window.SynAuth) return Promise.reject(new Error('auth-unavailable'));
+    return window.SynAuth.client();
+  }
+
+  /* ── which agency am I? ──────────────────────────────────────────────────
+     Membership is the authority, not a role string on the user. RLS on
+     agency_members already restricts this select to rows where profile_id is
+     the caller, so an unprivileged read cannot enumerate other agencies. */
+  var cachedAgencyId = null;
+  /* The cache held the ANSWER, not the request in flight. Every function in
+     this file starts by asking which agency you are in, and on a cold load
+     they all ask at once -- so the first eleven callers each fired their own
+     query and waited on their own round trip. Measured on one portal load:
+     eleven identical GETs on agency_members, finishing at 313ms through
+     3556ms because they queued behind each other.
+
+     Holding the promise means the first caller makes the request and the
+     other ten wait on that same one. It is cleared on settle so a failure is
+     retried rather than cached forever. */
+  var agencyIdInFlight = null;
+  function agencyId(force) {
+    if (cachedAgencyId && !force) return Promise.resolve(cachedAgencyId);
+    if (agencyIdInFlight && !force) return agencyIdInFlight;
+    agencyIdInFlight = client().then(function (c) {
+      return c.from('agency_members').select('agency_id').is('deleted_at', null).limit(1);
+    }).then(function (r) {
+      agencyIdInFlight = null;
+      if (r.error) throw r.error;
+      cachedAgencyId = (r.data && r.data[0] && r.data[0].agency_id) || null;
+      return cachedAgencyId;
+    }, function (err) {
+      agencyIdInFlight = null;
+      throw err;
+    });
+    return agencyIdInFlight;
+  }
+
+  /* Keep only writable keys, and drop undefined so PostgREST doesn't try to
+     null a column the form simply didn't collect. Empty strings become null:
+     the form yields '' for untouched optional fields and '' is not a valid
+     numeric or enum. */
+  /* Columns this database turned out not to have yet. The site deploys on
+     push and migrations are run by hand, so a newly added column can briefly
+     exist in this file and not in the table. Without this, PostgREST answers
+     PGRST204 and the entire listing save fails -- the agent loses the form,
+     over a fee field they may not even have filled in. */
+  var absent = Object.create(null);
+
+  function scrub(data) {
+    /* The Area the agent typed. It was sent as `neighbourhood`, which is not
+       a column, so it was dropped here on every save and the listing knew
+       only its city. It is stored as area_name -- free text, not
+       neighbourhood_id, which only a curated zone may fill (0048). Renamed
+       only when the caller sent it, so a partial update never clears it;
+       and it wins over a stale area_name riding along on a row from list(). */
+    if (typeof data.neighbourhood === 'string') {
+      data = Object.assign({}, data, { area_name: data.neighbourhood.trim().slice(0, 120) });
+    }
+    var out = {};
+    WRITABLE.forEach(function (k) {
+      if (!(k in data)) return;
+      if (absent[k]) return;
+      var v = data[k];
+      if (v === undefined) return;
+      if (v === '') v = null;
+      out[k] = v;
+    });
+    return out;
+  }
+
+  /* Recognises only the two ways "no such column" is reported, and only acts
+     on a column the error actually names. Anything else is a real failure and
+     is left to propagate: a save that breaks for a genuine reason must still
+     break loudly. */
+  /* Retries while each failure teaches us a new missing column, because
+     PostgREST names only ONE per response and the columns that go missing
+     together are the ones added by the same migration. Bounded at four: the
+     loop cannot spin -- noteAbsentColumn is only true when it has just marked
+     something new -- but a write path that retries on a server error should
+     have a ceiling regardless of how sure the reasoning is. */
+  function withColumnRetry(run, tries) {
+    tries = (tries == null) ? 4 : tries;
+    return run().then(function (r) {
+      if (r && r.error && tries > 1 && noteAbsentColumn(r.error)) {
+        return withColumnRetry(run, tries - 1);
+      }
+      return r;
+    });
+  }
+
+  function noteAbsentColumn(err) {
+    if (!err) return false;
+    var code = err.code || '';
+    if (code !== 'PGRST204' && code !== '42703') return false;
+    var text = String(err.message || '') + ' ' + String(err.details || '');
+    var hit = null;
+    WRITABLE.forEach(function (k) {
+      if (!absent[k] && text.indexOf(k) !== -1) hit = hit || k;
+    });
+    if (!hit) return false;
+    absent[hit] = true;
+    if (window.console) {
+      console.warn('[listings] "' + hit + '" is not in the database yet — saving without it. '
+        + 'Run the pending migration to store it.');
+    }
+    return true;
+  }
+
+  /* An agency's own switch controls visibility, so mirror it into `status`.
+     `properties_select_public` requires is_active AND status='live', so a row
+     left at the 'draft' default would be invisible to buyers and to browse —
+     which is exactly the "it saved but nothing happened" failure this module
+     exists to remove. */
+  function withStatus(row) {
+    // Only derive status when the caller actually said something about
+    // is_active. Defaulting a partial update to 'live' would silently
+    // republish a listing the agency had archived.
+    if (!('is_active' in row)) return row;
+    row.status = row.is_active === false ? 'draft' : 'live';
+    return row;
+  }
+
+  /* The 14-day freshness rule, written into the row rather than left implied.
+     Until now "14 days" existed only as copy and as a `listed_at` filter in the
+     matcher; `expires_at` was never set, so nothing actually expired. Listing
+     and re-listing both restart the clock, which is what re-confirmation means. */
+  var FRESH_DAYS = 14;
+  function freshWindow() {
+    var now = new Date();
+    return {
+      listed_at: now.toISOString(),
+      expires_at: new Date(now.getTime() + FRESH_DAYS * 864e5).toISOString(),
+    };
+  }
+
+  /* ── media ───────────────────────────────────────────────────────────────
+     property_media has no is_primary column — order is the primary signal, so
+     display_order 0 IS the cover image. Rewriting media as delete-then-insert
+     keeps ordering honest without diffing. */
+  function writeMedia(c, propertyId, media) {
+    var rows = (media || [])
+      .map(function (m) { return typeof m === 'string' ? { url: m } : m; })
+      .filter(function (m) { return m && m.url; })
+      .map(function (m, i) {
+        /* Derived when the caller did not say. Every caller in the portal
+           passes a bare URL string, so before this every video was being
+           filed as an image -- and the column has been able to say 'video'
+           since 0002. */
+        var row = {
+          property_id: propertyId,
+          url: m.url,
+          media_type: m.media_type || mediaTypeFromUrl(m.url),
+          display_order: i,
+        };
+        /* The branded copy and WHAT WAS DRAWN ON IT. The second part is the
+           point: comparing branded_price to the listing's price now is how a
+           stale mark becomes detectable instead of silently wrong. Only set
+           when there is one, so a plain photograph writes plain columns. */
+        if (m.branded_url) {
+          row.branded_url = m.branded_url;
+          row.branded_price = m.branded_price || null;
+          row.branded_verified = !!m.branded_verified;
+          row.branded_at = new Date().toISOString();
+        }
+        return row;
+      });
+    /* NEW ROWS FIRST, OLD ROWS AFTER (Greptile, full review). This deleted
+       the listing's media and then inserted the replacements, checking
+       neither -- so a refused insert left a listing with no photos while the
+       portal said "Listing updated". Now the old rows are read, the new ones
+       inserted, and only once that has worked are the old ones removed; any
+       failure is thrown to the caller, which reports it, and the listing keeps
+       the photos it had. */
+    return c.from('property_media').select('id').eq('property_id', propertyId).then(function (old) {
+      if (old.error) throw old.error;
+      var oldIds = (old.data || []).map(function (r) { return r.id; });
+      var ins = rows.length ? c.from('property_media').insert(rows) : Promise.resolve({ data: [], error: null });
+      return Promise.resolve(ins).then(function (r) {
+        if (r && r.error) throw r.error;
+        if (!oldIds.length) return { data: [], error: null };
+        return c.from('property_media').delete().in('id', oldIds).then(function (d) {
+          if (d && d.error) throw d.error;
+          return { data: [], error: null };
+        });
+      });
+    });
+  }
+
+  /* ── read ────────────────────────────────────────────────────────────────
+     Deleted rows are excluded here as well as by RLS: a soft-deleted listing
+     should not reappear in the agency's own list. */
+  function list() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      /* Scoped by agency_id EXPLICITLY, not left to RLS. Postgres permissive
+         policies OR together, and `properties_select_public` matches every
+         live listing on the platform — so relying on RLS alone would hand this
+         agency every other agency's inventory. RLS is the security floor; the
+         query still has to ask the right question. */
+      return c1.from('properties')
+        .select('*, property_media(url, media_type, display_order, '
+              /* Without these the mark is LOST on the next save:
+                 writeMedia is delete-then-insert, so a column it never
+                 read is a column it silently drops. */
+              /* id, because a redraw updates the row in place rather than
+                 waiting for a save. */
+              + 'id, branded_url, branded_price, branded_verified)'
+              /* The linked zone's NAME, the fallback when the agent left the
+                 Area blank. What they typed comes back in `*` as area_name. */
+              + ', neighbourhoods(name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data || []).map(function (p) {
+        p.media = (p.property_media || [])
+          .slice()
+          .sort(function (a, b) { return a.display_order - b.display_order; });
+        delete p.property_media;
+        /* Without this every caption and card built from these rows knew the
+           city and not the area -- "Ibadan" where the market writes "Agbowo,
+           Ibadan". The agent's own word first, then the linked zone. */
+        var hood = Array.isArray(p.neighbourhoods) ? p.neighbourhoods[0] : p.neighbourhoods;
+        var typed = typeof p.area_name === 'string' ? p.area_name.trim() : '';
+        if (!p.neighbourhood) p.neighbourhood = typed || (hood && hood.name) || '';
+        delete p.neighbourhoods;
+        return p;
+      });
+    });
+  }
+
+  /* ── leads ───────────────────────────────────────────────────────────────
+     The CRM's data source. Same discipline as list(): scoped by agency_id
+     explicitly rather than trusting RLS to be the only filter.
+
+     `lost` leads are excluded because this feeds a live pipeline view whose
+     funnel has no column for them — they are not hidden data, they are simply
+     not pipeline. Soft-deleted rows are excluded for the same reason as
+     listings. The joined property supplies the title and price the agency
+     needs to recognise which listing the lead is actually about. */
+  function leads() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('leads')
+        /* lead_attribution comes back WITH the lead rather than in a second
+           round trip. It is one row per touch (first, and last when they
+           differ), and it is the only record of which channel actually
+           produced this lead -- `source` is a single label written at
+           creation, not a chain. The CRM used to derive the channel from
+           `source` and never read this table at all. */
+        .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
+                'risk_level, next_action_recommendation, budget_min, budget_max, ' +
+                'preferences, ' +
+                'delivery_status, delivery_error, last_activity_at, created_at, ' +
+                'assigned_agent_id, properties(title, price, city), ' +
+                'lead_attribution(channel, is_first_touch, is_last_touch, occurred_at, campaign_id)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .neq('current_stage', 'lost')
+        .order('created_at', { ascending: false })
+        .limit(500);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* Move a lead through the pipeline.
+
+     Scoped by agency_id as well as id: RLS already restricts the row set, but
+     an explicit filter means a mistyped id fails as "no rows" rather than
+     quietly relying on the policy to be the only thing standing between this
+     agency and another one's lead.
+
+     Only pipeline columns are grantable to `authenticated` -- delivery_status,
+     source and consumer_phone are deliberately not updatable from the client,
+     so the attribution record cannot be rewritten after the fact. */
+  var LEAD_STAGES = ['new', 'contacted', 'qualified', 'viewing_scheduled',
+                     'viewing_completed', 'negotiating', 'commitment', 'closed', 'lost'];
+  /* ── what has happened to a lead ────────────────────────────────────────
+     Migration 0111 made a stage change write its own history, log itself to
+     the activity feed and raise the follow-up it implies. These read that back.
+
+     The lead drawer is where they belong, and the reason is the reference the
+     CRM work is being measured against: Frappe's organising idea is that ONE
+     page carries the activities, the notes and the tasks for an entity, so
+     nobody has to assemble the story from four screens. Ours had the tables
+     and no reader, which is the same as not having them. */
+
+  /** Open follow-ups on one lead, soonest first. Completed ones are dropped:
+   *  this list is what somebody still has to do, and a done task in it is a
+   *  line the eye has to skip past every time. The history section below
+   *  records the completion, so nothing is lost by leaving it out here. */
+  function leadTasks(leadId) {
+    if (!leadId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('tasks')
+        .select('id, title, description, task_type, priority, status, due_at, completed_at, assigned_to')
+        .eq('lead_id', leadId)
+        .is('deleted_at', null)
+        .in('status', ['pending', 'in_progress'])
+        .order('due_at', { ascending: true, nullsFirst: false })
+        .limit(50);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** The trail, newest first. activity_feed is append-only by trigger, so this
+   *  is the one account of a lead that cannot have been tidied up afterwards. */
+  function leadActivity(leadId, limit) {
+    if (!leadId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('activity_feed')
+        .select('id, activity_type, payload, created_at, agent_id')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false })
+        .limit(limit || 40);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Done. completed_at is set alongside the status because a status with no
+   *  time behind it cannot answer "how long did that actually take", which is
+   *  the only interesting question about a finished task. */
+  function completeTask(id) {
+    if (!id) return Promise.reject(new Error('no task'));
+    return client().then(function (c) {
+      return c.from('tasks')
+        .update({ status: 'completed', completed_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString() })
+        .eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Everything still owed across the agency, soonest first -- the answer to
+   *  "what do I do this morning", which is the question a CRM exists for and
+   *  the one this product could not answer at all. RLS narrows it to the
+   *  caller's own tasks unless they are an admin or owner, which is the right
+   *  default: an agent opening this wants their list, not everyone's. */
+  function openTasks(limit) {
+    return client().then(function (c) { return agencyId().then(function (aid) { return [c, aid]; }); })
+      .then(function (pair) {
+        var c = pair[0], aid = pair[1];
+        if (!aid) return { data: [], error: null };
+        return c.from('tasks')
+          .select('id, lead_id, title, task_type, priority, status, due_at')
+          .eq('agency_id', aid)
+          .is('deleted_at', null)
+          .in('status', ['pending', 'in_progress'])
+          .order('due_at', { ascending: true, nullsFirst: false })
+          .limit(limit || 100);
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return r.data || [];
+      });
+  }
+
+  function setLeadStage(id, stage) {
+    if (LEAD_STAGES.indexOf(stage) < 0) return Promise.reject(new Error('Unknown stage: ' + stage));
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ current_stage: stage, last_activity_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id, current_stage')
+        .maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      // RLS returning nothing is indistinguishable from a bad id at the wire;
+      // either way the write did not happen, so say so rather than reporting
+      // success and letting the UI drift from the database.
+      if (!r.data) throw new Error('That lead could not be updated');
+      return r.data;
+    });
+  }
+
+  /* ── campaigns ───────────────────────────────────────────────────────────
+     Campaigns used to live in localStorage, which meant they belonged to one
+     browser rather than to the agency: invisible to colleagues, gone with a
+     cleared cache. These read and write the real table.
+
+     Note on permissions: campaigns_manage is admin/owner only, while
+     campaigns_select is any member. A plain agent can therefore see campaigns
+     but not change them, and an RLS-blocked write returns "no rows" rather
+     than an error -- so every writer below treats an empty result as failure
+     instead of reporting a success that did not happen. */
+
+  /* NO campaign_creatives EMBED. Nothing renders those rows any more, so
+     fetching them was a join pulling fabricated headlines and an unmeasured
+     CTR on every campaign load. The rows are left in the table rather than
+     deleted -- that is an irreversible act and a separate decision. */
+  /* A campaign is a name, a window, the channels it went out on, and the
+     posts filed under it. budget_naira, spend_naira, persona and
+     target_audience_description were dropped in 20260926140000: nothing in
+     this product spends money, and nothing filtered, routed or wrote
+     differently because of an audience. */
+  var CAMPAIGN_SELECT =
+    'id, name, status, target_platforms, start_date, end_date, created_at';
+
+  /** What each campaign actually did, keyed by campaign id. Summed in the
+   *  database from social_post_stats() -- the same per-post measurement the
+   *  pipeline card reads -- so a campaign can never disagree with the posts
+   *  inside it. Replaces five stored columns nothing ever wrote. */
+  function campaignPerformance() {
+    return client().then(function (c) { return c.rpc('campaign_performance'); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return (r.data || []).reduce(function (m, row) {
+          m[row.campaign_id] = row; return m;
+        }, {});
+      });
+  }
+
+  /** File posts under a campaign. The RPC scopes the update to the campaign's
+   *  own agency, so the id array being client-supplied cannot reach another
+   *  agency's posts, and it carries the Synapse twins along -- their clicks
+   *  are clicks the campaign produced. */
+  function assignPostsToCampaign(campaignId, postIds) {
+    if (!campaignId || !(postIds || []).length) return Promise.resolve(0);
+    return client().then(function (c) {
+      return c.rpc('assign_posts_to_campaign', {
+        p_campaign_id: campaignId, p_post_ids: postIds });
+    }).then(function (r) { if (r.error) throw r.error; return r.data || 0; });
+  }
+
+  /** The agency's saved hashtag sets. Tags come back WITHOUT the leading
+   *  '#', which the composer adds -- storing it would make #Lekki and Lekki
+   *  two different tags. */
+  function listHashtagGroups() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('hashtag_groups')
+        .select('id, name, tags, updated_at')
+        .eq('agency_id', aid).is('deleted_at', null)
+        .order('name', { ascending: true });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Save or update one. Through the RPC because the normalising -- stripping
+   *  the #, dropping punctuation, folding duplicates by case -- has to happen
+   *  in one place, or a second caller quietly adds a duplicate nobody can
+   *  tell apart in the picker. */
+  function saveHashtagGroup(name, tags, id) {
+    if (!String(name || '').trim()) return Promise.reject(new Error('Name the group first'));
+    return client().then(function (c) {
+      return c.rpc('save_hashtag_group', {
+        p_name: String(name).trim(), p_tags: tags || [], p_id: id || null });
+    }).then(function (r) { if (r.error) throw r.error; return r.data; });
+  }
+
+  function deleteHashtagGroup(id) {
+    return client().then(function (c) {
+      return c.from('hashtag_groups')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id).is('deleted_at', null);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Redraw the mark on one photograph and record it against the row.
+   *
+   *  The original file is long gone from the browser, so it is fetched back
+   *  as a Blob and composited again -- and a Blob is same-origin as far as
+   *  the canvas is concerned, which sidesteps the taint the logo has to work
+   *  around.
+   *
+   *  Resolves to the new descriptor, or null if anything at all went wrong:
+   *  the old mark then stays, which is stale but not broken. */
+  function redrawBrandedMedia(mediaId, originalUrl, opts) {
+    if (!mediaId || !originalUrl) return Promise.resolve(null);
+    var c1;
+    return fetch(originalUrl, { mode: 'cors' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('could not fetch the original');
+        return r.blob();
+      })
+      .then(function (blob) {
+        /* brandImage reads .name for the output filename and a Blob has
+           none. Wrapped so the uploaded copy is not called "undefined". */
+        var f = blob;
+        try { f = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' }); }
+        catch (e) { /* no File constructor: the Blob works, the name does not */ }
+        return uploadBrandedCopy(f, opts || {});
+      })
+      .then(function (b) {
+        if (!b) return null;
+        return client().then(function (c) {
+          c1 = c;
+          /* Updated in place rather than at save. A redraw is not an edit to
+             the listing -- nothing to review, nothing to cancel -- and
+             requiring Save afterwards would mean somebody who pressed Redraw
+             and closed the drawer had silently done nothing. */
+          return c1.from('property_media').update({
+            branded_url: b.url,
+            branded_price: b.price,
+            branded_verified: b.verified,
+            branded_at: new Date().toISOString(),
+          }).eq('id', mediaId);
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          return b;
+        });
+      })
+      .catch(function (e) {
+        console.error('redraw failed', e);
+        return null;
+      });
+  }
+
+  /** Photographs whose printed mark no longer matches the listing. */
+  function staleBrandedMedia() {
+    return client().then(function (c) { return c.rpc('media_brand_stale'); })
+      .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+  }
+
+  function listCampaigns() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('campaigns')
+        .select(CAMPAIGN_SELECT)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* data: { name, persona, endDate, channels[], audience, creatives[] }
+     where each creative is { headline, imageUrl, channel }. The campaign and
+     its first creatives are written in two steps; if the creatives fail the
+     campaign is removed again, so a campaign with no ads never survives. */
+  function createCampaign(data) {
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('No agency on this account');
+      aid = a;
+      var today = new Date();
+      /* The caller now picks this. It used to be today + 30 days for every
+         campaign ever created, which is a date nobody chose being written down
+         as though they had. */
+      var end = data.endDate ? new Date(data.endDate) : new Date(today.getTime() + 30 * 86400000);
+      if (isNaN(end.getTime()) || end < today) end = new Date(today.getTime() + 30 * 86400000);
+      return c1.from('campaigns').insert({
+        agency_id: aid,
+        name: data.name,
+        // The form is always built from one listing, hence property_showcase.
+        campaign_type: 'property_showcase',
+        status: 'active',
+        start_date: today.toISOString().slice(0, 10),
+        end_date: end.toISOString().slice(0, 10),
+        target_platforms: data.channels || [],
+        /* Synapse buys no advertising, so this stays 0 rather than carrying
+           a number an agency was asked to invent. The column stays for the day
+           there is a real media buy behind it. */
+      }).select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to create campaigns');
+      /* A campaign is created and that is all. It used to write three
+         fabricated creatives here and roll the campaign back if they failed
+         -- "rather than leave a campaign with no creatives in it", which is
+         now exactly what every campaign correctly is until posts are
+         scheduled into it. */
+      return r.data.id;
+    });
+  }
+
+  function setCampaignStatus(id, live) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('campaigns')
+        .update({ status: live ? 'active' : 'paused' })
+        .eq('id', id).eq('agency_id', aid).is('deleted_at', null)
+        .select('id, status').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('You do not have permission to change this campaign');
+      return r.data;
+    });
+  }
+
+  /* addCreatives() and setCreativeStatus() lived here and wrote to
+     campaign_creatives -- invented headlines, and a status moving between
+     'learning' and 'scaling' that nothing acted on. Deleted with the table. */
+
+  /* ── the agency's own people ─────────────────────────────────────────────
+     Needed by the CRM's Assign action. profiles used to be readable only by
+     their owner, so this returned a list of blank names; migration 0045 lets
+     members of the same agency see each other. Consumers are not agency
+     members and stay invisible. */
+  /* The agency's people. This used to return only id/name/role, which was all
+     the Assign menu needed, so the Agents pane could not be built from it and
+     ran off a hard-coded empty array instead.
+
+     It now carries the agent's own profile too. agent_profiles is public-read
+     and joins profiles on profile_id, so the whole roster arrives in one
+     request. Every profile field stays null when the row does not exist -
+     never 0, never a placeholder - because "no rating recorded" and "rated
+     zero" are opposite claims about a person and the UI has to be able to
+     tell them apart. */
+  /* ── inviting a teammate ─────────────────────────────────────────────────
+     The invite is a record with a token; the email is matched server-side when
+     the invitee accepts, because an address cannot be resolved to a profile
+     from the browser. Delivery is not configured, so the caller gets a link to
+     share — everything after that link is real. */
+  function invites() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('agency_invites')
+        .select('id, email, role, token, created_at, expires_at, accepted_at, revoked_at')
+        .eq('agency_id', aid)
+        .is('accepted_at', null)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  function createInvite(email, role) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) { me = u && u.data && u.data.user && u.data.user.id; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        return c1.from('agency_invites')
+          .insert({ agency_id: aid, email: String(email).trim().toLowerCase(),
+                    role: role || 'agent', invited_by: me })
+          .select('id, email, role, token, expires_at')
+          .single();
+      })
+      .then(function (r) {
+        if (r.error) {
+          /* The partial unique index is the real rule about duplicates, so its
+             violation is reported as the plain fact rather than as a crash. */
+          if (String(r.error.message || '').indexOf('agency_invites_live_idx') >= 0
+              || r.error.code === '23505') {
+            throw new Error('There is already a live invite for that address.');
+          }
+          throw r.error;
+        }
+        return r.data;
+      });
+  }
+
+  function revokeInvite(id) {
+    return client().then(function (c) {
+      return c.from('agency_invites').update({ revoked_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  function acceptInvite(token) {
+    return client().then(function (c) {
+      return c.rpc('accept_agency_invite', { p_token: token });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      return row || { ok: false, reason: 'unknown' };
+    });
+  }
+
+  /* ── inspection availability + tours ─────────────────────────────────────
+     Availability is what an agent has pre-cleared; Tayo never proposes a time
+     outside it. Tours are the concrete visits buyers have booked into.
+
+     RLS already scopes both to the agency (agent_availability is
+     is_agency_member, and viewings_select already allowed the agency), so
+     these queries only have to ask the right question. */
+  function availability(agentId) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      var q = c1.from('agent_availability')
+        .select('id, agent_id, property_id, weekday, specific_date, start_time, end_time, slot_minutes, capacity')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('weekday', { ascending: true });
+      return agentId ? q.eq('agent_id', agentId) : q;
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  function addAvailability(o) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('agent_availability').insert({
+        agency_id: aid,
+        agent_id: o.agentId || null,
+        property_id: o.propertyId || null,
+        weekday: o.weekday,
+        start_time: o.start,
+        end_time: o.end,
+        slot_minutes: o.slotMinutes || 60,
+        capacity: o.capacity || 4,
+      }).select('id').single();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data;
+    });
+  }
+
+  /* Soft delete: an availability rule that produced past tours is history, and
+     hard-deleting it would orphan the reason those visits existed. */
+  function removeAvailability(id) {
+    return client().then(function (c) {
+      return c.from('agent_availability').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /* Upcoming tours with who is coming. Two requests rather than one embed:
+     inspection_slots has no foreign key to viewings that PostgREST can follow
+     in this direction, and the attendee list needs the consumer name off the
+     lead. */
+  function tours(days) {
+    var c1, aid1, slots;
+    var from = new Date().toISOString();
+    var to = new Date(Date.now() + (days || 30) * 864e5).toISOString();
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      aid1 = aid;
+      return c1.from('inspection_slots')
+        .select('id, agent_id, property_id, starts_at, duration_minutes, capacity, status, agency_note, properties(title, city), profiles:agent_id(full_name)')
+        .eq('agency_id', aid)
+        /* Cancelled tours are kept, not hidden. A tour that was called off is
+           part of the record — who had booked, and that it did not happen —
+           and an agency that cannot see it cannot answer for it. Buyers are a
+           different matter: open_inspection_slots still excludes cancelled, so
+           nobody can join one. */
+        .gte('starts_at', from)
+        .lte('starts_at', to)
+        .order('starts_at', { ascending: true });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      slots = r.data || [];
+      if (!slots.length) return { data: [] };
+      return c1.from('viewings')
+        .select('id, slot_id, consumer_id, status, lead_id, leads:lead_id(consumer_name, consumer_phone)')
+        .in('slot_id', slots.map(function (s) { return s.id; }))
+        .is('deleted_at', null);
+    }).then(function (vr) {
+      if (vr && vr.error) throw vr.error;
+      var byslot = {};
+      ((vr && vr.data) || []).forEach(function (v) {
+        (byslot[v.slot_id] = byslot[v.slot_id] || []).push({
+          id: v.id,
+          /* Carried so a cancelled tour can message these buyers back through
+             the outbox, which addresses leads rather than viewings. */
+          leadId: v.lead_id || null,
+          status: v.status,
+          name: (v.leads && v.leads.consumer_name) || 'A Synapse buyer',
+          phone: (v.leads && v.leads.consumer_phone) || null,
+        });
+      });
+      return slots.map(function (s) {
+        /* On a live tour the head count is who is still coming. On a cancelled
+           one it is who HAD booked, because that is the thing worth seeing
+           afterwards. */
+        var all = byslot[s.id] || [];
+        var people = s.status === 'cancelled'
+          ? all
+          : all.filter(function (x) { return x.status !== 'cancelled'; });
+        return {
+          id: s.id,
+          at: s.starts_at,
+          minutes: s.duration_minutes,
+          capacity: s.capacity,
+          status: s.status,
+          note: s.agency_note,
+          agent: (s.profiles && s.profiles.full_name) || 'Unassigned',
+          property: (s.properties && s.properties.title) || 'Listing unavailable',
+          city: (s.properties && s.properties.city) || '',
+          people: people,
+          /* Confirmed attendance is what the agent should plan around: someone
+             who has not answered the reconfirmation is not a headcount yet. */
+          confirmed: people.filter(function (x) { return x.status === 'confirmed'; }).length,
+        };
+      });
+    });
+  }
+
+  /* One call, so a cancellation cannot half-happen: the slot, the attendance
+     rows and the affected leads all move together, and every buyer whose only
+     tour this was goes back to `qualified` so they can be offered a new time.
+     Nothing is deleted — cancelled rows stay as the record. */
+  function cancelTour(id) {
+    return client().then(function (c) {
+      return c.rpc('cancel_inspection_slot', { p_slot_id: id });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.ok) throw new Error('That tour could not be cancelled');
+      return { affected: row.affected, leadsReset: row.leads_reset };
+    });
+  }
+
+  function setSlotStatus(id, status) {
+    return client().then(function (c) {
+      return c.from('inspection_slots').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  function setViewingStatus(id, status) {
+    return client().then(function (c) {
+      return c.from('viewings').update({ status: status, updated_at: new Date().toISOString() }).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /* ── team messaging ──────────────────────────────────────────────────────
+     The agency's own thread with one of its people, in the app. RLS already
+     restricts a row to its two participants inside an agency they share, so
+     the query does not re-implement that — it only has to ask for the pair in
+     both directions, because a thread is what each said to the other. */
+  function thread(agentId) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) return { data: [], error: null };
+        return c1.from('team_messages')
+          .select('id, sender_id, recipient_id, body, created_at')
+          .eq('agency_id', aid)
+          .or('and(sender_id.eq.' + me + ',recipient_id.eq.' + agentId + '),' +
+              'and(sender_id.eq.' + agentId + ',recipient_id.eq.' + me + ')')
+          .order('created_at', { ascending: true })
+          .limit(200);
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return { me: me, messages: (r.data || []).map(function (m) {
+          return { id: m.id, body: m.body, at: m.created_at, mine: m.sender_id === me };
+        }) };
+      });
+  }
+
+  function sendTeamMessage(agentId, body) {
+    var text = String(body || '').trim();
+    if (!text) return Promise.reject(new Error('Nothing to send'));
+    if (text.length > 4000) text = text.slice(0, 4000);
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        return c1.from('team_messages')
+          .insert({ agency_id: aid, sender_id: me, recipient_id: agentId, body: text })
+          .select('id, body, created_at')
+          .single();
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return { id: r.data.id, body: r.data.body, at: r.data.created_at, mine: true };
+      });
+  }
+
+  function roster() {
+    var c1, aid1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      aid1 = aid;
+      return c1.from('agency_members')
+        .select('profile_id, role, joined_at, profiles(full_name, phone, whatsapp, avatar_url, ' +
+                'agent_profiles(bio, years_experience, languages, specializations, areas_covered, ' +
+                'response_rate_pct, closed_deals, avg_rating, certifications))')
+        .eq('agency_id', aid)
+        .is('deleted_at', null);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var rows = r.data || [];
+      /* Follower and like counts come from agent_social_counts, a definer-rights
+         view: the numbers are public, the people behind them are not, so nobody
+         can enumerate who follows an agent. Second request rather than an embed
+         because a view carries no foreign key to join on. Failure here degrades
+         to nulls — the card then prints "—" rather than a zero it cannot back. */
+      var ids = rows.map(function (m) { return m.profile_id; });
+      if (!ids.length) return { rows: rows, social: {} };
+      return c1.from('agent_social_counts').select('agent_id, followers, likes')
+        .in('agent_id', ids)
+        .then(function (sr) {
+          var by = {};
+          (sr.data || []).forEach(function (x) { by[x.agent_id] = x; });
+          return { rows: rows, social: by };
+        })
+        .catch(function () { return { rows: rows, social: {} }; });
+    }).then(function (bundle) {
+      var social = bundle.social || {};
+      return (bundle.rows || []).map(function (m) {
+        var p = m.profiles || {};
+        var soc = social[m.profile_id] || {};
+        // PostgREST returns an object for a to-one embed and an array for
+        // to-many; agent_profiles.profile_id is the key, but accept both.
+        var ap = p.agent_profiles || {};
+        if (Array.isArray(ap)) ap = ap[0] || {};
+        var num = function (v) { return v == null ? null : Number(v); };
+        return {
+          id: m.profile_id,
+          name: p.full_name || 'Unnamed teammate',
+          role: m.role,
+          joined: m.joined_at || null,
+          phone: p.phone || p.whatsapp || null,
+          avatar: p.avatar_url || null,
+          bio: ap.bio || null,
+          years: num(ap.years_experience),
+          languages: ap.languages || [],
+          specializations: ap.specializations || [],
+          areas: ap.areas_covered || [],
+          responseRate: num(ap.response_rate_pct),
+          closed: num(ap.closed_deals),
+          rating: num(ap.avg_rating),
+          certifications: ap.certifications || [],
+          followers: soc.followers == null ? null : Number(soc.followers),
+          likes: soc.likes == null ? null : Number(soc.likes),
+        };
+      }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    });
+  }
+
+  /* Assign several leads at once. agentId may be null to unassign. */
+  function assignLeads(ids, agentId) {
+    if (!ids || !ids.length) return Promise.resolve([]);
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      return c1.from('leads')
+        .update({ assigned_agent_id: agentId || null, last_activity_at: new Date().toISOString() })
+        .in('id', ids)
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .select('id');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var done = (r.data || []).length;
+      if (!done) throw new Error('Those leads could not be assigned');
+      // A partial result is reported rather than smoothed over: the caller
+      // tells the user how many actually moved.
+      return { updated: done, requested: ids.length };
+    });
+  }
+
+  /* Soft-delete. This goes through the delete_lead function rather than an
+     UPDATE, because Postgres applies the table's SELECT policy to the row a
+     statement produces -- and leads_select requires deleted_at to be null, so
+     a client-side soft delete can never satisfy it. delete_lead checks that
+     the caller is an agency admin or owner, then bypasses RLS.
+
+     Each id is a separate call, so one failure does not silently take the rest
+     with it; the caller is told exactly how many were removed. */
+  function deleteLeads(ids) {
+    if (!ids || !ids.length) return Promise.resolve({ deleted: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(ids.map(function (id) {
+        return c.rpc('delete_lead', { p_lead_id: id }).then(function (r) {
+          return { ok: !r.error, error: r.error };
+        });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those leads could not be deleted');
+      return { deleted: ok, requested: ids.length, error: firstErr ? firstErr.message : null };
+    });
+  }
+
+  /* ── message outbox ──────────────────────────────────────────────────────
+     Queue first, deliver later. queue_agent_handoff() writes the row and
+     always succeeds; send-outbox delivers it. That split is the point: with
+     Twilio unconfigured the message still exists, visible and retryable,
+     instead of evaporating into a toast.
+
+     WHO IT REACHES. The agent the lead is assigned to, or the agency owner
+     when nobody is assigned -- never the buyer. WhatsApp carries Toju-to-agent
+     handoffs and nothing else. queue_lead_message(), which used to read
+     leads.consumer_phone, still exists and now refuses with an explanation
+     (migration 0082): a dropped function reads as a deployment fault and
+     invites someone to recreate it.
+
+     There is no client INSERT on message_outbox. The recipient is derived
+     server-side from the lead's assignment, so the platform cannot be pointed
+     at an arbitrary number -- a table taking any phone number plus any text
+     is an open SMS gateway on our own Twilio account. */
+
+  function queueMessages(leadIds, body) {
+    if (!leadIds || !leadIds.length) return Promise.resolve({ queued: 0, requested: 0, error: null });
+    return client().then(function (c) {
+      return Promise.all(leadIds.map(function (id) {
+        /* queue_agent_handoff, not queue_lead_message. WhatsApp carries
+            Toju-to-agent handoffs and nothing else, so the recipient is the
+            lead's assigned agent -- or the agency owner when nobody is
+            assigned -- and never the buyer. The old function still exists and
+            refuses, so no path can quietly message a buyer again. */
+        return c.rpc('queue_agent_handoff', { p_lead_id: id, p_body: body })
+          .then(function (r) { return { ok: !r.error, error: r.error }; });
+      }));
+    }).then(function (results) {
+      var ok = results.filter(function (r) { return r.ok; }).length;
+      var firstErr = (results.find(function (r) { return !r.ok; }) || {}).error;
+      if (!ok) throw new Error((firstErr && firstErr.message) || 'Those messages could not be queued');
+      return {
+        queued: ok,
+        requested: leadIds.length,
+        error: firstErr ? firstErr.message : null,
+      };
+    });
+  }
+
+  /* ── negotiation authority ───────────────────────────────────────────────
+     The lowest Tayo may agree to on a listing. Read and written by agency
+     staff only -- listing_negotiation_authority has no policy a buyer can
+     satisfy, and no function that returns the number is callable by one.
+
+     A missing row is NOT "no limit". It means Tayo has no authority to
+     negotiate this listing at all, which is why the UI says so in words
+     rather than showing an empty box that reads as unlimited. */
+  function getNegotiationFloor(propertyId) {
+    if (!propertyId) return Promise.resolve(null);
+    return client().then(function (c) {
+      return c.from('listing_negotiation_authority')
+        .select('floor_amount, currency, is_active, updated_at')
+        .eq('property_id', propertyId).maybeSingle();
+    }).then(function (r) {
+      if (r.error) return null;
+      return r.data || null;
+    }).catch(function () { return null; });
+  }
+
+  function setNegotiationFloor(propertyId, amount, active) {
+    return client().then(function (c) {
+      return c.rpc('set_negotiation_floor', {
+        p_property_id: propertyId,
+        p_amount: amount,
+        p_active: active !== false,
+      });
+    }).then(function (r) {
+      if (r.error) throw new Error(r.error.message || 'The floor could not be saved');
+      return r.data;
+    });
+  }
+
+  /* My own number, and setting it.
+     Registration asks for this now, but registration cannot reach an account
+     that already exists -- and on 2026-09-06 not one of the 41 agency members
+     had a number, so every lead resolved to nobody reachable. The portal has
+     to ask the people who are already here.
+
+     set_my_phone normalises server-side with the same rule as signup, so a
+     number typed here and a number typed at signup are stored in one shape.
+     A client that normalised on its own would eventually disagree with it. */
+  function myPhone() {
+    return client().then(function (c) {
+      return c.auth.getUser().then(function (u) {
+        var id = u && u.data && u.data.user && u.data.user.id;
+        if (!id) return null;
+        return c.from('profiles').select('phone').eq('id', id).maybeSingle()
+          .then(function (r) { return r.error ? null : { phone: (r.data && r.data.phone) || '' }; });
+      });
+    }).catch(function () { return null; });
+  }
+
+  function setMyPhone(phone) {
+    return client().then(function (c) {
+      return c.rpc('set_my_phone', { p_phone: phone });
+    }).then(function (r) {
+      if (r.error) throw new Error(r.error.message || 'That number could not be saved');
+      return r.data;
+    });
+  }
+
+  /* Who a handoff would reach, asked before it is written. Returns a name
+     and whether they are reachable -- never the number itself. */
+  function handoffTarget(leadId) {
+    return client().then(function (c) {
+      return c.rpc('lead_handoff_target', { p_lead_id: leadId });
+    }).then(function (r) {
+      if (r.error) return null;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      return row || null;
+    }).catch(function () { return null; });
+  }
+
+  function listOutbox(limit) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('message_outbox')
+        .select('id, to_phone, body, status, attempts, max_attempts, last_error, ' +
+                'scheduled_for, sent_at, created_at, leads(consumer_name)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(limit || 50);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /* Cancel something still waiting. The database refuses anything else -- a
+     message already sent cannot be un-sent, and pretending otherwise in the UI
+     would be a lie about what the buyer received. */
+  function cancelMessage(id) {
+    return client().then(function (c) {
+      return c.from('message_outbox')
+        .update({ status: 'cancelled' })
+        .eq('id', id)
+        .eq('status', 'queued')
+        .select('id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('That message has already left the queue');
+      return r.data;
+    });
+  }
+
+  /* Can anything be sent at all?
+     Asks send-outbox whether WhatsApp credentials exist on the project. It
+     claims nothing and sends nothing, and it answers with variable NAMES and
+     booleans -- never a value. The drawer needs this before offering a Send
+     button: pressing Send on an unconfigured project used to claim the batch,
+     and the claim burns an attempt on every row. */
+  function checkOutbox() {
+    return client().then(function (c) {
+      return c.functions.invoke('send-outbox', { body: { check: true } });
+    }).then(function (r) {
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (d) { return d || { twilioReady: false, missing: [] }; },
+            function () { return { twilioReady: false, missing: [] }; });
+        }
+        return { twilioReady: false, missing: [] };
+      }
+      return r.data || { twilioReady: false, missing: [] };
+    }).catch(function () {
+      // Unknown is not the same as unconfigured; the drawer says nothing.
+      return null;
+    });
+  }
+
+  /* Drain the queue. Deliberately an explicit action rather than something
+     that fires on a timer: these are real messages to real buyers. */
+  function sendOutbox(limit) {
+    // functions.invoke carries the caller's session token, which send-outbox
+    // needs: it resolves the caller's agency and drains only that queue.
+    return client().then(function (c) {
+      return c.functions.invoke('send-outbox', { body: { limit: limit || 20 } });
+    }).then(function (r) {
+      if (r.error) {
+        // The function's own JSON error is more useful than "non-2xx status".
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') {
+          return ctx.json().then(function (d) {
+            throw new Error((d && d.error) || r.error.message);
+          }, function () { throw new Error(r.error.message); });
+        }
+        throw new Error(r.error.message);
+      }
+      return r.data;
+    });
+  }
+
+  /* The named human at Synapse this agency escalates to by phone.
+
+     Comes from a SECURITY DEFINER function rather than a table read: the
+     relationship manager is Synapse staff, not a colleague, so both
+     profiles_select_own and the agency-colleagues policy correctly refuse to
+     show them -- and widening either to expose staff profiles would leak far
+     more than a name and a number.
+
+     Three real states, and the caller must handle all three:
+       { assigned: false }                    nobody assigned
+       { assigned: true, phone: null }        assigned, but no number on file
+       { assigned: true, phone: '+234...' }   callable
+     Never invent a fallback number for the first two. */
+  function relationshipManager() {
+    return client().then(function (c) {
+      return c.rpc('my_relationship_manager');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.manager_name) return { assigned: false, name: null, phone: null, hours: null };
+      return {
+        assigned: true,
+        name: row.manager_name,
+        phone: row.manager_phone || null,
+        hours: row.hours || null,
+      };
+    });
+  }
+
+  function create(data) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('no-agency: this account is not a member of any agency');
+      /* Rebuilt on the retry rather than reused: scrub() is what drops a
+         column now known to be absent, so the second attempt has to go back
+         through it. */
+      var build = function () {
+        var row = withStatus(scrub(data));
+        row.agency_id = aid;
+        Object.assign(row, freshWindow());   // starts the 14-day clock
+        // verification_* and trust_score are deliberately never set here.
+        return row;
+      };
+      return withColumnRetry(function () {
+        return c1.from('properties').insert(build()).select('id').single();
+      });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var id = r.data.id;
+      return writeMedia(c1, id, data.media).then(function () { return id; });
+    });
+  }
+
+  function update(id, data) {
+    var c1;
+    return client().then(function (c) {
+      c1 = c;
+      return withColumnRetry(function () {
+        /* Rebuilt each time: scrub() is what drops a column now known to be
+           absent, so a reused payload would repeat the same rejected write. */
+        return c.from('properties').update(withStatus(scrub(data))).eq('id', id).select('id').single();
+      });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return writeMedia(c1, id, data.media).then(function () { return id; });
+    });
+  }
+
+  /* Soft delete. There is no DELETE policy on properties by design, so a hard
+     delete would simply be refused; marking deleted_at is the supported path
+     and keeps leads and viewings that referenced the listing intact. */
+  function remove(id) {
+    return client().then(function (c) {
+      return c.from('properties').update({ deleted_at: new Date().toISOString(), is_active: false, status: 'archived' }).eq('id', id);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return true;
+    });
+  }
+
+  /* Re-listing is what the 14-day freshness rule measures against. */
+  /* Renewing a listing is the agency asserting the home is still available,
+     so it goes through reconfirm_listing(): one statement that stamps
+     availability_confirmed_at and moves expires_at together, with the
+     membership check server-side. The old version wrote expires_at directly
+     and recorded no confirmation, so the freshness promise had a date but
+     nothing behind it. */
+  function relist(id, days) {
+    return client().then(function (c) {
+      return c.rpc('reconfirm_listing', { p_property_id: id, p_days: days || FRESH_DAYS });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row) throw new Error('That listing could not be confirmed');
+      return row;
+    });
+  }
+
+  /* The agency's own record — name and verification tier. The portal used to
+     hardcode "Prestige Realty Ltd. · Gold Verified" in its header, so every
+     agency saw someone else's name and an unearned trust tier on their own
+     dashboard. */
+  var cachedAgency = null;
+  function agency() {
+    if (cachedAgency) return Promise.resolve(cachedAgency);
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return null;
+      return c1.from('agencies').select('id,name,verification_tier,subscription_tier').eq('id', aid).limit(1)
+        .then(function (r) {
+          if (r.error) throw r.error;
+          cachedAgency = (r.data && r.data[0]) || null;
+          return cachedAgency;
+        });
+    });
+  }
+
+  /* Paints [data-agency-name] / [data-agency-initials] / [data-agency-tier] /
+     [data-agency-eyebrow] wherever they appear. Silent when signed out — the
+     markup ships with neutral placeholders, never a specimen agency. */
+  function paintAgency() {
+    return agency().then(function (a) {
+      if (!a) return null;
+      var tier = a.verification_tier ? String(a.verification_tier).toLowerCase() : '';
+      /* APPENDING "verified" IS A CLAIM, so it is now an allowlist rather
+         than the default.
+
+         The label used to be "<tier> verified" for everything except the one
+         tier that was special-cased. That made the risky branch the fallback:
+         any tier that was not literally "verified" had the word appended to
+         it, and the four agencies whose tier is "unverified" read
+         "✦ Unverified verified" — a contradiction wearing a badge glyph, on
+         every page of their portal.
+
+         Only GOLD and BASIC are qualifiers that need the word ("Gold
+         verified"). Every other tier already names its own state and is shown
+         as itself, so a tier nobody has added yet can never be dressed up as
+         verified by accident. The glyph goes with the claim: ✦ marks a real
+         badge, so an unverified agency does not get one. */
+      var QUALIFIER = { gold: 1, basic: 1 };
+      var UNVERIFIED = { unverified: 1, pending: 1, rejected: 1, none: 1 };
+      var tierWord = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : '';
+      var tierLabel = !tier ? ''
+        : QUALIFIER[tier] ? '✦ ' + tierWord + ' verified'
+        : UNVERIFIED[tier] ? tierWord
+        : '✦ ' + tierWord;
+      var initials = String(a.name || '?').split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+      document.querySelectorAll('[data-agency-name]').forEach(function (el) { el.textContent = a.name || 'Your agency'; });
+      document.querySelectorAll('[data-agency-tier]').forEach(function (el) { el.textContent = tierLabel; });
+      document.querySelectorAll('[data-agency-initials]').forEach(function (el) { el.textContent = initials; el.title = a.name || 'Your agency'; });
+      document.querySelectorAll('[data-agency-eyebrow]').forEach(function (el) {
+        el.textContent = (a.name || 'Your agency') + (tierLabel ? ' · ' + tierLabel.replace('✦ ', '') : '');
+      });
+      return a;
+    }).catch(function () { return null; });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { paintAgency(); });
+  else paintAgency();
+
+  /* ── brand kit ───────────────────────────────────────────────────────────
+     The agency's own identity fields. `verification_tier`, `rating` and
+     `closed_deals` are deliberately absent: they are platform-owned and the
+     database refuses them anyway (agencies_guard_tier). An agency describes
+     itself here; it does not rate itself. */
+  var BRAND_FIELDS = [
+    'name', 'tagline', 'description', 'specialties',
+    'logo_url', 'logo_dark_url', 'brand_color', 'brand_color_secondary', 'brand_font',
+    'brand_voice', 'whatsapp_number', 'city', 'social',
+  ];
+
+  function loadBrand() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return null;
+      return c1.from('agencies').select(BRAND_FIELDS.join(',')).eq('id', aid).limit(1)
+        .then(function (r) { if (r.error) throw r.error; return (r.data && r.data[0]) || null; });
+    });
+  }
+
+  function saveBrand(patch) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('no-agency: this account is not a member of any agency');
+      var row = {};
+      BRAND_FIELDS.forEach(function (k) {
+        if (!(k in patch)) return;
+        var v = patch[k];
+        row[k] = v === '' ? null : v;
+      });
+      return c1.from('agencies').update(row).eq('id', aid).select('id').single();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      cachedAgency = null;            // name or tier may have changed
+      paintAgency();
+      return true;
+    });
+  }
+
+  /* ── Brand assets ────────────────────────────────────────────────────
+     Logo files live in the public `brand` bucket at
+       brand/<agency_id>/<slot>-<timestamp>.<ext>
+     The agency-id folder is what the storage policies check, so a member can
+     only ever write inside their own agency's folder.
+
+     The timestamp matters: object storage is cached hard at the CDN, and
+     re-uploading to a fixed path (logo-light.png) would keep serving the old
+     image after a change. A fresh filename each time sidesteps that
+     entirely, and the previous file is deleted so the folder cannot grow
+     without bound. */
+  var BRAND_BUCKET = 'brand';
+  var LOGO_MAX_BYTES = 2 * 1024 * 1024;
+  var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+
+  function extFor(file) {
+    var m = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg' };
+    return m[file.type] || 'png';
+  }
+
+  /* Upload one logo. `slot` is 'light' or 'dark'. Resolves to the public URL,
+     which the caller writes into logo_url / logo_dark_url via saveBrand. */
+  function uploadBrandAsset(file, slot) {
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (LOGO_TYPES.indexOf(file.type) === -1) {
+      return Promise.reject(new Error('Use a PNG, JPG, WEBP or SVG'));
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      return Promise.reject(new Error('That file is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep a logo under 2MB'));
+    }
+    var c1, aid;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('no-agency: this account is not a member of any agency');
+      aid = a;
+      var path = aid + '/logo-' + (slot === 'dark' ? 'dark' : 'light') + '-' + Date.now() + '.' + extFor(file);
+      return c1.storage.from(BRAND_BUCKET).upload(path, file, {
+        cacheControl: '31536000', upsert: false, contentType: file.type,
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return c1.storage.from(BRAND_BUCKET).getPublicUrl(path).data.publicUrl;
+      });
+    });
+  }
+
+  /* ── listing photographs ────────────────────────────────────────────────
+     The new-listing form only ever asked for a URL, so an agency holding a
+     photo on their phone had nowhere to put it. That is how a listing came to
+     be published with a Google share link as its image: not carelessness, an
+     absent feature. Same bucket convention as brand assets -- first folder is
+     the agency id, and the storage policy checks membership of that folder. */
+  var PHOTO_BUCKET = 'property-photos';
+  var PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
+  var PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+
+  /* mp4 and quicktime only. webm is left out on purpose: Meta will not ingest
+     it, so accepting it would mean an agency uploads a file, sees it on the
+     listing, schedules a post and learns hours later that Instagram refused
+     it. Refusing at the point where they can still pick another file is
+     kinder than a correct error at the wrong moment. MOV is in because that
+     is what an iPhone records and most of these will be filmed on one. */
+  var VIDEO_TYPES = ['video/mp4', 'video/quicktime'];
+  /* 100MB is roughly 90 seconds of 1080p from a phone, which is also where
+     Instagram caps a Reel -- the two limits agree instead of surprising each
+     other. The photo limit stays at 10MB: these are different questions, and
+     the bucket's own ceiling cannot tell them apart. */
+  var VIDEO_MAX_BYTES = 100 * 1024 * 1024;
+
+  function photoExtFor(file) {
+    var m = {
+      'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif',
+      'video/mp4': 'mp4', 'video/quicktime': 'mov',
+    };
+    return m[file.type] || 'jpg';
+  }
+
+  /* ── the one rule for "is this a video" ────────────────────────────────
+     The form's gallery is a list of URL strings and social_posts.media_urls
+     is a text[] of URLs, so nowhere downstream carries a type beside the
+     link. Rather than thread a parallel array through the form, the queue and
+     the publisher, the type is derived from the URL -- here, and by the same
+     rule in social-publish, because two different guesses about one string is
+     how a video ends up posted as a photograph.
+
+     Query strings and fragments are stripped first: a Supabase public URL can
+     arrive with ?t= on it and ".mp4?t=1" matches nothing. */
+  var VIDEO_EXT = /\.(mp4|mov|m4v|qt)$/i;
+  function mediaTypeFromUrl(url) {
+    var clean = String(url || '').split('#')[0].split('?')[0];
+    return VIDEO_EXT.test(clean) ? 'video' : 'image';
+  }
+
+  /* -- SHRINK BEFORE UPLOAD ---------------------------------------------
+     A listing photograph was uploaded exactly as chosen. The only limit was a
+     10MB gate, so a phone camera's 4000x3000 JPEG went up whole and came back
+     down whole -- into a card 343px wide, on a buyer's mobile data, every time
+     the grid painted. The two photos in the database today are 10KB and 46KB,
+     which is luck rather than design: nothing in this path made them that.
+
+     1600px on the long edge is roughly twice what the largest view uses, so it
+     survives a retina property page with room to spare, and turns an 8MB
+     upload into a couple of hundred KB. It also makes the upload itself finish
+     on the agency's own connection, which in Lagos is the half of this nobody
+     sees from a desk.
+
+     EVERY FAILURE PATH RETURNS THE ORIGINAL FILE. No createImageBitmap, no
+     toBlob, a decode error, or a browser that produces something larger than
+     what it was given -- all of them fall through to uploading exactly what
+     was chosen, which is what happens today. This can make an upload smaller;
+     it cannot stop one working.
+
+     Small files are untouched: under 400KB there is nothing worth re-encoding,
+     and a WebP already down at 10KB would only come back bigger. */
+  var PHOTO_MAX_EDGE = 1600;
+  var PHOTO_SHRINK_FLOOR = 400 * 1024;
+  var PHOTO_QUALITY = 0.82;
+
+  function shrinkForUpload(file) {
+    try {
+      if (!file || file.size < PHOTO_SHRINK_FLOOR) return Promise.resolve(file);
+      if (typeof createImageBitmap !== 'function') return Promise.resolve(file);
+      if (typeof document.createElement('canvas').toBlob !== 'function') return Promise.resolve(file);
+
+      return createImageBitmap(file).then(function (bmp) {
+        var scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(bmp.width, bmp.height));
+        if (!(scale < 1)) { if (bmp.close) bmp.close(); return file; }
+        var cw = Math.round(bmp.width * scale), ch = Math.round(bmp.height * scale);
+        var cv = document.createElement('canvas');
+        cv.width = cw; cv.height = ch;
+        cv.getContext('2d').drawImage(bmp, 0, 0, cw, ch);
+        if (bmp.close) bmp.close();
+        return new Promise(function (res) {
+          cv.toBlob(function (blob) {
+            /* Never upload something bigger than what we were handed: an
+               already-optimised source can re-encode larger, and shipping that
+               would be worse than doing nothing. */
+            if (!blob || blob.size >= file.size) return res(file);
+            var base = String(file.name || 'photo').replace(/[.][^.]+$/, '');
+            try {
+              res(new File([blob], base + '.jpg', { type: 'image/jpeg', lastModified: Date.now() }));
+            } catch (e) {
+              res(file);   // no File constructor: keep the original rather than guess
+            }
+          }, 'image/jpeg', PHOTO_QUALITY);
+        });
+      }).catch(function () { return file; });
+    } catch (e) {
+      return Promise.resolve(file);
+    }
+  }
+
+  /* ── the agency's mark, drawn onto a copy ─────────────────────────────
+     What agencies do by hand in Canva before every post. All three pieces
+     are already ours: agencies.logo_url, properties.price, and whether the
+     listing passed verification.
+
+     A SECOND FILE, never a replacement. The original stays in
+     property_media.url and the listing page keeps showing it. This copy is
+     read only by social posts, so a price drawn onto a picture can never
+     reach the property page -- and an agency that dislikes the result has
+     lost nothing.
+
+     Returns null for every failure, and there are many: no logo, a logo that
+     will not load, no createImageBitmap, a canvas that will not export, a
+     cross-origin taint. The caller then uploads the plain photograph.
+     Branding is a nicety; losing an upload because a logo 404'd would arrive
+     as "your photo did not save", which is not a trade worth making. */
+  var BRAND_BAR = 0.13;       // bar height, as a fraction of the shorter edge
+  var BRAND_PAD = 0.035;      // breathing room, same basis
+
+  function naira(n) {
+    var v = Number(n);
+    if (!isFinite(v) || v <= 0) return '';
+    /* The same shape media_brand_stale() formats for comparison. If these two
+       ever disagree, every image reads as stale for ever. */
+    if (v >= 1000000) return '\u20a6' + (v / 1000000).toFixed(1) + 'm';
+    return '\u20a6' + v.toLocaleString('en-NG');
+  }
+
+  function loadLogo(url) {
+    if (!url) return Promise.resolve(null);
+    return new Promise(function (res) {
+      var img = new Image();
+      /* The logo is in another bucket. Without this the draw taints the
+         canvas and toBlob throws SecurityError -- which is the one failure
+         here that looks like a bug in the photograph rather than in the
+         logo. */
+      img.crossOrigin = 'anonymous';
+      img.onload = function () { res(img); };
+      img.onerror = function () { res(null); };
+      img.src = url;
+      /* A logo that never resolves must not hold an upload open. */
+      setTimeout(function () { res(img.complete && img.naturalWidth ? img : null); }, 4000);
+    });
+  }
+
+  /** opts: { logoUrl, price, verified, agencyName } → a File, or null. */
+  function brandImage(file, opts) {
+    var o = opts || {};
+    try {
+      if (!file || typeof createImageBitmap !== 'function') return Promise.resolve(null);
+      if (typeof document.createElement('canvas').toBlob !== 'function') return Promise.resolve(null);
+      var priceText = naira(o.price);
+      /* Nothing to say, nothing to draw. A copy identical to the original is
+         storage and confusion for no gain. */
+      if (!priceText && !o.verified && !o.logoUrl) return Promise.resolve(null);
+
+      return Promise.all([createImageBitmap(file), loadLogo(o.logoUrl)])
+        .then(function (both) {
+          var bmp = both[0], logo = both[1];
+          var w = bmp.width, h = bmp.height;
+          var cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          var x = cv.getContext('2d');
+          x.drawImage(bmp, 0, 0, w, h);
+          if (bmp.close) bmp.close();
+
+          /* PROPORTIONAL TO THE SHORTER EDGE. A 4000px photograph and a 900px
+             one are both uploaded here, and a fixed 42px bar that reads well
+             on one is invisible on the other. */
+          var base = Math.min(w, h);
+          var barH = Math.round(base * BRAND_BAR);
+          var pad = Math.round(base * BRAND_PAD);
+
+          /* A gradient, not a solid bar: a hard edge across a photograph
+             reads as damage, and the point is to stay legible over whatever
+             happens to be at the bottom of the frame. */
+          var g = x.createLinearGradient(0, h - barH * 1.9, 0, h);
+          g.addColorStop(0, 'rgba(12,12,14,0)');
+          g.addColorStop(1, 'rgba(12,12,14,0.72)');
+          x.fillStyle = g;
+          x.fillRect(0, h - barH * 1.9, w, barH * 1.9);
+
+          if (priceText) {
+            var fs = Math.round(barH * 0.52);
+            x.font = '700 ' + fs + 'px Georgia, "Times New Roman", serif';
+            x.fillStyle = '#fff';
+            x.textBaseline = 'alphabetic';
+            x.fillText(priceText, pad, h - pad);
+          }
+
+          if (o.verified) {
+            var vs = Math.round(barH * 0.32);
+            x.font = '600 ' + vs + 'px system-ui, -apple-system, sans-serif';
+            var label = '\u2713 Verified';
+            var tw = x.measureText(label).width;
+            var bx = w - pad - tw - vs, by = h - pad - vs * 1.5;
+            x.fillStyle = 'rgba(31,122,74,0.92)';
+            /* roundRect is recent; a plain rectangle is the fallback rather
+               than no badge at all. */
+            if (x.roundRect) {
+              x.beginPath(); x.roundRect(bx, by, tw + vs, vs * 2, vs); x.fill();
+            } else {
+              x.fillRect(bx, by, tw + vs, vs * 2);
+            }
+            x.fillStyle = '#fff';
+            x.fillText(label, bx + vs / 2, by + vs * 1.35);
+          }
+
+          if (logo) {
+            /* Top corner, opposite the price, capped so a wide wordmark and a
+               square badge both sit sensibly. */
+            var lh = Math.round(base * 0.075);
+            var lw = Math.round(lh * (logo.naturalWidth / logo.naturalHeight || 1));
+            var maxW = Math.round(w * 0.32);
+            if (lw > maxW) { lw = maxW; lh = Math.round(lw / (logo.naturalWidth / logo.naturalHeight || 1)); }
+            x.globalAlpha = 0.92;
+            x.drawImage(logo, w - pad - lw, pad, lw, lh);
+            x.globalAlpha = 1;
+          }
+
+          return new Promise(function (res) {
+            try {
+              cv.toBlob(function (blob) {
+                if (!blob) return res(null);
+                var nm = String(file.name || 'photo').replace(/[.][^.]+$/, '');
+                try {
+                  res(new File([blob], nm + '-branded.jpg',
+                    { type: 'image/jpeg', lastModified: Date.now() }));
+                } catch (e) { res(null); }
+              }, 'image/jpeg', 0.9);
+            } catch (e) {
+              /* SecurityError: the logo tainted the canvas. The plain
+                 photograph is the right outcome, not a failed upload. */
+              res(null);
+            }
+          });
+        }).catch(function () { return null; });
+    } catch (e) {
+      return Promise.resolve(null);
+    }
+  }
+
+  /** Upload a branded copy beside the original. Resolves to { url, price,
+   *  verified } describing what was drawn, or null if nothing was. The caller
+   *  writes those onto property_media so drift is detectable later. */
+  function uploadBrandedCopy(file, opts) {
+    var o = opts || {};
+    return brandImage(file, o).then(function (branded) {
+      if (!branded) return null;
+      return uploadPropertyPhoto(branded).then(function (url) {
+        return { url: url, price: naira(o.price) || null, verified: !!o.verified };
+      /* The original is already up by now. A failed branded upload costs the
+         mark, not the photograph. */
+      }, function () { return null; });
+    });
+  }
+
+  /* Upload one listing photograph. Resolves to its public URL, which the
+     caller stores in property_media.url. */
+  function uploadPropertyPhoto(file) {
+    if (!file) return Promise.reject(new Error('No file selected'));
+
+    var isVideo = VIDEO_TYPES.indexOf(file.type) !== -1;
+    if (!isVideo && PHOTO_TYPES.indexOf(file.type) === -1) {
+      /* Names what IS accepted rather than what was wrong. Somebody who just
+         tried a .webm or a .avi needs to know which file to go and find. */
+      return Promise.reject(new Error(
+        'Use a JPG, PNG, WEBP or AVIF photo, or an MP4 or MOV video'));
+    }
+
+    var cap = isVideo ? VIDEO_MAX_BYTES : PHOTO_MAX_BYTES;
+    if (file.size > cap) {
+      return Promise.reject(new Error(
+        'That ' + (isVideo ? 'video' : 'photo') + ' is '
+        + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under '
+        + Math.round(cap / 1024 / 1024) + 'MB'));
+    }
+
+    var c1, aid;
+    /* Shrunk after the gate, not before. The limit is about what someone is
+       allowed to choose; it should still say so about a 12MB file rather than
+       silently accepting it because we could squeeze it down.
+
+       Never for video: shrinkForUpload draws the file into a canvas, which on
+       a video yields one still frame -- it would upload a single frame under
+       an .mp4 name and call it a walkthrough. */
+    var prepared = isVideo ? Promise.resolve(file) : shrinkForUpload(file);
+    return prepared.then(function (f) { file = f; return client(); })
+      .then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
+      if (!a) throw new Error('no-agency: this account is not a member of any agency');
+      aid = a;
+      /* Random suffix, not just a timestamp: two photos chosen in the same
+         second would otherwise collide, and upsert:false would reject the
+         second with an error the person cannot act on. */
+      var rand = (Math.random().toString(36).slice(2, 8));
+      /* The prefix is cosmetic; the EXTENSION is load-bearing, because it
+         is what mediaTypeFromUrl reads here and what the publisher reads
+         again at the other end. */
+      var path = aid + '/' + (isVideo ? 'video-' : 'photo-')
+        + Date.now() + '-' + rand + '.' + photoExtFor(file);
+      return c1.storage.from(PHOTO_BUCKET).upload(path, file, {
+        cacheControl: '31536000', upsert: false, contentType: file.type,
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        return c1.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+      });
+    });
+  }
+
+  /* Remove a previously uploaded file. Best-effort: a logo the agency has
+     already replaced must never block saving the new one, so a failure here
+     is swallowed rather than surfaced. */
+  function removeBrandAsset(url) {
+    if (!url) return Promise.resolve(false);
+    var marker = '/' + BRAND_BUCKET + '/';
+    var i = String(url).indexOf(marker);
+    if (i === -1) return Promise.resolve(false);        // not ours (a pasted URL)
+    var path = decodeURIComponent(String(url).slice(i + marker.length).split('?')[0]);
+    return client()
+      .then(function (c) { return c.storage.from(BRAND_BUCKET).remove([path]); })
+      .then(function () { return true; })
+      .catch(function () { return false; });
+  }
+
+
+  /* ── generated captions, kept ─────────────────────────────────────────
+     Pressing Generate used to produce a screen of captions that existed only
+     in the tab: close it and ten minutes of work was gone. Nothing wrote to
+     `generated_content` at all -- the table shipped with the schema and had
+     never held a row.
+
+     The two enums on it described a different product (narrative_angle was
+     luxury|investment|rental|..., which are property categories, not the
+     approaches syndication.js writes in), so the app's own values could not
+     have been stored even if something had tried. Migration
+     0071 added them. */
+
+  /* syndication.js platform -> the content_type enum. A platform with no
+     mapping is skipped rather than guessed at: writing the wrong enum value
+     would file a TikTok script under Instagram forever. */
+  /* A channel with no content type here is dropped by saveGeneration WITHOUT
+     a word -- which is how X came to be a platform the product published to
+     and could not file a draft for. content_type gained x_post in migration
+     0110 for exactly this. */
+  var CONTENT_TYPE = {
+    instagram: 'instagram_post',
+    tiktok: 'tiktok_script',
+    youtube: 'youtube_short',
+    facebook: 'facebook_post',
+    whatsapp: 'whatsapp_message',
+    x: 'x_post',
+    /* Needs 20260927090000 -- the enum value came after the platform. */
+    telegram: 'telegram_post',
+  };
+  /* narrative_angle values a generation may be filed under. 'custom' is what
+     an agency's own template files as -- it has no enum value it could
+     honestly claim, and inventing one per template would mean a migration
+     every time somebody writes a caption. */
+  var ANGLE_KEYS = { trust: 1, value: 1, life: 1, scarcity: 1, question: 1, custom: 1 };
+
+  /**
+   * Files every variant of one generation. Called right after Generate, so
+   * what is on screen is already saved before the agency decides anything.
+   *
+   * One insert for the batch, not one per variant: twenty-five round trips
+   * would make a fast action feel broken, and a partial save is worse than
+   * none -- you could not tell which half you were looking at.
+   */
+  function saveGeneration(propertyId, variants, promptVersion) {
+    if (!propertyId || !variants || !variants.length) return Promise.resolve({ saved: 0 });
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { saved: 0 };
+
+      var rows = [];
+      variants.forEach(function (v) {
+        var ct = CONTENT_TYPE[v.platform];
+        /* angleKey, not angle: since templates became rows, `angle` is a uuid.
+           Reading it here skipped every variant and wrote nothing, quietly. */
+        var key = ANGLE_KEYS[v.angleKey] ? v.angleKey : 'custom';
+        if (!ct) return;                       // unknown platform: skip, never guess
+        rows.push({
+          property_id: propertyId,
+          agency_id: aid,
+          content_type: ct,
+          narrative_angle: key,
+          template_id: v.templateId || null,
+          /* The caption as generated, hashtags and all -- this is the artefact
+             worth keeping, not a summary of it. */
+          generated_text: String(v.caption || ''),
+          status: 'draft',
+          /* WHO WROTE IT, and it used to say 'syndication.js' for everything --
+             the template engine and the model alike -- which made the two
+             indistinguishable in the archive. That is how 46 template-era rows
+             were still filling Awaiting approval and Earlier versions after
+             the templates themselves were deleted: nothing could tell them
+             apart to leave them out. */
+          generated_by: 'social-generate',
+          generation_prompt_version: String(promptVersion || 'angles-v2'),
+        });
+      });
+      if (!rows.length) return { saved: 0 };
+
+      return c1.from('generated_content').insert(rows).then(function (r) {
+        if (r.error) throw r.error;
+        return { saved: rows.length };
+      });
+    });
+  }
+
+  /** Everything generated for one listing, newest first. */
+  function listGenerations(propertyId) {
+    if (!propertyId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('generated_content')
+        .select('id, content_type, narrative_angle, generated_text, status, created_at')
+        .eq('property_id', propertyId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+
+  /* ── the social pipeline ──────────────────────────────────────────────
+     social_posts has existed since the first schema and nothing ever wrote a
+     row to it. The portal's pipeline read from a `posts` array that was
+     initialised to [] and never assigned, so every column was permanently
+     empty and Approve, Schedule and Publish had nothing to act on -- which is
+     exactly what an agency reported: captions generate, then the buttons do
+     nothing.
+
+     These are the reads and writes that stage needs. Everything is scoped by
+     agency_id and RLS (social_posts_rw = is_agency_member) enforces the same
+     rule server-side, so a caller cannot reach another agency's schedule. */
+
+  /** Platforms we can honestly schedule to: the syndication engine validates
+   *  against these five, and social_platform now carries all five. linkedin
+   *  and x exist in the enum but nothing generates or checks content for them,
+   *  so they are deliberately not offered. */
+  var SCHEDULABLE = { instagram: 1, tiktok: 1, youtube: 1, facebook: 1, whatsapp: 1, x: 1,
+                      telegram: 1 };
+
+  /** Everything this agency has queued, publishing or published. */
+  function listSocialPosts() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_posts')
+        /* short_links embedded, because it holds the only real performance
+           number this product has. click_count / human_click_count are ours --
+           recorded by our own redirect -- and need no platform connection, no
+           Graph API token and no review. The Published column was telling
+           agencies "metrics arrive once a channel is connected" while sitting
+           on a post with 26 clicks from 5 people. */
+        .select('id, property_id, content_id, platform, status, scheduled_at, published_at, '
+              + 'caption, media_urls, failure_reason, created_at, payload, leg, twin_of, '
+              + 'likes, comments, shares, metrics_at, '
+              + 'short_links(token, click_count, human_click_count, last_clicked_at)')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        .order('scheduled_at', { ascending: true, nullsFirst: false })
+        .limit(500);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Whether this agency answers Instagram comments with a private reply,
+   *  and with what. Absent row means off, which is also the default when the
+   *  row exists -- nobody is enrolled by the row appearing. */
+  function getReplySettings() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_reply_settings')
+        .select('agency_id, enabled, keyword, message, updated_at')
+        .eq('agency_id', aid).limit(1);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && r.data[0]) || null;
+    });
+  }
+
+  /** Upsert, because the row may not exist yet and "turn it on" should not
+   *  fail for an agency that has never opened this screen. RLS restricts the
+   *  write to owner and admin. */
+  function saveReplySettings(patch) {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!aid) throw new Error('No agency on this account');
+        var row = { agency_id: aid, updated_at: new Date().toISOString(), updated_by: me || null };
+        if (patch.enabled !== undefined) row.enabled = !!patch.enabled;
+        if (patch.keyword != null) row.keyword = String(patch.keyword).trim();
+        if (patch.message != null) row.message = String(patch.message);
+        return c1.from('social_reply_settings').upsert(row, { onConflict: 'agency_id' });
+      })
+      .then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** What people said back. Written by the metrics sweep against the
+   *  agency's own connected account -- so these exist only for posts that
+   *  went out on the agency's Instagram or Page, not for Synapse's own
+   *  channels, where the provider reports counts and no text.
+   *
+   *  RLS is social_comments_read (is_agency_member), and there is no write
+   *  policy at all: the one field a person may move goes through
+   *  mark_comment_handled. An agency editing the words a stranger wrote
+   *  would make our copy a forgery of somebody else's sentence. */
+  function listSocialComments() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('social_comments')
+        .select('id, social_post_id, property_id, platform, author_handle, '
+              + 'body, commented_at, handled_at')
+        .eq('agency_id', aid)
+        .is('deleted_at', null)
+        /* Newest first: the board's question is what is waiting now. */
+        .order('commented_at', { ascending: false, nullsFirst: false })
+        .limit(300);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Mark one dealt with, or put it back. Not an update: the table has no
+   *  write policy, and this is the only column a member is allowed to move. */
+  function markCommentHandled(id, handled) {
+    if (!id) return Promise.reject(new Error('no comment'));
+    return client().then(function (c) {
+      return c.rpc('mark_comment_handled', {
+        p_comment_id: id, p_handled: handled !== false });
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Captions generated but not yet approved -- the review queue.
+   *  Joins the property so a card can show what it is advertising. */
+  function listPendingContent() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [], error: null };
+      return c1.from('generated_content')
+        .select('id, property_id, content_type, narrative_angle, generated_text, status, created_at')
+        .eq('agency_id', aid)
+        .eq('status', 'draft')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || [];
+    });
+  }
+
+  /** Approve or discard a caption. 'approved' moves it out of the review
+   *  queue; 'archived' is the discard, and is a soft state rather than a
+   *  delete because an agency asking "what did we reject and why" is a fair
+   *  question and a deleted row cannot answer it. */
+  function setContentStatus(id, status) {
+    if (!id || (status !== 'approved' && status !== 'archived' && status !== 'scheduled')) {
+      return Promise.reject(new Error('bad status'));
+    }
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); }).then(function (u) {
+      me = u && u.data && u.data.user && u.data.user.id;
+      var patch = { status: status, updated_at: new Date().toISOString() };
+      if (status === 'approved') { patch.approved_by = me || null; patch.approved_at = new Date().toISOString(); }
+      return c1.from('generated_content').update(patch).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** This person's own tracked link for a listing on one channel. The same
+   *  person, listing and channel always get the same token back
+   *  (create_short_link keys manual links on the caller since 20260927130000),
+   *  so opening the share kit twice never scatters one agent's visits across
+   *  two links. */
+  function shareLink(propertyId, channel) {
+    if (!propertyId || !channel) return Promise.reject(new Error('No listing to share'));
+    return client().then(function (c) {
+      return c.rpc('create_short_link', { p_property_id: propertyId, p_channel: channel });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var row = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!row || !row.url) throw new Error('No link came back');
+      return { token: row.token, url: row.url };
+    });
+  }
+
+  /** How many people (not preview bots) have opened one link. */
+  function shareLinkOpens(token) {
+    if (!token) return Promise.resolve(0);
+    return client().then(function (c) {
+      return c.from('short_links').select('human_click_count').eq('token', token).maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && Number(r.data.human_click_count)) || 0;
+    });
+  }
+
+  /** The agency's own edit to a caption awaiting approval. Written to the
+   *  draft itself, so what gets approved is what was read. `.select` makes a
+   *  refused or already-moved row an error rather than a silent zero-row
+   *  update that looks like success. */
+  function updateContentText(id, text) {
+    var t = String(text == null ? '' : text).replace(/\s+$/, '');
+    if (!id) return Promise.reject(new Error('No caption to save'));
+    if (!t.trim()) return Promise.reject(new Error('A caption cannot be empty'));
+    return client().then(function (c) {
+      return c.from('generated_content')
+        .update({ generated_text: t })
+        .eq('id', id)
+        .select('id');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.length) {
+        throw new Error('That caption could not be changed — it may already have been approved or removed.');
+      }
+      return true;
+    });
+  }
+
+  /**
+   * Queue one caption across platforms and times.
+   *
+   * `slots` is a list of { platform, at } -- so "post this to Instagram at 9am
+   * and to Facebook at 6pm" is one call producing two rows, which is how the
+   * same post gets copies at different times on different channels rather than
+   * an agency retyping it. One row per slot is what the publisher will read.
+   *
+   * dry_run stays true: nothing is connected to a platform yet, and a row that
+   * claimed otherwise would be a lie the publisher would later act on.
+   */
+  /**
+   * Queue one post per channel, THROUGH queue_social_post.
+   *
+   * THIS USED TO INSERT INTO social_posts DIRECTLY, and that was the bug behind
+   * an entire rehearsal. queue_social_post is where a post gets its short link
+   * minted and its Synapse twin queued; a direct PostgREST insert skips both.
+   * So every caption scheduled from the composer -- the button an operator
+   * actually presses -- arrived with no tracked link in it and no amplification
+   * behind it, while publishLive(), which nobody uses to schedule, was the only
+   * caller that did it properly. Two ways in, one of them right.
+   *
+   * One call per slot, sequentially. The RPC takes a single platform because a
+   * short link is per post per channel -- that is the whole point of it -- and
+   * sequential rather than parallel for the reason publishLive gives: a partial
+   * failure halfway through a fan-out leaves an unknown number of rows queued
+   * and the agency unable to tell what is about to go out.
+   */
+  function schedulePost(opts) {
+    var o = opts || {};
+    var slots = (o.slots || []).filter(function (sl) {
+      return sl && SCHEDULABLE[sl.platform] && sl.at;
+    });
+    if (!o.propertyId) return Promise.reject(new Error('No listing on that post'));
+    if (!slots.length) return Promise.reject(new Error('Pick at least one channel and time'));
+
+    var c1;
+    var made = [];
+    return client().then(function (c) {
+      c1 = c;
+      return slots.reduce(function (chain, sl) {
+        return chain.then(function () {
+          var at = new Date(sl.at).toISOString();
+          return c1.rpc('queue_social_post', {
+            p_property_id: o.propertyId,
+            p_platform: sl.platform,
+            /* WHICH of the agency's accounts on that platform. null means
+               "the agency's default", which is what every post queued before
+               an agency could have two already means -- so this is additive
+               and nothing already scheduled changes its destination.
+               queue_social_post checks the account is the agency's own and
+               matches the platform; it is not trusted from here. */
+            p_social_account_id: sl.accountId || null,
+            /* Per slot, falling back to the shared one. The captions are
+               genuinely different per channel -- different subjects, not
+               retoned copies -- so putting one of them on every row would post
+               the Instagram angle to Facebook. */
+            p_caption: String(sl.caption || o.caption || ''),
+            /* [] NOT null. media_urls is NOT NULL with a default of '{}', and
+               an explicit null overrides the default rather than falling back
+               to it. */
+            p_media_urls: o.mediaUrls || [],
+            p_scheduled_at: at,
+            /* A SCHEDULED POST IS A REAL POST, and defaulting this to a
+               rehearsal meant it never could be. Everything queued from the
+               portal carried dry_run true, so a post scheduled for 8pm reached
+               8pm, went to the MOCK adapter, recorded what it would have sent,
+               and stopped. Forever, at every time, however long anybody waited.
+               Scheduling could not reach a platform at all -- and that is not a
+               fault in the drain or in any adapter: nothing was ever asking
+               them to send anything. Only "Post now" passed false, which is why
+               only "Post now" ever did anything.
+
+               Inverted. A caller must now ask for a rehearsal rather than ask
+               to be real. Post now still passes false explicitly and keeps its
+               confirm; a scheduled post is equally real, and its confirmation
+               is that somebody chose a time and pressed the button. */
+            p_dry_run: o.dryRun === true ? true : false,
+            /* WHICH ANGLE THIS CAPTION TOOK. social-generate rotates through
+               six subjects and needs to know which are spent for a listing, or
+               every regeneration rewrites the same three. This is why the RPC
+               grew a payload parameter: without it, moving off the direct
+               insert would have silently dropped the rotation. */
+            p_payload: sl.angle ? { angle: sl.angle } : null,
+          }).then(function (r) {
+            if (r.error) throw r.error;
+            made.push({ id: r.data, platform: sl.platform, scheduled_at: at });
+          });
+        });
+      }, Promise.resolve());
+    }).then(function () {
+      /* content_id links the row back to the generated_content it came from,
+         and the RPC does not take it -- it is the pipeline's bookkeeping, not
+         the publisher's. Patched on afterwards, and only when there is one, so
+         the composer (which has none) costs no extra round trip. A failure
+         here loses the link to the draft and not the post, so it does not
+         reject: the posts are queued either way. */
+      if (!o.contentId || !made.length) return made;
+      return c1.from('social_posts')
+        .update({ content_id: o.contentId })
+        .in('id', made.map(function (m) { return m.id; }))
+        .then(function () { return made; }, function () { return made; });
+    }).then(function () {
+      /* A STORY BESIDE EACH INSTAGRAM POST, when asked for. Instagram only:
+         queue_story_twin refuses anything else, and Facebook Stories are a
+         different product with different endpoints.
+
+         Fails soft for the same reason content_id above does -- the feed post
+         is what the agency asked for, and a Story that could not be queued
+         must not take it down. Sequential, because the RPC is idempotent per
+         source post but the rate limit is not. */
+      /* FILED UNDER THE CAMPAIGN, if one was chosen. After the rows exist,
+         and fails soft for the same reason content_id above does: the posts
+         are what the agency asked for, and a label that did not stick must
+         not take them down. */
+      /* What the agency asked for that did not happen is collected and
+         reported by the portal, not only logged (Greptile). */
+      window.SYN_LAST_SCHEDULE_PROBLEMS = [];
+      if (!o.campaignId || !made.length) return made;
+      return c1.rpc('assign_posts_to_campaign', {
+        p_campaign_id: o.campaignId,
+        p_post_ids: made.map(function (m) { return m.id; }),
+      }).then(function (r) {
+        if (r.error) { console.error('campaign assign', r.error.message); window.SYN_LAST_SCHEDULE_PROBLEMS.push('the campaign label'); }
+        return made;
+      }, function (e) { console.error('campaign assign', e); window.SYN_LAST_SCHEDULE_PROBLEMS.push('the campaign label'); return made; });
+    }).then(function () {
+      if (!o.stories || !made.length) return made;
+      var igs = made.filter(function (m) { return m.platform === 'instagram'; });
+      return igs.reduce(function (chain, m) {
+        return chain.then(function () {
+          return c1.rpc('queue_story_twin', { p_source_post: m.id })
+            .then(function (r) {
+              if (r.error) { console.error('story twin', r.error.message); (window.SYN_LAST_SCHEDULE_PROBLEMS || []).push('the Instagram Story'); }
+              else made.push({ id: r.data, platform: 'instagram', story: true,
+                               scheduled_at: m.scheduled_at });
+            }, function (e) { console.error('story twin', e); (window.SYN_LAST_SCHEDULE_PROBLEMS || []).push('the Instagram Story'); });
+        });
+      }, Promise.resolve()).then(function () { return made; });
+    });
+  }
+
+  /** Move a queued post to another time, another channel, or mark it done.
+   *  Used by the calendar when a post is dragged to a different day. */
+  function updateSocialPost(id, patch) {
+    if (!id || !patch) return Promise.reject(new Error('nothing to update'));
+    var row = { updated_at: new Date().toISOString() };
+    if (patch.at) row.scheduled_at = new Date(patch.at).toISOString();
+    if (patch.platform) {
+      if (!SCHEDULABLE[patch.platform]) return Promise.reject(new Error('We do not publish to that yet'));
+      row.platform = patch.platform;
+    }
+    /* undefined, not falsy: null is a real value here -- it means "go back
+       to the agency's default account" -- and `if (patch.accountId)` would
+       silently refuse to set it. */
+    if (patch.accountId !== undefined) row.social_account_id = patch.accountId || null;
+    if (patch.caption != null) row.caption = String(patch.caption);
+    if (patch.status) {
+      row.status = patch.status;
+      /* published_at is what the calendar and the metrics read; setting the
+         status without it leaves a post that is published on one screen and
+         unpublished on the next. */
+      if (patch.status === 'published') row.published_at = new Date().toISOString();
+    }
+    return client().then(function (c) {
+      return c.from('social_posts').update(row).eq('id', id);
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Take a post off the schedule. Soft, like everything else here. */
+  /* THROUGH THE RPC, not a direct UPDATE. Removing is a soft delete, which is
+     an UPDATE, and social_posts_guard refuses any UPDATE from the browser once
+     old.status has left draft/scheduled -- so a FAILED post could not be
+     retried, rescheduled OR removed. It was stuck on the board permanently,
+     and because the pipeline showed every non-published status as 'Scheduled'
+     it looked like it was still on its way out.
+
+     discard_social_post still refuses a published one, deliberately: that row
+     is the agency's record of what actually went out, and hiding it here would
+     not unpublish anything, it would only make our account of it wrong. */
+  function deleteSocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.rpc('discard_social_post', { p_post_id: id });
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Engagement from the platforms themselves -- likes, comments, shares --
+   *  for posts published through trypost.
+   *
+   *  Through the edge function rather than direct, because the trypost key is
+   *  a workspace-wide credential: anything holding it can post as Synapse on
+   *  every connected account, so it stays on the server. functions.invoke
+   *  attaches the session, and the function forwards that same token to
+   *  PostgREST -- so a post that is not yours does not come back and is never
+   *  asked about.
+   *
+   *  Returns {} rather than throwing on any failure. This is the decoration on
+   *  a panel whose important numbers are already on screen. */
+  function postMetrics(ids) {
+    var list = (ids || []).filter(Boolean).slice(0, 20);
+    if (!list.length) return Promise.resolve({});
+    return client().then(function (c) {
+      return c.functions.invoke('post-metrics', { body: { postIds: list } });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return (r.data && r.data.results) || {};
+    }).catch(function (e) {
+      console.error('post-metrics', e);
+      return {};
+    });
+  }
+
+  /** The per-post funnel: human click-throughs, listing visits, leads.
+   *
+   *  All three are measured by us -- our redirect counts the click, our
+   *  property page records the visit, our lead form closes the loop -- so they
+   *  exist with nothing connected to any platform. That is the whole reason
+   *  the pipeline can report performance at all today.
+   *
+   *  Returns a map keyed by social_post_id so a card can look itself up. */
+  function socialPostStats() {
+    return client().then(function (c) {
+      return c.rpc('social_post_stats');
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      var by = {};
+      (r.data || []).forEach(function (row) {
+        if (row && row.social_post_id) by[row.social_post_id] = row;
+      });
+      return by;
+    });
+  }
+
+  /** Puts a failed post back in the publish queue. Resets attempts server-side,
+   *  because drain_social_queue skips anything at max_attempts and a failed
+   *  post has spent them all. */
+  function retrySocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.rpc('retry_social_post', { p_post_id: id });
+    }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+
+
+  /* -- the agency's papers ------------------------------------------------
+     What a real-estate business in Nigeria must actually hold, and the one
+     place the portal collects it.
+
+     Order is the order of obligation, not of convenience: CAC first because
+     nothing else exists without it, SCUML second because the EFCC requires it
+     BEFORE you may trade, then the practice registrations, then the state
+     licence. `required` marks the four an agency cannot operate without; the
+     rest raise the tier but do not block.
+
+     None of this goes in a public bucket. See agency-documents in migration
+     0076 -- a director's ID behind a guessable URL is the exact failure this
+     path exists to avoid. */
+  var DOC_BUCKET = 'agency-documents';
+  var DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+  var DOC_MAX_BYTES = 15 * 1024 * 1024;
+
+  var DOC_CATALOGUE = [
+    { key: 'cac_certificate', label: 'CAC certificate',
+      body: 'Corporate Affairs Commission', scope: 'federal', required: true,
+      hint: 'Your certificate of incorporation.' },
+    { key: 'scuml_certificate', label: 'SCUML certificate',
+      body: 'EFCC', scope: 'federal', required: true,
+      hint: 'Anti-money-laundering registration. Required before you may trade.' },
+    { key: 'agency_license', label: 'State licence',
+      body: 'State authority', scope: 'state', required: true,
+      hint: 'LASRERA in Lagos. One per state you work in.' },
+    { key: 'directors_id', label: 'Director\u2019s ID',
+      body: 'Government issued', scope: 'federal', required: true,
+      hint: 'NIN slip, passport or driver\u2019s licence.' },
+    { key: 'esvarbon_registration', label: 'ESVARBON registration',
+      body: 'Estate Surveyors and Valuers Registration Board', scope: 'federal', required: false,
+      hint: 'If your firm practises estate surveying or valuation.' },
+    { key: 'niesv_membership', label: 'NIESV membership',
+      body: 'Nigerian Institution of Estate Surveyors and Valuers', scope: 'federal', required: false,
+      hint: 'Professional membership certificate.' },
+    { key: 'bank_statement', label: 'Bank statement',
+      body: 'Corporate account', scope: 'federal', required: false,
+      hint: 'Recent statement in the company\u2019s name.' },
+  ];
+
+  function docExtFor(file) {
+    var m = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png',
+              'image/webp': 'webp', 'image/heic': 'heic' };
+    return m[file.type] || 'pdf';
+  }
+
+  /* Every document on file for this agency, newest first. The bucket is
+     private, so nothing here is a URL you can open -- storage_url holds the
+     PATH, and documentLink() trades it for a short-lived signed URL at the
+     moment somebody actually clicks. */
+  function listDocuments() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) return [];
+        return c1.from('documents')
+          .select('id, document_type, display_name, storage_url, issuing_state, '
+                + 'is_verified, verified_at, expires_at, file_size_bytes, mime_type, created_at')
+          .eq('entity_type', 'agency').eq('entity_id', aid)
+          .is('deleted_at', null).eq('is_current', true)
+          .order('created_at', { ascending: false })
+          .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+      });
+  }
+
+  /* A signed URL, made when it is needed and good for two minutes. Long
+     enough to open the file, short enough that a copied link is worthless by
+     the time it is pasted anywhere. */
+  function documentLink(path) {
+    return client().then(function (c) {
+      return c.storage.from(DOC_BUCKET).createSignedUrl(path, 120);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data.signedUrl;
+    });
+  }
+
+  /* Upload one document and record it. The file goes up first: a row pointing
+     at a file that failed to upload is worse than an orphaned file, because
+     the checklist would then claim the agency supplied something it has not. */
+  function uploadDocument(file, opts) {
+    var o = opts || {};
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (DOC_TYPES.indexOf(file.type) === -1) {
+      return Promise.reject(new Error('Use a PDF, JPG, PNG or WEBP'));
+    }
+    if (file.size > DOC_MAX_BYTES) {
+      return Promise.reject(new Error('That file is '
+        + Math.ceil(file.size / 1024 / 1024) + 'MB \u2014 keep it under 15MB'));
+    }
+    var spec = null;
+    for (var i = 0; i < DOC_CATALOGUE.length; i++) {
+      if (DOC_CATALOGUE[i].key === o.type) { spec = DOC_CATALOGUE[i]; break; }
+    }
+    if (!spec) return Promise.reject(new Error('Unknown document type'));
+    /* The database refuses a state licence with no state (migration 0078).
+       Saying so here means the person is told before a 15MB upload, not
+       after it. */
+    if (spec.scope === 'state' && !o.state) {
+      return Promise.reject(new Error('Choose the state that issued this licence'));
+    }
+
+    var c1, aid, path;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (a) {
+        if (!a) throw new Error('no-agency: this account is not a member of any agency');
+        aid = a;
+        path = aid + '/' + o.type + '-' + Date.now() + '.' + docExtFor(file);
+        return c1.storage.from(DOC_BUCKET).upload(path, file, {
+          cacheControl: '0', upsert: false, contentType: file.type,
+        });
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        /* Supersede what was there rather than deleting it. A replaced
+           certificate is evidence of what was on file when a decision was
+           taken, and the row is what an auditor reads. */
+        var sup = c1.from('documents')
+          .update({ is_current: false, updated_at: new Date().toISOString() })
+          .eq('entity_type', 'agency').eq('entity_id', aid)
+          .eq('document_type', o.type).eq('is_current', true);
+        return spec.scope === 'state' ? sup.eq('issuing_state', o.state) : sup;
+      })
+      .then(function (r) {
+        if (r && r.error) throw r.error;
+        return c1.auth.getUser();
+      })
+      .then(function (u) {
+        return c1.from('documents').insert({
+          entity_type: 'agency', entity_id: aid,
+          document_type: o.type,
+          display_name: (o.name && String(o.name).trim()) || spec.label,
+          storage_url: path,
+          issuing_state: spec.scope === 'state' ? o.state : null,
+          expires_at: o.expiresAt || null,
+          file_size_bytes: file.size,
+          mime_type: file.type,
+          uploaded_by: u && u.data && u.data.user && u.data.user.id,
+          /* is_verified is never set here and no policy would allow it. An
+             agency does not verify its own papers. */
+          is_current: true,
+        }).select('id').single();
+      })
+      .then(function (r) {
+        if (r.error) {
+          /* The row failed, so the file is an orphan. Take it back out rather
+             than leaving a private bucket filling with unreferenced IDs. */
+          c1.storage.from(DOC_BUCKET).remove([path]).catch(function () {});
+          throw r.error;
+        }
+        return r.data;
+      });
+  }
+
+  /* Remove it outright, and the file with it.
+
+     This was a soft delete -- set deleted_at, keep the row -- and it could
+     never have worked. documents_select is `deleted_at is null and
+     can_access_document(...)`, and PostgreSQL applies SELECT policies to the
+     NEW row on UPDATE: stamping deleted_at makes the row invisible to the
+     very policy that has to admit it, so the write is refused with "new row
+     violates row-level security policy". Verified by dropping the deleted_at
+     clause in a transaction, watching the update succeed, and rolling back.
+
+     A hard delete is the honest answer anyway. This path is for "I uploaded
+     the wrong file", the storage object is removed in the same breath, and a
+     row pointing at a file that no longer exists is not an audit trail. The
+     history that matters is superseding -- is_current = false on replacement,
+     which keeps both the row and the file, and which does work. */
+  function deleteDocument(id, path) {
+    var c1;
+    return client().then(function (c) {
+      c1 = c;
+      return c.from('documents').delete().eq('id', id);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (path) return c1.storage.from(DOC_BUCKET).remove([path]).catch(function () { return null; });
+      return null;
+    }).then(function () { return true; });
+  }
+
+  /* The checklist: catalogue + what is on file + what the platform has
+     confirmed, folded together. Everything derived, nothing stored, so it
+     cannot drift from the documents table.
+
+     Four states per row, and the differences matter to whoever is reading:
+       missing    nothing uploaded
+       pending    uploaded, nobody has checked it yet
+       verified   a platform admin confirmed it
+       expired    it had an expiry date and that date has passed */
+  /* An agency signed up before any of this existed cannot be asked to
+     produce it retroactively as a condition of carrying on. agency_verifications
+     .documents_reviewed is the marker: set by the verification desk, readable
+     by the agency, and writable by neither -- the table has a SELECT policy
+     and nothing else, so an agency cannot exempt itself.
+
+     The checklist still renders and still accepts uploads. What changes is
+     that nothing is counted as outstanding and the page stops asking. */
+  function documentsExemption() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); })
+      .then(function (aid) {
+        if (!aid) return null;
+        return c1.from('agency_verifications')
+          .select('documents_reviewed, verification_notes, current_tier')
+          .eq('agency_id', aid).is('deleted_at', null)
+          .maybeSingle()
+          .then(function (r) { return r.error ? null : r.data; });
+      })
+      .catch(function () { return null; });
+  }
+
+  function verificationStatus() {
+    return Promise.all([listDocuments(), agency(), documentsExemption()]).then(function (both) {
+      var docs = both[0] || [], ag = both[1] || {}, ver = both[2] || null;
+      var exempt = !!(ver && ver.documents_reviewed);
+      var now = Date.now();
+      var rows = DOC_CATALOGUE.map(function (spec) {
+        var mine = docs.filter(function (d) { return d.document_type === spec.key; });
+        var state = 'missing';
+        if (mine.length) {
+          var allExpired = mine.every(function (d) {
+            return d.expires_at && new Date(d.expires_at).getTime() < now;
+          });
+          state = allExpired ? 'expired'
+            : mine.some(function (d) { return d.is_verified; }) ? 'verified' : 'pending';
+        }
+        return {
+          key: spec.key, label: spec.label, body: spec.body, hint: spec.hint,
+          scope: spec.scope, required: spec.required, state: state, files: mine,
+        };
+      });
+      var missing = exempt ? [] : rows.filter(function (r) {
+        return r.required && (r.state === 'missing' || r.state === 'expired');
+      });
+      return {
+        tier: ag.verification_tier || 'unverified',
+        rows: rows,
+        exempt: exempt,
+        exemptNote: exempt ? (ver.verification_notes || null) : null,
+        outstanding: missing.length,
+        /* Complete means every REQUIRED row is on file. It deliberately does
+           not mean verified: supplying the papers is the agency's half and
+           checking them is ours, and an agency should be able to see when it
+           has finished its half. */
+        complete: missing.length === 0,
+      };
+    });
+  }
+
+  /* ── the person, not the agency ───────────────────────────────────────────
+     An agent who accepted an invite arrived as a name and nothing else. Not
+     because nobody wrote the form -- because agent_profiles carried a single
+     policy, public_read, so the table was readable by the world and writable
+     by no one. A form would have failed silently. The policies exist now
+     (see the an_agent_can_write_their_own_profile migration) and these are
+     the calls that use them.
+
+     Two tables, because the split is real: `profiles` is who you are on
+     Synapse at all -- name, phone, WhatsApp, face -- and `agent_profiles` is
+     how you work: what you cover, what you speak, what you have been doing
+     and for how long. A buyer eventually reads the second one. */
+
+  var AVATAR_BUCKET = 'avatars';
+  var AVATAR_MAX_BYTES = 3 * 1024 * 1024;
+
+  /** Everything the signed-in person can edit about themselves, plus the role
+   *  that decides which editor they should be shown at all. */
+  function myProfile() {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        return c1.from('profiles')
+          .select('id, full_name, phone, whatsapp, avatar_url, '
+                + 'agent_profiles(bio, years_experience, languages, specializations, '
+                + 'areas_covered, certifications, response_rate_pct, closed_deals, avg_rating)')
+          .eq('id', me).maybeSingle();
+      })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        var row = r.data || {};
+        /* PostgREST gives a to-one embed as an object and a to-many as an
+           array. agent_profiles.profile_id is the key so it is to-one, but the
+           roster already accepts both and so does this. */
+        var ap = row.agent_profiles || {};
+        if (Array.isArray(ap)) ap = ap[0] || {};
+        return {
+          id: me,
+          name: row.full_name || '',
+          phone: row.phone || '',
+          whatsapp: row.whatsapp || '',
+          avatar: row.avatar_url || '',
+          bio: ap.bio || '',
+          years: ap.years_experience == null ? '' : ap.years_experience,
+          languages: ap.languages || [],
+          specializations: ap.specializations || [],
+          areas: ap.areas_covered || [],
+          certifications: ap.certifications || [],
+          /* Read-only, and shown as such. The database refuses a write to
+             these from the portal -- see agent_profiles_guard. */
+          closed: ap.closed_deals,
+          rating: ap.avg_rating,
+          responseRate: ap.response_rate_pct,
+          /* Enough of a profile to appear as a colleague rather than a blank.
+             Used to decide whether to prompt, never to block anything. */
+          complete: !!(row.full_name && row.avatar_url && ap.bio),
+        };
+      });
+  }
+
+  /** The signed-in person's role in their agency, so the portal can send an
+   *  owner to the brand and an agent to their own profile. */
+  function myRole() {
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        return agencyId();
+      })
+      .then(function (aid) {
+        if (!me || !aid) return null;
+        return c1.from('agency_members').select('role')
+          .eq('agency_id', aid).eq('profile_id', me).maybeSingle()
+          .then(function (r) { return (r.data && r.data.role) || null; });
+      })
+      .catch(function () { return null; });
+  }
+
+  /** Save both halves. The two tables are written separately because they are
+   *  governed separately: profiles by profiles_update_own, agent_profiles by
+   *  the policies added alongside this. A failure on one is reported rather
+   *  than silently leaving the other half saved. */
+  function saveMyProfile(patch) {
+    var c1, me;
+    var p = patch || {};
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+
+        var who = {};
+        if (p.name != null) who.full_name = String(p.name).trim();
+        if (p.phone != null) who.phone = String(p.phone).trim() || null;
+        if (p.whatsapp != null) who.whatsapp = String(p.whatsapp).trim() || null;
+        if (p.avatar != null) who.avatar_url = String(p.avatar).trim() || null;
+        /* A name is the one field with no sensible empty state: it is what a
+           colleague and a buyer both see first. */
+        if (who.full_name === '') throw new Error('Your name cannot be blank');
+        who.updated_at = new Date().toISOString();
+
+        return Object.keys(who).length > 1
+          ? c1.from('profiles').update(who).eq('id', me)
+          : { error: null };
+      })
+      .then(function (r) {
+        if (r && r.error) throw r.error;
+        var work = { profile_id: me };
+        var list = function (v) {
+          return (Array.isArray(v) ? v : String(v || '').split(','))
+            .map(function (x) { return String(x).trim(); })
+            .filter(Boolean);
+        };
+        if (p.bio != null) work.bio = String(p.bio).trim() || null;
+        if (p.years != null) {
+          var y = parseInt(p.years, 10);
+          work.years_experience = Number.isFinite(y) && y >= 0 && y <= 70 ? y : null;
+        }
+        if (p.languages != null) work.languages = list(p.languages);
+        if (p.specializations != null) work.specializations = list(p.specializations);
+        if (p.areas != null) work.areas_covered = list(p.areas);
+        if (p.certifications != null) work.certifications = list(p.certifications);
+        if (Object.keys(work).length === 1) return { error: null };
+        /* Upsert: an agent who has never opened this has no row at all, and
+           making them save twice to get one would be a bug they cannot see. */
+        return c1.from('agent_profiles').upsert(work, { onConflict: 'profile_id' });
+      })
+      .then(function (r) { if (r && r.error) throw r.error; return true; });
+  }
+
+  /** A face, in the person's own folder. Returns the public URL; the caller
+   *  passes it back through saveMyProfile so nothing is stored until they
+   *  actually save. */
+  function uploadAvatar(file) {
+    if (!file) return Promise.reject(new Error('No file'));
+    if (!/^image\//.test(file.type || '')) return Promise.reject(new Error('That is not an image'));
+    if (file.size > AVATAR_MAX_BYTES) {
+      return Promise.reject(new Error('That photo is ' + Math.ceil(file.size / 1024 / 1024) + 'MB \u2014 keep it under 3MB'));
+    }
+    var c1, me;
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); })
+      .then(function (u) {
+        me = u && u.data && u.data.user && u.data.user.id;
+        if (!me) throw new Error('Not signed in');
+        var path = me + '/avatar-' + Date.now() + '.' + extFor(file);
+        return c1.storage.from(AVATAR_BUCKET).upload(path, file, {
+          cacheControl: '31536000', upsert: false, contentType: file.type,
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          return c1.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
+        });
+      });
+  }
+
+  /* listTemplates / saveTemplate / deleteTemplate lived here and are gone
+     with the editor they served. content_templates still exists and still
+     holds its rows -- the five seeds and anything an agency wrote -- but
+     nothing in the app reads it any more. */
+
+  /* Several photos at once.     Nigerian mobile connection uploading eight files in parallel is how you get
+     eight timeouts instead of eight photos, and the progress callback would
+     have nothing meaningful to report. One at a time, in the order chosen, so
+     the first file picked becomes display_order 0 -- the cover.
+
+     A file that fails does not stop the rest. The caller is handed both lists
+     and decides what to say; losing seven good photos because the eighth was a
+     screenshot of a PDF would be its own bug. */
+  /** brand: { logoUrl, price, verified } — optional. When given, a marked
+   *  copy of each photograph is uploaded beside the original and described in
+   *  `items`. `urls` keeps its old shape so every existing caller is
+   *  untouched. */
+  function uploadPropertyPhotos(files, onProgress, brand) {
+    var list = Array.prototype.slice.call(files || []);
+    if (!list.length) return Promise.resolve({ urls: [], items: [], failed: [] });
+    var urls = [], items = [], failed = [];
+    return list.reduce(function (chain, file, i) {
+      return chain.then(function () {
+        if (typeof onProgress === 'function') onProgress(i, list.length, file.name);
+        return uploadPropertyPhoto(file)
+          .then(function (url) {
+            urls.push(url);
+            var item = { url: url };
+            items.push(item);
+            /* Only photographs. brandImage draws a video's first frame into a
+               canvas, so branding one would produce a still with a price on
+               it filed as the walkthrough. */
+            if (!brand || mediaTypeFromUrl(url) === 'video') return null;
+            return uploadBrandedCopy(file, brand).then(function (b) {
+              if (!b) return null;
+              item.branded_url = b.url;
+              item.branded_price = b.price;
+              item.branded_verified = b.verified;
+              return null;
+            });
+          })
+          .catch(function (err) {
+            failed.push({ name: file.name, reason: (err && err.message) || 'upload failed' });
+          });
+      });
+    }, Promise.resolve()).then(function () {
+      if (typeof onProgress === 'function') onProgress(list.length, list.length, null);
+      return { urls: urls, items: items, failed: failed };
+    });
+  }
+
+  window.SynListings = {
+    uploadPropertyPhoto: uploadPropertyPhoto,
+    uploadPropertyPhotos: uploadPropertyPhotos,
+    /* Exported so the gallery, the studio preview and anything else deciding
+       between <img> and <video> asks the same question of the same string. */
+    mediaTypeFromUrl: mediaTypeFromUrl,
+    isVideoUrl: function (u) { return mediaTypeFromUrl(u) === 'video'; },
+    agencyId: agencyId,
+    agency: agency,
+    paintAgency: paintAgency,
+    loadBrand: loadBrand,
+    saveBrand: saveBrand,
+    uploadBrandAsset: uploadBrandAsset,
+    removeBrandAsset: removeBrandAsset,
+    list: list,
+    leads: leads,
+    setLeadStage: setLeadStage,
+    leadTasks: leadTasks,
+    leadActivity: leadActivity,
+    completeTask: completeTask,
+    openTasks: openTasks,
+    roster: roster,
+    invites: invites,
+    createInvite: createInvite,
+    revokeInvite: revokeInvite,
+    acceptInvite: acceptInvite,
+    availability: availability,
+    addAvailability: addAvailability,
+    removeAvailability: removeAvailability,
+    tours: tours,
+    cancelTour: cancelTour,
+    setSlotStatus: setSlotStatus,
+    setViewingStatus: setViewingStatus,
+    thread: thread,
+    sendTeamMessage: sendTeamMessage,
+    relationshipManager: relationshipManager,
+    assignLeads: assignLeads,
+    deleteLeads: deleteLeads,
+    queueMessages: queueMessages,
+    listOutbox: listOutbox,
+    cancelMessage: cancelMessage,
+    sendOutbox: sendOutbox,
+    checkOutbox: checkOutbox,
+    handoffTarget: handoffTarget,
+    getNegotiationFloor: getNegotiationFloor,
+    setNegotiationFloor: setNegotiationFloor,
+    myPhone: myPhone,
+    setMyPhone: setMyPhone,
+    listCampaigns: listCampaigns,
+    saveGeneration: saveGeneration,
+    listGenerations: listGenerations,
+    DOC_CATALOGUE: DOC_CATALOGUE,
+    documentsExemption: documentsExemption,
+    listDocuments: listDocuments,
+    documentLink: documentLink,
+    uploadDocument: uploadDocument,
+    deleteDocument: deleteDocument,
+    verificationStatus: verificationStatus,
+    myProfile: myProfile,
+    myRole: myRole,
+    saveMyProfile: saveMyProfile,
+    uploadAvatar: uploadAvatar,
+    listPendingContent: listPendingContent,
+    setContentStatus: setContentStatus,
+    updateContentText: updateContentText,
+    shareLink: shareLink,
+    shareLinkOpens: shareLinkOpens,
+    listSocialPosts: listSocialPosts,
+    listSocialComments: listSocialComments,
+    brandImage: brandImage,
+    staleBrandedMedia: staleBrandedMedia,
+    redrawBrandedMedia: redrawBrandedMedia,
+    uploadBrandedCopy: uploadBrandedCopy,
+    listHashtagGroups: listHashtagGroups,
+    saveHashtagGroup: saveHashtagGroup,
+    deleteHashtagGroup: deleteHashtagGroup,
+    campaignPerformance: campaignPerformance,
+    assignPostsToCampaign: assignPostsToCampaign,
+    getReplySettings: getReplySettings,
+    saveReplySettings: saveReplySettings,
+    markCommentHandled: markCommentHandled,
+    schedulePost: schedulePost,
+    updateSocialPost: updateSocialPost,
+    deleteSocialPost: deleteSocialPost,
+    retrySocialPost: retrySocialPost,
+    socialPostStats: socialPostStats,
+    postMetrics: postMetrics,
+    createCampaign: createCampaign,
+    setCampaignStatus: setCampaignStatus,
+    LEAD_STAGES: LEAD_STAGES,
+    create: create,
+    update: update,
+    remove: remove,
+    relist: relist,
+    available: function () {
+      return agencyId().then(function (a) { return !!a; }).catch(function () { return false; });
+    },
+  };
+})();

@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <!-- The chrome should match what is behind it, and on this page that differs
+       by width: the phone layout puts the dark photograph at the top of the
+       screen (body is #121212 under the 1024px breakpoint), the desktop layout
+       is the light ground. One value would be wrong on one of them. -->
+  <meta name="theme-color" content="#121212" media="(max-width: 1024px)" />
+  <meta name="theme-color" content="#f5f5f5" media="(min-width: 1025px)" />
+  <title>Sign in · Synapse</title>
+  <!-- No indexing of an auth screen, and never leak the ?next= path in a referrer -->
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <link rel="stylesheet" href="loader.css" />
+  <link rel="stylesheet" href="seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="seam.js"></script>
+  <script src="loader.js" defer></script>
+  <script>
+    /* BEFORE THE FIRST PAINT, not after the main script parses the query
+       string further down. Stamped here, the correct panel is the first
+       one drawn; stamped later, every agency would see a beat of the
+       buyer's photograph before it swapped. */
+    (function () {
+      var agency = /(^|[?&])role=agency(&|$)/.test(location.search);
+      document.documentElement.setAttribute('data-role', agency ? 'agency' : 'customer');
+    })();
+  </script>
+  <style>
+    /* Split auth screen: photography on one side, a calm form on the other.
+       The picture carries the aspiration; the form stays completely plain so
+       nothing competes with the four fields that matter. */
+    /* dvh, not vh. On a phone 100vh is the viewport with the browser toolbar
+       HIDDEN, so a page pinned to it is taller than the screen the moment the
+       toolbar is showing -- which is most of the time. .au already used dvh
+       under the breakpoint; body did not, and it is the element that paints
+       the background behind everything. */
+    body { min-height: 100vh; min-height: 100dvh; background: var(--bg); }
+    .au { display: grid; grid-template-columns: 1.05fr 1fr; min-height: 100vh; }
+
+    /* ── picture side ── */
+    /* ══ TWO DOORS, NOT ONE WITH DIFFERENT WORDS ═══════════════════════
+       A buyer signing in is at the end of a hopeful, personal search: the
+       panel is a photograph of somewhere someone lives, warm-lit, with a
+       serif line about keys. An agency signing in is arriving at work. The
+       same photograph says the wrong thing to them entirely -- they are not
+       dreaming about a home, they are coming back to leads that have gone
+       cold since Friday.
+
+       So the agency panel drops the photograph and becomes a surface: ink,
+       a drafting grid, sans-serif, and a plain list of what the workspace
+       does. Nothing decorative, nothing aspirational, no stock photo of
+       someone smiling at a laptop. Professional here means it looks like a
+       tool and wastes none of your time.
+
+       The role is stamped on <html> by a script in the head, so the right
+       panel is the first one painted -- swapping it after load would show
+       every agency a buyer's photograph for a beat first. */
+    .au-art { position: relative; overflow: hidden; background: #121212; }
+    .au-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── THE BUYER'S DOOR: warmer than neutral ──────────────────────────
+       The overlay was a flat grey-black wash over a photograph of a Nigerian
+       estate at dusk, which drained exactly the warmth the picture had. A
+       brown-black gradient keeps the light in it. */
+    :root[data-role="customer"] .au-art::after {
+      background: linear-gradient(180deg, rgba(28,18,10,0.26) 0%, rgba(22,15,10,0.52) 52%, rgba(14,10,7,0.86) 100%);
+    }
+
+    /* ── THE AGENCY'S DOOR: a photograph, but not of a home ─────────────
+       The first version of this was flat ink and a CSS grid. It read as
+       professional the way a spreadsheet does -- correct and cold -- and it
+       was the one thing on the page that looked unfinished beside the
+       buyer's photograph.
+
+       So it gets a picture too, and the differentiation moves to the SUBJECT.
+       The buyer sees a street of homes, because that is what they are
+       looking for. An agency sees a bridge: infrastructure, span, reach --
+       the market they sell into rather than a house they might live in. It
+       is the same argument the copy makes, in an image.
+
+       Cooler and deeper than the buyer's warm brown wash, so the two doors
+       still do not look alike at a glance. */
+    :root[data-role="agency"] .au-art { background: #0B0F14; }
+    :root[data-role="agency"] .au-art::after {
+      background: linear-gradient(180deg, rgba(8,12,18,0.34) 0%, rgba(8,12,18,0.62) 48%, rgba(6,9,14,0.92) 100%);
+    }
+    /* Sans, tighter, smaller. The serif is the buyer's voice. */
+    :root[data-role="agency"] .au-quote {
+      font-family: var(--f-sans); font-weight: 650;
+      font-size: clamp(21px, 2.05vw, 27px); letter-spacing: -0.015em; max-width: 18ch;
+    }
+    :root[data-role="agency"] .au-sub { color: rgba(255,255,255,0.70); }
+    /* A label, not a flourish. */
+    .au-eyebrow { display: none; font: 700 11px var(--f-sans); letter-spacing: .16em;
+      text-transform: uppercase; color: rgba(255,255,255,0.46); margin-bottom: 14px; }
+    :root[data-role="agency"] .au-eyebrow { display: block; }
+    /* What the workspace does, stated flat. No figures: a number here would
+       have to be invented, and this product does not print invented numbers. */
+    .au-work { display: none; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.12); }
+    :root[data-role="agency"] .au-work { display: block; }
+    .au-work div { display: flex; align-items: baseline; gap: 12px;
+      padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 13.5px; color: rgba(255,255,255,0.86); }
+    .au-work div:last-child { border-bottom: 0; }
+    .au-work b { flex: none; width: 16px; font: 700 11px var(--f-sans);
+      color: rgba(255,255,255,0.38); }
+    :root[data-role="agency"] .au-marks { display: none; }
+    .au-art::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(12,12,12,0.30) 0%, rgba(12,12,12,0.55) 55%, rgba(12,12,12,0.82) 100%);
+    }
+    .au-art-in { position: absolute; inset: auto 0 0 0; z-index: 1; padding: 46px 52px; color: #fff; }
+    .au-quote { font-family: var(--f-serif); font-weight: 500; font-size: clamp(24px, 2.6vw, 34px);
+      line-height: 1.18; letter-spacing: -0.02em; max-width: 15ch; }
+    .au-sub { font-size: 14.5px; line-height: 1.65; color: rgba(255,255,255,0.82); margin-top: 16px; max-width: 42ch; font-weight: 500; }
+    .au-marks { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 26px; font-size: 12.5px; color: rgba(255,255,255,0.72); font-weight: 600; }
+    .au-marks span { display: inline-flex; align-items: center; gap: 7px; }
+    .au-marks i { width: 6px; height: 6px; border-radius: 50%; background: #5fd08a; }
+    .au-brand { position: absolute; top: 34px; left: 52px; z-index: 1; display: flex; align-items: center; gap: 11px; color: #fff; }
+    /* THE ONE PLACE A FLAT LOGO FILE COULD NOT GO.
+       This mark sits directly on a photograph, and every file in
+       images/brand is an opaque JPEG -- any of them would have laid a solid
+       white or orange rectangle across the picture. So the artwork is carried
+       as alpha instead: mark-white-transparent.png is derived from the
+       agency's own mark-black-on-white artwork, with the ink turned white (the
+       same white mark their white-on-orange lockups use) and the ground turned
+       transparent. The JPEG's compression haze across the white ground is
+       pinned to fully clear on the way, or the "transparent" background would
+       carry a grey film visible over the photo.
+
+       White is baked in and cannot be recoloured, which is fine for the one
+       place it is used and the reason it is not the nav's asset. */
+    .au-brand svg,
+    .au-brand img { width: 19px; height: 27px; }
+    /* `.au-art img` above makes every image in this panel the full-bleed
+       background photograph -- absolute, inset 0, object-fit cover. The mark
+       is an <img> inside that panel now, so it was caught by that rule and
+       stacked on top of the wordmark at the panel's origin: the logo read
+       "NAPSE". It has to be put back into the flex row explicitly. contain,
+       not cover, because 164x227 into 19x27 would otherwise shave the mark. */
+    .au-brand img { position: static; inset: auto; flex: none; object-fit: contain; }
+    .au-brand span { font-weight: 700; letter-spacing: .34em; text-transform: uppercase; font-size: 12px; }
+
+    /* ── form side ── */
+    .au-form { display: flex; align-items: center; justify-content: center; padding: 48px 40px; }
+    .au-box { width: 100%; max-width: 384px; }
+    .au-back { font-size: 13px; color: var(--ink-dim); display: inline-block; margin-bottom: 30px; }
+    .au-back:hover { color: var(--ink); }
+    .au-h { font-family: var(--f-serif); font-weight: 500; font-size: 33px; letter-spacing: -0.02em; line-height: 1.14; }
+    .au-p { font-size: 15px; color: var(--ink-muted); line-height: 1.65; margin-top: 10px; font-weight: 500; }
+    /* the reason someone was sent here — framed as progress, not a toll gate */
+    .au-why { display: flex; gap: 11px; padding: 13px 15px; border-radius: 13px; margin-top: 20px;
+      background: rgba(20,20,20,0.04); border: 1px solid var(--border); font-size: 13.5px;
+      line-height: 1.6; color: var(--ink-muted); font-weight: 500; }
+    .au-why b { color: var(--ink); font-weight: 700; }
+    /* a class with display:flex outranks the [hidden] attribute — say it again */
+    .au-why[hidden], .au-field[hidden], .au-hint[hidden], .au-err[hidden], .au-alt[hidden] { display: none; }
+
+    .au-tabs { display: flex; gap: 3px; padding: 4px; background: rgba(20,20,20,0.05);
+      border-radius: 100px; margin: 26px 0 20px; }
+    .au-tab { flex: 1; border: none; background: none; cursor: pointer; font: 600 13.5px var(--f-sans);
+      color: var(--ink-muted); padding: 9px 0; border-radius: 100px; transition: background-color .2s, color .2s; }
+    .au-tab.on { background: #121212; color: #f5f5f5; }
+
+    .au-field { margin-bottom: 14px; }
+    .au-label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-muted); margin-bottom: 6px; }
+    .au-input { width: 100%; padding: 13px 15px; border-radius: 12px; border: 1px solid var(--border);
+      background: #fff; font: 15px var(--f-sans); color: var(--ink); outline: none;
+      transition: border-color .18s, box-shadow .18s; }
+    .au-input:focus { border-color: rgba(20,20,20,0.4); }
+    .au-input[aria-invalid="true"] { border-color: #7a271a; }
+    /* ── SHOW PASSWORD ───────────────────────────────────────────────────
+       Typing a password you cannot see, on a phone, with a minimum length
+       and a keyboard that hides half the screen, is how people end up locked
+       out of their own agency. The control is added by script to every
+       password field on the page rather than hand-written three times, so the
+       next one that gets added has it too. */
+    .au-pw { position: relative; display: block; }
+    .au-pw .au-input { padding-right: 46px; }
+    /* z-index 3, and it is load-bearing. The global focus-visible rule gives
+       any focused input `position: relative; z-index: 2`, so a button with
+       auto stacking sits UNDER the field exactly while that field has focus
+       -- which is to say, the entire time someone is typing a password and
+       might want to see it. It rendered correctly and refused every real
+       click; only a scripted .click(), which skips hit-testing, appeared to
+       work. */
+    .au-pw-t { position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+      z-index: 3;
+      width: 34px; height: 34px; padding: 0; border-radius: 9px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-dim); background: none; border: 0; }
+    /* 34x34 is the visible control; a thumb needs 44, and this one is tapped
+       more than anything else on the form -- it is the only way to check a
+       password you are about to submit. Measured at 33x33 of real tappable
+       area, which is the smallest control on the page.
+
+       The mark keeps its size and a pseudo-element carries the target, the
+       same trick the demo-account link and the landing page's carousel dots
+       already use. Gated to coarse pointers for the reason that file gives:
+       an invisible 44px box here reaches into the text field, and on a mouse
+       it would swallow clicks meant to put the caret at the end of what you
+       typed. A thumb has no such precision to lose. */
+    @media (pointer: coarse) {
+      .au-pw-t::before {
+        content: ''; position: absolute;
+        top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 44px; height: 44px; border-radius: 12px;
+      }
+    }
+    /* The glyph is decoration; the button is the control. Without this a
+       hit test lands on a <path> and anything reasoning about what is
+       under the cursor has to walk up to find the button. */
+    .au-pw-t svg { width: 18px; height: 18px; pointer-events: none; }
+    .au-pw-t:hover { color: var(--ink); background: rgba(0,0,0,0.05); }
+    .au-pw-t:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .au-hint { font-size: 12px; color: var(--ink-dim); margin-top: 6px; line-height: 1.5; }
+
+    /* The consent block. Legible rather than fine print: this is the one
+       thing on the page somebody is supposed to read before they act, so it
+       is set at the same size as the hints rather than smaller, and the two
+       links are underlined like links instead of hidden in the run of text. */
+    .au-consent { margin-top: 14px; }
+    .au-consent-row { display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13px; line-height: 1.55; color: var(--ink); cursor: pointer; }
+    /* 18px and a 3px nudge so the box sits on the first line's optical centre
+       rather than its top edge. */
+    .au-consent-row input { flex: none; width: 18px; height: 18px; margin-top: 3px;
+      accent-color: var(--brand); cursor: pointer; }
+    .au-consent-row a { color: var(--ink); text-decoration: underline; }
+    .au-consent-note { margin: 8px 0 0 28px; font-size: 12px; line-height: 1.5;
+      color: var(--ink-dim); }
+    .au-err { font-size: 12.5px; color: #7a271a; margin-top: 6px; font-weight: 600; }
+
+    .au-submit { width: 100%; margin-top: 8px; padding: 14px; border-radius: 100px; border: none;
+      background: #121212; color: #f5f5f5; font: 700 14.5px var(--f-sans); cursor: pointer;
+      transition: opacity .2s, transform .15s; }
+    @media (hover: hover) and (pointer: fine) {
+      .au-submit:hover:not(:disabled) { transform: translateY(-1px); }
+    }
+    .au-submit:disabled { opacity: .55; cursor: progress; transform: none; }
+    .au-alt { text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: 18px; }
+    .au-alt button { background: none; border: none; font: 600 13px var(--f-sans); color: var(--ink);
+      cursor: pointer; text-decoration: underline; padding: 0; }
+    .au-legal { font-size: 11.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 22px; text-align: center; }
+
+    /* a whole-form message (sent-confirmation, hard failure) */
+    /* Google, and the rule that separates it from the form. */
+    .au-oauth { width: 100%; display: flex; align-items: center; justify-content: center;
+      gap: 10px; min-height: 48px; padding: 13px 16px; border-radius: 13px;
+      border: 1px solid rgba(20,20,20,0.18); background: #fff; cursor: pointer;
+      font: 600 14.5px/1 var(--f-sans, inherit); color: #1a1a1a; }
+    .au-oauth:hover { background: #fafafa; }
+    .au-oauth:disabled { opacity: .6; cursor: default; }
+    .au-or { display: flex; align-items: center; gap: 12px; margin: 18px 0;
+      color: var(--ink-dim, #6b6b6b); font-size: 12px; text-transform: uppercase;
+      letter-spacing: .14em; }
+    .au-or::before, .au-or::after { content: ''; flex: 1; height: 1px;
+      background: rgba(20,20,20,0.12); }
+
+    /* Email / Phone. A segmented control rather than two links, because it
+       switches what this form IS rather than navigating anywhere. */
+    .au-methods { display: flex; gap: 6px; padding: 4px; margin-bottom: 18px;
+      background: rgba(20,20,20,0.05); border-radius: 12px; }
+    .au-method { flex: 1; min-height: 40px; border: 0; border-radius: 9px;
+      background: transparent; cursor: pointer; color: var(--ink-muted, #545454);
+      font: 600 13.5px/1 var(--f-sans, inherit); }
+    .au-method.on { background: #fff; color: #1a1a1a;
+      box-shadow: 0 1px 3px rgba(20,20,20,0.10); }
+
+    /* A button that reads as a link. It is a <button> because it performs an
+       action rather than going somewhere; the 44px hit area is carried by a
+       pseudo-element so the text keeps its size. */
+    .au-linkbtn { position: relative; background: none; border: 0; padding: 0;
+      font: inherit; color: inherit; text-decoration: underline;
+      text-underline-offset: 2px; cursor: pointer; }
+    .au-linkbtn::before { content: ''; position: absolute; left: -4px; right: -4px;
+      top: 50%; transform: translateY(-50%); height: 44px; }
+    .au-linkbtn:disabled { opacity: .55; cursor: default; }
+
+    .au-note { padding: 14px 16px; border-radius: 13px; font-size: 13.5px; line-height: 1.6;
+      margin-top: 18px; font-weight: 500; }
+    .au-note.ok { background: rgba(46,125,79,0.09); border: 1px solid rgba(46,125,79,0.28); color: #1f6340; }
+    .au-note.bad { background: rgba(122,39,26,0.06); border: 1px solid rgba(122,39,26,0.22); color: #7a271a; }
+
+    /* tablet: just unstack the split — the desktop proportions still work */
+
+    /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
+       Designed for the phone rather than inherited from the split screen.
+
+       The form itself is NOT duplicated into a separate mobile block the way
+       the marketing pages are: 25 element ids drive sign-in, sign-up and
+       password recovery, and a second copy would mean duplicate ids —
+       getElementById returns the first, so one of the two forms would be
+       silently inert. One form, a mobile-native shell around it.
+
+       Shape: the photograph is a short establishing image, and the form
+       rides up over it on a rounded sheet — the standard mobile auth
+       gesture, and it puts the first field near the top of the screen
+       instead of below a full-height picture. */
+    @media (max-width: 1024px) {
+      body { background: #121212; }          /* matches the art behind the sheet */
+      /* The brand ambience is built for the light ground; over near-black it
+         reads as a smudge rather than a glow. */
+      body::before, body::after { content: none; }
+      .au { grid-template-columns: 1fr; min-height: 100dvh; }
+
+      .au-art { min-height: 208px; }
+
+
+      /* -- THE MOBILE SCRIM HAS TO OUTRANK THE ROLE SELECTOR -------------
+         This was written as `.au-art::after`, and it never applied once.
+         `:root[data-role="customer"] .au-art::after` is a class more
+         specific, and specificity does not care which media query a rule
+         sits in -- so every phone kept the DESKTOP wash, 26% opaque at the
+         top, while this rule sat here looking like it was doing something.
+
+         What that cost: the white logo and the white headline were left
+         sitting on whatever the photograph happened to be. Over the dark
+         brick interior it passed. Over the bright contemporary living room
+         the text had nothing behind it and the top of the page read as
+         broken -- reported as "nothing is clear, nothing is visible".
+
+         So the role selectors are repeated here to win, and the SHAPE of
+         the gradient changes rather than just its strength. Dark at both
+         ends, where the logo and the headline actually are; lighter through
+         the middle, so the photograph is still a photograph instead of a
+         grey rectangle. Flattening it to a uniform 70% would have fixed the
+         text by throwing away the picture. */
+      :root[data-role="customer"] .au-art::after {
+        background: linear-gradient(180deg,
+          rgba(26,17,10,0.72) 0%, rgba(26,17,10,0.40) 30%,
+          rgba(20,13,9,0.58) 62%, rgba(12,8,5,0.92) 100%);
+      }
+      :root[data-role="agency"] .au-art::after {
+        background: linear-gradient(180deg,
+          rgba(8,12,18,0.74) 0%, rgba(8,12,18,0.42) 30%,
+          rgba(7,10,16,0.62) 62%, rgba(5,8,13,0.94) 100%);
+      }
+
+      /* Insurance, not decoration. Each door cycles through five photographs
+         and the sets have already been changed once. A scrim tuned to the
+         five that exist today is one new image away from being wrong again,
+         and the failure mode is silent -- nobody files a bug against a
+         sign-in page, they just cannot read it. A shadow is invisible over a
+         dark wash and saves the text over a bright one. */
+      .au-brand, .au-quote { text-shadow: 0 1px 12px rgba(0,0,0,0.55); }
+      /* Cleared of the notch. viewport-fit=cover lets the photograph run to
+         the physical top of the screen, which is what it should do -- and it
+         puts this wordmark under the camera cutout unless it steps down by
+         the inset. On a phone without one the inset is 0px and this is the
+         20px it always was. */
+      .au-brand {
+        top: calc(20px + env(safe-area-inset-top, 0px));
+        left: calc(22px + env(safe-area-inset-left, 0px));
+      }
+      .au-art-in { padding: 0 22px 34px; }
+      .au-quote { font-size: 25px; max-width: 18ch; }
+      .au-sub, .au-marks { display: none; }  /* the form is the job here, not the pitch */
+
+      /* -- AND THE AGENCY'S TWO, WHICH THIS RULE COULD NOT REACH ---------
+         The line above hides the pitch on a phone, and on the buyer's door
+         it does. The agency door carries two more blocks -- the eyebrow and
+         the three-row `.au-work` list -- and both are turned ON by
+         `:root[data-role="agency"]` selectors a full class more specific
+         than the bare `.au-sub, .au-marks` above, so that rule never touched
+         them.
+
+         What that produced, measured on a 375px phone: 266px of content
+         bottom-anchored inside a 208px panel with overflow hidden. The
+         excess did not scroll or shrink, it pushed UP -- the headline's last
+         line was sliced off by the panel edge and the wordmark came to rest
+         on top of the first list row. Reported, accurately, as the logo and
+         the text overlapping with nothing readable.
+
+         Same lesson as the scrim thirty lines up, twice in one media query:
+         a rule written at lower specificity than the one it means to
+         override is not a weak rule, it is a rule that does nothing, and it
+         reads as working code forever. */
+      :root[data-role="agency"] .au-eyebrow,
+      :root[data-role="agency"] .au-work { display: none; }
+
+      /* the sheet */
+      .au-form {
+        padding:
+          26px
+          calc(22px + env(safe-area-inset-right, 0px))
+          calc(40px + env(safe-area-inset-bottom, 0px))
+          calc(22px + env(safe-area-inset-left, 0px));
+        background: var(--bg);
+        border-radius: 26px 26px 0 0;
+        margin-top: -22px;
+        position: relative; z-index: 1;
+        align-items: flex-start;
+      }
+      .au-box { max-width: none; }
+      .au-back { display: none; }            /* the brand mark on the photo goes home */
+
+      .au-h { font-size: 27px; }
+      .au-p { font-size: 14.5px; margin-top: 8px; }
+      .au-why { margin-top: 16px; }
+
+      .au-tabs { margin: 20px 0 18px; }
+      .au-tab { min-height: 44px; font-size: 14px; }
+      /* Its sibling. These two strips sit one above the other and do the same
+         kind of job -- pick one of two -- so one being 44 and the other 40 was
+         an oversight rather than a decision. Measured at 43px of tappable
+         height against the tab strip's 44. */
+      .au-method { min-height: 44px; }
+
+      .au-field { margin-bottom: 16px; }
+      .au-label { font-size: 13px; margin-bottom: 7px; }
+      /* 16px is the floor: below it iOS Safari zooms the whole page in on
+         focus, which on an auth form reads as the page breaking. */
+      .au-input { font-size: 16px; padding: 14px 15px; border-radius: 14px; }
+      .au-submit { padding: 16px; font-size: 15px; margin-top: 10px; }
+      .au-alt { margin-top: 20px; }
+      .au-alt button { font-size: 14px; min-height: 44px; padding: 0 12px; }
+      .au-legal { margin-top: 20px; }
+
+      /* ── A SHORT SCREEN IS A DIFFERENT SCREEN ─────────────────────────
+         208px of photograph is a third of a portrait phone and more than
+         HALF of a landscape one: measured at 812x375 the panel took 208 of
+         375 and left 167px for the form, so the email field started below
+         the fold on a page whose entire job is that field.
+
+         The photograph is not worth scrolling past to sign in, so on a short
+         viewport it becomes a band. Sized from the arithmetic rather than by
+         eye: the wordmark ends 47px down, two lines at 18px need 42px, and
+         16px of padding sits under them -- 150px clears all three with 45px
+         between the wordmark and the line. The first attempt used 132px and
+         the two overlapped by 8px, which is what measuring afterwards is for.
+
+         Keyed on height, not orientation: a landscape phone, a split-screen
+         window and a short desktop window are the same problem.
+
+         LAST IN THE BLOCK ON PURPOSE. .au-art-in's padding is set earlier in
+         this same media query at equal specificity, so a rule placed above it
+         loses on source order and silently does nothing -- which is exactly
+         what the 132px version did. */
+      @media (max-height: 500px) {
+        .au-art { min-height: 150px; }
+        .au-quote { font-size: 18px; max-width: 28ch; }
+        /* The bottom padding is NOT touched here, and that is the point.
+           .au-form has margin-top: -22px -- the sheet deliberately rides up
+           over the panel's bottom edge -- so any text within 22px of that
+           edge is underneath it. The 34px this block inherits exists to clear
+           exactly that overlap, and my first attempt at 16px put the headline
+           straight under the sheet: visible in the measurements as a quote
+           ending at 134 against a sheet starting at 128.
+
+           At 150px with the inherited 34px there is room for two lines and
+           12px of daylight between the text and the sheet. */
+        .au-form { padding-top: 20px; }
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <div class="au">
+    <!-- picture side -->
+    <div class="au-art">
+      <!-- src is set by the script directly below rather than written here.
+           Two <img> tags switched by CSS would download BOTH pictures on
+           every visit to hide one of them; setting it inline, immediately
+           after the element is parsed, fetches exactly the one this visitor
+           will see and still beats the first paint. -->
+      <img id="artPhoto" alt="" aria-hidden="true" />
+      <script>
+        /* ── THE PANEL CYCLES ────────────────────────────────────────────
+           A sign-in page is somewhere people come back to, and the same
+           photograph every time makes it feel like the page never changed --
+           which, for someone who signs in daily, is most of what they see of
+           the product. So each door has a set and moves through it.
+
+           Two sets, because the two doors argue different things. A buyer
+           gets INTERIORS: rooms, from inside, where somebody lives. An
+           agency gets LANDMARKS: the country they sell into, at the scale
+           they sell at.
+
+           IN ORDER, NOT AT RANDOM. Random repeats -- roughly one visit in
+           five would show the same picture twice running, which reads as
+           broken rather than varied. An index in localStorage means the next
+           visit is always a different photograph, and it degrades to the
+           first one in a private window where storage throws.
+
+           TO ADD MORE: drop the file in images/ and add it to the array.
+           That is the whole procedure. A file that fails to load is skipped
+           rather than leaving an empty panel, so a typo costs one slot and
+           not the page. */
+        (function () {
+          var agency = document.documentElement.getAttribute('data-role') === 'agency';
+
+          /* WHERE THESE CAME FROM. All ten are Pexels, whose licence allows
+             commercial use with no attribution. NOT Pinterest: those are
+             other people's copyrighted photographs and this is a product
+             agencies pay for, which makes it a liability rather than a
+             technicality. Downloaded at 1800px on the long edge -- sharp at
+             2x on the panel's real width, and a fraction of the weight of an
+             actual 4K file on a page whose whole job is to load fast.
+
+             Rooms, from the inside, with somebody living in them. The old
+             set was a street of houses shot from outside and an empty
+             unfurnished hall; neither is what the line beside them promises. */
+          /* THE LINE TRAVELS WITH THE PICTURE, not beside it. They are one
+             pair in one array because the alternative -- two arrays and two
+             indices -- drifts the first time somebody adds a photograph and
+             not a line, and drifts silently: the page still renders, it just
+             says the wrong thing about the room behind it. */
+          var INTERIORS = [
+            { src: '../images/interior-navy-sofa.jpg',
+              line: 'The last step before the keys.' },
+            { src: '../images/interior-brick-window.jpg',
+              line: 'A window you have not looked out of yet.' },
+            { src: '../images/interior-contemporary.jpg',
+              line: 'Somewhere to put your things down.' },
+            { src: '../images/interior-minimal-living.jpg',
+              line: 'The quiet after the search.' },
+            { src: '../images/interior-art-decor.jpg',
+              line: 'A room that already looks like you.' },
+          ];
+
+          /* Nigeria at the scale an agency works at. abuja-gate.jpg is out:
+             it is 541px square, which is why it looked soft blown up across
+             a full-height panel. */
+          /* The agency lines carry what the `.au-work` list used to say. That
+             list is hidden on a phone now -- it overflowed the panel and sat
+             on top of the wordmark -- so the three things it promised move
+             into the rotation instead of being lost with it. */
+          var LANDMARKS = [
+            { src: '../images/landmark-eko-bridge.jpg',    // Lekki-Ikoyi Link Bridge
+              line: 'The leads are already waiting.' },
+            { src: '../images/landmark-carter-bridge.jpg', // Carter Bridge, Lagos Island
+              line: 'Every enquiry in one inbox.' },
+            { src: '../images/landmark-lagos-sunset.jpg',  // Lagos skyline from the water
+              line: 'Follow-ups that go out on time.' },
+            { src: '../images/landmark-lagos-skyline.jpg', // Lagos skyline
+              line: 'One listing, every channel, at once.' },
+            { src: '../images/landmark-lagos-aerial.jpg',  // Lagos from above at sunset
+              line: 'The market you already sell into.' },
+          ];
+
+          var set = agency ? LANDMARKS : INTERIORS;
+          var KEY = 'syn_art_' + (agency ? 'agency' : 'customer');
+
+          var i = 0;
+          try {
+            i = (parseInt(localStorage.getItem(KEY), 10) || 0) % set.length;
+            localStorage.setItem(KEY, String((i + 1) % set.length));
+          } catch (e) { i = 0; }   // private window: always the first, never broken
+
+          var img = document.getElementById('artPhoto');
+
+          /* This script runs where it sits -- inside the panel, straight after
+             the <img> -- so that the photograph starts downloading before the
+             rest of the page is parsed. Which means #artQuote DOES NOT EXIST
+             yet on the first call. So the line is stashed as well as written,
+             and the block that knows about roles applies it once the markup
+             is there. On a later call -- a file 404s and the set walks on --
+             the element does exist and gets written directly, so the line
+             follows the photograph it belongs to instead of describing the
+             one that failed to load. */
+          function paint() {
+            /* ── THE PHONE WAS DOWNLOADING A BILLBOARD ───────────────────
+               These are 1800px files, 237KB to 584KB each, and on a phone
+               this panel is 375x208 CSS pixels. That is roughly five times
+               the pixels anyone can see, on the page that gates the whole
+               product, for an audience paying for the megabyte. At 900px the
+               same picture is 69% smaller and identical at this size.
+
+               srcset BEFORE src, deliberately. A browser that supports
+               srcset chooses from it and never fetches src -- but only if
+               both are set before the load begins. Set src first and some
+               browsers start the 1800px fetch immediately, then fetch again
+               from srcset, and the page pays twice for one photograph.
+
+               sizes says how wide the panel actually is, which srcset cannot
+               know: full width on a phone, about half the window beside the
+               form on a desktop. Without it the browser assumes 100vw and
+               over-fetches on every large screen. */
+            var base = set[i].src.replace(/\.jpg$/, '');
+            img.sizes = '(max-width: 1024px) 100vw, 52vw';
+            img.srcset = base + '-900.jpg 900w, '
+                       + base + '-1200.jpg 1200w, '
+                       + set[i].src + ' 1800w';
+            img.src = set[i].src;
+            window.SYN_ART_LINE = set[i].line;
+            var q = document.getElementById('artQuote');
+            if (q) q.textContent = set[i].line;
+          }
+
+          /* Walk on to the next one if a file is missing, and stop after a
+             full lap so a wholly absent set cannot loop forever. */
+          var tried = 0;
+          img.addEventListener('error', function () {
+            if (++tried >= set.length) return;
+            i = (i + 1) % set.length;
+            paint();
+          });
+          paint();
+        })();
+      </script>
+      <a class="au-brand" href="../index.html">
+        <img class="au-mark" src="../images/brand/mark-white-transparent.png" alt="" aria-hidden="true">
+        <span>Synapse</span>
+      </a>
+      <div class="au-art-in">
+        <p class="au-eyebrow" id="artEyebrow">Agency workspace</p>
+        <p class="au-quote" id="artQuote">The last step before the keys.</p>
+        <p class="au-sub" id="artSub">Your account keeps your saved homes, your conversations with Tayo, and the agents you have spoken to — on every device.</p>
+        <div class="au-marks">
+          <span><i></i> Verified listings only</span>
+          <span><i></i> Free for buyers &amp; renters</span>
+        </div>
+        <!-- Agency only; the stylesheet hides it for a buyer. Deliberately
+             without figures -- a number on a sign-in page is either invented
+             or out of date, and this one would be both. -->
+        <div class="au-work">
+          <div><b>01</b> Every lead in one inbox, with what they asked for</div>
+          <div><b>02</b> Follow-ups that go out before the interest cools</div>
+          <div><b>03</b> One listing, posted to every channel at once</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- form side -->
+    <!-- MAIN, not a div. The photograph beside this is decoration -- an
+         aria-hidden image, the wordmark and a line -- and everything a person
+         actually came here to do is in this column. Without the landmark a
+         screen reader has nothing to jump to and has to walk the page to find
+         the form. Styled entirely by class, so the tag change costs nothing:
+         .au-form sets its own display: flex. -->
+    <main class="au-form">
+      <div class="au-box">
+        <a class="au-back" href="../index.html">← Back to Synapse</a>
+
+        <h1 class="au-h" id="auH">Welcome back</h1>
+        <p class="au-p" id="auP">Sign in to pick up where you left off.</p>
+
+        <div class="au-why" id="auWhy" hidden></div>
+
+        <div class="au-tabs" role="tablist">
+          <button class="au-tab on" id="tabIn"  type="button" role="tab" aria-selected="true">Sign in</button>
+          <button class="au-tab"    id="tabUp"  type="button" role="tab" aria-selected="false">Create account</button>
+        </div>
+
+        <!-- Google sits above the form, not below it. Someone who has a Google
+             account and no password here should not have to read past two
+             fields to find that out. Rendered only once the project reports
+             the provider is actually on — see OAUTH_PROVIDERS in auth.js. -->
+        <div id="auOauth" hidden>
+          <button class="au-oauth" id="auGoogle" type="button">
+            <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.82a4.12 4.12 0 0 1-1.79 2.7v2.26h2.9c1.7-1.56 2.67-3.87 2.67-6.6z"/>
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.81.54-1.84.86-3.06.86-2.35 0-4.34-1.58-5.05-3.71H.93v2.33A9 9 0 0 0 9 18z"/>
+              <path fill="#FBBC05" d="M3.95 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.93a9 9 0 0 0 0 8.08l3.02-2.33z"/>
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .93 4.96l3.02 2.33C4.66 5.16 6.65 3.58 9 3.58z"/>
+            </svg>
+            <span id="auGoogleLabel">Continue with Google</span>
+          </button>
+          <div class="au-or"><span>or</span></div>
+        </div>
+
+        <!-- Email or phone. A phone number is the identifier most people here
+             actually have and remember; an email address is the one they are
+             usually asked for. Offering both, rather than choosing for them. -->
+        <div class="au-methods" role="tablist" aria-label="How to sign in">
+          <button class="au-method on" id="methodEmail" type="button" role="tab" aria-selected="true">Email</button>
+          <button class="au-method" id="methodPhone" type="button" role="tab" aria-selected="false">Phone</button>
+        </div>
+
+        <form id="auForm" novalidate>
+          <div class="au-field" id="nameField" hidden>
+            <label class="au-label" for="auName">Your name</label>
+            <input class="au-input" id="auName" name="name" type="text" autocomplete="name" />
+          </div>
+          <!-- Agency signups only. Rides to the DB in signup metadata, where
+               the provisioning trigger names the new agency with it — the one
+               moment we can use the agency's real name instead of guessing. -->
+          <div class="au-field" id="agencyNameField" hidden>
+            <label class="au-label" for="auAgencyName">Agency name</label>
+            <input class="au-input" id="auAgencyName" name="agencyName" type="text" autocomplete="organization" />
+            <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
+          </div>
+          <!-- Optional. Buyers who open one of the agency's listings can go
+               straight to its own site from the "Listed by" card. -->
+          <div class="au-field" id="agencyWebField" hidden>
+            <label class="au-label" for="auAgencyWebsite">Agency website (optional)</label>
+            <input class="au-input" id="auAgencyWebsite" name="agencyWebsite" type="url" inputmode="url" autocomplete="url" placeholder="youragency.com" />
+          </div>
+          <!-- Agency staff only. A Toju handoff arrives on somebody's WhatsApp
+               and there is nowhere else for it to go, so an agency without a
+               number here cannot be handed a lead at all. Nothing collected
+               this before: every profile on the project had phone = NULL. -->
+          <div class="au-field" id="staffPhoneField" hidden>
+            <label class="au-label" for="auStaffPhone">Your WhatsApp number</label>
+            <input class="au-input" id="auStaffPhone" name="staffPhone" type="tel" autocomplete="tel"
+                   inputmode="tel" placeholder="0803 123 4567" />
+            <div class="au-hint">Where Tayo sends you a lead the moment it qualifies. Any format — 08…, 234… or +234…</div>
+            <div class="au-err" id="errStaffPhone" role="alert" hidden></div>
+          </div>
+          <div class="au-field" id="emailField">
+            <label class="au-label" for="auEmail">Email</label>
+            <input class="au-input" id="auEmail" name="email" type="email" autocomplete="email"
+                   required inputmode="email" />
+            <div class="au-err" id="errEmail" role="alert" hidden></div>
+          </div>
+          <div class="au-field" id="passField">
+            <label class="au-label" for="auPass">Password</label>
+            <input class="au-input" id="auPass" name="password" type="password"
+                   autocomplete="current-password" required minlength="8" />
+            <div class="au-hint" id="passHint" hidden>At least 8 characters. Longer is better than complicated.</div>
+            <div class="au-err" id="errPass" role="alert" hidden></div>
+          </div>
+
+          <!-- Phone. Two steps in one panel: the number, then the code that
+               was just sent to it. The number stays on screen at step two so
+               somebody who mistyped it can see that they did. -->
+          <div class="au-field" id="phoneField" hidden>
+            <label class="au-label" for="auPhone">Phone number</label>
+            <input class="au-input" id="auPhone" name="phone" type="tel" autocomplete="tel"
+                   inputmode="tel" placeholder="0803 123 4567" />
+            <div class="au-hint">Nigerian numbers welcome in any format — 08…, 234… or +234…</div>
+            <div class="au-err" id="errPhone" role="alert" hidden></div>
+          </div>
+          <div class="au-field" id="codeField" hidden>
+            <label class="au-label" for="auCode">The 6-digit code</label>
+            <input class="au-input" id="auCode" name="code" type="text" autocomplete="one-time-code"
+                   inputmode="numeric" maxlength="6" placeholder="123456" />
+            <div class="au-hint" id="codeHint"></div>
+            <div class="au-err" id="errCode" role="alert" hidden></div>
+            <button type="button" class="au-linkbtn" id="codeBack" style="margin-top:10px">Use a different number</button>
+          </div>
+
+          <!-- Shown for "Create account" only. The agreement is made once;
+               a box on every sign-in teaches people to tick without reading.
+               Never pre-ticked: a pre-ticked consent box is not consent, and
+               is specifically called out as not being it. -->
+          <div class="au-consent" id="consentBlock" hidden>
+            <label class="au-consent-row">
+              <input type="checkbox" id="auConsent" />
+              <span>I have read and agree to the
+                <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and the
+                <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+            </label>
+            <p class="au-consent-note">
+              Synapse uses an AI advisor. Your messages and the details you share are processed
+              by providers outside Nigeria — the Privacy Policy lists who, and what for.
+            </p>
+            <div class="au-err" id="errConsent" role="alert" hidden></div>
+          </div>
+
+          <button class="au-submit" id="auGo" type="submit">Sign in</button>
+          <div id="auNote"></div>
+        </form>
+
+        <!-- Sign-in was email and password only, which means remembering
+             another password just to look at houses, and means we hold a
+             password hash for people who never wanted an account with us.
+             Placed after the form rather than above it: most people arriving
+             here already have a password, and putting the alternative first
+             makes the familiar path look like the afterthought. -->
+
+        <!-- Shown ONLY when the visitor arrives via a password-recovery link.
+             This step used to be missing entirely: clicking the reset link
+             signed people in (Supabase issues a real session for it) and the
+             page just redirected them into the app — they were never actually
+             asked for a new password, so the thing they came here to fix never
+             got fixed. See the recovery handling below. -->
+        <!-- Google returns a name and an email and nothing else. A business
+             signing in that way arrives with no agency behind it, so this is
+             where it is asked -- once, and only when there is genuinely
+             nothing to attach the account to. -->
+        <form id="agencyForm" novalidate hidden>
+          <div class="au-field">
+            <label class="au-label" for="agName">What is your agency called?</label>
+            <input class="au-input" id="agName" type="text" autocomplete="organization" required />
+            <div class="au-hint">The name buyers will see on your listings. You can change it later.</div>
+            <div class="au-err" id="errAgName" role="alert" hidden></div>
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="agCity">City (optional)</label>
+            <input class="au-input" id="agCity" type="text" autocomplete="address-level2" placeholder="Lagos" />
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="agWebsite">Agency website (optional)</label>
+            <input class="au-input" id="agWebsite" type="url" inputmode="url" autocomplete="url" placeholder="youragency.com" />
+          </div>
+          <button class="au-submit" id="agGo" type="submit">Finish setting up</button>
+          <div id="agNote"></div>
+        </form>
+
+        <form id="recoverForm" novalidate hidden>
+          <div class="au-field">
+            <label class="au-label" for="rpPass1">New password</label>
+            <input class="au-input" id="rpPass1" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="au-hint">At least 8 characters. Longer is better than complicated.</div>
+            <div class="au-err" id="errRp1" role="alert" hidden></div>
+          </div>
+          <div class="au-field">
+            <label class="au-label" for="rpPass2">Confirm new password</label>
+            <input class="au-input" id="rpPass2" type="password" autocomplete="new-password" required minlength="8" />
+            <div class="au-err" id="errRp2" role="alert" hidden></div>
+          </div>
+          <button class="au-submit" id="rpGo" type="submit">Set new password</button>
+          <div id="rpNote"></div>
+        </form>
+
+        <p class="au-alt" id="auAlt">
+          <button type="button" id="forgotBtn">Forgot your password?</button>
+        </p>
+
+        <p class="au-legal">Synapse never shares your details with an agency until you choose to contact them.</p>
+        <p class="au-legal" id="demoNote" style="margin-top:6px"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var role   = params.get('role') === 'agency' ? 'agency' : 'customer';
+      var reason = params.get('reason') || '';
+      var next   = params.get('next') || '';
+      /* A SIGN-IN LANDS ON OVERVIEW. Eden, 2026-09-28: "When I sign in, take
+         me to the overview page. Don't take me to the social." next can carry
+         the pane the session ended on (#social -- requireAuth keeps it on
+         purpose). That is right for the bounce further down, where a session
+         already exists and the visitor is only being returned to their place;
+         it is wrong after somebody has actually signed in. So every redirect
+         that follows a real sign-in goes through here, and a portal address
+         loses its pane. Customer pages keep theirs. */
+      function signedInDest(fallback) {
+        var d = SynAuth.safeNext(next, fallback);
+        return /(^|\/)agency\.html/.test(d) ? d.replace(/#.*$/, '') : d;
+      }
+
+      // 'in' | 'up'. Honours ?mode=up so a "Create account" link elsewhere
+      // actually lands on the create-account form — without this every entry
+      // point, register or login, dropped the visitor on the same sign-in tab.
+      var mode = params.get('mode') === 'up' ? 'up' : 'in';
+      var busy = false;  // single-flight guard: blocks double-submit races
+
+      var el = function (id) { return document.getElementById(id); };
+      var form = el('auForm'), go = el('auGo'), note = el('auNote');
+
+      /* When a recovery/magic link's one-time token is already spent, Supabase
+         redirects back here with the failure in the hash fragment rather than
+         establishing a session — so no PASSWORD_RECOVERY event ever fires and
+         this would otherwise look like an ordinary, unexplained sign-in page.
+         The common real-world cause: mail providers and corporate security
+         scanners "pre-visit" links in emails to check for phishing, which
+         silently consumes the single-use token before the person ever clicks
+         it themselves. Name that, rather than leaving them guessing. */
+      // Captured now, shown after setMode() runs at the bottom of this script —
+      // setMode() calls clearErrors(), which wipes #auNote, so showing this
+      // immediately just gets erased a few lines later.
+      var expiredLinkMsg = null;
+      (function () {
+        var hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+        var code = hash.get('error_code');
+        if (!code) return;
+        expiredLinkMsg = (code === 'otp_expired')
+          ? 'That reset link has already been used or opened — some mail apps open links automatically to scan them, which can use it up before you click it yourself. Request a fresh one below.'
+          : 'That link did not work — request a fresh one below.';
+        history.replaceState(null, '', location.pathname + location.search);
+      })();
+
+      /* ── framing: why am I here? ─────────────────────────────────────── */
+      var WHY = {
+        contact: { t: 'One step before we introduce you.',
+                   d: 'We ask for an account before sharing your details with an agent — so you can see every conversation in one place, and so no agency ever gets your number without you choosing.' },
+        agency:  { t: 'Set up your agency workspace.',
+                   d: 'Your listings, leads and verification all live behind this login.' },
+        saved:   { t: 'Keep your saved homes.',
+                   d: 'An account keeps them on every device instead of just this browser.' },
+      };
+      if (reason && WHY[reason]) {
+        var w = el('auWhy');
+        w.hidden = false;
+        w.innerHTML = '<div><b>' + WHY[reason].t + '</b><br>' + WHY[reason].d + '</div>';
+        if (reason === 'contact') mode = 'up';
+      }
+      if (role === 'agency') {
+        /* An agency is not moving house. The buyer's panel talks about saved
+           homes and conversations with Tayo, which is the right thing to say
+           to someone at the end of a search and the wrong thing entirely to
+           someone arriving at work. This is about the leads waiting, the
+           follow-ups overdue, and the posts that brought them in. */
+        el('artSub').textContent = 'Every enquiry, every reply and every post that brought them in — '
+          + 'in one place your whole team works from.';
+        if (!reason) mode = 'up';
+      }
+
+      /* THE LINE THE CYCLER CHOSE, APPLIED LAST.
+         It has to come after the agency block above, which used to hard-code
+         'The leads are already waiting.' here -- that line is now the first
+         entry of the LANDMARKS set, so the agency door still opens on it and
+         then moves through the other four. Written last because whoever
+         writes last wins, and the cycler is the one that knows which
+         photograph is actually on screen.
+
+         Guarded rather than assumed: if the cycler threw, or the element is
+         gone, the markup's own line stands and the page is still a page. */
+      if (window.SYN_ART_LINE && el('artQuote')) {
+        el('artQuote').textContent = window.SYN_ART_LINE;
+      }
+
+      /* ── mode switch ─────────────────────────────────────────────────── */
+      function setMode(m) {
+        mode = m;
+        var up = m === 'up';
+        el('tabUp').classList.toggle('on', up);
+        el('tabIn').classList.toggle('on', !up);
+        el('tabUp').setAttribute('aria-selected', String(up));
+        el('tabIn').setAttribute('aria-selected', String(!up));
+        el('nameField').hidden = !up;
+        el('agencyNameField').hidden = !(up && role === 'agency');
+        el('agencyWebField').hidden = !(up && role === 'agency');
+        /* Only asked of agency staff, and only when signing up. A buyer has
+           no use for it and should not be asked; an agency without it cannot
+           be handed a lead at all, because a Toju handoff goes to a person's
+           WhatsApp and there is nowhere else for it to go. */
+        var spf = el('staffPhoneField');
+        if (spf) spf.hidden = !(up && role === 'agency' && method !== 'phone');
+        el('passHint').hidden = !up;
+        /* Here rather than in syncSubmitLabel, because this is where every
+           other field's visibility is decided and setMode does not route
+           through that function — hooking it left the block hidden while the
+           button already read "Create account". */
+        syncConsent();
+        el('auH').textContent = up
+          ? (role === 'agency' ? 'Create your agency account' : 'Create your account')
+          : 'Welcome back';
+        el('auP').textContent = up
+          ? 'It takes about twenty seconds.'
+          : 'Sign in to pick up where you left off.';
+        go.textContent = up ? 'Create account' : 'Sign in';
+        el('auPass').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
+        el('auAlt').hidden = up;
+        clearErrors();
+      }
+      el('tabUp').addEventListener('click', function () { setMode('up'); });
+      el('tabIn').addEventListener('click', function () { setMode('in'); });
+
+      /* ── validation + errors ─────────────────────────────────────────── */
+      function clearErrors() {
+        ['errEmail', 'errPass'].forEach(function (id) { el(id).hidden = true; el(id).textContent = ''; });
+        ['auEmail', 'auPass'].forEach(function (id) {
+          el(id).removeAttribute('aria-invalid');
+          el(id).removeAttribute('aria-describedby');
+        });
+        note.innerHTML = '';
+      }
+      /* aria-invalid says THAT the field is wrong; the red border says it too.
+         Neither says WHY, and the sentence that does was being written into a
+         div nothing was listening to -- so a screen reader user got a field
+         marked invalid and no way to find out what was wrong with it.
+
+         role="alert" on the container (in the markup) announces the sentence
+         when it appears. aria-describedby ties it to the field, so tabbing
+         back to a field that is already in error reads the reason again
+         rather than just "invalid". The pair is WCAG 3.3.1's whole point:
+         identify the error AND describe it, to everyone. */
+      function fieldError(inputId, errId, msg) {
+        el(errId).textContent = msg; el(errId).hidden = false;
+        el(inputId).setAttribute('aria-invalid', 'true');
+        el(inputId).setAttribute('aria-describedby', errId);
+      }
+      function showNote(kind, msg) {
+        note.innerHTML = '<div class="au-note ' + kind + '" role="status">' + msg + '</div>';
+      }
+      // Never reveal whether an email exists — that is an account-enumeration
+      // oracle. Sign-in failures are always the same sentence.
+      function friendly(err) {
+        var m = String((err && err.message) || '').toLowerCase();
+        /* ORDER MATTERS, and it was wrong. The specific mappings were appended
+           BELOW a broad `indexOf('rate')` test, which meant the email-send
+           limit could never reach its own message: everybody saw "Too many
+           attempts just now. Wait a minute" -- about attempts they had not
+           made, on a wait that is nearer an hour. Codes first, then narrow
+           message tests, then the broad ones. */
+        var code = (err && (err.code || err.error_code)) || '';
+
+        /* THE LIVE RESET PAGE'S "SOMETHING WENT WRONG" (2026-09-26). GoTrue
+           refuses a new password that matches the current one, with code
+           same_password and the sentence "New password should be different
+           from the old password." A mapping further down was meant for this,
+           but it looks for the word "same" -- which that sentence does not
+           contain -- so it fell through to the catch-all. Matched by code
+           first, and by the words GoTrue actually uses. */
+        if (code === 'same_password' || m.indexOf('different from the old password') > -1)
+          return 'That is already your password — choose a different one, or simply sign in with it.';
+        /* The server states the actual rule it applied, which is more useful
+           than any paraphrase of it. Escaped: it goes into innerHTML. */
+        if (code === 'weak_password')
+          return escHtml((err && err.message) || 'That password is too weak — choose a stronger one.');
+        if (code === 'reauthentication_needed')
+          return 'For security, sign in again before changing your password.';
+
+        /* Supabase's built-in email sender allows only a handful of messages
+           an hour and is not meant for production. Signing up three or four
+           times is enough to hit it single-handed, which is why this reads as
+           a mystery: nothing the person did was wrong, and no one else was
+           using the app. Name the real cause. */
+        if (code === 'over_email_send_rate_limit' || m.indexOf('email rate limit') > -1)
+          return 'The project has sent as many emails as it is allowed this hour — this is our sending limit, not anything you did. Wait an hour, or turn off email confirmation while testing.';
+        if (code === 'over_request_rate_limit')
+          return 'Too many requests from this device just now. Wait a minute and try again.';
+        if (code === 'over_sms_send_rate_limit' || (m.indexOf('sms') > -1 && m.indexOf('rate') > -1))
+          return 'Too many codes requested. Wait a minute, then ask for another.';
+        if (code === 'phone_provider_disabled' || m.indexOf('unsupported phone provider') > -1)
+          return 'Signing in by phone is not switched on yet. Use your email address for now.';
+        if (code === 'otp_disabled')
+          return 'One-time codes are not switched on for this project yet.';
+        if (code === 'otp_expired')
+          return 'That code has expired. Ask for a new one.';
+        if (code === 'user_already_exists'
+            || m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1)
+          return 'There is already an account with that email — try signing in instead.';
+        if (code === 'email_not_confirmed')
+          return 'That account still needs confirming. Check your email for the link we sent.';
+
+        if (m.indexOf('invalid login') > -1 || m.indexOf('invalid credentials') > -1)
+          return 'That email and password do not match. Try again, or reset your password.';
+        if (m.indexOf('invalid') > -1 && (m.indexOf('otp') > -1 || m.indexOf('token') > -1))
+          return 'That code is not right. Check it and try again.';
+        if (m.indexOf('password') > -1 && m.indexOf('short') > -1)
+          return 'That password is too short — use at least 8 characters.';
+        if (m.indexOf('weak') > -1 || m.indexOf('pwned') > -1 || m.indexOf('compromised') > -1)
+          return 'That password has appeared in a known breach. Please choose a different one.';
+        if (m.indexOf('same') > -1 && m.indexOf('password') > -1)
+          return 'That is your current password — choose a different one.';
+        if (m.indexOf('provider is not enabled') > -1)
+          return 'That sign-in method is not switched on for this project yet.';
+        if (m.indexOf('fetch') > -1 || m.indexOf('network') > -1 || m.indexOf('unreachable') > -1)
+          return 'We could not reach the sign-in service. Check your connection and try again.';
+        if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
+          return 'This reset link has expired — request a new one and use it within a few minutes.';
+
+        /* Broad, and last, so it can never shadow a specific one again.
+           "For security purposes, you can only request this after N seconds"
+           is the throttle GoTrue actually returns most of the time, and it
+           contains neither "rate" nor "too many" -- it was falling through to
+           "Something went wrong", which tells nobody to simply wait. The
+           number is pulled out so the message says how long. */
+        var wait = /after (\d+) seconds?/i.exec(m);
+        if (wait) return 'Please wait ' + wait[1] + (wait[1] === '1' ? ' second' : ' seconds') + ' before trying that again.';
+        if (m.indexOf('for security purposes') > -1)
+          return 'Please wait a few seconds before trying that again.';
+        if (m.indexOf('rate') > -1 || m.indexOf('too many') > -1)
+          return 'Too many attempts just now. Wait a minute and try again.';
+        return GENERIC_ERR;
+      }
+      /* Named so a caller can tell "nothing matched" apart from a real
+         sentence, and say something more useful where it is safe to. */
+      var GENERIC_ERR = 'Something went wrong. Please try again.';
+      function escHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (ch) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
+      }
+
+      /* ── THE DEMO ACCOUNTS ────────────────────────────────────
+         This used to be unconditional. Whatever anybody typed, both tabs
+         signed them into one of two shared accounts — which made the whole
+         page a facade: nobody could create a real account, Create account
+         provisioned nothing, and any two visitors were writing into the same
+         agency at once.
+
+         The demo still earns its place: it shows the product without asking
+         for a signup first. So it stays, as a deliberate choice rather than
+         the only outcome. It runs when the URL asks for it (?demo=1), or when
+         the visitor presses the demo button. Everything else is now a real
+         credential check against a real account.
+
+         It signs into a genuine fixed account rather than faking the UI, so
+         every real dependent — RLS, the agency-portal role gate, notify.js
+         reading SynAuth.user().id — behaves exactly as it does for anybody
+         else. */
+      var DEMO_ACCOUNTS = {
+        customer: { email: 'demo-customer@synapse.ng', password: 'SynDemo-Cust-9f42x' },
+        agency:   { email: 'demo-agency@synapse.ng',   password: 'SynDemo-Agcy-7k18q' },
+      };
+      var demoRequested = params.get('demo') === '1';
+
+      /* The note has to describe the page the visitor is actually on. Leaving
+         "any email and password gets you in" beside a form that now checks
+         credentials would send somebody with a typo'd password round in
+         circles — the page would be telling them it cannot fail. */
+      if (demoRequested) {
+        el('demoNote').textContent = 'Demo mode — this opens a shared example account.';
+      } else {
+        el('demoNote').innerHTML = 'Just looking? <button type="button" class="au-linkbtn" '
+          + 'id="demoBtn">Open a demo ' + (role === 'agency' ? 'agency' : 'account')
+          + '</button> instead — no signup.';
+        el('demoBtn').addEventListener('click', function () {
+          if (busy) return;
+          /* Routed through the form's own submit rather than duplicating the
+             redirect, the error mapping and the busy handling. Switching to
+             the sign-in tab first keeps `mode` truthful, so the button label
+             and the destination afterwards are the ones for signing in. */
+          demoRequested = true;
+          setMode('in');
+          if (form.requestSubmit) form.requestSubmit();
+          else form.dispatchEvent(new Event('submit', { cancelable: true }));
+        });
+      }
+
+      /* ── submit ──────────────────────────────────────────────────────── */
+
+      /* -- how they are signing in --------------------------------------
+         'email' or 'phone'. The phone path has two steps and `codeSent` says
+         which one we are on; it resets whenever the number changes, because a
+         code sent to a different number is not a code for this one. */
+      var method = 'email';
+      var codeSent = false;
+      var pendingPhone = '';
+
+      function setMethod(m) {
+        method = m === 'phone' ? 'phone' : 'email';
+        el('methodEmail').classList.toggle('on', method === 'email');
+        el('methodPhone').classList.toggle('on', method === 'phone');
+        el('methodEmail').setAttribute('aria-selected', String(method === 'email'));
+        el('methodPhone').setAttribute('aria-selected', String(method === 'phone'));
+
+        el('emailField').hidden = method !== 'email';
+        el('passField').hidden  = method !== 'email';
+        el('phoneField').hidden = method !== 'phone' || codeSent;
+        el('codeField').hidden  = method !== 'phone' || !codeSent;
+
+        /* Required-ness follows visibility. A browser refuses to submit a form
+           whose invalid field is hidden, and says nothing visible about why --
+           which reads as a dead button. */
+        el('auEmail').required = method === 'email';
+        el('auPass').required  = method === 'email';
+
+        el('forgotBtn').hidden = method === 'phone';
+        clearErrors();
+        syncSubmitLabel();
+      }
+
+      function syncSubmitLabel() {
+        if (method === 'phone') go.textContent = codeSent ? 'Confirm code' : 'Send me a code';
+        else go.textContent = mode === 'up' ? 'Create account' : 'Sign in';
+        syncConsent();
+      }
+
+      /* Visibility drives requiredness here too. The block is only asked for
+         when an account is being created; a returning visitor agreed to this
+         when they signed up and the record of that is what we keep. */
+      function syncConsent() {
+        var block = el('consentBlock');
+        if (!block) return;
+        block.hidden = mode !== 'up';
+        if (block.hidden) {
+          var box = el('auConsent');
+          if (box) box.checked = false;      // never carries across a mode switch
+          var err = el('errConsent');
+          if (err) err.hidden = true;
+        }
+      }
+
+      el('methodEmail').addEventListener('click', function () { if (!busy) setMethod('email'); });
+      el('methodPhone').addEventListener('click', function () { if (!busy) setMethod('phone'); });
+
+      el('codeBack').addEventListener('click', function () {
+        if (busy) return;
+        codeSent = false; pendingPhone = '';
+        el('auCode').value = '';
+        setMethod('phone');
+      });
+
+      /* -- Google -------------------------------------------------------
+         Asked, not assumed. signInWithOAuth navigates the browser itself, so a
+         .catch() around it never runs -- by the time it would, the tab is
+         gone. Knowing beforehand is the only way to fail gracefully, and it is
+         what stops a dead button writing a PKCE verifier into storage that
+         nothing ever comes back to consume. */
+      SynAuth.enabledProviders().then(function (list) {
+        if (list.indexOf('google') === -1) return;      // off on the project: draw nothing
+        el('auOauth').hidden = false;
+        el('auGoogle').addEventListener('click', function () {
+          if (busy) return;
+          busy = true;
+          el('auGoogle').disabled = true;
+          el('auGoogleLabel').textContent = 'Taking you to Google...';
+          /* The role goes WITH them. Without it the return is
+             indistinguishable from a buyer's, and a business would be
+             provisioned as a consumer with no way back. */
+          SynAuth.signInWithProvider('google', next, role).catch(function (err) {
+            busy = false;
+            el('auGoogle').disabled = false;
+            el('auGoogleLabel').textContent = 'Continue with Google';
+            showNote('bad', friendly(err));
+          });
+        });
+      });
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (busy) return;                     // concurrency: one in flight only
+        clearErrors();
+
+        var email = el('auEmail').value.trim();
+        var pass  = el('auPass').value;
+        var name  = el('auName').value.trim();
+        var agencyName = el('auAgencyName').value.trim();
+        var agencyWebsite = el('auAgencyWebsite') ? el('auAgencyWebsite').value.trim() : '';
+      var staffPhone = el('auStaffPhone') ? el('auStaffPhone').value.trim() : '';
+
+        var phone = el('auPhone').value.trim();
+        var code  = el('auCode').value.trim();
+
+        if (!demoRequested && method === 'email') {
+          var ok = true;
+          if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
+            fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
+          }
+          if (!pass || pass.length < 8) {
+            fieldError('auPass', 'errPass', 'Use at least 8 characters.'); ok = false;
+          }
+          if (!ok) return;
+        }
+        if (!demoRequested && method === 'phone') {
+          if (!codeSent) {
+            if (!phone || SynAuth.normalisePhone(phone).length < 11) {
+              fieldError('auPhone', 'errPhone', 'Enter your number, including the network code.');
+              return;
+            }
+          } else if (code.replace(/[^0-9]/g, '').length !== 6) {
+            fieldError('auCode', 'errCode', 'The code is six digits.');
+            return;
+          }
+        }
+
+        /* Refused in JavaScript rather than by a native `required`, for the
+           reason setMethod() already gives about hidden invalid fields: the
+           browser declines to submit and says nothing visible, which reads as
+           a dead button. */
+        if (mode === 'up') {
+          var cBox = el('auConsent');
+          if (cBox && !cBox.checked) {
+            var cErr = el('errConsent');
+            if (cErr) {
+              cErr.textContent = 'Please read and accept the Terms and the Privacy Policy to continue.';
+              cErr.hidden = false;
+            }
+            cBox.focus();
+            return;
+          }
+        }
+
+        /* Refused here, not later. An agency account created without a
+           number is an agency Tayo cannot hand a lead to, and the only way to
+           notice is a handoff that fails weeks afterwards. */
+        if (mode === 'up' && role === 'agency' && method !== 'phone' && !staffPhone) {
+          var spErr = el('errStaffPhone');
+          if (spErr) {
+            spErr.textContent = 'Tayo sends you leads on WhatsApp, so we need a number for you.';
+            spErr.hidden = false;
+          }
+          var spInput = el('auStaffPhone');
+          if (spInput) spInput.focus();
+          return;
+        }
+
+        busy = true; go.disabled = true;
+        go.textContent = mode === 'up' ? 'Creating your account…' : 'Signing you in…';
+
+        /* The demo short-circuits to the shared account, so a link in a deck
+           or an email opens the product with nothing to type. Everything else
+           is the real thing: Create account provisions the profile, and for an
+           agency the agencies row and the owner membership with it — all three
+           atomically inside the handle_new_user trigger, so closing the tab
+           can never leave an account half-made. */
+        /* Four entrances, one completion path below. The phone flow's first
+           step is the odd one out: it finishes without a session, because the
+           person still has to read the code we just sent them. */
+        var sendingCode = method === 'phone' && !codeSent && !demoRequested;
+
+        var work = demoRequested
+          ? SynAuth.signIn(DEMO_ACCOUNTS[role].email, DEMO_ACCOUNTS[role].password)
+          : method === 'phone'
+            ? (codeSent
+                ? SynAuth.verifyPhoneCode(pendingPhone, code)
+                : SynAuth.sendPhoneCode(phone, { role: role, name: name, agencyName: agencyName, agencyWebsite: agencyWebsite }))
+            : (mode === 'up'
+                ? SynAuth.signUp(email, pass, { role: role, name: name, agencyName: agencyName, agencyWebsite: agencyWebsite, phone: staffPhone, next: next })
+                : SynAuth.signIn(email, pass));
+
+        work.then(function (res) {
+          if (res && res.error) throw res.error;
+
+          /* Step one of two. No session yet and none expected: move the panel
+             on to the code, and name the number it went to, so a mistyped one
+             is obvious before they sit waiting for an SMS that cannot arrive. */
+          if (sendingCode) {
+            pendingPhone = res.phone || SynAuth.normalisePhone(phone);
+            codeSent = true;
+            setMethod('phone');
+            el('codeHint').textContent = 'Sent to ' + pendingPhone + '. It expires in a few minutes.';
+            el('auCode').focus();
+            showNote('ok', 'Code sent. Enter it above.');
+            return;
+          }
+          // Sign-up with email confirmation returns a user but no session.
+          var session = res && res.data && res.data.session;
+          if (mode === 'up' && !session) {
+            // Supabase intentionally returns 200 with no error when the email
+            // is already registered — that's how it avoids leaking which
+            // emails have accounts via an error message. But it means "check
+            // your email to confirm" is a LIE for someone who already has an
+            // account: nothing about their password changed, and re-showing
+            // that message is exactly what left a real person stuck for
+            // weeks, retrying "sign up" and never getting anywhere. The
+            // documented signal for this case: an already-registered email
+            // comes back with an empty `identities` array; a genuinely new
+            // signup has at least one.
+            var u = res && res.data && res.data.user;
+            var alreadyExists = u && Array.isArray(u.identities) && u.identities.length === 0;
+            if (alreadyExists) {
+              // setMode() calls clearErrors(), which wipes #auNote — call it
+              // BEFORE showNote(), not after (this exact ordering mistake
+              // already bit the expired-link message earlier in this file).
+              setMode('in');
+              el('auEmail').value = email;
+              showNote('bad', 'You already have an account with that email. Sign in below, or reset your password if you have forgotten it.');
+              return;
+            }
+            setMode('in');
+            showNote('ok', 'Check your email to confirm your account, then sign in.');
+            return;
+          }
+          // A brand-new agency goes straight into setting up its brand — that
+          // is the first thing Tayo needs before it can write anything on their
+          // behalf, and an empty brand is the one gap a new account always has.
+          // Existing sign-ins are untouched, and an explicit ?next= still wins.
+          var fallback = role === 'agency'
+            ? (mode === 'up' ? 'agency.html?welcome=agency' : 'agency.html')
+            : 'toju.html';
+
+          /* Written here because this is the first point at which a session
+             exists -- consent_records' RLS requires profile_id = auth.uid(),
+             and a consent record attributed to nobody is not a record.
+
+             Fire-and-forget on purpose: the redirect does not wait for it.
+             Trapping somebody at the sign-in screen because an audit row did
+             not insert would be protecting the wrong thing, and a missing row
+             can be reconciled where an abandoned signup cannot. */
+          if (mode === 'up' && !demoRequested) recordConsent();
+
+          window.location.href = signedInDest(fallback);
+        }).catch(function (err) {
+          /* UNCONFIRMED: OFFER A NEW LINK, don't just point at the old one.
+             Every confirmation email sent before 2026-09-25 opened localhost,
+             so "check your email for the link we sent" sent people back to a
+             link that could never work. This is not an enumeration leak:
+             GoTrue returns email_not_confirmed only when the password was
+             RIGHT, so only the account's owner ever sees the offer. */
+          /* Read the way friendly() reads it -- code OR error_code. The SDK
+             has used both, and checking only one would silently skip this
+             offer for whichever version sends the other. */
+          var errCode = (err && (err.code || err.error_code)) || '';
+          if (errCode === 'email_not_confirmed' && email && SynAuth.resendConfirmation) {
+            showNote('bad', 'That account still needs confirming. '
+              + '<button type="button" class="au-linkbtn" id="auResend">Send a new confirmation link</button>');
+            var rb = el('auResend');
+            if (rb) rb.addEventListener('click', function () {
+              rb.disabled = true; rb.textContent = 'Sending…';
+              SynAuth.resendConfirmation(email, { role: role })
+                .then(function (r) {
+                  if (r && r.error) throw r.error;
+                  showNote('ok', 'A new link is on its way. Open it on any device — '
+                    + 'it goes to synapsecore.dev now, not to this computer.');
+                })
+                .catch(function (e2) { showNote('bad', friendly(e2)); });
+            });
+          } else {
+            showNote('bad', friendly(err));
+          }
+        }).then(function () {
+          busy = false; go.disabled = false;
+          syncSubmitLabel();
+        });
+      });
+
+      /* ── what they agreed to, and which version of it ─────────────────
+         The version is a date because a date IS the version, and it lives
+         next to the documents it names: publishing new terms means changing
+         this line in the same commit. "They accepted the terms" stops meaning
+         anything the moment the terms change; "they accepted 2026-09-19" does
+         not, and that is the question an enquiry actually asks.
+
+         Three rows rather than one. Terms and privacy are separate documents
+         accepted as separate things, and AI processing is separate again
+         because it is the one somebody is most likely to withdraw later -- a
+         withdrawal has to be able to name what it withdraws. */
+      var POLICY_VERSION = '2026-09-19';
+
+      function recordConsent() {
+        try {
+          if (!window.SynAuth || !SynAuth.client) return;
+          SynAuth.client().then(function (c) {
+            return c.auth.getUser().then(function (u) {
+              var id = u && u.data && u.data.user && u.data.user.id;
+              if (!id) return null;
+              return c.from('consent_records').insert(
+                ['terms_of_service', 'privacy_policy', 'ai_processing'].map(function (k) {
+                  return {
+                    profile_id: id, kind: k, version: POLICY_VERSION,
+                    granted: true, context: 'signup',
+                  };
+                }));
+            });
+          }).then(function (r) {
+            if (r && r.error && window.console) {
+              console.warn('[consent] not recorded:', r.error.message);
+            }
+          }).catch(function (e) {
+            if (window.console) console.warn('[consent] not recorded:', e && e.message);
+          });
+        } catch (e) { /* never block the journey over an audit row */ }
+      }
+
+      /* ── forgot password ─────────────────────────────────────────────── */
+      el('forgotBtn').addEventListener('click', function () {
+        var email = el('auEmail').value.trim();
+        if (!email) { fieldError('auEmail', 'errEmail', 'Enter your email first, then tap this again.'); return; }
+        if (busy) return;
+        busy = true;
+        SynAuth.resetPassword(email).then(function () {
+          // Deliberately unconditional — confirming whether the address exists
+          // would leak account membership.
+          showNote('ok', 'If there is an account for that email, a reset link is on its way.');
+        }).catch(function (e) {
+          /* Logged, and a sending limit is said out loud. The limit is on the
+             project's email, not on this address, so naming it leaks nothing
+             about who has an account -- and swallowing it told people a link
+             was on its way when none was going to be sent. */
+          if (window.console) console.warn('reset request failed', e);
+          var rc = (e && e.code) || '';
+          if ((e && e.status === 429) || /rate_limit/.test(rc)) {
+            showNote('bad', 'Too many reset emails have gone out in the last hour. Try again later.');
+            return;
+          }
+          showNote('ok', 'If there is an account for that email, a reset link is on its way.');
+        }).then(function () { busy = false; });
+      });
+
+      /* ── password recovery ───────────────────────────────────────────────
+         THE BUG THIS FIXES: clicking a "reset password" email link makes
+         Supabase issue a real session for that visitor (that is how the link
+         proves who they are) — but a session is not a new password. The page
+         used to treat "there is a session" and "they are done" as the same
+         thing and just redirected into the app, so nobody who used the reset
+         link ever actually got to change their password. They landed in the
+         app still not knowing a password that works, which is exactly what
+         "login doesn't work" and "reset doesn't work" both trace back to.
+
+         Supabase's SDK fires a dedicated 'PASSWORD_RECOVERY' auth event when
+         the link is a recovery link (as opposed to a normal sign-in). That is
+         the only reliable signal — the URL itself does not visibly say so. */
+      var recovering = false;
+
+      function enterRecoverMode() {
+        recovering = true;
+        el('auWhy').hidden = true;
+        document.querySelector('.au-tabs').hidden = true;
+        form.hidden = true;
+        el('auAlt').hidden = true;
+        el('auH').textContent = 'Choose a new password';
+        el('auP').textContent = 'You are signed in for this one step only — set a password and you are done.';
+        el('recoverForm').hidden = false;
+      }
+
+      function rpFieldError(inputId, errId, msg) {
+        el(errId).textContent = msg; el(errId).hidden = false;
+        el(inputId).setAttribute('aria-invalid', 'true');
+        el(inputId).setAttribute('aria-describedby', errId);
+      }
+      function rpClearErrors() {
+        ['errRp1', 'errRp2'].forEach(function (id) { el(id).hidden = true; el(id).textContent = ''; });
+        ['rpPass1', 'rpPass2'].forEach(function (id) {
+          el(id).removeAttribute('aria-invalid');
+          el(id).removeAttribute('aria-describedby');
+        });
+        el('rpNote').innerHTML = '';
+      }
+
+      var rpBusy = false;
+      el('recoverForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (rpBusy) return;
+        rpClearErrors();
+        var p1 = el('rpPass1').value, p2 = el('rpPass2').value;
+        var ok = true;
+        if (!p1 || p1.length < 8) { rpFieldError('rpPass1', 'errRp1', 'Use at least 8 characters.'); ok = false; }
+        else if (p1 !== p2) { rpFieldError('rpPass2', 'errRp2', 'These two do not match.'); ok = false; }
+        if (!ok) return;
+
+        rpBusy = true;
+        var rpGo = el('rpGo');
+        rpGo.disabled = true; rpGo.textContent = 'Saving…';
+
+        SynAuth.client().then(function (c) { return c.auth.updateUser({ password: p1 }); })
+          .then(function (res) {
+            if (res && res.error) throw res.error;
+            el('rpNote').innerHTML = '<div class="au-note ok" role="status">Password updated. Taking you in…</div>';
+            /* The reset link carries no role, so the page assumes a customer;
+               the account itself knows better. An agency resetting its
+               password belongs in the portal, not in Tayo. */
+            var who = res && res.data && res.data.user;
+            var fallback = (role === 'agency' || SynAuth.roleOf(who) === 'agency') ? 'agency.html' : 'toju.html';
+            setTimeout(function () { window.location.href = signedInDest(fallback); }, 900);
+          })
+          .catch(function (err) {
+            rpBusy = false; rpGo.disabled = false; rpGo.textContent = 'Set new password';
+            /* Logged whole, because the page used to keep the only clue to
+               itself and show "Something went wrong" on the live site. */
+            if (window.console) console.error('password update failed', err);
+
+            /* ALREADY THEIR PASSWORD. Nothing needs fixing: they have typed a
+               password that works, and the recovery link has already signed
+               them in. Refusing them and asking for another one would make
+               them solve a problem they no longer have -- so offer the door. */
+            var rc = (err && (err.code || err.error_code)) || '';
+            if (rc === 'same_password'
+                || /different from the old password/i.test(String((err && err.message) || ''))) {
+              el('rpNote').innerHTML = '<div class="au-note ok" role="status">That is already your '
+                + 'password, so there is nothing to change. '
+                + '<button type="button" class="au-linkbtn" id="rpContinue">Continue to Synapse</button></div>';
+              el('rpContinue').addEventListener('click', function () {
+                var fb = role === 'agency' ? 'agency.html' : 'toju.html';
+                window.location.href = signedInDest(fb);
+              });
+              return;
+            }
+
+            /* ANYTHING ELSE UNRECOGNISED: the server's own words. This person
+               is already signed in by the recovery link, so there is nothing
+               to protect by hiding them, and "Something went wrong" is what
+               made this failure impossible to diagnose. */
+            var msg = friendly(err);
+            if (msg === GENERIC_ERR && err && err.message) {
+              msg = 'That did not work: ' + escHtml(err.message);
+            }
+            el('rpNote').innerHTML = '<div class="au-note bad" role="status">' + msg + '</div>';
+          });
+      });
+
+      // Event-driven, not timer-based: a setTimeout heuristic here would be
+      // guessing at a race between two async operations. Instead, act only on
+      // the FIRST relevant signal the SDK itself sends — verified empirically
+      // (see commit note) that INITIAL_SESSION fires exactly once on a normal
+      // load, and PASSWORD_RECOVERY fires instead of it when the visitor
+      // arrived via a recovery link. Whichever one arrives is authoritative;
+      // `decided` stops any late/duplicate event from acting twice.
+      /* Coming back from Google. This has to be settled BEFORE the ordinary
+         INITIAL_SESSION redirect runs, because that one compares the session's
+         role against the page's and an agency returning from OAuth fails that
+         comparison by definition: the trigger made them a consumer, since
+         signInWithOAuth had no way to say otherwise. Left alone it would tell
+         a business to "sign in with a customer account", about the account
+         they had just made. */
+      var oauthReturn = params.get('oauth') === '1';
+
+      function enterAgencyMode(suggestedName) {
+        ['.au-tabs', '.au-methods'].forEach(function (sel) {
+          var n = document.querySelector(sel);
+          if (n) n.hidden = true;
+        });
+        form.hidden = true;
+        if (el('auOauth')) el('auOauth').hidden = true;
+        if (el('forgotWrap')) el('forgotWrap').hidden = true;
+        el('demoNote').textContent = '';
+        el('agencyForm').hidden = false;
+        el('auH').textContent = 'One more thing';
+        el('auP').textContent = 'Your account is ready. Tell us the agency it belongs to.';
+        if (suggestedName) el('agName').value = suggestedName;
+        el('agName').focus();
+      }
+
+      function finishOauth(session) {
+        var dest = signedInDest(role === 'agency' ? 'agency.html' : 'toju.html');
+        if (role !== 'agency') { window.location.href = dest; return; }
+
+        /* Ask the database, do not infer. A business that signed in with
+           Google twice already HAS an agency the second time, and must not be
+           asked to name a new one. */
+        SynAuth.hasAgency().then(function (has) {
+          if (has) { window.location.href = dest; return; }
+          var meta = (session && session.user && session.user.user_metadata) || {};
+          enterAgencyMode(meta.name || meta.full_name || '');
+        });
+      }
+
+      el('agencyForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (busy) return;
+        var name = el('agName').value.trim();
+        el('errAgName').hidden = true;
+        if (!name) {
+          fieldError('agName', 'errAgName', 'Enter the name your agency trades under.');
+          return;
+        }
+        busy = true;
+        var b = el('agGo');
+        b.disabled = true; b.textContent = 'Setting up\u2026';
+        var site = el('agWebsite') ? el('agWebsite').value.trim() : '';
+        SynAuth.provisionAgency(name, el('agCity').value.trim()).then(function (res) {
+          if (res && res.error) throw res.error;
+          /* The website, if one was given, goes on the agency the RPC just
+             made (the owner may update their own agency). A failure here is
+             not worth stopping for: it can be added on the Brand page. */
+          return (site ? SynAuth.saveAgencyWebsite(site).catch(function () {}) : Promise.resolve());
+        }).then(function () {
+          window.location.href = signedInDest('agency.html?welcome=agency');
+        }).catch(function (err) {
+          busy = false; b.disabled = false; b.textContent = 'Finish setting up';
+          /* "already belongs to an agency" means the server refused a second
+             one -- which is the guard working. They simply go in. */
+          var m = String((err && err.message) || '').toLowerCase();
+          if (m.indexOf('already') > -1) {
+            window.location.href = signedInDest('agency.html');
+            return;
+          }
+          el('agNote').innerHTML = '<div class="au-note bad" role="status">'
+            + friendly(err) + '</div>';
+        });
+      });
+
+      /* THE RESET LINK THAT WORKS ON ANY DEVICE (28 September 2026).
+         auth.js signs in with PKCE, and a PKCE reset link can only be redeemed
+         by the browser that asked for it: that browser holds the one-time
+         verifier. Asked for on a laptop and opened on a phone -- or inside the
+         Gmail or Outlook app's own browser, which has separate storage -- the
+         exchange fails in silence, no PASSWORD_RECOVERY ever fires, and this
+         page showed a plain sign-in form. It looked fixed whenever it was
+         tested in the browser that asked, and broken whenever it was not.
+
+         The reset email (supabase/templates/recovery.html, applied by
+         auth-urls.yml) now links here with ?type=recovery&token_hash=, and the
+         token is verified from this page. A token_hash needs no verifier, so
+         any browser can redeem it. It also survives mail scanners that open
+         links to check them: they fetch the page, but only a browser running
+         this script spends the token. */
+      var recoveryToken = params.get('type') === 'recovery' ? params.get('token_hash') : null;
+      /* Until an email template can be changed (it needs a custom SMTP
+         provider), reset links are requested in implicit form and arrive with
+         the session in the fragment. auth.js lifts it off the URL before the
+         PKCE client can reject it; this page redeems it. */
+      var hashRecovery = (!recoveryToken && SynAuth.takeRecovery) ? SynAuth.takeRecovery() : null;
+      var decided = !!(recoveryToken || hashRecovery);   // the link decides, not the first auth event
+
+      function redeemRecovery(spend) {
+        SynAuth.client().then(spend).then(function (res) {
+          if (res && res.error) throw res.error;
+          enterRecoverMode();
+        }).catch(function (err) {
+          if (window.console) console.error('recovery link failed', err);
+          var rc = (err && (err.code || err.error_code)) || '';
+          showNote('bad', (rc === 'otp_expired' || /expired|invalid/i.test(String((err && err.message) || '')))
+            ? 'That reset link has expired or has already been used. Request a fresh one below.'
+            : 'That reset link did not work. Request a fresh one below.');
+        });
+      }
+      if (recoveryToken) {
+        /* Off the address bar straight away: it is a one-use credential, and a
+           reload must not try to spend it twice. */
+        history.replaceState(null, '', location.pathname);
+        redeemRecovery(function (c) { return c.auth.verifyOtp({ token_hash: recoveryToken, type: 'recovery' }); });
+      } else if (hashRecovery) {
+        redeemRecovery(function (c) { return c.auth.setSession(hashRecovery); });
+      }
+
+      SynAuth.client().then(function (c) {
+        c.auth.onAuthStateChange(function (event, session) {
+          if (decided) return;
+          if (oauthReturn && session && event !== 'PASSWORD_RECOVERY') {
+            decided = true;
+            finishOauth(session);
+            return;
+          }
+          if (event === 'PASSWORD_RECOVERY') {
+            decided = true; recovering = true;
+            enterRecoverMode();
+          } else if (event === 'INITIAL_SESSION') {
+            decided = true;
+            if (!session) {
+              /* A link that finished with ?code= and still no session: a
+                 PKCE link opened in a different browser from the one that
+                 asked for it (see THE RESET LINK above). Emails sent before
+                 28 September are like this. The email address may well be
+                 confirmed; the sign-in could not complete here. */
+              if (params.get('code') && !oauthReturn) {
+                showNote('bad', 'That link was opened in a different browser from the one it was '
+                  + 'requested in, so it could not sign you in here. If it was a confirmation link, '
+                  + 'your email is confirmed: sign in below. If it was a password reset, request a new '
+                  + 'one: new reset links work on any phone or browser.');
+              }
+              return;
+            }
+            // THE LOOP THIS FIXES: this used to redirect on session EXISTENCE
+            // alone. Someone signed in on the customer side, then sent to
+            // signin.html?role=agency by agency.html's own requireAuth() (it
+            // correctly saw the wrong role and sent them here to fix it) —
+            // this handler saw "a session exists" and bounced them straight
+            // back to agency.html before they ever saw the form, which
+            // bounced them right back here. Neither page could ever win,
+            // and nobody could ever actually sign in as the other role.
+            // Redirect only when the existing session IS the role that was
+            // asked for; otherwise stay put and let them use the form.
+            if (SynAuth.roleOf(session.user) === role) {
+              window.location.href = SynAuth.safeNext(next, role === 'agency' ? 'agency.html' : 'toju.html');
+            } else {
+              showNote('bad', 'You’re currently signed in on the ' + (role === 'agency' ? 'customer' : 'agency') + ' side. Sign in below with ' + (role === 'agency' ? 'an agency' : 'a customer') + ' account to switch.');
+            }
+          }
+        });
+      });
+
+      setMode(mode);
+      if (expiredLinkMsg) showNote('bad', expiredLinkMsg);
+    })();
+  </script>
+  <script>
+    /* Every password field gets a reveal, including the two on the reset
+       form -- they are in the DOM from the start, just hidden, so one pass at
+       load covers them.
+
+       type is toggled rather than the text being redrawn anywhere: password
+       managers, autofill and the browser's own save prompt all key off the
+       real input, and reading the value out into a second element would put
+       a plaintext copy somewhere nothing expects one.
+
+       Nothing remembers the revealed state. It resets to hidden on every
+       load, because a password left visible on a returned-to tab is the
+       failure this control is not worth causing. */
+    (function revealPasswords() {
+      function attach(inp) {
+        if (inp.dataset.pwToggle) return;
+        inp.dataset.pwToggle = '1';
+
+        var wrap = document.createElement('div');
+        wrap.className = 'au-pw';
+        inp.parentNode.insertBefore(wrap, inp);
+        wrap.appendChild(inp);
+
+        var b = document.createElement('button');
+        b.type = 'button';                 // never submits the form
+        b.className = 'au-pw-t';
+        if (inp.id) b.setAttribute('aria-controls', inp.id);
+
+        /* An eye, not the word "Show". Drawn to the same rules as the rest
+           of the icon set -- 24-unit box, no fill, 1.75 stroke in
+           currentColor -- so it inherits the field's own colour and hover
+           rather than looking pasted on. The struck-through eye is the
+           revealed state: the icon says what pressing it will do next.
+
+           The visible label goes, so the accessible name has to carry it,
+           which is what aria-label and aria-pressed below are for. */
+        var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"'
+          + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+          + '<path d="M1.8 12S5.5 5.4 12 5.4 22.2 12 22.2 12 18.5 18.6 12 18.6 1.8 12 1.8 12z"/>'
+          + '<circle cx="12" cy="12" r="3.1"/></svg>';
+        var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"'
+          + ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+          + '<path d="M10.6 6.1A10.6 10.6 0 0 1 12 6c6.5 0 10.2 6 10.2 6a18.5 18.5 0 0 1-3.3 3.8"/>'
+          + '<path d="M6.4 7.5A17.9 17.9 0 0 0 1.8 12s3.7 6 10.2 6a10 10 0 0 0 4.1-.8"/>'
+          + '<path d="M9.8 9.9a3.1 3.1 0 0 0 4.3 4.3"/>'
+          + '<path d="M3 3l18 18"/></svg>';
+
+        function set(shown) {
+          inp.type = shown ? 'text' : 'password';
+          b.innerHTML = shown ? EYE_OFF : EYE;
+          b.setAttribute('aria-pressed', String(shown));
+          b.setAttribute('aria-label', shown ? 'Hide password' : 'Show password');
+          b.setAttribute('title', shown ? 'Hide password' : 'Show password');
+        }
+        set(false);
+
+        b.addEventListener('click', function () {
+          /* Caret first. Changing an input's type sends the cursor to the end
+             in several browsers, which is maddening if you pressed Show to
+             check a character you were part-way through typing. */
+          var pos = null;
+          try { pos = inp.selectionStart; } catch (e) { /* not all types allow it */ }
+          set(inp.type === 'password');
+          try {
+            inp.focus();
+            if (pos != null) inp.setSelectionRange(pos, pos);
+          } catch (e) { /* focus is the nice-to-have, not the point */ }
+        });
+
+        wrap.appendChild(b);
+      }
+
+      var run = function () {
+        [].forEach.call(document.querySelectorAll('input[type="password"]'), attach);
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+      else run();
+    })();
+  </script>
+</body>
+</html>
