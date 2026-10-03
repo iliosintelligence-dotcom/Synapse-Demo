@@ -454,8 +454,44 @@ a { color: inherit; }
 .pr-per.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(74, 52, 30, 0.08); }
 :root[data-theme="dark"] .pr-per.on { background: #FFFFFF; color: #000000; box-shadow: none; }
 .pr-save { margin-left: 6px; padding: 3px 8px; border-radius: 999px; background: var(--orange); color: #15120F; font-size: 12px; }
-.pr-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 28px; align-items: stretch; }
-.pr-card { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 30px 28px 32px; }
+.pr-carousel { position: relative; margin-top: 28px; }
+.pr-grid { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  padding: 16px 2px 6px; scrollbar-width: none; align-items: stretch; outline: none; }
+.pr-grid::-webkit-scrollbar { display: none; }
+.pr-grid:focus-visible { box-shadow: 0 0 0 2px var(--orange); border-radius: 24px; }
+/* Wide and short: details left, features right. */
+.pr-card { position: relative; flex: 0 0 min(600px, 88%); scroll-snap-align: start;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-rows: auto auto auto 1fr;
+  column-gap: 32px; align-content: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px 28px 28px; }
+.pr-card > .pr-name, .pr-card > .pr-price, .pr-card > .pr-best, .pr-card > .pr-go { grid-column: 1; }
+.pr-card > .pr-name { grid-row: 1; } .pr-card > .pr-price { grid-row: 2; } .pr-card > .pr-best { grid-row: 3; }
+.pr-card > .pr-go { grid-row: 4; align-self: end; margin-top: 22px !important; }
+.pr-card > .pr-list { grid-column: 2; grid-row: 1 / span 4; margin: 0 !important; padding: 0 0 0 28px; border-top: 0; border-left: 1px solid var(--line); align-content: start; }
+.pr-card > .pr-not { grid-column: 2; grid-row: 5; padding: 14px 0 0 28px; }
+.pr-arrow { position: absolute; z-index: 2; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center; border: 0; cursor: pointer; background: var(--btn); color: var(--btn-ink);
+  box-shadow: 0 10px 24px -8px rgba(30,20,10,.45); transition: opacity .15s ease, transform .15s ease; }
+.pr-arrow.prev { left: -24px; } .pr-arrow.next { right: -24px; }
+.pr-arrow[disabled] { opacity: 0; pointer-events: none; }
+.pr-arrow:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.pr-dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+.pr-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); transition: width .2s ease, background .2s ease; }
+.pr-dots i.on { width: 22px; border-radius: 4px; background: var(--orange); }
+:root[data-theme="dark"] .pr-dots i { background: #2F3336; }
+:root[data-theme="dark"] .pr-card > .pr-list { border-left-color: transparent; padding-left: 20px; }
+@media (max-width: 720px) {
+  .pr-card { flex-basis: 86%; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .pr-card > .pr-name, .pr-card > .pr-price, .pr-card > .pr-best, .pr-card > .pr-list, .pr-card > .pr-not, .pr-card > .pr-go { grid-column: 1; grid-row: auto; }
+  .pr-card > .pr-list { padding: 16px 0 0; margin-top: 16px !important; border-left: 0; border-top: 1px solid var(--line); }
+  .pr-card > .pr-not { padding: 12px 0 0; }
+  /* Arrows share a row with the dots, under the cards, clear of what follows. */
+  .pr-carousel { padding-bottom: 52px; }
+  .pr-arrow { width: 40px; height: 40px; top: auto; bottom: 0; transform: none; }
+  .pr-arrow.prev { left: 0; } .pr-arrow.next { right: 0; }
+  .pr-arrow[disabled] { opacity: .35; pointer-events: none; }
+  .pr-dots { margin-top: -36px; height: 20px; align-items: center; }
+}
 .pr-card.feature { background: var(--tint); border-color: var(--orange); box-shadow: inset 0 0 0 1px var(--orange); }
 .pr-badge { position: absolute; top: -13px; left: 26px; padding: 5px 12px; border-radius: 999px; background: var(--orange); color: #15120F; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .pr-name { font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
@@ -469,8 +505,7 @@ a { color: inherit; }
 /* Every plan can be chosen (Eden, 2026-10-02): a button at the foot of each
    card, and the whole card is that button -- the link's ::after covers it. */
 .pr-go { margin-top: auto; align-self: stretch; }
-.pr-list + .pr-go, .pr-not + .pr-go { margin-top: 24px; }
-.pr-card .pr-list { margin-bottom: auto; }
+
 .pr-go::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
 .pr-card { transition: transform .15s ease, border-color .15s ease; }
 .pr-card:has(.pr-go:hover) { transform: translateY(-2px); border-color: var(--line-2); }
@@ -527,21 +562,20 @@ a { color: inherit; }
 :root[data-theme="dark"] .pr-table :is(th, td) { border-top-color: transparent; }
 :root[data-theme="dark"] .pr-table tbody tr:nth-child(odd) :is(th, td) { background: #0B0C0E; }
 :root[data-theme="dark"] .pr-table tbody tr:nth-child(odd) td.hi { background: #22170E; }
-:root[data-theme="dark"] .pr-list { border-top: 0; padding-top: 8px; }
+:root[data-theme="dark"] .pr-list { border-top: 0; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .ask { border-color: var(--edge); }
 }
 
 /* ── narrower screens ─────────────────────────────────────────────────────── */
 @media (max-width: 1180px) and (min-width: 961px) {
-  .pr-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pr-grid { gap: 14px; }
 }
 @media (max-width: 960px) {
   .nav-links { display: none; }
   .row, .row.flip { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .row.flip .row-text { order: 0; }
-  .pr-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
-  .pr-card.feature { order: -1; }
+  .pr-card.feature { order: 0; }
   .pr-price { font-size: 38px; }
   .steps { grid-template-columns: minmax(0, 1fr); }
   .promises { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
