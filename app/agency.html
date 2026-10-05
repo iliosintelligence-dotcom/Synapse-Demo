@@ -16731,6 +16731,21 @@
        the thing it is about — which is the only reason to show it at all. */
     let NOTI = [];
     let notiCleared = false;
+    /* A notification you have opened (or cleared) is dealt with: it leaves the bell.
+       Items are derived from state, so what identifies one is its text, and that
+       carries the count ("3 new leads"). It comes back only when the facts change
+       (a fourth lead), never just because the page re-rendered. Kept per browser. */
+    const NOTI_SEEN_KEY = 'syn-noti-handled';
+    let notiHandled = {};
+    try { notiHandled = JSON.parse(localStorage.getItem(NOTI_SEEN_KEY) || '{}') || {}; } catch (e) { notiHandled = {}; }
+    function notiKey(n) { return [n.type, n.pane || '', n.task || '', n.title, n.sub].join('|'); }
+    function notiHandle(keys) {
+      keys.forEach(k => { if (k) notiHandled[k] = Date.now(); });
+      /* Capped, so it cannot grow for ever: the oldest 200 go first. */
+      const ks = Object.keys(notiHandled).sort((a, b) => notiHandled[b] - notiHandled[a]).slice(0, 200);
+      const live = {}; ks.forEach(k => { live[k] = notiHandled[k]; }); notiHandled = live;
+      try { localStorage.setItem(NOTI_SEEN_KEY, JSON.stringify(notiHandled)); } catch (e) { /* private mode: handled for this visit only */ }
+    }
 
     function buildNoti() {
       if (notiCleared) { NOTI = []; return; }
@@ -16798,7 +16813,7 @@
           title: 'Synapse is free for you until ' + until,
           sub: 'After that, your plan\u2019s limits apply. See what each plan includes.', group: 'Today' });
       }
-      NOTI = out;
+      NOTI = out.filter(n => !notiHandled[notiKey(n)]);
     }
 
     function renderNoti() {
@@ -16812,7 +16827,7 @@
         list.innerHTML = groups.map(g =>
           (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
           g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
-            data-noti-pane="${n.pane || ''}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}>
+            data-noti-pane="${n.pane || ''}" data-noti-key="${esc2(notiKey(n))}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}>
             <span class="ico">${SynIcons.svg(n.icon)}</span>
             <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
           </div>`).join('')
@@ -16825,17 +16840,21 @@
     /* Clicking a notification goes where it points. Keyboard too: the rows are
        real buttons, so Enter and Space work and focus is visible. */
     function openNoti(el) {
+      /* Going there is dealing with it: take it out of the bell first. */
+      notiHandle([el.getAttribute('data-noti-key')]);
       const task = el.getAttribute('data-noti-task');
       if (task) {
         const t = typeof findTask === 'function' ? findTask(task) : null;
         toggleNoti(false);
         if (t) showTasks([t]);
+        renderNoti();
         return;
       }
       const pane = el.getAttribute('data-noti-pane');
       if (!pane) return;
       goToPane(pane);
       toggleNoti(false);
+      renderNoti();
     }
     document.getElementById('notiList').addEventListener('click', (e) => {
       const row = e.target.closest('[data-noti-pane]'); if (row) openNoti(row);
@@ -16858,7 +16877,7 @@
     // Clearing is a dismissal, not a fix: the underlying state is unchanged, so
     // the flag stops derived items from immediately reappearing.
     document.getElementById('notiClear').addEventListener('click', () => {
-      notiCleared = true; renderNoti(); toggleNoti(false); toast('Notifications cleared');
+      notiHandle(NOTI.map(notiKey)); renderNoti(); toggleNoti(false); toast('Notifications cleared');
     });
 
     renderNoti();
