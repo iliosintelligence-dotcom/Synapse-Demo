@@ -9789,13 +9789,17 @@
       loadListingGate();
     })();
     document.getElementById('newListingBtn').addEventListener('click', () => {
-      if (LG.known && !LG.ok) {
-        const box = document.getElementById('lgGate');
-        if (box) box.scrollIntoView({ block: 'center', behavior: sReduce() ? 'auto' : 'smooth' });
-        toast(LG.canFix ? 'Add your CAC certificate first' : 'Your agency owner needs to add the CAC certificate first');
-        return;
-      }
-      listingForm({ st: 'pending' }, -1);
+      /* Asked fresh each time: the certificate may have been added or removed
+         in the Verification pane since the page loaded. */
+      loadListingGate().then(() => {
+        if (LG.known && !LG.ok) {
+          const box = document.getElementById('lgGate');
+          if (box) box.scrollIntoView({ block: 'center', behavior: sReduce() ? 'auto' : 'smooth' });
+          toast(LG.canFix ? 'Add your CAC certificate first' : 'Your agency owner needs to add the CAC certificate first');
+          return;
+        }
+        listingForm({ st: 'pending' }, -1);
+      });
     });
     // listings toolbar
     document.getElementById('listSeg').addEventListener('click', (e) => {
@@ -11508,7 +11512,7 @@
           if (!window.confirm('Remove this document? The file is deleted as well.')) return;
           rm.disabled = true;
           SynListings.deleteDocument(file.dataset.doc, file.dataset.path)
-            .then(() => { toast('Document removed'); return loadVerification(); })
+            .then(() => { toast('Document removed'); if (typeof loadListingGate === 'function') loadListingGate(); return loadVerification(); })
             .catch((err) => { rm.disabled = false; toast((err && err.message) || 'Could not remove that'); });
         }
       });
@@ -11521,7 +11525,7 @@
         const was = btn.textContent;
         btn.disabled = true; btn.textContent = 'Uploading\u2026';
         SynListings.uploadDocument(file, { type: job.type, state: job.state })
-          .then(() => { toast('Uploaded \u2014 the verification desk will review it'); return loadVerification(); })
+          .then(() => { toast('Uploaded \u2014 the verification desk will review it'); if (typeof loadListingGate === 'function') loadListingGate(); return loadVerification(); })
           .catch((err) => {
             btn.disabled = false; btn.textContent = was;
             toast((err && err.message) || 'Could not upload that document');
@@ -15545,7 +15549,15 @@
     function startCheckout(what, btn) {
       const req = typeof what === 'string' ? { plan: what, period: 'monthly' } : what;
       const label = btn ? btn.textContent : '';
-      const done = () => { if (btn) { btn.disabled = false; btn.textContent = label; } };
+      /* The plan picker stays usable while Paystack opens, so on failure the
+         button is rebuilt from the current choice rather than restored to
+         the label it had when it was pressed. */
+      const done = () => {
+        if (!btn) return;
+        btn.disabled = false;
+        if (btn.hasAttribute('data-bl-pay') && typeof BL !== 'undefined' && BL.data) blRender();
+        else btn.textContent = label;
+      };
       if (btn) { btn.disabled = true; btn.textContent = 'Opening Paystack\u2026'; }
       authToken().then((token) => {
         if (!token) {
@@ -15728,7 +15740,9 @@
       if (!now) return;
       now.innerHTML = '<div class="bl-k">Your plan</div><div class="bl-state">' + blEsc(msg) + '</div>'
         + (retry ? '<button type="button" class="btn btn-ghost" style="margin-top:14px" data-bl-retry>Try again</button>' : '');
-      document.getElementById('blBuy').innerHTML = '';
+      const buyBox = document.getElementById('blBuy');
+      buyBox.dataset.sig = '';   /* so the next good load rebuilds the picker */
+      buyBox.innerHTML = '';
       document.getElementById('blAddons').innerHTML = '';
       document.getElementById('blHist').innerHTML = '';
     }

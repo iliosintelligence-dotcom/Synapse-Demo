@@ -681,7 +681,15 @@
   <script>
     /* Before first paint, so a chosen background never flashes the default. The
        chooser checks it still belongs to whoever is signed in. */
-    try { var b = JSON.parse(localStorage.getItem('toju_bg_v1') || 'null'); if (b && (b.mode === 'photo' || b.mode === 'pattern')) document.documentElement.setAttribute('data-tjbg', b.mode); } catch (e) {}
+    /* Only for the person who chose it: the saved choice carries the user id,
+       and it is applied here only when the stored session is that same user.
+       If the session cannot be read, the colour shows until the chooser checks. */
+    try {
+      var b = JSON.parse(localStorage.getItem('toju_bg_v1') || 'null');
+      var ss = JSON.parse(localStorage.getItem('synapse_auth_v1') || 'null');
+      var who = ss && ss.user && ss.user.id;
+      if (b && who && b.uid === who && (b.mode === 'photo' || b.mode === 'pattern')) document.documentElement.setAttribute('data-tjbg', b.mode);
+    } catch (e) {}
   </script>
   <script src="theme.js"></script>
 </head>
@@ -2038,7 +2046,7 @@
     }
     convo.addEventListener('click', (e) => {
       const qb = e.target.closest('.tj-quick [data-quick]');
-      if (qb) { const v = qb.dataset.quick; qb.parentElement.remove(); send(v); return; }
+      if (qb) { if (busy) return; const v = qb.dataset.quick; qb.parentElement.remove(); send(v); return; }
       const more = e.target.closest('.tj-more');
       if (more) {
         const body = more.nextElementSibling; const open = body.hidden;
@@ -2154,8 +2162,10 @@
         apply(me && s && s.uid === me ? s.mode : 'tint');
       }).catch(() => { apply('tint'); });
 
-      const close = () => { panel.hidden = true; };
+      let opener = null;
+      const close = () => { panel.hidden = true; if (opener && opener.focus) opener.focus(); opener = null; };
       function open() {
+        opener = document.activeElement;
         const cur = root.getAttribute('data-tjbg') || 'tint';
         if (!me) {
           const here = location.pathname + location.search;
@@ -2180,7 +2190,18 @@
         body.querySelectorAll('[data-bgm]').forEach((x) => x.setAttribute('aria-pressed', String(x === o)));
       });
       panel.addEventListener('click', (e) => { if (e.target === panel) close(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
+      document.addEventListener('keydown', (e) => {
+        if (panel.hidden) return;
+        if (e.key === 'Escape') { close(); return; }
+        if (e.key !== 'Tab') return;
+        /* Keep Tab inside the dialog. */
+        const f = [...panel.querySelectorAll('button, a[href]')].filter((x) => !x.disabled && x.offsetParent !== null);
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!panel.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      });
       ['tjBg', 'tjmBg'].forEach((id) => { const b = document.getElementById(id); if (b) b.addEventListener('click', open); });
     })();
 
