@@ -1093,7 +1093,8 @@
       const q = m[1].trim(), ql = q.toLowerCase();
       if (/^(why|what|tell me|describe)\b/.test(ql)) return [];
       const good = (Array.isArray(sugg) ? sugg : []).map((x) => String(x || '').trim())
-        .filter((x) => x && x.length <= 40 && !/\?$/.test(x));
+        /* An answer, not an action: "Alert me" is a different thing to tap. */
+        .filter((x) => x && x.length <= 40 && !/\?$/.test(x) && !/^alert me/i.test(x));
       if (good.length >= 2 && good.length <= 6) return good;
       if (/how many (bed|bedroom)/.test(ql)) return ['1 bedroom', '2 bedrooms', '3 bedrooms', '4 bedrooms', '5+ bedrooms'];
       if (/how many (bath|toilet)/.test(ql)) return ['1 bathroom', '2 bathrooms', '3 bathrooms', '4+ bathrooms'];
