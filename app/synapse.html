@@ -115,6 +115,7 @@
   .pf-linkedin { background: #0A66C2; }
   .pf-x { background: #000; }
   .pf-telegram { background: #229ED9; }
+  .pf-youtube { background: #FF0000; font-size: 15px; }
   .pf img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
   /* ── home ── */
@@ -355,9 +356,9 @@
               <div class="small muted" id="count" style="margin-top:6px"></div></div>
           </div>
           <div class="card stack">
-            <div><label class="f">3 · Pictures</label>
+            <div><label class="f">3 · Pictures, or a video for YouTube</label>
               <div class="thumbs" id="thumbs"></div>
-              <input type="file" id="pic" accept="image/jpeg,image/png,image/webp" multiple hidden></div>
+              <input type="file" id="pic" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" multiple hidden></div>
           </div>
           <div class="card stack">
             <div><label class="f">4 · Where should it go?</label><div class="picks" id="picks"></div><p class="small muted" id="picksNote" style="margin-top:8px"></p></div>
@@ -488,7 +489,7 @@
           <ol class="steps-l">
             <li><b>Start from a real home</b> (optional). Tap a listing: its photos are added and the caption is written from its real details.</li>
             <li><b>Say what it is about</b> and press <b>Write captions</b>. Three captions appear in Synapse's voice. Tap one, then edit it freely.</li>
-            <li><b>Add pictures</b> of your own with the <b>+</b> box (JPG, PNG or WEBP, up to 8 MB each).</li>
+            <li><b>Add pictures</b> of your own with the <b>+</b> box (JPG, PNG or WEBP, up to 8 MB each). For <b>YouTube</b>, add one vertical video instead (MP4 or MOV, up to 3 minutes and 50 MB) and tick only YouTube.</li>
             <li><b>Tap the accounts</b> that should get it, then choose <b>Now</b> or <b>Pick a time</b>.</li>
             <li>Press <b>Post</b>. The preview on the right shows roughly how it will look.</li>
           </ol></div>
@@ -577,17 +578,19 @@
   var SB_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  var PL = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', linkedin: 'LinkedIn', x: 'X', telegram: 'Telegram' };
-  var GLYPH = { instagram: '◎', facebook: 'f', tiktok: '♪', linkedin: 'in', x: 'X', telegram: '➤' };
-  var STUDIO_PLATFORMS = ['instagram', 'facebook', 'tiktok', 'linkedin', 'x'];
+  var PL = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', linkedin: 'LinkedIn', x: 'X', telegram: 'Telegram', youtube: 'YouTube' };
+  var GLYPH = { instagram: '◎', facebook: 'f', tiktok: '♪', linkedin: 'in', x: 'X', telegram: '➤', youtube: '▶' };
+  var STUDIO_PLATFORMS = ['instagram', 'facebook', 'tiktok', 'linkedin', 'x', 'youtube'];
   /* Where to make the account, and the one thing people get wrong. */
   var MAKE = {
     instagram: { url: 'https://www.instagram.com/accounts/emailsignup/', tip: 'Switch it to a Professional (Business) account in Settings, and link it to a Facebook Page. Instagram will not take scheduled posts otherwise.', what: 'photo and video posts' },
     facebook: { url: 'https://www.facebook.com/pages/create', tip: 'Make a Page, not a personal profile. Posts go to the Page.', what: 'Page posts' },
     tiktok: { url: 'https://www.tiktok.com/signup', tip: 'Use an email Synapse owns, so the account does not belong to one person.', what: 'video posts' },
     linkedin: { url: 'https://www.linkedin.com/company/setup/new/', tip: 'Create a Company Page. Posts go to the Page, not a person.', what: 'company posts' },
-    x: { url: 'https://x.com/i/flow/signup', tip: 'Use an email Synapse owns. X keeps posts to about 280 characters.', what: 'short posts' }
+    x: { url: 'https://x.com/i/flow/signup', tip: 'Use an email Synapse owns. X keeps posts to about 280 characters.', what: 'short posts' },
+    youtube: { url: 'https://www.youtube.com/create_channel', tip: 'Create a channel under a Google account Synapse owns. YouTube here takes vertical videos up to 3 minutes (MP4 or MOV), posted from Create. It cannot post homes by itself or share agencies\u2019 posts.', what: 'videos (Shorts)' }
   };
+  var VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
   var S = { role: null, overview: null, picked: {}, media: [], when: 'now', loaded: {}, tab: 'home', posts: null, activity: null, name: '', link: '' };
   var toastT;
 
@@ -781,6 +784,7 @@
       var id = esc(c.id);
       var name = c.label || c.handle || PL[c.platform] || 'account';
       var gap = Math.round((c.min_gap_minutes || 0) / 6) / 10;
+      var yt = c.platform === 'youtube';
       return '<div class="card chan">'
         + '<div class="chan-head">' + badge(c.platform, 'lg') + '<div class="grow"><div class="chan-name">' + esc(name) + '</div>'
         + '<div class="muted small">' + esc(PL[c.platform] || c.platform) + (c.handle ? ' · ' + esc(c.handle) : '') + '</div>'
@@ -790,9 +794,8 @@
         + ((c.route_kinds || []).length || c.route_min_beds != null || c.route_max_beds != null || c.route_min_price || c.route_max_price || (c.route_areas || []).length ? '<span class="pill hot">Sorted</span>' : '') + '</div></div></div>'
         + '<div class="chan-body">'
         + '<div class="opt"><div class="grow"><b>Switched on</b><small>Off keeps the account here but posts nothing to it.</small></div>' + sw(c.is_active, 'data-id="' + id + '" data-k="is_active"', 'Switched on: ' + name) + '</div>'
-        + '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: one live listing at a time. ' + esc(c.posts_today) + ' so far today.</small></div>' + sw(c.autopilot, 'data-id="' + id + '" data-k="autopilot"', 'Autopilot: ' + name) + '</div>'
-        + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, if the listing matches what this page takes (needs sharing on in Automation).</small></div>' + sw(c.mirror, 'data-id="' + id + '" data-k="mirror"', 'Share agencies’ posts: ' + name) + '</div>'
-        + routeBox(c, open)
+        + (yt ? '<p class="muted small" style="margin:4px 0 10px">Videos only. Post to this channel from Create; it cannot post homes by itself or share agencies\u2019 posts.</p>' : ('<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: one live listing at a time. ' + esc(c.posts_today) + ' so far today.</small></div>' + sw(c.autopilot, 'data-id="' + id + '" data-k="autopilot"', 'Autopilot: ' + name) + '</div>'         + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, if the listing matches what this page takes (needs sharing on in Automation).</small></div>' + sw(c.mirror, 'data-id="' + id + '" data-k="mirror"', 'Share agencies’ posts: ' + name) + '</div>'))
+        + (yt ? '' : routeBox(c, open))
         + '<details class="pace" data-id="' + id + '"' + (open['p' + c.id] ? ' open' : '') + '><summary>Name, city and pacing</summary><div class="pace-grid">'
         + '<div><label class="f">Name</label><input type="text" data-f="label" data-id="' + id + '" value="' + esc(c.label || '') + '" maxlength="80"></div>'
         + '<div><label class="f">City (blank = every city)</label><input type="text" data-f="city" data-id="' + id + '" value="' + esc(c.city || '') + '" maxlength="60"></div>'
@@ -915,8 +918,8 @@
         }).join('') : '<div class="callout">TryPost does not show a ' + esc(PL[W.platform]) + ' account yet. Connect it there, then press <b>Look again</b>.</div>') + '</div>'
         + (W.chosen ? '<div class="stack" style="margin-top:18px"><b>What is it for?</b>'
           + '<div class="opt"><div class="grow"><b>Our own posts</b><small>Announcements and campaigns you write in Create.</small></div>' + sw(W.purpose.own, 'data-pur="own"', 'Our own posts') + '</div>'
-          + '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: the newest live listings, on a schedule.</small></div>' + sw(W.purpose.auto, 'data-pur="auto"', 'Autopilot') + '</div>'
-          + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, credited to them.</small></div>' + sw(W.purpose.mirror, 'data-pur="mirror"', 'Share agencies posts') + '</div>'
+          + (W.platform === 'youtube' ? '' : '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: the newest live listings, on a schedule.</small></div>' + sw(W.purpose.auto, 'data-pur="auto"', 'Autopilot') + '</div>'
+          + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, credited to them.</small></div>' + sw(W.purpose.mirror, 'data-pur="mirror"', 'Share agencies posts') + '</div>')
           + '<div><label class="f" for="wzCity">City <span class="muted">(blank = every city)</span></label><input type="text" id="wzCity" maxlength="60" placeholder="e.g. Ibadan"></div></div>' : '')
         + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><button class="btn" type="button" id="wzFind">Look again</button><span class="spacer"></span>'
         + '<button class="btn orange big" type="button" id="wzAdd"' + (W.chosen ? '' : ' disabled') + '>Add this channel</button></div>';
@@ -996,7 +999,7 @@
     $('pvSub').textContent = first ? PL[pf] : 'Preview';
     var cap = $('caption').value.trim();
     $('pvCap').textContent = cap || 'Your caption shows here.'; $('pvCap').className = 'ph-cap' + (cap ? '' : ' none');
-    $('pvImg').innerHTML = S.media.length ? S.media.slice(0, 4).map(function (u) { return '<img alt="" src="' + esc(u) + '">'; }).join('') : 'Pictures show here';
+    $('pvImg').innerHTML = S.media.length ? S.media.slice(0, 4).map(function (u) { return VIDEO_RE.test(u) ? '<video src="' + esc(u) + '#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>' : '<img alt="" src="' + esc(u) + '">'; }).join('') : 'Pictures show here';
     $('pvImg').style.gridTemplateColumns = S.media.length > 1 ? 'repeat(' + Math.min(S.media.length, 2) + ', 1fr)' : '';
   }
 
@@ -1051,7 +1054,7 @@
 
   /* pictures: your own uploads, or the ones taken from a home */
   function renderThumbs() {
-    $('thumbs').innerHTML = S.media.map(function (u, i) { return '<div class="thumb"><img alt="" src="' + esc(u) + '"><button type="button" data-rm="' + i + '" aria-label="Remove picture">×</button></div>'; }).join('')
+    $('thumbs').innerHTML = S.media.map(function (u, i) { return '<div class="thumb">' + (VIDEO_RE.test(u) ? '<video src="' + esc(u) + '#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>' : '<img alt="" src="' + esc(u) + '">') + '<button type="button" data-rm="' + i + '" aria-label="Remove">×</button></div>'; }).join('')
       + (S.media.length < 10 ? '<button type="button" class="drop" id="addPic"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>' : '');
     renderPreview();
   }
@@ -1068,9 +1071,11 @@
     SynAuth.client().then(function (c) {
       return files.reduce(function (p, f) {
         return p.then(function () {
-          if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast('Use JPG, PNG or WEBP pictures.'); return; }
-          if (f.size > 8 * 1024 * 1024) { toast(f.name + ' is over 8MB.'); return; }
-          var ext = f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg';
+          var isVid = /^video\/(mp4|quicktime)$/.test(f.type);
+          if (!isVid && !/^image\/(jpeg|png|webp)$/.test(f.type)) { toast('Use JPG, PNG or WEBP pictures, or an MP4 or MOV video.'); return; }
+          if (!isVid && f.size > 8 * 1024 * 1024) { toast(f.name + ' is over 8MB.'); return; }
+          if (isVid && f.size > 50 * 1024 * 1024) { toast(f.name + ' is over 50MB. Compress it or trim it, then add it again.'); return; }
+          var ext = isVid ? (f.type === 'video/quicktime' ? 'mov' : 'mp4') : f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg';
           var d = new Date(), path = d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) + '.' + ext;
           return c.storage.from('synapse-media').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false }).then(function (r) {
             if (r.error) { toast('Could not upload ' + f.name + '.'); return; }
@@ -1097,6 +1102,11 @@
     var avail = {}; postable().forEach(function (c) { avail[c.id] = true; });
     var ids = Object.keys(S.picked).filter(function (k) { return S.picked[k] && avail[k]; });
     if (!ids.length) { toast('Tap the accounts that should get this post.'); return; }
+    var chosen = postable().filter(function (c) { return ids.indexOf(c.id) > -1; });
+    var wantsVideo = chosen.some(function (c) { return c.platform === 'youtube'; });
+    var hasVid = S.media.some(function (u) { return VIDEO_RE.test(u); });
+    if (wantsVideo && !(S.media.length === 1 && hasVid)) { toast('YouTube takes one video and nothing else. Add the video and remove any pictures, or untick YouTube.'); return; }
+    if (hasVid && chosen.some(function (c) { return c.platform !== 'youtube'; })) { toast('Only YouTube takes a video from here. Untick the other accounts, or remove the video.'); return; }
     var body = { caption: $('caption').value, media_urls: S.media, channel_ids: ids };
     if (S.when === 'later') {
       if (!$('at').value) { toast('Pick a date and time, or choose Now.'); return; }
