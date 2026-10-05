@@ -388,6 +388,7 @@
         var can = x.supported && !x.added;
         return '<div class="acct">' + (x.avatar ? '<img alt="" src="' + esc(x.avatar) + '" referrerpolicy="no-referrer">' : '<span class="chip">' + esc(SHORT[x.platform] || '?') + '</span>')
           + '<div class="grow"><b>' + esc(x.name || x.username || x.id) + '</b><div class="muted small">' + esc(PL[x.platform] || x.platform) + (x.username ? ' · @' + esc(String(x.username).replace(/^@/, '')) : '') + '</div></div>'
+          + (x.status && x.status !== 'connected' ? '<span class="pill bad">' + (x.status === 'token_expired' ? 'Needs reconnecting in TryPost' : 'Disconnected in TryPost') + '</span>' : '')
           + (x.added ? '<span class="pill ok">Added</span>'
             : x.supported ? '<button class="btn sm primary" type="button" data-add="' + esc(x.id) + '" data-platform="' + esc(x.platform) + '" data-name="' + esc(x.name || x.username) + '" data-handle="' + esc(x.username) + '">Add</button>'
             : '<span class="pill">Not supported yet</span>') + '</div>';
