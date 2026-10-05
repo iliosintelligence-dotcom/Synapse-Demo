@@ -615,16 +615,16 @@
   <link rel="stylesheet" href="theme-dark.css" />
   <link rel="stylesheet" href="scene.css" />
   <style id="tjExtras">
-    /* THE BACKGROUND (Eden, 2026-10-05). Everyone starts on the warm colour the
-       landing page paints behind its pictures. A signed-in visitor can switch
+    /* THE BACKGROUND (Eden, 2026-10-05). Everyone starts on the interior photograph (the
+       picture is the default, 2026-10-06); the warm colour the landing page paints is one of the choices. A signed-in visitor can switch
        to the interior photograph or a quiet pattern; each has a day and a
        night version. scene.css paints the night photograph with !important,
        so these outrank it by carrying more attribute selectors. */
-    :root:root:not([data-tjbg="photo"]):not([data-tjbg="pattern"]) .tj-bg {
+    :root:root[data-tjbg="tint"] .tj-bg {
       background-image: url('../images/home/bg-tayo-light.webp') !important;
       background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
     }
-    :root:root[data-theme="dark"]:not([data-tjbg="photo"]):not([data-tjbg="pattern"]) .tj-bg {
+    :root:root[data-theme="dark"][data-tjbg="tint"] .tj-bg {
       background-image: url('../images/home/bg-tayo-dark.webp') !important;
     }
     :root:root[data-tjbg="pattern"] .tj-bg {
@@ -693,7 +693,7 @@
       var b = JSON.parse(localStorage.getItem('toju_bg_v1') || 'null');
       var ss = JSON.parse(localStorage.getItem('synapse_auth_v1') || 'null');
       var who = ss && ss.user && ss.user.id;
-      if (b && who && b.uid === who && (b.mode === 'photo' || b.mode === 'pattern')) document.documentElement.setAttribute('data-tjbg', b.mode);
+      if (b && who && b.uid === who && (b.mode === 'tint' || b.mode === 'pattern')) document.documentElement.setAttribute('data-tjbg', b.mode);
     } catch (e) {}
   </script>
   <script src="theme.js"></script>
@@ -2175,20 +2175,20 @@
       const body = document.getElementById('tjBgBody');
       let me = null;
       const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
-      const apply = (mode) => { if (mode === 'photo' || mode === 'pattern') root.setAttribute('data-tjbg', mode); else root.removeAttribute('data-tjbg'); };
+      const apply = (mode) => { if (mode === 'tint' || mode === 'pattern') root.setAttribute('data-tjbg', mode); else root.removeAttribute('data-tjbg'); };
       /* A saved choice belongs to whoever made it. Signed out, or someone
-         else, gets the colour. */
+         else, gets the photograph. */
       Promise.resolve(window.SynAuth && SynAuth.ready ? SynAuth.ready() : null).then((u) => {
         me = u && u.id ? u.id : null;
         const s = read();
-        apply(me && s && s.uid === me ? s.mode : 'tint');
-      }).catch(() => { apply('tint'); });
+        apply(me && s && s.uid === me ? s.mode : 'photo');
+      }).catch(() => { apply('photo'); });
 
       let opener = null;
       const close = () => { panel.hidden = true; if (opener && opener.focus) opener.focus(); opener = null; };
       function open() {
         opener = document.activeElement;
-        const cur = root.getAttribute('data-tjbg') || 'tint';
+        const cur = root.getAttribute('data-tjbg') || 'photo';
         if (!me) {
           const here = location.pathname + location.search;
           body.innerHTML = '<p class="tj-bgp-s">Create a free account to choose your own background: the warm colour, the interior photograph or a quiet pattern. Each has a light and a dark version.</p>'
