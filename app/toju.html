@@ -194,7 +194,7 @@
        than an icon: a letter at icon metrics reads as a mistake. */
     /* Zyn, not a monogram: a glass character with no disc behind him. */
     /* The picture has room around Zyn for his props, so the frame is larger than the 58px slot and he fills it. */
-    .av-toju { position: relative; width: 58px; height: 58px; margin-top: -4px; background: none; box-shadow: none; }
+    .av-toju { cursor: pointer; position: relative; width: 58px; height: 58px; margin-top: -4px; background: none; box-shadow: none; }
     .av-toju img { position: absolute; left: 50%; top: 50%; width: 112px; height: 112px; margin: -56px 0 0 -56px; filter: saturate(1.25) contrast(1.08) drop-shadow(0 1px 0 rgba(20,20,60,.25)) drop-shadow(0 8px 10px rgba(40,40,60,.3)); }
     .av-user { background: rgba(255,255,255,0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.8); color: var(--ink-muted); font-size: 13px; font-weight: 600; }
     .sender { font-size: 12px; font-weight: 600; color: #121212; margin: 0 0 5px 3px; }
@@ -1688,6 +1688,11 @@
     const inIframe = window.self !== window.top;
     let recog = null, listening = false, hintTimer = null;
 
+    /* Tap Zyn and he zooms in and does something. */
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('.av-toju'); if (!a || !window.Zyn) return;
+      Zyn.emote(a.querySelector('img'));
+    });
     function hint(msg) {
       hintEl.textContent = msg; hintEl.hidden = false;
       clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 5000);
@@ -1942,6 +1947,7 @@
     /* ?reply=<listing id> from the listing page. Restored from storage
        otherwise, so a reload does not drop the subject mid-conversation. */
     const replyParam = new URLSearchParams(location.search).get('reply');
+    const askBeforeStrip = new URLSearchParams(location.search).get('ask');
     if (replyParam) {
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       /* TAYO SPEAKS FIRST. Attaching the listing and then waiting made the
@@ -1954,7 +1960,7 @@
          listing, so what comes back is grounded in the row rather than
          invented. Skipped when ?ask= is also present: that carries the
          visitor's own words and they outrank a generic opener. */
-      const alsoAsking = new URLSearchParams(location.search).get('ask');
+      const alsoAsking = askBeforeStrip;
       attachReply(replyParam).then((p) => {
         if (p && !alsoAsking) send('Tell me about this home.');
       });

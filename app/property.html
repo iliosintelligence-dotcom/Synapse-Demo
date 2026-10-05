@@ -1883,7 +1883,19 @@
       });
     }
 
+    function replyLink(id) {
+      var b = document.getElementById('replyBtn');
+      id = id || new URLSearchParams(window.location.search).get('id');
+      if (b && id) b.href = 'toju.html?reply=' + encodeURIComponent(id);
+      /* And again at the tap, from the address bar, so even a tap before anything loads carries the listing. */
+      if (b && !b.__zl) { b.__zl = 1; b.addEventListener('click', function () { var q = new URLSearchParams(window.location.search).get('id'); if (q) b.href = 'toju.html?reply=' + encodeURIComponent(q); }); }
+    }
     function paintProperty(p) {
+      /* The chat link is set here, first, from the listing that has just loaded. It used
+         to be set far below, inside a listener that runs after map and area code; when
+         anything above it threw, the button stayed a bare "toju.html" and opened the
+         chat about nothing. */
+      replyLink(p && p.id);
       const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
       const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
 

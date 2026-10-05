@@ -70,5 +70,50 @@
     return 'helpful';
   }
 
-  window.Zyn = { img: img, set: set, url: url, forReply: forReply, preload: preload, ids: IDS };
+  /* Tap Zyn and he does something: he zooms in, shows one of his moods or actions, and settles back.
+     Taps while he is mid-emote are ignored, so he never stacks. Reduced motion keeps the change of
+     face but drops the zoom and the hops. */
+  var EMOTES = [
+    { s: 'celebrating', big: 2.6, kf: function (b) { return [
+      { transform: 'translateY(0) scale(1) rotate(0)' }, { transform: 'translateY(-6%) scale(' + b + ') rotate(-6deg)', offset: .18 },
+      { transform: 'translateY(-16%) scale(' + b * 1.08 + ') rotate(6deg)', offset: .34 }, { transform: 'translateY(0) scale(' + b + ') rotate(-4deg)', offset: .5 },
+      { transform: 'translateY(-12%) scale(' + b * 1.05 + ') rotate(4deg)', offset: .66 }, { transform: 'translateY(0) scale(' + b + ') rotate(0)', offset: .82 },
+      { transform: 'translateY(0) scale(1) rotate(0)' }]; } },
+    { s: 'excited', big: 2.5, kf: function (b) { return [
+      { transform: 'scale(1)' }, { transform: 'scale(' + b + ',' + b * .94 + ')', offset: .15 }, { transform: 'translateY(-18%) scale(' + b * .96 + ',' + b * 1.06 + ')', offset: .3 },
+      { transform: 'translateY(0) scale(' + b * 1.05 + ',' + b * .95 + ')', offset: .42 }, { transform: 'translateY(-14%) scale(' + b + ')', offset: .56 },
+      { transform: 'translateY(0) scale(' + b + ')', offset: .8 }, { transform: 'scale(1)' }]; } },
+    { s: 'waving', big: 2.4, kf: function (b) { return [
+      { transform: 'scale(1) rotate(0)' }, { transform: 'scale(' + b + ') rotate(0)', offset: .16 }, { transform: 'scale(' + b + ') rotate(-9deg)', offset: .3 },
+      { transform: 'scale(' + b + ') rotate(9deg)', offset: .44 }, { transform: 'scale(' + b + ') rotate(-9deg)', offset: .58 }, { transform: 'scale(' + b + ') rotate(0)', offset: .78 },
+      { transform: 'scale(1) rotate(0)' }]; } },
+    { s: 'delighted', big: 2.6, kf: function (b) { return [
+      { transform: 'scale(1) rotate(0)' }, { transform: 'scale(' + b + ') rotate(0)', offset: .18 }, { transform: 'translateY(-14%) scale(' + b * 1.06 + ') rotate(360deg)', offset: .55 },
+      { transform: 'scale(' + b + ') rotate(360deg)', offset: .8 }, { transform: 'scale(1) rotate(360deg)' }]; } },
+    { s: 'winking', big: 2.4, kf: function (b) { return [
+      { transform: 'scale(1) rotate(0)' }, { transform: 'scale(' + b + ') rotate(8deg)', offset: .2 }, { transform: 'scale(' + b * 1.05 + ') rotate(10deg)', offset: .5 },
+      { transform: 'scale(' + b + ') rotate(8deg)', offset: .78 }, { transform: 'scale(1) rotate(0)' }]; } }
+  ];
+  var lastEmote = -1;
+  function emote(el) {
+    if (!el || el.__emoting) return;
+    var i; do { i = Math.floor(Math.random() * EMOTES.length); } while (i === lastEmote && EMOTES.length > 1);
+    lastEmote = i;
+    var e = EMOTES[i], was = ((el.getAttribute('src') || '').match(/zyn-([a-z]+)\.webp/) || [0, 'happy'])[1];
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.__emoting = true;
+    var host = el.parentNode, hz = host && host.style.zIndex, ez = el.style.zIndex;
+    if (host) host.style.zIndex = '60';
+    el.style.zIndex = '60';
+    Zyn.set(el, e.s, true);
+    var done = function () {
+      el.__emoting = false; el.style.zIndex = ez; if (host) host.style.zIndex = hz || '';
+      Zyn.set(el, was);
+    };
+    if (calm || !el.animate) { setTimeout(done, 1600); return; }
+    var a = el.animate(e.kf(e.big), { duration: 2800, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    a.onfinish = done; a.oncancel = done;
+  }
+
+  window.Zyn = { emote: emote, img: img, set: set, url: url, forReply: forReply, preload: preload, ids: IDS };
 })();
