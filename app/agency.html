@@ -15555,7 +15555,9 @@
       const done = () => {
         if (!btn) return;
         btn.disabled = false;
-        if (btn.hasAttribute('data-bl-pay') && typeof BL !== 'undefined' && BL.data) blRender();
+        /* The label was changed to "Opening Paystack" by hand, so the cached one
+           is stale: clear it, or the rebuild thinks nothing changed. */
+        if (btn.hasAttribute('data-bl-pay') && typeof BL !== 'undefined' && BL.data) { btn.dataset.v = ''; blRender(); }
         else btn.textContent = label;
       };
       if (btn) { btn.disabled = true; btn.textContent = 'Opening Paystack\u2026'; }
