@@ -396,7 +396,7 @@
       </div>
       <div class="card">
         <div class="opt"><span class="pf" style="background:var(--ok);color:#fff"><svg class="i" viewBox="0 0 24 24"><path d="M17 3l4 4-4 4"/><path d="M3 11V9a2 2 0 0 1 2-2h16"/><path d="M7 21l-4-4 4-4"/><path d="M21 13v2a2 2 0 0 1-2 2H3"/></svg></span><div class="grow"><b>Share agencies' posts</b>
-          <small>When an agency posts a listing, Synapse's channels that ask for it post it too, with a link that still credits the agency. Agencies are not asked first: this is Synapse sharing what they publish.</small></div>
+          <small>When an agency posts a listing, Synapse's channels that ask for it post it too, with a link that still credits the agency. Agencies are not asked first: this is Synapse sharing what they publish. Which page takes which listing is set here, on each channel, under <b>What this page takes</b>: a 2-bedroom flat goes only to the page set up for 2-bedroom flats.</small></div>
           <button class="sw" id="twinSw" role="switch" aria-checked="false" aria-label="Share agencies' posts"></button></div>
         <div id="mirrorSummary" class="small muted"></div>
       </div>
@@ -471,6 +471,7 @@
             <li><b>Switched on</b>: off keeps the account on the page but sends it nothing.</li>
             <li><b>Post homes by itself</b>: the channel posts one live listing at a time, newest first, inside the hours and daily limit you set.</li>
             <li><b>Share agencies' posts</b>: when an agency publishes a listing, this channel posts it too, crediting the agency.</li>
+            <li><b>What this page takes</b>: you decide which listings go where. Tick the kinds (for sale, for rent, land...), set bedrooms, a price range or areas, and the card shows how many live listings match. A listing goes to every page whose rules it matches, and a rule left empty takes anything.</li>
           </ul>
           <p class="muted small">Open <b>Name, city and pacing</b> on a card to rename it, give it a city, and set posts a day, hours between posts and the hours it may post (Lagos time).</p></div>
       </article>
@@ -724,12 +725,57 @@
     if (b.dataset.step === 'add') openWizard(); else show(b.dataset.step);
   });
 
+  /* ── what each channel takes ─────────────────────────────────────────
+     The studio, not the agent, decides which Synapse page a listing goes to. A
+     channel takes a listing when it matches ALL of its rules; a rule left blank
+     matches anything. Agents only ever choose their own accounts. */
+  var ROUTE_KINDS = [['sale', 'For sale'], ['rent', 'For rent'], ['shared', 'Shared room'], ['land', 'Land'], ['shortlet', 'Short-let'], ['offplan', 'Off-plan'], ['commercial', 'Commercial']];
+  function moneyWord(n) { n = Number(n); if (!n) return ''; return n >= 1e9 ? +(n / 1e9).toFixed(2) + 'bn' : n >= 1e6 ? +(n / 1e6).toFixed(2) + 'm' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n); }
+  /* "3m", "500k", "2.5 million", "₦4,000,000" -> whole naira; blank -> null; anything else -> undefined. */
+  function readMoney(v) {
+    var t = String(v == null ? '' : v).toLowerCase().replace(/[₦,\s]/g, '').replace(/naira|ngn/g, '');
+    if (!t) return null;
+    var m = t.match(/^(\d+(?:\.\d+)?)(k|thousand|m|mn|million|b|bn|billion)?$/);
+    if (!m) return undefined;
+    var mult = { k: 1e3, thousand: 1e3, m: 1e6, mn: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9 }[m[2]] || 1;
+    return Math.round(Number(m[1]) * mult);
+  }
+  function ruleText(c) {
+    var parts = [];
+    var k = (c.route_kinds || []).map(function (x) { var f = ROUTE_KINDS.filter(function (r) { return r[0] === x; })[0]; return f ? f[1] : x; });
+    if (k.length) parts.push(k.join(' or '));
+    var lo = c.route_min_beds, hi = c.route_max_beds;
+    if (lo != null || hi != null) parts.push(lo != null && lo === hi ? lo + '-bedroom' : (lo != null ? lo : 0) + (hi != null ? '\u2013' + hi : '+') + ' bedrooms');
+    if (c.route_min_price || c.route_max_price) parts.push((c.route_min_price ? '\u20A6' + moneyWord(c.route_min_price) : '') + (c.route_min_price && c.route_max_price ? ' to ' : c.route_max_price ? 'up to ' : ' and up') + (c.route_max_price ? '\u20A6' + moneyWord(c.route_max_price) : ''));
+    if ((c.route_areas || []).length) parts.push(c.route_areas.join(', '));
+    parts.push(c.city ? c.city : 'every city');
+    return parts.join(' \u00b7 ');
+  }
+  function routeBox(c, open) {
+    var id = esc(c.id), kinds = c.route_kinds || [];
+    var any = !kinds.length && c.route_min_beds == null && c.route_max_beds == null && !c.route_min_price && !c.route_max_price && !(c.route_areas || []).length;
+    return '<details class="pace route" data-rid="' + id + '" data-id="' + id + '"' + ((open['r' + c.id] || !any) ? ' open' : '') + '><summary>What this page takes: <b style="color:var(--ink)">' + esc(any ? (c.city ? c.city + ', every kind of listing' : 'every listing') : ruleText(c)) + '</b></summary>'
+      + '<p class="muted small" style="margin:2px 0 12px">Agencies\u2019 posts and autopilot go to this page only when the listing matches everything below. Leave a box empty to take anything.</p>'
+      + '<label class="f">Kind of listing</label><div class="picks">' + ROUTE_KINDS.map(function (r) {
+          return '<button type="button" class="pick plain" data-rk="' + r[0] + '" data-id="' + id + '" aria-pressed="' + (kinds.indexOf(r[0]) > -1 ? 'true' : 'false') + '">' + r[1] + '</button>'; }).join('') + '</div>'
+      + '<div class="pace-grid" style="margin-top:14px">'
+      + '<div><label class="f">Fewest bedrooms</label><input type="number" min="0" max="20" data-f="route_min_beds" data-id="' + id + '" value="' + esc(c.route_min_beds == null ? '' : c.route_min_beds) + '" placeholder="any"></div>'
+      + '<div><label class="f">Most bedrooms</label><input type="number" min="0" max="20" data-f="route_max_beds" data-id="' + id + '" value="' + esc(c.route_max_beds == null ? '' : c.route_max_beds) + '" placeholder="any"></div>'
+      + '<div><label class="f">Lowest price</label><input type="text" data-f="route_min_price" data-id="' + id + '" value="' + esc(moneyWord(c.route_min_price)) + '" placeholder="e.g. 3m"></div>'
+      + '<div><label class="f">Highest price</label><input type="text" data-f="route_max_price" data-id="' + id + '" value="' + esc(moneyWord(c.route_max_price)) + '" placeholder="e.g. 50m"></div>'
+      + '</div><div style="margin-top:12px"><label class="f">Areas <span class="muted">(optional, separate with commas)</span></label><input type="text" data-f="route_areas" data-id="' + id + '" value="' + esc((c.route_areas || []).join(', ')) + '" placeholder="e.g. Bodija, Agodi" maxlength="200"></div>'
+      + '<p class="small" style="margin-top:12px"><b>' + esc(c.reach == null ? '' : c.reach) + '</b> <span class="muted">of ' + esc((S.overview || {}).live_listings || 0) + ' live listings match these rules right now.</span></p>'
+      + (kinds.length || c.route_min_beds != null || c.route_max_beds != null || c.route_min_price || c.route_max_price || (c.route_areas || []).length
+        ? '<button class="btn sm" type="button" data-clearroute="' + id + '">Take everything again</button>' : '')
+      + '</details>';
+  }
+
   /* ── channels ─────────────────────────────────────────────────────── */
   function renderChannels() {
     var box = $('chanList'), a = document.activeElement;
     if (a && box.contains(a) && a.matches('input')) { S.pendingRender = true; return; }
     var open = {};
-    box.querySelectorAll('details.pace[open]').forEach(function (d) { open[d.dataset.id] = true; });
+    box.querySelectorAll('details.pace[open]').forEach(function (d) { open[(d.classList.contains('route') ? 'r' : 'p') + d.dataset.id] = true; });
     var list = S.overview.channels || [];
     box.innerHTML = list.map(function (c) {
       var id = esc(c.id);
@@ -740,12 +786,14 @@
         + '<div class="muted small">' + esc(PL[c.platform] || c.platform) + (c.handle ? ' · ' + esc(c.handle) : '') + '</div>'
         + '<div class="tags"><span class="pill ' + (c.is_active ? 'ok' : '') + '">' + (c.is_active ? 'On' : 'Off') + '</span>'
         + (c.autopilot ? '<span class="pill hot">Autopilot</span>' : '') + (c.mirror ? '<span class="pill hot">Agency posts</span>' : '')
-        + '<span class="pill">' + (c.city ? esc(c.city) : 'Every city') + '</span></div></div></div>'
+        + '<span class="pill">' + (c.city ? esc(c.city) : 'Every city') + '</span>'
+        + ((c.route_kinds || []).length || c.route_min_beds != null || c.route_max_beds != null || c.route_min_price || c.route_max_price || (c.route_areas || []).length ? '<span class="pill hot">Sorted</span>' : '') + '</div></div></div>'
         + '<div class="chan-body">'
         + '<div class="opt"><div class="grow"><b>Switched on</b><small>Off keeps the account here but posts nothing to it.</small></div>' + sw(c.is_active, 'data-id="' + id + '" data-k="is_active"', 'Switched on: ' + name) + '</div>'
         + '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: one live listing at a time. ' + esc(c.posts_today) + ' so far today.</small></div>' + sw(c.autopilot, 'data-id="' + id + '" data-k="autopilot"', 'Autopilot: ' + name) + '</div>'
-        + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish (needs sharing on in Automation).</small></div>' + sw(c.mirror, 'data-id="' + id + '" data-k="mirror"', 'Share agencies’ posts: ' + name) + '</div>'
-        + '<details class="pace" data-id="' + id + '"' + (open[c.id] ? ' open' : '') + '><summary>Name, city and pacing</summary><div class="pace-grid">'
+        + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, if the listing matches what this page takes (needs sharing on in Automation).</small></div>' + sw(c.mirror, 'data-id="' + id + '" data-k="mirror"', 'Share agencies’ posts: ' + name) + '</div>'
+        + routeBox(c, open)
+        + '<details class="pace" data-id="' + id + '"' + (open['p' + c.id] ? ' open' : '') + '><summary>Name, city and pacing</summary><div class="pace-grid">'
         + '<div><label class="f">Name</label><input type="text" data-f="label" data-id="' + id + '" value="' + esc(c.label || '') + '" maxlength="80"></div>'
         + '<div><label class="f">City (blank = every city)</label><input type="text" data-f="city" data-id="' + id + '" value="' + esc(c.city || '') + '" maxlength="60"></div>'
         + num('Posts a day', 'daily_cap', c.id, c.daily_cap, 1, 24)
@@ -759,6 +807,21 @@
   }
   $('chanList').addEventListener('click', function (e) {
     if (e.target.closest('[data-retry]')) { S.overview = null; loadOverview(); return; }
+    var rk = e.target.closest('[data-rk]');
+    if (rk) {
+      var ch = (S.overview.channels || []).filter(function (x) { return x.id === rk.dataset.id; })[0]; if (!ch) return;
+      var cur = (ch.route_kinds || []).slice(), at = cur.indexOf(rk.dataset.rk);
+      if (at > -1) cur.splice(at, 1); else cur.push(rk.dataset.rk);
+      rk.setAttribute('aria-pressed', String(at === -1));
+      api('channel_update', { id: ch.id, route_kinds: cur }).then(function () { return loadOverview(); }).catch(function (er) { toast(er.message); loadOverview(); });
+      return;
+    }
+    var cr = e.target.closest('[data-clearroute]');
+    if (cr) {
+      api('channel_update', { id: cr.dataset.clearroute, route_kinds: [], route_min_beds: null, route_max_beds: null, route_min_price: null, route_max_price: null, route_areas: [] })
+        .then(function () { toast('This page takes everything again.'); return loadOverview(); }).catch(function (er) { toast(er.message); });
+      return;
+    }
     var s = e.target.closest('.sw');
     if (s) {
       var on = s.getAttribute('aria-checked') !== 'true';
@@ -784,6 +847,13 @@
     var f = i.dataset.f, v = i.value, patch = { id: i.dataset.id };
     if (f === 'gap_hours') { patch.min_gap_minutes = Math.round(Number(v) * 60); }
     else if (f === 'label' || f === 'city') { patch[f] = v; }
+    else if (f === 'route_min_beds' || f === 'route_max_beds') { patch[f] = v === '' ? null : Number(v); }
+    else if (f === 'route_min_price' || f === 'route_max_price') {
+      var money = readMoney(v);
+      if (money === undefined) { toast('Write a price like 3m, 500k or 2500000.'); loadOverview(); return; }
+      patch[f] = money;
+    }
+    else if (f === 'route_areas') { patch[f] = v; }
     else { patch[f] = Number(v); }
     api('channel_update', patch).then(function () { toast('Saved.'); return loadOverview(); }).catch(function (er) { toast(er.message); loadOverview(); });
   });
