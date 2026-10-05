@@ -503,7 +503,7 @@
       .then(function () {
         S.uploading = Math.max(0, (S.uploading || 1) - 1);
         $('addPic').disabled = false; $('addPic').textContent = 'Add pictures'; $('pic').value = '';
-        if (!S.uploading) $('send').disabled = false;
+        if (!S.uploading && !S.sending) $('send').disabled = false;
       });
   });
   function renderThumbs() {
@@ -527,12 +527,12 @@
       if (!$('at').value) { toast('Pick a date and time, or choose Now.'); return; }
       body.scheduled_at = new Date($('at').value).toISOString();
     }
-    var b = $('send'); b.disabled = true; b.textContent = 'Sending…';
+    S.sending = true; var b = $('send'); b.disabled = true; b.textContent = 'Sending…';
     api('compose', body).then(function (d) {
       toast(S.when === 'later' ? 'Scheduled for ' + when(d.at) + '.' : 'On its way.');
       $('caption').value = ''; S.media = []; renderThumbs(); S.picked = {}; renderPicks(); $('suggs').innerHTML = '';
       return loadPosts();
-    }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; b.textContent = 'Post'; });
+    }).catch(function (e) { toast(e.message); }).then(function () { S.sending = false; b.disabled = !!S.uploading; b.textContent = 'Post'; });
   });
 
   function statusPill(s, delivery) {
@@ -569,10 +569,10 @@
     $('autoSummary').textContent = auto.length
       ? auto.length + ' channel' + (auto.length === 1 ? '' : 's') + ' on autopilot, drawing on ' + o.live_listings + ' live listing' + (o.live_listings === 1 ? '' : 's') + '.'
       : 'No channel is on autopilot. Switch it on for a channel in Channels.';
-    $('twinSw').setAttribute('aria-checked', String(!!o.twins_enabled));
+    $('twinSw').setAttribute('aria-checked', String(!!o.twins_enabled)); $('twinSw').disabled = !!S.loadFailed;
     $('mirrorSummary').textContent = o.twins_enabled
       ? mir + ' channel' + (mir === 1 ? '' : 's') + ' will receive the next agency post.'
-      : 'Off. Agencies’ posts stay on their own accounts.';
+      : (S.loadFailed ? 'The setting could not be loaded. Reload to see it.' : 'Off. Agencies’ posts stay on their own accounts.');
   }
   $('twinSw').addEventListener('click', function () {
     var on = $('twinSw').getAttribute('aria-checked') !== 'true';
