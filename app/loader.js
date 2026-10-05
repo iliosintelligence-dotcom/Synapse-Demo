@@ -44,6 +44,12 @@
       '<div class="synload-mark" aria-hidden="true"></div>'
       + '<div class="synload-bar" aria-hidden="true"></div>'
       + '<div class="synload-msg"></div>';
+    /* The mark is alive while you wait: its three parts take turns hopping (brand.js). Without it, the masked
+       mark above stays as it was. */
+    if (window.SynBrand) {
+      var old = wrap.querySelector('.synload-mark');
+      if (old) { var m = SynBrand.mark({ wait: true }); m.setAttribute('aria-hidden', 'true'); old.parentNode.replaceChild(m, old); }
+    }
     document.body.appendChild(wrap);
     setMsg(wrap, msg);
     return wrap;
