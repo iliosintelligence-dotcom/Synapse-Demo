@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <meta name="theme-color" content="#F7F7F8" />
+  <title>Agency · Synapse</title>
+  <meta name="description" content="An estate agency on Synapse: who they are, where their office is, and every home they list." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <style>
+    /* THE AGENCY'S OWN PAGE (Eden, 2026-10-02): "the user should be able to
+       click on it and view the agency brand ... their website, their office
+       location and other details ... other properties or investment
+       opportunities provided by the agency." Opened from "Listed by" on a
+       listing. Everything here is what the agency published on its Brand
+       page; nothing is invented, and a field it left empty is left out.
+       No phone number: buyers reach agencies through Tayo, by design. */
+    .ap { max-width: 1080px; margin: 0 auto; padding: 22px 20px 120px; }
+    .ap-hero { position: relative; border-radius: 24px; overflow: hidden; padding: 28px 26px 24px;
+      background: var(--ag, #141412); color: #fff; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+    .ap-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.28)); pointer-events: none; }
+    .ap-logo { position: relative; z-index: 1; width: 84px; height: 84px; border-radius: 20px; background: #fff; display: grid; place-items: center;
+      font: 700 32px var(--f-sans); color: var(--ag, #141412); overflow: hidden; }
+    .ap-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .ap-id { position: relative; z-index: 1; min-width: 0; }
+    .ap-name { font: 700 clamp(26px, 4vw, 38px)/1.1 var(--ag-font, var(--f-sans)); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+    .ap-tag { margin: 8px 0 0; font-size: 15px; opacity: .88; max-width: 60ch; }
+    .ap-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .ap-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,0.16); font-size: 12.5px; font-weight: 600; }
+    .ap-chip.ok { background: #FFFFFF; color: #15803D; }
+    @media (max-width: 560px) { .ap-hero { grid-template-columns: minmax(0, 1fr); padding: 22px 18px; } .ap-logo { width: 64px; height: 64px; font-size: 24px; } }
+
+    .ap-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; align-items: start; }
+    @media (max-width: 860px) { .ap-grid { grid-template-columns: minmax(0, 1fr); } }
+    .ap-card { background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 18px; padding: 20px 20px 18px; }
+    html[data-theme="dark"] .ap-card { border-color: transparent; }
+    .ap-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+    .ap-about { font-size: 15px; line-height: 1.65; color: var(--ink); white-space: pre-line; margin: 0; }
+    .ap-facts { display: grid; gap: 12px; margin: 0; }
+    .ap-facts div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; font-size: 14px; }
+    .ap-facts dt { color: var(--ink-muted); }
+    .ap-facts dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+    .ap-facts a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+    .ap-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ap-tags span { padding: 3px 9px; border-radius: 999px; background: var(--surface-2, rgba(13,13,15,0.06)); font-size: 12.5px; }
+    .ap-ask { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 16px; min-height: 46px; border-radius: 999px;
+      background: var(--btn-solid-bg, #141412); color: var(--btn-solid-fg, #fff); font: 600 14px var(--f-sans); text-decoration: none; }
+
+    .ap-h2 { font: 600 22px var(--f-sans); margin: 34px 0 4px; }
+    .ap-sub { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+    .ap-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .ap-filters button { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--ink); font: 600 13px var(--f-sans); cursor: pointer; }
+    .ap-filters button[aria-pressed="true"] { background: var(--ink); color: var(--surface, #fff); border-color: var(--ink); }
+    html[data-theme="dark"] .ap-filters button { border-color: transparent; background: var(--surface-2); }
+    html[data-theme="dark"] .ap-filters button[aria-pressed="true"] { background: #fff; color: #000; }
+    .ap-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; }
+    .ap-l { display: block; text-decoration: none; color: inherit; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: transform .15s; }
+    .ap-l:hover { transform: translateY(-2px); }
+    html[data-theme="dark"] .ap-l { border-color: transparent; }
+    .ap-l .ph { aspect-ratio: 4 / 3; background: var(--surface-2, rgba(13,13,15,0.06)); display: grid; place-items: center; color: var(--ink-dim); font-size: 12px; }
+    .ap-l .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ap-l .b { padding: 12px 14px 14px; }
+    .ap-l .kind { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+    .ap-l .pr { font: 700 18px var(--f-sans); margin-top: 4px; font-variant-numeric: tabular-nums lining-nums; }
+    .ap-l .t { font-size: 13.5px; margin-top: 3px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ap-l .m { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+    .ap-empty { padding: 26px; text-align: center; color: var(--ink-muted); font-size: 14px; }
+    .ap-miss { padding: 60px 20px; text-align: center; }
+  </style>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="theme-night.css" />
+  <link rel="stylesheet" href="theme-dark.css" />
+  <script src="theme.js"></script>
+</head>
+<body>
+  <div class="appbar">
+    <a class="brand" href="../buyers.html">
+      <img class="syn-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true">
+      Synapse
+    </a>
+    <nav>
+      <a href="toju.html">Tayo</a>
+      <a href="browse.html">Your matches</a>
+      <a href="dream.html">Dream Home</a>
+    </nav>
+    <span class="spacer"></span>
+    <span data-auth-slot style="margin-right:16px"></span>
+    <a class="home" href="javascript:history.length>1?history.back():location.assign('browse.html')">&larr; Back</a>
+  </div>
+
+  <main class="ap" id="ap">
+    <section class="ap-hero" id="apHero">
+      <div class="ap-logo" id="apLogo">&mdash;</div>
+      <div class="ap-id">
+        <h1 class="ap-name" id="apName">Loading&hellip;</h1>
+        <p class="ap-tag" id="apTag" hidden></p>
+        <div class="ap-chips" id="apChips"></div>
+      </div>
+    </section>
+
+    <div class="ap-grid">
+      <div class="ap-card" id="apAboutCard" hidden>
+        <div class="ap-k">About</div>
+        <p class="ap-about" id="apAbout"></p>
+      </div>
+      <div class="ap-card">
+        <div class="ap-k">The agency</div>
+        <dl class="ap-facts" id="apFacts"></dl>
+        <a class="ap-ask" id="apAsk" href="toju.html?new=site">Ask Tayo about their homes</a>
+      </div>
+    </div>
+
+    <h2 class="ap-h2" id="apListHead">Their listings</h2>
+    <p class="ap-sub" id="apListSub"></p>
+    <div class="ap-filters" id="apFilters" role="group" aria-label="Show"></div>
+    <div class="ap-list" id="apList"></div>
+  </main>
+
+  <script src="icons.js"></script>
+  <script src="cust-nav.js"></script>
+  <script src="auth.js"></script>
+  <script>
+  (function () {
+    const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+    const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const H = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+    const id = new URLSearchParams(location.search).get('id') || '';
+    const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const naira = (n) => { n = Number(n) || 0; return n >= 1e9 ? '₦' + (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : '₦' + n.toLocaleString(); };
+    const PERIOD = { total: '', per_year: '/yr', per_month: '/mo', per_night: '/night' };
+    const TIER = { gold: 'Gold verified', basic: 'Verified', verified: 'Verified' };
+    const safeUrl = (raw) => {
+      let v = String(raw || '').trim(); if (!v) return '';
+      if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+      try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href : ''; } catch (e) { return ''; }
+    };
+    const isVid = (m) => !!m && (m.media_type === 'video' || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || '')));
+    const cover = (media) => {
+      const s = (media || []).filter((m) => m && m.url).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      const ph = s.find((m) => !isVid(m));
+      if (ph) return ph.url;
+      const u = s.length ? String(s[0].url) : '';
+      return /res\.cloudinary\.com\/.+\/video\/upload\//.test(u) ? u.replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg') : null;
+    };
+    const kindOf = (p) => p.property_type === 'land' ? 'land'
+      : p.listing_type === 'shortlet' ? 'shortlet'
+      : p.listing_type === 'rent' ? 'rent' : 'sale';
+    const KIND_LABEL = { sale: 'For sale', rent: 'For rent', land: 'Land', shortlet: 'Shortlet' };
+
+    function missing(msg) {
+      document.getElementById('ap').innerHTML = '<div class="ap-miss"><h1 class="ap-name" style="color:var(--ink)">' + esc(msg) + '</h1>'
+        + '<p class="ap-sub" style="margin-top:10px"><a href="browse.html">Back to your matches</a></p></div>';
+    }
+    if (!/^[0-9a-f-]{36}$/i.test(id)) { missing('This agency link is incomplete.'); return; }
+
+    const AG = 'id,name,logo_url,logo_dark_url,verification_tier,city,address,description,brand_color,brand_font,tagline,founded_year,specialties,business_hours,social,avg_response_minutes,closed_deals';
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/agencies?select=' + AG + '&id=eq.' + id + '&deleted_at=is.null', { headers: H }).then((r) => r.ok ? r.json() : []),
+      fetch(SUPABASE_URL + '/rest/v1/properties?select=id,title,price,price_period,listing_type,property_type,city,area_name,bedrooms,verification_status,property_media(url,display_order,media_type)'
+        + '&agency_id=eq.' + id + '&deleted_at=is.null&is_active=eq.true&order=created_at.desc&limit=200', { headers: H }).then((r) => r.ok ? r.json() : []),
+    ]).then(([ags, props]) => {
+      const a = Array.isArray(ags) && ags[0];
+      if (!a) { missing('We couldn’t find this agency.'); return; }
+      paintAgency(a);
+      paintListings(Array.isArray(props) ? props : [], a);
+    }).catch(() => missing('This page couldn’t load. Check your connection and try again.'));
+
+    function paintAgency(a) {
+      document.title = a.name + ' · Synapse';
+      const hero = document.getElementById('apHero');
+      if (/^#[0-9a-f]{3,8}$/i.test(a.brand_color || '')) hero.style.setProperty('--ag', a.brand_color);
+      if (a.brand_font && /^[\w\s-]{2,40}$/.test(a.brand_font)) hero.style.setProperty('--ag-font', '"' + a.brand_font + '", var(--f-sans)');
+      document.getElementById('apName').textContent = a.name;
+      const logo = document.getElementById('apLogo');
+      const logoUrl = safeUrl(a.logo_url);
+      if (logoUrl) logo.innerHTML = '<img src="' + esc(logoUrl) + '" alt="' + esc(a.name) + ' logo">';
+      else logo.textContent = (a.name || '?').trim()[0].toUpperCase();
+      if (a.tagline) { const t = document.getElementById('apTag'); t.textContent = a.tagline; t.hidden = false; }
+
+      const chips = [];
+      if (TIER[a.verification_tier]) chips.push('<span class="ap-chip ok">✓ ' + TIER[a.verification_tier] + '</span>');
+      if (a.city) chips.push('<span class="ap-chip">' + esc(a.city) + '</span>');
+      if (a.founded_year) chips.push('<span class="ap-chip">Since ' + esc(a.founded_year) + '</span>');
+      document.getElementById('apChips').innerHTML = chips.join('');
+
+      if (a.description) { document.getElementById('apAbout').textContent = a.description; document.getElementById('apAboutCard').hidden = false; }
+
+      const social = (a.social && typeof a.social === 'object') ? a.social : {};
+      const rows = [];
+      if (a.address || a.city) {
+        const where = [a.address, a.city].filter(Boolean).join(', ');
+        rows.push(['Office', esc(where) + ' · <a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(where + ', Nigeria') + '" target="_blank" rel="noopener">Map</a>']);
+      }
+      const site = safeUrl(social.website);
+      if (site) rows.push(['Website', '<a href="' + esc(site) + '" target="_blank" rel="noopener nofollow">' + esc(site.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a>']);
+      const nets = ['instagram', 'facebook', 'tiktok', 'x', 'linkedin', 'youtube'].map((k) => {
+        const u = safeUrl(social[k]); return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener nofollow">' + k.charAt(0).toUpperCase() + k.slice(1) + '</a>' : '';
+      }).filter(Boolean);
+      if (nets.length) rows.push(['Social', nets.join(' · ')]);
+      const hours = typeof a.business_hours === 'string' ? a.business_hours
+        : (a.business_hours && typeof a.business_hours === 'object' && a.business_hours.text) || '';
+      if (hours) rows.push(['Hours', esc(hours)]);
+      const spec = Array.isArray(a.specialties) ? a.specialties.filter(Boolean) : [];
+      if (spec.length) rows.push(['Focus', '<span class="ap-tags">' + spec.map((s) => '<span>' + esc(s) + '</span>').join('') + '</span>']);
+      if (a.avg_response_minutes) rows.push(['Replies in', 'about ' + (a.avg_response_minutes < 90 ? Math.round(a.avg_response_minutes) + ' min' : Math.round(a.avg_response_minutes / 60) + ' h')]);
+      document.getElementById('apFacts').innerHTML = rows.length
+        ? rows.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('')
+        : '<div><dd style="grid-column:1/-1;color:var(--ink-muted)">This agency hasn’t added its office details yet.</dd></div>';
+      document.getElementById('apAsk').href = 'toju.html?new=site&ask=' + encodeURIComponent('What homes does ' + a.name + ' have that suit me?');
+    }
+
+    let ALL = [], SHOW = 'all';
+    function paintListings(props, a) {
+      ALL = props;
+      document.getElementById('apListHead').textContent = props.length
+        ? props.length + ' listing' + (props.length > 1 ? 's' : '') + ' from ' + a.name
+        : 'Listings from ' + a.name;
+      const kinds = Array.from(new Set(props.map(kindOf)));
+      const f = document.getElementById('apFilters');
+      f.innerHTML = kinds.length > 1
+        ? ['all'].concat(kinds).map((k) => '<button type="button" data-k="' + k + '" aria-pressed="' + (k === SHOW) + '">' + (k === 'all' ? 'All' : KIND_LABEL[k]) + '</button>').join('')
+        : '';
+      renderList();
+    }
+    function renderList() {
+      const list = ALL.filter((p) => SHOW === 'all' || kindOf(p) === SHOW);
+      const el = document.getElementById('apList');
+      if (!list.length) { el.innerHTML = '<div class="ap-empty" style="grid-column:1/-1">No live listings right now.</div>'; return; }
+      el.innerHTML = list.map((p) => {
+        const img = cover(p.property_media);
+        const area = (p.area_name || '').trim();
+        const where = [area.length <= 40 && !/\n/.test(area) ? area : '', p.city].filter(Boolean).join(', ');
+        const meta = [p.bedrooms ? p.bedrooms + ' bed' : '', p.verification_status === 'verified' ? 'Verified' : 'Not yet verified'].filter(Boolean).join(' · ');
+        return '<a class="ap-l" href="property.html?id=' + encodeURIComponent(p.id) + '">'
+          + '<div class="ph">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : 'No photo yet') + '</div>'
+          + '<div class="b"><div class="kind">' + KIND_LABEL[kindOf(p)] + '</div>'
+          + '<div class="pr">' + (Number(p.price) > 0 ? naira(p.price) + (PERIOD[p.price_period] || '') : 'Price on request') + '</div>'
+          + '<div class="t">' + esc(p.title || 'Listing') + '</div>'
+          + '<div class="m">' + esc(where) + (where && meta ? ' · ' : '') + meta + '</div></div></a>';
+      }).join('');
+    }
+    document.getElementById('apFilters').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-k]'); if (!b) return;
+      SHOW = b.dataset.k;
+      document.querySelectorAll('#apFilters [data-k]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderList();
+    });
+  })();
+  </script>
+</body>
+</html>

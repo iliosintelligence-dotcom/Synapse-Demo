@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<title>Synapse studio</title>
+<!--
+  ── The Synapse studio (Eden, 2026-10-05) ───────────────────────────────
+  Synapse's own social media team works here, apart from the agency portal.
+  There is no link to this page from anywhere on the site: it is a back door,
+  and the door is the person, not the address. Whoever opens it must be signed
+  in AND be on the Synapse team (a founder, or someone a founder has added);
+  anyone else sees one plain sentence. The page holds no data of its own: it
+  asks the synapse-studio function, which checks the same thing again.
+  Not analytics-tagged, not indexed.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<style>
+  :root {
+    --bg: #F7F4EF; --surface: #FFFFFF; --surface-2: #F1ECE5; --ink: #15120F; --muted: #6B645C; --dim: #968E84;
+    --line: rgba(21,18,15,0.12); --orange: #FF8A2D; --ok: #2E7D4F; --warn: #B45309; --bad: #B3261E;
+    --on-ink: #FFFFFF; --ink-btn: #15120F; --shadow: 0 1px 2px rgba(21,18,15,0.06), 0 12px 32px -18px rgba(21,18,15,0.25);
+    --f: 'Josefin Sans', system-ui, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #000000; --surface: #111214; --surface-2: #1B1D20; --ink: #F5F2EE; --muted: #A39B91; --dim: #7C766E;
+    --line: transparent; --ok: #5FC48A; --warn: #F2A65A; --bad: #F28B82;
+    --on-ink: #000000; --ink-btn: #FFFFFF; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--f); font-variant-numeric: lining-nums; }
+  h1, h2, h3, p { margin: 0; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .bar { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .bar-in { max-width: 1040px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 16px; }
+  .brand { font-weight: 600; font-size: 17px; letter-spacing: 0.02em; }
+  .brand small { font-weight: 400; color: var(--muted); margin-left: 8px; }
+  .spacer { flex: 1; }
+  .who { font-size: 13px; color: var(--muted); max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabs { max-width: 1040px; margin: 0 auto; padding: 0 12px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { border: 0; background: none; padding: 12px 14px; font-weight: 500; font-size: 15px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--orange); }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 96px; }
+  .pane > * + * { margin-top: 20px; }
+  .h { font-weight: 600; font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); max-width: 62ch; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); }
+  .stack > * + * { margin-top: 14px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1 1 200px; min-width: 0; }
+  .k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .muted { color: var(--muted); }
+  .small { font-size: 13.5px; }
+
+  .btn { min-height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font-weight: 600; font-size: 14.5px; cursor: pointer; transition: background-color .15s ease, border-color .15s ease, opacity .15s ease; -webkit-tap-highlight-color: transparent; }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--ink-btn); color: var(--on-ink); border-color: transparent; }
+  .btn.primary:hover { opacity: .88; }
+  .btn.orange { background: var(--orange); color: #15120F; border-color: transparent; }
+  .btn.danger { color: var(--bad); }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .btn.sm { min-height: 34px; padding: 0 14px; font-size: 13.5px; }
+  input[type=text], input[type=email], input[type=number], input[type=datetime-local], select, textarea {
+    width: 100%; min-height: 42px; padding: 9px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+  html[data-theme="dark"] input[type=text], html[data-theme="dark"] input[type=email], html[data-theme="dark"] input[type=number],
+  html[data-theme="dark"] input[type=datetime-local], html[data-theme="dark"] select, html[data-theme="dark"] textarea { background: #000; border-color: rgba(255,255,255,0.28); }
+  textarea { min-height: 150px; resize: vertical; line-height: 1.55; }
+  label.f { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+  .sw { position: relative; width: 46px; height: 28px; flex: none; border-radius: 999px; border: 0; background: var(--dim); cursor: pointer; transition: background-color .18s ease; -webkit-tap-highlight-color: transparent; }
+  .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .18s ease; }
+  .sw[aria-checked="true"] { background: var(--ok); }
+  .sw[aria-checked="true"]::after { transform: translateX(18px); }
+  .opt { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
+  .opt + .opt { border-top: 1px solid var(--line); }
+  .opt b { display: block; font-weight: 600; }
+  .opt small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.4; }
+
+  .chan { display: grid; gap: 4px; }
+  .chan-head { display: flex; align-items: center; gap: 12px; }
+  .chip { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 10px; border-radius: 11px; background: var(--surface-2); font-weight: 700; font-size: 12px; letter-spacing: .04em; flex: none; }
+  .chan-name { font-weight: 600; font-size: 17px; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+  .pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); } .pill.bad { color: var(--bad); }
+  details.pace { margin-top: 6px; }
+  details.pace summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--muted); padding: 6px 0; }
+  .pace-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 8px; }
+
+  .acct { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+  .acct + .acct { border-top: 1px solid var(--line); }
+  .acct img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: var(--surface-2); flex: none; }
+
+  .picks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pick { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-weight: 500; font-size: 14px; }
+  .pick[aria-pressed="true"] { background: var(--ink-btn); color: var(--on-ink); border-color: transparent; }
+  .thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+  .thumb { position: relative; width: 84px; height: 84px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.65); color: #fff; cursor: pointer; line-height: 1; }
+  .opts3 { display: grid; gap: 8px; }
+  .sugg { text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; line-height: 1.5; }
+  .sugg:hover { background: var(--surface-2); }
+
+  .item { padding: 14px 0; display: grid; gap: 4px; }
+  .item + .item { border-top: 1px solid var(--line); }
+  .item-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .item-text { color: var(--ink); overflow-wrap: anywhere; }
+
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; max-width: min(92vw, 520px); padding: 12px 18px; border-radius: 14px; background: var(--ink-btn); color: var(--on-ink); font-weight: 500; box-shadow: 0 12px 32px -12px rgba(0,0,0,.5); }
+  .gate { max-width: 520px; margin: 18vh auto 0; padding: 0 24px; text-align: center; color: var(--muted); }
+  .empty { color: var(--muted); padding: 8px 0; }
+  @media (max-width: 640px) {
+    main { padding: 22px 16px 88px; } .bar-in { padding: 12px 16px; } .h { font-size: 23px; } .who { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .btn, .sw, .sw::after { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">Opening…</div>
+
+<div id="app" hidden>
+  <header class="bar">
+    <div class="bar-in">
+      <div class="brand">Synapse<small>studio</small></div>
+      <div class="spacer"></div>
+      <div class="who" id="who"></div>
+      <button class="btn sm" id="out" type="button">Sign out</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Studio">
+      <button class="tab" role="tab" data-tab="channels" aria-selected="true">Channels</button>
+      <button class="tab" role="tab" data-tab="compose" aria-selected="false">Compose</button>
+      <button class="tab" role="tab" data-tab="auto" aria-selected="false">Automation</button>
+      <button class="tab" role="tab" data-tab="activity" aria-selected="false">Activity</button>
+      <button class="tab" role="tab" data-tab="team" aria-selected="false" id="teamTab" hidden>Team</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- CHANNELS -->
+    <section class="pane" id="p-channels">
+      <h1 class="h">Channels</h1>
+      <p class="lede">The accounts Synapse posts from. Connect an account in TryPost, add it here, then choose what it does: post the live inventory by itself, receive agencies' posts, or just be there for your own posts.</p>
+      <div id="chanList" class="stack"></div>
+
+      <div class="card stack">
+        <div class="row"><h2 class="h" style="font-size:19px">Add an account</h2><span class="spacer"></span>
+          <button class="btn sm" id="loadAccts" type="button">Show my TryPost accounts</button></div>
+        <p class="muted small">Accounts are connected inside TryPost, which holds the permission to post. Connect a new one there, then come back and press the button: it will appear below.
+          <a href="https://app.trypost.it" target="_blank" rel="noopener">Open TryPost</a></p>
+        <div id="acctList"></div>
+      </div>
+
+      <div class="card stack" id="legacyCard" hidden>
+        <h2 class="h" style="font-size:19px">Developer accounts</h2>
+        <p class="muted small">These were connected first, with the developer logins. They still receive agencies' posts when mirroring is on. Switch one off once the team's own account replaces it.</p>
+        <div id="legacyList"></div>
+      </div>
+    </section>
+
+    <!-- COMPOSE -->
+    <section class="pane" id="p-compose" hidden>
+      <h1 class="h">Compose</h1>
+      <p class="lede">A post of your own: an announcement, a tip, a campaign. Write it, choose where it goes, and send it now or at a time you pick.</p>
+      <div class="card stack">
+        <div><label class="f" for="brief">Need a start? Say what it is about</label>
+          <div class="row"><input type="text" id="brief" class="grow" placeholder="e.g. Tayo now tells you what was checked on every home" maxlength="300">
+          <button class="btn sm" id="suggest" type="button">Suggest captions</button></div></div>
+        <div class="opts3" id="suggs"></div>
+        <div><label class="f" for="caption">Caption</label><textarea id="caption" maxlength="5000" placeholder="Write the post"></textarea>
+          <div class="small muted" id="count" style="margin-top:6px"></div></div>
+        <div><label class="f">Pictures</label>
+          <div class="thumbs" id="thumbs"></div>
+          <div style="margin-top:10px"><button class="btn sm" id="addPic" type="button">Add pictures</button>
+          <input type="file" id="pic" accept="image/jpeg,image/png,image/webp" multiple hidden></div></div>
+        <div><label class="f">Post to</label><div class="picks" id="picks"></div><p class="small muted" id="picksNote" style="margin-top:8px"></p></div>
+        <div class="row">
+          <div><label class="f">When</label>
+            <div class="row"><button class="pick" id="whenNow" type="button" aria-pressed="true">Now</button>
+            <button class="pick" id="whenLater" type="button" aria-pressed="false">Pick a time</button></div></div>
+          <div id="atWrap" hidden><label class="f" for="at">Date and time (your device's clock)</label><input type="datetime-local" id="at"></div>
+        </div>
+        <div class="row"><button class="btn primary" id="send" type="button">Post</button></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h" style="font-size:19px">Scheduled and recent</h2>
+        <div id="postList"><div class="empty">Loading…</div></div>
+      </div>
+    </section>
+
+    <!-- AUTOMATION -->
+    <section class="pane" id="p-auto" hidden>
+      <h1 class="h">Automation</h1>
+      <p class="lede">Two things run without anyone pressing a button. Both stay inside each channel's pacing, so no channel is flooded.</p>
+      <div class="card">
+        <div class="opt"><div class="grow"><b>Post the live listings</b>
+          <small>Each channel with Autopilot on posts one home at a time from the live inventory: newest first, in the hours and the daily limit you set on the channel. A home goes out again only after its repeat period.</small></div></div>
+        <div id="autoSummary" class="small muted"></div>
+      </div>
+      <div class="card">
+        <div class="opt"><div class="grow"><b>Mirror agencies' posts</b>
+          <small>When an agency posts a listing, Synapse's channels that ask for it post it too, with a link that still credits the agency. Agencies are not asked first: this is Synapse sharing what they publish.</small></div>
+          <button class="sw" id="twinSw" role="switch" aria-checked="false" aria-label="Mirror agencies' posts"></button></div>
+        <div id="mirrorSummary" class="small muted"></div>
+      </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section class="pane" id="p-activity" hidden>
+      <h1 class="h">Activity</h1>
+      <p class="lede">What Synapse's channels have posted lately, and what is waiting.</p>
+      <div class="card"><div id="actList"><div class="empty">Loading…</div></div></div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="pane" id="p-team" hidden>
+      <h1 class="h">Team</h1>
+      <p class="lede">Who can open the studio. Enter an email and Synapse sends an invitation: the link in it brings them to a page where they choose a password and create their account as part of the team. Someone who already has a Synapse account just gets access. An admin can invite and remove anyone.</p>
+      <div class="card stack">
+        <div class="row"><div class="grow"><label class="f" for="mEmail">Email</label><input type="email" id="mEmail" placeholder="name@example.com" autocomplete="off"></div>
+        <div><label class="f" for="mRole">Role</label><select id="mRole"><option value="social_manager">Social media manager</option><option value="admin">Admin</option></select></div>
+        <div style="align-self:flex-end"><button class="btn primary" id="mAdd" type="button">Send invitation</button></div></div>
+        <div id="inviteRes" hidden></div>
+        <div id="staffList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+<script src="auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  var SB_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var PL = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', linkedin: 'LinkedIn', x: 'X', telegram: 'Telegram' };
+  var SHORT = { instagram: 'IG', facebook: 'FB', tiktok: 'TT', linkedin: 'IN', x: 'X', telegram: 'TG' };
+  var STUDIO_PLATFORMS = ['instagram', 'facebook', 'tiktok', 'linkedin', 'x'];
+  var S = { role: null, overview: null, picked: {}, media: [], when: 'now', loaded: {} };
+  var toastT;
+
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 3600);
+  }
+  function token() {
+    return SynAuth.client().then(function (c) { return c.auth.getSession(); })
+      .then(function (r) { return r && r.data && r.data.session && r.data.session.access_token; });
+  }
+  /* One door to the function. Resolves the JSON; rejects with a sentence. */
+  function api(action, body) {
+    return token().then(function (tok) {
+      if (!tok) throw new Error('Please sign in again.');
+      return fetch(SB_URL + '/functions/v1/synapse-studio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + tok },
+        body: JSON.stringify(Object.assign({ action: action }, body || {}))
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d && d.error ? d.error : 'Something went wrong. Try again.');
+        return d;
+      });
+    });
+  }
+  function when(ts) {
+    if (!ts) return '';
+    try { return new Date(ts).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ''; }
+  }
+
+  /* ── the door ─────────────────────────────────────────────────────── */
+  function start() {
+    SynAuth.ready().then(function (u) {
+      if (!u) { location.replace('signin.html?next=' + encodeURIComponent('synapse.html')); return; }
+      $('who').textContent = u.email || '';
+      return api('me').then(function (d) {
+        S.role = d.role;
+        $('gate').hidden = true; $('app').hidden = false;
+        if (d.can_manage || d.role === 'platform_admin') $('teamTab').hidden = false;
+        return loadOverview();
+      }).catch(function () {
+        /* Signed in, but not on the team. Say which sign-in this is, so the right address can be added. */
+        $('gate').innerHTML = 'You are signed in as <b>' + esc(u.email || 'this account') + '</b>, which is not on the Synapse team. '
+          + 'Ask an admin to add this email, or sign in with another one.<div style="margin-top:18px"><button class="btn" id="gateOut" type="button">Sign out</button></div>';
+        $('gateOut').addEventListener('click', function () { SynAuth.signOut().then(function () { location.href = 'signin.html?next=synapse.html'; }); });
+      });
+    }).catch(function () { $('gate').textContent = 'There is nothing here.'; });
+  }
+
+  /* ── tabs ─────────────────────────────────────────────────────────── */
+  function show(tab) {
+    document.querySelectorAll('.tab').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
+    ['channels', 'compose', 'auto', 'activity', 'team'].forEach(function (t) { $('p-' + t).hidden = t !== tab; });
+    if (tab === 'compose') loadPosts();
+    if (tab === 'activity') loadActivity();
+    if (tab === 'team') loadStaff();
+    if (tab === 'auto' || tab === 'compose' || tab === 'channels') renderAll();
+  }
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('.tab'); if (b) show(b.dataset.tab);
+  });
+  $('out').addEventListener('click', function () { SynAuth.signOut().then(function () { location.href = 'signin.html'; }); });
+
+  /* ── overview, shared by three tabs ───────────────────────────────── */
+  var EMPTY = { channels: [], legacy: [], twins_enabled: false, live_listings: 0 };
+  function loadOverview() {
+    return api('overview').then(function (o) { S.overview = o; S.loadFailed = false; renderAll(); })
+      .catch(function (e) {
+        toast(e.message);
+        if (!S.overview) {
+          S.overview = EMPTY; S.loadFailed = true; renderAll();
+          $('chanList').insertAdjacentHTML('afterbegin', '<div class="card"><b>The studio could not load.</b> <button class="btn sm" type="button" data-retry>Try again</button></div>');
+        }
+      });
+  }
+  function renderAll() { if (S.overview) { renderChannels(); renderLegacy(); renderPicks(); renderAuto(); } }
+
+  function sw(on, attrs, label) {
+    return '<button type="button" class="sw" role="switch" aria-label="' + esc(label) + '" aria-checked="' + (on ? 'true' : 'false') + '" ' + attrs + '></button>';
+  }
+  function num(label, field, id, val, min, max) {
+    return '<div><label class="f">' + label + '</label><input type="number" data-f="' + field + '" data-id="' + esc(id) + '" value="' + esc(val) + '" min="' + min + '" max="' + max + '"></div>';
+  }
+
+  /* ── channels ─────────────────────────────────────────────────────── */
+  function renderChannels() {
+    var box = $('chanList'), a = document.activeElement;
+    if (a && box.contains(a) && a.matches('input')) { S.pendingRender = true; return; }
+    var open = {};
+    box.querySelectorAll('details.pace[open]').forEach(function (d) { open[d.dataset.id] = true; });
+    var list = S.overview.channels || [];
+    if (!list.length) { box.innerHTML = '<div class="card empty">No accounts yet. Add one below.</div>'; return; }
+    box.innerHTML = list.map(function (c) {
+      var id = esc(c.id);
+      var name = c.label || c.handle || PL[c.platform] || 'account';
+      var gap = Math.round((c.min_gap_minutes || 0) / 6) / 10;
+      return '<div class="card chan">'
+        + '<div class="chan-head"><span class="chip">' + esc(SHORT[c.platform] || c.platform) + '</span>'
+        + '<div class="grow"><div class="chan-name">' + esc(c.label || c.handle || PL[c.platform]) + '</div>'
+        + '<div class="muted small">' + esc(PL[c.platform] || c.platform) + (c.handle ? ' · ' + esc(c.handle) : '') + (c.city ? ' · ' + esc(c.city) : ' · every city') + '</div></div>'
+        + '<span class="pill ' + (c.is_active ? 'ok' : '') + '">' + (c.is_active ? 'On' : 'Off') + '</span></div>'
+        + '<div class="opt"><div class="grow"><b>Active</b><small>Off keeps the account here but posts nothing to it.</small></div>' + sw(c.is_active, 'data-id="' + id + '" data-k="is_active"', 'Active: ' + name) + '</div>'
+        + '<div class="opt"><div class="grow"><b>Autopilot</b><small>Posts the live listings by itself, ' + esc(c.posts_today) + ' so far today.</small></div>' + sw(c.autopilot, 'data-id="' + id + '" data-k="autopilot"', 'Autopilot: ' + name) + '</div>'
+        + '<div class="opt"><div class="grow"><b>Mirror agencies’ posts</b><small>Also posts what agencies publish (needs mirroring on in Automation).</small></div>' + sw(c.mirror, 'data-id="' + id + '" data-k="mirror"', 'Mirror agencies\u2019 posts: ' + name) + '</div>'
+        + '<details class="pace" data-id="' + id + '"' + (open[c.id] ? ' open' : '') + '><summary>Pacing and details</summary><div class="pace-grid">'
+        + '<div><label class="f">Name</label><input type="text" data-f="label" data-id="' + id + '" value="' + esc(c.label || '') + '" maxlength="80"></div>'
+        + '<div><label class="f">City (blank = every city)</label><input type="text" data-f="city" data-id="' + id + '" value="' + esc(c.city || '') + '" maxlength="60"></div>'
+        + num('Posts a day', 'daily_cap', c.id, c.daily_cap, 1, 24)
+        + num('Hours between posts', 'gap_hours', c.id, gap, 0.5, 24)
+        + num('Starts at (hour, Lagos)', 'window_start', c.id, c.window_start, 0, 23)
+        + num('Stops at (hour, Lagos)', 'window_end', c.id, c.window_end, 1, 24)
+        + num('Repeat a home after (days)', 'repost_days', c.id, c.repost_days, 1, 365)
+        + '</div><div style="margin-top:14px"><button class="btn sm danger" data-remove="' + id + '" type="button">Remove this account</button></div></details>'
+        + '</div>';
+    }).join('');
+  }
+  $('chanList').addEventListener('click', function (e) {
+    if (e.target.closest('[data-retry]')) { S.overview = null; loadOverview(); return; }
+    var s = e.target.closest('.sw');
+    if (s) {
+      var on = s.getAttribute('aria-checked') !== 'true';
+      s.setAttribute('aria-checked', String(on));
+      var patch = { id: s.dataset.id }; patch[s.dataset.k] = on;
+      api('channel_update', patch).then(loadOverview).catch(function (er) { toast(er.message); loadOverview(); });
+      return;
+    }
+    var rm = e.target.closest('[data-remove]');
+    if (rm && window.confirm('Remove this account from the studio? Its past posts stay in the record.')) {
+      api('channel_remove', { id: rm.dataset.remove }).then(function (d) { toast(d.kept ? 'Switched off. Its history is kept.' : 'Removed.'); return loadOverview(); })
+        .catch(function (er) { toast(er.message); });
+    }
+  });
+  $('chanList').addEventListener('focusout', function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (S.pendingRender && !($('chanList').contains(a) && a.matches('input'))) { S.pendingRender = false; renderChannels(); }
+    }, 0);
+  });
+  $('chanList').addEventListener('change', function (e) {
+    var i = e.target.closest('[data-f]'); if (!i) return;
+    var f = i.dataset.f, v = i.value, patch = { id: i.dataset.id };
+    if (f === 'gap_hours') { patch.min_gap_minutes = Math.round(Number(v) * 60); }
+    else if (f === 'label' || f === 'city') { patch[f] = v; }
+    else { patch[f] = Number(v); }
+    api('channel_update', patch).then(function () { toast('Saved.'); return loadOverview(); }).catch(function (er) { toast(er.message); loadOverview(); });
+  });
+
+  /* ── adding accounts ──────────────────────────────────────────────── */
+  $('loadAccts').addEventListener('click', function () {
+    var b = $('loadAccts'); b.disabled = true; b.textContent = 'Asking TryPost…';
+    api('trypost_accounts').then(function (d) {
+      var a = d.accounts || [];
+      $('acctList').innerHTML = a.length ? a.map(function (x) {
+        var can = x.supported && !x.added;
+        return '<div class="acct">' + (x.avatar ? '<img alt="" src="' + esc(x.avatar) + '" referrerpolicy="no-referrer">' : '<span class="chip">' + esc(SHORT[x.platform] || '?') + '</span>')
+          + '<div class="grow"><b>' + esc(x.name || x.username || x.id) + '</b><div class="muted small">' + esc(PL[x.platform] || x.platform) + (x.username ? ' · @' + esc(String(x.username).replace(/^@/, '')) : '') + '</div></div>'
+          + (x.status && x.status !== 'connected' ? '<span class="pill bad">' + (x.status === 'token_expired' ? 'Needs reconnecting in TryPost' : 'Disconnected in TryPost') + '</span>' : '')
+          + (x.added ? '<span class="pill ok">Added</span>'
+            : x.supported ? '<button class="btn sm primary" type="button" data-add="' + esc(x.id) + '" data-platform="' + esc(x.platform) + '" data-name="' + esc(x.name || x.username) + '" data-handle="' + esc(x.username) + '">Add</button>'
+            : '<span class="pill">Not supported yet</span>') + '</div>';
+      }).join('') : '<div class="empty">TryPost has no accounts yet. Connect one there first.</div>';
+    }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; b.textContent = 'Show my TryPost accounts'; });
+  });
+  $('acctList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-add]'); if (!b) return;
+    b.disabled = true;
+    api('channel_add', { trypost_account_id: b.dataset.add, platform: b.dataset.platform, label: b.dataset.name, handle: b.dataset.handle })
+      .then(function () { toast('Added. It starts quiet: switch on what it should do.'); b.replaceWith(Object.assign(document.createElement('span'), { className: 'pill ok', textContent: 'Added' })); return loadOverview(); })
+      .catch(function (er) { b.disabled = false; toast(er.message); });
+  });
+
+  function renderLegacy() {
+    var l = S.overview.legacy || [];
+    $('legacyCard').hidden = !l.length;
+    $('legacyList').innerHTML = l.map(function (x) {
+      return '<div class="opt"><span class="chip">' + esc(SHORT[x.platform] || x.platform) + '</span><div class="grow"><b>' + esc(x.handle || PL[x.platform]) + '</b><small>' + esc(PL[x.platform] || x.platform) + '</small></div>'
+        + sw(x.is_active, 'data-leg="' + esc(x.id) + '"', 'Developer account: ' + (x.handle || PL[x.platform])) + '</div>';
+    }).join('');
+  }
+  $('legacyList').addEventListener('click', function (e) {
+    var s = e.target.closest('[data-leg]'); if (!s) return;
+    var on = s.getAttribute('aria-checked') !== 'true'; s.setAttribute('aria-checked', String(on));
+    api('legacy_toggle', { id: s.dataset.leg, is_active: on }).then(loadOverview).catch(function (er) { toast(er.message); loadOverview(); });
+  });
+
+  /* ── compose ──────────────────────────────────────────────────────── */
+  function postable() {
+    return ((S.overview || EMPTY).channels || []).filter(function (c) { return c.is_active && c.trypost_account_id && STUDIO_PLATFORMS.indexOf(c.platform) > -1; });
+  }
+  function renderPicks() {
+    var list = postable();
+    /* A channel switched off or removed is no longer a choice, and must not stay selected out of sight. */
+    var ok = {}; list.forEach(function (c) { ok[c.id] = true; });
+    Object.keys(S.picked).forEach(function (k) { if (!ok[k]) delete S.picked[k]; });
+    $('picks').innerHTML = list.length ? list.map(function (c) {
+      return '<button type="button" class="pick" data-ch="' + esc(c.id) + '" data-pl="' + esc(c.platform) + '" aria-pressed="' + (S.picked[c.id] ? 'true' : 'false') + '">' + esc(c.label || PL[c.platform]) + ' <span class="muted">' + esc(PL[c.platform]) + '</span></button>';
+    }).join('') : '';
+    $('picksNote').textContent = list.length ? '' : 'Add an active account in Channels first.';
+    count();
+  }
+  $('picks').addEventListener('click', function (e) {
+    var b = e.target.closest('.pick'); if (!b) return;
+    S.picked[b.dataset.ch] = !S.picked[b.dataset.ch];
+    b.setAttribute('aria-pressed', String(!!S.picked[b.dataset.ch])); count();
+  });
+  function pickedPlatforms() {
+    return postable().filter(function (c) { return S.picked[c.id]; }).map(function (c) { return c.platform; });
+  }
+  function count() {
+    var n = $('caption').value.length, ps = pickedPlatforms(), msg = n + ' characters';
+    if (ps.indexOf('x') > -1) msg += ' · X keeps about 280, so it will be shortened there';
+    $('count').textContent = msg;
+  }
+  $('caption').addEventListener('input', count);
+  $('suggest').addEventListener('click', function () {
+    var b = $('suggest'), brief = $('brief').value.trim();
+    if (!brief) { toast('Say what the post is about first.'); return; }
+    b.disabled = true; b.textContent = 'Writing…';
+    var ps = pickedPlatforms();
+    api('suggest_caption', { brief: brief, platform: ps[0] || '' }).then(function (d) {
+      $('suggs').innerHTML = (d.options || []).map(function (o, i) { return '<button type="button" class="sugg" data-i="' + i + '">' + esc(o) + '</button>'; }).join('');
+      S.suggs = d.options || [];
+    }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; b.textContent = 'Suggest captions'; });
+  });
+  $('suggs').addEventListener('click', function (e) {
+    var b = e.target.closest('.sugg'); if (!b) return;
+    $('caption').value = S.suggs[Number(b.dataset.i)] || ''; count(); $('caption').focus();
+  });
+  $('addPic').addEventListener('click', function () { $('pic').click(); });
+  $('pic').addEventListener('change', function () {
+    var files = [].slice.call($('pic').files || []).slice(0, 10 - S.media.length);
+    if (!files.length) return;
+    S.uploading = (S.uploading || 0) + 1;
+    $('send').disabled = true;
+    $('addPic').disabled = true; $('addPic').textContent = 'Uploading…';
+    SynAuth.client().then(function (c) {
+      return files.reduce(function (p, f) {
+        return p.then(function () {
+          if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { toast('Use JPG, PNG or WEBP pictures.'); return; }
+          if (f.size > 8 * 1024 * 1024) { toast(f.name + ' is over 8MB.'); return; }
+          var ext = f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg';
+          var d = new Date(), path = d.getUTCFullYear() + '/' + (d.getUTCMonth() + 1) + '/' + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) + '.' + ext;
+          return c.storage.from('synapse-media').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false }).then(function (r) {
+            if (r.error) { toast('Could not upload ' + f.name + '.'); return; }
+            S.media.push(c.storage.from('synapse-media').getPublicUrl(path).data.publicUrl);
+          });
+        });
+      }, Promise.resolve());
+    }).then(renderThumbs).catch(function () { toast('Upload failed. Try again.'); })
+      .then(function () {
+        S.uploading = Math.max(0, (S.uploading || 1) - 1);
+        $('addPic').disabled = false; $('addPic').textContent = 'Add pictures'; $('pic').value = '';
+        if (!S.uploading && !S.sending) $('send').disabled = false;
+      });
+  });
+  function renderThumbs() {
+    $('thumbs').innerHTML = S.media.map(function (u, i) { return '<div class="thumb"><img alt="" src="' + esc(u) + '"><button type="button" data-rm="' + i + '" aria-label="Remove picture">×</button></div>'; }).join('');
+  }
+  $('thumbs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rm]'); if (!b) return; S.media.splice(Number(b.dataset.rm), 1); renderThumbs();
+  });
+  function setWhen(w) {
+    S.when = w; $('whenNow').setAttribute('aria-pressed', String(w === 'now')); $('whenLater').setAttribute('aria-pressed', String(w === 'later'));
+    $('atWrap').hidden = w !== 'later';
+  }
+  $('whenNow').addEventListener('click', function () { setWhen('now'); });
+  $('whenLater').addEventListener('click', function () { setWhen('later'); });
+  $('send').addEventListener('click', function () {
+    if (S.uploading) { toast('Wait for the pictures to finish uploading.'); return; }
+    var avail = {}; postable().forEach(function (c) { avail[c.id] = true; });
+    var ids = Object.keys(S.picked).filter(function (k) { return S.picked[k] && avail[k]; });
+    var body = { caption: $('caption').value, media_urls: S.media, channel_ids: ids };
+    if (S.when === 'later') {
+      if (!$('at').value) { toast('Pick a date and time, or choose Now.'); return; }
+      body.scheduled_at = new Date($('at').value).toISOString();
+    }
+    S.sending = true; var b = $('send'); b.disabled = true; b.textContent = 'Sending…';
+    api('compose', body).then(function (d) {
+      toast(S.when === 'later' ? 'Scheduled for ' + when(d.at) + '.' : 'On its way.');
+      $('caption').value = ''; S.media = []; renderThumbs(); S.picked = {}; renderPicks(); $('suggs').innerHTML = '';
+      return loadPosts();
+    }).catch(function (e) { toast(e.message); }).then(function () { S.sending = false; b.disabled = !!S.uploading; b.textContent = 'Post'; });
+  });
+
+  function statusPill(s, delivery) {
+    if (s === 'live') return '<span class="pill ok">Live</span>';
+    if (s === 'sent') return '<span class="pill warn">Sent, not live yet</span>';
+    if (s === 'failed') return '<span class="pill bad">Failed</span>';
+    if (s === 'cancelled') return '<span class="pill">Stopped</span>';
+    if (s === 'publishing') return '<span class="pill warn">Sending</span>';
+    return '<span class="pill">Scheduled</span>';
+  }
+  function loadPosts() {
+    api('posts').then(function (d) {
+      var p = d.posts || [];
+      $('postList').innerHTML = p.length ? p.map(function (x) {
+        var ch = x.channel || {};
+        return '<div class="item"><div class="item-top"><b>' + esc(ch.label || ch.handle || PL[x.platform]) + '</b><span class="muted small">' + esc(PL[x.platform] || x.platform) + '</span>'
+          + statusPill(x.status) + '<span class="muted small">' + esc(when(x.published_at || x.scheduled_at)) + '</span><span class="spacer"></span>'
+          + (x.status === 'scheduled' ? '<button class="btn sm" data-cancel="' + esc(x.id) + '" type="button">Stop</button>' : '') + '</div>'
+          + '<div class="item-text">' + esc(String(x.caption || '').slice(0, 220)) + '</div>'
+          + (x.failure_reason ? '<div class="small" style="color:var(--bad)">' + esc(x.failure_reason) + '</div>' : '') + '</div>';
+      }).join('') : '<div class="empty">Nothing yet.</div>';
+    }).catch(function (e) { $('postList').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
+  }
+  $('postList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cancel]'); if (!b) return; b.disabled = true;
+    api('post_cancel', { id: b.dataset.cancel }).then(function () { toast('Stopped.'); loadPosts(); }).catch(function (er) { toast(er.message); loadPosts(); });
+  });
+
+  /* ── automation ───────────────────────────────────────────────────── */
+  function renderAuto() {
+    var o = S.overview, ch = o.channels || [];
+    var auto = ch.filter(function (c) { return c.is_active && c.autopilot; });
+    var mir = ch.filter(function (c) { return c.is_active && c.mirror; }).length + (o.legacy || []).filter(function (l) { return l.is_active; }).length;
+    $('autoSummary').textContent = auto.length
+      ? auto.length + ' channel' + (auto.length === 1 ? '' : 's') + ' on autopilot, drawing on ' + o.live_listings + ' live listing' + (o.live_listings === 1 ? '' : 's') + '.'
+      : 'No channel is on autopilot. Switch it on for a channel in Channels.';
+    $('twinSw').setAttribute('aria-checked', String(!!o.twins_enabled)); $('twinSw').disabled = !!S.loadFailed;
+    $('mirrorSummary').textContent = o.twins_enabled
+      ? mir + ' channel' + (mir === 1 ? '' : 's') + ' will receive the next agency post.'
+      : (S.loadFailed ? 'The setting could not be loaded. Reload to see it.' : 'Off. Agencies’ posts stay on their own accounts.');
+  }
+  $('twinSw').addEventListener('click', function () {
+    var on = $('twinSw').getAttribute('aria-checked') !== 'true';
+    if (on && !window.confirm('Switch on mirroring? Every post an agency makes will also go out on the channels set to receive it.')) return;
+    $('twinSw').setAttribute('aria-checked', String(on));
+    api('settings_set', { twins_enabled: on }).then(function () { toast(on ? 'Mirroring is on.' : 'Mirroring is off.'); return loadOverview(); })
+      .catch(function (e) { toast(e.message); loadOverview(); });
+  });
+
+  /* ── activity ─────────────────────────────────────────────────────── */
+  var KIND = { autopilot: 'Autopilot', mirrored: 'Mirrored', studio: 'Studio post' };
+  function loadActivity() {
+    api('activity').then(function (d) {
+      var a = Array.isArray(d) ? d : [];
+      $('actList').innerHTML = a.length ? a.slice(0, 60).map(function (x) {
+        var st = x.status === 'published' || x.delivery === 'live' || x.status === 'live' ? 'live' : x.status;
+        return '<div class="item"><div class="item-top"><b>' + esc(x.channel || PL[x.platform]) + '</b><span class="pill">' + esc(KIND[x.kind] || x.kind) + '</span>'
+          + statusPill(st === 'published' ? 'live' : st) + '<span class="muted small">' + esc(when(x.at)) + '</span></div>'
+          + '<div class="item-text">' + esc(x.text || '') + '</div>'
+          + (x.failure ? '<div class="small" style="color:var(--bad)">' + esc(x.failure) + '</div>' : '') + '</div>';
+      }).join('') : '<div class="empty">Nothing has posted yet.</div>';
+    }).catch(function (e) { $('actList').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
+  }
+
+  /* ── team ─────────────────────────────────────────────────────────── */
+  function loadStaff() {
+    api('staff_list').then(function (d) {
+      var s = d.staff || [];
+      $('staffList').innerHTML = s.length ? s.map(function (x) {
+        return '<div class="opt"><div class="grow"><b>' + esc(x.email || 'Unknown') + '</b><small>' + (x.role === 'admin' ? 'Admin' : 'Social media manager')
+          + ' \u00b7 ' + (x.joined ? 'Joined' : 'Invitation not opened yet') + '</small></div>'
+          + (x.joined ? '' : '<button class="btn sm" data-linkstaff="' + esc(x.profile_id) + '" type="button">Copy link</button>')
+          + '<button class="btn sm danger" data-rmstaff="' + esc(x.profile_id) + '" type="button">Remove</button></div>';
+      }).join('') : '<div class="empty">Only founders so far.</div>';
+    }).catch(function (e) { $('staffList').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
+  }
+  /* Show a join link for the admin to pass on, with a Copy button. */
+  function showLink(email, link, why) {
+    var r = $('inviteRes');
+    r.hidden = false;
+    r.innerHTML = '<div class="card" style="box-shadow:none"><b>Send them this link</b>'
+      + '<p class="muted small" style="margin-top:6px">' + (why ? esc(why) + ' ' : '') + 'Copy the link and send it to ' + esc(email) + ' yourself, by WhatsApp or email. It works once.</p>'
+      + '<div class="row" style="margin-top:12px"><input type="text" readonly id="linkBox" class="grow" value="' + esc(link) + '" aria-label="Invitation link">'
+      + '<button class="btn sm primary" id="linkCopy" type="button">Copy</button></div></div>';
+    $('linkCopy').addEventListener('click', function () { copyLink(link, $('linkCopy')); });
+  }
+  function copyLink(link, btn) {
+    var done = function () { toast('Link copied.'); if (btn) { var w = btn.textContent; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = w; }, 1600); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(done, function () { window.prompt('Copy this link:', link); }); }
+    else { window.prompt('Copy this link:', link); }
+  }
+  $('mAdd').addEventListener('click', function () {
+    var b = $('mAdd'), email = $('mEmail').value.trim(); b.disabled = true; b.textContent = 'Sending…';
+    $('inviteRes').hidden = true;
+    api('staff_invite', { email: email, role: $('mRole').value }).then(function (d) {
+      if (d.status === 'emailed') { toast('Invitation sent to ' + email + '.'); $('inviteRes').hidden = false; $('inviteRes').innerHTML = '<p class="small" style="color:var(--ok)">Invitation sent to <b>' + esc(email) + '</b>. The email has a link that brings them here to create their account.</p>'; }
+      else if (d.status === 'existing') { toast('They already have an account.'); $('inviteRes').hidden = false; $('inviteRes').innerHTML = '<p class="small" style="color:var(--ok)"><b>' + esc(email) + '</b> already has a Synapse account and now has studio access. They sign in as usual.</p>'; }
+      else if (d.link) { showLink(email, d.link, d.status === 'link' ? 'The email could not be sent (' + (d.reason || 'no reason given') + ').' : ''); }
+      $('mEmail').value = ''; loadStaff();
+    }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; b.textContent = 'Send invitation'; });
+  });
+  $('staffList').addEventListener('click', function (e) {
+    var lk = e.target.closest('[data-linkstaff]');
+    if (lk) {
+      lk.disabled = true;
+      api('staff_link', { profile_id: lk.dataset.linkstaff }).then(function (d) { copyLink(d.link, null); }).catch(function (er) { toast(er.message); }).then(function () { lk.disabled = false; });
+      return;
+    }
+    var b = e.target.closest('[data-rmstaff]'); if (!b || !window.confirm('Remove their access to the studio?')) return;
+    api('staff_remove', { profile_id: b.dataset.rmstaff }).then(function () { toast('Removed.'); loadStaff(); }).catch(function (er) { toast(er.message); });
+  });
+
+  if (window.SynAuth && SynAuth.ready) start(); else $('gate').textContent = 'There is nothing here.';
+})();
+</script>
+</body>
+</html>

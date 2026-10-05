@@ -1,0 +1,620 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Synapse — authentication
+   A thin wrapper over Supabase Auth (GoTrue) so every page speaks to sessions
+   the same way. Loads @supabase/supabase-js from CDN and exposes window.SynAuth.
+
+   SECURITY NOTES (deliberate, please keep):
+   · The publishable key below is PUBLIC by design — it identifies the project
+     and carries no privileges of its own. All real authorisation lives in
+     Postgres RLS. Never put a service-role key in this file or any client file.
+   · Sessions are held by supabase-js in localStorage and auto-refreshed. We do
+     NOT hand-roll token storage, and we never read the JWT to make trust
+     decisions — the server re-verifies on every request.
+   · `requireAuth()` is a UX gate, not a security boundary. It stops an
+     unauthenticated person seeing a screen; it does not protect data. Data
+     protection is RLS. Treat any client check as advisory.
+   · Redirect targets are validated against same-origin before use so a crafted
+     ?next= cannot bounce a freshly-signed-in user to an attacker's page.
+   ───────────────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  var PUBLISHABLE_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  var CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+
+  /* A RESET LINK'S SESSION, TAKEN BEFORE THE CLIENT SEES IT (28 Sept 2026).
+     resetPassword() below asks for an implicit-flow link, which comes back
+     to signin.html with the session in the fragment. The client here is
+     PKCE and would reject a fragment like that, so it is lifted off the URL
+     now, while this file runs, before any client exists -- and handed to
+     signin.html through takeRecovery(). Only a recovery fragment is touched. */
+  var pendingRecovery = null;
+  (function () {
+    try {
+      var h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      if (h.get('type') === 'recovery' && h.get('access_token') && h.get('refresh_token')) {
+        pendingRecovery = { access_token: h.get('access_token'), refresh_token: h.get('refresh_token') };
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+    } catch (e) { /* no URL API: nothing taken, the page behaves as before */ }
+  })();
+  function takeRecovery() { var r = pendingRecovery; pendingRecovery = null; return r; }
+
+  var clientPromise = null;
+  var cachedUser = null;      // last known user; refreshed by onAuthStateChange
+  var readyResolvers = [];
+  var isReady = false;
+
+  function loadSdk() {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve(window.supabase);
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-syn-supabase]');
+      if (existing) { existing.addEventListener('load', function () { resolve(window.supabase); }); existing.addEventListener('error', reject); return; }
+      var s = document.createElement('script');
+      s.src = CDN; s.async = true; s.setAttribute('data-syn-supabase', '');
+      s.onload = function () { resolve(window.supabase); };
+      s.onerror = function () { reject(new Error('auth-sdk-unreachable')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function client() {
+    if (clientPromise) return clientPromise;
+    clientPromise = loadSdk().then(function (sb) {
+      var c = sb.createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,   // handles the email-confirmation callback
+          storageKey: 'synapse_auth_v1',
+          flowType: 'pkce',           // PKCE — no token ever rides in a URL fragment
+        },
+      });
+      c.auth.onAuthStateChange(function (_evt, session) {
+        cachedUser = session ? session.user : null;
+        document.dispatchEvent(new CustomEvent('syn:auth', { detail: { user: cachedUser } }));
+        paintAll();
+      });
+      return c;
+    });
+    return clientPromise;
+  }
+
+  /* ── session ─────────────────────────────────────────────────────────── */
+  function getUser() {
+    return client().then(function (c) { return c.auth.getUser(); })
+      .then(function (r) { cachedUser = (r && r.data && r.data.user) || null; return cachedUser; })
+      .catch(function () { return null; });
+  }
+  function ready() {
+    if (isReady) return Promise.resolve(cachedUser);
+    return getUser().then(function (u) {
+      isReady = true;
+      readyResolvers.forEach(function (fn) { fn(u); });
+      readyResolvers = [];
+      return u;
+    });
+  }
+  // The app only cares about two sides (customer / agency), but the database
+  // trigger that provisions public.profiles on signup (handle_new_user) casts
+  // raw_user_meta_data->>'role' to a real Postgres enum: consumer, agent,
+  // agency_admin, agency_owner, platform_admin — NOT the literal strings
+  // 'customer'/'agency' this file used to send. Sending an invalid value
+  // aborts the trigger's transaction and 500s the whole signup (confirmed via
+  // Supabase's own auth logs: every signup was failing this way). Fixed by
+  // sending real enum values and classifying the full vocabulary here, so the
+  // rest of the app keeps its simple two-sided model without knowing this
+  // enum exists.
+  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'platform_admin'];
+  function roleOf(u) {
+    if (!u) return null;
+    var m = u.user_metadata || {};
+    return AGENCY_DB_ROLES.indexOf(m.role) > -1 ? 'agency' : 'customer';
+  }
+
+  /* ── redirect safety ──────────────────────────────────────────────────── */
+  // Only ever navigate to a same-origin path. Anything absolute, protocol-
+  // relative or cross-origin is discarded rather than "cleaned" — rejecting is
+  // safer than trying to sanitise a hostile URL.
+  /* Where a link that travels through EMAIL must point.
+
+     A password reset or a confirmation link is read in a mail client, and
+     very often on a different device from the one that asked for it. A
+     localhost URL is the one address guaranteed not to work there: the phone
+     resolves localhost to itself, finds nothing on port 3000, and the person
+     is told the site cannot be reached. That is the whole bug -- requesting a
+     reset while developing produced an email nobody could use.
+
+     So an emailed link never carries a loopback origin. Any real origin is
+     used as-is, which keeps preview deployments working; only localhost is
+     rewritten, because only localhost is meaningless to another machine.
+
+     OAuth's redirectTo is deliberately NOT routed through this: that one
+     returns to the same browser on the same device, where localhost is
+     exactly right during development. */
+  var CANONICAL_ORIGIN = 'https://synapsecore.dev';
+
+  function mailOrigin() {
+    var o = window.location.origin;
+    return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:|$)/i.test(o)
+      ? CANONICAL_ORIGIN
+      : o;
+  }
+
+  function safeNext(raw, fallback) {
+    fallback = fallback || 'toju.html';
+    if (!raw) return fallback;
+    try {
+      if (/^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.indexOf('//') === 0) return fallback;
+      var u = new URL(raw, window.location.href);
+      if (u.origin !== window.location.origin) return fallback;
+      return u.pathname + u.search + u.hash;
+    } catch (e) { return fallback; }
+  }
+
+  /* ── OAuth ───────────────────────────────────────────────────────────────
+     Sign-in was email and password only, which is a real barrier here: it
+     means remembering another password to look at houses, and it means we
+     hold a password hash for people who never wanted an account with us.
+
+     The redirect is built through safeNext() for the same reason every other
+     navigation is. An OAuth `redirectTo` is attacker-reachable -- it travels
+     as a query parameter through a third party and comes back -- so it must
+     never be echoed from the URL without being checked. Supabase also
+     requires the final URL to be on its allow-list, which is a second gate,
+     but the first one is ours and should not depend on their configuration
+     being right.
+
+     No callback page is needed: the client is created with
+     detectSessionInUrl, so the session in the returning fragment is consumed
+     wherever the person lands. */
+  /* Google is back, and the reason it was removed is handled rather than
+     re-introduced: the button is rendered ONLY after enabledProviders() says
+     the project has the provider switched on. While it is off, no button is
+     drawn and no PKCE verifier is ever written, which is what used to leave
+     half-finished keys in storage.
+
+     Anything added here must also be enabled on the Supabase project or it
+     stays invisible -- that is the intended behaviour, not a bug. */
+  var OAUTH_PROVIDERS = ['google'];
+
+  /* Which providers this project actually has switched on.
+     GoTrue publishes this at /auth/v1/settings, and asking is the difference
+     between a button that works and a button that throws the person out to a
+     raw JSON error on a supabase.co domain. signInWithOAuth navigates the
+     browser itself, so a .catch() around it never runs -- the tab has already
+     gone. The only way to fail gracefully is to know before pressing.
+
+     Cached for the page: the answer cannot change mid-session, and the sign-in
+     screen would otherwise ask twice. */
+  var providersPromise = null;
+  function enabledProviders() {
+    if (providersPromise) return providersPromise;
+    providersPromise = fetch(SUPABASE_URL + '/auth/v1/settings', {
+      headers: { apikey: PUBLISHABLE_KEY },
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ext = (d && d.external) || {};
+        return OAUTH_PROVIDERS.filter(function (name) { return ext[name] === true; });
+      })
+      .catch(function () { return []; });   // unreachable settings: offer nothing
+    return providersPromise;
+  }
+
+  /* Whether this account has an agency behind it. OAuth cannot carry the
+     role at signup, so after a Google return we have to ASK the database
+     rather than trust the token: a business that signed in with Google is
+     indistinguishable from a buyer until this answers. */
+  function hasAgency() {
+    return client().then(function (c) {
+      return c.auth.getUser().then(function (r) {
+        var u = r && r.data && r.data.user;
+        if (!u) return false;
+        return c.from('agency_members').select('agency_id')
+          .eq('profile_id', u.id).is('deleted_at', null).limit(1)
+          .then(function (res) { return !!(res.data && res.data.length); });
+      });
+    }).catch(function () { return false; });
+  }
+
+  /** Gives the signed-in account its first agency. Refused server-side if they
+   *  already have one, so this cannot mint a second. */
+  function provisionAgency(name, city) {
+    return client().then(function (c) {
+      return c.rpc('provision_agency_for_current_user', {
+        p_agency_name: name,
+        p_city: city || null,
+      }).then(function (res) {
+        if (res && res.error) return res;
+
+        /* The RPC writes profiles, agencies and agency_members -- everything
+           the SERVER uses. It does not write user_metadata, and roleOf() reads
+           exactly that, so without this the browser still believes the person
+           is a customer: agency.html's role gate turns them away and sends
+           them back to sign-in, which sends them to agency.html, and nobody
+           ever gets in. The email path avoids it only because signUp sets the
+           metadata at creation.
+
+           This is not a privilege grant. Every server-side check goes through
+           agency_members and agency_role(); user_metadata is a client-side hint
+           about which UI to show, and setting it alone gains nothing. */
+        return c.auth.updateUser({ data: { role: 'agency_owner' } })
+          .then(function () { return getUser(); })
+          .then(function () { return res; })
+          .catch(function () { return res; });   // provisioned either way
+      });
+    });
+  }
+
+  /* The agency's own website, saved onto the agency this account owns. Used
+     by sign-up flows that create the agency through the RPC (Google, phone),
+     where the database trigger that reads agency_website never runs. A bare
+     domain gets https://; anything that is not a plain http(s) address is
+     refused rather than stored. */
+  function saveAgencyWebsite(raw) {
+    var v = String(raw || '').trim();
+    if (!v) return Promise.resolve(null);
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = 'https://' + v;
+    try {
+      var u = new URL(v);
+      if (!/^https?:$/.test(u.protocol) || u.hostname.indexOf('.') < 0 || v.length > 200) throw new Error('bad url');
+      v = u.href;
+    } catch (e) { return Promise.reject(new Error('That does not look like a website address.')); }
+    return client().then(function (c) {
+      return getUser().then(function (user) {
+        if (!user) throw new Error('Not signed in.');
+        return c.from('agencies').select('id,social').eq('owner_id', user.id).limit(1).then(function (r) {
+          if (r.error) throw r.error;
+          var a = r.data && r.data[0];
+          if (!a) throw new Error('No agency yet.');
+          var social = Object.assign({}, a.social || {}, { website: v });
+          return c.from('agencies').update({ social: social }).eq('id', a.id);
+        });
+      });
+    });
+  }
+
+  function signInWithProvider(provider, next, role) {
+    if (OAUTH_PROVIDERS.indexOf(provider) === -1) {
+      return Promise.reject(new Error('Unsupported sign-in provider: ' + provider));
+    }
+    /* THE ROLE HAS TO SURVIVE THE ROUND TRIP.
+       signInWithOAuth cannot pass user metadata, so handle_new_user sees no
+       role and makes every Google signup a consumer -- including a business.
+       The intent therefore travels in the return URL and is settled when the
+       browser comes back, by asking the database what this account actually
+       has. Coming back through the sign-in page rather than straight to the
+       destination is deliberate: an agency with no agency row needs to be
+       asked its name before the portal will let it in at all. */
+    if (role) {
+      next = 'signin.html?oauth=1&role=' + encodeURIComponent(role)
+        + (next ? '&next=' + encodeURIComponent(next) : '');
+    }
+    // Resolve to an absolute same-origin URL: safeNext() returns a path, and
+    // Supabase needs a full URL to hand to the provider.
+    var path = safeNext(next, 'toju.html');
+    var target = new URL(path, window.location.href).toString();
+
+    return client().then(function (c) {
+      return c.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: target,
+          // Ask for the minimum. A name and an email are what a profile needs;
+          // anything more is data we would be holding without a use for it.
+          scopes: provider === 'google' ? 'email profile' : undefined,
+        },
+      });
+    }).then(function (r) {
+      /* signInWithOAuth resolves BEFORE the browser leaves, and reports a
+         misconfigured provider here rather than at the destination. Surfacing
+         it means "Google sign-in is not enabled on this project" instead of a
+         silent no-op when the button is pressed. */
+      if (r && r.error) throw r.error;
+      return r;
+    });
+  }
+
+  /* ── actions ─────────────────────────────────────────────────────────── */
+  function signUp(email, password, opts) {
+    opts = opts || {};
+    return client().then(function (c) {
+      // 'consumer' / 'agency_owner': real handle_new_user enum values — see
+      // the note above roleOf(). A self-serve agency signup is treated as
+      // that agency's owner, and the DB trigger provisions the agencies row
+      // + owner membership atomically with the profile (migration 0039) —
+      // the client deliberately does NOT sequence any of that, so closing
+      // the tab can never leave an account half-provisioned.
+      var meta = {
+        role: opts.role === 'agency' ? 'agency_owner' : 'consumer',
+        full_name: opts.name || null,
+      };
+      // The agency's display name, typed by the person signing up. Only the
+      // trigger reads this; it is never invented on their behalf.
+      if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+      if (opts.role === 'agency' && opts.agencyWebsite) meta.agency_website = opts.agencyWebsite;
+      /* The number Synapse will reach this person on.
+         Nothing collected it before, so profiles.phone was NULL for all 68
+         accounts on the project -- and a Toju handoff has nowhere to go
+         without it. Normalised here with the same rules the phone sign-in
+         path uses, so the number that receives a handoff is the same shape as
+         the number that could sign them in. The trigger normalises again
+         server-side; this is for the person looking at the field, not for
+         trust. */
+      if (opts.phone) {
+        var tel = normalisePhone(opts.phone);
+        if (tel) meta.phone = tel;
+      }
+      /* The confirmation link has to come back to the page the person left,
+         WITH the context they left it in. This was origin + pathname only, so
+         `role` and `next` were dropped: an agency owner confirming their email
+         landed on a page that had defaulted back to role=customer, saw its
+         session was the wrong role for that page, and was told to "sign in
+         with a customer account to switch" -- on the account they had just
+         created. Every agency signup by email would have hit it the moment
+         confirmations started arriving reliably.
+
+         Built from opts rather than from the current URL: signUp is callable
+         from anywhere, and the caller knows which role it just asked for. */
+      var back = mailOrigin() + window.location.pathname
+        + '?role=' + (opts.role === 'agency' ? 'agency' : 'customer')
+        + (opts.next ? '&next=' + encodeURIComponent(opts.next) : '');
+
+      return c.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: meta,
+          emailRedirectTo: back,
+        },
+      });
+    });
+  }
+  /* ── a fresh confirmation link ─────────────────────────────────────────
+     Until 2026-09-25 the project's Site URL was http://localhost:3000 with an
+     EMPTY redirect allow-list, so every confirmation email ever sent opened
+     localhost on the reader's phone. Somebody who signed up in that window
+     holds a link that can never work, and the sign-in page was telling them
+     to "check your email for the link we sent" -- the broken one.
+
+     So a new link can be asked for, built through mailOrigin() like every
+     other emailed link, with the role carried as signUp carries it. */
+  function resendConfirmation(email, opts) {
+    opts = opts || {};
+    return client().then(function (c) {
+      return c.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: mailOrigin() + '/app/signin.html?role='
+            + (opts.role === 'agency' ? 'agency' : 'customer'),
+        },
+      });
+    });
+  }
+
+  /* ── phone ──────────────────────────────────────────────────────────────
+     Nigerian numbers get typed every way there is: 0803..., 234803...,
+     +234803..., with spaces and dashes. GoTrue wants strict E.164 and rejects
+     anything else with a message about the format rather than about the
+     number, so the normalising happens here rather than being asked of the
+     person typing. Same rules as send-outbox, deliberately -- a number that
+     reaches somebody by WhatsApp should be the same number that signs them in. */
+  function normalisePhone(raw) {
+    var d = String(raw || '').replace(/[^\d+]/g, '');
+    if (!d) return '';
+    if (d.charAt(0) === '+') return d;
+    if (d.indexOf('234') === 0) return '+' + d;
+    if (d.charAt(0) === '0') return '+234' + d.slice(1);
+    // A bare 10-digit local number, which is how most people write it.
+    if (d.length === 10) return '+234' + d;
+    return '+' + d;
+  }
+
+  /** Sends the six-digit code. Creates the account if there is not one yet,
+   *  carrying the same metadata the email path sends so handle_new_user
+   *  provisions the profile -- and, for an agency, the agencies row and owner
+   *  membership -- identically whichever way somebody signed up. */
+  function sendPhoneCode(phone, opts) {
+    opts = opts || {};
+    var to = normalisePhone(phone);
+    if (!to || to.length < 10) {
+      return Promise.resolve({ error: { message: 'Enter a phone number, including the network code.' } });
+    }
+    var meta = {
+      role: opts.role === 'agency' ? 'agency_owner' : 'consumer',
+      full_name: opts.name || null,
+    };
+    if (opts.role === 'agency' && opts.agencyName) meta.agency_name = opts.agencyName;
+    if (opts.role === 'agency' && opts.agencyWebsite) meta.agency_website = opts.agencyWebsite;
+    return client().then(function (c) {
+      return c.auth.signInWithOtp({
+        phone: to,
+        options: { data: meta, shouldCreateUser: opts.createIfMissing !== false },
+      });
+    }).then(function (r) { r.phone = to; return r; });
+  }
+
+  /** Exchanges the code for a session. `type: 'sms'` covers both a first-time
+   *  signup and a returning sign-in -- GoTrue does not distinguish, and neither
+   *  should the caller. */
+  function verifyPhoneCode(phone, code) {
+    return client().then(function (c) {
+      return c.auth.verifyOtp({
+        phone: normalisePhone(phone),
+        token: String(code || '').replace(/\D/g, ''),
+        type: 'sms',
+      });
+    });
+  }
+
+  function signIn(email, password) {
+    return client().then(function (c) { return c.auth.signInWithPassword({ email: email, password: password }); });
+  }
+  function signOut() {
+    return client().then(function (c) {
+      /* A global sign-out revokes the refresh token on the server, which is
+         what you want and needs the network. But a sign-out button has to end
+         the session on THIS device even when the network does not answer --
+         being unable to reach a server is not a reason to leave somebody
+         signed in on a phone they are trying to hand back.
+
+         So: ask for the global one, and if it has not returned in two and a
+         half seconds, clear the local session and carry on. The server-side
+         revocation still lands if the request completes; the person is signed
+         out here either way. */
+      var global = c.auth.signOut();
+      var fallback = new Promise(function (resolve) {
+        setTimeout(function () { resolve(c.auth.signOut({ scope: 'local' })); }, 2500);
+      });
+      return Promise.race([global, fallback]);
+    })
+      .catch(function () { /* cleared below whatever happened */ })
+      .then(function () {
+        /* WHAT THE NEXT PERSON ON THIS BROWSER MUST NOT SEE (Greptile audit):
+           Tayo's saved chat, its archived chats, and the id that restores them
+           from the server. The id is kept only while proximity alerts are on,
+           because the alert watch is held under it. */
+        try {
+          localStorage.removeItem('toju_chat_v1');
+          localStorage.removeItem('toju_sessions_v1');
+          var prox = JSON.parse(localStorage.getItem('synapse_proximity_v1') || '{}');
+          if (prox.on !== true) localStorage.removeItem('toju_visitor_v1');
+        } catch (e) {}
+        cachedUser = null; paintAll();
+      });
+  }
+  /* IMPLICIT, ON PURPOSE (28 September 2026). The SDK's resetPasswordForEmail
+     sends a PKCE challenge, and a PKCE reset link can only be redeemed by the
+     browser that asked for it -- so a reset requested on a laptop and opened
+     on a phone, or in the Gmail or Outlook app's own browser, failed silently
+     and showed a plain sign-in page. Asked for without a challenge, the link
+     carries the session itself and works wherever it is opened; takeRecovery()
+     above catches it on arrival. (The better fix is a token_hash email
+     template, which signin.html already understands, but Supabase allows
+     template changes only with a custom SMTP provider.) */
+  function resetPassword(email) {
+    var to = mailOrigin() + '/app/signin.html';
+    return fetch(SUPABASE_URL + '/auth/v1/recover?redirect_to=' + encodeURIComponent(to), {
+      method: 'POST',
+      headers: { apikey: PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email }),
+    }).then(function (r) {
+      if (r.ok) return { data: {}, error: null };
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        var e = new Error(j.msg || j.message || j.error_description || ('Reset request failed (' + r.status + ')'));
+        e.code = j.error_code || j.code || ''; e.status = r.status;
+        throw e;
+      });
+    });
+  }
+
+  /* ── gate ────────────────────────────────────────────────────────────── */
+  // UX gate only. Sends the visitor to sign-in and remembers where they were.
+  function requireAuth(opts) {
+    opts = opts || {};
+    return ready().then(function (u) {
+      if (u && (!opts.role || roleOf(u) === opts.role)) return u;
+      /* THE FRAGMENT IS PART OF WHERE THEY WERE. This was pathname + search,
+         so bouncing through sign-in dropped #social or #marketing and landed
+         everyone back on Overview -- reported as "reload takes me back to
+         overview", which is what it looks like from the outside: the agency
+         portal keeps its open pane in the hash, and the trip through the gate
+         quietly threw it away. Line 134 of this same file already builds a
+         return path WITH the hash; this one had simply not been kept in step. */
+      var here = window.location.pathname + window.location.search + window.location.hash;
+      var q = '?next=' + encodeURIComponent(here);
+      if (opts.role) q += '&role=' + encodeURIComponent(opts.role);
+      if (opts.reason) q += '&reason=' + encodeURIComponent(opts.reason);
+      window.location.href = 'signin.html' + q;
+      return null;
+    });
+  }
+
+  /* ── header paint ────────────────────────────────────────────────────── */
+  // Any page can drop <span data-auth-slot></span> in its appbar and get a
+  // correct signed-in / signed-out control with no per-page wiring.
+  function paintAll() {
+    document.querySelectorAll('[data-auth-slot]').forEach(function (slot) {
+      if (cachedUser) {
+        var name = (cachedUser.user_metadata && cachedUser.user_metadata.full_name) || cachedUser.email || 'Account';
+        /* THE INITIALS DISC IS GONE. It was a dark circle carrying two letters
+           -- "LP", "DE" -- beside Sign out: the same size and shape as a
+           button, and not one. An agency owner looked at it and could not say
+           what it was, which is the whole test a control has to pass. The
+           agency's name is already on every pane header, and the account it
+           identified is now named in the button's own tooltip, where it costs
+           no space and pretends to be nothing.
+
+           This is the second disc to go from this bar. The first was the
+           agency chip that sat beside it -- removed for exactly this reason,
+           and this one survived only because it happened to be the wrapper
+           carrying sign-out. It was not. */
+        slot.innerHTML = '<span class="auth-chip">'
+          + '<button type="button" class="auth-out" title="Signed in as ' + esc(name) + '">'
+          + 'Sign out</button></span>';
+        var out = slot.querySelector('.auth-out');
+        if (out) out.addEventListener('click', function () {
+          /* It did work -- but it said nothing while it worked, and the call
+             it waits on is a network round trip. On a slow connection you
+             press Sign out, the label does not change, the page does not
+             move, and the only reasonable conclusion is that the button is
+             broken. So it answers immediately, and it cannot be pressed twice.
+
+             No .catch() before either: if the request failed, the reload
+             never came and you stayed signed in with no way to know why. */
+          if (out.disabled) return;
+          out.disabled = true;
+          out.textContent = 'Signing out\u2026';
+          signOut()
+            .catch(function () { /* handled below: the session is cleared regardless */ })
+            .then(function () { window.location.reload(); });
+        });
+      } else {
+        /* Two things were wrong with a bare "Sign in" link.
+
+           It dropped the visitor back on toju.html afterwards, because no
+           `next` was carried -- so signing in from a dream board or a property
+           page silently lost the thing they were looking at, which is the
+           moment they were most likely to want an account for.
+
+           And it never offered to CREATE one. The tab exists on the sign-in
+           page, but a first-time buyer had to guess it was there. Every
+           entrance on the agency side offers both; the customer side offered
+           neither. */
+        var here = window.location.pathname.slice(window.location.pathname.lastIndexOf('/') + 1)
+          + window.location.search + window.location.hash;
+        var back = encodeURIComponent(here || 'toju.html');
+        slot.innerHTML =
+          '<a class="auth-in" href="signin.html?next=' + back + '">Sign in</a>'
+          + '<a class="auth-up" href="signin.html?mode=up&next=' + back + '">Create account</a>';
+      }
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  window.SynAuth = {
+    client: client, ready: ready, user: function () { return cachedUser; },
+    getUser: getUser, roleOf: roleOf, safeNext: safeNext,
+    signUp: signUp, signIn: signIn, signOut: signOut, resetPassword: resetPassword,
+    takeRecovery: takeRecovery,
+    resendConfirmation: resendConfirmation,
+    sendPhoneCode: sendPhoneCode, verifyPhoneCode: verifyPhoneCode,
+    normalisePhone: normalisePhone,
+    signInWithProvider: signInWithProvider, providers: OAUTH_PROVIDERS,
+    hasAgency: hasAgency, provisionAgency: provisionAgency, saveAgencyWebsite: saveAgencyWebsite,
+    mailOrigin: mailOrigin,
+    enabledProviders: enabledProviders,
+    requireAuth: requireAuth, paint: paintAll,
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { ready().then(paintAll); });
+  } else { ready().then(paintAll); }
+})();
