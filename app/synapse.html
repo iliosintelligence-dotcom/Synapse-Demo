@@ -227,7 +227,7 @@
     <!-- TEAM -->
     <section class="pane" id="p-team" hidden>
       <h1 class="h">Team</h1>
-      <p class="lede">Who can open the studio. A founder always can. Someone you add needs a Synapse account first.</p>
+      <p class="lede">Who can open the studio. Someone you add needs a Synapse account first, and signs in with that same email. An admin can add and remove anyone.</p>
       <div class="card stack">
         <div class="row"><div class="grow"><label class="f" for="mEmail">Email</label><input type="email" id="mEmail" placeholder="name@example.com" autocomplete="off"></div>
         <div><label class="f" for="mRole">Role</label><select id="mRole"><option value="social_manager">Social media manager</option><option value="admin">Admin</option></select></div>
@@ -292,10 +292,13 @@
       return api('me').then(function (d) {
         S.role = d.role;
         $('gate').hidden = true; $('app').hidden = false;
-        if (d.role === 'platform_admin') $('teamTab').hidden = false;
+        if (d.can_manage || d.role === 'platform_admin') $('teamTab').hidden = false;
         return loadOverview();
       }).catch(function () {
-        $('gate').textContent = 'There is nothing here.';
+        /* Signed in, but not on the team. Say which sign-in this is, so the right address can be added. */
+        $('gate').innerHTML = 'You are signed in as <b>' + esc(u.email || 'this account') + '</b>, which is not on the Synapse team. '
+          + 'Ask an admin to add this email, or sign in with another one.<div style="margin-top:18px"><button class="btn" id="gateOut" type="button">Sign out</button></div>';
+        $('gateOut').addEventListener('click', function () { SynAuth.signOut().then(function () { location.href = 'signin.html?next=synapse.html'; }); });
       });
     }).catch(function () { $('gate').textContent = 'There is nothing here.'; });
   }
