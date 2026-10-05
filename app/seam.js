@@ -111,7 +111,12 @@
     catch (e) { return {}; }
   }
 
+  /* The two landing pages always open at the top (Eden, 2026-10-05): coming
+     back to one from the other must not drop you where you last were on it. */
+  function isLanding() { return /^\/(index\.html|buyers\.html)?$/.test(location.pathname); }
+
   function remember() {
+    if (isLanding()) return;
     try {
       var m = readMap();
       var keys = Object.keys(m);
@@ -129,6 +134,7 @@
   }
 
   function restore() {
+    if (isLanding()) return;
     var saved = readMap()[here()];
     if (!saved || (!saved.y && !saved.id)) return;
     /* Only take over when the browser has not already got it right -- but

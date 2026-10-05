@@ -51,6 +51,19 @@
   scrolled();
 })();
 
+/* ── Always open at the top ──────────────────────────────────────────────
+   Switching between the agency page and the customer page, or coming back
+   with the back button, used to land wherever you had been on that page. The
+   landing pages start at the top every time. A link to a section (#pricing)
+   still goes there. */
+(function () {
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+  function top() { if (!location.hash) window.scrollTo(0, 0); }
+  top();
+  window.addEventListener('load', top);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) top(); });
+})();
+
 /* ── The reality row (index.html) ─────────────────────────────────────────
    Eden's reference was Miro's row of cards that slides sideways as you
    scroll down. On a wide screen with motion allowed the section holds still
