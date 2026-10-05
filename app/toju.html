@@ -327,6 +327,7 @@
        reach the far ones and keeps the chat readable, which is the right way
        round here. */
     .chatbox .suggest { display: flex; gap: 7px; padding: 9px 5px 2px; margin-top: 4px; overflow-x: auto; border-top: 1px solid rgba(255,255,255,0.6); }
+    .chatbox .suggest:empty { display: none; }
     .chatbox .suggest::-webkit-scrollbar { display: none; }
     .chatbox .suggest button { white-space: nowrap; font-family: var(--f-sans); font-size: 12px; font-weight: 500; color: rgba(21,23,26,0.7); cursor: pointer;
       background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); border-radius: 100px; padding: 6px 12px; transition: background-color .18s, border-color .18s, color .18s; }
@@ -1103,7 +1104,12 @@
       const m = t.match(/([^.!?]*\?)\s*$/);
       if (!m) return [];
       const q = m[1].trim(), ql = q.toLowerCase();
-      if (/^(why|what|tell me|describe)\b/.test(ql)) return [];
+      /* Open questions (a city, a reason, a budget in their own words) have no short
+         list of answers; buttons would be guesses. Only a choice offered in the
+         question itself ("rent or buy?") or a yes/no is closed. */
+      const openQ = /^(why|what|which|where|when|who|whom|whose|how|tell me|describe)\b/.test(ql)
+        && !/ or /.test(ql) && !/^how many (bed|bedroom|bath|toilet)/.test(ql);
+      if (openQ) return [];
       const good = (Array.isArray(sugg) ? sugg : []).map((x) => String(x || '').trim())
         /* An answer, not an action: "Alert me" is a different thing to tap. */
         .filter((x) => x && x.length <= 40 && !/\?$/.test(x) && !/^alert me/i.test(x));
@@ -1575,7 +1581,10 @@
         persist();
         tojuMsg(data.reply, matches, priceHistory, extra);
         collect(matches); renderCanvas();
-        renderSuggest(data.suggestions);
+        /* The row under the box repeats the closed-question buttons in the reply,
+           so a live reply leaves it empty: nothing is offered unless Tayo asked
+           something with a short answer, and then the answers sit in the reply. */
+        renderSuggest(null, true);
         renderReply();   // the introduction unlocks once there is a conversation
       } catch (e) {
         clearTimeout(timer); t.remove();
@@ -1656,8 +1665,10 @@
        the one that shipped in the HTML. */
     let DEFAULT_SUGGEST = suggestEl.innerHTML;
     function setDefaultSuggest(html) { DEFAULT_SUGGEST = html; }
-    function renderSuggest(list) {
-      if (Array.isArray(list) && list.length) {
+    function renderSuggest(list, blank) {
+      if (blank) {
+        suggestEl.innerHTML = '';
+      } else if (Array.isArray(list) && list.length) {
         suggestEl.innerHTML = list.map((s) =>
           '<button data-send="' + esc(s) + '">' + esc(s) + '</button>').join('');
       } else {
