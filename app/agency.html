@@ -82,6 +82,30 @@
        SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
   <script src="syndication-audit.js"></script>
   <style>
+    /* ── the account menu ── */
+    .acct-wrap { position: relative; display: inline-flex; }
+    .acct-menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 120; min-width: 248px; padding: 8px; border-radius: 16px;
+      background: var(--surface, #fff); border: 1px solid rgba(21,18,15,0.1); box-shadow: 0 24px 60px -18px rgba(21,18,15,0.35);
+      transform-origin: 100% 0; animation: acctIn .26s cubic-bezier(.34,1.4,.64,1) both; }
+    .acct-menu[hidden] { display: none; }
+    @keyframes acctIn { from { opacity: 0; transform: translateY(-6px) scale(.94); } to { opacity: 1; transform: none; } }
+    .acct-who { display: flex; align-items: center; gap: 12px; padding: 10px 10px 12px; }
+    .acct-who b { display: block; font-weight: 600; font-size: 14.5px; line-height: 1.25; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-who small { display: block; color: var(--ink-muted, #6b645c); font-size: 12.5px; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-av { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2, #f0ebe4); flex: none; }
+    .acct-av svg { width: 22px; height: 22px; }
+    .acct-item { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 42px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent;
+      color: inherit; font: 500 14.5px/1 var(--f-sans, system-ui); text-align: left; text-decoration: none; cursor: pointer; }
+    .acct-item:hover, .acct-item:focus-visible { background: rgba(21,18,15,0.06); outline: none; }
+    .acct-item [data-icon] { width: 18px; height: 18px; flex: none; opacity: .75; }
+    .acct-sep { height: 1px; margin: 6px 4px; background: rgba(21,18,15,0.1); }
+    .acct-out { color: #B3261E; }
+    html[data-theme="dark"] .acct-menu { background: #111214; border-color: transparent; box-shadow: none; }
+    html[data-theme="dark"] .acct-av { background: #1B1D20; }
+    html[data-theme="dark"] .acct-item:hover, html[data-theme="dark"] .acct-item:focus-visible { background: rgba(255,255,255,0.08); }
+    html[data-theme="dark"] .acct-sep { background: rgba(255,255,255,0.12); }
+    html[data-theme="dark"] .acct-out { color: #F28B82; }
+    @media (prefers-reduced-motion: reduce) { .acct-menu { animation: none; } }
     /* Agency portal — separate world from the customer app. Customer pages
        never link here; you arrive via "For Agencies" on the landing page.
        App shell: the nav rail is pinned to the far-left edge of the screen
@@ -3140,6 +3164,7 @@
       .appbar .brand svg{ width: 20px; height: 29px; }
       .appbar > nav{ display: none; }               /* the taskbar says where you are */
       .appbar [data-auth-slot]{ display: none; }
+      .appbar .acct-wrap{ margin-right: 0 !important; }
       .appbar .home{ display: none; }
       .stats{ grid-template-columns: repeat(2,1fr); }
       .two{ grid-template-columns: 1fr; }
@@ -4043,7 +4068,21 @@
          header ("SPOILT FOOD REAL ESTATE · VERIFIED"), and this one was an
          inert <span> -- it looked like a button and answered nothing. The
          account chip stays, because it carries sign-out. -->
-    <span data-auth-slot style="margin-right:16px"></span>
+    <!-- "Sign out" was a word in the top bar. It is a person now: tap it for the account options, sign out
+         among them. auth.js still paints its own (hidden) Sign out into the slot below, because it owns
+         the sign-out logic; the menu's Sign out presses that one. -->
+    <span data-auth-slot style="display:none"></span>
+    <span class="acct-wrap" style="margin-right:16px">
+      <button class="bell" id="acctBtn" type="button" aria-label="Account" aria-haspopup="menu" aria-expanded="false" aria-controls="acctMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c0-4 3.3-6.4 7.5-6.4s7.5 2.4 7.5 6.4"/></svg></button>
+      <div class="acct-menu" id="acctMenu" role="menu" aria-label="Account" hidden>
+        <div class="acct-who"><span class="acct-av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c0-4 3.3-6.4 7.5-6.4s7.5 2.4 7.5 6.4"/></svg></span><div><b id="acctName">Your account</b><small id="acctMail"></small></div></div>
+        <button class="acct-item" type="button" role="menuitem" data-acct="billing"><span data-icon="card"></span>Plan &amp; billing</button>
+        <a class="acct-item" role="menuitem" href="your-data.html"><span data-icon="shield"></span>Your data &amp; privacy</a>
+        <a class="acct-item" role="menuitem" href="../index.html"><span data-icon="home"></span>Back to site</a>
+        <div class="acct-sep"></div>
+        <button class="acct-item acct-out" type="button" role="menuitem" data-acct="out"><span data-icon="user"></span>Sign out</button>
+      </div>
+    </span>
     <!-- "← Site" was here and went to ../index.html, which is exactly where
          the Synapse logo at the other end of this bar already goes. -->
   </div>
@@ -17165,10 +17204,6 @@
         html += '<div class="agd-sep"></div>'
           + '<button class="agd-item" role="menuitem" data-nav-site>'
           + '<span data-icon="home"></span>Back to site</button>';
-        if (document.querySelector('[data-auth-slot] .auth-out')) {
-          html += '<button class="agd-item" role="menuitem" data-nav-out>'
-            + '<span data-icon="user"></span>Sign out</button>';
-        }
         navSheet.innerHTML = html;
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(navSheet);
       }
@@ -18749,5 +18784,50 @@
     })();
   </script>
   <script src="motion.js"></script>
+<script>
+  /* The account menu: a person icon in the top bar. */
+  (function () {
+    var btn = document.getElementById('acctBtn'), menu = document.getElementById('acctMenu');
+    if (!btn || !menu) return;
+    function fill() {
+      var u = window.SynAuth && SynAuth.user && SynAuth.user();
+      if (!u) return;
+      var name = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || '';
+      document.getElementById('acctName').textContent = name || (u.email || 'Your account');
+      document.getElementById('acctMail').textContent = name ? (u.email || '') : '';
+    }
+    function setOpen(on) {
+      menu.hidden = !on; btn.setAttribute('aria-expanded', String(on));
+      if (on) {
+        fill();
+        /* One floating panel at a time. */
+        if (typeof toggleNoti === 'function') { try { toggleNoti(false); } catch (e) {} }
+        if (typeof toggleRm === 'function') { try { toggleRm(false); } catch (e) {} }
+        var first = menu.querySelector('.acct-item'); if (first) first.focus();
+      }
+    }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(menu.hidden); });
+    document.addEventListener('click', function (e) { if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) setOpen(false); });
+    document.addEventListener('keydown', function (e) {
+      if (menu.hidden) return;
+      if (e.key === 'Escape') { setOpen(false); btn.focus(); return; }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      var items = [].slice.call(menu.querySelectorAll('.acct-item')), i = items.indexOf(document.activeElement);
+      e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+    });
+    menu.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-acct]'); if (!b) { setOpen(false); return; }
+      setOpen(false);
+      if (b.dataset.acct === 'billing') { var a = document.querySelector('#tabs a[data-pane="billing"]'); if (a) a.click(); }
+      if (b.dataset.acct === 'out') {
+        /* auth.js owns sign-out (it answers at once and cannot be pressed twice); this only routes to it. */
+        var real = document.querySelector('[data-auth-slot] .auth-out');
+        if (real) real.click(); else if (window.SynAuth) SynAuth.signOut().then(function () { location.reload(); });
+      }
+    });
+    if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(menu);
+    if (window.SynAuth && SynAuth.ready) SynAuth.ready().then(fill);
+  })();
+</script>
 </body>
 </html>
