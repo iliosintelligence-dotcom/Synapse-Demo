@@ -2352,6 +2352,21 @@
     });
   }
 
+  /** May this agency add listings yet? The database holds the real lock
+   *  (enforce_listing_verification); this lets the portal say so first.
+   *  Resolves { ok, can_fix }. */
+  function listingGate() {
+    return client().then(function (c) {
+      return agencyId().then(function (aid) {
+        if (!aid) return { data: { ok: true } };
+        return c.rpc('agency_listing_gate', { p_agency_id: aid });
+      });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      return r.data || { ok: true };
+    });
+  }
+
   /** Puts a failed post back in the publish queue. Resets attempts server-side,
    *  because drain_social_queue skips anything at max_attempts and a failed
    *  post has spent them all. */
@@ -2877,6 +2892,7 @@
     listDocuments: listDocuments,
     documentLink: documentLink,
     uploadDocument: uploadDocument,
+    listingGate: listingGate,
     deleteDocument: deleteDocument,
     verificationStatus: verificationStatus,
     myProfile: myProfile,

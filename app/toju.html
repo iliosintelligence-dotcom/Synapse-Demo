@@ -609,12 +609,93 @@
   <link rel="stylesheet" href="theme-night.css" />
   <link rel="stylesheet" href="theme-dark.css" />
   <link rel="stylesheet" href="scene.css" />
+  <style id="tjExtras">
+    /* THE BACKGROUND (Eden, 2026-10-05). Everyone starts on the warm colour the
+       landing page paints behind its pictures. A signed-in visitor can switch
+       to the interior photograph or a quiet pattern; each has a day and a
+       night version. scene.css paints the night photograph with !important,
+       so these outrank it by carrying more attribute selectors. */
+    :root:root:not([data-tjbg="photo"]):not([data-tjbg="pattern"]) .tj-bg {
+      background-image: url('../images/home/bg-tayo-light.webp') !important;
+      background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
+    }
+    :root:root[data-theme="dark"]:not([data-tjbg="photo"]):not([data-tjbg="pattern"]) .tj-bg {
+      background-image: url('../images/home/bg-tayo-dark.webp') !important;
+    }
+    :root:root[data-tjbg="pattern"] .tj-bg {
+      background-image: radial-gradient(circle at 1px 1px, rgba(190,110,50,0.26) 1.3px, transparent 1.6px), linear-gradient(135deg, #FFF1E6, #F3E4F3) !important;
+      background-size: 22px 22px, cover !important; background-position: 0 0, center !important; background-repeat: repeat, no-repeat !important;
+    }
+    :root:root[data-tjbg="pattern"][data-theme="dark"] .tj-bg {
+      background-image: radial-gradient(circle at 1px 1px, rgba(255,160,90,0.17) 1.3px, transparent 1.6px), linear-gradient(135deg, #1D1411, #130E14) !important;
+    }
+
+    /* Status dots beside words are gone. */
+    .tj-title span[aria-hidden="true"], .tj-dot, .tjm-status i { display: none !important; }
+
+    /* Reply actions as icons, the way ChatGPT does them. */
+    .tj-acts { gap: 2px; margin-top: 8px; }
+    .tj-acts .tj-ib { position: relative; width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 9px; display: inline-grid; place-items: center; color: var(--ink-muted); transition: background-color .15s ease, color .15s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-acts .tj-ib svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .tj-acts .tj-ib:hover { background: rgba(0,0,0,0.06); color: var(--ink); }
+    .tj-acts .tj-ib[aria-pressed="true"] { color: var(--ink); }
+    .tj-acts .tj-ib[aria-pressed="true"] svg { fill: currentColor; }
+    .tj-acts .tj-ib:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 1px; }
+    .tj-acts .tj-ib.tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); padding: 4px 9px; border-radius: 7px; background: #15120F; color: #fff; font: 600 11.5px var(--f-sans); white-space: nowrap; pointer-events: none; }
+    html[data-theme="dark"] .tj-acts .tj-ib:hover { background: rgba(255,255,255,0.1); }
+    html[data-theme="dark"] .tj-acts .tj-ib.tip::after { background: #fff; color: #000; }
+
+    /* Answers a closed question can be tapped. */
+    .tj-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .tj-quick button { min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(21,18,15,0.18); background: rgba(255,255,255,0.72); color: var(--ink); font: 600 13.5px var(--f-sans); cursor: pointer; transition: background-color .15s ease, border-color .15s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-quick button:hover { background: #fff; border-color: rgba(21,18,15,0.4); }
+    .tj-quick button:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 2px; }
+    html[data-theme="dark"] .tj-quick button { background: #fff; color: #000; border-color: transparent; }
+
+    /* The background chooser. */
+    .tj-bgp { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(15,12,10,0.38); }
+    .tj-bgp[hidden] { display: none; }
+    .tj-bgp-card { width: min(440px, 100%); padding: 24px 22px 22px; border-radius: 22px; background: var(--surface, #fff); color: var(--ink); box-shadow: 0 30px 70px -20px rgba(20,12,6,0.5); }
+    html[data-theme="dark"] .tj-bgp-card { background: #111214; }
+    .tj-bgp-t { font: 600 20px/1.2 var(--f-serif, serif); }
+    .tj-bgp-s { margin: 8px 0 16px; font-size: 14px; line-height: 1.5; color: var(--ink-muted); }
+    .tj-bgp-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .tj-bgp-opt { display: grid; gap: 8px; padding: 8px 8px 10px; border-radius: 14px; border: 1px solid rgba(21,18,15,0.14); background: transparent; color: var(--ink); font: 600 13px var(--f-sans); text-align: center; cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-bgp-opt[aria-pressed="true"] { border-color: var(--orange, #FF8A2D); box-shadow: inset 0 0 0 1px var(--orange, #FF8A2D); }
+    html[data-theme="dark"] .tj-bgp-opt { border-color: transparent; background: #1B1D20; }
+    html[data-theme="dark"] .tj-bgp-opt[aria-pressed="true"] { border-color: var(--orange, #FF8A2D); }
+    .tj-bgp-opt:focus-visible, .tj-bgp-x:focus-visible, .tj-bgp-go:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 2px; }
+    .tj-sw { display: block; aspect-ratio: 4 / 3; border-radius: 9px; background-size: cover; background-position: center; }
+    .tj-sw.tint { background-image: url('../images/home/bg-tayo-light.webp'); }
+    .tj-sw.photo { background-image: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=400&q=60'); }
+    .tj-sw.pattern { background-image: radial-gradient(circle at 1px 1px, rgba(190,110,50,0.4) 1.3px, transparent 1.6px), linear-gradient(135deg, #FFF1E6, #F3E4F3); background-size: 12px 12px, cover; }
+    html[data-theme="dark"] .tj-sw.tint { background-image: url('../images/home/bg-tayo-dark.webp'); }
+    html[data-theme="dark"] .tj-sw.photo { background-image: url('../images/interior-night.jpg'); }
+    html[data-theme="dark"] .tj-sw.pattern { background-image: radial-gradient(circle at 1px 1px, rgba(255,160,90,0.3) 1.3px, transparent 1.6px), linear-gradient(135deg, #1D1411, #130E14); }
+    .tj-bgp-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .tj-bgp-x, .tj-bgp-go { min-height: 42px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(21,18,15,0.18); background: transparent; color: var(--ink); font: 600 14px var(--f-sans); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+    .tj-bgp-go { background: var(--orange, #FF8A2D); border-color: transparent; color: #15120F; }
+    html[data-theme="dark"] .tj-bgp-x { background: #fff; color: #000; border-color: transparent; }
+    @media (prefers-reduced-motion: reduce) { .tj-acts .tj-ib, .tj-quick button, .tj-bgp-opt { transition: none; } }
+  </style>
+  <script>
+    /* Before first paint, so a chosen background never flashes the default. The
+       chooser checks it still belongs to whoever is signed in. */
+    try { var b = JSON.parse(localStorage.getItem('toju_bg_v1') || 'null'); if (b && (b.mode === 'photo' || b.mode === 'pattern')) document.documentElement.setAttribute('data-tjbg', b.mode); } catch (e) {}
+  </script>
   <script src="theme.js"></script>
 </head>
 <body>
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
   <div class="tj-bg"></div>
   <div class="tj-wash"></div>
+
+  <div class="tj-bgp" id="tjBgPanel" hidden>
+    <div class="tj-bgp-card" role="dialog" aria-modal="true" aria-labelledby="tjBgT">
+      <div class="tj-bgp-t" id="tjBgT">Change background</div>
+      <div id="tjBgBody"></div>
+    </div>
+  </div>
 
   <div class="tj-app">
     <!-- ══ MOBILE APP BAR (≤720px) ══════════════════════════════════════
@@ -634,6 +715,7 @@
              know before they start typing about their income. -->
         <span class="tjm-status"><i></i> AI advisor · <a href="/privacy">how your chat is used</a></span>
       </div>
+      <button class="tjm-act" id="tjmBg" type="button" aria-label="Change background"><span data-icon="boards"></span></button>
       <button class="tjm-act" id="tjmHist" type="button" aria-label="Past conversations"><span data-icon="history"></span></button>
       <button class="tjm-act" id="tjmNew" type="button" aria-label="New chat">↺</button>
     </header>
@@ -661,6 +743,7 @@
           <button id="tjNew" type="button" class="cnav-mi" role="menuitem"><span data-icon="plus" aria-hidden="true"></span>New chat</button>
           <button id="tjHist" type="button" class="cnav-mi" role="menuitem"><span data-icon="history" aria-hidden="true"></span>History</button>
           <button id="tjPins" type="button" class="cnav-mi" role="menuitem"><span data-icon="heart" aria-hidden="true"></span>Pinned</button>
+          <button id="tjBg" type="button" class="cnav-mi" role="menuitem"><span data-icon="boards" aria-hidden="true"></span>Change background</button>
         </div>
       </div>
       <span data-auth-slot></span>
@@ -987,16 +1070,58 @@
     }
     const slimMatch = (m) => ({ id: m.id, title: m.title, price: m.price, city: m.city, listingType: m.listingType,
       pricePeriod: m.pricePeriod, bedrooms: m.bedrooms, deal: m.deal || null, verificationStatus: m.verificationStatus || null });
+    const TJ_ICO = {
+      share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
+      pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>',
+      up: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>',
+      down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>',
+    };
+    const FBKEY = 'toju_fb_v1';
+    function loadFb() { try { return JSON.parse(localStorage.getItem(FBKEY)) || {}; } catch (e) { return {}; } }
+    function saveFb(m) { try { localStorage.setItem(FBKEY, JSON.stringify(m)); } catch (e) {} }
+    function ib(act, label, pressed) {
+      return '<button type="button" class="tj-ib" data-act="' + act + '" aria-label="' + label + '" title="' + label + '"'
+        + (pressed === undefined ? '' : ' aria-pressed="' + pressed + '"') + '>' + TJ_ICO[act] + '</button>';
+    }
+    /* A closed question gets its answers as buttons. Tayo's own suggested
+       replies are used when the question is one they answer; otherwise the
+       common closed questions are recognised. An open question gets none. */
+    function quickAnswers(text, sugg) {
+      const t = String(text || '').replace(/\s+/g, ' ').trim();
+      const m = t.match(/([^.!?]*\?)\s*$/);
+      if (!m) return [];
+      const q = m[1].trim(), ql = q.toLowerCase();
+      if (/^(why|what|tell me|describe)\b/.test(ql)) return [];
+      const good = (Array.isArray(sugg) ? sugg : []).map((x) => String(x || '').trim())
+        .filter((x) => x && x.length <= 40 && !/\?$/.test(x));
+      if (good.length >= 2 && good.length <= 6) return good;
+      if (/how many (bed|bedroom)/.test(ql)) return ['1 bedroom', '2 bedrooms', '3 bedrooms', '4 bedrooms', '5+ bedrooms'];
+      if (/how many (bath|toilet)/.test(ql)) return ['1 bathroom', '2 bathrooms', '3 bathrooms', '4+ bathrooms'];
+      if (/\b(rent|renting)\b/.test(ql) && /\b(buy|buying|purchase)\b/.test(ql) && / or /.test(ql)) return ['Rent', 'Buy'];
+      if (/^(do|does|did|are|is|am|would|will|can|could|should|have|has|shall|was|were)\b/.test(ql) && !/ or /.test(ql)) return ['Yes', 'No'];
+      return [];
+    }
+    function quickHtml(text, extra) {
+      if (!extra || !extra.live) return '';
+      const opts = quickAnswers(text, extra.suggestions).slice(0, 6);
+      if (!opts.length) return '';
+      return '<div class="tj-quick" role="group" aria-label="Quick answers">'
+        + opts.map((o) => '<button type="button" data-quick="' + esc(o) + '">' + esc(o) + '</button>').join('') + '</div>';
+    }
     function tojuMsg(text, matches, priceHistory, extra) {
       extra = extra || {};
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
       el._payload = { text: String(text || ''), more: extra.more || null, matches: (Array.isArray(matches) ? matches : []).slice(0, 6).map(slimMatch), at: Date.now() };
       el._payload.id = pinId(el._payload);
-      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + moreHtml(extra.more) + '</div>'
+      el.innerHTML = '<div class="av av-toju">T</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + moreHtml(extra.more) + '</div>' + quickHtml(text, extra)
         + priceHistoryHtml(priceHistory) + checkedHtml(extra.searched) + matchesHtml(matches)
-        + '<div class="tj-acts"><button type="button" data-act="pin" aria-pressed="' + isPinned(el._payload.id) + '">' + (isPinned(el._payload.id) ? 'Pinned' : 'Pin') + '</button>'
-        + '<button type="button" data-act="share">Share</button></div></div>';
+        + '<div class="tj-acts" role="group" aria-label="Reply actions">'
+        + ib('share', 'Share')
+        + ib('pin', isPinned(el._payload.id) ? 'Unpin' : 'Pin', isPinned(el._payload.id))
+        + ib('up', 'Good reply', loadFb()[el._payload.id] === 'up')
+        + ib('down', 'Poor reply', loadFb()[el._payload.id] === 'down')
+        + '</div></div>';
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
@@ -1431,7 +1556,7 @@
         // sets showMatches) so asking "show me what you found" always renders them.
         const matches = Array.isArray(data.matches) ? data.matches : [];
         const priceHistory = data.priceHistory && Array.isArray(data.priceHistory.rows) ? data.priceHistory : null;
-        const extra = { more: typeof data.more === 'string' && data.more.trim() ? data.more.trim() : null, searched: data.searched || null };
+        const extra = { more: typeof data.more === 'string' && data.more.trim() ? data.more.trim() : null, searched: data.searched || null, live: true, suggestions: data.suggestions };
         saved.push({ role: 'assistant', content: data.reply, matches, priceHistory, more: extra.more, searched: extra.searched });
         persist();
         tojuMsg(data.reply, matches, priceHistory, extra);
@@ -1863,9 +1988,44 @@
       return 'Tayo, Synapse\'s property advisor:\n\n' + pl.text + (pl.more ? '\n\n' + pl.more : '')
         + (homes.length ? '\n\n' + homes.join('\n') : '') + '\n\n' + location.origin + '/app/toju.html?new=site';
     }
+    function flashTip(btn, word) {
+      btn.dataset.tip = word; btn.classList.add('tip');
+      clearTimeout(btn._tipT); btn._tipT = setTimeout(() => btn.classList.remove('tip'), 1600);
+    }
+    function setPin(b, on) {
+      b.setAttribute('aria-pressed', String(on));
+      const label = on ? 'Unpin' : 'Pin';
+      b.setAttribute('aria-label', label); b.title = label;
+      flashTip(b, on ? 'Pinned' : 'Unpinned');
+    }
+    /* Thumbs: one rating per reply, tapping it again takes it back. Kept on
+       this device for the pressed state, and sent to the team so ratings
+       teach something. The visitor's own words are never sent. */
+    function rate(b, pl) {
+      const want = b.dataset.act;
+      const map = loadFb();
+      const clearing = map[pl.id] === want;
+      if (clearing) delete map[pl.id]; else map[pl.id] = want;
+      saveFb(map);
+      const row = b.closest('.tj-acts');
+      row.querySelectorAll('[data-act="up"],[data-act="down"]').forEach((x) => x.setAttribute('aria-pressed', String(map[pl.id] === x.dataset.act)));
+      flashTip(b, clearing ? 'Removed' : 'Thanks');
+      if (clearing) return;
+      try {
+        fetch(SUPABASE_URL + '/rest/v1/rpc/record_toju_feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+          body: JSON.stringify({ p_reply_id: String(pl.id), p_rating: want, p_excerpt: String(pl.text || '').slice(0, 300) }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch (e) {}
+    }
     function shareOut(text, btn) {
       const was = btn.textContent;
-      const done = (w) => { btn.textContent = w; setTimeout(() => { btn.textContent = was; }, 1800); };
+      const done = (w) => {
+        if (btn.classList.contains('tj-ib')) { flashTip(btn, w); return; }
+        btn.textContent = w; setTimeout(() => { btn.textContent = was; }, 1800);
+      };
       if (navigator.share) {
         navigator.share({ title: 'Tayo on Synapse', text }).catch((e) => { if (e && e.name !== 'AbortError') done('Could not share'); });
         return;
@@ -1876,6 +2036,8 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done('Copied'), copy); else copy();
     }
     convo.addEventListener('click', (e) => {
+      const qb = e.target.closest('.tj-quick [data-quick]');
+      if (qb) { const v = qb.dataset.quick; qb.parentElement.remove(); send(v); return; }
       const more = e.target.closest('.tj-more');
       if (more) {
         const body = more.nextElementSibling; const open = body.hidden;
@@ -1886,16 +2048,17 @@
       if (!b) return;
       const msg = b.closest('.msg'); const pl = msg && msg._payload; if (!pl) return;
       if (b.dataset.act === 'share') { shareOut(shareText(pl), b); return; }
+      if (b.dataset.act === 'up' || b.dataset.act === 'down') { rate(b, pl); return; }
       let pins = loadPins();
-      if (pins.some((x) => x.id === pl.id)) { pins = pins.filter((x) => x.id !== pl.id); b.textContent = 'Pin'; b.setAttribute('aria-pressed', 'false'); }
-      else { pins.unshift(pl); b.textContent = 'Pinned'; b.setAttribute('aria-pressed', 'true'); }
+      if (pins.some((x) => x.id === pl.id)) { pins = pins.filter((x) => x.id !== pl.id); setPin(b, false); }
+      else { pins.unshift(pl); setPin(b, true); }
       savePins(pins);
     });
     const pinPanel = document.getElementById('tjPinPanel');
     const pinList = document.getElementById('tjPinList');
     function renderPins() {
       const pins = loadPins();
-      if (!pins.length) { pinList.innerHTML = '<div class="hist-empty">Nothing pinned yet.<br>Tap Pin under any reply from Tayo to keep it, and the homes with it, here.</div>'; return; }
+      if (!pins.length) { pinList.innerHTML = '<div class="hist-empty">Nothing pinned yet.<br>Tap the pin under any reply from Tayo to keep it, and the homes with it, here.</div>'; return; }
       pinList.innerHTML = '<button class="hist-row" data-pin-share-all type="button"><div class="mid"><div class="t">Share everything pinned</div><div class="d">' + pins.length + ' pinned</div></div></button>'
         + pins.map((x) => '<div class="hist-row pin-row" data-pin="' + esc(x.id) + '"><div class="mid"><div class="t">' + esc(String(x.text).slice(0, 110)) + (String(x.text).length > 110 ? '\u2026' : '') + '</div>'
           + '<div class="d">' + histDate(x.at) + (x.matches && x.matches.length ? ' \u00B7 ' + x.matches.length + ' home' + (x.matches.length === 1 ? '' : 's') : '') + '</div>'
@@ -1972,6 +2135,53 @@
     }
     const nc = document.getElementById('tjNew');
     if (nc) nc.addEventListener('click', newChat);
+
+    /* ── change background (signed-in only) ─────────────────────────────── */
+    (function () {
+      const KEY = 'toju_bg_v1';
+      const root = document.documentElement;
+      const panel = document.getElementById('tjBgPanel');
+      const body = document.getElementById('tjBgBody');
+      let me = null;
+      const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+      const apply = (mode) => { if (mode === 'photo' || mode === 'pattern') root.setAttribute('data-tjbg', mode); else root.removeAttribute('data-tjbg'); };
+      /* A saved choice belongs to whoever made it. Signed out, or someone
+         else, gets the colour. */
+      Promise.resolve(window.SynAuth && SynAuth.ready ? SynAuth.ready() : null).then((u) => {
+        me = u && u.id ? u.id : null;
+        const s = read();
+        apply(me && s && s.uid === me ? s.mode : 'tint');
+      }).catch(() => { apply('tint'); });
+
+      const close = () => { panel.hidden = true; };
+      function open() {
+        const cur = root.getAttribute('data-tjbg') || 'tint';
+        if (!me) {
+          const here = location.pathname + location.search;
+          body.innerHTML = '<p class="tj-bgp-s">Create a free account to choose your own background: the warm colour, the interior photograph or a quiet pattern. Each has a light and a dark version.</p>'
+            + '<div class="tj-bgp-foot"><button type="button" class="tj-bgp-x" data-bgx>Not now</button>'
+            + '<a class="tj-bgp-go" href="signin.html?next=' + encodeURIComponent(here) + '">Create an account</a></div>';
+        } else {
+          const opt = (m, label) => '<button type="button" class="tj-bgp-opt" data-bgm="' + m + '" aria-pressed="' + (cur === m) + '"><span class="tj-sw ' + m + '"></span>' + label + '</button>';
+          body.innerHTML = '<p class="tj-bgp-s">Pick what sits behind the chat. It follows light and dark mode.</p>'
+            + '<div class="tj-bgp-opts">' + opt('tint', 'Colour') + opt('photo', 'Photo') + opt('pattern', 'Pattern') + '</div>'
+            + '<div class="tj-bgp-foot"><button type="button" class="tj-bgp-x" data-bgx>Done</button></div>';
+        }
+        panel.hidden = false;
+        const first = body.querySelector('button, a'); if (first) first.focus();
+      }
+      body.addEventListener('click', (e) => {
+        if (e.target.closest('[data-bgx]')) { close(); return; }
+        const o = e.target.closest('[data-bgm]'); if (!o || !me) return;
+        const mode = o.dataset.bgm;
+        apply(mode);
+        try { localStorage.setItem(KEY, JSON.stringify({ uid: me, mode: mode })); } catch (err) {}
+        body.querySelectorAll('[data-bgm]').forEach((x) => x.setAttribute('aria-pressed', String(x === o)));
+      });
+      panel.addEventListener('click', (e) => { if (e.target === panel) close(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
+      ['tjBg', 'tjmBg'].forEach((id) => { const b = document.getElementById(id); if (b) b.addEventListener('click', open); });
+    })();
 
     /* Mobile bar: forwards to the real controls rather than owning its own
        copy of the logic, so history and new-chat can never drift apart

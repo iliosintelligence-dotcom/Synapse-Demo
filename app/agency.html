@@ -285,6 +285,14 @@
     .bl-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 16px; margin-top: 20px; align-items: start; }
     @media (max-width: 900px) { .bl-grid { grid-template-columns: minmax(0, 1fr); } }
     .bl-grid .card { padding: 22px 22px 20px; border-radius: 18px; }
+    /* Section labels and the status dots beside words are gone (Eden, 2026-10-05). */
+    .eyebrow { display: none !important; }
+    .lc-st::before, .stat-dot, .cmp-reply-dot, .feed .it .dot { display: none !important; }
+    .lg-gate { margin: 4px 0 20px; padding: 20px 22px; border-radius: 18px; border: 1px solid var(--orange); background: rgba(255,138,45,0.07); }
+    .lg-gate-t { font: 600 18px/1.25 var(--f-serif); color: var(--ink); }
+    .lg-gate p { margin: 8px 0 14px; font-size: 14px; line-height: 1.55; color: var(--ink-muted); max-width: 56ch; }
+    .lg-gate-agent { font-size: 13px; color: var(--ink-muted); }
+    html[data-theme="dark"] .lg-gate { border-color: transparent; background: #2B1D12; }
     .bl-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
     .bl-plan { font: 600 30px/1.1 var(--f-serif); color: var(--ink); margin-top: 10px; letter-spacing: -0.01em; }
     .bl-state { font-size: 14px; color: var(--ink); margin-top: 8px; }
@@ -4472,6 +4480,15 @@
               <button class="tbtn" id="relistAllBtn" hidden></button>
               <button class="tbtn primary" id="newListingBtn">+ New listing</button>
             </div>
+          </div>
+
+          <!-- PARTIAL VERIFICATION (Eden, 2026-10-05): one document, the CAC
+               certificate, opens listing. Hidden unless the agency still owes it. -->
+          <div class="lg-gate" id="lgGate" hidden>
+            <div class="lg-gate-t">Add your CAC certificate to start listing</div>
+            <p>One document is enough to begin. Upload it now and add listings straight away; the verification desk reviews it afterwards.</p>
+            <button type="button" class="btn btn-primary" id="lgGateBtn">Upload CAC certificate</button>
+            <span class="lg-gate-agent" id="lgGateAgent" hidden>Ask your agency owner to upload it.</span>
           </div>
 
           <div class="lgrid" id="lgrid"></div>
@@ -9734,7 +9751,52 @@
         }
       }
     });
-    document.getElementById('newListingBtn').addEventListener('click', () => listingForm({ st: 'pending' }, -1));
+    /* THE GATE: an agency that has not yet shown a CAC certificate is asked for
+       it before the form opens. The database refuses the insert either way. */
+    const LG = { ok: true, canFix: false, known: false };
+    function renderListingGate() {
+      const box = document.getElementById('lgGate');
+      if (!box) return;
+      box.hidden = LG.ok;
+      document.getElementById('lgGateBtn').hidden = !LG.canFix;
+      document.getElementById('lgGateAgent').hidden = LG.canFix;
+    }
+    function loadListingGate() {
+      if (!window.SynListings || !SynListings.listingGate) return Promise.resolve();
+      return SynListings.listingGate()
+        .then((g) => { LG.ok = g.ok !== false; LG.canFix = !!g.can_fix; LG.known = true; renderListingGate(); })
+        .catch(() => { /* cannot tell: stay open, the database still decides */ });
+    }
+    (function wireListingGate() {
+      const btn = document.getElementById('lgGateBtn');
+      if (!btn) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      btn.addEventListener('click', () => { input.value = ''; input.click(); });
+      input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Uploading\u2026';
+        SynListings.uploadDocument(file, { type: 'cac_certificate' })
+          .then(() => { toast('Uploaded. You can add listings now.'); return loadListingGate(); })
+          .catch((err) => toast((err && err.message) || 'Could not upload that. Try again.'))
+          .then(() => { btn.disabled = false; btn.textContent = was; });
+      });
+      loadListingGate();
+    })();
+    document.getElementById('newListingBtn').addEventListener('click', () => {
+      if (LG.known && !LG.ok) {
+        const box = document.getElementById('lgGate');
+        if (box) box.scrollIntoView({ block: 'center', behavior: sReduce() ? 'auto' : 'smooth' });
+        toast(LG.canFix ? 'Add your CAC certificate first' : 'Your agency owner needs to add the CAC certificate first');
+        return;
+      }
+      listingForm({ st: 'pending' }, -1);
+    });
     // listings toolbar
     document.getElementById('listSeg').addEventListener('click', (e) => {
       const b = e.target.closest('[data-lf]'); if (!b) return;
@@ -15258,7 +15320,7 @@
         { id: 'foundation', name: 'Free', headline: 'Everything you need to start winning buyers.',
           price: 0, unit: 'forever', best: 'New or small agencies getting started.',
           cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
-            ['Up to 3 active listings', 'Room to try Synapse with your best homes'],
+            ['Up to 20 active listings', 'Room to grow your catalogue'],
             ['2 team members', 'Bring on a partner'],
             ['CRM with WhatsApp handoff', 'Never lose a lead — buyers land on your phone'],
             ['Tayo AI referrals', 'Get matched to buyers already looking for what you list'],
@@ -15266,9 +15328,9 @@
             ['Basic analytics', 'See your leads and listings at a glance'],
           ], tradeoffs: ['Slower verification queue', 'No marketing automation or social syndication', 'Limited AI'] },
         { id: 'accelerator', name: 'Accelerate', headline: 'Grow faster with AI-powered marketing and verification.',
-          price: 75000, unit: 'per month', best: 'The plan almost every serious agency wants.',
+          price: 25000, unit: 'per month', best: 'The plan almost every serious agency wants.',
           cta: 'Upgrade to Accelerate', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
-            ['Up to 10 active listings · 5 agent seats', 'Scale the whole team'],
+            ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
             ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
             ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
             ['AI writes and posts for you', 'Captions and scheduling handled — no marketing hire'],
@@ -15276,9 +15338,9 @@
             ['Marketing performance dashboard', 'See exactly what your spend returns'],
           ] },
         { id: 'market-leader', name: 'Leader', headline: 'Dominate your local market.',
-          price: 250000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
+          price: 75000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
           cta: 'Choose Leader', ctaStyle: 'ghost', features: [
-            ['Up to 20 active listings · unlimited seats', 'Room for a full portfolio'],
+            ['Unlimited listings & seats', 'No ceiling on your growth'],
             ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
             ['Every marketing channel + AI campaigns', 'Tayo generates whole campaigns for you'],
             ['Proximity marketing', 'Reach buyers the moment they walk past your listing'],
@@ -15300,7 +15362,7 @@
           ] },
       ],
       addons: [
-        { ico: 'agency', name: 'Extra Listing Pack', desc: '+5 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
+        { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
         { ico: 'spark', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
         { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels — never affects Tayo\'s ranking.', price: '₦10k', unit: 'each' },
         { ico: 'shield', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
@@ -15320,7 +15382,7 @@
     // features/tradeoffs above into shared dimensions every plan has a
     // value for (true/false/a specific figure).
     const COMPARE_ROWS = [
-      { label: 'Active listings', vals: ['3', '10', '20', 'Unlimited'] },
+      { label: 'Active listings', vals: ['20', '100', 'Unlimited', 'Unlimited'] },
       { label: 'Team seats', vals: ['2', '5', 'Unlimited', 'Unlimited'] },
       { label: 'CRM with WhatsApp handoff', vals: [true, true, true, true] },
       { label: 'Tayo AI buyer referrals', vals: [true, true, true, true] },
@@ -15608,11 +15670,11 @@
     const BL = { data: null, pays: [], adds: [], plan: null, period: null };
     const BL_TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader', enterprise: 'Enterprise' };
     const BL_PLANS = [
-      { code: 'accelerator',   name: 'Accelerate', line: '10 listings, 5 seats, every channel' },
-      { code: 'market_leader', name: 'Leader',     line: '20 listings, unlimited seats, campaigns, proximity' },
+      { code: 'accelerator',   name: 'Accelerate', line: '100 listings, 5 seats, every channel' },
+      { code: 'market_leader', name: 'Leader',     line: 'Unlimited listings and seats, campaigns, proximity' },
     ];
     const BL_ADDON_INFO = {
-      listing_pack:         { name: 'Extra Listing Pack',   ico: 'agency', desc: '+5 active listings for a month, added the moment you pay.' },
+      listing_pack:         { name: 'Extra Listing Pack',   ico: 'agency', desc: '+25 active listings for a month, added the moment you pay.' },
       social_boost:         { name: 'Social Reach Boost',   ico: 'share',  desc: 'Paid reach behind one listing on social. Never affects Tayo’s ranking.' },
       verification_credits: { name: 'Verification Credits', ico: 'shield', desc: 'Your next listings go to the front of the verification desk.' },
       campaign_boost:       { name: 'Campaign Boost',       ico: 'chart',  desc: 'Extra reach behind a marketing campaign that’s working.' },
@@ -15876,7 +15938,7 @@
 
     /* ══ THE PAYWALL'S FACE (2026-10-03) ═════════════════════════════════
        When a plan limit refuses something, the database says so in a
-       sentence ("Your free plan includes 3 active listings..."). That used
+       sentence ("Your free plan includes 20 active listings..."). That used
        to arrive as a toast or a red note. Now it opens a prompt that says
        what happened and offers the way through: plans, or a listing pack.
        Only the owner pays, so others are told to ask their owner. */
@@ -15893,7 +15955,7 @@
         + '<h3 id="pgT">' + (listing ? 'You\u2019ve reached your listing limit' : seats ? 'Your team is full on this plan' : 'That\u2019s on Accelerate and above') + '</h3>'
         + '<p>' + esc2(msg.replace(/\s*(Upgrade|Subscription in the portal).*$/i, '')) + '</p>'
         + (owner
-          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 5 listings</button>' : '')
+          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 25 listings</button>' : '')
             + '<button type="button" class="btn btn-primary" data-pg="plans">See plans</button></div>'
           : '<p class="pg-n">Only your agency\u2019s owner can change the plan. Ask them to upgrade.</p>')
         + '<button type="button" class="pg-x" data-pg="close" aria-label="Close">\u00D7</button></div>';
@@ -16055,7 +16117,7 @@
         html: () => tpSummary('What each plan includes', [
           'Free: list, generate campaigns, and rehearse them.',
           'Accelerate: publish for real to your connected channels.',
-          'Leader: 20 active listings, campaigns and proximity marketing.',
+          'Leader: unlimited listings and syndication.',
         ], 'Ask below what your own numbers would look like on another plan — the answer uses your listings and leads, not an example.') },
     };
     const snapshotHTML = (pane) => STATS[pane]

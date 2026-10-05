@@ -102,7 +102,8 @@ a { color: inherit; }
   font-size: 13px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--ink-2);
 }
-.eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
+/* Section labels and the dots beside words are gone (Eden, 2026-10-05). */
+.eyebrow, .step-k { display: none; }
 .h1, .h2, .h3 { margin: 0; font-weight: 400; letter-spacing: -0.02em; text-wrap: balance; }
 .h1 { font-size: clamp(44px, 7.4vw, 96px); line-height: 1.02; }
 .h2 { font-size: clamp(32px, 4.4vw, 56px); line-height: 1.06; }
@@ -202,7 +203,7 @@ a { color: inherit; }
 /* A headline that is one sentence runs on; its muted end stays inline. */
 .hero .h1.flow { max-width: 20ch; }
 .hero .h1.flow em { display: inline; }
-.hero .lede { margin: 24px auto 0; max-width: 40ch; }
+.hero .lede { margin: 18px auto 0; max-width: 40ch; }
 .hero-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
 .hero-frame {
   margin: clamp(44px, 6vw, 72px) auto 0;
@@ -238,7 +239,7 @@ a { color: inherit; }
 .ask-foot a { color: var(--ink-2); font-weight: 600; text-decoration: none; }
 .ask-foot a:hover { color: var(--ink); }
 .pip { display: inline-flex; align-items: center; gap: 8px; }
-.pip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #2BB673; }
+
 
 /* ── the three promises: a figure, what it buys you, why ─────────────────── */
 .promises { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 48px; }
@@ -271,10 +272,10 @@ a { color: inherit; }
 :root[data-theme="dark"] .rail li[data-brand="tiktok"] svg { color: #FFFFFF; }
 
 /* ── sections ─────────────────────────────────────────────────────────────── */
-.sec { padding: clamp(80px, 11vw, 150px) 0 0; }
+.sec { padding: clamp(104px, 14vw, 200px) 0 0; }
 .sec-head { max-width: 820px; }
-.sec-head .h2 { margin-top: 18px; }
-.sec-head .lede { margin-top: 22px; }
+.sec-head .h2 { margin-top: 0; }
+.sec-head .lede { margin-top: 14px; }
 
 /* ── The reality: the problems slide past (Miro's row, Eden's reference) ──
    By default a swipeable row with arrows: what phones, tablets and reduced
@@ -283,8 +284,8 @@ a { color: inherit; }
    heading first, then the four problems, then on to Introducing. */
 .rl-rail { max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
 .rl-head { max-width: 820px; }
-.rl-head .h2 { margin-top: 18px; }
-.rl-head .lede { margin-top: 22px; }
+.rl-head .h2 { margin-top: 0; }
+.rl-head .lede { margin-top: 14px; }
 .rl-hint { display: none; }
 .rl-track {
   display: flex; gap: 16px; margin-top: 40px;
@@ -302,8 +303,8 @@ a { color: inherit; }
 :root[data-theme="dark"] .rl-art { background-image: var(--paint-d); }
 .rl-body { padding: 22px 4px 0; }
 .rl-n { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-.rl-body .h3 { margin-top: 10px; }
-.rl-body p { margin: 10px 0 0; color: var(--muted); font-size: 17px; }
+.rl-body .h3 { margin-top: 0; }
+.rl-body p { margin: 8px 0 0; color: var(--muted); font-size: 17px; }
 .rl-stage { position: relative; }
 .rl-ctrl { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 26px; }
 .rl-arrow {
@@ -333,6 +334,10 @@ a { color: inherit; }
 /* As wide as the screen's height allows, so a card always fits whole. */
 .reality.rl-pinned .rl-card { flex: 0 0 min(440px, calc((100svh - 68px - 300px) * 4 / 3)); }
 .reality.rl-pinned .rl-ctrl { display: none; }
+
+/* The figure tile: the buyers page's three promises as pictures. */
+.rl-art > .art-fig { width: 62%; padding: 9cqw 5.5cqw; text-align: center; }
+.art-fig b { display: block; font-size: 17cqw; font-weight: 300; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: lining-nums; }
 
 /* The pictures, drawn in container units so they scale with the tile. */
 .rl-art > div {
@@ -397,9 +402,9 @@ a { color: inherit; }
 .row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
 .row.flip { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
 .row.flip .row-text { order: 2; }
-.row-text .h2 { margin-top: 18px; font-size: clamp(32px, 3.6vw, 48px); }
-.row-text .lede { margin-top: 20px; font-size: 18px; }
-.row + .row { margin-top: clamp(80px, 10vw, 140px); }
+.row-text .h2 { margin-top: 0; font-size: clamp(32px, 3.6vw, 48px); }
+.row-text .lede { margin-top: 12px; font-size: 18px; }
+.row + .row { margin-top: clamp(104px, 13vw, 180px); }
 .row .frame { aspect-ratio: 4 / 3; }
 
 /* CRM: the pipeline with Tayo's side of the conversation standing on it. */
@@ -430,12 +435,12 @@ a { color: inherit; }
 /* Small teams: one wide frame, then the three things it keeps in view. */
 .wide { aspect-ratio: 16 / 8.2; margin-top: 48px; }
 .wide .shot { left: 50%; top: 10%; width: 86%; transform: translateX(-50%); }
-.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
 .step { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 26px 26px 28px; }
 .step-k { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; color: var(--muted); }
-.step-k::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
-.step .h3 { margin-top: 12px; }
-.step p { margin: 8px 0 0; color: var(--muted); font-size: 17px; }
+
+.step .h3 { margin-top: 0; }
+.step p { margin: 6px 0 0; color: var(--muted); font-size: 17px; }
 
 /* Screens drift a little against their paint as the page moves, where the
    browser can tie an animation to scrolling. Nothing waits on it. */
@@ -589,7 +594,7 @@ a { color: inherit; }
 }
 @media (max-width: 720px) {
   body { font-size: 17px; }
-  .sec { padding-top: 72px; }
+  .sec { padding-top: 104px; }
   .hero { padding-top: 28px; }
   .lede { font-size: 17px; }
   .nav-cta { display: none; }
