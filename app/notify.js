@@ -254,7 +254,9 @@
       if (p !== 'granted') return { ok: false, reason: p };
       /* Both the push subscription and the watch must be saved before the
          control says "on" (Greptile: it said on when neither was). */
-      return subscribe({ side: 'customer' }).then(function () {
+      return subscribe({ side: 'customer' }).then(function (sub) {
+        /* No push key, or the browser refused: alerts could never arrive, so do not say they are on. */
+        if (!sub) throw new Error('push subscription not saved');
         return upsertWatch(criteria || {});
       }).then(function () {
         setProximity(true);

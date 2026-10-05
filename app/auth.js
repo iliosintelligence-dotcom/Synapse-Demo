@@ -475,13 +475,17 @@
       .then(function () {
         /* WHAT THE NEXT PERSON ON THIS BROWSER MUST NOT SEE (Greptile audit):
            Tayo's saved chat, its archived chats, and the id that restores them
-           from the server. The id is kept only while proximity alerts are on,
-           because the alert watch is held under it. */
+           from the server. The id used to be kept while proximity alerts were on,
+           because the watch is held under it; but the same id restores the chat
+           from the server, so the next person on a shared browser could read the
+           last person's conversation. It always goes now, and alerts go with it:
+           signing out ends them on this device, and switching them on again makes
+           a fresh watch under a fresh id. */
         try {
           localStorage.removeItem('toju_chat_v1');
           localStorage.removeItem('toju_sessions_v1');
-          var prox = JSON.parse(localStorage.getItem('synapse_proximity_v1') || '{}');
-          if (prox.on !== true) localStorage.removeItem('toju_visitor_v1');
+          localStorage.removeItem('toju_visitor_v1');
+          localStorage.removeItem('synapse_proximity_v1');
         } catch (e) {}
         cachedUser = null; paintAll();
       });

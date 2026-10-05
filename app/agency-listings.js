@@ -1286,8 +1286,17 @@
     }).then(function (r) {
       if (r.error) throw r.error;
       var id = r.data.id;
-      return writeMedia(c1, id, data.media).then(function () { return id; });
+      return writeMedia(c1, id, data.media).then(function () { return id; }, function (e) { throw partialSave(e, id, 'listing was created'); });
     });
+  }
+
+  /* The row is written before its photos. If the photos then fail, the listing exists (or
+     changed) and saying "not saved" is wrong: the agency would retype and duplicate it. Say what
+     did happen, and carry the id so the caller can open it. */
+  function partialSave(e, id, what) {
+    var err = new Error('The ' + what + ', but its photos could not be saved. Open it from your listings and add the photos again.');
+    err.partial = true; err.id = id; err.cause = e;
+    return err;
   }
 
   function update(id, data) {
@@ -1301,7 +1310,7 @@
       });
     }).then(function (r) {
       if (r.error) throw r.error;
-      return writeMedia(c1, id, data.media).then(function () { return id; });
+      return writeMedia(c1, id, data.media).then(function () { return id; }, function (e) { throw partialSave(e, id, 'changes were saved'); });
     });
   }
 

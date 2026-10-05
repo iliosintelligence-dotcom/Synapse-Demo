@@ -182,7 +182,7 @@
     <section class="yd-card">
       <h2>Take a copy</h2>
       <p>
-        Downloads everything listed above as a JSON file. It is the data itself, not a summary.
+        Downloads everything listed above, from this device, as a JSON file. It is the data itself, not a summary. For a copy of what we hold on our servers, email ilios.intelligence@gmail.com and quote your identifier.
       </p>
       <div class="yd-row">
         <button class="yd-btn" id="exportBtn" type="button">Download my data</button>
@@ -342,8 +342,8 @@
          pretending otherwise would be the dishonest version of a data-rights
          page. */
       $('heldNote').innerHTML = 'This lists what is on this device. We also hold records on our '
-        + 'servers — conversations, leads, and alerts — which the download below includes where '
-        + 'this page can reach them, and which deleting below removes. '
+        + 'servers — conversations, leads, and alerts. The download below is a copy of this device only; '
+        + 'to get the server records, email ilios.intelligence@gmail.com. Deleting below removes both. '
         + '<a href="/privacy">The policy</a> lists them all.';
     }
 
@@ -405,6 +405,15 @@
       }
 
       server.then(function (res) {
+        /* If the server refused, the identifier is the only handle for finishing this by hand, so
+           it stays on screen and on the device until erasure has actually happened. */
+        if (!res.ok) {
+          if (window.SynLoader) SynLoader.hide();
+          note.innerHTML = 'The server refused: ' + String(res.error || 'unknown error').slice(0, 120).replace(/[<>&]/g, '')
+            + '. Nothing was cleared, so you can try again. If it keeps failing, email ilios.intelligence@gmail.com and quote the id above.';
+          note.className = 'yd-note yd-bad';
+          return;
+        }
         LOCAL_KEYS.forEach(function (pair) {
           try { localStorage.removeItem(pair[0]); } catch (e) {}
         });
