@@ -227,11 +227,12 @@
     <!-- TEAM -->
     <section class="pane" id="p-team" hidden>
       <h1 class="h">Team</h1>
-      <p class="lede">Who can open the studio. Someone you add needs a Synapse account first, and signs in with that same email. An admin can add and remove anyone.</p>
+      <p class="lede">Who can open the studio. Enter an email and Synapse sends an invitation: the link in it brings them to a page where they choose a password and create their account as part of the team. Someone who already has a Synapse account just gets access. An admin can invite and remove anyone.</p>
       <div class="card stack">
         <div class="row"><div class="grow"><label class="f" for="mEmail">Email</label><input type="email" id="mEmail" placeholder="name@example.com" autocomplete="off"></div>
         <div><label class="f" for="mRole">Role</label><select id="mRole"><option value="social_manager">Social media manager</option><option value="admin">Admin</option></select></div>
-        <div style="align-self:flex-end"><button class="btn primary" id="mAdd" type="button">Add</button></div></div>
+        <div style="align-self:flex-end"><button class="btn primary" id="mAdd" type="button">Send invitation</button></div></div>
+        <div id="inviteRes" hidden></div>
         <div id="staffList"></div>
       </div>
     </section>
@@ -605,17 +606,45 @@
     api('staff_list').then(function (d) {
       var s = d.staff || [];
       $('staffList').innerHTML = s.length ? s.map(function (x) {
-        return '<div class="opt"><div class="grow"><b>' + esc(x.email || 'Unknown') + '</b><small>' + (x.role === 'admin' ? 'Admin' : 'Social media manager') + '</small></div>'
+        return '<div class="opt"><div class="grow"><b>' + esc(x.email || 'Unknown') + '</b><small>' + (x.role === 'admin' ? 'Admin' : 'Social media manager')
+          + ' \u00b7 ' + (x.joined ? 'Joined' : 'Invitation not opened yet') + '</small></div>'
+          + (x.joined ? '' : '<button class="btn sm" data-linkstaff="' + esc(x.profile_id) + '" type="button">Copy link</button>')
           + '<button class="btn sm danger" data-rmstaff="' + esc(x.profile_id) + '" type="button">Remove</button></div>';
       }).join('') : '<div class="empty">Only founders so far.</div>';
     }).catch(function (e) { $('staffList').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
   }
+  /* Show a join link for the admin to pass on, with a Copy button. */
+  function showLink(email, link, why) {
+    var r = $('inviteRes');
+    r.hidden = false;
+    r.innerHTML = '<div class="card" style="box-shadow:none"><b>Send them this link</b>'
+      + '<p class="muted small" style="margin-top:6px">' + (why ? esc(why) + ' ' : '') + 'Copy the link and send it to ' + esc(email) + ' yourself, by WhatsApp or email. It works once.</p>'
+      + '<div class="row" style="margin-top:12px"><input type="text" readonly id="linkBox" class="grow" value="' + esc(link) + '" aria-label="Invitation link">'
+      + '<button class="btn sm primary" id="linkCopy" type="button">Copy</button></div></div>';
+    $('linkCopy').addEventListener('click', function () { copyLink(link, $('linkCopy')); });
+  }
+  function copyLink(link, btn) {
+    var done = function () { toast('Link copied.'); if (btn) { var w = btn.textContent; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = w; }, 1600); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(link).then(done, function () { window.prompt('Copy this link:', link); }); }
+    else { window.prompt('Copy this link:', link); }
+  }
   $('mAdd').addEventListener('click', function () {
-    var b = $('mAdd'); b.disabled = true;
-    api('staff_add', { email: $('mEmail').value, role: $('mRole').value }).then(function () { toast('Added.'); $('mEmail').value = ''; loadStaff(); })
-      .catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; });
+    var b = $('mAdd'), email = $('mEmail').value.trim(); b.disabled = true; b.textContent = 'Sending…';
+    $('inviteRes').hidden = true;
+    api('staff_invite', { email: email, role: $('mRole').value }).then(function (d) {
+      if (d.status === 'emailed') { toast('Invitation sent to ' + email + '.'); $('inviteRes').hidden = false; $('inviteRes').innerHTML = '<p class="small" style="color:var(--ok)">Invitation sent to <b>' + esc(email) + '</b>. The email has a link that brings them here to create their account.</p>'; }
+      else if (d.status === 'existing') { toast('They already have an account.'); $('inviteRes').hidden = false; $('inviteRes').innerHTML = '<p class="small" style="color:var(--ok)"><b>' + esc(email) + '</b> already has a Synapse account and now has studio access. They sign in as usual.</p>'; }
+      else if (d.link) { showLink(email, d.link, d.status === 'link' ? 'The email could not be sent (' + (d.reason || 'no reason given') + ').' : ''); }
+      $('mEmail').value = ''; loadStaff();
+    }).catch(function (e) { toast(e.message); }).then(function () { b.disabled = false; b.textContent = 'Send invitation'; });
   });
   $('staffList').addEventListener('click', function (e) {
+    var lk = e.target.closest('[data-linkstaff]');
+    if (lk) {
+      lk.disabled = true;
+      api('staff_link', { profile_id: lk.dataset.linkstaff }).then(function (d) { copyLink(d.link, null); }).catch(function (er) { toast(er.message); }).then(function () { lk.disabled = false; });
+      return;
+    }
     var b = e.target.closest('[data-rmstaff]'); if (!b || !window.confirm('Remove their access to the studio?')) return;
     api('staff_remove', { profile_id: b.dataset.rmstaff }).then(function () { toast('Removed.'); loadStaff(); }).catch(function (er) { toast(er.message); });
   });
