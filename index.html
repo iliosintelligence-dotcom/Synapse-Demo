@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <!-- Google tag (gtag.js), G-R7VX06N3ZY, in Google Consent Mode (advanced).
+       The tag loads on every page, but Analytics may set cookies only after
+       the visitor accepts them in the banner (/consent.js). Until then -- and
+       for anyone who says no -- it sends cookieless signals with no stored
+       identifier, which Google uses to estimate visits. Eden chose this over
+       strict opt-in (2026-10-02) so Analytics can see the tag and the traffic.
+       Advertising consent is never granted: Analytics is for measurement only.
+       The address it reports is trimmed first: Google gets the page plus any
+       campaign or channel tag (utm_*, gclid, fbclid, ch, via) and a listing's
+       id, never the rest of the query or the fragment. Those carry what
+       visitors typed or were sent -- a question to Tayo (?ask=), a search, a
+       sign-in or password-reset code -- and none of that belongs in an
+       analytics account. The referrer is trimmed the same way. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { ok = localStorage.getItem('syn_consent_v1') === 'granted'; } catch (e) {}
+      gtag('consent', 'default', {
+        analytics_storage: ok ? 'granted' : 'denied',
+        ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('js', new Date());
+      var KEEP = /^(utm_[a-z]+|gclid|fbclid|ch|via|id)$/;
+      function clean(href) {
+        try {
+          var u = new URL(href), q = new URLSearchParams();
+          u.searchParams.forEach(function (v, k) { if (KEEP.test(k)) q.set(k, v); });
+          var s = q.toString();
+          return u.origin + u.pathname + (s ? '?' + s : '');
+        } catch (e) { return ''; }
+      }
+      gtag('config', 'G-R7VX06N3ZY', {
+        page_location: clean(location.href),
+        page_referrer: document.referrer ? clean(document.referrer) : ''
+      });
+      /* The tag is already on the page; consent.js still calls this on Accept. */
+      window.SynGtagLoad = function () {};
+    })();
+  </script>
+  <script src="/consent.js" defer></script>
+  <title>Synapse for agencies · Grow your agency, not your workload</title>
+  <!-- Every browser asks for /favicon.ico whether or not a page mentions it,
+       and nothing was there: a 404 on every page load of the whole site, and
+       a blank square in every tab. These are declared as well as sitting at
+       the root, so the browser takes the sharp one rather than scaling the
+       .ico. -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- ── Discovery ────────────────────────────────────────────────────────
+       There was none of this: no description, no card, no canonical, on any
+       page. A link pasted into WhatsApp — which is how this product actually
+       travels in Nigeria — rendered as a bare URL. og:image is absolute
+       because scrapers do not resolve relative paths. -->
+  <meta name="description" content="Synapse helps Nigerian estate agencies publish a listing once and reach every channel, qualify enquiries with an AI advisor, and see which channels actually produce buyers. Free to start." />
+  <link rel="canonical" href="https://www.synapsecore.dev/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Synapse" />
+  <meta property="og:locale" content="en_NG" />
+  <meta property="og:url" content="https://www.synapsecore.dev/" />
+  <meta property="og:title" content="Grow your agency. Not your workload." />
+  <meta property="og:description" content="Synapse helps Nigerian estate agencies publish a listing once and reach every channel, qualify enquiries with an AI advisor, and see which channels actually produce buyers. Free to start." />
+  <meta property="og:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Synapse — Grow your agency. Not your workload." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Grow your agency. Not your workload." />
+  <meta name="twitter:description" content="Synapse helps Nigerian estate agencies publish a listing once and reach every channel, qualify enquiries with an AI advisor, and see which channels actually produce buyers. Free to start." />
+  <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
+  <meta name="theme-color" content="#FAF6F0" />
+  <!-- Organization + the plans, as structured data. Every value here is
+       checkable on the page or in the product; nothing is asserted that the
+       Terms do not already say. Deliberately no postalAddress and no legal
+       entity name — those are still open with a lawyer, and a schema block is
+       not the place to invent them. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.synapsecore.dev/#organization",
+        "name": "Synapse",
+        "url": "https://www.synapsecore.dev/",
+        "logo": "https://www.synapsecore.dev/images/brand/stacked-black-on-white-large.jpg",
+        "description": "An AI property advisor and listing platform for Nigeria.",
+        "email": "ilios.intelligence@gmail.com",
+        "areaServed": { "@type": "Country", "name": "Nigeria" },
+        "parentOrganization": { "@type": "Organization", "name": "ILIOS Digital" }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.synapsecore.dev/#website",
+        "url": "https://www.synapsecore.dev/",
+        "name": "Synapse",
+        "inLanguage": "en-NG",
+        "publisher": { "@id": "https://www.synapsecore.dev/#organization" }
+      },
+      {
+        "@type": "Service",
+        "name": "Synapse for agencies",
+        "serviceType": "Real estate listing and marketing platform",
+        "provider": { "@id": "https://www.synapsecore.dev/#organization" },
+        "areaServed": { "@type": "Country", "name": "Nigeria" },
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free",
+            "price": "0",
+            "priceCurrency": "NGN",
+            "description": "Up to 20 active listings, 2 team members, CRM with WhatsApp handoff."
+          },
+          {
+            "@type": "Offer",
+            "name": "Accelerate",
+            "price": "25000",
+            "priceCurrency": "NGN",
+            "description": "Up to 100 listings and 5 agent seats, publishing to every channel, AI-written and scheduled posts.",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "25000",
+              "priceCurrency": "NGN",
+              "unitCode": "MON"
+            }
+          },
+          {
+            "@type": "Offer",
+            "name": "Leader",
+            "price": "75000",
+            "priceCurrency": "NGN",
+            "description": "Unlimited listings and seats, AI-generated campaigns on every channel, proximity marketing.",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "75000",
+              "priceCurrency": "NGN",
+              "unitCode": "MON"
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- LIGHT BY DAY, DARK BY NIGHT. Eden asked for the landing page's dark mode
+       to follow the time of day rather than the device: dark from 7pm to 7am
+       on Nigeria time (Lagos sunset and sunrise sit near both ends all
+       year). Stamped here, before the stylesheet paints, so the page never
+       flashes the wrong ground. The switch in the bar overrides it for the
+       rest of the visit; ?theme=light|dark forces it for one load. -->
+  <script>
+    (function () {
+      var d = document.documentElement, chosen = null;
+      /* Nigeria time: Lagos is UTC+1 all year, so 7am and 7pm never drift. */
+      function byClock() { var h = (new Date().getUTCHours() + 1) % 24; return (h >= 19 || h < 7) ? 'dark' : 'light'; }
+      try {
+        var q = new URLSearchParams(location.search).get('theme');
+        if (q === 'light' || q === 'dark') chosen = q;
+        else {
+          /* A choice made with the switch, here or in the app, holds until
+             the next 7am/7pm switch (app/theme.js writes the same key). */
+          var p = JSON.parse(localStorage.getItem('syn_theme_pick') || 'null');
+          if (p && (p.t === 'light' || p.t === 'dark') && p.until > Date.now()) chosen = p.t;
+        }
+      } catch (e) {}
+      d.setAttribute('data-theme', chosen || byClock());
+      window.SynHome = { byClock: byClock, chosen: function () { return chosen; }, choose: function (t) { chosen = t; } };
+    })();
+  </script>
+
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="app/seam.css" />
+  <!-- In <head>, not at the end of <body>: pagereveal fires before a
+       body script has run, and seam.js has to be listening for it. -->
+  <script src="app/seam.js"></script>
+  <script src="app/arrival.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a href="index.html" class="logo" aria-label="Synapse home">
+      <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+      <span class="logo-word">Synapse</span>
+    </a>
+    <nav class="nav-links" aria-label="Page">
+      <a href="#product">Product</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <!-- Which side of Synapse you are on, and the way to the other one --
+         on a phone too, where the page links do not fit. -->
+    <div class="aud" role="group" aria-label="Who Synapse is for">
+      <a class="aud-seg on" href="index.html" aria-current="page">For agencies</a>
+      <a class="aud-seg" href="buyers.html">For customers</a>
+    </div>
+    <button type="button" class="mode" id="modeBtn" aria-label="Switch to dark mode">
+      <svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+      <svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    </button>
+    <a class="nav-signin" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+    <a class="btn btn-solid btn-sm nav-cta" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <!-- ── HERO: the promise, then the portal itself ── -->
+  <section class="hero">
+    <div class="wrap">
+      <h1 class="h1">Grow your agency. <em>Not your workload.</em></h1>
+      <p class="lede">Every listing reaches more buyers, qualifies itself, and arrives as a warm, ready-to-close deal.</p>
+      <div class="hero-cta">
+        <a class="btn btn-solid" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">
+          Try free
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#pricing">See pricing</a>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="frame p-hero hero-frame">
+        <img class="shot lt" src="images/home/shot-overview-light.webp" width="2000" height="1250" loading="lazy" alt="The Synapse agency portal: an agency's listings with prices and photos, a map of Ibadan, and the chosen listing's details." />
+        <img class="shot dk" src="images/home/shot-overview-dark.webp" width="2000" height="1250" loading="lazy" alt="The Synapse agency portal: an agency's listings with prices and photos, a map of Ibadan, and the chosen listing's details." />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHERE IT GOES. Monochrome marks: the page's one colour is orange. ── -->
+  <section class="rail" aria-label="Channels Synapse publishes to">
+    <div class="wrap">
+      <p>One upload, published to</p>
+      <div class="rail-vp">
+        <ul class="rail-list">
+          <li data-brand="instagram"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
+          <li data-brand="facebook"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
+          <li data-brand="tiktok"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
+          <li data-brand="telegram"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
+          <li data-brand="whatsapp"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
+          <li data-brand="youtube"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
+          <li data-brand="synapse"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
+        </ul>
+        <ul class="rail-list rail-copy" aria-hidden="true">
+          <li data-brand="instagram"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.15" fill="currentColor" stroke="none"/></svg>Instagram</li>
+          <li data-brand="facebook"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.6 21.5V13h2.8l.5-3.3h-3.3V7.6c0-.95.32-1.6 1.7-1.6h1.75V3.05A22 22 0 0 0 15.5 2.9c-2.6 0-4.35 1.6-4.35 4.5V9.7H8.3V13h2.85v8.5z" fill="currentColor" stroke="none"/></svg>Facebook</li>
+          <li data-brand="tiktok"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.2 3v10.6a3.5 3.5 0 1 1-3-3.46"/><path d="M14.2 3c.35 2.3 1.9 3.9 4.3 4.1"/></svg>TikTok</li>
+          <li data-brand="telegram"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4.2L2.9 11.3c-.8.3-.8 1 .05 1.3l4.6 1.45 1.75 5.45c.2.6.6.65 1.05.3l2.6-2.1 4.7 3.45c.55.3 1 .1 1.15-.55L21.9 5.2c.2-.85-.3-1.25-.9-1z"/><path d="M7.6 14l10.3-6.6"/></svg>Telegram</li>
+          <li data-brand="whatsapp"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.4 20.6l1.25-4.4A8.2 8.2 0 1 1 7.9 19.3z"/><path d="M9 9.1c.25 1.5 1.05 2.8 2.3 3.7 1.05.75 2.2 1 2.9.9.35-.05.6-.35.75-.7l.2-.5-1.85-.95-.6.75c-.85-.4-1.55-1.1-1.95-1.95l.75-.6-.95-1.85-.5.2c-.35.15-.65.4-.7.75z" fill="currentColor" stroke="none"/></svg>WhatsApp</li>
+          <li data-brand="youtube"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="5.4" width="19.6" height="13.2" rx="4"/><path d="M10.3 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none"/></svg>YouTube</li>
+          <li data-brand="synapse"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.4" r="2.1"/><circle cx="5.6" cy="16.4" r="2.1"/><circle cx="18.4" cy="16.4" r="2.1"/><path d="M12 7.5v6.9M10.4 15.2l-3 .6M13.6 15.2l3 .6"/></svg>Synapse</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── THE REALITY ─────────────────────────────────────────────────────────
+       Eden, with Miro's "Innovation Workspace" row as the reference: the
+       problems slide past as you scroll, each with a picture of what it says.
+       On a wide screen the section holds still and the page's own scroll
+       carries the cards sideways (home.js); on a phone, or with reduced
+       motion, it is a swipe with arrows either side. The pictures are drawn,
+       not photographed: each one is the problem in one glance. -->
+  <section class="sec reality" id="reality" aria-labelledby="realityTitle">
+    <div class="rl-pin" id="rlPin">
+    <div class="rl-stage" id="rlStage">
+      <div class="rl-rail" id="rlRail">
+        <div class="rl-head">
+          <h2 class="h2" id="realityTitle">1&ndash;3% of enquiries close. <em>The other 97% still cost you.</em></h2>
+          <p class="lede">That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.</p>
+          <p class="rl-hint" aria-hidden="true">Keep scrolling &rarr;</p>
+        </div>
+        <div class="rl-track" id="rlTrack" role="group" aria-roledescription="carousel" aria-label="Four problems">
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="1 of 4">
+            <div class="rl-art p-crm" aria-hidden="true">
+              <div class="art-dots">
+                <div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="live"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="art-cap"><b>3</b> of 100 enquiries</div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <h3 class="h3">Are you working 97 dead ends to reach 3 live ones?</h3>
+              <p>Every &ldquo;is it still available?&rdquo; answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="2 of 4">
+            <div class="rl-art p-tayo" aria-hidden="true">
+              <div class="art-stack">
+                <div class="art-clock">11:48 pm</div>
+                <div class="art-row"><span class="ic">IG</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">FB</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">WA</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+                <div class="art-row"><span class="ic">TT</span><span class="ln"><i></i><i></i></span><span class="tag">Draft</span></div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <h3 class="h3">Are your evenings going on captions?</h3>
+              <p>Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="3 of 4">
+            <div class="rl-art p-reach" aria-hidden="true">
+              <div class="art-fee">
+                <div class="art-fee-t">One property&rsquo;s fee</div>
+                <div class="art-bar"><span class="you">You</span><span>Agency 2</span><span>Agency 3</span><span>Agency 4</span></div>
+                <div class="art-fee-s">Reach bought by splitting it four ways</div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <h3 class="h3">Are you splitting the fee to get reach?</h3>
+              <p>Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone&rsquo;s cut, or you take a fraction of what the work was worth.</p>
+            </div>
+          </article>
+
+          <article class="rl-card" aria-roledescription="slide" aria-label="4 of 4">
+            <div class="rl-art p-team" aria-hidden="true">
+              <div class="art-queue">
+                <div class="art-who"><span class="av">TA</span><span><b>Your best closer</b><em>On one call</em></span></div>
+                <div class="art-q"><span>Counter-offer, 4-bed</span><span class="w">waiting</span></div>
+                <div class="art-q"><span>Viewing request</span><span class="w">waiting</span></div>
+                <div class="art-q"><span>Price question</span><span class="w">waiting</span></div>
+              </div>
+            </div>
+            <div class="rl-body">
+              <h3 class="h3">Is your best negotiator one person?</h3>
+              <p>Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.</p>
+            </div>
+          </article>
+
+        </div>
+      </div>
+      <div class="rl-ctrl">
+        <button type="button" class="rl-arrow prev" id="rlPrev" aria-label="Previous problem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="rl-count" id="rlCount" aria-live="polite">1 / 4</span>
+        <button type="button" class="rl-arrow next" id="rlNext" aria-label="Next problem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    </div>
+    <div class="wrap">
+      <p class="either"><b>Either way:</b> the customer pays more, or you earn less on the same work. Often both.</p>
+    </div>
+  </section>
+
+  <!-- ── INTRODUCING: the turn of the page, as one statement ── -->
+  <section class="sec intro" aria-labelledby="introTitle">
+    <div class="wrap">
+      <h2 class="intro-word" id="introTitle">Synapse</h2>
+      <p class="statement">The work you have been doing by hand &mdash; the posting, the chasing, the checking &mdash; <em>done once, properly, and on its own.</em></p>
+    </div>
+  </section>
+
+  <!-- ── WHAT IT DOES: words beside the screens that do it ── -->
+  <section class="sec" id="product">
+    <div class="wrap">
+
+      <div class="row">
+        <div class="row-text">
+          <h2 class="h2">One listing. <em>Every channel.</em></h2>
+          <p class="lede">Upload once. Synapse writes the copy in your agency&rsquo;s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.</p>
+          <p class="lede">Each version is checked against that platform&rsquo;s real limits &mdash; caption length, aspect ratio, video duration &mdash; and it never claims &ldquo;verified&rdquo; on a listing that is not.</p>
+          <p class="lede">No agency retainer. No social media manager. No waiting on a designer.</p>
+        </div>
+        <div class="frame p-reach">
+          <img class="shot bleed lt" src="images/home/shot-social-light.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+          <img class="shot bleed dk" src="images/home/shot-social-dark.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+        </div>
+      </div>
+
+      <div class="row flip">
+        <div class="row-text">
+          <h2 class="h2">Every enquiry arrives <em>already worked.</em></h2>
+          <p class="lede">Every lead arrives with the city, the budget and the brief already attached &mdash; and Tayo&rsquo;s opening position with it.</p>
+          <p class="lede">Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.</p>
+          <p class="lede">The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.</p>
+        </div>
+        <div class="frame p-crm">
+          <img class="shot under lt" src="images/home/shot-crm-light.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+          <img class="shot under dk" src="images/home/shot-crm-dark.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+          <img class="phone lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+          <img class="phone dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-text">
+          <h2 class="h2">Reach the buyer <em>standing outside.</em></h2>
+          <p class="lede">Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.</p>
+          <p class="lede">Local intent, caught live, and delivered straight into your pipeline as a qualified lead.</p>
+        </div>
+        <div class="frame p-nearby">
+          <img class="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+          <img class="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+          <div class="ping" aria-hidden="true">
+            <span class="ping-icon"><img src="images/brand/mark-black-on-white-tight.jpg" alt="" /></span>
+            <span class="ping-top"><span>Synapse &middot; Nearby</span><span>now</span></span>
+            <span class="ping-t">A 4-bed duplex is 200&nbsp;m from you</span>
+            <span class="ping-s">&#8358;120M &middot; New Bodija. Tap to see it.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── ONE VIEW ── -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 class="h2">Built to make small teams <em>do big work.</em></h2>
+        <p class="lede">Every listing, lead and verification in a single view &mdash; with the next action already decided for each one.</p>
+      </div>
+      <div class="frame p-team wide">
+        <img class="shot lt" src="images/home/shot-listings-light.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons to post or share it." />
+        <img class="shot dk" src="images/home/shot-listings-dark.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons to post or share it." />
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3 class="h3">Nothing gets dropped</h3>
+          <p>Every lead ranked hot to cold, with the next best action written for whoever picks it up.</p>
+        </div>
+        <div class="step">
+          <h3 class="h3">Verification, tracked</h3>
+          <p>See where each property stands in verification, and what is still outstanding.</p>
+        </div>
+        <div class="step">
+          <h3 class="h3">Know what worked</h3>
+          <p>Every closed deal traced back to the post that started it &mdash; so you spend on what actually sells.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PRICING ══════════════════════════════════════════════════════════
+       The real tiers from the portal (PRICING in app/agency.html) -- keep the
+       two in step if either changes. -->
+  <section class="sec" id="pricing">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 class="h2">Start free. Pay when it <em>pays you back.</em></h2>
+        <p class="lede">No setup fee and no lock-in. Free, Accelerate and Leader take no commission on your deals. Move up or down a tier whenever you like.</p>
+      </div>
+
+      <!-- Billing period. Prices are written into the cards as monthly; the
+           toggle rewrites them, so there is one source of truth per plan. -->
+      <div class="pr-toggle" role="group" aria-label="Billing period">
+        <button type="button" class="pr-per on" data-per="monthly" aria-pressed="true">Monthly</button>
+        <button type="button" class="pr-per" data-per="annual" aria-pressed="false">Annual <span class="pr-save"></span></button>
+      </div>
+      <p class="pr-note" id="prOffer" hidden>Annual is 10 months&rsquo; price for agencies that join before 1&nbsp;December&nbsp;2026, and it stays that way for them.</p>
+
+      <!-- A CAROUSEL OF WIDE CARDS (Eden, 2026-10-03): "don't make them so
+           slim and tall ... carousel it ... arrows to the side so they can be
+           a little bit shorter and wider". Each plan is a wide card, details
+           on the left and features on the right; swipe or use the arrows. -->
+      <div class="pr-carousel">
+      <button type="button" class="pr-arrow prev" id="prPrev" aria-label="Previous plan" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button type="button" class="pr-arrow next" id="prNext" aria-label="Next plan"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+      <div class="pr-grid" id="prGrid" tabindex="0" aria-label="Plans">
+        <div class="pr-card">
+          <div class="pr-name">Free</div>
+          <div class="pr-price">&#8358;0<span>forever</span></div>
+          <p class="pr-best">New or small agencies getting started.</p>
+          <ul class="pr-list">
+            <li>Up to 20 active listings</li>
+            <li>2 team members</li>
+            <li>CRM with WhatsApp handoff</li>
+            <li>Tayo AI referrals</li>
+            <li>Standard verification queue</li>
+          </ul>
+          <p class="pr-not">No marketing automation or syndication.</p>
+          <a class="btn btn-ghost pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Start free</a>
+        </div>
+
+        <div class="pr-card feature">
+          <span class="pr-badge">Most popular</span>
+          <div class="pr-name">Accelerate</div>
+          <div class="pr-price" data-monthly="25000">&#8358;25,000<span>per month</span></div>
+          <p class="pr-best">The plan almost every serious agency wants.</p>
+          <ul class="pr-list">
+            <li>Up to 100 listings &middot; 5 agent seats</li>
+            <li>Reviewed within 48 hours</li>
+            <li>Publish once, reach every channel</li>
+            <li>AI writes and schedules your posts</li>
+            <li>See which channels actually make buyers</li>
+          </ul>
+          <a class="btn btn-solid pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html%23billing">Choose Accelerate</a>
+        </div>
+
+        <div class="pr-card">
+          <div class="pr-name">Leader</div>
+          <div class="pr-price" data-monthly="75000">&#8358;75,000<span>per month</span></div>
+          <p class="pr-best">Established agencies going for the top.</p>
+          <ul class="pr-list">
+            <li>Unlimited listings and seats</li>
+            <li>AI-generated campaigns, every channel</li>
+            <li>Proximity marketing</li>
+            <li>Dedicated verification desk</li>
+          </ul>
+          <p class="pr-not">Tayo still ranks purely on buyer fit &mdash; never on payment.</p>
+          <a class="btn btn-ghost pr-go" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html%23billing">Choose Leader</a>
+        </div>
+
+        <!-- ENTERPRISE (Eden, 2026-10-02): no list price. Terms are agreed
+             with the agency -- a monthly fee, per project, or a commission on
+             closed deals. Not in the annual toggle (no data-monthly) and not
+             in the JSON-LD offers, which list priced plans only. -->
+        <div class="pr-card">
+          <div class="pr-name">Enterprise</div>
+          <div class="pr-price">Negotiated<span>a fee, per project, or commission</span></div>
+          <p class="pr-best">Developers and large agencies.</p>
+          <ul class="pr-list">
+            <li>Everything in Leader</li>
+            <li>Pricing agreed with you, even as commission on closed deals</li>
+            <li>A dedicated relationship manager</li>
+            <li>Onboarding and your listings brought across</li>
+          </ul>
+          <a class="btn btn-ghost pr-go" href="mailto:ilios.intelligence@gmail.com?subject=Enterprise%20plan">Talk to us</a>
+        </div>
+      </div>
+      </div>
+      <div class="pr-dots" id="prDots" aria-hidden="true"></div>
+
+      <!-- Side-by-side comparison. Every row restates a claim already made on
+           the cards above -- this introduces no new promise. -->
+      <details class="pr-compare">
+        <summary>Compare the plans side by side</summary>
+        <div class="pr-tablewrap">
+          <table class="pr-table">
+            <caption class="sr-only">Feature comparison across the Free, Accelerate, Leader and Enterprise plans</caption>
+            <thead>
+              <tr>
+                <th scope="col" style="text-align:left">What you get</th>
+                <th scope="col">Free</th>
+                <th scope="col" class="hi">Accelerate</th>
+                <th scope="col">Leader</th>
+                <th scope="col">Enterprise</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Active listings</th><td>20</td><td class="hi">100</td><td>Unlimited</td><td>Unlimited</td></tr>
+              <tr><th scope="row">Team seats</th><td>2</td><td class="hi">5</td><td>Unlimited</td><td>Unlimited</td></tr>
+              <tr><th scope="row">CRM with WhatsApp handoff</th><td aria-label="Included">&#10003;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Tayo AI referrals</th><td aria-label="Included">&#10003;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Verification queue</th><td>Standard</td><td class="hi">48 hours</td><td>Dedicated desk</td><td>Dedicated desk</td></tr>
+              <tr><th scope="row">Social syndication</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">AI writes &amp; schedules posts</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Channel attribution</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi" aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Verification standard</th><td colspan="4" class="pr-neutral">Identical on every plan &mdash; verification is never for sale</td></tr>
+              <tr><th scope="row">Proximity marketing</th><td class="no" aria-label="Not included">&mdash;</td><td class="hi no" aria-label="Not included">&mdash;</td><td aria-label="Included">&#10003;</td><td aria-label="Included">&#10003;</td></tr>
+              <tr><th scope="row">Commission on your deals</th><td>None</td><td class="hi">None</td><td>None</td><td>If you choose it</td></tr>
+              <tr><th scope="row">Tayo ranking</th><td colspan="4" class="pr-neutral">Always on buyer fit &mdash; never on what you pay</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ── THE LAST ASK, on paint ── -->
+  <section class="end">
+    <div class="wrap">
+      <div class="frame p-tayo">
+        <h2 class="h2">Put your next listing <em>to work.</em></h2>
+        <p class="lede">Free for up to 20 active listings. No setup fee, no lock-in, no commission on your deals.</p>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">Try free</a>
+          <a class="btn btn-ghost" href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <a href="index.html" class="logo" aria-label="Synapse home">
+        <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+        <span class="logo-word">Synapse</span>
+      </a>
+      <p class="foot-tag">Synapse &mdash; by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.</p>
+      <p class="foot-tag">Screens on this page are the Synapse portal and Tayo with real listings; the leads, posts and chat in them are samples.</p>
+    </div>
+    <div class="foot-links">
+      <a href="buyers.html">For customers</a>
+      <a href="#pricing">Pricing</a>
+      <a href="app/signin.html?role=agency&amp;reason=agency&amp;next=agency.html">Sign in</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="#" data-cookie-settings>Cookie settings</a>
+    </div>
+  </div>
+</footer>
+
+<!-- THE STANDING ASK ON A PHONE, as the page had before: one pill that
+     follows you down the page. The bar's Try free steps aside for it there. -->
+<a class="float-cta" href="app/signin.html?role=agency&amp;mode=up&amp;reason=agency&amp;next=agency.html">
+  Try free
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</a>
+
+<script src="home.js"></script>
+<script>
+/* The plan carousel: arrows step one card, dots show where you are, and the
+   arrows grey out at either end. Native scroll does the swiping. */
+(function () {
+  var grid = document.getElementById('prGrid');
+  var prev = document.getElementById('prPrev'), next = document.getElementById('prNext');
+  var dots = document.getElementById('prDots');
+  if (!grid || !prev || !next) return;
+  var cards = [].slice.call(grid.querySelectorAll('.pr-card'));
+  if (dots) dots.innerHTML = cards.map(function () { return '<i></i>'; }).join('');
+  var step = function () { var c = cards[0]; return c ? c.getBoundingClientRect().width + 16 : grid.clientWidth; };
+  function sync() {
+    var max = grid.scrollWidth - grid.clientWidth - 2;
+    prev.disabled = grid.scrollLeft <= 2;
+    next.disabled = grid.scrollLeft >= max;
+    var i = Math.round(grid.scrollLeft / step());
+    if (dots) [].forEach.call(dots.children, function (d, k) { d.classList.toggle('on', k === Math.min(i, cards.length - 1)); });
+  }
+  prev.addEventListener('click', function () { grid.scrollBy({ left: -step(), behavior: 'smooth' }); });
+  next.addEventListener('click', function () { grid.scrollBy({ left: step(), behavior: 'smooth' }); });
+  grid.addEventListener('scroll', function () { window.requestAnimationFrame(sync); }, { passive: true });
+  grid.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); next.click(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev.click(); }
+  });
+  window.addEventListener('resize', sync);
+  sync();
+})();
+</script>
+<script>
+/* ── Pricing: monthly ⇄ annual ────────────────────────────────────────────
+   COMMERCIAL DECISION. ANNUAL_MONTHS_FREE is the offer: pay for (12 − n)
+   months, get 12. One number in one place, so it is Eden's to set. Set it to
+   0 and the toggle disappears rather than advertising a discount that does
+   not exist. Monthly prices live in the cards' data-monthly attributes. */
+(function () {
+  /* The offer closes for NEW agencies on OFFER_CLOSES (Eden, 2026-10-02:
+     "in December we're going to remove the two months free"). It must match
+     platform_settings.annual_offer.joined_before, which is what the checkout
+     actually charges by; agencies that joined before it keep the offer.
+     After the date the toggle disappears rather than advertise it. */
+  var OFFER_CLOSES = new Date('2026-12-01T00:00:00+01:00');
+  var ANNUAL_MONTHS_FREE = new Date() < OFFER_CLOSES ? 2 : 0;
+  var offerNote = document.getElementById('prOffer');
+  if (offerNote) offerNote.hidden = !ANNUAL_MONTHS_FREE;
+  var wraps = [].slice.call(document.querySelectorAll('.pr-toggle'));
+  var prices = [].slice.call(document.querySelectorAll('.pr-price[data-monthly]'));
+  if (!wraps.length || !prices.length) return;
+  if (!ANNUAL_MONTHS_FREE) { wraps.forEach(function (w) { w.hidden = true; }); return; }
+
+  var paidMonths = 12 - ANNUAL_MONTHS_FREE;
+  [].slice.call(document.querySelectorAll('.pr-save')).forEach(function (el) {
+    el.textContent = ANNUAL_MONTHS_FREE + ' months free';
+  });
+  var naira = function (n) { return '₦' + Math.round(n).toLocaleString('en-NG'); };
+
+  function paint(period) {
+    prices.forEach(function (el) {
+      var monthly = Number(el.getAttribute('data-monthly')) || 0;
+      if (period === 'annual') {
+        // The effective monthly rate, with the real yearly total underneath:
+        // an agency budgets per month but pays per year.
+        el.innerHTML = naira((monthly * paidMonths) / 12) + '<span>per month, billed yearly ('
+          + naira(monthly * paidMonths) + ')</span>';
+      } else {
+        el.innerHTML = naira(monthly) + '<span>per month</span>';
+      }
+    });
+    wraps.forEach(function (wrap) {
+      wrap.querySelectorAll('.pr-per').forEach(function (b) {
+        var on = b.dataset.per === period;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+    });
+  }
+  wraps.forEach(function (wrap) {
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-per]');
+      if (b) paint(b.dataset.per);
+    });
+  });
+  paint('monthly');
+})();
+</script>
+
+<!-- ── after an agency deletes itself ───────────────────────────────────
+     app/agency.html (DELETE AGENCY) signs the owner out and sends them
+     here, leaving one line in sessionStorage that says what happened. It is
+     read once and removed, so a reload or a later visit says nothing, and it
+     never rides in the URL where it could be bookmarked or shared. -->
+<style>
+  .goodbye {
+    position: fixed; z-index: 60;
+    top: calc(80px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px;
+    margin-inline: auto; width: fit-content; max-width: 560px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 8px 12px 18px; border-radius: 16px;
+    background: var(--surface); color: var(--ink);
+    font: 500 15px/1.45 var(--f);
+    box-shadow: 0 16px 40px rgba(21, 18, 15, 0.16);
+  }
+  .goodbye button {
+    flex: none; width: 40px; height: 40px; border: none; border-radius: 50%;
+    background: transparent; color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer;
+  }
+  .goodbye button:hover { color: var(--ink); }
+  /* Night: the lighter black on black is the edge; a shadow on #000 is not. */
+  :root[data-theme="dark"] .goodbye { box-shadow: none; }
+</style>
+<script>
+(function () {
+  var g = null;
+  try {
+    g = JSON.parse(sessionStorage.getItem('synapse_goodbye_v1') || 'null');
+    sessionStorage.removeItem('synapse_goodbye_v1');
+  } catch (e) { return; }
+  if (!g || g.kind !== 'agency') return;
+
+  var box = document.createElement('div');
+  box.className = 'goodbye';
+  box.setAttribute('role', 'status');
+  var say = document.createElement('span');
+  /* Says what was done, not what sounds most final: when the login had to
+     stay (another agency, staff), the page does not claim it went. */
+  say.textContent = g.login === 'kept'
+    ? 'Your agency has been deleted. Your Synapse login was kept, because you still use it elsewhere on Synapse.'
+    : 'Your agency and your Synapse account have been deleted.';
+  var x = document.createElement('button');
+  x.type = 'button';
+  x.setAttribute('aria-label', 'Dismiss');
+  x.textContent = '×';
+  x.addEventListener('click', function () { box.remove(); });
+  box.appendChild(say);
+  box.appendChild(x);
+  document.body.appendChild(box);
+  setTimeout(function () { if (box.parentNode) box.remove(); }, 12000);
+})();
+</script>
+</body>
+</html>

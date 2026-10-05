@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<title>Join the Synapse team</title>
+<!--
+  Where a team invitation lands. The invitation email links here with
+  ?type=invite&token_hash=..., and this page verifies the token itself (the
+  same way the password-reset link does), so the link works in any browser,
+  not only the one that asked for it. The person chooses a password, which
+  makes the account, and goes straight to the studio. Their access was granted
+  when the invitation was sent; this page only lets them in.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="theme.js"></script>
+<style>
+  :root { --bg: #F7F4EF; --surface: #FFFFFF; --ink: #15120F; --muted: #6B645C; --line: rgba(21,18,15,0.14); --orange: #FF8A2D; --bad: #B3261E; --ok: #2E7D4F; --on-ink: #FFFFFF; --ink-btn: #15120F; --f: 'Josefin Sans', system-ui, sans-serif; }
+  html[data-theme="dark"] { --bg: #000; --surface: #111214; --ink: #F5F2EE; --muted: #A39B91; --line: transparent; --bad: #F28B82; --ok: #5FC48A; --on-ink: #000; --ink-btn: #FFF; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--bg); color: var(--ink); font: 400 17px/1.5 var(--f); }
+  .card { width: min(440px, 100%); padding: 32px 28px 28px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(21,18,15,0.06), 0 24px 48px -28px rgba(21,18,15,0.3); }
+  html[data-theme="dark"] .card { box-shadow: none; }
+  .brand { font-weight: 600; letter-spacing: .02em; }
+  h1 { margin: 18px 0 8px; font-weight: 600; font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; }
+  p { margin: 0; color: var(--muted); }
+  label { display: block; margin: 18px 0 6px; font-size: 14px; font-weight: 600; color: var(--muted); }
+  input { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; }
+  html[data-theme="dark"] input { background: #000; border-color: rgba(255,255,255,0.28); }
+  :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .btn { margin-top: 22px; width: 100%; min-height: 50px; border-radius: 999px; border: 0; background: var(--ink-btn); color: var(--on-ink); font: 600 17px var(--f); cursor: pointer; }
+  .btn[disabled] { opacity: .55; cursor: default; }
+  .note { margin-top: 14px; font-size: 15px; }
+  .note.bad { color: var(--bad); } .note.ok { color: var(--ok); }
+  a { color: inherit; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand">Synapse</div>
+
+  <section id="working"><h1>Opening your invitation…</h1></section>
+
+  <section id="form" hidden>
+    <h1>Welcome to the Synapse team</h1>
+    <p>Choose a password to create your account. You will use this email and password to sign in.</p>
+    <form id="f" novalidate>
+      <label for="name">Your name</label>
+      <input id="name" type="text" autocomplete="name" maxlength="80">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="new-password" minlength="8">
+      <label for="pw2">Password again</label>
+      <input id="pw2" type="password" autocomplete="new-password" minlength="8">
+      <div id="msg" class="note bad" role="alert" hidden></div>
+      <button class="btn" id="go" type="submit">Create my account</button>
+    </form>
+  </section>
+
+  <section id="bad" hidden>
+    <h1>This invitation can't be opened</h1>
+    <p id="badWhy">The link has expired or was already used. Ask whoever invited you to send a new one.</p>
+    <p class="note">Already made your password? <a href="signin.html?next=synapse.html">Sign in</a>.</p>
+  </section>
+
+  <section id="done" hidden>
+    <h1>You're in</h1>
+    <p id="doneMsg">Taking you to the studio…</p>
+  </section>
+</main>
+
+<script src="auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var type = params.get('type') === 'magiclink' ? 'magiclink' : (params.get('type') === 'invite' ? 'invite' : '');
+  var token = params.get('token_hash') || '';
+
+  function only(id) { ['working', 'form', 'bad', 'done'].forEach(function (s) { $(s).hidden = s !== id; }); }
+  function bad(why) { if (why) $('badWhy').textContent = why; only('bad'); }
+  function say(t) { var m = $('msg'); m.textContent = t; m.hidden = !t; }
+  /* The address no longer carries the token once it has been read. */
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+
+  /* Into the studio if the account is on the team; otherwise say so plainly. */
+  function enter(c) {
+    return c.rpc('synapse_staff_role').then(function (r) {
+      only('done');
+      if (r && r.data) { setTimeout(function () { location.replace('synapse.html'); }, 700); }
+      else { $('doneMsg').textContent = 'Your account is ready, but this email is not on the Synapse team yet. Ask your admin to add it.'; }
+    });
+  }
+
+  SynAuth.client().then(function (c) {
+    if (!token || !type) {
+      /* No invitation in the link: if they are already signed in, send them on. */
+      return SynAuth.ready().then(function (u) { if (u) return enter(c); bad('This page needs the link from your invitation email.'); });
+    }
+    return c.auth.verifyOtp({ token_hash: token, type: type }).then(function (r) {
+      if (r.error || !r.data || !r.data.session) { bad(); return; }
+      only('form');
+      var nm = r.data.user && r.data.user.user_metadata && r.data.user.user_metadata.full_name;
+      if (nm) $('name').value = nm;
+      $('pw').focus();
+    });
+  }).catch(function () { bad('Something went wrong opening the invitation. Try the link again, or ask for a new one.'); });
+
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault(); say('');
+    var pw = $('pw').value;
+    if (pw.length < 8) { say('Use at least 8 characters.'); return; }
+    if (pw !== $('pw2').value) { say('The two passwords are not the same.'); return; }
+    var b = $('go'); b.disabled = true; b.textContent = 'Creating your account…';
+    var name = $('name').value.trim().slice(0, 80);
+    SynAuth.client().then(function (c) {
+      return c.auth.updateUser(Object.assign({ password: pw }, name ? { data: { full_name: name } } : {})).then(function (r) {
+        if (r.error) { throw new Error(r.error.message || 'That password was not accepted.'); }
+        if (name && r.data && r.data.user) { c.from('profiles').update({ full_name: name }).eq('id', r.data.user.id).then(function () {}, function () {}); }
+        return enter(c);
+      });
+    }).catch(function (err) {
+      b.disabled = false; b.textContent = 'Create my account'; say(err && err.message ? err.message : 'That did not work. Try again.');
+    });
+  });
+})();
+</script>
+</body>
+</html>
