@@ -82,6 +82,10 @@
        SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
   <script src="syndication-audit.js"></script>
   <style>
+    .bz-card { margin: 14px 0; padding: 14px 16px; border-radius: 16px; background: #FFF0E2; color: #15120F; font-size: 14.5px; line-height: 1.45; }
+    .bz-bar { display: block; height: 8px; margin-top: 10px; border-radius: 8px; background: rgba(21,18,15,.12); overflow: hidden; }
+    .bz-bar i { display: block; height: 100%; border-radius: 8px; background: #FF8A2D; }
+    html[data-theme="dark"] .bz-card { background: #2A1B0E; color: #F5F2EE; }
     /* Held open until the portal's data has landed (bootDone), then lifted. */
     #syn-load { animation: none !important; }
     #syn-load.go { animation: synLoadOut .45s ease forwards !important; }
@@ -4307,6 +4311,7 @@
                numbers: "0 of 20" is a confident claim about somebody's
                account that happens to be untrue. -->
           <div class="plan-usage" id="planUsage" hidden></div>
+          <div class="bz-card" id="bonanzaCard" hidden></div>
           <a class="bl-link" href="#billing" data-open-billing>Billing, payments and add-ons <span aria-hidden="true">&rarr;</span></a>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
@@ -16072,6 +16077,26 @@
           window.SYN_PAYWALL = r.data;
           if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
         }).catch(() => {});
+      /* The 2026 bonanza: 20 listings this year = a free year next year. */
+      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('bonanza_progress', { p_agency: aid }) : null))
+        .then((r) => {
+          if (!r || r.error || !r.data) return;
+          window.SYN_BONANZA = r.data; paintBonanza();
+          if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
+        }).catch(() => {});
+    }
+    function paintBonanza() {
+      const b = window.SYN_BONANZA, box = document.getElementById('bonanzaCard');
+      if (!box || !b || !b.on) return;
+      const have = Math.min(b.have, b.needed), pct = Math.round(have / b.needed * 100);
+      const until = b.free_until ? new Date(b.free_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+      box.hidden = false;
+      box.innerHTML = b.earned
+        ? '<b>You earned the 2026 bonanza.</b> Synapse is free for you, on the Leader plan, until ' + until + '. Nothing to pay and nothing to do.'
+        : b.open
+          ? '<b>2026 bonanza: upload ' + b.needed + ' listings this year and 2027 is free.</b> You are at ' + have + ' of ' + b.needed + '.'
+            + '<span class="bz-bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>'
+          : 'The 2026 bonanza has closed.';
     }
     setTimeout(loadPaywallInfo, 2500);
     /* Kept fresh (Greptile): a portal left open past the free date must not
@@ -16884,6 +16909,18 @@
           title: 'Synapse is free for you until ' + until,
           sub: 'After that, your plan\u2019s limits apply. See what each plan includes.', group: 'Today' });
       }
+      /* THE BONANZA, in the bell while it is open and not yet earned. */
+      try {
+        const bz = window.SYN_BONANZA;
+        if (bz && bz.on && bz.open && !bz.earned) {
+          out.unshift({ type: 'billing', tag: 'Bonanza', icon: 'card', pane: 'subscription',
+            title: 'Upload ' + bz.needed + ' listings this year, get 2027 free',
+            sub: 'You are at ' + Math.min(bz.have, bz.needed) + ' of ' + bz.needed + '. Ends 31 December 2026.', group: 'Today' });
+        } else if (bz && bz.on && bz.earned) {
+          out.unshift({ type: 'billing', tag: 'Bonanza', icon: 'card', pane: 'subscription',
+            title: 'You earned a free 2027', sub: 'Leader plan, free until the end of 2027.', group: 'Today' });
+        }
+      } catch (e) {}
       /* GETTING STARTED (Eden, 2026-10-07): a new agency is told what to do first, in the bell, without waiting for an
          email. Only for the first month, only once the listings have answered (so it never claims "none" before it
          knows), and it goes the moment there is a listing. */
