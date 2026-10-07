@@ -99,20 +99,37 @@
     if (!el || el.__emoting) return;
     var i; do { i = Math.floor(Math.random() * EMOTES.length); } while (i === lastEmote && EMOTES.length > 1);
     lastEmote = i;
-    var e = EMOTES[i], was = ((el.getAttribute('src') || '').match(/zyn-([a-z]+)\.webp/) || [0, 'happy'])[1];
+    var e = EMOTES[i];
     var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.__emoting = true;
-    var host = el.parentNode, hz = host && host.style.zIndex, ez = el.style.zIndex;
-    if (host) host.style.zIndex = '60';
-    el.style.zIndex = '60';
-    Zyn.set(el, e.s, true);
-    var done = function () {
-      el.__emoting = false; el.style.zIndex = ez; if (host) host.style.zIndex = hz || '';
-      Zyn.set(el, was);
-    };
-    if (calm || !el.animate) { setTimeout(done, 1600); return; }
-    var a = el.animate(e.kf(e.big), { duration: 2800, easing: 'cubic-bezier(.3,.7,.3,1)' });
-    a.onfinish = done; a.oncancel = done;
+    var was = ((el.getAttribute('src') || '').match(/zyn-([a-z]+)\.webp/) || [0, 'happy'])[1];
+    /* Reduced motion: the face changes where he stands, nothing flies. */
+    if (calm || !el.animate || !document.body) {
+      Zyn.set(el, e.s, true);
+      setTimeout(function () { Zyn.set(el, was); el.__emoting = false; }, 1600);
+      return;
+    }
+    /* HE LEAVES THE CHAT TO DO IT. Zooming him in place was clipped by whatever he sat inside (a message row, a
+       scrolling column, a header), so the bigger he got the more of him was cut off. A copy of him flies out above
+       everything, does his thing at the middle of the screen, and flies back; the one in the chat waits invisible. */
+    var r = el.getBoundingClientRect(), vw = window.innerWidth || document.documentElement.clientWidth || 800, vh = window.innerHeight || document.documentElement.clientHeight || 600;
+    var S = Math.max(Math.min(300, vw * 0.72, vh * 0.5), r.width * 1.6), k = S / Math.max(r.width, 1);
+    var tx = vw / 2 - (r.left + r.width / 2), ty = vh * 0.44 - (r.top + r.height / 2);
+    var ghost = document.createElement('img');
+    ghost.src = url(e.s); ghost.alt = ''; ghost.setAttribute('aria-hidden', 'true'); ghost.draggable = false;
+    ghost.className = 'zyn zm-still';
+    ghost.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height +
+      'px;margin:0;z-index:2147483000;pointer-events:none;transform-origin:50% 50%;filter:drop-shadow(0 18px 24px rgba(40,40,60,.35)) saturate(1.2)';
+    document.body.appendChild(ghost);
+    el.style.visibility = 'hidden';
+    var there = 'translate(' + tx + 'px,' + ty + 'px)';
+    var mid = e.kf(k).slice(1, -1);
+    var frames = [{ transform: 'translate(0px,0px) scale(1)', offset: 0 }, { transform: there + ' scale(' + k + ')', offset: 0.2 }];
+    mid.forEach(function (f, n) { frames.push({ transform: there + ' ' + f.transform, offset: 0.2 + 0.6 * ((n + 1) / (mid.length + 1)) }); });
+    frames.push({ transform: there + ' scale(' + k + ')', offset: 0.8 }, { transform: 'translate(0px,0px) scale(1)', offset: 1 });
+    var done = function () { if (ghost.parentNode) ghost.remove(); el.style.visibility = ''; el.__emoting = false; };
+    var an = ghost.animate(frames, { duration: 3400, easing: 'cubic-bezier(.34,1.35,.64,1)' });
+    an.onfinish = done; an.oncancel = done;
   }
 
   window.Zyn = { emote: emote, img: img, set: set, url: url, forReply: forReply, preload: preload, ids: IDS };

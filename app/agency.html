@@ -82,6 +82,9 @@
        SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
   <script src="syndication-audit.js"></script>
   <style>
+    /* Held open until the portal's data has landed (bootDone), then lifted. */
+    #syn-load { animation: none !important; }
+    #syn-load.go { animation: synLoadOut .45s ease forwards !important; }
     /* ── the account menu ── */
     .acct-wrap { position: relative; display: inline-flex; }
     .acct-menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 120; min-width: 248px; padding: 8px; border-radius: 16px;
@@ -5161,7 +5164,7 @@
 
     function loadLeads(){
       if (!window.SynListings || !SynListings.leads) {
-        CRM.loaded = true; CRM.error = 'the data layer did not load'; renderCrm(); return;
+        CRM.loaded = true; CRM.error = 'the data layer did not load'; renderCrm(); bootDone('leads'); return;
       }
       SynListings.leads().then(rows => {
         leads = rows.map(mapLead);
@@ -5172,12 +5175,14 @@
         /* Whichever of the two requests lands second completes the picture:
            the roster supplies the people, the leads supply their workload. */
         if (AG.loaded && AGENTS.length) { tallyAgentLeads(); renderAgents(); }
+        bootDone('leads');
       }).catch(err => {
         CRM.loaded = true;
         CRM.error = (err && err.message) || 'please refresh';
         leads = [];
         renderCrm();
         console.error('leads load failed', err);
+        bootDone('leads');
       });
     }
     loadLeads();
@@ -7876,10 +7881,24 @@
        been deleted, so a property the agency never uploaded reappeared. Empty
        is the correct starting state — hydrateListings() fills it from the
        database, and an agency with no uploads sees none. */
-    let LISTINGS_DATA;
-    try { LISTINGS_DATA = JSON.parse(localStorage.getItem(L_KEY)); } catch (e) {}
-    if (!Array.isArray(LISTINGS_DATA)) LISTINGS_DATA = [];
-    LISTINGS_DATA = LISTINGS_DATA.map(l => deriveLegacy(migrateListing(l)));
+    /* NOT SEEDED FROM localStorage ANY MORE (Eden, 2026-10-07). The saved copy was painted first and the database
+       answer replaced it a moment later, so an agency saw listings from two weeks ago (some since deleted) flash and
+       then "correct themselves". Nothing is shown from a copy now: the portal waits behind its opening screen (see
+       bootDone) until the database has answered, then paints once, with what is true. */
+    let LISTINGS_DATA = [];
+    /* The opening screen (#syn-load) used to lift on a timer, whether or not anything had loaded. Now it lifts when the
+       two things the first screen is made of (the listings and the leads) have answered, or after 7 seconds so a slow
+       connection is never held hostage. Whichever lands, the portal paints once. */
+    function bootDone(part) {
+      /* on window, and a function declaration, so loadLeads() further up can call it before this line has run */
+      const BOOT = window.__BOOT || (window.__BOOT = { listings: false, leads: false, done: false });
+      if (part && part !== 'timeout') BOOT[part] = true;
+      if (BOOT.done || (!(BOOT.listings && BOOT.leads) && part !== 'timeout')) return;
+      BOOT.done = true;
+      const v = document.getElementById('syn-load');
+      if (v) { v.classList.add('go'); setTimeout(() => { v.style.display = 'none'; }, 600); }
+    }
+    setTimeout(() => bootDone('timeout'), 7000);
     /* Every mutation announces itself. Other panes (syndication, marketing,
        proximity) derive their property options from LISTINGS_DATA rather than
        querying separately, so "the properties this agency has listed" has one
@@ -9877,9 +9896,9 @@
       return l;
     }
     function hydrateListings() {
-      if (!window.SynListings) return;
+      if (!window.SynListings) { bootDone('listings'); return; }
       SynListings.available().then((ok) => {
-        if (!ok) return null;
+        if (!ok) { bootDone('listings'); return null; }
         return SynListings.list().then((rows) => {
           dbBacked = true;
           LISTINGS_DATA = rows.map(fromDbRow);
@@ -9891,11 +9910,14 @@
              has to be repainted here, not just the grid that triggered it. */
           if (typeof renderOverview === 'function') renderOverview();
           announceListings();
+          bootDone('listings');
         });
-      }).catch((e) => { console.warn('listings: staying on local data —', (e && e.message) || e); });
+      }).catch((e) => { console.warn('listings: could not load —', (e && e.message) || e); bootDone('listings'); });
     }
-    if (document.readyState === 'complete') hydrateListings();
-    else window.addEventListener('load', hydrateListings);
+    /* Start as soon as the page is parsed, not at window load: load waits for every image and font, which is time the
+       agency spends looking at the opening screen for nothing. */
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hydrateListings);
+    else hydrateListings();
 
     // ── marketing — findings first, then the posts that produced them ──
     // Campaigns own their creatives; each creative is measured on its own
@@ -16854,6 +16876,18 @@
           title: 'Synapse is free for you until ' + until,
           sub: 'After that, your plan\u2019s limits apply. See what each plan includes.', group: 'Today' });
       }
+      /* GETTING STARTED (Eden, 2026-10-07): a new agency is told what to do first, in the bell, without waiting for an
+         email. Only for the first month, only once the listings have answered (so it never claims "none" before it
+         knows), and it goes the moment there is a listing. */
+      try {
+        const me = window.SynAuth && SynAuth.user && SynAuth.user();
+        const young = me && me.created_at && (Date.now() - new Date(me.created_at).getTime()) < 30 * 864e5;
+        if (young && dbBacked && !L.length) {
+          out.unshift({ type: 'setup', tag: 'Getting started', icon: 'plus', pane: 'listings',
+            title: 'Add your first listing',
+            sub: 'About three minutes: photos, price and a pin on the map. Tayo starts matching it to buyers once it is live.', group: 'Getting started' });
+        }
+      } catch (e) { /* the bell is never worth an error */ }
       NOTI = out.filter(n => !notiHandled[notiKey(n)]);
     }
 

@@ -146,3 +146,83 @@
   window.addEventListener('load', layout);   // fonts and images settle widths
   layout();
 })();
+
+
+/* ── The vertical carousel (index.html #vcar) ───────────────────────────────
+   On a wide screen with motion allowed the section holds still (.vc-pinned,
+   CSS sticky) and the page's scroll position is turned into WHICH idea is
+   in the middle of the reel; the reel then springs to it. Everywhere else it
+   is a plain list, and tapping an idea shows its picture. */
+(function () {
+  var sec = document.getElementById('vcar');
+  if (!sec) return;
+  var pin = document.getElementById('vcPin'), stage = document.getElementById('vcStage');
+  var track = document.getElementById('vcTrack'), reel = document.getElementById('vcReel');
+  var items = [].slice.call(track.querySelectorAll('.vc-item'));
+  var shots = [].slice.call(sec.querySelectorAll('.vc-shot'));
+  var ticks = [].slice.call(sec.querySelectorAll('.vc-ticks i'));
+  var wide = window.matchMedia('(min-width: 961px)');
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var pinned = false, cur = -1, step = 0, ticking = false;
+
+  function show(i) {
+    i = Math.max(0, Math.min(items.length - 1, i));
+    if (i === cur) return;
+    cur = i;
+    items.forEach(function (it, n) { it.classList.toggle('on', n === i); it.setAttribute('aria-current', n === i ? 'true' : 'false'); });
+    shots.forEach(function (s, n) { s.classList.toggle('on', n === i); });
+    ticks.forEach(function (t, n) { t.classList.toggle('on', n === i); });
+    if (pinned) {
+      /* Put the chosen idea in the middle of the window. */
+      var h = items[0].offsetHeight;
+      var mid = (reel.clientHeight - h) / 2;
+      track.style.transform = 'translate3d(0,' + (mid - i * h).toFixed(1) + 'px,0)';
+    } else { track.style.transform = ''; }
+  }
+
+  function onScroll() {
+    if (!pinned) return;
+    var r = pin.getBoundingClientRect();
+    var span = pin.offsetHeight - stage.offsetHeight;
+    var top = parseFloat(window.getComputedStyle(stage).top) || 0;
+    var p = span > 0 ? Math.min(1, Math.max(0, (top - r.top) / span)) : 0;
+    show(Math.min(items.length - 1, Math.floor(p * items.length)));
+  }
+
+  function layout() {
+    pinned = wide.matches && !still.matches;
+    sec.classList.toggle('vc-pinned', pinned);
+    if (!pinned) { pin.style.height = ''; var c = cur; cur = -1; show(c < 0 ? 0 : c); return; }
+    /* One screen of scrolling per idea. */
+    step = Math.round(window.innerHeight * 0.55);
+    pin.style.height = (stage.offsetHeight + step * (items.length - 1) + step * 0.4) + 'px';
+    var c2 = cur; cur = -1; show(c2 < 0 ? 0 : c2);
+    onScroll();
+  }
+
+  /* Pick an idea: scroll to it when the section is held, else just show it. */
+  function pick(i) {
+    if (!pinned) { show(i); return; }
+    var top = pin.getBoundingClientRect().top + window.pageYOffset;
+    var stageTop = parseFloat(window.getComputedStyle(stage).top) || 0;
+    window.scrollTo({ top: top - stageTop + step * i + step * 0.2, behavior: still.matches ? 'auto' : 'smooth' });
+  }
+  items.forEach(function (it, n) {
+    it.addEventListener('click', function () { pick(n); });
+    it.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(n); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); var nx = items[Math.min(items.length - 1, n + 1)]; nx.focus(); pick(Math.min(items.length - 1, n + 1)); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); var pv = items[Math.max(0, n - 1)]; pv.focus(); pick(Math.max(0, n - 1)); }
+    });
+  });
+
+  window.addEventListener('scroll', function () {
+    if (ticking) return; ticking = true;
+    window.requestAnimationFrame(function () { ticking = false; onScroll(); });
+  }, { passive: true });
+  var rt;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(layout, 120); });
+  [wide, still].forEach(function (m) { if (m.addEventListener) m.addEventListener('change', layout); else if (m.addListener) m.addListener(layout); });
+  window.addEventListener('load', layout);
+  layout();
+})();
