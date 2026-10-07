@@ -205,6 +205,9 @@
   .tile { display: grid; gap: 10px; justify-items: start; padding: 16px; border: 1.5px solid var(--line); border-radius: 18px; background: var(--surface); cursor: pointer; text-align: left; font-weight: 600; }
   .tile:hover { border-color: var(--orange); background: var(--orange-soft); }
   .tile small { color: var(--muted); font-weight: 400; font-size: 13px; line-height: 1.35; }
+  .wz-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--orange); margin-right: 4px; animation: wzPulse 1.2s ease-in-out infinite; }
+  @keyframes wzPulse { 0%,100% { transform: scale(.7); opacity: .55; } 50% { transform: scale(1.15); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wz-dot { animation: none; } }
   .callout { background: var(--orange-soft); border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.45; }
   .gstep { display: flex; gap: 14px; align-items: flex-start; }
   .gstep .dot { margin-top: 2px; }
@@ -367,8 +370,23 @@
             <div><label class="f">5 · When?</label>
               <div class="row"><button class="pick plain" id="whenNow" type="button" aria-pressed="true">Now</button>
               <button class="pick plain" id="whenLater" type="button" aria-pressed="false">Pick a time</button>
-              <div id="atWrap" hidden style="flex:1 1 220px"><input type="datetime-local" id="at" aria-label="Date and time (your device's clock)"></div></div></div>
-            <div class="row"><button class="btn primary big" id="send" type="button">Post</button></div>
+              <button class="pick plain" id="whenMany" type="button" aria-pressed="false">Several times</button>
+              <div id="atWrap" hidden style="flex:1 1 220px"><input type="datetime-local" id="at" aria-label="Date and time (your device's clock)"></div></div>
+              <div id="manyWrap" hidden style="margin-top:12px">
+                <p class="muted small" style="margin-bottom:8px">The same post goes out at every time you add, on every account you ticked.</p>
+                <div id="manyList" class="stack" style="margin-bottom:10px"></div>
+                <div class="row"><button class="btn sm" id="addTime" type="button">+ Add a time</button><button class="btn sm" id="repeatBtn" type="button">Repeat daily or weekly…</button></div>
+                <div id="repeatBox" class="callout" hidden style="margin-top:12px">
+                  <div class="row">
+                    <div><label class="f" for="rpStart">First time</label><input type="datetime-local" id="rpStart"></div>
+                    <div><label class="f" for="rpEvery">Every</label><select id="rpEvery"><option value="1">day</option><option value="2">2 days</option><option value="7">week</option></select></div>
+                    <div><label class="f" for="rpCount">How many times</label><input type="number" id="rpCount" min="2" max="30" value="7" style="width:90px"></div>
+                    <div style="align-self:flex-end"><button class="btn sm primary" id="rpFill" type="button">Fill the list</button></div>
+                  </div>
+                </div>
+                <p class="small" id="manySummary" style="margin-top:10px"></p>
+              </div></div>
+            <div class="row"><button class="btn primary big" id="send" type="button">Post</button><button class="btn big" id="sendMore" type="button" hidden>Schedule and write another</button></div>
           </div>
         </div>
         <div class="preview stack">
@@ -456,8 +474,8 @@
           <p>Go to <b>Channels</b> and press the orange <b>Add a channel</b>. A guide walks you through three steps:</p>
           <ol class="steps-l">
             <li><b>Pick the network.</b> Instagram, Facebook, TikTok, LinkedIn or X.</li>
-            <li><b>Make the account</b> if it does not exist (the guide links to the sign-up page and gives the tip for that network), then <b>connect it in TryPost</b>: sign in there, open <b>Accounts</b>, press <b>Connect</b> and approve. TryPost is the tool that holds the permission to post.</li>
-            <li><b>Come back</b> and press <b>I've connected it</b>. Choose your account, say what it is for (our own posts, autopilot, agency posts) and add it.</li>
+            <li><b>Connect it in TryPost</b> (the guide opens it in a new tab and lists the exact buttons for that network). <b>Check the workspace first:</b> the guide shows which accounts Synapse already sees, so if TryPost shows different ones you are in another workspace, and the account would never appear here. Switch workspace from the name at the top of TryPost's left menu.</li>
+            <li><b>Keep the guide open.</b> It checks every few seconds and moves on by itself the moment your account appears. Then choose it, say what it is for (our own posts, autopilot, agency posts) and add it. No account yet? The guide has a link to create one.</li>
           </ol>
           <p class="muted small">You can add as many accounts as you like, including several on the same network, one per city for example.</p></div>
       </article>
@@ -493,7 +511,9 @@
             <li><b>Say what it is about</b> and press <b>Write captions</b>. Three captions appear in Synapse's voice. Tap one, then edit it freely.</li>
             <li><b>Add pictures</b> of your own with the <b>+</b> box (JPG, PNG or WEBP, up to 8 MB each). For <b>YouTube</b>, add one vertical video instead (MP4 or MOV, up to 3 minutes and 50 MB) and tick only YouTube.</li>
             <li><b>Tap the accounts</b> that should get it, then choose <b>Now</b> or <b>Pick a time</b>.</li>
-            <li>Press <b>Post</b>. The preview on the right shows roughly how it will look.</li>
+            <li>Choose <b>Now</b>, <b>Pick a time</b>, or <b>Several times</b>. With several times you add as many dates as you like (or press <b>Repeat daily or weekly</b> to fill them in), and the same post goes out at each, on every account you ticked.</li>
+            <li>Press <b>Post</b> (or <b>Schedule</b>). To line up a week of different posts, press <b>Schedule and write another</b>: it keeps your accounts and times and clears only the post. Scheduled posts show below by day, and <b>Stop all in one batch</b> cancels a whole batch.</li>
+            <li>The preview on the right shows roughly how it will look.</li>
           </ol></div>
       </article>
 
@@ -591,6 +611,15 @@
     linkedin: { url: 'https://www.linkedin.com/company/setup/new/', tip: 'Create a Company Page. Posts go to the Page, not a person.', what: 'company posts' },
     x: { url: 'https://x.com/i/flow/signup', tip: 'Use an email Synapse owns. X keeps posts to about 280 characters.', what: 'short posts' },
     youtube: { url: 'https://www.youtube.com/create_channel', tip: 'Create a channel under a Google account Synapse owns. YouTube here takes vertical videos up to 3 minutes (MP4 or MOV), posted from Create. It cannot post homes by itself or share agencies\u2019 posts.', what: 'videos (Shorts)' }
+  };
+  /* What to click inside TryPost, per network. Written from TryPost's own guides: the names of the buttons are theirs. */
+  var STEPS = {
+    instagram: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>Instagram</b> card press <b>Connect</b>.', 'Choose <b>Instagram (Facebook Business)</b> if it is a Business or Creator account linked to a Facebook Page (the usual case). Choose plain <b>Instagram</b> only for a personal account.', 'Approve it on Facebook, and pick the Facebook Page if it asks.'],
+    facebook: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>Facebook</b> card press <b>Connect</b>.', 'Approve it on Facebook, then <b>pick the Page</b> (not your personal profile) when it asks.'],
+    tiktok: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>TikTok</b> card press <b>Connect</b>.', 'Log in to the TikTok account and approve.'],
+    linkedin: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>LinkedIn</b> card press <b>Connect</b> and approve.', 'On the next screen <b>choose the company page</b>, not your personal profile.'],
+    x: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>X</b> card press <b>Connect</b>.', 'Approve it on X, signed in as the account you want.'],
+    youtube: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>YouTube</b> card press <b>Connect</b>.', 'Choose the <b>Google account that owns the channel</b>: the channel is decided by which account you pick. Then approve.']
   };
   var VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
   var S = { role: null, overview: null, picked: {}, media: [], when: 'now', loaded: {}, tab: 'home', posts: null, activity: null, name: '', link: '' };
@@ -883,11 +912,37 @@
      and the page says which one you are on. */
   var W = { step: 1, platform: null, accounts: null, chosen: null, purpose: { own: true, auto: false, mirror: false } };
   function openWizard() { W = { step: 1, platform: null, accounts: null, chosen: null, purpose: { own: true, auto: false, mirror: false } }; $('veil').hidden = false; document.body.style.overflow = 'hidden'; drawWizard(); }
-  function closeWizard() { $('veil').hidden = true; document.body.style.overflow = ''; }
+  var watchT = null;
+  function stopWatch() { if (watchT) { clearInterval(watchT); watchT = null; } }
+  function closeWizard() { stopWatch(); $('veil').hidden = true; document.body.style.overflow = ''; }
+  /* Step 2: ask TryPost every few seconds. The first answer also fills in what the workspace already holds, so the
+     person can tell whether they are in the right one; the first new account of this network moves things on. */
+  function seenLine() {
+    var el = $('wzSeen'); if (!el) return;
+    var a = W.accounts || [];
+    el.innerHTML = a.length
+      ? 'The workspace Synapse reads already holds: <b>' + a.slice(0, 6).map(function (x) { return esc(x.name || x.username || PL[x.platform]) + ' (' + esc(PL[x.platform] || x.platform) + ')'; }).join(', ') + (a.length > 6 ? ' and ' + (a.length - 6) + ' more' : '') + '</b>. If TryPost shows different accounts, you are in another workspace: switch.'
+      : 'The workspace Synapse reads has no accounts yet. Whatever you connect first will appear here.';
+  }
+  function startWatch() {
+    stopWatch(); var n = 0;
+    var tick = function () {
+      if ($('veil').hidden || W.step !== 2) { stopWatch(); return; }
+      if (++n > 150) { stopWatch(); var w = $('wzWait'); if (w) w.textContent = 'Still nothing. Press \u201cI\u2019ve connected it, check now\u201d when you are done.'; return; }
+      api('trypost_accounts').then(function (d) {
+        if (W.step !== 2) return;
+        W.accounts = d.accounts || []; seenLine();
+        var fresh = W.accounts.filter(function (a) { return a.platform === W.platform && !a.added && a.supported && (!a.status || a.status === 'connected'); });
+        if (fresh.length) { stopWatch(); toast('Found your ' + PL[W.platform] + ' account.'); W.step = 3; drawWizard(); }
+      }).catch(function () { /* the next tick tries again */ });
+    };
+    tick(); watchT = setInterval(tick, 5000);
+  }
   $('veil').addEventListener('click', function (e) { if (e.target === $('veil')) closeWizard(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('veil').hidden) closeWizard(); });
   function drawWizard() {
     var bars = $('wzProg').children; for (var i = 0; i < bars.length; i++) bars[i].className = i < W.step ? 'on' : '';
+    stopWatch();
     var h = '';
     if (W.step === 1) {
       h = '<h2 class="h" id="wzTitle" style="font-size:25px">Which network?</h2><p class="lede">Pick the one you want to add. Already have the account? You will connect it in step 2.</p>'
@@ -897,16 +952,20 @@
         + '<div class="row" style="margin-top:20px"><span class="spacer"></span><button class="btn" type="button" data-wzclose>Cancel</button></div>';
     } else if (W.step === 2) {
       var m = MAKE[W.platform];
-      h = '<div class="row" style="gap:14px">' + badge(W.platform, 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Connect ' + esc(PL[W.platform]) + '</h2><p class="muted small">Two quick things, then come back here.</p></div></div>'
-        + '<div class="stack" style="margin-top:20px">'
-        + '<div class="gstep"><span class="dot">1</span><div class="grow"><b>Make the account</b> <span class="muted">(skip if it already exists)</span>'
-        + '<div class="callout" style="margin:8px 0 10px">' + esc(m.tip) + '</div>'
-        + '<a class="btn sm" href="' + esc(m.url) + '" target="_blank" rel="noopener">Create a ' + esc(PL[W.platform]) + ' account ↗</a></div></div>'
-        + '<div class="gstep"><span class="dot">2</span><div class="grow"><b>Connect it in TryPost</b><p class="muted small" style="margin:4px 0 10px">TryPost is the tool that holds the permission to post. Sign in, choose <b>Accounts</b>, press <b>Connect</b> next to ' + esc(PL[W.platform]) + ', and approve it.</p>'
-        + '<a class="btn sm primary" href="https://app.trypost.it" target="_blank" rel="noopener">Open TryPost ↗</a></div></div>'
-        + '<div class="gstep"><span class="dot">3</span><div class="grow"><b>Come back and press the button</b><p class="muted small" style="margin:4px 0 10px">Your account will be waiting in the list.</p></div></div>'
+      h = '<div class="row" style="gap:14px">' + badge(W.platform, 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Connect ' + esc(PL[W.platform]) + '</h2><p class="muted small">You connect it inside TryPost. Keep this window open: it notices by itself when you are done.</p></div></div>'
+        + '<div class="stack" style="margin-top:18px">'
+        + '<div class="gstep"><span class="dot">1</span><div class="grow"><b>Open TryPost</b>'
+        + '<p class="muted small" style="margin:4px 0 8px">It opens in a new tab. Sign in if it asks. <b>Check the workspace first:</b> accounts live inside a workspace, and Synapse reads the one shown below. Click the workspace name at the top of TryPost\u2019s left menu and make sure it is the one that holds these accounts.</p>'
+        + '<div class="callout" id="wzSeen" style="margin-bottom:10px">Looking at what is already there\u2026</div>'
+        + '<a class="btn sm primary" href="https://app.trypost.it" target="_blank" rel="noopener">Open TryPost \u2197</a></div></div>'
+        + '<div class="gstep"><span class="dot">2</span><div class="grow"><b>Connect your ' + esc(PL[W.platform]) + ' account</b>'
+        + '<ol class="steps-l" style="margin:8px 0 0">' + (STEPS[W.platform] || []).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>'
+        + '<p class="muted small" style="margin-top:8px">Connected the wrong one? Sign out of ' + esc(PL[W.platform]) + ' in your browser first, then connect again.</p></div></div>'
+        + '<div class="gstep"><span class="dot">3</span><div class="grow"><b>Wait here</b><p class="muted small" style="margin:4px 0 0" id="wzWait"><span class="wz-dot"></span> Waiting for your ' + esc(PL[W.platform]) + ' account to appear\u2026 this page checks every few seconds.</p></div></div>'
+        + '<details class="pace"><summary>You do not have a ' + esc(PL[W.platform]) + ' account yet?</summary><div class="callout" style="margin:8px 0 10px">' + esc(m.tip) + '</div>'
+        + '<a class="btn sm" href="' + esc(m.url) + '" target="_blank" rel="noopener">Create a ' + esc(PL[W.platform]) + ' account \u2197</a></details>'
         + '</div>'
-        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><span class="spacer"></span><button class="btn orange big" type="button" id="wzFind">I’ve connected it</button></div>';
+        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><span class="spacer"></span><button class="btn orange big" type="button" id="wzFind">I\u2019ve connected it, check now</button></div>';
     } else {
       var list = (W.accounts || []).filter(function (a) { return a.platform === W.platform; });
       h = '<h2 class="h" id="wzTitle" style="font-size:25px">Choose the account</h2>'
@@ -917,7 +976,7 @@
             + '<div class="grow"><b>' + esc(x.name || x.username || x.id) + '</b><div class="muted small">' + (x.username ? '@' + esc(String(x.username).replace(/^@/, '')) : esc(PL[x.platform])) + '</div></div>'
             + (x.added ? '<span class="pill ok">Already added</span>' : x.status && x.status !== 'connected' ? '<span class="pill bad">Reconnect in TryPost</span>'
               : can ? '<button class="btn sm ' + (on ? 'orange' : '') + '" type="button" data-pick="' + esc(x.id) + '" data-name="' + esc(x.name || x.username) + '">' + (on ? 'Chosen ✓' : 'Choose') + '</button>' : '<span class="pill">Not supported yet</span>') + '</div>';
-        }).join('') : '<div class="callout">TryPost does not show a ' + esc(PL[W.platform]) + ' account yet. Connect it there, then press <b>Look again</b>.</div>') + '</div>'
+        }).join('') : '<div class="callout"><b>TryPost does not show a ' + esc(PL[W.platform]) + ' account yet.</b> The usual reasons, most likely first:<ol class="steps-l" style="margin:8px 0 0"><li>It was connected in a <b>different TryPost workspace</b>. Click the workspace name at the top of TryPost\u2019s left menu and switch to the one that holds Synapse\u2019s other accounts, then connect it there.</li><li>The connection was not finished. Go back to TryPost and approve it all the way to the end.</li>' + (W.platform === 'instagram' ? '<li>For a Business or Creator account, use <b>Instagram (Facebook Business)</b>, not plain Instagram.</li>' : '') + '</ol><p style="margin-top:8px">Then press <b>Look again</b>.</p></div>') + '</div>'
         + (W.chosen ? '<div class="stack" style="margin-top:18px"><b>What is it for?</b>'
           + '<div class="opt"><div class="grow"><b>Our own posts</b><small>Announcements and campaigns you write in Create.</small></div>' + sw(W.purpose.own, 'data-pur="own"', 'Our own posts') + '</div>'
           + (W.platform === 'youtube' ? '' : '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: the newest live listings, on a schedule.</small></div>' + sw(W.purpose.auto, 'data-pur="auto"', 'Autopilot') + '</div>'
@@ -928,6 +987,7 @@
     }
     $('wz').innerHTML = h;
     var f = $('wz').querySelector('button, a'); if (f && W.step === 1) f.focus();
+    if (W.step === 2) { seenLine(); startWatch(); }
   }
   $('wz').addEventListener('click', function (e) {
     var t = e.target;
@@ -1093,13 +1153,57 @@
       });
   });
 
+  /* ── when: now, one time, or several ─────────────────────────────── */
+  S.times = [''];
   function setWhen(w) {
-    S.when = w; $('whenNow').setAttribute('aria-pressed', String(w === 'now')); $('whenLater').setAttribute('aria-pressed', String(w === 'later'));
-    $('atWrap').hidden = w !== 'later';
+    S.when = w;
+    ['now', 'later', 'many'].forEach(function (k) { $('when' + k.charAt(0).toUpperCase() + k.slice(1)).setAttribute('aria-pressed', String(w === k)); });
+    $('atWrap').hidden = w !== 'later'; $('manyWrap').hidden = w !== 'many';
+    $('sendMore').hidden = w === 'now';
+    $('send').textContent = w === 'now' ? 'Post' : w === 'many' ? 'Schedule all' : 'Schedule';
+    if (w === 'many') renderTimes();
   }
+  /* A datetime-local value in this device's clock, from a Date. */
+  function localStamp(d) {
+    function z(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes());
+  }
+  function renderTimes() {
+    if (!S.times.length) S.times = [''];
+    $('manyList').innerHTML = S.times.map(function (t, i) {
+      return '<div class="row" style="gap:8px"><span class="dot" style="width:26px;height:26px;font-size:12px">' + (i + 1) + '</span>'
+        + '<input type="datetime-local" class="grow" data-ti="' + i + '" value="' + esc(t) + '" aria-label="Time ' + (i + 1) + '">'
+        + (S.times.length > 1 ? '<button class="btn sm" type="button" data-tdel="' + i + '" aria-label="Remove time ' + (i + 1) + '">×</button>' : '') + '</div>';
+    }).join('');
+    var n = S.times.filter(Boolean).length, a = Object.keys(S.picked).filter(function (k) { return S.picked[k]; }).length;
+    $('manySummary').innerHTML = n ? '<b>' + n * Math.max(a, 1) + '</b> <span class="muted">post' + (n * Math.max(a, 1) === 1 ? '' : 's') + ' will be scheduled (' + n + ' time' + (n === 1 ? '' : 's') + (a ? ' \u00d7 ' + a + ' account' + (a === 1 ? '' : 's') : '') + ').</span>' : '<span class="muted">Add at least one time.</span>';
+  }
+  $('manyList').addEventListener('input', function (e) { var i = e.target.closest('[data-ti]'); if (i) { S.times[Number(i.dataset.ti)] = i.value; renderTimes(); var again = $('manyList').querySelector('[data-ti="' + i.dataset.ti + '"]'); if (again) again.focus(); } });
+  $('manyList').addEventListener('click', function (e) { var d = e.target.closest('[data-tdel]'); if (d) { S.times.splice(Number(d.dataset.tdel), 1); renderTimes(); } });
+  $('addTime').addEventListener('click', function () {
+    /* The new row starts a day after the last one, at the same hour: the usual next thing. */
+    var last = S.times.filter(Boolean).slice(-1)[0], nxt = '';
+    if (last) { var d = new Date(last); d.setDate(d.getDate() + 1); nxt = localStamp(d); }
+    if (S.times.length === 1 && !S.times[0]) S.times[0] = nxt; else S.times.push(nxt);
+    renderTimes();
+  });
+  $('repeatBtn').addEventListener('click', function () {
+    $('repeatBox').hidden = !$('repeatBox').hidden;
+    if (!$('repeatBox').hidden && !$('rpStart').value) { var d = new Date(Date.now() + 3600e3); d.setMinutes(0, 0, 0); $('rpStart').value = localStamp(d); }
+  });
+  $('rpFill').addEventListener('click', function () {
+    var start = $('rpStart').value; if (!start) { toast('Choose the first time.'); return; }
+    var every = Number($('rpEvery').value), count = Math.max(2, Math.min(30, Math.round(Number($('rpCount').value) || 7))), out = [], d = new Date(start);
+    for (var i = 0; i < count; i++) { out.push(localStamp(d)); d = new Date(d.getTime()); d.setDate(d.getDate() + every); }
+    S.times = out; $('repeatBox').hidden = true; renderTimes();
+  });
   $('whenNow').addEventListener('click', function () { setWhen('now'); });
   $('whenLater').addEventListener('click', function () { setWhen('later'); });
-  $('send').addEventListener('click', function () {
+  $('whenMany').addEventListener('click', function () { setWhen('many'); });
+
+  /* Send. "Schedule and write another" keeps the accounts and the times, and clears only the post itself, so a week of
+     posts can be set up one after another without choosing the same things again. */
+  function submit(another) {
     if (S.uploading) { toast('Wait for the pictures to finish uploading.'); return; }
     var avail = {}; postable().forEach(function (c) { avail[c.id] = true; });
     var ids = Object.keys(S.picked).filter(function (k) { return S.picked[k] && avail[k]; });
@@ -1113,14 +1217,25 @@
     if (S.when === 'later') {
       if (!$('at').value) { toast('Pick a date and time, or choose Now.'); return; }
       body.scheduled_at = new Date($('at').value).toISOString();
+    } else if (S.when === 'many') {
+      var ts = S.times.filter(Boolean).map(function (t) { return new Date(t); });
+      if (!ts.length) { toast('Add at least one time.'); return; }
+      if (ts.some(function (d) { return d.getTime() < Date.now() - 60000; })) { toast('One of the times has already passed. Change it, or remove it.'); return; }
+      body.scheduled_times = ts.map(function (d) { return d.toISOString(); });
     }
-    S.sending = true; var b = $('send'); b.disabled = true; b.textContent = 'Sending…';
+    S.sending = true; var b = another ? $('sendMore') : $('send'), label = b.textContent; b.disabled = true; b.textContent = 'Sending…';
     api('compose', body).then(function (d) {
-      toast(S.when === 'later' ? 'Scheduled for ' + when(d.at) + '.' : 'On its way.');
-      $('caption').value = ''; S.media = []; S.link = ''; $('brief').value = ''; renderThumbs(); S.picked = {}; renderPicks(); $('suggs').innerHTML = ''; renderPreview();
+      toast(S.when === 'many' ? 'Scheduled ' + d.count + ' post' + (d.count === 1 ? '' : 's') + '.' : S.when === 'later' ? 'Scheduled for ' + when(d.at) + '.' : 'On its way.');
+      $('caption').value = ''; S.media = []; S.link = ''; $('brief').value = ''; renderThumbs(); $('suggs').innerHTML = '';
+      if (!another) { S.picked = {}; if (S.when === 'many') { S.times = ['']; renderTimes(); } }
+      else { $('at').value = ''; if ($('caption')) $('caption').focus(); }
+      renderPicks(); renderPreview();
       return loadPosts();
-    }).catch(function (e) { toast(e.message); }).then(function () { S.sending = false; b.disabled = !!S.uploading; b.textContent = 'Post'; });
-  });
+    }).catch(function (e) { toast(e.message); }).then(function () { S.sending = false; b.disabled = !!S.uploading; b.textContent = label; });
+  }
+  $('send').addEventListener('click', function () { submit(false); });
+  $('sendMore').addEventListener('click', function () { submit(true); });
+  $('picks').addEventListener('click', function () { if (S.when === 'many') renderTimes(); });
 
   function statusPill(s) {
     if (s === 'live') return '<span class="pill ok">Live</span>';
@@ -1130,21 +1245,53 @@
     if (s === 'publishing') return '<span class="pill warn">Sending</span>';
     return '<span class="pill hot">Scheduled</span>';
   }
+  function dayLabel(ts) {
+    try {
+      var d = new Date(ts), now = new Date();
+      var key = function (x) { return x.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos' }); };
+      var tom = new Date(now.getTime() + 86400e3);
+      if (key(d) === key(now)) return 'Today';
+      if (key(d) === key(tom)) return 'Tomorrow';
+      return d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'short' });
+    } catch (e) { return ''; }
+  }
   function loadPosts() {
     return api('posts').then(function (d) {
       var p = d.posts || []; S.posts = p;
-      $('postList').innerHTML = p.length ? p.map(function (x) {
+      /* Waiting posts first, soonest first, grouped by day; then what has gone out, newest first. */
+      var waiting = p.filter(function (x) { return x.status === 'scheduled'; }).sort(function (a, b) { return new Date(a.scheduled_at) - new Date(b.scheduled_at); });
+      var done = p.filter(function (x) { return x.status !== 'scheduled'; });
+      var batches = {}; waiting.forEach(function (x) { batches[x.group_id] = (batches[x.group_id] || 0) + 1; });
+      var row = function (x) {
         var ch = x.channel || {};
         return '<div class="item"><div class="item-top">' + badge(x.platform, 'sm') + '<b>' + esc(ch.label || ch.handle || PL[x.platform]) + '</b>'
           + statusPill(x.status) + '<span class="muted small">' + esc(when(x.published_at || x.scheduled_at)) + '</span><span class="spacer"></span>'
           + (x.status === 'scheduled' ? '<button class="btn sm" data-cancel="' + esc(x.id) + '" type="button">Stop</button>' : '') + '</div>'
           + '<div class="item-text">' + esc(String(x.caption || '').slice(0, 220)) + '</div>'
           + (x.failure_reason ? '<div class="small" style="color:var(--bad)">' + esc(x.failure_reason) + '</div>' : '') + '</div>';
-      }).join('') : '<div class="empty">Nothing yet. Your first post will show here.</div>';
+      };
+      var html = '', lastDay = '', shownBatch = {};
+      waiting.forEach(function (x) {
+        var dl = dayLabel(x.scheduled_at);
+        if (dl !== lastDay) { html += '<div class="k" style="margin:18px 0 2px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)">' + esc(dl) + '</div>'; lastDay = dl; }
+        html += row(x);
+        if (batches[x.group_id] > 1 && !shownBatch[x.group_id]) shownBatch[x.group_id] = 1;
+      });
+      var big = Object.keys(batches).filter(function (g) { return batches[g] > 1; });
+      if (big.length) html = '<div class="row" style="margin-bottom:6px">' + big.map(function (g) { return '<button class="btn sm danger" type="button" data-stopbatch="' + esc(g) + '">Stop all ' + batches[g] + ' in one batch</button>'; }).join('') + '</div>' + html;
+      if (done.length) html += '<div class="k" style="margin:22px 0 2px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)">Recent</div>' + done.map(row).join('');
+      $('postList').innerHTML = html || '<div class="empty">Nothing yet. Your first post will show here.</div>';
       renderHome();
     }).catch(function (e) { $('postList').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
   }
   $('postList').addEventListener('click', function (e) {
+    var sb = e.target.closest('[data-stopbatch]');
+    if (sb) {
+      if (!window.confirm('Stop every post in this batch that has not gone out yet?')) return;
+      sb.disabled = true;
+      api('post_cancel', { group_id: sb.dataset.stopbatch }).then(function (r) { toast('Stopped ' + (r.stopped || 'them') + '.'); loadPosts(); }).catch(function (er) { toast(er.message); loadPosts(); });
+      return;
+    }
     var b = e.target.closest('[data-cancel]'); if (!b) return; b.disabled = true;
     api('post_cancel', { id: b.dataset.cancel }).then(function () { toast('Stopped.'); loadPosts(); }).catch(function (er) { toast(er.message); loadPosts(); });
   });
