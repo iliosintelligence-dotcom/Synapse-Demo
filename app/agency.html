@@ -85,6 +85,14 @@
     /* Held open until the portal's data has landed (bootDone), then lifted. */
     #syn-load { animation: none !important; }
     #syn-load.go { animation: synLoadOut .45s ease forwards !important; }
+    /* MAPS STAY BEHIND (Eden, 2026-10-07). Leaflet stacks its own panes and controls at z-index 400 to 1000, and with
+       nothing around the map to contain them they climbed above the listing form's dropdowns, which sat hidden behind
+       the pin map. Every map is its own stacking context now, at the bottom, so nothing inside it can outrank anything
+       outside it; and the form's menus are lifted above it for good measure. */
+    .leaflet-container { isolation: isolate; z-index: 0; position: relative; }
+    #lfPinMap { position: relative; z-index: 0; isolation: isolate; }
+    .leaflet-pane, .leaflet-top, .leaflet-bottom { z-index: auto; }
+    .leaflet-pane { z-index: 1; } .leaflet-top, .leaflet-bottom { z-index: 5; }
     /* ── the account menu ── */
     .acct-wrap { position: relative; display: inline-flex; }
     .acct-menu { position: absolute; right: 0; top: calc(100% + 10px); z-index: 120; min-width: 248px; padding: 8px; border-radius: 16px;
