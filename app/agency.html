@@ -4417,6 +4417,7 @@
   <script src="brand.js"></script>
   <link rel="stylesheet" href="foil.css" />
   <script src="foil.js" defer></script>
+  <script src="scramble.js"></script>
 </head>
 <body class="portal">
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -15186,6 +15187,8 @@
         cmp.angles = d.angles || {};
         rememberAngles(l && l.id, d.anglesUsed || []);
         renderComposer();
+        /* The drafts have just been written for you: let them arrive decoded. */
+        if (window.Scramble) cmpModal.querySelectorAll('.cap-prev').forEach((el) => Scramble.text(el, el.textContent));
       } catch (e) {
         /* NAMED, not guessed. This catch covers the fetch AND every line of
            setup around it, so "network hiccup" was being reported for a
@@ -15362,6 +15365,7 @@
           if (CED.opener && CED.opener.focus) CED.opener.focus();
         };
         CED.close = close;
+        ['keydown', 'pointerdown', 'focus'].forEach((ev) => CED.text.addEventListener(ev, () => { if (window.Scramble) Scramble.finish(CED.text); }));
         Dyn.reset(CED.save, 'Save caption'); Dyn.reset(CED.go, 'Rewrite');
         const setBusy = (b) => {
           CED.busy = b;
@@ -15400,7 +15404,9 @@
               return;
             }
             CED.history.push(before);
-            CED.text.value = d.caption;
+            /* Decoded into place, then the counter is read from the real text. */
+            if (window.Scramble) Scramble.value(CED.text, d.caption, { duration: 900, done: () => { if (CED.o === o) meta(); } });
+            else CED.text.value = d.caption;
             CED.undo.hidden = false;
             CED.ask.value = '';
             meta();
@@ -15425,6 +15431,7 @@
         CED.go.addEventListener('click', () => rewrite(CED.ask.value));
         CED.ask.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); rewrite(CED.ask.value); } });
         CED.undo.addEventListener('click', () => {
+          if (window.Scramble) Scramble.finish(CED.text);
           if (!CED.history.length) return;
           CED.text.value = CED.history.pop();
           CED.undo.hidden = !CED.history.length;
@@ -15440,6 +15447,7 @@
           if (e.key === 'Escape') { e.stopPropagation(); close(false); }
         });
         CED.save.addEventListener('click', () => {
+          if (window.Scramble) Scramble.finish(CED.text);
           if (!CED.o || CED.busy) return;
           const text = CED.text.value.replace(/\s+$/, '');
           if (!text.trim()) { CED.note.className = 'ced-note err'; CED.note.textContent = 'A caption cannot be empty.'; return; }
@@ -15465,6 +15473,7 @@
         });
       }
 
+      if (window.Scramble) Scramble.finish(CED.text);
       CED.o = o;
       CED.opener = document.activeElement;
       CED.orig = String(o.text || '');
@@ -16552,7 +16561,12 @@
           const pq = blQuote(sp.dataset.blAmt, BL.period);
           put(sp, blNaira(pq.amount) + '<small>per ' + pq.unit + '</small>');
         });
-        put(buy.querySelector('[data-bl-rcpt]'), blReceipt(BL.plan, BL.period, tier));
+        const slot = buy.querySelector('[data-bl-rcpt]');
+        const slipBefore = slot ? slot.dataset.v : undefined;
+        put(slot, blReceipt(BL.plan, BL.period, tier));
+        /* Not on the first paint (nothing changed), only when you switch plan or
+           period: the new amounts decode. */
+        if (slot && slipBefore !== undefined && slot.dataset.v !== slipBefore && window.Scramble) Scramble.numbers(slot, '.rc-row b, .rc-total b');
         put(buy.querySelector('[data-bl-note]'), note);
         const payBtn = buy.querySelector('[data-bl-pay]');
         if (payBtn && !payBtn.disabled) Dyn.set(payBtn, verb + ' · ' + blNaira(q.amount));

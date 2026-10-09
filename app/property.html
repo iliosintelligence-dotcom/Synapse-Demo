@@ -2736,6 +2736,7 @@
   <script src="map/style-synapse.js"></script>
   <script src="map/render.js"></script>
   <script src="stamp.js"></script>
+  <script src="scramble.js"></script>
   <script src="icons.js"></script>
   <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
        deferred and runs after icons.js has hydrated. Optional throughout:
@@ -3438,10 +3439,10 @@
       if (sheet && 'IntersectionObserver' in window && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
         sheet.classList.add('wait');
         var io = new IntersectionObserver(function (es) {
-          if (es.some(function (e) { return e.isIntersecting; })) { sheet.classList.add('in'); io.disconnect(); }
+          if (es.some(function (e) { return e.isIntersecting; })) { sheet.classList.add('in'); io.disconnect(); if (window.Scramble) Scramble.numbers(sheet, '.cr-row b, .cr-total b'); }
         }, { threshold: 0.35 });
         io.observe(sheet);
-        setTimeout(function () { sheet.classList.add('in'); io.disconnect(); }, 4000);
+        setTimeout(function () { if (!sheet.classList.contains('in')) { sheet.classList.add('in'); io.disconnect(); if (window.Scramble) Scramble.numbers(sheet, '.cr-row b, .cr-total b'); } }, 4000);
       }
 
       if (noteEl) {
