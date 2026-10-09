@@ -1037,6 +1037,7 @@
            autoplaying here -- this is the top of a page somebody may be
            scrolling in public. -->
       <video id="heroVid" hidden muted playsinline controls preload="metadata"></video>
+      <span id="heroStamp"></span>
       <span class="counter" id="counter">1 / 5</span>
       <span class="swipe-hint" id="swipeHint" hidden>Swipe for more</span>
       <div class="actions">
@@ -1952,6 +1953,9 @@
       const verified = p.verification_status === 'verified';
       const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
       const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
+      /* The stamp goes on the photograph, only for an explicit 'verified'. */
+      const hs = document.getElementById('heroStamp');
+      if (hs) hs.innerHTML = verified && window.SynStamp ? SynStamp.html({ land: true }) : '';
       /* NO FRACTION. "3 of 3 checks passed" read as complete, and was: it
          counted the checks somebody happened to record, not the seven this
          platform can run. A desk attestation covering three of them showed a
@@ -2705,6 +2709,7 @@
        around it, not a set of listings. -->
   <script src="map/style-synapse.js"></script>
   <script src="map/render.js"></script>
+  <script src="stamp.js"></script>
   <script src="icons.js"></script>
   <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
        deferred and runs after icons.js has hydrated. Optional throughout:

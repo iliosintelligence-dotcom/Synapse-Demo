@@ -1163,3 +1163,26 @@ html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !importa
     width: 44px; height: 44px; transform: translate(-50%, -50%);
   }
 }
+
+/* ── verified stamp (idea: dqnamo's Stamp) ── */
+.vst { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: inline-block; transform: rotate(-4deg); pointer-events: none;
+  filter: drop-shadow(0 1px 0 rgba(20,26,38,.25)) drop-shadow(0 6px 8px rgba(20,26,38,.28)); }
+.vst-in { --ink: #1E5733; display: grid; justify-items: center; gap: 1px; width: 62px; padding: 9px 4px 7px; background: #FFFDF6; color: var(--ink);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; text-align: center;
+  outline: 1.5px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: -5px;
+  -webkit-mask: radial-gradient(circle at 5px 0, #0000 2.6px, #000 3px) top / 10px 100% repeat-x, radial-gradient(circle at 5px 100%, #0000 2.6px, #000 3px) bottom / 10px 100% repeat-x,
+                radial-gradient(circle at 0 5px, #0000 2.6px, #000 3px) left / 100% 10px repeat-y, radial-gradient(circle at 100% 5px, #0000 2.6px, #000 3px) right / 100% 10px repeat-y;
+  -webkit-mask-composite: source-in, source-in, source-in;
+          mask: radial-gradient(circle at 5px 0, #0000 2.6px, #000 3px) top / 10px 100% repeat-x, radial-gradient(circle at 5px 100%, #0000 2.6px, #000 3px) bottom / 10px 100% repeat-x,
+                radial-gradient(circle at 0 5px, #0000 2.6px, #000 3px) left / 100% 10px repeat-y, radial-gradient(circle at 100% 5px, #0000 2.6px, #000 3px) right / 100% 10px repeat-y;
+          mask-composite: intersect, intersect, intersect; }
+.vst-in svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.vst-in b { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; line-height: 1.1; }
+.vst-in i { font-style: normal; font-size: 6px; letter-spacing: .2em; opacity: .7; }
+.vst-pm { position: absolute; right: -14px; bottom: -8px; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid rgba(20,26,38,.45); opacity: .5; transform: rotate(-14deg);
+  background: repeating-linear-gradient(0deg, transparent 0 4px, rgba(20,26,38,.45) 4px 5px) center / 70% 56% no-repeat; }
+.vst-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.vst.land { animation: vstDown .42s cubic-bezier(.2,.9,.3,1.25) .15s both; transform-origin: bottom left; }
+@keyframes vstDown { from { opacity: 0; transform: rotate(-12deg) scale(1.7); } 60% { opacity: 1; } to { opacity: 1; transform: rotate(-4deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .vst.land { animation: none; } }
+.hero .vst { left: 14px; bottom: auto; top: 14px; transform-origin: top left; }

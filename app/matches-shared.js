@@ -342,7 +342,7 @@
       <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${esc(l.id)}">
         <div class="body">
           <div class="tags">
-            ${verifyChip(l.vstatus)}
+            ${isVerified && window.SynStamp ? '' : verifyChip(l.vstatus)}
             ${matchChip}
             ${expiryChip(l)}
             ${cmpBox}
@@ -365,6 +365,7 @@
           ${img
             ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`
             : ''}
+          ${isVerified && window.SynStamp ? SynStamp.html() : ''}
           <button type="button" class="save${saves.has(l.id) ? ' on' : ''}" data-save="${esc(l.id)}"
                   aria-pressed="${saves.has(l.id)}"
                   aria-label="${saves.has(l.id) ? 'Remove' : 'Save'} ${esc(l.ttl)}">${icon('heart', saves.has(l.id) ? '♥' : '♡')}</button>
