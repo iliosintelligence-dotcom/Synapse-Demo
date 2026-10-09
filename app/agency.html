@@ -2722,6 +2722,32 @@
     .cmp-meta { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--ink-dim); margin-top: auto; }
     .cmp-meta .ok { color: var(--success); font-weight: 700; }
     .cmp-meta .no { color: #a8402b; font-weight: 700; }
+    /* ── campaign draft cards v2, channel tiles, summary chips ── */
+    .cmp-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+    .cmp-card.v2 { padding: 14px; border-radius: 16px; gap: 10px; box-shadow: 0 6px 18px rgba(20,26,38,.05); }
+    .cmp-card.v2 .cv2-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .cmp-card.v2 .cv2-angle { font: 700 11px/1 var(--f-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); }
+    .cmp-card.v2 .cv2-st { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; font: 700 11.5px/1 var(--f-sans); background: rgba(0,0,0,.05); }
+    .cmp-card.v2 .cv2-st i { width: 7px; height: 7px; border-radius: 50%; }
+    .cmp-card.v2 .cv2-st.ok { color: #1E5733; } .cmp-card.v2 .cv2-st.ok i { background: #25683F; }
+    .cmp-card.v2 .cv2-st.no { color: #9B1F18; } .cmp-card.v2 .cv2-st.no i { background: #B3261E; }
+    .cmp-card.v2 .cmp-hook { font: 600 15px/1.35 var(--f-sans); color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cmp-card.v2 .cmp-body { font-size: 13px; line-height: 1.5; color: var(--ink-muted); max-height: none; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .cmp-card.v2 .cv2-foot { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+    .cmp-card.v2 .cv2-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: rgba(0,0,0,.05); font: 600 11px/1 var(--f-sans); color: var(--ink-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cmp-card.v2 .cv2-chip svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .cmp-card.v2 .cv2-why { font: 600 12px/1.35 var(--f-sans); color: #9B1F18; }
+    .cmp-sum { gap: 8px; background: none; padding: 0; margin-bottom: 14px; }
+    .cmp-sum > span { padding: 7px 13px; border-radius: 999px; background: rgba(0,0,0,.05); font-size: 12.5px; color: var(--ink-muted); }
+    .cmp-sum > span b { font-family: var(--f-sans); font-size: 13.5px; color: var(--ink); }
+    .cmp-sum > span.g { background: rgba(37,104,63,.12); color: #1E5733; } .cmp-sum > span.g b { color: #1E5733; }
+    .cmp-sum > span.r { background: rgba(179,38,30,.1); color: #9B1F18; } .cmp-sum > span.r b { color: #9B1F18; }
+    .cmp-ch { border-radius: 14px; }
+    .col-blank p { font-size: 12.5px; }
+    html[data-theme="dark"] .cmp-card.v2 { background: var(--surface); }
+    html[data-theme="dark"] .cmp-card.v2 .cv2-chip, html[data-theme="dark"] .cmp-card.v2 .cv2-st, html[data-theme="dark"] .cmp-sum > span { background: rgba(255,255,255,.1); }
+    html[data-theme="dark"] .cmp-card.v2 .cv2-st.ok, html[data-theme="dark"] .cmp-sum > span.g, html[data-theme="dark"] .cmp-sum > span.g b { color: #5FC48A; }
+    html[data-theme="dark"] .cmp-card.v2 .cv2-st.no, html[data-theme="dark"] .cmp-card.v2 .cv2-why, html[data-theme="dark"] .cmp-sum > span.r, html[data-theme="dark"] .cmp-sum > span.r b { color: #F28B82; }
     /* One quiet line, not a toast: the answer to "did that save?" should
        still be there when you look for it. */
     /* Earlier versions. A list, not a grid: these are read one at a time
@@ -4447,8 +4473,7 @@
           <div class="card cmp-gen" id="cmpGenPanel">
             <div class="cmp-head">
               <div>
-                <div class="h2">Generate a campaign</div>
-                <p class="sub" style="margin:0">Each version is checked against that platform's limits before it can be queued.</p>
+                <div class="h2" title="Each version is checked against that platform's limits before it can be queued.">Generate a campaign</div>
               </div>
               <!-- The card is the tallest thing on this pane and it is only
                    needed when you are actually making something. Collapsed,
@@ -6011,12 +6036,12 @@
       scheduled: 'calendar', published: 'share', attention: 'chart',
     };
     const PSTAGE_EMPTY = {
-      uploaded: 'Nothing waiting on content \u2014 every listing has a caption in review or a post queued.',
-      generating: 'Nothing generating right now.',
-      approval: 'Nothing waiting on your review.',
-      scheduled: 'Nothing scheduled yet.',
-      published: 'Nothing has gone out yet. A post lands here the moment it reaches a platform \u2014 yours or Synapse\u2019s.',
-      attention: 'Nothing to fix \u2014 nothing failed, and everything live has been clicked.',
+      uploaded: 'Nothing waiting',
+      generating: 'Nothing writing',
+      approval: 'Nothing to review',
+      scheduled: 'Nothing scheduled',
+      published: 'Nothing live yet',
+      attention: 'All clear',
     };
     /* ── THE PIPELINE, FROM THE DATABASE ───────────────────────────────
        `posts` was declared here as [] and never assigned by anything, so every
@@ -12742,8 +12767,7 @@
           });
         });
         if (!any) {
-          html += '<div class="ch-empty">No channels connected yet. Until one is, '
-            + 'anything scheduled here is a rehearsal.</div>';
+          html += '<div class="ch-empty" title="Until a channel is connected, anything scheduled here is a rehearsal.">No channels connected</div>';
         }
         html += '</div>';
         if (canConnect()) html += '<div class="ch-add" id="chAdd"></div>';
@@ -14352,11 +14376,10 @@
            no heading gave no clue which listing they belonged to, which
            matters when the picker above is still showing something else. */
         var sumHtml = brandBar + '<div class="cmp-sum">'
-          + '<span><b>' + campaign.variants.length + '</b> variants</span>'
+          + '<span><b>' + campaign.variants.length + '</b> drafts</span>'
           + '<span><b>' + angleCount + '</b> angles</span>'
-          + '<span><b>' + Object.keys(S.PLATFORMS).length + '</b> channels</span>'
-          + '<span style="color:var(--success)"><b>' + ok.length + '</b> ready</span>'
-          + (bad ? '<span style="color:#a8402b"><b>' + bad + '</b> need attention</span>' : '')
+          + '<span class="g"><b>' + ok.length + '</b> ready</span>'
+          + (bad ? '<span class="r"><b>' + bad + '</b> to fix</span>' : '')
           + '</div>'
           + (skipped.length
             ? '<div class="muted" style="font-size:12.5px;margin:-4px 0 12px">'
@@ -14394,43 +14417,24 @@
           platHtml += '<div class="cmp-plat" data-plat="' + pl + '" hidden><div class="cmp-grid">'
             + vs.map(function (v) {
                 var bodyOnly = v.caption.split('\n\n').slice(1).join('\n\n');
-                return '<div class="cmp-card' + (v.issues.length ? ' bad' : '') + '" title="' + esc(v.angleWhy) + '">'
-                  + '<div class="cmp-angle">' + esc(v.angleName) + '</div>'
+                return '<div class="cmp-card v2' + (v.issues.length ? ' bad' : '') + '" title="' + esc(v.angleWhy) + '">'
+                  + '<div class="cv2-top"><span class="cv2-angle">' + esc(v.angleName) + '</span>'
+                  + (v.issues.length
+                      ? '<span class="cv2-st no" title="' + esc(v.issues.join(' \u00b7 ')) + '"><i></i>Fix</span>'
+                      : '<span class="cv2-st ok"><i></i>Ready</span>') + '</div>'
                   + '<div class="cmp-hook">' + esc(v.hook) + '</div>'
                   + '<div class="cmp-body">' + esc(bodyOnly) + '</div>'
-                  /* PREVIEW ONLY. NEVER PAYLOAD.
-                     The caption that goes out is not the caption above:
-                     queue_social_post appends a tracked short link to it
-                     server-side. Saying so here is the difference between a
-                     rehearsal that tells the truth and one that implies the
-                     post ships exactly as shown.
-
-                     It is drawn, not minted, and it is drawn HERE -- in the
-                     card's html, from a constant -- so it is never written
-                     back onto the variant. publishLive() sends v.caption,
-                     which nothing on this path touches, so the dots cannot
-                     reach a real account. Minting a token to rehearse with
-                     would be worse than showing nothing: create_short_link
-                     keys on social_post_id when it has one and on
-                     (property, channel, campaign) when it does not, so a
-                     rehearsal token would be a second, different link from
-                     the one the post finally carries -- the exact ambiguity
-                     the whole service exists to remove. */
-                  + '<div class="cmp-ph">'
-                  + '<span class="cmp-ph-u" aria-hidden="true">' + esc(LINK_PREVIEW) + '</span>'
-                  + '<span class="sr-only">A tracked synapsecore.dev short link</span>'
-                  + '<span>appended to this caption when it is queued</span>'
+                  /* PREVIEW ONLY. NEVER PAYLOAD. The caption that goes out is not the caption above:
+                     queue_social_post appends a tracked short link to it server-side. That is now one small chip
+                     (the full sentence is its tooltip) instead of a paragraph on every card; it is drawn here, from
+                     a constant, and never written back onto the variant, so it cannot reach a real account. */
+                  + '<div class="cv2-foot">'
+                  + '<span class="cv2-chip" title="A tracked synapsecore.dev short link is added to this caption when it is queued">'
+                  + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>'
+                  + '<span class="sr-only">A tracked synapsecore.dev short link is added when it is queued. </span>' + esc(LINK_PREVIEW) + '</span>'
+                  + '<span class="cv2-chip">' + (v.media ? esc(v.media.label) + (v.ratio ? ' \u00b7 ' + esc(v.ratio) : '') : 'No picture') + '</span>'
                   + '</div>'
-                  + '<div class="cmp-meta">'
-                  + (v.media ? esc(v.media.label) + ' · ' + esc(v.ratio || '') : 'no creative')
-                  + ' · ' + (v.issues.length
-                      ? '<span class="no">' + esc(v.issues[0]) + '</span>'
-                      : '<span class="ok">passes</span>')
-                  + '</div>'
-                  /* Keep the SHAPE of this one. The caption is already
-                     rendered, so saving it verbatim would bake this listing's
-                     area and price into every future post -- the editor opens
-                     on the recovered pattern instead. */
+                  + (v.issues.length ? '<div class="cv2-why">' + esc(v.issues[0]) + '</div>' : '')
                   + '</div>';
               }).join('')
             + '</div></div>';
