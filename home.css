@@ -316,7 +316,7 @@ a { color: inherit; }
 :root[data-theme="dark"] .rl-arrow { background: #FFFFFF; color: #000000; border-color: transparent; box-shadow: none; }
 .rl-arrow:disabled { opacity: 0.35; cursor: default; }
 .rl-count { min-width: 48px; text-align: center; font-size: 14px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
-.reality .either { margin-top: 30px; }
+.rl-head .either { margin: 14px 0 0; font-size: clamp(17px, 1.4vw, 19px); }
 
 .reality.rl-pinned .rl-stage {
   position: sticky; top: 68px; height: calc(100vh - 68px); height: calc(100svh - 68px);
@@ -386,7 +386,11 @@ a { color: inherit; }
 .either b { color: var(--ink); font-weight: 600; }
 
 /* Introducing: the page's one big statement. */
-.intro { text-align: center; }
+/* Equal air above and below the one big statement: the section above ends
+   22px past its last visible element (the carousel controls), so that much is
+   taken off this one's top padding and the gap reads the same either side. */
+.intro { text-align: center; padding-top: calc(clamp(104px, 14vw, 200px) - 22px); }
+.intro .statement { max-width: 26ch; }
 .intro .eyebrow { justify-content: center; }
 /* The word in the logo's face: wide, heavy capitals with the wordmark's
    tracking. Archivo at its widest is the nearest Google Font to the logo.
@@ -595,6 +599,7 @@ a { color: inherit; }
 @media (max-width: 720px) {
   body { font-size: 17px; }
   .sec { padding-top: 104px; }
+  .intro { padding-top: 82px; }
   .hero { padding-top: 28px; }
   .lede { font-size: 17px; }
   .nav-cta { display: none; }
