@@ -709,32 +709,6 @@ a { color: inherit; }
 }
 
 
-/* ── 60 / 30 / 10 (Eden, 2026-10-09) ──────────────────────────────────────────
-   60% paper: the warm off-white ground the page already sits on (hero, product,
-   pricing, the reel). 30% ink: two full-width dark bands, the reality row and
-   the footer, with the dark buttons and type. 10% orange: marks only (the hero
-   drawing's lights and tick, the send arrow, focus), never a section ground and
-   never a word. A band re-points the page's own colour tokens, so everything
-   inside it (headings, body, arrows, buttons) re-colours itself. */
-.band-ink {
-  --bg: #15120F; --bg-2: #1E1A16; --surface: #241F1A; --ink: #FAF6F0; --ink-2: #E4DBD0; --muted: #BDB3A8; --soft: #A89C8F;
-  --line: rgba(250, 246, 240, .14); --line-2: rgba(250, 246, 240, .2); --edge: rgba(250, 246, 240, .22);
-  --btn: #FAF6F0; --btn-ink: #15120F; --frame-edge: rgba(255, 255, 255, .1);
-  background: var(--bg); color: var(--ink);
-}
-:root[data-theme="dark"] .band-ink { --bg: #14110E; --bg-2: #1B1713; --surface: #1F1B17; }
-.band-ink .rl-arrow { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
-.foot.band-ink { margin-top: clamp(64px, 8vw, 110px); border-top: 0; padding-top: 52px; }
-.foot.band-ink .logo img { filter: invert(1); mix-blend-mode: screen; }
-.reality.band-ink { padding-bottom: clamp(48px, 6vw, 90px); }
-/* The channel row used each network's own colour; the page's one colour is orange. */
-.rail li svg { color: var(--ink) !important; }
-
-/* The drawn pictures keep their own light (or night) palette inside the ink band; only the words around them turn. */
-.band-ink .rl-art { --bg: #FAF6F0; --bg-2: #F4ECE2; --surface: #FFFFFF; --ink: #15120F; --ink-2: #3B352F; --muted: #6B6259; --soft: #8C8278; --tint: #FFF1E4; --line: #E8DDD0; --line-2: #D9CAB8; --edge: #D9CAB8; color: var(--ink); }
-:root[data-theme="dark"] .band-ink .rl-art { --bg: #000000; --bg-2: #0B0C0E; --surface: #16181C; --ink: #E7E9EA; --ink-2: #C9CDD1; --muted: #A3A8AE; --soft: #71767B; --tint: #1C140D; --line: transparent; --line-2: transparent; --edge: #2F3336; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .band-ink .rl-art { --bg: #000000; --bg-2: #0B0C0E; --surface: #16181C; --ink: #E7E9EA; --ink-2: #C9CDD1; --muted: #A3A8AE; --soft: #71767B; --tint: #1C140D; --line: transparent; --line-2: transparent; --edge: #2F3336; } }
-
 /* The reel's quiet ideas are quiet by colour, never by transparency: faded text fails WCAG contrast. */
 .vcar .vc-item, .vcar:not(.vc-pinned) .vc-item, .vcar.vc-pinned .vc-item { opacity: 1; }
 .vcar .vc-item .h3, .vcar .vc-item p { color: var(--muted); transition: color .4s ease; }
