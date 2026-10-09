@@ -716,23 +716,3 @@ a { color: inherit; }
 .vcar .vc-item.on p { color: var(--ink-2); }
 .vcar.vc-pinned .vc-item { transform: scale(.88); }
 .vcar.vc-pinned .vc-item.on { transform: none; }
-
-
-/* Minimalist drawings from unDraw (free for commercial use, no credit needed), recoloured to Synapse's paper, ink and
-   orange, with a night version of each. They sit in the empty space beside the hero's text, and above the last ask. */
-.ud { height: auto; max-width: none; }
-.hero > .wrap:first-child { position: relative; }
-.hero-ud { position: absolute; left: 0; right: 0; top: 52%; pointer-events: none; }
-.hero-ud .ud { position: absolute; width: clamp(190px, 20vw, 270px); top: 0; }
-.hero-ud .ud-a { left: 0; } .hero-ud .ud-b { right: 0; }
-@media (prefers-reduced-motion: no-preference) {
-  .hero-ud .ud { animation: udFloat 7s ease-in-out infinite; }
-  .hero-ud .ud-b { animation-delay: -3.5s; }
-  @keyframes udFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-}
-@media (max-width: 1180px) {
-  .hero-ud { position: static; display: flex; justify-content: center; gap: 12px; margin-top: 26px; }
-  .hero-ud .ud { position: static; width: min(44vw, 260px); }
-}
-.ud-flip { transform: scaleX(-1); }
-@media (prefers-reduced-motion: no-preference) { .hero-ud .ud-flip { animation-name: udFloatFlip; } @keyframes udFloatFlip { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-7px); } } }
