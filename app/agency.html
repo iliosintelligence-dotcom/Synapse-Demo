@@ -2080,6 +2080,38 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ── receipt for the plan price (idea: dqnamo's Receipt Printer) ── */
+    .rc-slot { margin-top: 16px; filter: drop-shadow(0 1px 0 rgba(20,26,38,.12)) drop-shadow(0 12px 16px rgba(20,26,38,.14)); }
+    .rc-paper { position: relative; max-width: 360px; margin: 0 auto; padding: 18px 20px 26px; background: #FFFEFB; color: #1B1A17;
+      font: 500 13px/1.45 ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace; letter-spacing: .01em;
+      transform-origin: top center; animation: rcPrint .55s cubic-bezier(.2,.8,.2,1) both;
+      -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 51% repeat-x, linear-gradient(#000, #000) top / 100% calc(100% - 7px) no-repeat;
+              mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 51% repeat-x, linear-gradient(#000, #000) top / 100% calc(100% - 7px) no-repeat; }
+    @keyframes rcPrint { from { clip-path: inset(0 0 100% 0); transform: translateY(-10px); } to { clip-path: inset(0 0 -20px 0); transform: none; } }
+    .rc-head { display: flex; justify-content: space-between; gap: 10px; font-size: 11.5px; color: #5C584F; }
+    .rc-brand { font-weight: 800; letter-spacing: .22em; color: #1B1A17; }
+    .rc-rule { height: 0; border-top: 1px solid #CFCABD; margin: 12px 0; }
+    .rc-rule.dash { border-top: 1.5px dashed #B9B3A4; }
+    .rc-item { font-weight: 800; letter-spacing: .06em; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .rc-item em { font: 700 10px ui-monospace, Menlo, monospace; font-style: normal; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border: 1.5px solid #1B1A17; border-radius: 4px; }
+    .rc-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+    .rc-row b { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .rc-row.sub { color: #4A463E; }
+    .rc-row.off, .rc-row.off b { color: #1E5733; }
+    .rc-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 800; }
+    .rc-total span { letter-spacing: .14em; font-size: 12.5px; }
+    .rc-total b { font-size: 24px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+    .rc-pay { margin-top: 4px; font-size: 11.5px; color: #5C584F; }
+    .rc-bar { height: 34px; margin-top: 14px; opacity: .85;
+      background: repeating-linear-gradient(90deg, #1B1A17 0 2px, transparent 2px 4px, #1B1A17 4px 5px, transparent 5px 9px, #1B1A17 9px 12px, transparent 12px 14px, #1B1A17 14px 15px, transparent 15px 19px); }
+    @media (prefers-reduced-motion: reduce) { .rc-paper { animation: none; } }
+    /* ── hold to confirm (idea: dqnamo's Hold to Confirm) ── */
+    .pcard.v2 .pc-ib.hold { position: relative; overflow: hidden; touch-action: manipulation; -webkit-touch-callout: none; user-select: none; }
+    .pcard.v2 .pc-ib.hold::after { content: ''; position: absolute; inset: 0; background: #B3261E; transform: scaleY(0); transform-origin: bottom; pointer-events: none; z-index: 0; }
+    .pcard.v2 .pc-ib.hold svg { position: relative; z-index: 1; }
+    .pcard.v2 .pc-ib.hold.holding::after { animation: holdFill .7s linear forwards; }
+    .pcard.v2 .pc-ib.hold.holding { color: #fff; }
+    @keyframes holdFill { to { transform: scaleY(1); } }
     /* ── new post popup v2: photo cards for the listing, chips that say when they are on, one pinned action ── */
     #cmpModal { padding: 22px 24px 0; border-radius: 26px; width: min(94vw, 680px); scroll-padding-bottom: 90px; }
     .cmp-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
@@ -6884,6 +6916,42 @@
     /* Where it went, as one plain sentence for the tooltip. */
     const pcWhere = (p) => plain(carriedBy(p)) + (p.waitMine || (p.waitAmp && p.waitAmp.length) ? ' ' + plain(waitLine(p)) : '');
 
+    /* HOLD TO CONFIRM (idea: dqnamo's "Hold to Confirm"). Discard and Remove
+       used to be one tap away from a post you may have spent a while on, next to
+       buttons you press all day. Now they fill while you hold them and fire at
+       the end; a plain tap only reminds you what to do. It sits in front of the
+       board's own handlers (capture phase), so they run exactly as before, once,
+       when the hold completes. */
+    (function holdToConfirm() {
+      const HOLD = 700;
+      let timer = null, cur = null;
+      const stop = () => { clearTimeout(timer); timer = null; if (cur) { cur.classList.remove('holding'); cur = null; } };
+      const begin = (b) => {
+        if (b.disabled) return;
+        stop(); delete b.dataset.swallow; cur = b; b.classList.add('holding');
+        timer = setTimeout(() => {
+          const t = cur; stop(); if (!t) return;
+          t.dataset.held = '1';
+          if (navigator.vibrate) try { navigator.vibrate(18); } catch (e) { /* not on every phone */ }
+          t.click();
+          t.dataset.swallow = '1';   /* the click the browser sends when you let go is the same press */
+        }, HOLD);
+      };
+      document.addEventListener('pointerdown', (e) => { const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (b && e.button === 0) begin(b); });
+      ['pointerup', 'pointercancel'].forEach((t) => document.addEventListener(t, stop));
+      document.addEventListener('pointermove', (e) => { if (cur && !cur.contains(document.elementFromPoint(e.clientX, e.clientY))) stop(); });
+      document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (b) begin(b); } });
+      document.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') stop(); });
+      document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('.pc-ib.hold')) e.preventDefault(); });
+      document.addEventListener('click', (e) => {
+        const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (!b) return;
+        if (b.dataset.held === '1') { delete b.dataset.held; return; }
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (b.dataset.swallow === '1') { delete b.dataset.swallow; return; }
+        if (typeof toast === 'function') toast((b.getAttribute('aria-label') || 'Hold to confirm') + ': press and hold the button');
+      }, true);
+    })();
+
     function pcard(p, stage, i) {
       let chip = '', line = '', acts = '', extra = '';
       const id = esc2(p.id);
@@ -6898,11 +6966,11 @@
       } else if (stage === 'approval') {
         chip = pcChip('brand', 'Needs your OK');
         extra = '<div class="cap" data-capedit="' + id + '" role="button" tabindex="0" aria-label="Open this caption to edit" title="Tap to edit">' + esc2((p.caption || '').slice(0, 200)) + '</div>';
-        acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', 'Discard');
+        acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', 'Hold to discard', 'hold');
       } else if (stage === 'scheduled') {
         chip = p.failure ? pcChip('warn', 'Retrying', 'Tried already: ' + p.failure) : pcChip('info', 'Scheduled');
         line = '<span class="pc-l">' + PCI.clock + esc2(p.when || 'No time set') + '</span>';
-        acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', 'Remove');
+        acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', 'Hold to remove', 'hold');
       } else if (stage === 'published') {
         const up = p.mineLive || (p.ampLive && p.ampLive.length);
         if (p.inbox) chip = pcChip('info', 'TikTok draft', 'In your TikTok inbox. Open TikTok, add a sound and post it: until then it is a draft only you can see.');
@@ -6919,7 +6987,7 @@
         if (p.status === 'failed') {
           chip = pcChip('bad', 'Failed', p.failure || 'This did not go out.');
           line = '<span class="pc-l pc-why" title="' + esc2(p.failure || 'This did not go out.') + '">' + esc2((p.failure || 'This did not go out.').length > 80 ? (p.failure || '').slice(0, 79).trim() + '…' : (p.failure || 'This did not go out.')) + '</span>';
-          acts = pcBtn('sendnow', id, 'retry', 'Try again', 'pri') + pcIcon('remove', id, 'trash', 'Remove');
+          acts = pcBtn('sendnow', id, 'retry', 'Try again', 'pri') + pcIcon('remove', id, 'trash', 'Hold to remove', 'hold');
         } else {
           chip = pcChip('warn', 'No taps yet', 'Live since ' + (p.when || 'a while back') + (p.clicksRaw ? ', ' + p.clicksRaw + ' preview fetches, but' : ',') + ' not one person has tapped the link.');
           line = '<span class="pc-l">Live since ' + esc2(p.when || 'a while') + '</span>';
@@ -16124,6 +16192,34 @@
         : { amount: month, perMonth: month, unit: 'month' };
     }
 
+    /* THE PRICE, AS A RECEIPT (idea: dqnamo's "Receipt Printer" in The Kitchen).
+       The plan picker used to end in a sentence and a button. This is the same
+       sum laid out as the slip you would get at a till: what you are buying,
+       the months, anything knocked off, and a TOTAL that matches the button.
+       Drawn from blQuote(), the same function the button reads, so the slip and
+       the charge cannot disagree. Never sent anywhere; it is only a picture of
+       the amount the page already holds. */
+    function blReceipt(planCode, period, tier) {
+      const d = BL.data, plan = d.prices.plans[planCode];
+      const meta = BL_PLANS.find((p) => p.code === planCode) || { name: planCode };
+      const month = Number(plan.monthly_kobo), free = Number(d.annual_months_free) || 0;
+      const annual = period === 'annual', months = annual ? 12 : 1;
+      const q = blQuote(planCode, period);
+      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const row = (l, r, cls) => '<div class="rc-row' + (cls ? ' ' + cls : '') + '"><span>' + l + '</span><b>' + r + '</b></div>';
+      return '<div class="rc-paper" role="group" aria-label="What you will pay">'
+        + '<div class="rc-head"><span class="rc-brand">SYNAPSE</span><span>' + blEsc(today) + '</span></div>'
+        + '<div class="rc-rule"></div>'
+        + '<div class="rc-item">' + blEsc(meta.name.toUpperCase()) + ' PLAN'
+        + (tier === planCode ? '<em>your plan</em>' : '') + '</div>'
+        + row(months + (months === 1 ? ' month' : ' months') + ' \u00d7 ' + blNaira(month), blNaira(month * months), 'sub')
+        + (annual && free > 0 ? row(free + (free === 1 ? ' month' : ' months') + ' free', '\u2212' + blNaira(month * free), 'off') : '')
+        + '<div class="rc-rule dash"></div>'
+        + '<div class="rc-total"><span>TOTAL</span><b>' + blNaira(q.amount) + '</b></div>'
+        + '<div class="rc-bar" aria-hidden="true"></div>'
+        + '</div>';
+    }
+
     function blRender() {
       const d = BL.data;
       const tier = d.tier;
@@ -16209,6 +16305,7 @@
               + '</button>';
           }).join('')
           + '</div>'
+          + '<div class="rc-slot" data-bl-rcpt></div>'
           + '<div class="bl-note" data-bl-note>' + note + '</div>'
           + '<button type="button" class="btn btn-primary bl-pay" data-bl-pay>' + verb + ' · ' + blNaira(q.amount) + '</button>'
           + '<div class="bl-fine">You pay on Paystack’s page by card, bank transfer or USSD. Paying by card renews your plan automatically each <span data-bl-every>' + (BL.period === 'annual' ? 'year' : 'month') + '</span>; you can turn that off here at any time. Bigger needs? <a href="#" data-bl-enterprise style="color:inherit">Enterprise</a> is priced with you.</div>';
@@ -16221,6 +16318,7 @@
           const pq = blQuote(sp.dataset.blAmt, BL.period);
           put(sp, blNaira(pq.amount) + '<small>per ' + pq.unit + '</small>');
         });
+        put(buy.querySelector('[data-bl-rcpt]'), blReceipt(BL.plan, BL.period, tier));
         put(buy.querySelector('[data-bl-note]'), note);
         const payBtn = buy.querySelector('[data-bl-pay]');
         if (payBtn && !payBtn.disabled) put(payBtn, verb + ' · ' + blNaira(q.amount));
