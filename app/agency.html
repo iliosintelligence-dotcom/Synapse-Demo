@@ -900,6 +900,27 @@
     .s-cal .cempty { font-size: 11px; color: var(--ink-dim); text-align: center; padding-top: 10px;
       display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .s-cal .cempty-i { font-size: 15px; color: var(--ink-dim); opacity: .45; }
+    /* ── calendar entry v2 ── */
+    .s-cal .cev.v2 { padding: 0; overflow: hidden; border-radius: 12px; }
+    .s-cal .cev.v2:focus-visible { outline: 2px solid var(--brand, #FF8A2D); outline-offset: 2px; }
+    .s-cal .cv-ph { position: relative; aspect-ratio: 16 / 10; background: var(--surface-2, #F0EBE4); }
+    .s-cal .cv-ph .lph { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; overflow: hidden; }
+    .s-cal .cv-ph .lph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .s-cal .cv-ph .lph.no-photo, .s-cal .cv-ph .lph:empty { background: linear-gradient(135deg, #F4ECE2, #E8DDD0); }
+    .s-cal .cv-t { position: absolute; left: 6px; top: 6px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(255,255,255,.94); color: #15120F; font: 700 10.5px/1 var(--f-sans); box-shadow: 0 2px 6px rgba(21,18,15,.18); }
+    .s-cal .cv-t i { width: 6px; height: 6px; border-radius: 50%; background: #8C8278; }
+    .s-cal .cv-t.ok i { background: #25683F; } .s-cal .cv-t.ok { color: #1E5733; }
+    .s-cal .cv-t.warn i { background: #B45309; } .s-cal .cv-t.warn { color: #8A3D05; }
+    .s-cal .cv-t.bad i { background: #B3261E; } .s-cal .cv-t.bad { color: #9B1F18; }
+    .s-cal .cv-t.info i { background: #3C6EA8; }
+    .s-cal .cv-b { padding: 8px 9px 9px; display: grid; gap: 6px; }
+    .s-cal .cv-b .cet { font: 600 12px/1.2 var(--f-sans); }
+    .s-cal .cv-chs { display: flex; }
+    .s-cal .cv-chs .cav { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: #fff; border: 2px solid var(--surface); margin-left: -5px; box-sizing: content-box; }
+    .s-cal .cv-chs .cav:first-child { margin-left: 0; }
+    .s-cal .cempty { padding-top: 14px; }
+    .s-cal .cempty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-dim); opacity: .35; }
+    html[data-theme="dark"] .s-cal .cv-ph .lph.no-photo, html[data-theme="dark"] .s-cal .cv-ph .lph:empty { background: linear-gradient(135deg, #1B1D20, #111214); }
     /* An empty pipeline column, said properly. It was one line of grey text
        floating in a column with nothing else in it, which reads as a stage
        that failed to load rather than one nobody has reached yet. */
@@ -6812,6 +6833,17 @@
       const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
     }
     // ── calendar view ──
+    /* A calendar entry: the photo with its time on it, the name, and where it goes. No sentences. */
+    function calEvent(p) {
+      const live = p.stage === 'published';
+      const when = String(p.when || '');
+      const t = live ? 'Live' : (when.indexOf(',') > -1 ? when.slice(when.lastIndexOf(',') + 1).trim() : (when || 'Scheduled'));
+      const tone = live ? 'ok' : (p.stage === 'attention' ? 'bad' : (p.failure ? 'warn' : 'info'));
+      const chs = (p.channels || []).slice(0, 3).map(c => '<span class="cav" title="' + esc2((CH[c] && CH[c].label) || c) + '" style="background:' + ((CH[c] && CH[c].color) || '#161616') + '">' + chMark(c, 9) + '</span>').join('');
+      return '<div class="cev v2" data-pid="' + esc2(p.id) + '" tabindex="0" role="button" aria-label="' + esc2(String(p.listing || '').split(',')[0] + ', ' + t) + '">'
+        + '<div class="cv-ph">' + photoHtml(p.img) + '<span class="cv-t ' + tone + '"><i></i>' + esc2(t) + '</span></div>'
+        + '<div class="cv-b"><div class="cet">' + esc2(String(p.listing || '').split(',')[0]) + '</div><div class="cv-chs">' + chs + '</div></div></div>';
+    }
     function renderCalendar(){
       const el = document.getElementById('calendar'); if (!el) return;
       const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], base = new Date(), ti = (base.getDay() + 6) % 7;
@@ -6840,7 +6872,7 @@
       el.innerHTML = names.map((dn, i) => `
         <div class="cday ${i === ti ? 'today' : ''}${!buckets[i].length ? ' empty' : ''}">
           <div class="dh"><span class="dn">${dn}</span><span class="dd">${nums[i]}</span></div>
-          ${buckets[i].length ? buckets[i].map(p => `<div class="cev" data-pid="${p.id}"><div class="cet">${p.listing.split(',')[0]}</div><div class="cem">${p.channels.slice(0,3).map(c => `<span class="cav" style="width:16px;height:16px;font-size:8px;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;background:${CH[c].color}">${chMark(c, 9)}</span>`).join('')}<span class="cew">${p.stage === 'published' ? 'live' : (p.when || 'scheduled')}</span></div></div>`).join('') : `<div class="cempty"><span class="cempty-i" data-icon="calendar"></span>${i === ti ? 'Nothing today' : 'Nothing'}</div>`}
+          ${buckets[i].length ? buckets[i].map(p => calEvent(p)).join('') : `<div class="cempty" aria-label="Nothing ${i === ti ? 'today' : 'this day'}"><span class="cempty-dot"></span></div>`}
         </div>`).join('');
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
     }
