@@ -2077,6 +2077,34 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ── caption editor on a phone: a bottom sheet you write in, with the rewrite chips in one swipeable row and Save pinned ── */
+    @media (max-width: 640px) {
+      .ced-scrim { align-items: flex-end; padding: 0; }
+      .ced { width: 100%; max-height: 96dvh; border-radius: 26px 26px 0 0; padding: 6px 16px 0; gap: 10px; animation: cedUp .28s cubic-bezier(.2,.9,.3,1) both; box-shadow: 0 -24px 60px rgba(20,26,38,.3); }
+      .ced::before { content: ''; display: block; width: 40px; height: 5px; border-radius: 5px; background: rgba(0,0,0,.18); margin: 4px auto 2px; flex: none; }
+      .ced-head { gap: 10px; }
+      .ced-head h3 { font-size: 17px; }
+      .ced-x { background: rgba(0,0,0,.06); font-size: 22px; }
+      .ced-text { min-height: 120px; max-height: 34dvh; flex: 0 1 auto; height: 34dvh; font-size: 16px; line-height: 1.55; padding: 14px; }
+      .ced-meta { flex: none; }
+      .ced-quick { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none; scroll-padding-left: 16px; }
+      .ced-quick::-webkit-scrollbar { display: none; }
+      .ced-quick button { flex: none; min-height: 44px; }
+      .ced-askrow { flex-direction: column; }
+      .ced-askrow input { min-height: 48px; font-size: 16px; }
+      .ced-askrow .btn { min-height: 48px; width: 100%; }
+      .ced-foot { position: sticky; bottom: 0; z-index: 2; flex-wrap: nowrap; gap: 8px; margin: 4px -16px 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        background: var(--surface); box-shadow: 0 -10px 22px -12px rgba(20,26,38,.22); }
+      .ced-foot .sp { display: none; }
+      .ced-foot .btn { min-height: 52px; }
+      .ced-foot #cedCancel { flex: 0 0 auto; padding: 0 18px; }
+      .ced-foot #cedUndo { flex: 0 0 auto; padding: 0 14px; }
+      .ced-foot #cedSave { flex: 1 1 auto; font-size: 15.5px; }
+    }
+    @keyframes cedUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .ced { animation: none !important; } }
+    html[data-theme="dark"] .ced::before { background: rgba(255,255,255,.25); }
+    html[data-theme="dark"] .ced-x { background: rgba(255,255,255,.1); }
     /* On the board, the caption opens the same editor. */
     .pcard .cap[data-capedit] { cursor: pointer; border-radius: 6px; }
     .pcard .cap[data-capedit]:hover { background: rgba(0,0,0,0.03); }
