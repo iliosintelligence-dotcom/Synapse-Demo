@@ -2080,6 +2080,31 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ── verified stamp (idea: dqnamo's Stamp) ── */
+    .vst { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: inline-block; transform: rotate(-4deg); pointer-events: none;
+      filter: drop-shadow(0 1px 0 rgba(20,26,38,.25)) drop-shadow(0 6px 8px rgba(20,26,38,.28)); }
+    .vst-in { --ink: #1E5733; display: grid; justify-items: center; gap: 1px; width: 62px; padding: 9px 4px 7px; background: #FFFDF6; color: var(--ink);
+      font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; text-align: center;
+      outline: 1.5px solid color-mix(in srgb, var(--ink) 70%, transparent); outline-offset: -5px;
+      -webkit-mask: radial-gradient(circle at 5px 0, #0000 2.6px, #000 3px) top / 10px 100% repeat-x, radial-gradient(circle at 5px 100%, #0000 2.6px, #000 3px) bottom / 10px 100% repeat-x,
+                    radial-gradient(circle at 0 5px, #0000 2.6px, #000 3px) left / 100% 10px repeat-y, radial-gradient(circle at 100% 5px, #0000 2.6px, #000 3px) right / 100% 10px repeat-y;
+      -webkit-mask-composite: source-in, source-in, source-in;
+              mask: radial-gradient(circle at 5px 0, #0000 2.6px, #000 3px) top / 10px 100% repeat-x, radial-gradient(circle at 5px 100%, #0000 2.6px, #000 3px) bottom / 10px 100% repeat-x,
+                    radial-gradient(circle at 0 5px, #0000 2.6px, #000 3px) left / 100% 10px repeat-y, radial-gradient(circle at 100% 5px, #0000 2.6px, #000 3px) right / 100% 10px repeat-y;
+              mask-composite: intersect, intersect, intersect; }
+    .vst.rv .vst-in { --ink: #7A4A06; }
+    .vst-in svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .vst-in b { font-size: 8.5px; font-weight: 800; letter-spacing: .12em; line-height: 1.1; }
+    .vst-in i { font-style: normal; font-size: 6px; letter-spacing: .2em; opacity: .7; }
+    .vst-pm { position: absolute; right: -14px; bottom: -8px; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid rgba(20,26,38,.45); opacity: .5; transform: rotate(-14deg);
+      background: repeating-linear-gradient(0deg, transparent 0 4px, rgba(20,26,38,.45) 4px 5px) center / 70% 56% no-repeat; }
+    .vst.sm { left: 6px; bottom: 6px; transform: rotate(-3deg) scale(.72); transform-origin: bottom left; }
+    .vst.land { left: 12px; bottom: auto; top: 12px; transform-origin: top left; animation: vstDown .42s cubic-bezier(.2,.9,.3,1.25) .15s both; }
+    @keyframes vstDown { from { opacity: 0; transform: rotate(-12deg) scale(1.7); } 60% { opacity: 1; } to { opacity: 1; transform: rotate(-4deg) scale(1); } }
+    @media (prefers-reduced-motion: reduce) { .vst.land { animation: none; } }
+    html[data-theme="dark"] .vst-in { background: #F4F0E4; }
+    #cmpModal .cmp-lst { position: relative; }
+    #cmpModal .cmp-lst .vst { left: 8px; bottom: auto; top: 8px; }
     /* ── receipt for the plan price (idea: dqnamo's Receipt Printer) ── */
     .rc-slot { margin-top: 16px; filter: drop-shadow(0 1px 0 rgba(20,26,38,.12)) drop-shadow(0 12px 16px rgba(20,26,38,.14)); }
     .rc-paper { position: relative; max-width: 360px; margin: 0 auto; padding: 18px 20px 26px; background: #FFFEFB; color: #1B1A17;
@@ -7796,7 +7821,7 @@
       const img = post.img || (L && L.img) || '';
       const price = post.price || (L && nairaShort(L.price)) || '';
       const vs = L ? L.verification_status : null;
-      const vb = vs === 'verified' ? '<span class="pvb" style="background:var(--success)">✓ Verified</span>'
+      const vb = vs === 'verified' ? vStamp('ok').replace('class="vst ', 'class="vst land ')
         : vs === 'in_progress' ? '<span class="pvb" style="background:#7a5410">Verifying</span>'
         : vs ? '<span class="pvb" style="background:rgba(20,22,26,0.72)">Unverified</span>' : '';
       const loc = L ? [L.neighbourhood, L.city].filter(Boolean).join(', ') : post.listing.split(',').slice(1).join(',').trim();
@@ -8467,7 +8492,7 @@
            Re-list when the listing is running out -- with Share beside it,
            and Edit / Re-list in the menu. The whole card opens Edit. */
         const id = esc2(l.id);
-        const st = l.st === 'verified' ? '<span class="lc-st ok">Verified</span>'
+        const st = l.st === 'verified' ? vStamp('ok')
           : l.st === 'pending' ? '<span class="lc-st rev">In review</span>'
           : l.st === 'inactive' ? '<span class="lc-st off">Not live</span>' : '';
         const exp = f.expired ? '<span class="lc-exp dead">Hidden from buyers</span>'
@@ -12559,6 +12584,25 @@
       return L.find((x) => x && x.id === id) || null;
     }
 
+    /* THE VERIFIED STAMP (idea: dqnamo's "Stamp" in The Kitchen). "Verified" was a
+       green word on a photo; it is the one claim Synapse makes that nobody else
+       can, so it gets to look like something that was applied by hand: a
+       perforated postage stamp, a shield, a postmark half-printed over the edge.
+       Drawn only from a listing's own verification_status, never from anything a
+       caller can type, and the words stay as text (and a tooltip) for readers
+       who cannot see the picture. kind: 'ok' | 'review'. size: 'sm' for tiles. */
+    function vStamp(kind, size, label) {
+      const ok = kind !== 'review';
+      const word = ok ? 'Verified' : 'In review';
+      const ico = ok
+        ? '<path d="M12 3 4.5 6v5.5c0 4.4 3 8 7.5 9.5 4.5-1.5 7.5-5.1 7.5-9.5V6z"/><path d="m8.6 12 2.4 2.4 4.4-4.8"/>'
+        : '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>';
+      return '<span class="vst ' + (ok ? 'ok' : 'rv') + (size === 'sm' ? ' sm' : '') + '" title="' + (ok ? 'Verified by Synapse: all seven checks passed' : 'Synapse is checking this listing') + '">'
+        + '<span class="vst-in"><svg viewBox="0 0 24 24" aria-hidden="true">' + ico + '</svg>'
+        + '<b>' + word.toUpperCase() + '</b><i>' + (label || 'SYNAPSE') + '</i></span>'
+        + '<span class="vst-pm" aria-hidden="true"></span><span class="sr-only">' + word + '. </span></span>';
+    }
+
     let POST_LISTINGS = [];
     function rebuildPostListings() {
       const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
@@ -14805,7 +14849,7 @@
         + `<button class="x" id="cmpX" aria-label="Close">×</button></div>
         <div class="cmp-step"><b>1</b>Listing</div>
         <div class="cmp-listings" role="group" aria-label="Verified listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}" aria-pressed="${i === cmp.li}">`
-          + `${photoHtml(l.img, { cls: 'cl-ph' })}<span class="cl-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>`
+          + `${photoHtml(l.img, { cls: 'cl-ph' })}${l.verification_status === 'verified' ? vStamp('ok', 'sm') : ''}<span class="cl-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>`
           + `<span class="cl-txt"><span class="t">${l.title.split(',')[0]}</span><span class="p">${nairaShort(l.price)}</span></span></button>`).join('')}</div>
         <div class="cmp-step"><b>2</b>Channels<span class="cmp-count">${cmp.chans.size ? cmp.chans.size + ' selected' : 'pick at least one'}</span></div>
         <!-- X WAS MISSING FROM THIS LIST AND POSTS WERE GOING OUT ON IT.
