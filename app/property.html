@@ -353,6 +353,32 @@
     .cost-row.total { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 10px; margin-top: 4px; font-weight: 600; color: var(--ink); }
     .cost-row.total b { color: var(--brand); font-family: var(--f-serif); font-size: 18px; }
     .cost-note { font-size: 12px; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+    /* the cost card as a receipt (idea: dqnamo's Receipt Printer) */
+    .cr-paper { position: relative; max-width: 380px; margin: 8px auto 4px; padding: 16px 20px 24px; background: #FFFEFB; color: #1B1A17;
+      font: 500 13px/1.5 ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace; letter-spacing: .01em;
+      -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 51% repeat-x, linear-gradient(#000, #000) top / 100% calc(100% - 7px) no-repeat;
+              mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 14px 51% repeat-x, linear-gradient(#000, #000) top / 100% calc(100% - 7px) no-repeat; }
+    #costRows:has(.cr-paper) { display: block; filter: drop-shadow(0 1px 0 rgba(20,26,38,.14)) drop-shadow(0 12px 16px rgba(20,26,38,.14)); }
+    .cr-paper.wait { clip-path: inset(0 0 100% 0); }
+    .cr-paper.wait.in { animation: crPrint .7s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes crPrint { from { clip-path: inset(0 0 100% 0); transform: translateY(-8px); } to { clip-path: inset(0 0 -20px 0); transform: none; } }
+    .cr-head { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: #5C584F; letter-spacing: .14em; }
+    .cr-brand { font-weight: 800; letter-spacing: .22em; color: #1B1A17; }
+    .cr-rule { border-top: 1px solid #CFCABD; margin: 12px 0 10px; }
+    .cr-rule.dash { border-top: 1.5px dashed #B9B3A4; margin: 14px 0 12px; }
+    .cr-sec { margin: 10px 0 4px; font-size: 10px; font-weight: 800; letter-spacing: .2em; color: #7A7568; }
+    .cr-row { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; }
+    .cr-row span { color: #3B382F; }
+    .cr-row i { flex: 1 1 auto; min-width: 12px; border-bottom: 1.5px dotted #B9B3A4; transform: translateY(-3px); }
+    .cr-row b { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .cr-row.no span, .cr-row.no b { color: #8A8577; font-weight: 500; font-style: italic; }
+    .cr-total { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; column-gap: 12px; row-gap: 2px; font-weight: 800; }
+    .cr-total span { font-size: 12px; letter-spacing: .14em; white-space: nowrap; }
+    .cr-total b { margin-left: auto; font-size: 24px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; text-align: right; }
+    .cr-fine { margin-top: 6px; font-size: 9.5px; letter-spacing: .16em; color: #7A7568; }
+    .cr-bar { height: 28px; margin-top: 12px; opacity: .85;
+      background: repeating-linear-gradient(90deg, #1B1A17 0 2px, transparent 2px 4px, #1B1A17 4px 5px, transparent 5px 9px, #1B1A17 9px 12px, transparent 12px 14px, #1B1A17 14px 15px, transparent 15px 19px); }
+    @media (prefers-reduced-motion: reduce) { .cr-paper.wait, .cr-paper.wait.in { clip-path: none; animation: none; } }
     /* The seam between what it costs and what to offer. A rule rather than a
        second card: they are two halves of one answer, and a border says
        "related" where a card edge says "separate". */
@@ -3316,7 +3342,7 @@
         if (n == null) return null;
         try {
           return new Intl.NumberFormat(undefined, {
-            style: 'currency', currency: cur, maximumFractionDigits: 0,
+            style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0,
           }).format(Number(n));
         } catch (e) { return String(n); }
       };
@@ -3369,10 +3395,54 @@
         return;
       }
 
-      rowsEl.innerHTML = rows.map(function (r) {
-        return '<div class="cost-row' + (r[2] ? ' total' : '') + '">'
-          + '<span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>';
-      }).join('');
+      /* THE COST AS A RECEIPT (idea: dqnamo's Receipt Printer). The same figures
+         the card always showed, laid out as the slip you would get at a till:
+         what you pay every year, what you pay once, and a bottom line. Nothing
+         here is worked out that was not already: the only total is the rent
+         first-year total above, and it still appears only when every part of it
+         is known. Where there is no honest total, the bottom line is the
+         headline price, and a cost the agency did not state is printed on the
+         slip as "not stated" rather than being left out or guessed. */
+      var hasTotal = rows.some(function (r) { return r[2]; });
+      var line = function (label, val, cls) {
+        return '<div class="cr-row' + (cls ? ' ' + cls : '') + '"><span>' + esc(label) + '</span><i aria-hidden="true"></i><b>' + esc(val) + '</b></div>';
+      };
+      var stated = function (label, v, val) { return v == null ? line(label, 'not stated', 'no') : line(label, val); };
+      var priceLabel = isRent ? 'Rent' : 'Price';
+      var priceRow = p.price != null ? (priceLabel + ' ' + money(p.price) + per) : null;
+      var every = '', once = '';
+      if (hasTotal && p.price != null) every += line(priceLabel, money(p.price) + per);
+      every += stated('Service charge', p.service_charge, p.service_charge == null ? '' : money(p.service_charge) + (isRent ? '/yr' : ''));
+      once += stated('Move-in cost', p.move_in_cost, p.move_in_cost == null ? '' : money(p.move_in_cost));
+      once += stated('Agency fee', p.agency_fee, p.agency_fee == null ? '' : fee(p.agency_fee));
+      once += stated('Legal fee', p.legal_fee, p.legal_fee == null ? '' : fee(p.legal_fee));
+      var totalRow = null;
+      rows.forEach(function (r) { if (r[2]) totalRow = r; });
+      var bottomLabel = hasTotal ? 'First year, all in' : priceLabel;
+      var bottomVal = hasTotal ? totalRow[1] : (p.price != null ? money(p.price) + per : '');
+      var paper = '<div class="cr-paper" role="group" aria-label="What this home costs">'
+        + '<div class="cr-head"><span class="cr-brand">SYNAPSE</span><span>COST SLIP</span></div>'
+        + '<div class="cr-rule"></div>'
+        + (every ? '<div class="cr-sec">' + (isRent ? 'EVERY YEAR' : 'RECURRING') + '</div>' + every : '')
+        + '<div class="cr-sec">ONCE</div>' + once
+        + '<div class="cr-rule dash"></div>'
+        + (bottomVal ? '<div class="cr-total"><span>' + esc(bottomLabel.toUpperCase()) + '</span><b>' + esc(bottomVal) + '</b></div>' : '')
+        + '<div class="cr-fine">FIGURES AS STATED BY THE AGENCY</div>'
+        + '<div class="cr-bar" aria-hidden="true"></div>'
+        + '</div>';
+      rowsEl.innerHTML = paper;
+      /* It prints when you reach it. A card two swipes away would otherwise
+         finish its animation before anyone saw it. If the page cannot say when
+         it is on screen, it just shows. */
+      var sheet = rowsEl.querySelector('.cr-paper');
+      if (sheet && 'IntersectionObserver' in window && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        sheet.classList.add('wait');
+        var io = new IntersectionObserver(function (es) {
+          if (es.some(function (e) { return e.isIntersecting; })) { sheet.classList.add('in'); io.disconnect(); }
+        }, { threshold: 0.35 });
+        io.observe(sheet);
+        setTimeout(function () { sheet.classList.add('in'); io.disconnect(); }, 4000);
+      }
 
       if (noteEl) {
         /* Names precisely what is missing. The old note ended "any agency
@@ -3380,17 +3450,9 @@
            there was no column for one, but it amounted to telling the buyer to
            go and ask. There is a column now, so the card either shows the fee
            or says plainly that this agency has not stated it. */
-        var missing = [];
-        if (p.service_charge == null) missing.push('service charge');
-        if (p.move_in_cost == null) missing.push('move-in cost');
-        if (p.agency_fee == null) missing.push('agency fee');
-        if (p.legal_fee == null) missing.push('legal fee');
-        var tail = 'Utilities and power are separate and not shown here.';
-        noteEl.textContent = missing.length
-          ? ('The agency has not stated a ' + missing.slice(0, -1).join(', ')
-             + (missing.length > 1 ? ' or ' : '') + missing[missing.length - 1]
-             + ' for this listing. ' + tail)
-          : tail;
+        /* What was not stated is printed on the slip itself now, so the note
+           only carries what no slip line can: what is outside these figures. */
+        noteEl.textContent = 'Utilities and power are separate and not shown here.';
       }
     }
 
