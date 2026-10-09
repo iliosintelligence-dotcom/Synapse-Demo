@@ -2080,6 +2080,20 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ── dynamic button (idea: dqnamo's Dynamic Button) ── */
+    .dyn-l { display: inline-flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap; animation: dynIn .24s cubic-bezier(.2,.8,.2,1) both; }
+    .dyn-l.still { animation: none; }
+    @keyframes dynIn { from { opacity: 0; transform: translateY(7px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+    .dyn-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; opacity: .75; animation: spin .7s linear infinite; flex: none; }
+    .dyn-ico { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .dyn-ico path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: dynTick .32s .08s ease-out forwards; }
+    @keyframes dynTick { to { stroke-dashoffset: 0; } }
+    .ced #cedSave[disabled] { opacity: 1; cursor: progress; }
+    #cedSave.is-done { background: #25683F; color: #fff; }
+    html[data-theme="dark"] #cedSave.is-done { background: #5FC48A; color: #04210F; }
+    .dyn-enter { animation: dynIn .3s cubic-bezier(.2,.8,.2,1) both; }
+    #cmpModal .cmp-foot .btn { white-space: nowrap; }
+    @media (prefers-reduced-motion: reduce) { .dyn-l, .dyn-enter, .dyn-ico path { animation: none !important; } .dyn-ico path { stroke-dashoffset: 0; } }
     /* ── verified stamp (idea: dqnamo's Stamp) ── */
     .vst { position: absolute; left: 10px; bottom: 10px; z-index: 2; display: inline-block; transform: rotate(-4deg); pointer-events: none;
       filter: drop-shadow(0 1px 0 rgba(20,26,38,.25)) drop-shadow(0 6px 8px rgba(20,26,38,.28)); }
@@ -12584,6 +12598,51 @@
       return L.find((x) => x && x.id === id) || null;
     }
 
+    /* THE DYNAMIC BUTTON (idea: dqnamo's "Dynamic Button" in The Kitchen).
+       A button that says "Save", then "Saving...", then "Saved" used to swap its
+       text in one frame and jump in width. This changes the label with a short
+       crossfade and glides the button from its old width to its new one, so the
+       eye follows the change instead of catching up with it. Buttons that are
+       full width already (a phone's pinned Save) just get the crossfade, since
+       their width does not move. Reduced motion: the text changes, nothing
+       animates. The label is markup WE write (icons, "Saving..."), never
+       user text; pass anything typed by a person through esc2() first. */
+    const Dyn = (function () {
+      const reduce = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const SPIN = '<span class="dyn-spin" aria-hidden="true"></span>';
+      const TICK = '<svg class="dyn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+      function glide(btn, w0) {
+        if (!btn || !btn.isConnected || reduce() || !(w0 > 0)) return;
+        btn.style.transition = 'none'; btn.style.width = '';
+        const w1 = btn.getBoundingClientRect().width;
+        if (Math.abs(w1 - w0) < 1.5) return;
+        btn.style.width = w0 + 'px'; btn.style.overflow = 'hidden';
+        void btn.offsetWidth;
+        const done = () => { btn.style.transition = ''; btn.style.width = ''; btn.style.overflow = ''; btn.removeEventListener('transitionend', onEnd); };
+        const onEnd = (e) => { if (e.target === btn && e.propertyName === 'width') done(); };
+        /* Start the glide on a frame that has actually been drawn. A heavy
+           re-render can hold the page for a few hundred milliseconds, and a
+           transition begun before that is already over when the first frame
+           arrives: the button would jump, which is what this exists to avoid. */
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (!btn.isConnected) return;
+          btn.style.transition = 'width .3s cubic-bezier(.2,.8,.2,1)'; btn.style.width = w1 + 'px';
+          btn.addEventListener('transitionend', onEnd); setTimeout(done, 420);
+        }));
+        setTimeout(done, 1200);   /* never leave a button pinned to a width */
+      }
+      function set(btn, html) {
+        if (!btn || btn.dataset.dynHtml === html) return;
+        const w0 = btn.getBoundingClientRect().width;
+        btn.dataset.dynHtml = html;
+        btn.innerHTML = '<span class="dyn-l">' + html + '</span>';
+        glide(btn, w0);
+      }
+      /* Put a label back without animating (a dialog that reopens). */
+      function reset(btn, html) { if (btn) { btn.dataset.dynHtml = html; btn.innerHTML = '<span class="dyn-l still">' + html + '</span>'; } }
+      return { set, reset, glide, SPIN, TICK };
+    })();
+
     /* THE VERIFIED STAMP (idea: dqnamo's "Stamp" in The Kitchen). "Verified" was a
        green word on a photo; it is the one claim Synapse makes that nobody else
        can, so it gets to look like something that was applied by hand: a
@@ -14837,6 +14896,7 @@
     let cmp = { li: 0, chans: new Set(), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
 
     function renderComposer(){
+      const dynBefore = ['cmpGen', 'cmpSchedule'].reduce((m, id) => { const e = document.getElementById(id); if (e) m[id] = e.getBoundingClientRect().width; return m; }, {});
       /* X goes out on SYNAPSE'S X account (social-publish SYNAPSE_ACCOUNT_ONLY):
          agencies cannot connect their own yet. Said on the chip, where the
          choice is made, so nobody picks X expecting their own account. The
@@ -14881,6 +14941,11 @@
         html += `<div class="cmp-foot">${genBtn}<button class="btn btn-primary" id="cmpSchedule">Send for approval \u2192</button></div>`;
       }
       cmpModal.innerHTML = html;
+      /* Generate becomes "Write again" beside a new "Send for approval": the
+         buttons glide from where they were to where they are now. */
+      Object.keys(dynBefore).forEach((id) => { const e = document.getElementById(id); if (e) Dyn.glide(e, dynBefore[id]); });
+      const send = document.getElementById('cmpSchedule');
+      if (send && !dynBefore.cmpSchedule && cmpModal.classList.contains('on')) send.classList.add('dyn-enter');
     }
     /* Takes the listing to open on. The pipeline's "Generate content" button
        sits on a specific card, and opening the composer on whichever listing
@@ -15181,8 +15246,10 @@
           if (CED.opener && CED.opener.focus) CED.opener.focus();
         };
         CED.close = close;
+        Dyn.reset(CED.save, 'Save caption'); Dyn.reset(CED.go, 'Rewrite');
         const setBusy = (b) => {
           CED.busy = b;
+          Dyn.set(CED.go, b && CED.rewriting ? Dyn.SPIN + 'Writing\u2026' : 'Rewrite');
           CED.text.setAttribute('aria-busy', String(b));
           [CED.go, CED.save, CED.undo].concat([].slice.call(el.querySelectorAll('.ced-quick button')))
             .forEach((x) => { x.disabled = b; });
@@ -15195,7 +15262,7 @@
           if (CED.busy || !CED.o) return;
           const o = CED.o, before = CED.text.value;
           if (!before.trim()) { CED.note.className = 'ced-note err'; CED.note.textContent = 'There is no caption to change yet.'; return; }
-          setBusy(true);
+          CED.rewriting = true; setBusy(true);
           CED.note.className = 'ced-note'; CED.note.textContent = 'Rewriting\u2026';
           try {
             const tk = await authToken();
@@ -15262,12 +15329,17 @@
           if (!text.trim()) { CED.note.className = 'ced-note err'; CED.note.textContent = 'A caption cannot be empty.'; return; }
           const done = CED.o.onSave(text);
           if (done && typeof done.then === 'function') {
-            setBusy(true); CED.note.className = 'ced-note'; CED.note.textContent = 'Saving\u2026';
+            CED.rewriting = false; setBusy(true); CED.note.className = 'ced-note'; CED.note.textContent = 'Saving\u2026';
+            Dyn.set(CED.save, Dyn.SPIN + 'Saving\u2026');
             const o = CED.o;
-            done.then(() => { if (CED.o === o) { setBusy(false); close(true); } })
+            done.then(() => {
+                if (CED.o !== o) return;
+                CED.busy = false; Dyn.set(CED.save, Dyn.TICK + 'Saved'); CED.save.disabled = false; CED.save.classList.add('is-done');
+                setTimeout(() => { if (CED.o === o) close(true); }, 420);
+              })
               .catch((err) => {
                 if (CED.o !== o) return;
-                setBusy(false);
+                setBusy(false); Dyn.set(CED.save, 'Save caption');
                 CED.note.className = 'ced-note err';
                 CED.note.textContent = (err && err.message) || 'That caption was not saved.';
               });
@@ -15283,7 +15355,8 @@
       CED.history = [];
       CED.text.value = CED.orig;
       CED.ask.value = '';
-      CED.undo.hidden = true;
+      CED.undo.hidden = true; CED.rewriting = false;
+      Dyn.reset(CED.save, 'Save caption'); CED.save.classList.remove('is-done');
       CED.note.className = 'ced-note'; CED.note.textContent = '';
       CED.setBusy(false);
       CED.badge.innerHTML = chnBadge(o.ch);
@@ -16365,7 +16438,7 @@
         put(buy.querySelector('[data-bl-rcpt]'), blReceipt(BL.plan, BL.period, tier));
         put(buy.querySelector('[data-bl-note]'), note);
         const payBtn = buy.querySelector('[data-bl-pay]');
-        if (payBtn && !payBtn.disabled) put(payBtn, verb + ' · ' + blNaira(q.amount));
+        if (payBtn && !payBtn.disabled) Dyn.set(payBtn, verb + ' · ' + blNaira(q.amount));
         put(buy.querySelector('[data-bl-every]'), BL.period === 'annual' ? 'year' : 'month');
       }
 
