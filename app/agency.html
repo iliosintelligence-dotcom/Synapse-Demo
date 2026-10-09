@@ -4415,6 +4415,8 @@
   <link rel="stylesheet" href="theme-dark.css" />
   <script src="theme.js"></script>
   <script src="brand.js"></script>
+  <link rel="stylesheet" href="foil.css" />
+  <script src="foil.js" defer></script>
 </head>
 <body class="portal">
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -16487,6 +16489,7 @@
       const limit = d.listings_max == null
         ? 'Unlimited active listings.'
         : d.listings_max + ' active listings' + (packs ? ', including ' + packs + ' listing pack' + (packs > 1 ? 's' : '') : '') + '.';
+      document.getElementById('blNow').classList.toggle('irid', tier === 'market_leader');
       document.getElementById('blNow').innerHTML =
         '<div class="bl-k">Your plan</div>'
         + '<div class="bl-plan">' + blEsc(BL_TIER_NAME[tier] || tier) + '</div>'
@@ -16529,7 +16532,7 @@
           + BL_PLANS.map((p) => {
             const pq = blQuote(p.code, BL.period);
             const on = p.code === BL.plan;
-            return '<button type="button" class="bl-opt" role="radio" aria-checked="' + on + '" data-bl-plan="' + p.code + '">'
+            return '<button type="button" class="bl-opt' + (p.code === 'market_leader' ? ' irid' : '') + '" role="radio" aria-checked="' + on + '" data-bl-plan="' + p.code + '">'
               + '<span class="bl-dot" aria-hidden="true"></span>'
               + '<span><b>' + p.name + (tier === p.code ? '<span class="bl-tag">YOUR PLAN</span>' : '') + '</b><small>' + p.line + '</small></span>'
               + '<span class="bl-amt" data-bl-amt="' + p.code + '">' + blNaira(pq.amount) + '<small>per ' + pq.unit + '</small></span>'
@@ -16711,6 +16714,9 @@
       const have = Math.min(b.have, b.needed), pct = Math.round(have / b.needed * 100);
       const until = b.free_until ? new Date(b.free_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
       box.hidden = false;
+      /* The earned state is a prize, so it is drawn as foil; the open state
+         stays the plain orange card. */
+      box.classList.toggle('irid', !!b.earned); box.classList.toggle('fill', !!b.earned);
       box.innerHTML = b.earned
         ? '<b>You earned the 2026 bonanza.</b> Synapse is free for you, on the Leader plan, until ' + until + '. Nothing to pay and nothing to do.'
         : b.open

@@ -1,0 +1,32 @@
+/* IRIDESCENT FOIL (idea: dqnamo's Iridescent Foil in The Kitchen).
+   A card that catches the light: a thin holographic ring, a faint foil wash and a
+   band of sheen that slides as you scroll and follows the pointer. It is a
+   treatment, not a layout: add class "irid" to a card that is already
+   position-able, and "fill" for a full foil surface (a prize, not a plan).
+   Text keeps the card's own colours, so contrast is unchanged; the foil sits
+   behind content (wash) or on the edge (ring), never across the words except
+   as a soft highlight. --fx --fy --gx --gy are set by foil.js. */
+.irid { --fx: .5; --fy: .5; --gx: 50%; --gy: 30%; position: relative; isolation: isolate;
+  --foil: linear-gradient(115deg, #ff8fd0, #ffd56a, #78eec0, #78b4ff, #c496ff, #ff8fd0); }
+.irid::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; padding: 2px; pointer-events: none;
+  background: var(--foil) calc(var(--fx) * 100% + var(--fy) * 100%) 50% / 320% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask-composite: exclude;
+  transition: filter .3s ease; }
+.irid::after { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none;
+  background:
+    radial-gradient(240px circle at var(--gx) var(--gy), rgba(255,255,255,.55), rgba(255,255,255,0) 60%),
+    linear-gradient(105deg, rgba(255,255,255,0) 32%, rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 68%) calc(var(--fy) * 100%) 0 / 300% 100%,
+    var(--foil) calc(var(--fx) * 100% + var(--fy) * 100%) 50% / 320% 100%;
+  opacity: .16; mix-blend-mode: soft-light; }
+.irid:not(.lit)::after { background-image:
+    linear-gradient(105deg, rgba(255,255,255,0) 32%, rgba(255,255,255,.5) 50%, rgba(255,255,255,0) 68%),
+    var(--foil); background-position: calc(var(--fy) * 100%) 0, calc(var(--fx) * 100% + var(--fy) * 100%) 50%; background-size: 300% 100%, 320% 100%; }
+.irid.lit::after { opacity: .3; }
+.irid > * { position: relative; z-index: 2; }
+.irid.fill { background: linear-gradient(115deg, #ffe0f1, #fff0bd, #d3fae8, #d5e7ff, #e8d9ff, #ffe0f1) calc(var(--fx) * 100% + var(--fy) * 100%) 50% / 320% 100% !important; color: #15120F !important; }
+.irid.fill::after { opacity: .55; mix-blend-mode: overlay; }
+.irid.fill b, .irid.fill .bz-bar { color: inherit; }
+:root[data-theme="dark"] .irid::after, html[data-theme="dark"] .irid::after { opacity: .12; }
+:root[data-theme="dark"] .irid.fill, html[data-theme="dark"] .irid.fill { background-blend-mode: normal; }
+@media (prefers-reduced-motion: reduce) { .irid::before, .irid::after { transition: none; } }
