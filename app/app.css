@@ -1230,3 +1230,41 @@ html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !importa
 :root[data-theme="dark"] .tkt-note { color: #E4DFD3; background: rgba(24,24,26,.82); }
 @keyframes tktIn { from { opacity: 0; transform: translateY(-16px) rotate(-3deg); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .tkt { animation: none; } .tkt-body, .tkt-hero, .tkt-ph, .tkt-bar { transition: none; transform: none; } .tkt-body::after { display: none; } }
+
+/* ── tactile primary button (idea: dqnamo's Tactile Button in The Kitchen) ──
+   The orange primary action is a physical key: a face with a faint sheen, a
+   firm darker edge under it, and a soft shadow on the desk. Hover lifts the
+   face a pixel; pressing sinks it the whole depth of the edge, so the button
+   visibly goes down and the shadow closes under it. Only the SHADOW and the
+   transform change, never the box, so nothing around a button moves. Disabled
+   buttons are flat: nothing to press. Reduced motion keeps the look and drops
+   the movement. */
+/* :not(:disabled) is also what lifts these above theme.css, which flattens the
+   primary button's shadow for the calm look: the tactile edge is a deliberate
+   exception, and only for buttons that can actually be pressed. */
+.btn-primary:not(:disabled), .agd-btn-primary, .lc-main:not(:disabled) {
+  --edge: #B8621B; --depth: 4px;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 55%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 8px) 16px -6px rgba(184,98,27,.55);
+  transform: translateY(0);
+  transition: transform .09s ease-out, box-shadow .09s ease-out, background-color .15s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled), .agd-btn-primary:hover, .lc-main:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 calc(var(--depth) + 1px) 0 var(--edge), 0 calc(var(--depth) + 12px) 20px -6px rgba(184,98,27,.55);
+  }
+}
+.btn-primary:active:not(:disabled), .agd-btn-primary:active, .lc-main:active:not(:disabled) {
+  transform: translateY(var(--depth));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 var(--edge), 0 2px 6px -3px rgba(184,98,27,.5);
+  transition-duration: .04s;
+}
+.btn-primary:disabled, .btn-primary[disabled], .lc-main:disabled { background-image: none; box-shadow: none; transform: none; }
+.btn-primary:focus-visible, .agd-btn-primary:focus-visible, .lc-main:focus-visible {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 var(--depth) 0 var(--edge), 0 0 0 3px rgba(255,138,45,.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .agd-btn-primary, .lc-main { transition: none; }
+  .btn-primary:hover:not(:disabled), .btn-primary:active:not(:disabled), .agd-btn-primary:active, .lc-main:active:not(:disabled) { transform: none; }
+}
