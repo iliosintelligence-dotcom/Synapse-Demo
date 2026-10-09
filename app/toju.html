@@ -1281,6 +1281,52 @@
     }
     function hoLabel() { return HANDED ? 'Introduced' : 'Introduce me'; }
 
+    /* THE INTRODUCTION TICKET (idea: dqnamo's Ticket). The sentence "Done, I have
+       introduced you" is easy to scroll past and hard to point at later. This is
+       the same fact as something you can hold: the home, the date, a reference
+       taken from the lead's own id, and whether the agent was messaged or the
+       enquiry was only saved. It states what create-lead actually returned and
+       nothing more: delivery_status 'delivered' says sent; anything else says
+       saved, because that is all we know then. */
+    function introTicket(p, d) {
+      if (!p || !d || !d.lead_id) return;
+      const ref = String(d.lead_id).replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase();
+      const when = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const sent = d.delivery_status === 'delivered';
+      let img = ''; try { img = coverOf(p.property_media) || ''; } catch (e) { img = ''; }
+      const where = [priceLine(p), p.city].filter(Boolean).join(' \u00b7 ');
+      const el = document.createElement('div');
+      el.className = 'tkt-wrap';
+      el.innerHTML = '<div class="tkt" data-tkt role="group" aria-label="Introduction ticket"><div class="tkt-body">'
+        + '<div class="tkt-main">'
+        + '<div class="tkt-kicker"><span>INTRODUCTION</span><span>' + esc(when) + '</span></div>'
+        + '<div class="tkt-hero">' + (img ? '<span class="tkt-ph"><img src="' + esc(img) + '" alt=""></span>' : '')
+        + '<div class="tkt-t">' + esc(p.title || 'This home') + '<small>' + esc(where) + '</small></div></div>'
+        + '<div class="tkt-grid"><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>The agent</b></div><div><i>Status</i><b>' + (sent ? 'Sent' : 'Saved') + '</b></div></div>'
+        + '</div>'
+        + '<div class="tkt-stub"><div class="tkt-ref"><i>Reference</i><b>' + esc(ref) + '</b></div><div class="tkt-bar" aria-hidden="true"></div></div>'
+        + '</div></div>'
+        + '<p class="tkt-note">' + (sent
+          ? 'The agent has been messaged with what we talked about. Quote this reference if you call them.'
+          : 'The agency has your brief and will see it on their side. Quote this reference if you call them.') + '</p>';
+      convo.appendChild(el); scrollDown();
+    }
+    /* Depth that follows the pointer (or a finger dragged across the ticket). */
+    document.addEventListener('pointermove', (e) => {
+      const t = e.target.closest && e.target.closest('[data-tkt]'); if (!t) return;
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const r = t.getBoundingClientRect(); if (!r.width) return;
+      const x = Math.max(-1, Math.min(1, (e.clientX - r.left) / r.width * 2 - 1)), y = Math.max(-1, Math.min(1, (e.clientY - r.top) / r.height * 2 - 1));
+      t.style.setProperty('--ry', (x * 7).toFixed(2) + 'deg'); t.style.setProperty('--rx', (-y * 6).toFixed(2) + 'deg');
+      t.style.setProperty('--px', x.toFixed(3)); t.style.setProperty('--py', y.toFixed(3));
+      t.style.setProperty('--gx', ((x + 1) * 50).toFixed(1) + '%'); t.style.setProperty('--gy', ((y + 1) * 50).toFixed(1) + '%');
+    });
+    document.addEventListener('pointerout', (e) => {
+      const t = e.target.closest && e.target.closest('[data-tkt]'); if (!t || t.contains(e.relatedTarget)) return;
+      ['--rx', '--ry', '--px', '--py'].forEach((k) => t.style.setProperty(k, k === '--rx' || k === '--ry' ? '0deg' : '0'));
+      t.style.setProperty('--gx', '50%'); t.style.setProperty('--gy', '30%');
+    });
+
     /* The introduction. The same create-lead call the listing page used to
        make -- the lead is written before any WhatsApp is attempted, so a
        messaging outage costs the message and never the enquiry -- but reached
@@ -1333,6 +1379,7 @@
         tojuMsg('Done \u2014 I have introduced you to the agent for '
           + (REPLY_TO.title || 'this home')
           + '. They have what we talked about, so you will not be starting again.');
+        try { introTicket(REPLY_TO, d); } catch (e) { /* the ticket is a keepsake; the introduction stands without it */ }
       } catch (e) {
         if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; }
         tojuMsg((e && e.message) || 'I could not make that introduction just now.');

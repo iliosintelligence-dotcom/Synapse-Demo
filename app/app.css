@@ -1186,3 +1186,47 @@ html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !importa
 @keyframes vstDown { from { opacity: 0; transform: rotate(-12deg) scale(1.7); } 60% { opacity: 1; } to { opacity: 1; transform: rotate(-4deg) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .vst.land { animation: none; } }
 .hero .vst { left: 14px; bottom: auto; top: 14px; transform-origin: top left; }
+
+/* ── ticket (idea: dqnamo's Ticket in The Kitchen) ──
+   A perforated paper ticket: a main section, a torn-off stub, notches where the
+   two meet, and a little depth that follows the pointer. Composable: put any
+   content in .tkt-main and .tkt-stub; --stub is the stub's height and decides
+   where the notches go. Stays paper (cream, dark ink) in dark mode, like the
+   plan receipt in the portal. */
+.tkt { --stub: 96px; --notch: 11px; --rx: 0deg; --ry: 0deg; --px: 0; --py: 0; --gx: 50%; --gy: 30%;
+  position: relative; width: min(340px, 100%); margin: 6px 0 10px; perspective: 700px; animation: tktIn .6s cubic-bezier(.2,.9,.3,1.25) both; }
+.tkt-body { position: relative; color: #1B1A17; background: #FFFDF6;
+  transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform .14s ease-out; will-change: transform;
+  filter: drop-shadow(0 1px 0 rgba(20,26,38,.18)) drop-shadow(0 14px 18px rgba(20,26,38,.2));
+  border-radius: 16px;
+  -webkit-mask: radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000) , radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000);
+  -webkit-mask-composite: source-in;
+          mask: radial-gradient(circle var(--notch) at 0 calc(100% - var(--stub)), #0000 97%, #000) , radial-gradient(circle var(--notch) at 100% calc(100% - var(--stub)), #0000 97%, #000);
+          mask-composite: intersect; }
+.tkt-body::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: soft-light;
+  background: radial-gradient(260px circle at var(--gx) var(--gy), rgba(255,255,255,.75), rgba(255,255,255,0) 60%); }
+.tkt-main { padding: 16px 18px 14px; display: grid; gap: 12px; }
+.tkt-kicker { display: flex; justify-content: space-between; gap: 10px; font: 700 10.5px ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; letter-spacing: .16em; color: #5C584F; }
+.tkt-kicker span:first-child { color: #1E5733; }
+.tkt-hero { display: flex; gap: 12px; align-items: center; transform: translate(calc(var(--px) * 3px), calc(var(--py) * 3px)); transition: transform .14s ease-out; }
+.tkt-ph { width: 64px; height: 64px; flex: none; border-radius: 12px; overflow: hidden; background: #E9E3D6; box-shadow: 0 6px 12px -6px rgba(20,26,38,.4);
+  transform: translate(calc(var(--px) * 6px), calc(var(--py) * 6px)); transition: transform .14s ease-out; }
+.tkt-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tkt-t { min-width: 0; font: 700 15px/1.25 var(--f-sans, system-ui); color: #1B1A17; overflow-wrap: anywhere; }
+.tkt-t small { display: block; margin-top: 3px; font: 500 12px/1.35 var(--f-sans, system-ui); color: #5C584F; }
+.tkt-grid { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 10px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; }
+.tkt-grid i { display: block; font-style: normal; font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #7A7568; }
+.tkt-grid b { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 700; }
+.tkt-stub { position: relative; height: var(--stub); padding: 14px 18px 12px; display: grid; align-content: center; gap: 8px; }
+.tkt-stub::before { content: ''; position: absolute; left: calc(var(--notch) + 6px); right: calc(var(--notch) + 6px); top: 0; border-top: 2px dashed #CFC9B8; }
+.tkt-ref { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; }
+.tkt-ref i { font-style: normal; font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: #7A7568; }
+.tkt-ref b { font-size: 17px; font-weight: 800; letter-spacing: .14em; }
+.tkt-bar { height: 22px; opacity: .85; transform: translate(calc(var(--px) * -3px), calc(var(--py) * -2px)); transition: transform .14s ease-out;
+  background: repeating-linear-gradient(90deg, #1B1A17 0 2px, transparent 2px 4px, #1B1A17 4px 5px, transparent 5px 9px, #1B1A17 9px 12px, transparent 12px 14px, #1B1A17 14px 15px, transparent 15px 19px); }
+.tkt-note { margin: 10px 0 0; padding: 9px 13px; width: fit-content; max-width: min(340px, 100%); border-radius: 14px; font-size: 12.5px; line-height: 1.5;
+  color: #2F2D28; background: rgba(255,253,246,.88); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+:root[data-theme="dark"] .tkt-note { color: #E4DFD3; background: rgba(24,24,26,.82); }
+@keyframes tktIn { from { opacity: 0; transform: translateY(-16px) rotate(-3deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tkt { animation: none; } .tkt-body, .tkt-hero, .tkt-ph, .tkt-bar { transition: none; transform: none; } .tkt-body::after { display: none; } }
