@@ -665,6 +665,34 @@
     html[data-theme="dark"] .ced-text, html[data-theme="dark"] .ced-askrow input, html[data-theme="dark"] .drawer .slot select, html[data-theme="dark"] .drawer .slot input { background: #000; }
     html[data-theme="dark"] .ced-count, html[data-theme="dark"] .sch2-sl em, html[data-theme="dark"] .drawer .slot-x { background: rgba(255,255,255,.1); }
     html[data-theme="dark"] .sch2-q.on, html[data-theme="dark"] .ced-quick button:hover { background: #2A1B0E; }
+    /* ── scheduler sheet on a phone: a bottom sheet, time chips in one swipeable row, the date and time side by side,
+       and the save button pinned where the thumb is. Only for the scheduler (the other drawers keep their own shape). ── */
+    @media (max-width: 640px) {
+      .drawer:has(.sch2-head) { top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-width: none; height: auto; max-height: 92dvh;
+        border-left: 0; border-radius: 26px 26px 0 0; padding: 8px 16px 0; transform: translateY(105%); box-shadow: 0 -24px 60px rgba(20,26,38,.28); overscroll-behavior: contain; }
+      .drawer.on:has(.sch2-head) { transform: translateY(0); }
+      .drawer:has(.sch2-head)::before { content: ''; display: block; width: 40px; height: 5px; border-radius: 5px; background: rgba(0,0,0,.18); margin: 4px auto 10px; }
+      .drawer .sch2-head { margin-bottom: 10px; }
+      .drawer .sch2-head h2 { font-size: 19px; }
+      .drawer .sch2-head .x { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.06); font-size: 22px; display: grid; place-items: center; }
+      .sch2-post { padding: 8px; gap: 10px; }
+      .sch2-ph { width: 64px; height: 64px; border-radius: 10px; }
+      .sch2-lbl { margin: 14px 0 6px; }
+      .sch2-quick { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 10px; padding: 0 16px 2px; scrollbar-width: none; scroll-snap-type: x proximity; scroll-padding-left: 16px; }
+      .sch2-quick::-webkit-scrollbar { display: none; }
+      .sch2-q { flex: none; min-height: 44px; scroll-snap-align: start; }
+      .drawer .slot { grid-template-columns: 1fr 1fr 44px; grid-template-areas: 'p p x' 'd t t'; gap: 8px; padding: 10px; }
+      .drawer .slot-p { grid-area: p; } .drawer .slot-d { grid-area: d; } .drawer .slot-t { grid-area: t; } .drawer .slot-x { grid-area: x; width: 44px; min-height: 44px; }
+      .drawer .slot select, .drawer .slot input { min-height: 44px; font-size: 16px; }
+      .drawer .slot-acct { grid-column: 1 / -1; }
+      .sch2-ghost { min-height: 44px; }
+      .sch2-story { min-height: 44px; }
+      .sch2-foot-pad { height: 4px; }
+      .sch2-save { position: sticky; bottom: 0; z-index: 2; margin: 14px -16px 0; width: calc(100% + 32px); border-radius: 0; min-height: 56px;
+        padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -12px 24px -12px rgba(20,26,38,.2); }
+    }
+    html[data-theme="dark"] .drawer:has(.sch2-head)::before { background: rgba(255,255,255,.25); }
+    html[data-theme="dark"] .drawer .sch2-head .x { background: rgba(255,255,255,.1); }
     .slot-acct { grid-column: 1 / -1; }
     /* No account to choose between: the div is empty and takes no
        space, gap included. */
