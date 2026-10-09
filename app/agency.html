@@ -14717,7 +14717,7 @@
 
     const escT = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const cmpScrim = document.getElementById('cmpScrim'), cmpModal = document.getElementById('cmpModal');
-    let cmp = { li: 0, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
+    let cmp = { li: 0, chans: new Set(), captions: null, hashtags: [], note: '', rec: '', loading: false, err: '' };
 
     function renderComposer(){
       /* X goes out on SYNAPSE'S X account (social-publish SYNAPSE_ACCOUNT_ONLY):
@@ -14734,7 +14734,7 @@
         <div class="cmp-listings" role="group" aria-label="Verified listings">${POST_LISTINGS.map((l, i) => `<button class="cmp-lst ${i === cmp.li ? 'on' : ''}" data-li="${i}" aria-pressed="${i === cmp.li}">`
           + `${photoHtml(l.img, { cls: 'cl-ph' })}<span class="cl-tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>`
           + `<span class="cl-txt"><span class="t">${l.title.split(',')[0]}</span><span class="p">${nairaShort(l.price)}</span></span></button>`).join('')}</div>
-        <div class="cmp-step"><b>2</b>Channels<span class="cmp-count">${cmp.chans.size} selected</span></div>
+        <div class="cmp-step"><b>2</b>Channels<span class="cmp-count">${cmp.chans.size ? cmp.chans.size + ' selected' : 'pick at least one'}</span></div>
         <!-- X WAS MISSING FROM THIS LIST AND POSTS WERE GOING OUT ON IT.
              Synapse's own X account twins every listing, so the platform has
              been publishing all along -- with a caption written for Instagram
@@ -14788,7 +14788,7 @@
         idx = which;
       }
       if (!POST_LISTINGS.length) { toast('Add an active listing first'); return; }
-      cmp = { li: idx, chans: new Set(['instagram', 'tiktok', 'facebook']), captions: null, hashtags: [], note: '', rec: '', angles: {}, loading: false, err: '' };
+      cmp = { li: idx, chans: new Set(), captions: null, hashtags: [], note: '', rec: '', angles: {}, loading: false, err: '' };
       renderComposer(); cmpScrim.classList.add('on'); cmpModal.classList.add('on');
       /* Not awaited: the composer opens now and the chips arrive a beat
          later, re-rendering themselves. Blocking a modal on a list of
