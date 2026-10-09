@@ -828,6 +828,53 @@
     .pcard .act { padding: 8px; font: 700 12px var(--f-sans); margin-top: 10px; }
     .pcard .act.pri { background: var(--brand-deep); }
     .pcard .gen { font-size: 12px; }
+    /* ── pipeline card v2: a picture, a name, a price, one chip, one line, buttons ── */
+    .col { min-width: 236px; }
+    .pcard.v2 { padding: 0; overflow: hidden; border-radius: 16px; display: flex; flex-direction: column; margin-bottom: 10px; }
+    .pcard.v2 .pc-ph { position: relative; aspect-ratio: 16 / 10; background: var(--surface-2, #F0EBE4); }
+    .pcard.v2 .pc-ph .lph { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; overflow: hidden; }
+    .pcard.v2 .pc-ph .lph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pcard.v2 .pc-ph .lph.no-photo, .pcard.v2 .pc-ph .lph:empty { background: linear-gradient(135deg, #F4ECE2, #E8DDD0); }
+    .pcard.v2 .pc-chip { position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px;
+      background: rgba(255,255,255,.94); color: #15120F; font: 700 11.5px/1 var(--f-sans); box-shadow: 0 2px 8px rgba(21,18,15,.18); }
+    .pcard.v2 .pc-chip i { width: 7px; height: 7px; border-radius: 50%; background: #8C8278; flex: none; }
+    .pcard.v2 .pc-chip.ok i { background: #25683F; } .pcard.v2 .pc-chip.ok { color: #1E5733; }
+    .pcard.v2 .pc-chip.warn i { background: #B45309; } .pcard.v2 .pc-chip.warn { color: #8A3D05; }
+    .pcard.v2 .pc-chip.bad i { background: #B3261E; } .pcard.v2 .pc-chip.bad { color: #9B1F18; }
+    .pcard.v2 .pc-chip.brand i { background: #FF8A2D; }
+    .pcard.v2 .pc-chip.info i { background: #3C6EA8; }
+    .pcard.v2 .pc-chs { position: absolute; left: 8px; bottom: 8px; display: flex; }
+    .pcard.v2 .pc-chs .cav { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; border: 2px solid #fff; margin-left: -6px; box-shadow: 0 1px 4px rgba(21,18,15,.3); }
+    .pcard.v2 .pc-chs .cav:first-child { margin-left: 0; }
+    .pcard.v2 .pc-main { padding: 11px 12px 4px; display: grid; gap: 3px; }
+    .pcard.v2 .pc-title { font: 600 14px/1.25 var(--f-sans); color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pcard.v2 .pc-price { font: 600 15px/1.2 var(--f-serif); color: var(--brand-deep, var(--ink)); font-variant-numeric: lining-nums; }
+    .pcard.v2 .pc-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 8px; margin-top: 4px; font-size: 12px; color: var(--ink-muted); }
+    .pcard.v2 .pc-l { display: inline-flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pcard.v2 .pc-l svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .pcard.v2 .pc-m { color: var(--ink); white-space: nowrap; }
+    .pcard.v2 .pc-m b { font-weight: 700; }
+    .pcard.v2 .cap { margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: var(--ink); -webkit-line-clamp: 3; cursor: text; }
+    .pcard.v2 .cap:hover, .pcard.v2 .cap:focus-visible { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(21,18,15,.3); text-underline-offset: 3px; outline: none; }
+    .pcard.v2 .skel { margin-top: 8px; }
+    .pcard.v2 .pc-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px 12px; }
+    .pcard.v2 .pc-btn { white-space: nowrap; }
+    .pcard.v2 .pc-btn.ok { flex: 1 1 100%; }
+    .col .ch .w { display: none; }
+    .pcard.v2 .pc-btn { flex: 1 1 auto; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; border: 0; border-radius: 999px;
+      font: 700 12.5px/1 var(--f-sans); cursor: pointer; background: rgba(0,0,0,.05); color: var(--ink); transition: transform .15s ease, opacity .15s ease; }
+    .pcard.v2 .pc-btn svg, .pcard.v2 .pc-ib svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .pcard.v2 .pc-btn:hover { opacity: .9; } .pcard.v2 .pc-btn:active { transform: scale(.97); }
+    .pcard.v2 .pc-btn.pri { background: var(--brand-deep, #15120F); color: #fff; }
+    .pcard.v2 .pc-btn.ok { background: #25683F; color: #fff; }
+    .pcard.v2 .pc-ib { width: 36px; height: 36px; flex: none; display: inline-grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0,0,0,.05); color: var(--ink-muted); cursor: pointer; transition: background-color .15s ease, color .15s ease; }
+    .pcard.v2 .pc-ib:hover { background: rgba(0,0,0,.1); color: var(--ink); }
+    .pcard.v2 .pc-btn:focus-visible, .pcard.v2 .pc-ib:focus-visible { outline: 2px solid var(--brand, #FF8A2D); outline-offset: 2px; }
+    .pcard.v2 .cmts { margin-top: 8px; }
+    html[data-theme="dark"] .pcard.v2 .pc-btn, html[data-theme="dark"] .pcard.v2 .pc-ib { background: rgba(255,255,255,.1); color: var(--ink); }
+    html[data-theme="dark"] .pcard.v2 .pc-btn.pri { background: #fff; color: #000; }
+    html[data-theme="dark"] .pcard.v2 .pc-btn.ok { background: #5FC48A; color: #04210F; }
+    html[data-theme="dark"] .pcard.v2 .pc-ph .lph.no-photo, html[data-theme="dark"] .pcard.v2 .pc-ph .lph:empty { background: linear-gradient(135deg, #1B1D20, #111214); }
     .pcard .skel { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
     .pcard .skel span { height: 9px; border-radius: 5px; background: linear-gradient(90deg,rgba(0,0,0,0.05) 25%,rgba(0,0,0,0.09) 37%,rgba(0,0,0,0.05) 63%); background-size: 400% 100%; animation: shimmer 1.3s ease infinite; }
     @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
@@ -6586,54 +6633,84 @@
             + p.id + '">Check the link</button></div>' : '');
     }
 
-    function pcard(p, stage, i){
-      let body = '';
-      /* A listing that has been posted before is not the same as one nobody
-         has touched, and the button should not pretend otherwise. Saying so
-         also explains why it is sitting in the first column again. */
-      if (stage === 'uploaded') body = (p.postedCount
-          ? `<div class="w" style="margin-top:8px;color:var(--ink-muted)">Posted ${p.postedCount} time${p.postedCount === 1 ? '' : 's'}${p.lastPostedAt ? ' · last ' + esc2(fmtWhen(p.lastPostedAt)) : ''}</div>`
-          : '')
-        + `<button class="act pri" data-act="gen" data-id="${p.id}">⚡ ${p.postedCount ? 'Write another post' : 'Generate content'}</button>`;
-      else if (stage === 'generating') body = `<div class="gen"><span class="spin"></span> Writing captions…</div><div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>`;
-      /* Keep or discard — the two answers a review actually has. Approving
-         opens the scheduler rather than silently picking a time, because "when"
-         is the decision the agency was asking to make. */
-      else if (stage === 'approval') body = `<div class="cap" data-capedit="${esc2(p.id)}" role="button" tabindex="0" aria-label="Open this caption to edit">${esc2((p.caption || '').slice(0, 260))}</div>
-        <span class="cap-edit" aria-hidden="true">\u270e Edit caption</span>
-        <button class="act pri" data-act="approve" data-id="${p.id}">Keep &amp; schedule</button>
-        <button class="act gh" data-act="discard" data-id="${p.id}">Discard</button>`;
-      /* A RETRY IS NOT A FRESH SCHEDULE.
-         A row can be status 'scheduled' and already carry a failure_reason:
-         the publisher tried, could not, and pushed scheduled_at forward for
-         another go. On the board that looked identical to a post which had
-         never been attempted -- same clock, same time, nothing said. And when
-         the reason is "no account is connected", the remaining attempts are
-         certain to fail the same way, so the agency sat watching a clock for
-         an outcome that was already decided.
+    /* ── THE PIPELINE CARD, REDESIGNED (Eden, 2026-10-09) ──────────────────────
+       "The cards of each property's post are not presentable. That is why you have so many texts and explanations on
+       them." The old card explained itself in sentences. This one is a picture, a name, a price, ONE status chip, one
+       short line, and buttons. Everything that used to be a sentence is a chip or an icon, and the full wording lives in
+       the tooltip (title) for anyone who wants it. Every [data-act], [data-capedit] and [data-pid] the board's handlers
+       listen for is still here, so nothing about how a card behaves has changed. */
+    const PCI = {
+      send:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>',
+      move:  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+      copy:  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15V7a2 2 0 0 1 2-2h8"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+      close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+      link:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>',
+      retry: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/></svg>',
+      edit:  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16z"/></svg>',
+      spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>',
+      check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+    };
+    /* A button that is only a picture still needs a name: aria-label for the reader, title for the hover. */
+    const pcIcon = (act, id, ico, label, extra) =>
+      '<button type="button" class="pc-ib' + (extra ? ' ' + extra : '') + '" data-act="' + act + '" data-id="' + id + '" aria-label="' + label + '" title="' + label + '">' + PCI[ico] + '</button>';
+    const pcBtn = (act, id, ico, label, cls) =>
+      '<button type="button" class="pc-btn ' + (cls || '') + '" data-act="' + act + '" data-id="' + id + '">' + PCI[ico] + '<span>' + label + '</span></button>';
+    const pcChip = (tone, text, tip) => '<span class="pc-chip ' + tone + '"' + (tip ? ' title="' + esc2(tip) + '"' : '') + '><i></i>' + esc2(text) + '</span>';
+    const plain = (h) => String(h || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+    /* Where it went, as one plain sentence for the tooltip. */
+    const pcWhere = (p) => plain(carriedBy(p)) + (p.waitMine || (p.waitAmp && p.waitAmp.length) ? ' ' + plain(waitLine(p)) : '');
 
-         It stays in Scheduled, because it genuinely is still queued and a
-         transient failure really can succeed next time. It just stops
-         pretending the first attempt never happened. */
-      else if (stage === 'scheduled') body = (p.failure
-          ? `<div class="rsn" style="margin-top:8px">Tried already — ${esc2(p.failure)}</div>` : '')
-        + `<div class="w" style="margin-top:8px">🕑 ${esc2(p.when || 'no time set')}</div>
-        <button class="act ok" data-act="sendnow" data-id="${p.id}">Send now</button>
-        <div class="actrow">
-          <button class="act gh" data-act="reschedule" data-id="${p.id}">Move</button>
-          <button class="act gh" data-act="duplicate" data-id="${p.id}">Copy</button>
-          <button class="act gh" data-act="remove" data-id="${p.id}">Remove</button>
-        </div>`;
-      /* STILL NO INVENTED METRICS -- but there is a real one now, and this
-         card was denying it. Views and DMs would be made up; click-throughs
-         are not. Our own redirect counts them, which is why they exist with
-         nothing connected to any platform, and the card used to read
-         "metrics arrive once a channel is connected" while sitting on a post
-         that 5 people had clicked. Human clicks, not raw: the raw count is
-         mostly preview crawlers fetching the link the second it is posted. */
-      else if (stage === 'published') body = liveBody(p);
-      else if (stage === 'attention') body = attentionBody(p);
-      return `<div class="pcard ${stage === 'attention' ? 'warn' : ''}${p._justpub ? ' justpub' : ''}${i >= pipePeek() ? ' pc-extra' : ''}" draggable="true" data-pid="${p.id}"><div class="ptop">${photoHtml(p.img, { small: true })}<div style="min-width:0"><div class="t">${p.listing.split(',')[0]}</div><div class="p">${p.price}</div></div></div>${chavRow(p)}${body}</div>`;
+    function pcard(p, stage, i) {
+      let chip = '', line = '', acts = '', extra = '';
+      const id = esc2(p.id);
+      if (stage === 'uploaded') {
+        chip = pcChip('neutral', 'New listing');
+        line = p.postedCount
+          ? '<span class="pc-l"><b>' + p.postedCount + '×</b> posted' + (p.lastPostedAt ? ' · ' + esc2(fmtWhen(p.lastPostedAt)) : '') + '</span>' : '';
+        acts = pcBtn('gen', id, 'spark', p.postedCount ? 'Write another' : 'Generate', 'pri');
+      } else if (stage === 'generating') {
+        chip = pcChip('info', 'Writing');
+        extra = '<div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>';
+      } else if (stage === 'approval') {
+        chip = pcChip('brand', 'Needs your OK');
+        extra = '<div class="cap" data-capedit="' + id + '" role="button" tabindex="0" aria-label="Open this caption to edit" title="Tap to edit">' + esc2((p.caption || '').slice(0, 200)) + '</div>';
+        acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', 'Discard');
+      } else if (stage === 'scheduled') {
+        chip = p.failure ? pcChip('warn', 'Retrying', 'Tried already: ' + p.failure) : pcChip('info', 'Scheduled');
+        line = '<span class="pc-l">' + PCI.clock + esc2(p.when || 'No time set') + '</span>';
+        acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', 'Remove');
+      } else if (stage === 'published') {
+        const up = p.mineLive || (p.ampLive && p.ampLive.length);
+        if (p.inbox) chip = pcChip('info', 'TikTok draft', 'In your TikTok inbox. Open TikTok, add a sound and post it: until then it is a draft only you can see.');
+        else chip = up ? pcChip('ok', 'Live', pcWhere(p)) : pcChip('warn', 'Sent', pcWhere(p) || 'Sent, not live yet. This updates by itself when it is up.');
+        const bits = [];
+        if (p.clicks) bits.push('<b>' + p.clicks + '</b> tapped');
+        if (p.token || p.clicks) bits.push('<b>' + (p.leads || 0) + '</b> ' + ((p.leads || 0) === 1 ? 'enquiry' : 'enquiries'));
+        const e = p.engage || {};
+        if (e.comments) bits.push('<b>' + e.comments + '</b> ' + (e.comments === 1 ? 'comment' : 'comments'));
+        line = '<span class="pc-l">' + (p.when ? esc2(p.when) : '') + '</span>' + (bits.length ? '<span class="pc-m">' + bits.join(' · ') + '</span>' : '');
+        extra = (p.comments && p.comments.length) ? commentList(p) : '';
+        acts = p.token ? pcBtn('openlink', id, 'link', 'Open the link', 'gh') : '';
+      } else if (stage === 'attention') {
+        if (p.status === 'failed') {
+          chip = pcChip('bad', 'Failed', p.failure || 'This did not go out.');
+          line = '<span class="pc-l pc-why" title="' + esc2(p.failure || 'This did not go out.') + '">' + esc2((p.failure || 'This did not go out.').slice(0, 70)) + '</span>';
+          acts = pcBtn('sendnow', id, 'retry', 'Try again', 'pri') + pcIcon('remove', id, 'trash', 'Remove');
+        } else {
+          chip = pcChip('warn', 'No taps yet', 'Live since ' + (p.when || 'a while back') + (p.clicksRaw ? ', ' + p.clicksRaw + ' preview fetches, but' : ',') + ' not one person has tapped the link.');
+          line = '<span class="pc-l">Live since ' + esc2(p.when || 'a while') + '</span>';
+          acts = pcBtn('duplicate', id, 'edit', 'Write another version', 'gh') + (p.token ? pcIcon('openlink', id, 'link', 'Check the link') : '');
+        }
+      }
+      const chs = p.channels && p.channels.length
+        ? '<div class="pc-chs">' + p.channels.map((c) => '<span class="cav" title="' + esc2((CH[c] && CH[c].label) || c) + '" style="background:' + ((CH[c] && CH[c].color) || '#161616') + '">' + chMark(c, 12) + '</span>').join('') + '</div>' : '';
+      return '<div class="pcard v2 ' + (stage === 'attention' ? 'warn' : '') + (p._justpub ? ' justpub' : '') + (i >= pipePeek() ? ' pc-extra' : '') + '" draggable="true" data-pid="' + id + '">'
+        + '<div class="pc-ph">' + photoHtml(p.img) + chip + chs + '</div>'
+        + '<div class="pc-main"><div class="pc-title">' + esc2(String(p.listing || '').split(',')[0]) + '</div><div class="pc-price">' + esc2(p.price || '') + '</div>'
+        + (line ? '<div class="pc-line">' + line + '</div>' : '') + extra + '</div>'
+        + (acts ? '<div class="pc-acts">' + acts + '</div>' : '') + '</div>';
     }
     function renderPipeline(){
       const el = document.getElementById('pipeline'); if (!el) return;
