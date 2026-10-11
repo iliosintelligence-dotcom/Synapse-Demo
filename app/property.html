@@ -682,6 +682,7 @@
     .pvo-leg { margin: 10px 0 4px; display: grid; gap: 6px; font-size: 12.5px; color: var(--ink); }
     .pvo-leg i { display: inline-block; width: 22px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
     .pvo-leg small { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-muted); }
+    #pvFloodLeg { display: grid; } @media (max-width: 1024px) { #pvFloodLeg { grid-template-columns: 1fr 1fr; gap: 8px 10px; } #pvFloodLeg small { grid-column: 1 / -1; } }
     .pvo-flood { margin: 10px 0 2px; padding: 10px 12px; border-radius: 12px; background: rgba(20,26,38,.05); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
     .pvo-flood.warn { background: #FDE8E8; color: #5C1F1F; }
     .pvo-flood-h { font-weight: 700; font-size: 12.5px; margin-bottom: 3px; }
@@ -4577,7 +4578,7 @@
           var bx = big.getContext('2d'); bx.imageSmoothingEnabled = true; bx.filter = 'blur(1.6px)';
           bx.drawImage(cv, 0, 0, big.width, big.height);
           whenMap(function () { MAPR.imageOverlay('pv-flood', big.toDataURL('image/png'), g.bbox, { opacity: 0.95, smooth: true }); });
-          MAPR.flyTo(PROP[1], PROP[0], 14);
+          whenMap(function () { MAPR.fitPoints([xy(PROP)], { maxZoom: 14.5, padding: fitPad(), duration: REDUCE ? 0 : 500 }); });
           leg.innerHTML = n
             ? '<span><i style="background:#8CC8FF"></i>Under 0.5 m</span><span><i style="background:#4696EB"></i>0.5 to 1.5 m</span><span><i style="background:#1E64D7"></i>1.5 to 3 m</span><span><i style="background:#0C32A0"></i>Over 3 m</span>'
               + '<small>Modelled river flood, 1-in-100-year, within 3.5 km. JRC / Copernicus GloFAS.</small>'
