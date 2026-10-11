@@ -2635,6 +2635,8 @@
          URL and this visit looked organic. SynArrival kept it. */
       const channel = q.get('ch')
         || (window.SynArrival ? SynArrival.channel() : '');
+      /* Remember which home this visitor met on social, so coming back to Tayo can pick the conversation up from its card. */
+      try { if (channel && URL_ID) localStorage.setItem('syn_last_home', JSON.stringify({ id: URL_ID, ch: channel, ts: Date.now() })); } catch (e) { /* storage blocked */ }
       if (!channel || !URL_ID) return;
 
       let visitor = null;

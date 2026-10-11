@@ -279,6 +279,21 @@
       display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; }
     /* The quote bar. A left rule and a tint, which is what a quoted reply
        looks like everywhere, so it needs no explaining. */
+    /* THE HANDOVER CARD: Tayo's summary for the agent, the viewing times the agent has open, and the send button. */
+    .ho-card { margin: 10px 0 4px; padding: 16px 16px 14px; border-radius: 18px; background: var(--surface, #fff); border: 1px solid var(--border, rgba(20,26,38,.12)); box-shadow: 0 10px 30px rgba(20,26,38,.08); max-width: 560px; }
+    .ho-k { font: 700 11px var(--f-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+    .ho-t { margin: 4px 0 10px; font: 700 16px/1.3 var(--f-sans); }
+    .ho-sum { display: grid; gap: 7px; margin: 0 0 12px; padding: 0; list-style: none; font-size: 13.5px; line-height: 1.45; }
+    .ho-sum b { display: inline-block; min-width: 92px; color: var(--ink-muted); font-weight: 600; }
+    .ho-msg { margin: 0 0 12px; padding: 11px 12px; border-radius: 12px; background: rgba(20,26,38,.05); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .ho-slots { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+    .ho-slot { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border, rgba(20,26,38,.18)); background: transparent; color: var(--ink); font: 600 12.5px var(--f-sans); cursor: pointer; }
+    html[data-theme="dark"] .ho-slot { background: rgba(255,255,255,.1); border-color: transparent; }
+    .ho-slot.on { background: #141412; color: #fff; border-color: #141412; }
+    html[data-theme="dark"] .ho-slot.on { background: #fff; color: #000; border-color: #fff; }
+    .ho-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ho-row .btn { min-height: 46px; }
+    .ho-note { margin: 8px 0 0; font-size: 12px; color: var(--ink-muted); }
     .tj-reply {
       display: flex; align-items: center; gap: 10px;
       margin: 0 0 8px; padding: 8px 10px 8px 12px;
@@ -1212,6 +1227,11 @@
        because it is the subject rather than one message's quote. */
     const REPLY_KEY = 'toju_reply_v1';
     let REPLY_TO = null;
+    /* 'discuss' = they pressed Discuss with an agent (Tayo negotiates and hands over); 'info' = they came back to a home
+       from a social post or campaign (the card, and answers). Kept across a reload with the listing. */
+    const MODE_KEY = 'toju_reply_mode_v1';
+    let REPLY_MODE = (function () { try { return localStorage.getItem(MODE_KEY) || 'discuss'; } catch (e) { return 'discuss'; } })();
+    const setMode = (m) => { REPLY_MODE = m; try { localStorage.setItem(MODE_KEY, m); } catch (e) {} };
 
     function loadReply() {
       try { return JSON.parse(localStorage.getItem(REPLY_KEY)) || null; } catch (e) { return null; }
@@ -1334,9 +1354,11 @@
        messaging outage costs the message and never the enquiry -- but reached
        from here, after a conversation, which is the entire point. */
     async function handOff() {
-      if (!REPLY_TO || HANDED) return;
+      if (!REPLY_TO || HANDED || HO_BUSY) return;
       const btn = document.getElementById('tjHandoff');
-      if (btn) { btn.disabled = true; btn.textContent = 'Introducing\u2026'; }
+      HO_BUSY = true;
+      if (btn) { btn.disabled = true; btn.textContent = 'Preparing\u2026'; }
+      const reset = () => { HO_BUSY = false; if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; } };
       try {
         if (!window.SynAuth) throw new Error('Sign-in is unavailable right now.');
         const who = await SynAuth.ready();
@@ -1347,43 +1369,98 @@
           location.href = 'signin.html?reason=contact&next=' + encodeURIComponent(here);
           return;
         }
+        /* 1. Tayo writes the summary and the message to the agent, from what was actually said. */
+        const t = typing();
+        const hres = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+          body: JSON.stringify({ action: 'handover', visitorId: VISITOR, listingId: REPLY_TO.id,
+            messages: saved.slice(-16).map((m) => ({ role: m.role, content: m.content })) }),
+        });
+        const H = await hres.json().catch(() => ({}));
+        t.remove();
+        if (!hres.ok || !H.message) throw new Error((H && H.error) || 'I could not put the summary together just now.');
+        /* 2. The viewing times the agent has open (the agent's own calendar, through the same function the listing page uses). */
+        let slots = [];
+        try {
+          const c = await SynAuth.client();
+          const r = await c.rpc('open_inspection_slots', { p_property_id: REPLY_TO.id, p_days: 14 });
+          slots = (r && r.data) || [];
+        } catch (e) { slots = []; }
+        renderHandover(H, slots);
+      } catch (e) {
+        tojuMsg((e && e.message) || 'I could not make that introduction just now.');
+        reset();
+      }
+    }
+    let HO_BUSY = false;
+
+    const slotLabel = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+    /* The card: what the agent will read, the times they have free, and one button. Nothing is sent until it is pressed. */
+    function renderHandover(H, slots) {
+      const sm = H.summary || {};
+      const row = (k, v) => v ? '<li><b>' + esc(k) + '</b>' + esc(v) + '</li>' : '';
+      const qs = Array.isArray(sm.questions) && sm.questions.length ? sm.questions.join(' \u00b7 ') : '';
+      const cs = Array.isArray(sm.concerns) && sm.concerns.length ? sm.concerns.join(' \u00b7 ') : '';
+      const offer = H.openingOffer ? 'Opening at \u20a6' + Number(H.openingOffer).toLocaleString('en-NG') : '';
+      const el = document.createElement('div');
+      el.className = 'ho-card'; el.id = 'hoCard';
+      const picks = (slots || []).slice(0, 6);
+      el.innerHTML = '<div class="ho-k">Handover to the agent</div><div class="ho-t">' + esc((H.home && H.home.title) || REPLY_TO.title || 'This home') + '</div>'
+        + '<ul class="ho-sum">'
+        + row('Wants', sm.wants) + row('Budget', sm.budget) + row('Paying', sm.financing) + row('Timeline', sm.timeline) + row('Household', sm.household)
+        + row('Where it stands', [sm.position, offer].filter(Boolean).join('. ')) + row('Asked', qs) + row('Worried about', cs) + row('Next step', sm.nextStep)
+        + '</ul>'
+        + '<div class="ho-k">The message Tayo will send</div><div class="ho-msg">' + esc(H.message) + '</div>'
+        + '<div class="ho-k">' + (picks.length ? 'Pick a viewing time the agent has free' : 'Viewing') + '</div>'
+        + (picks.length
+          ? '<div class="ho-slots" role="group" aria-label="Viewing times">' + picks.map((p) => '<button type="button" class="ho-slot" data-slot="' + esc(p.starts_at) + '">' + esc(slotLabel(p.starts_at)) + '</button>').join('') + '</div>'
+          : '<p class="ho-note">The agent has not set viewing times for this home yet. They will propose one.</p>')
+        + '<div class="ho-row"><button type="button" class="btn btn-primary" id="hoSend">Send to the agent</button><button type="button" class="btn btn-ghost" id="hoCancel">Not yet</button></div>'
+        + '<p class="ho-note">The agent gets this by WhatsApp and email. Nothing is sent until you press the button.</p>';
+      convo.appendChild(el); scrollDown();
+      let chosen = null;
+      el.addEventListener('click', (e) => {
+        const b = e.target.closest('.ho-slot');
+        if (b) { chosen = (chosen === b.dataset.slot) ? null : b.dataset.slot; el.querySelectorAll('.ho-slot').forEach((x) => x.classList.toggle('on', x.dataset.slot === chosen)); return; }
+        if (e.target.closest('#hoCancel')) { el.remove(); HO_BUSY = false; const bt = document.getElementById('tjHandoff'); if (bt) { bt.disabled = false; bt.textContent = 'Introduce me'; } return; }
+        if (e.target.closest('#hoSend')) sendHandover(H, chosen, el);
+      });
+    }
+
+    async function sendHandover(H, slot, card) {
+      const send = card.querySelector('#hoSend'); if (send) { send.disabled = true; send.textContent = 'Sending\u2026'; }
+      try {
         const c = await SynAuth.client();
         const sess = await c.auth.getSession();
         const tok = sess && sess.data && sess.data.session && sess.data.session.access_token;
         if (!tok) throw new Error('Please sign in again to be introduced.');
-
+        const sm = H.summary || {};
         const res = await fetch(SUPABASE_URL + '/functions/v1/create-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + tok },
-          /* The visitor id travels WITH the lead now, so create-lead can
-             attribute it server-side in the same request. The rpc below is
-             kept as a belt-and-braces retry for leads created by older
-             clients; attribute_lead no-ops when a lead is already done. */
           body: JSON.stringify({
             property_id: REPLY_TO.id, source: 'toju_chat', session_id: VISITOR || null,
+            negotiation: { offer: H.openingOffer || null, advice: String(sm.position || '').slice(0, 1000), draft: H.message, summary: sm },
+            slot: slot || undefined,
           }),
         });
         const d = await res.json().catch(() => ({}));
-        // 207: the lead is saved and the WhatsApp did not go out. Still an
-        // introduction, and the agency sees it flagged undelivered.
-        if (!(res.ok || res.status === 207) || !d.lead_id) {
-          throw new Error((d && d.error) || 'That introduction did not go through.');
-        }
-
-        /* Collapse this visitor's touches onto the new lead. Fire and forget:
-           the introduction is made, and failing to attribute it must never
-           look like failing to make it. */
-        try {
-          if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {});
-        } catch (e) { /* storage blocked; the lead still stands */ }
-
-        HANDED = true; renderReply();
-        tojuMsg('Done \u2014 I have introduced you to the agent for '
-          + (REPLY_TO.title || 'this home')
-          + '. They have what we talked about, so you will not be starting again.');
-        try { introTicket(REPLY_TO, d); } catch (e) { /* the ticket is a keepsake; the introduction stands without it */ }
+        // 207: the lead is saved and the WhatsApp did not go out. Still an introduction, and the agency sees it flagged.
+        if (!(res.ok || res.status === 207) || !d.lead_id) throw new Error((d && d.error) || 'That introduction did not go through.');
+        try { if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {}); } catch (e) { /* the lead stands */ }
+        HANDED = true; HO_BUSY = false; renderReply();
+        card.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        /* Say exactly what happened, and no more. */
+        const by = d.delivery_status === 'delivered' ? (d.email === 'sent' ? 'on WhatsApp and by email' : 'on WhatsApp')
+          : d.email === 'sent' ? 'by email' : null;
+        const v = d.viewing;
+        const viewing = v ? (v.ok ? ' Your viewing is requested for ' + slotLabel(v.startsAt) + '; the agent confirms it.' : ' I could not book that viewing slot, so the agent will propose a time.') : '';
+        tojuMsg('Done. I have introduced you to the agent for ' + (REPLY_TO.title || 'this home') + (by ? ' and sent them the summary ' + by + '.' : '. The summary is saved on their side and they will see it in their portal.') + viewing
+          + ' You will not be starting again.');
+        try { introTicket(REPLY_TO, d); } catch (e) { /* a keepsake; the introduction stands without it */ }
       } catch (e) {
-        if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; }
+        if (send) { send.disabled = false; send.textContent = 'Send to the agent'; }
         tojuMsg((e && e.message) || 'I could not make that introduction just now.');
       }
     }
@@ -1609,7 +1686,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
@@ -1999,7 +2076,9 @@
        otherwise, so a reload does not drop the subject mid-conversation. */
     const replyParam = new URLSearchParams(location.search).get('reply');
     const askBeforeStrip = new URLSearchParams(location.search).get('ask');
+    const homeParam = new URLSearchParams(location.search).get('home');
     if (replyParam) {
+      setMode('discuss');
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
       /* TAYO SPEAKS FIRST. Attaching the listing and then waiting made the
          visitor open a conversation about a home they had just been reading --
@@ -2015,9 +2094,24 @@
       attachReply(replyParam).then((p) => {
         if (p && !alsoAsking) send('Tell me about this home.');
       });
+    } else if (homeParam) {
+      /* FROM A SOCIAL POST OR CAMPAIGN: the property card, and answers about it. */
+      setMode('info');
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      attachReply(homeParam).then((p) => { if (p && !askBeforeStrip) send('Tell me about this home.'); });
     } else {
       REPLY_TO = loadReply();
       renderReply();
+      /* COMING BACK TO THE APP after meeting a home on social: nothing said yet here, a home remembered from a recent
+         visit that came through a channel. Put its card up and let them ask. */
+      try {
+        const lh = JSON.parse(localStorage.getItem('syn_last_home') || 'null');
+        const fresh = lh && lh.id && lh.ch && (Date.now() - Number(lh.ts || 0)) < 14 * 864e5;
+        if (fresh && !REPLY_TO && !askBeforeStrip && !(saved && saved.length) && !JSON.parse(localStorage.getItem('toju_sessions_v1') || '[]').length) {
+          setMode('info');
+          attachReply(lh.id).then((p) => { if (p) send('Tell me about this home.'); });
+        }
+      } catch (e) { /* storage blocked: the chat simply opens as usual */ }
     }
 
     const askParam = new URLSearchParams(location.search).get('ask');
