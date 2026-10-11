@@ -2122,6 +2122,14 @@
     .wz-dots button.on { background: var(--ink); color: var(--surface); } .wz-dots button.on b { background: #FF8A2D; color: #15120F; }
     .wz-dots button.done b { background: #25683F; color: #fff; }
     html[data-theme="dark"] .wz-dots button { background: rgba(255,255,255,.08); } html[data-theme="dark"] .wz-dots button.on { background: #fff; color: #000; }
+    .fast-card { margin: 0 0 18px; padding: 22px 24px; border-radius: 22px; background: linear-gradient(135deg, #FFF0E2, #FFE2C7); color: #15120F; display: grid; gap: 10px; }
+    .fast-card[hidden] { display: none; }
+    .fc-k { font: 700 12px var(--f-sans); letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+    .fc-t { margin: 0; font: 700 22px/1.2 var(--f-sans); } .fc-w { margin: 0; font-size: 14px; line-height: 1.55; max-width: 60ch; }
+    .fast-card textarea { width: 100%; min-height: 96px; border: 1px solid rgba(21,18,15,.18); border-radius: 14px; padding: 12px 14px; background: rgba(255,255,255,.75); color: #15120F; font: 500 14px/1.5 var(--f-sans); resize: vertical; }
+    .fc-row { display: flex; gap: 10px; flex-wrap: wrap; } .fc-row .btn { min-height: 46px; }
+    html[data-theme="dark"] .fast-card { background: linear-gradient(135deg, #2A1B0E, #231709); color: #F5F2EE; }
+    html[data-theme="dark"] .fast-card textarea { background: rgba(255,255,255,.07); color: #F5F2EE; border-color: rgba(255,255,255,.16); }
     .wz-step[hidden] { display: none; }
     .wz-step #lfFill { display: flex; margin: 10px 0 6px; } .wz-step #lfFillNote { display: block; margin: 0 0 16px; font-size: 12.5px; line-height: 1.5; }
     .wz-step .lf-sec { border: 0; padding: 0; margin: 0 0 18px; }
@@ -4733,6 +4741,13 @@
       <main>
         <!-- ══ OVERVIEW ══ -->
         <section class="pane on" id="pane-overview">
+          <div class="fast-card" id="fastCard" hidden>
+            <div class="fc-k">Fast start</div>
+            <h2 class="fc-t">Your first listing in about two minutes</h2>
+            <p class="fc-w">Paste what you would send a buyer on WhatsApp: the price, the place, the rooms. Synapse reads it and fills the form for you to check.</p>
+            <textarea id="fastText" rows="4" placeholder="e.g. 4 bedroom duplex in Bodija, Ibadan. 85m naira, C of O, BQ, 24hr power..." aria-label="Paste your listing text"></textarea>
+            <div class="fc-row"><button type="button" class="btn btn-primary" id="fastGo">Read it and start</button><button type="button" class="btn btn-ghost" id="fastBlank">Start from a blank form</button></div>
+          </div>
           <div class="next-card" id="nextCard" hidden></div>
           <div class="ov-head">
             <div>
@@ -8769,7 +8784,28 @@
         </div>`;
     }
 
+    /* The fast lane (Eden, 2026-10-11): an agency with nothing yet is offered one box, not a form. */
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#fastGo')) {
+        const t = (document.getElementById('fastText').value || '').trim();
+        if (t.length < 20) { toast('Paste the listing text first, or start from a blank form.'); return; }
+        listingForm({ st: 'pending' }, -1, { id: null, data: { description: t }, floor: null, step: 1, updated_at: new Date().toISOString() });
+        setTimeout(() => { const b = document.getElementById('lfFill'); if (b) b.click(); }, 450);
+        return;
+      }
+      if (e.target.closest('#fastBlank')) { try { localStorage.setItem('syn_fast_off', '1'); } catch (x) {} paintFast(); listingForm({ st: 'pending' }, -1); return; }
+    });
+    function paintFast() {
+      const c = document.getElementById('fastCard'), n = document.getElementById('nextCard'); if (!c) return;
+      try {
+      const empty = typeof LISTINGS_DATA !== 'undefined' && LISTINGS_DATA.length === 0 && SD.list.length === 0 && !readListingDraft();
+      let gone = false; try { gone = localStorage.getItem('syn_fast_off') === '1'; } catch (e) {}
+      c.hidden = !(empty && !gone && dbBacked);
+      if (!c.hidden && n) n.hidden = true;
+      } catch (e) { /* page still starting */ }
+    }
     function renderListings() {
+      paintFast();
       syncRelistAll();          // the bulk button appears, and counts, with the grid
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
       STATS.listings = [
@@ -10264,6 +10300,7 @@
             if (f.address && g('lfAddr').classList.contains('lf-filled')) g('lfAddr').dispatchEvent(new Event('blur'));
             syncDealRows();
             validate();
+            g('lfDesc').dispatchEvent(new CustomEvent('lf:filled', { bubbles: true }));
             if (note) note.textContent = n
               ? 'Filled ' + n + ' box' + (n > 1 ? 'es' : '') + ' from your description (highlighted). Check them before saving.'
               : 'Nothing in the description could go into a box. Fill them in below.';
@@ -10601,6 +10638,12 @@
           if (!opts || !opts.quiet) { const f = pages[at].querySelector('input:not([type=hidden]):not([type=checkbox]),textarea,select'); if (f && !(window.matchMedia && matchMedia('(max-width:720px)').matches)) f.focus({ preventScroll: true }); }
           if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(pages[at]);
         }
+        /* After "Fill", land on the first step that still needs something; the rest is already done. */
+        root.addEventListener('lf:filled', () => {
+          validate();
+          const k = STEPS.findIndex((st) => st.errs.some((e) => LAST_CHECKS[e]));
+          setTimeout(() => show(k < 0 ? STEPS.length - 1 : k), 900);
+        });
         nextBtn.addEventListener('click', () => { if (checkStep(at)) show(at + 1); });
         backBtn.addEventListener('click', () => show(at - 1));
         keepBtn.addEventListener('click', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); toast('Draft saved. Find it in Listings.'); closeLead(); });
@@ -17244,6 +17287,7 @@
               + (isNext ? '<div class="sp-w">' + esc2(x.why) + '</div><button type="button" class="btn btn-primary" data-setup-go="' + x.id + '">' + esc2(x.cta) + ' \u2192</button>' : '') + '</div></li>';
           }).join('') + '</ul>';
       }
+      if (typeof paintFast === 'function') paintFast();
       /* Say so when a step gets done, and what is next. */
       try {
         const key = 'syn_setup_done'; const before = parseInt(localStorage.getItem(key) || '-1', 10);
