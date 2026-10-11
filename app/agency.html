@@ -10300,6 +10300,20 @@
             if (f.address && g('lfAddr').classList.contains('lf-filled')) g('lfAddr').dispatchEvent(new Event('blur'));
             syncDealRows();
             validate();
+            /* No title in the text: make a plain one from what was read, e.g. "4-bed Duplex in Bodija, Ibadan". */
+            const tEl = g('lfTitle');
+            if (tEl && !tEl.value.trim()) {
+              const typeEl = g('lfType'), beds = parseInt(g('lfBeds').value, 10);
+              const tl = f.property_type && typeEl && typeEl.selectedOptions[0] ? typeEl.selectedOptions[0].textContent.trim() : '';
+              const area = String(g('lfAddr').value || '').split(',')[0].replace(/^\s*(?:plot|block|flat|house|no\.?)?\s*\d+[a-z]?\s*/i, '').trim();
+              const city = g('lfCity').value.trim();
+              const place = [area, city].filter((x, i, arr) => x && arr.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i).join(', ');
+              const t = [beds > 0 ? beds + '-bed' : '', tl].filter(Boolean).join(' ') + (place ? ' in ' + place : '');
+              if (t.length > 6) {
+                tEl.value = t; tEl.dispatchEvent(new Event('input', { bubbles: true })); tEl.classList.add('lf-filled');
+                setTimeout(() => tEl.classList.remove('lf-filled'), 6000); n++;
+              }
+            }
             g('lfDesc').dispatchEvent(new CustomEvent('lf:filled', { bubbles: true }));
             if (note) note.textContent = n
               ? 'Filled ' + n + ' box' + (n > 1 ? 'es' : '') + ' from your description (highlighted). Check them before saving.'
