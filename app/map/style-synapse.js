@@ -161,82 +161,73 @@
     restaurant:  'ring',
     cafe:        'ring',
     fuel:        'drop',
-    place_of_worship: 'arch',
     police:      'shield',
   };
 
+  /* PICTOGRAMS, NOT SHAPES (Eden, 2026-10-11: "there are icons that don't mean anything, plus
+     circles, triangles ... get proper things to represent the structures"). The earlier marks were
+     abstract silhouettes (a cross, a triangle, a dot), which read as nothing. Each place now gets a
+     coloured badge carrying a drawing of what it is: a cap for a school, a cross in a square for a
+     hospital, a bus, a cart, a bank building, a pump, a pill, a tree. The drawings are the same
+     ones the rest of the app uses (icons.js), copied here as plain SVG so the map does not depend on
+     load order. Places of worship are not drawn from the tiles: they cannot tell a church from a
+     mosque, and a wrong symbol on a mosque is worse than none; the surveyed places on a home's own
+     map do tell them apart. */
+  var GLYPH = {
+    school:   '<path d="M12 3l10 5-10 5L2 8z"/><path d="M6 10.3V15c0 1.4 2.9 2.7 6 2.7s6-1.3 6-2.7v-4.7"/><path d="M22 8v6.5"/>',
+    hospital: '<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 8v8M8 12h8"/>',
+    pharmacy: '<rect x="4.5" y="9" width="15" height="6.5" rx="3.25" transform="rotate(-40 12 12.25)"/><path d="m9.6 7.9 4.8 7.2"/>',
+    cart:     '<circle cx="9" cy="20.5" r="1.3"/><circle cx="18" cy="20.5" r="1.3"/><path d="M2.5 3.5h2.3l2.6 12.3a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6l1.4-7.3H6.2"/>',
+    bank:     '<path d="M3 9.5 12 4l9 5.5"/><path d="M4.5 9.5h15"/><path d="M6 12v6M10 12v6M14 12v6M18 12v6"/><path d="M3.5 20.5h17"/>',
+    bus:      '<rect x="3.5" y="4" width="17" height="13" rx="2.5"/><path d="M3.5 11.5h17"/><circle cx="7.5" cy="19.5" r="1.5"/><circle cx="16.5" cy="19.5" r="1.5"/><path d="M7 7.5h3M14 7.5h3"/>',
+    tree:     '<path d="M12 21v-6"/><path d="M12 15c-3.6 0-6-2.3-6-5.2 0-1.3.6-2.4 1.5-3.2C7.5 4.6 9.5 3 12 3s4.5 1.6 4.5 3.6c.9.8 1.5 1.9 1.5 3.2 0 2.9-2.4 5.2-6 5.2z"/><path d="M8.5 21h7"/>',
+    food:     '<path d="M7.5 2.5v6.3a2 2 0 1 0 4 0V2.5M9.5 8.8v12.7"/><path d="M16 2.5c-1.4 0-2.3 1.9-2.3 4.2S14.6 11 16 11s2.3-2 2.3-4.3S17.4 2.5 16 2.5zM16 11v10.5"/>',
+    cup:      '<path d="M5 8h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M16 9.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3v2M11 3v2"/>',
+    fuel:     '<path d="M5 20.5V4.5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 14 4.5v16"/><path d="M3.5 20.5h12"/><path d="M5 9h9"/><path d="M14 8h2.2a1.8 1.8 0 0 1 1.8 1.8v6a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/>',
+    police:   '<path d="M12 2.8 4.5 5.5v6c0 4.6 3 7.9 7.5 9.7 4.5-1.8 7.5-5.1 7.5-9.7v-6z"/><path d="m12 8.2 1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z"/>'
+  };
+  var MARK_STYLE = {
+    hospital: { g: 'hospital', c: '#C94040' }, pharmacy: { g: 'pharmacy', c: '#B3506B' },
+    school: { g: 'school', c: '#2F6DBD' }, university: { g: 'school', c: '#2F6DBD' },
+    supermarket: { g: 'cart', c: '#A8742B' }, market: { g: 'cart', c: '#A8742B' },
+    bank: { g: 'bank', c: '#5A6B7A' }, transit: { g: 'bus', c: '#1D7A8C' },
+    park: { g: 'tree', c: '#3F9C6D' }, restaurant: { g: 'food', c: '#C98B3A' },
+    cafe: { g: 'cup', c: '#C98B3A' }, fuel: { g: 'fuel', c: '#7A6A3F' }, police: { g: 'police', c: '#4A5B8C' }
+  };
+  var GLYPH_IMG = {}, MARK_MAPS = [];
+  function preloadGlyphs() {
+    if (typeof Image === 'undefined') return;
+    Object.keys(MARK_STYLE).forEach(function (kind) {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" fill="none" stroke="#fff" '
+        + 'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' + GLYPH[MARK_STYLE[kind].g] + '</svg>';
+      var img = new Image();
+      img.onload = function () {
+        GLYPH_IMG[kind] = img;
+        /* A map that registered a plain disc before the drawing was ready gets the finished badge. */
+        MARK_MAPS.forEach(function (m) {
+          try { if (m.hasImage('syn-' + kind)) m.updateImage('syn-' + kind, drawMark(kind, 40)); } catch (e) { /* style swapping */ }
+        });
+      };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    });
+  }
+  preloadGlyphs();
+
   function drawMark(kind, px) {
-    var s = px || 22;
+    var s = px || 40;
     var cv = document.createElement('canvas');
     cv.width = s; cv.height = s;
     var x = cv.getContext('2d');
-    var m = s / 2, r = s * 0.30;
-
-    /* A white disc under every mark. The road network is the darkest thing on
-       this map by design, and a dark glyph dropped straight onto a trunk road
-       disappears into it. */
-    x.fillStyle = 'rgba(255,255,255,0.92)';
-    x.beginPath(); x.arc(m, m, s * 0.44, 0, Math.PI * 2); x.fill();
-
-    x.strokeStyle = C.ink; x.fillStyle = C.ink;
-    x.lineWidth = Math.max(1.4, s * 0.085);
-    x.lineJoin = 'round'; x.lineCap = 'round';
-
-    switch (kind) {
-      case 'cross':
-        x.beginPath();
-        x.moveTo(m, m - r); x.lineTo(m, m + r);
-        x.moveTo(m - r, m); x.lineTo(m + r, m);
-        x.stroke(); break;
-      case 'crossOutline':
-        x.lineWidth = Math.max(1.1, s * 0.06);
-        x.beginPath();
-        x.moveTo(m, m - r); x.lineTo(m, m + r);
-        x.moveTo(m - r, m); x.lineTo(m + r, m);
-        x.stroke(); break;
-      case 'triangle':
-        x.beginPath();
-        x.moveTo(m, m - r); x.lineTo(m + r, m + r * 0.8); x.lineTo(m - r, m + r * 0.8);
-        x.closePath(); x.fill(); break;
-      case 'diamond':
-        x.beginPath();
-        x.moveTo(m, m - r); x.lineTo(m + r, m); x.lineTo(m, m + r); x.lineTo(m - r, m);
-        x.closePath(); x.fill(); break;
-      case 'dot':
-        x.beginPath(); x.arc(m, m, r * 0.72, 0, Math.PI * 2); x.fill(); break;
-      case 'ring':
-        x.beginPath(); x.arc(m, m, r * 0.66, 0, Math.PI * 2); x.stroke(); break;
-      case 'bars':
-        x.lineWidth = Math.max(1.2, s * 0.07);
-        [-r * 0.55, 0, r * 0.55].forEach(function (dx) {
-          x.beginPath(); x.moveTo(m + dx, m - r * 0.7); x.lineTo(m + dx, m + r * 0.7); x.stroke();
-        }); break;
-      case 'rounded':
-        x.beginPath();
-        if (x.roundRect) x.roundRect(m - r * 0.8, m - r * 0.8, r * 1.6, r * 1.6, r * 0.4);
-        else x.rect(m - r * 0.8, m - r * 0.8, r * 1.6, r * 1.6);
-        x.stroke(); break;
-      case 'leaf':
-        x.beginPath();
-        x.ellipse(m, m, r * 0.55, r * 0.85, Math.PI / 4, 0, Math.PI * 2);
-        x.stroke(); break;
-      case 'drop':
-        x.beginPath();
-        x.moveTo(m, m - r); x.quadraticCurveTo(m + r * 0.9, m + r * 0.2, m, m + r);
-        x.quadraticCurveTo(m - r * 0.9, m + r * 0.2, m, m - r);
-        x.fill(); break;
-      case 'arch':
-        x.beginPath();
-        x.arc(m, m + r * 0.2, r * 0.7, Math.PI, 0);
-        x.stroke(); break;
-      case 'shield':
-        x.beginPath();
-        x.moveTo(m, m - r); x.lineTo(m + r * 0.75, m - r * 0.35);
-        x.lineTo(m, m + r); x.lineTo(m - r * 0.75, m - r * 0.35);
-        x.closePath(); x.stroke(); break;
-      default:
-        x.beginPath(); x.arc(m, m, r * 0.5, 0, Math.PI * 2); x.stroke();
-    }
+    var st = MARK_STYLE[kind] || { c: '#6B6B70' }, m = s / 2;
+    /* a soft shadow, a white ring so the badge survives a dark trunk road, then the colour */
+    x.shadowColor = 'rgba(20,20,18,0.28)'; x.shadowBlur = s * 0.08; x.shadowOffsetY = s * 0.03;
+    x.fillStyle = '#FFFFFF';
+    x.beginPath(); x.arc(m, m, s * 0.46, 0, Math.PI * 2); x.fill();
+    x.shadowColor = 'transparent';
+    x.fillStyle = st.c;
+    x.beginPath(); x.arc(m, m, s * 0.39, 0, Math.PI * 2); x.fill();
+    var g = GLYPH_IMG[kind];
+    if (g) { var gs = s * 0.58; x.drawImage(g, m - gs / 2, m - gs / 2, gs, gs); }
     return x.getImageData(0, 0, s, s);
   }
 
@@ -286,7 +277,7 @@
         filter: ['all', ['==', '$type', 'Point'], ['in', 'subclass'].concat(SUBCLASS[kind] || [kind])],
         layout: {
           'icon-image': 'syn-' + kind,
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.55, 16, 0.8, 18, 1],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 16, 1.1, 18, 1.3],
           'icon-allow-overlap': false,
           'icon-padding': 6,
           /* Names arrive late. A label per POI at z13 is a wall of text; by
@@ -352,7 +343,7 @@
     Object.keys(MARKS).forEach(function (kind) {
       var id = 'syn-' + kind;
       if (map.hasImage && map.hasImage(id)) return;
-      try { map.addImage(id, drawMark(MARKS[kind], 22), { pixelRatio: 2 }); } catch (e) { /* already there */ }
+      try { map.addImage(id, drawMark(kind, 40), { pixelRatio: 2 }); } catch (e) { /* already there */ }
     });
 
   }
@@ -376,6 +367,7 @@
   function wireMissingMarks(map) {
     if (!map || map.__synMarksWired) return;
     map.__synMarksWired = true;
+    MARK_MAPS.push(map);
 
     /* ONE SHOT WAS THE WHOLE PROBLEM. addMarks() was called once, from the
        'load' handler, and every one of its addImage() calls threw because the
@@ -395,7 +387,7 @@
       if (!id || id.indexOf('syn-') !== 0) return;
       var kind = id.slice(4);
       if (!MARKS[kind] || (map.hasImage && map.hasImage(id))) return;
-      try { map.addImage(id, drawMark(MARKS[kind], 22), { pixelRatio: 2 }); } catch (err) { /* raced us to it */ }
+      try { map.addImage(id, drawMark(kind, 40), { pixelRatio: 2 }); } catch (err) { /* raced us to it */ }
     });
   }
 

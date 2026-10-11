@@ -655,6 +655,33 @@
        property, those are the places. */
     .pv-home-pin.pv-home-on { background: #FF8A2D !important; border-color: #FF8A2D !important; }
     .pvo-rows { margin: 0; padding: 0; list-style: none; max-height: 34vh; overflow-y: auto; }
+    /* the floating menu button must not sit on the map's "What's nearby" pill (the dock it clears is behind the sheet) */
+    body.pv-map-open .cnav { bottom: calc(18px + env(safe-area-inset-bottom)) !important; }
+    /* THE DEAL, inside the costs card */
+    #costCard #pvDealCard { margin: 0 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
+    /* PROPERTY INTELLIGENCE */
+    .pi-rows { display: grid; }
+    .pi-row { display: flex; gap: 12px; align-items: flex-start; padding: 13px 0; border-top: 1px solid var(--border); }
+    .pi-rows .pi-row:first-child { border-top: 0; padding-top: 4px; }
+    .pi-ic { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(20,26,38,.06); color: var(--ink); }
+    .pi-ic svg { width: 18px; height: 18px; display: block; }
+    html[data-theme="dark"] .pi-ic { background: rgba(255,255,255,.1); }
+    .pi-tx { flex: 1; min-width: 0; }
+    .pi-k { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+    .pi-v { margin-top: 3px; font-size: 14.5px; font-weight: 600; line-height: 1.35; color: var(--ink); }
+    .pi-s { margin-top: 2px; font-size: 12.5px; line-height: 1.45; color: var(--ink-muted); }
+    .pi-chip { display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 999px; font: 700 11px var(--f-sans); vertical-align: 1px; }
+    .pi-chip.ok { background: #DDF1E4; color: #17512D; } .pi-chip.mid { background: #FBEBC8; color: #6A4A06; } .pi-chip.bad { background: #FBDADA; color: #7A1F1F; } .pi-chip.na { background: rgba(20,26,38,.07); color: var(--ink-muted); }
+    html[data-theme="dark"] .pi-chip.ok { background: #173A25; color: #BDEBCB; } html[data-theme="dark"] .pi-chip.mid { background: #3F3110; color: #F4DCA0; } html[data-theme="dark"] .pi-chip.bad { background: #4A1B1B; color: #F7C6C6; }
+    .pi-score { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 800 13px var(--f-sans); color: #fff; }
+    .pi-score.ok { background: #2F8F55; } .pi-score.mid { background: #D99A1E; } .pi-score.bad { background: #C4402F; } .pi-score.na { background: #8A8F98; }
+    .pi-btn { margin-top: 9px; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #141412; color: #fff; font: 700 13px var(--f-sans); cursor: pointer; }
+    html[data-theme="dark"] .pi-btn { background: #fff; color: #000; }
+    .pi-btn svg { width: 16px; height: 16px; }
+    /* the flood map's legend */
+    .pvo-leg { margin: 10px 0 4px; display: grid; gap: 6px; font-size: 12.5px; color: var(--ink); }
+    .pvo-leg i { display: inline-block; width: 22px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+    .pvo-leg small { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-muted); }
     .pvo-flood { margin: 10px 0 2px; padding: 10px 12px; border-radius: 12px; background: rgba(20,26,38,.05); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
     .pvo-flood.warn { background: #FDE8E8; color: #5C1F1F; }
     .pvo-flood-h { font-weight: 700; font-size: 12.5px; margin-bottom: 3px; }
@@ -1154,12 +1181,6 @@
     <!-- THE DEAL (Eden, 2026-10-02): built or not, how it is paid for,
          how many are left, the terms of an investment -- from the listing's
          own fields, so a buyer does not have to dig it out of the prose. -->
-    <div class="card section" id="pvDealCard" hidden>
-      <div class="lbl"><span data-icon="costs"></span> The deal</div>
-      <dl class="pv-deal" id="pvDeal"></dl>
-      <p class="pv-deal-note" id="pvDealNote" hidden></p>
-    </div>
-
     <div class="card section" id="pvTakeCard" hidden>
       <div class="lbl"><span data-icon="spark"></span> Tayo's take</div>
       <p class="reason" id="pvTake"></p>
@@ -1177,7 +1198,13 @@
          Reported from a phone, where the cost of the split is highest: two
          swipes to hold one idea in your head. -->
     <div class="card section" id="costCard">
-      <div class="lbl"><span data-icon="costs"></span> What it really costs</div>
+      <div class="lbl"><span data-icon="costs"></span> <span id="costLbl">What it really costs</span></div>
+      <!-- The deal (built or not, how it is paid for, the terms of an investment) lives here now: on its own
+           it was an empty card on most listings. It only appears when the listing has deal terms. -->
+      <div id="pvDealCard" hidden>
+        <dl class="pv-deal" id="pvDeal"></dl>
+        <p class="pv-deal-note" id="pvDealNote" hidden></p>
+      </div>
       <!-- Every figure here was written into the page: ₦83k service charge,
            ₦120k power, ₦45k for a "12 min route", a ₦248k total and a note
            about ₦165M earning back ₦13.9M at 8.4%. All of it showed on every
@@ -1214,19 +1241,12 @@
         what you can afford and what you asked about.</p>
     </div>
 
-    <!-- Neighbourhood intelligence.
-         WAS: "Neighbourhood intelligence — Lekki Phase 1" with six invented
-         score bars (82, 85, 88, 74, 86, 28) and a note about a rising corridor
-         and ₦8.5M rents, hardcoded into the page and therefore shown on every
-         listing in the database -- including properties 130km away in Ibadan.
-         Everything below is now drawn from the listing itself, and where we
-         have nothing the section says so. -->
-    <div class="card section">
-      <div class="lbl"><span data-icon="pin"></span> <span id="nbTitle">Around this property</span></div>
-      <p class="nb-addr" id="nbAddr"></p>
-      <div class="nb" id="nbScores"></div>
-      <p class="nb-note" id="nbNote"></p>
-      <div class="nb-around" id="nbAround"></div>
+    <!-- PROPERTY INTELLIGENCE (Eden, 2026-10-11). Replaces "Around this property". What matters about a
+         home in Nigeria beyond its price: the electricity band, flood risk, water, security, title and age,
+         drawn only from the listing and from measured data; anything the agency did not state says so. -->
+    <div class="card section" id="piCard">
+      <div class="lbl"><span data-icon="spark"></span> Property intelligence</div>
+      <div class="pi-rows" id="piRows"></div>
     </div>
 
     <!-- commute intelligence: times shift with time of day; add your own places -->
@@ -2173,6 +2193,7 @@
           note.hidden = false;
         }
         show('pvDealCard', true);
+        const cl = document.getElementById('costLbl'); if (cl) cl.textContent = 'The deal & what it really costs';
       })();
 
       // Listed by. Real agency, real tier, and nothing else -- we store no
@@ -3888,6 +3909,7 @@
     }
 
     function paintAround() {
+      if (window.paintIntel) paintIntel();
       var host = document.getElementById('nbAround');
       if (!host) return;
       var K = '<div class="nba-k">What is nearby</div>';
@@ -4339,6 +4361,7 @@
       poiMarkers.forEach(function (m) { m.remove(); });
       poiMarkers = [];
       if (routeLine) { MAPR.removeLine(routeLine); routeLine = null; }
+      if (MAPR.removeImageOverlay) MAPR.removeImageOverlay('pv-flood');
     }
 
     /* The home pin is redrawn rather than restyled because it is a DOM marker
@@ -4412,6 +4435,7 @@
           + '<span class="lb">Commute</span>'
           + '<span class="n">' + DEST.length + '</span></button>');
       }
+      rows.unshift('<button class="pvo-row" data-cat="__flood" type="button"><span class="ic">' + poiSvg('waves', 12) + '</span><span class="lb">Flood map</span><span class="n">View</span></button>');
       if (!rows.length) { overlay.innerHTML = NO_DATA; fit([PROP]); return; }
 
       overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
@@ -4421,37 +4445,149 @@
          loadFlood() and floodHtml() are kept for when it has a place of its own. */
     }
 
-    /* river flood exposure (JRC GloFAS, stored per listing by property-flood). A RIVER flood
-       model only: no drainage or coastal/lagoon flooding. Said every time, and "outside the zone"
-       is never worded as safe. */
+    /* ── PROPERTY INTELLIGENCE + the flood map ─────────────────────────────────────────────
+       Flood data: JRC / Copernicus GloFAS river flood model, read per listing by property-flood and
+       stored in property_flood. A RIVER model (no drainage or coastal flooding), which the legend and
+       tooltips say; the card shows a 1-10 score so a buyer can compare homes at a glance. */
     var FLOOD = { state: 'idle', row: null };
+    var FN_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co', FN_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    function fnHeaders() { return { apikey: FN_KEY, Authorization: 'Bearer ' + FN_KEY, 'Content-Type': 'application/json' }; }
     function loadFlood() {
       var id = propIdForFetch();
       if (FLOOD.state !== 'idle' || !id) return;
       FLOOD.state = 'loading';
-      var U = 'https://bhrhejpekmhbhwryjhgk.supabase.co', K = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
-      var H = { apikey: K, Authorization: 'Bearer ' + K };
-      fetch(U + '/rest/v1/property_flood?property_id=eq.' + encodeURIComponent(id) + '&select=*', { headers: H })
+      fetch(FN_URL + '/rest/v1/property_flood?property_id=eq.' + encodeURIComponent(id) + '&select=*', { headers: fnHeaders() })
         .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (rows) {
-          if (rows && rows[0]) return rows[0];
-          return fetch(U + '/functions/v1/property-flood', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ property_id: id }) })
+          if (rows && rows[0] && (rows[0].measured || rows[0].covered === false)) return rows[0];
+          return fetch(FN_URL + '/functions/v1/property-flood', { method: 'POST', headers: fnHeaders(), body: JSON.stringify({ property_id: id }) })
             .then(function (r) { return r.ok ? r.json() : null; });
         })
         .then(function (row) { FLOOD.row = row && row.property_id ? row : null; FLOOD.state = 'done'; })
         .catch(function () { FLOOD.state = 'done'; })
-        .then(function () { if (PANEL && PANEL.mode === 'cats') showCats(); });
+        .then(function () { paintIntel(); });
     }
-    function floodHtml() {
-      /* Only a warning is worth the space on the card. Nothing is shown for a home outside the zone
-         (silence there is not a safety claim, and the card stays short). The source rides in the
-         tooltip rather than as a line of small print. */
-      var r = FLOOD.row;
-      if (FLOOD.state !== 'done' || !r || r.covered === false || !r.in_zone_100) return '';
-      return '<div class="pvo-flood warn" title="JRC / Copernicus GloFAS river flood hazard maps, 90 m. A model, not an official map; it does not cover drainage or coastal flooding.">'
-        + '<div class="pvo-flood-h">Inside a modelled river flood zone</div>'
-        + '<p>A major river flood could reach about <b>' + Number(r.depth_100_m).toFixed(1) + ' m</b> here' + (r.in_zone_10 ? ', and a 1-in-10-year flood reaches it too' : '') + '.</p></div>';
+    /* 1 (lowest) to 10. Inside the 10-year zone is the worst; inside the 100-year zone scales with depth;
+       outside it, how close the nearest modelled flood water is. */
+    function floodScore(r) {
+      if (!r || r.covered === false) return null;
+      if (r.in_zone_10) return 9;
+      if (r.in_zone_100) { var d = Number(r.depth_100_m) || 0; return d >= 2 ? 8 : d >= 1 ? 7 : 6; }
+      var n = r.nearest_flood_m;
+      if (n == null) return 1;
+      return n <= 300 ? 4 : n <= 1000 ? 3 : 2;
     }
+    function paintIntel() {
+      var host = document.getElementById('piRows'), p = window.__pvListing;
+      if (!host || !p) return;
+      loadFlood();
+      var ic = function (n) { return poiSvg(n, 18); };
+      var am = (Array.isArray(p.amenities) ? p.amenities : []).map(String);
+      var has = function (re) { return am.filter(function (a) { return re.test(a); }); };
+      var rows = [];
+      var chip = function (t, tone) { return '<span class="pi-chip ' + tone + '">' + t + '</span>'; };
+      var row = function (icon, k, v, sub, extra) {
+        return '<div class="pi-row"><span class="pi-ic">' + ic(icon) + '</span><div class="pi-tx"><div class="pi-k">' + k + '</div><div class="pi-v">' + v + '</div>'
+          + (sub ? '<div class="pi-s">' + sub + '</div>' : '') + (extra || '') + '</div></div>';
+      };
+
+      /* electricity */
+      var BH = { A: '20+', B: '16+', C: '12+', D: '8+', E: '4+' };
+      var bandTone = { A: 'ok', B: 'ok', C: 'mid', D: 'bad', E: 'bad' };
+      var power = has(/generator|inverter|solar|24\s*\/?\s*7\s*power/i), meter = has(/prepaid|meter/i);
+      var backup = power.length ? power.map(escHtml).join(', ') : '';
+      rows.push(row('bolt', 'Electricity',
+        p.electricity_band && BH[p.electricity_band]
+          ? 'Band ' + escHtml(p.electricity_band) + ' \u00b7 ' + BH[p.electricity_band] + ' hours a day' + chip(bandTone[p.electricity_band] === 'ok' ? 'Reliable' : bandTone[p.electricity_band] === 'mid' ? 'Fair' : 'Limited', bandTone[p.electricity_band])
+          : 'Band not stated' + chip('Ask the agency', 'na'),
+        [backup, meter.length ? 'Prepaid meter' : ''].filter(Boolean).join(' \u00b7 ')));
+
+      /* flood */
+      var sc = floodScore(FLOOD.row), fr = FLOOD.row, tone = sc == null ? 'na' : sc <= 3 ? 'ok' : sc <= 6 ? 'mid' : 'bad';
+      var word = sc == null ? '' : sc <= 3 ? 'Low' : sc <= 6 ? 'Moderate' : 'High';
+      var fsub = FLOOD.state !== 'done' ? 'Checking the flood model\u2026'
+        : sc == null ? 'Not assessed for this location.'
+        : fr.in_zone_100 ? 'Inside the modelled 100-year river flood zone, up to ' + Number(fr.depth_100_m).toFixed(1) + ' m deep' + (fr.in_zone_10 ? ', and flooded in a 10-year event too' : '') + '.'
+        : fr.nearest_flood_m != null && fr.nearest_flood_m > 0 ? 'Modelled river flood water about ' + (fr.nearest_flood_m >= 1000 ? (fr.nearest_flood_m / 1000).toFixed(1) + ' km' : Math.round(fr.nearest_flood_m / 10) * 10 + ' m') + ' away.'
+        : 'No modelled river flooding within 3.5 km.';
+      var fbtn = sc == null ? '' : '<button type="button" class="pi-btn" data-pi-flood>' + ic('waves') + ' View flood map</button>';
+      rows.push('<div class="pi-row"><span class="pi-score ' + tone + '" title="River flood risk, 1 (lowest) to 10. Source: JRC / Copernicus GloFAS flood model. Covers rivers, not drainage or coastal flooding.">' + (sc == null ? '\u2013' : sc) + '</span>'
+        + '<div class="pi-tx"><div class="pi-k">Flood risk</div><div class="pi-v">' + (sc == null ? 'Not assessed' : sc + ' out of 10' + chip(word, tone)) + '</div>'
+        + '<div class="pi-s">' + escHtml(fsub) + '</div>' + fbtn + '</div></div>');
+
+      /* water */
+      var water = has(/borehole|water\s*(storage|supply|tank|treatment|well)|\bwell\b|tank/i);
+      if (water.length) rows.push(row('water', 'Water', water.map(escHtml).join(', '), ''));
+
+      /* security */
+      var sec = has(/secur|gated|fenc|cctv|guard|gatehouse/i);
+      if (sec.length) rows.push(row('shield', 'Security', sec.map(escHtml).join(', '), ''));
+
+      /* title */
+      rows.push(row('legal', 'Title', p.title_type && TITLE_LABEL[p.title_type] ? escHtml(TITLE_LABEL[p.title_type]) : 'Not stated' + chip('Ask for the document', 'na'), ''));
+
+      /* build & age */
+      var COND = { brand_new: 'Brand new', excellent: 'Excellent condition', good: 'Good condition', fair: 'Fair condition', needs_work: 'Needs work' };
+      var built = [];
+      if (p.year_built) built.push('Built ' + escHtml(p.year_built));
+      if (p.property_condition && COND[p.property_condition]) built.push(COND[p.property_condition]);
+      if (p.build_stage && p.build_stage !== 'completed') built.push({ under_construction: 'Under construction', not_started: 'Not started' }[p.build_stage] + (p.build_progress_pct != null ? ' (' + p.build_progress_pct + '%)' : ''));
+      if (built.length) rows.push(row('home', 'Building', built.join(' \u00b7 '), ''));
+
+      /* nearest essentials, once the places are loaded */
+      if (POI && POI.length && PROP) {
+        var near = {};
+        POI.forEach(function (q) { var d = q.dm != null ? Number(q.dm) : haversineM(PROP, q.c); if (isFinite(d) && (near[q.t] == null || d < near[q.t])) near[q.t] = d; });
+        var pick = [['hospital', 'Hospital'], ['school', 'School'], ['transit', 'Transport'], ['market', 'Market']].filter(function (x) { return near[x[0]] != null; })
+          .map(function (x) { return x[1] + ' ' + formatDist(near[x[0]]); });
+        if (pick.length) rows.push(row('pin', 'Nearest', pick.join(' \u00b7 '), ''));
+      }
+      host.innerHTML = rows.join('');
+    }
+    window.paintIntel = paintIntel;
+
+    var BACK_BTN = '<button class="pvo-back" type="button" data-back aria-label="Back to all nearby"><span class="pvo-back-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span><span>All nearby</span></button>';
+    function showFlood() {
+      PANEL = { mode: 'flood', cat: null, poi: null };
+      clearPois();
+      drawHome(true);
+      markCardOn(true);
+      overlay.className = 'pvc-overlay';
+      overlay.innerHTML = BACK_BTN + '<div class="pvo-k">Flood map</div>'
+        + '<div class="pvo-leg" id="pvFloodLeg"><span>Loading the flood map\u2026</span></div>';
+      fit([PROP]);
+      revealMap();
+      fetch(FN_URL + '/functions/v1/property-flood', { method: 'POST', headers: fnHeaders(), body: JSON.stringify({ property_id: propIdForFetch(), grid: true }) })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (g) {
+          var leg = document.getElementById('pvFloodLeg');
+          if (PANEL.mode !== 'flood' || !leg) return;
+          if (!g || !g.depth_b64) { leg.innerHTML = '<span>The flood map is not available for this location.</span>'; return; }
+          var bin = atob(g.depth_b64), cv = document.createElement('canvas'); cv.width = g.cols; cv.height = g.rows;
+          var cx = cv.getContext('2d'), im = cx.createImageData(g.cols, g.rows), n = 0;
+          for (var i = 0; i < bin.length; i++) {
+            var d = bin.charCodeAt(i) * 0.05; if (!d) continue; n++;
+            var c = d < 0.5 ? [140, 200, 255, 150] : d < 1.5 ? [70, 150, 235, 175] : d < 3 ? [30, 100, 215, 195] : [12, 50, 160, 215];
+            im.data[i * 4] = c[0]; im.data[i * 4 + 1] = c[1]; im.data[i * 4 + 2] = c[2]; im.data[i * 4 + 3] = c[3];
+          }
+          cx.putImageData(im, 0, 0);
+          whenMap(function () { MAPR.imageOverlay('pv-flood', cv.toDataURL('image/png'), g.bbox, { opacity: 0.9 }); });
+          MAPR.flyTo(PROP[1], PROP[0], 14);
+          leg.innerHTML = n
+            ? '<span><i style="background:#8CC8FF"></i>Under 0.5 m</span><span><i style="background:#4696EB"></i>0.5 to 1.5 m</span><span><i style="background:#1E64D7"></i>1.5 to 3 m</span><span><i style="background:#0C32A0"></i>Over 3 m</span>'
+              + '<small>Modelled river flood, 1-in-100-year, within 3.5 km. JRC / Copernicus GloFAS.</small>'
+            : '<span>No modelled river flooding within 3.5 km of this home.</span><small>JRC / Copernicus GloFAS river flood model.</small>';
+        })
+        .catch(function () { var leg = document.getElementById('pvFloodLeg'); if (leg) leg.innerHTML = '<span>The flood map could not load. Try again in a moment.</span>'; });
+    }
+    /* the intelligence card's "View flood map": open the map (a sheet on a phone, beside the page on a desktop), then switch it to flood */
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-pi-flood]')) return;
+      var phone = window.matchMedia('(max-width: 1024px)').matches, btn = document.getElementById('pvmMapBtn');
+      if (phone) { if (!document.body.classList.contains('pv-map-open') && btn) btn.click(); }
+      else { var cv = document.querySelector('.pv-canvas'); if (cv) cv.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      whenMap(function () { setTimeout(showFlood, 350); });
+    });
 
     /* ── state 2: one kind, pinned ───────────────────────────────────── */
     function placesOf(t) {
@@ -4460,6 +4596,7 @@
 
     function showCat(t) {
       if (t === COMMUTE_KEY) return showCommute();
+      if (t === '__flood') return showFlood();
       PANEL = { mode: 'places', cat: t, poi: null };
       clearPois();
       drawHome(true);
@@ -4659,6 +4796,7 @@
       window.__pvListing = p;
       paintNeighbourhood(p);
       paintCosts(p);
+      if (window.paintIntel) paintIntel();
       // Their anchors first, so the very first paint can already include them
       // rather than flashing an area-only paragraph and then rewriting it.
       fetchMyPlaces().then(function () { paintAround(); });

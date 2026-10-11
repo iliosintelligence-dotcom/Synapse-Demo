@@ -635,6 +635,30 @@
   Renderer.prototype.onCluster = function (fn) { this._handlers.cluster.push(fn); return this; };
   Renderer.prototype.resize = function () { if (this.map) this.map.resize(); return this; };
 
+  /** A picture laid on the map between two corners, under the labels (a flood-depth layer, say).
+   *  bbox = [west, south, east, north]. Replaces any overlay with the same id. */
+  Renderer.prototype.imageOverlay = function (id, url, bbox, opts) {
+    var map = this.map; if (!map) return this;
+    var o = opts || {};
+    this.removeImageOverlay(id);
+    map.addSource(id, {
+      type: 'image', url: url,
+      coordinates: [[bbox[0], bbox[3]], [bbox[2], bbox[3]], [bbox[2], bbox[1]], [bbox[0], bbox[1]]],
+    });
+    var before;
+    (map.getStyle().layers || []).some(function (l) { if (l.type === 'symbol') { before = l.id; return true; } return false; });
+    map.addLayer({
+      id: id, type: 'raster', source: id,
+      paint: { 'raster-opacity': o.opacity == null ? 0.85 : o.opacity, 'raster-resampling': o.smooth ? 'linear' : 'nearest', 'raster-fade-duration': 150 },
+    }, before);
+    return this;
+  };
+  Renderer.prototype.removeImageOverlay = function (id) {
+    var map = this.map; if (!map) return this;
+    try { if (map.getLayer(id)) map.removeLayer(id); if (map.getSource(id)) map.removeSource(id); } catch (e) { /* style swapping */ }
+    return this;
+  };
+
   /* ── one finger, when the map IS the screen ────────────────────────────
      The old rule was: one finger scrolls the PAGE, two fingers move the map.
      Carried over from the Leaflet build with this reasoning, which is worth
