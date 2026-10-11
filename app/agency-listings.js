@@ -240,7 +240,9 @@
      should not reappear in the agency's own list. */
   function list() {
     var c1;
+    var lastAid = null;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      lastAid = aid;
       if (!aid) return { data: [], error: null };
       /* Scoped by agency_id EXPLICITLY, not left to RLS. Postgres permissive
          policies OR together, and `properties_select_public` matches every
@@ -263,7 +265,23 @@
         .order('created_at', { ascending: false });
     }).then(function (r) {
       if (r.error) throw r.error;
-      return (r.data || []).map(function (p) {
+      /* The public columns hold a generalised address and a pin rounded to about 100 m. This
+         agency's own members see, and edit, the exact ones. If the lookup fails the rows still
+         load (generalised); saving then leaves the stored exact values alone, because the
+         database only replaces them when the value actually changes. */
+      return c1.rpc('agency_property_exact', { p_agency: lastAid }).then(function (er) {
+        var exact = {};
+        ((er && er.data) || []).forEach(function (x) { exact[x.property_id] = x; });
+        return { rows: r.data || [], exact: exact };
+      }, function () { return { rows: r.data || [], exact: {} }; });
+    }).then(function (pack) {
+      return pack.rows.map(function (p) {
+        var ex = pack.exact[p.id];
+        if (ex) {
+          if (ex.address != null) p.address = ex.address;
+          if (ex.latitude != null) p.latitude = ex.latitude;
+          if (ex.longitude != null) p.longitude = ex.longitude;
+        }
         p.media = (p.property_media || [])
           .slice()
           .sort(function (a, b) { return a.display_order - b.display_order; });
@@ -1354,11 +1372,18 @@
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return null;
-      return c1.from('agencies').select('id,name,verification_tier,subscription_tier').eq('id', aid).limit(1)
+      /* The plan is not a public column any more (a signed-in buyer could read every
+         agency's plan); the members-only function hands it back for this agency. */
+      return c1.from('agencies').select('id,name,verification_tier').eq('id', aid).limit(1)
         .then(function (r) {
           if (r.error) throw r.error;
-          cachedAgency = (r.data && r.data[0]) || null;
-          return cachedAgency;
+          var a = (r.data && r.data[0]) || null;
+          if (!a) return null;
+          return c1.rpc('agency_private', { p_agency: aid }).then(function (pr) {
+            if (pr && pr.data) a.subscription_tier = pr.data.subscription_tier;
+            cachedAgency = a;
+            return cachedAgency;
+          }, function () { cachedAgency = a; return a; });
         });
     });
   }
@@ -1421,8 +1446,17 @@
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
       if (!aid) return null;
-      return c1.from('agencies').select(BRAND_FIELDS.join(',')).eq('id', aid).limit(1)
-        .then(function (r) { if (r.error) throw r.error; return (r.data && r.data[0]) || null; });
+      var pub = BRAND_FIELDS.filter(function (k) { return k !== 'whatsapp_number'; });
+      return c1.from('agencies').select(pub.join(',')).eq('id', aid).limit(1)
+        .then(function (r) { if (r.error) throw r.error; return (r.data && r.data[0]) || null; })
+        .then(function (row) {
+          if (!row) return null;
+          /* whatsapp_number is private to the agency's members: it comes from agency_private(). */
+          return c1.rpc('agency_private', { p_agency: aid }).then(function (pr) {
+            row.whatsapp_number = pr && pr.data ? pr.data.whatsapp_number : null;
+            return row;
+          }, function () { row.whatsapp_number = null; return row; });
+        });
     });
   }
 
