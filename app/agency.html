@@ -2103,18 +2103,40 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ── compact pipeline card (Eden, 2026-10-11): about the height of an empty column's placeholder ── */
+    #pipeline .pcard.v2.cmp { padding: 10px; gap: 8px; border-radius: 14px; margin-bottom: 8px; min-width: 0; overflow: hidden; }
+    #pipeline .pcard.v2.cmp .pc-title, #pipeline .pcard.v2.cmp .pc-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #pipeline .pcard.v2.cmp .pc-line .pc-l { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #pipeline .pcard.v2.cmp .pc-acts { flex-wrap: nowrap; }
+    #pipeline .pcard.v2.cmp .pc-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; padding: 0 8px; gap: 5px; }
+    #pipeline .pcard.v2.cmp .pc-ib { flex: none; }
+    #pipeline .pcard.v2.cmp .pc-top { display: flex; gap: 10px; align-items: center; }
+    #pipeline .pcard.v2.cmp .pc-ph { position: relative; flex: none; width: 56px; height: 56px; aspect-ratio: auto; border-radius: 12px; overflow: hidden; }
+    #pipeline .pcard.v2.cmp .pc-chs { left: 3px; bottom: 3px; }
+    #pipeline .pcard.v2.cmp .pc-chs .cav { width: 16px; height: 16px; border-width: 1.5px; margin-left: -5px; }
+    #pipeline .pcard.v2.cmp .pc-chs .cav svg { width: 9px; height: 9px; }
+    #pipeline .pcard.v2.cmp .pc-main { padding: 0; flex: 1; min-width: 0; gap: 1px; }
+    #pipeline .pcard.v2.cmp .pc-title { font-size: 13.5px; line-height: 1.25; }
+    #pipeline .pcard.v2.cmp .pc-sub { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    #pipeline .pcard.v2.cmp .pc-price { font: 600 13px/1.2 var(--f-serif); color: var(--brand-deep, var(--ink)); white-space: nowrap; }
+    #pipeline .pcard.v2.cmp .pc-chip { position: static; padding: 2px 8px 2px 7px; font-size: 10.5px; box-shadow: none; background: rgba(20,26,38,.07); min-width: 0; }
+    #pipeline .pcard.v2.cmp .pc-line { margin-top: 1px; font-size: 11.5px; }
+    #pipeline .pcard.v2.cmp .pc-line .pc-m { display: none; }
+    #pipeline .pcard.v2.cmp .pc-line .cap { display: block; margin: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-line-clamp: unset; font-size: 11.5px; line-height: 1.3; color: var(--ink-muted); }
+    #pipeline .pcard.v2.cmp .pc-acts { padding: 0; gap: 6px; }
+    #pipeline .pcard.v2.cmp .pc-btn { min-height: 32px; font-size: 12px; padding: 0 12px; }
+    #pipeline .pcard.v2.cmp .pc-ib { width: 32px; height: 32px; }
+    #pipeline .pcard.v2.cmp .pc-btn svg, #pipeline .pcard.v2.cmp .pc-ib svg { width: 14px; height: 14px; }
+    #pipeline .pcard.v2.cmp .cmts { margin: 0; }
+    html[data-theme="dark"] #pipeline .pcard.v2.cmp .pc-chip { background: rgba(255,255,255,.1); }
     /* ══ SETUP ANCHOR (Eden, 2026-10-11) ═══════════════════════════════════════════
        A ring in the top bar and a "your next step" card on Overview, both fed by
        agency_setup_progress(). Together they answer the question people were
        texting Eden: "what should I do next?" ═══════════════════════════════════ */
-    .setup-ring { position: relative; display: inline-grid; place-items: center; padding: 0; }
-    .setup-ring svg { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); transform: rotate(-90deg); }
-    .setup-ring .sr-bg { fill: none; stroke: rgba(20,26,38,.12); stroke-width: 3.5; }
-    .setup-ring .sr-fg { fill: none; stroke: #FF8A2D; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray .6s cubic-bezier(.2,.8,.2,1); }
-    .setup-ring .sr-n { position: relative; font: 800 11.5px var(--f-sans); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .setup-ring { position: relative; display: inline-grid; place-items: center; padding: 0 14px; width: auto; min-width: 52px; border-radius: 999px; }
+    .setup-ring .sr-n { position: relative; font: 800 13px var(--f-sans); letter-spacing: -.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
     .setup-ring.nudge { animation: srNudge 2.4s ease-in-out 3; }
     @keyframes srNudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,45,.5); } 50% { box-shadow: 0 0 0 8px rgba(255,138,45,0); } }
-    html[data-theme="dark"] .setup-ring .sr-bg { stroke: rgba(255,255,255,.18); }
     .next-card { display: flex; align-items: center; gap: 16px; margin: 0 0 18px; padding: 16px 18px; border-radius: 20px; background: #FFF0E2; color: #15120F; }
     .next-card[hidden] { display: none; }
     .nc-ico { flex: none; width: 46px; height: 46px; border-radius: 14px; background: #FF8A2D; color: #15120F; display: grid; place-items: center; }
@@ -2158,7 +2180,7 @@
       .setup-pop { top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-height: 82dvh; border-radius: 26px 26px 0 0; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -24px 60px rgba(20,26,38,.3); }
       .setup-pop::before { content: ''; display: block; width: 40px; height: 5px; border-radius: 5px; background: rgba(0,0,0,.18); margin: 4px auto 12px; }
     }
-    @media (prefers-reduced-motion: reduce) { .setup-ring.nudge { animation: none; } .setup-ring .sr-fg, .sp-bar i { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .setup-ring.nudge { animation: none; } .sp-bar i { transition: none; } }
     /* ══ CRM TABLE v2 (Eden, 2026-10-11) ═══════════════════════════════════════
        Desktop: a calm table, one line of meaning per cell. Phone: each lead is
        a card with the three things you do with a lead -- see who it is and what
@@ -4378,8 +4400,8 @@
       body.portal.dock-open .shell { padding-left: 264px; }
       body.portal .side-dock {
         display: flex; flex-direction: column; gap: 10px;
-        position: fixed; left: 16px; top: calc(61px + 16px); z-index: 40;
-        max-height: calc(100vh - 61px - 16px - 76px);
+        position: fixed; left: 16px; top: calc(61px + 16px + 48px + 10px); z-index: 40;
+        max-height: calc(100vh - 61px - 16px - 48px - 10px - 16px);
       }
       body.portal .side-dock .side,
       body.portal .side-dock .side:hover,
@@ -4457,9 +4479,10 @@
       body.portal .side-hist button:hover:not(:disabled) { background: var(--canvas); }
       body.portal .side-hist button:disabled { color: var(--ink-dim); opacity: .45; cursor: default; }
 
-      /* Expand / collapse: bottom left, on its own. */
+      /* Expand / collapse: top left, above the menu, so people see it and know what it is for
+         (Eden, 2026-10-11). It was at the bottom of the screen where nobody looked. */
       body.portal .side-toggle {
-        position: fixed; left: 16px; bottom: 16px; z-index: 40;
+        position: fixed; left: 16px; top: calc(61px + 16px); z-index: 40;
         width: 56px; height: 48px; border-radius: 16px;
         justify-content: flex-start; gap: 12px; padding: 0 19px; overflow: hidden; white-space: nowrap;
         transition: width var(--m-expanded) var(--m-ease-panel);
@@ -4538,7 +4561,6 @@
          getting set up and opens the checklist. Hidden until it has real numbers, and
          gone for good once everything is done. -->
     <button class="bell setup-ring" id="setupBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="setupPop" aria-label="Getting set up" hidden>
-      <svg viewBox="0 0 36 36" aria-hidden="true"><circle class="sr-bg" cx="18" cy="18" r="15"/><circle class="sr-fg" id="setupArc" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="0 100"/></svg>
       <span class="sr-n" id="setupNum">0</span>
     </button>
     <button class="bell" id="rmBtn" aria-label="Contact Synapse" aria-haspopup="dialog" aria-expanded="false">
@@ -6396,7 +6418,7 @@
     const PSTAGES = [
       { id: 'uploaded', label: 'Listing uploaded', who: 'Auto-generation triggers' },
       { id: 'generating', label: 'Content generating', who: 'GPT-4o — no action needed' },
-      { id: 'approval', label: 'Awaiting approval', who: 'You review before publishing' },
+      { id: 'approval', label: 'Draft', who: 'You review before publishing' },
       { id: 'scheduled', label: 'Scheduled', who: 'Auto-publishes at best time' },
       { id: 'published', label: 'Published', who: 'Live \u2014 click-throughs counted' },
       /* WAS 'Underperforming', 'Tayo suggests a boost'.
@@ -6506,11 +6528,15 @@
          'publishing' counts as in flight; 'published' and 'failed' do not. A
          failed post is not work in progress -- it is work that stopped, and it
          has its own column. */
+      /* KEPT IN THE FIRST COLUMN EVEN WHILE A POST IS IN FLIGHT (Eden, 2026-10-11): "keep a
+         copy of the same listing under Listing uploaded, in case the agent wants to quickly
+         make another post". So a listing is never taken out of this column; the card only
+         says how many posts of it are in progress. */
       const IN_FLIGHT = { draft: 1, scheduled: 1, publishing: 1 };
       const busy = {};
-      PIPE.drafts.forEach(d => { if (d.property_id) busy[d.property_id] = 1; });
+      PIPE.drafts.forEach(d => { if (d.property_id) busy[d.property_id] = (busy[d.property_id] || 0) + 1; });
       PIPE.social.forEach(r => {
-        if (r.property_id && IN_FLIGHT[r.status]) busy[r.property_id] = 1;
+        if (r.property_id && IN_FLIGHT[r.status] && !(r.leg === 'synapse' && r.twin_of)) busy[r.property_id] = (busy[r.property_id] || 0) + 1;
       });
 
       /* What this listing has already had, so the card can say "ready for its
@@ -6529,12 +6555,12 @@
       });
 
       (LISTINGS_DATA || []).forEach(l => {
-        if (!l.id || busy[l.id]) return;
+        if (!l.id) return;
         const hist = postedBefore[l.id] || null;
         out.push({ id: 'l:' + l.id, propertyId: l.id, stage: 'uploaded',
           listing: listingTitle(l), price: priceLabel(l), img: l.img,
           channels: [], caption: '', scheduledAt: null, when: '', reach: 0,
-          postedCount: hist ? hist.n : 0,
+          postedCount: hist ? hist.n : 0, inflight: busy[l.id] || 0,
           lastPostedAt: hist ? hist.last : null });
       });
       PIPE.drafts.forEach(d => {
@@ -7138,19 +7164,17 @@
       let chip = '', line = '', acts = '', extra = '';
       const id = esc2(p.id);
       if (stage === 'uploaded') {
-        chip = pcChip('neutral', 'New listing');
-        line = p.postedCount
-          ? '<span class="pc-l"><b>' + p.postedCount + '×</b> posted' + (p.lastPostedAt ? ' · ' + esc2(fmtWhen(p.lastPostedAt)) : '') + '</span>' : '';
-        acts = pcBtn('gen', id, 'spark', p.postedCount ? 'Write another' : 'Generate', 'pri');
+        line = '<span class="pc-l">' + (p.inflight
+          ? '<b>' + p.inflight + '</b> in progress' + (p.postedCount ? ' \u00b7 <b>' + p.postedCount + '\u00d7</b> posted' : '')
+          : p.postedCount ? '<b>' + p.postedCount + '\u00d7</b> posted' + (p.lastPostedAt ? ' \u00b7 ' + esc2(fmtWhen(p.lastPostedAt)) : '') : 'Ready for its first post') + '</span>';
+        acts = pcBtn('gen', id, 'spark', p.postedCount || p.inflight ? 'Write another' : 'Generate', 'pri');
       } else if (stage === 'generating') {
-        chip = pcChip('info', 'Writing');
-        extra = '<div class="skel"><span style="width:100%"></span><span style="width:72%"></span></div>';
+        line = '<span class="pc-l">Writing the captions\u2026</span>';
       } else if (stage === 'approval') {
-        chip = pcChip('brand', 'Needs your OK');
-        extra = '<div class="cap" data-capedit="' + id + '" role="button" tabindex="0" aria-label="Open this caption to edit" title="Tap to edit">' + esc2((p.caption || '').slice(0, 200)) + '</div>';
+        line = '<span class="cap" data-capedit="' + id + '" role="button" tabindex="0" aria-label="Open this caption to edit" title="Tap to edit">' + esc2((p.caption || '').slice(0, 200)) + '</span>';
         acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', 'Hold to discard', 'hold');
       } else if (stage === 'scheduled') {
-        chip = p.failure ? pcChip('warn', 'Retrying', 'Tried already: ' + p.failure) : pcChip('info', 'Scheduled');
+        chip = p.failure ? pcChip('warn', 'Retrying', 'Tried already: ' + p.failure) : '';
         line = '<span class="pc-l">' + PCI.clock + esc2(p.when || 'No time set') + '</span>';
         acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', 'Hold to remove', 'hold');
       } else if (stage === 'published') {
@@ -7178,10 +7202,15 @@
       }
       const chs = p.channels && p.channels.length
         ? '<div class="pc-chs">' + p.channels.map((c) => '<span class="cav" title="' + esc2((CH[c] && CH[c].label) || c) + '" style="background:' + ((CH[c] && CH[c].color) || '#161616') + '">' + chMark(c, 12) + '</span>').join('') + '</div>' : '';
-      return '<div class="pcard v2 ' + (stage === 'attention' ? 'warn' : '') + (p._justpub ? ' justpub' : '') + (i >= pipePeek() ? ' pc-extra' : '') + '" draggable="true" data-pid="' + id + '">'
-        + '<div class="pc-ph">' + photoHtml(p.img) + chip + chs + '</div>'
-        + '<div class="pc-main"><div class="pc-title">' + esc2(String(p.listing || '').split(',')[0]) + '</div><div class="pc-price">' + esc2(p.price || '') + '</div>'
-        + (line ? '<div class="pc-line">' + line + '</div>' : '') + extra + '</div>'
+      /* COMPACT (Eden, 2026-10-11): the card is as tall as an empty column's placeholder, so more
+         of them fit before the scroll. A small picture beside the name, the price (and a status
+         word only when it says something the column does not), one line, and the buttons. */
+      return '<div class="pcard v2 cmp ' + (stage === 'attention' ? 'warn' : '') + (p._justpub ? ' justpub' : '') + (i >= pipePeek() ? ' pc-extra' : '') + '" draggable="true" data-pid="' + id + '">'
+        + '<div class="pc-top"><div class="pc-ph">' + photoHtml(p.img) + chs + '</div>'
+        + '<div class="pc-main"><div class="pc-title">' + esc2(String(p.listing || '').split(',')[0]) + '</div>'
+        + '<div class="pc-sub"><span class="pc-price">' + esc2(p.price || '') + '</span>' + chip + '</div>'
+        + (line ? '<div class="pc-line">' + line + '</div>' : '') + '</div></div>'
+        + extra
         + (acts ? '<div class="pc-acts">' + acts + '</div>' : '') + '</div>';
     }
     function renderPipeline(){
@@ -7280,7 +7309,7 @@
         `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
          <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${chMark(s.c, 10)}</span>`).join('')}</div></div>
          <div class="s-tile"><div class="k">This week</div><div class="s-mini">${days.map((d, i) => `<div class="d ${i === ti ? 'today' : ''}"><div class="lbl">${d}</div><div class="cell">${'<span class="pd"></span>'.repeat(Math.min(3, perDay[i]))}</div></div>`).join('')}</div></div>
-         <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} posts awaiting approval"><div class="k">Needs approval</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
+         <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} drafts to review"><div class="k">Drafts</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
       const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
     }
     // ── calendar view ──
@@ -16050,7 +16079,7 @@
       SynListings.saveGeneration(l.id, variants).then((r) => {
         const n = (r && r.saved) || 0;
         if (!n) throw new Error('Nothing could be filed — none of those channels has a content type yet.');
-        toast(n + (n === 1 ? ' caption' : ' captions') + ' sent for approval — review them in Awaiting approval');
+        toast(n + (n === 1 ? ' caption' : ' captions') + ' sent for approval — review them in Draft');
         closeComposer();
         if (typeof loadPipeline === 'function') loadPipeline();
       }).catch((err) => {
@@ -16929,7 +16958,6 @@
       if (!next) { btn.hidden = true; if (card) card.hidden = true; if (pop) pop.hidden = true; return; }
       btn.hidden = false;
       document.getElementById('setupNum').textContent = doneN + '/' + total;
-      document.getElementById('setupArc').setAttribute('stroke-dasharray', Math.round(doneN / total * 100) + ' 100');
       btn.setAttribute('aria-label', 'Getting set up: ' + doneN + ' of ' + total + ' done. Next: ' + next.title);
       if (card) {
         card.hidden = false;
@@ -17993,7 +18021,14 @@
       if (pane === 'overview' && OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 60);
       if (window.synMotion) synMotion.refresh();
       const paneEl = document.getElementById('pane-' + pane);
-      if (paneEl && paneEl.scrollIntoView) paneEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      /* TO THE TOP, AND AT ONCE (Eden, 2026-10-11: "it takes me to the middle of the screen,
+         not the top"). A smooth scroll to the pane's own edge stopped partway as the new pane
+         grew, leaving the heading out of sight. Every scroller there is goes to 0. */
+      try {
+        window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0;
+        const sc = document.querySelector('.content'); if (sc) sc.scrollTop = 0;
+        if (paneEl) paneEl.scrollTop = 0;
+      } catch (e) {}
       rememberPane(pane);
     }
 
