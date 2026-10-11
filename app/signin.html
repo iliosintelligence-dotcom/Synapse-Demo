@@ -298,6 +298,13 @@
 
     /* a whole-form message (sent-confirmation, hard failure) */
     /* Google, and the rule that separates it from the form. */
+.pw-rules { list-style: none; margin: 2px 0 8px; padding: 0; display: grid; gap: 3px; font-size: 12.5px; }
+    .pw-rules li { color: #6B665C; padding-left: 20px; position: relative; }
+    .pw-rules li::before { content: ''; position: absolute; left: 2px; top: 4px; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; opacity: .7; }
+    .pw-rules li.ok { color: #1E5733; }
+    .pw-rules li.ok::before { background: #25683F; border-color: #25683F; opacity: 1; }
+    .pw-bar { height: 5px; border-radius: 4px; background: rgba(20,26,38,.12); overflow: hidden; }
+    .pw-bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: #C2410C; transition: width .25s ease, background-color .25s ease; }
     .au-oauth { width: 100%; display: flex; align-items: center; justify-content: center;
       gap: 10px; min-height: 48px; padding: 13px 16px; border-radius: 13px;
       border: 1px solid rgba(20,20,20,0.18); background: #fff; cursor: pointer;
@@ -511,6 +518,7 @@
   <script src="brand.js"></script>
   <link rel="stylesheet" href="tapfix.css" />
   <script src="ref.js"></script>
+  <link rel="preconnect" href="https://bhrhejpekmhbhwryjhgk.supabase.co" crossorigin />
 </head>
 <body>
   <div class="au">
@@ -704,7 +712,7 @@
              account and no password here should not have to read past two
              fields to find that out. Rendered only once the project reports
              the provider is actually on — see OAUTH_PROVIDERS in auth.js. -->
-        <div id="auOauth" hidden>
+        <div id="auOauth">
           <button class="au-oauth" id="auGoogle" type="button">
             <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
               <path fill="#4285F4" d="M17.6 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.82a4.12 4.12 0 0 1-1.79 2.7v2.26h2.9c1.7-1.56 2.67-3.87 2.67-6.6z"/>
@@ -765,7 +773,16 @@
             <label class="au-label" for="auPass">Password</label>
             <input class="au-input" id="auPass" name="password" type="password"
                    autocomplete="current-password" required minlength="8" />
-            <div class="au-hint" id="passHint" hidden>At least 8 characters. Longer is better than complicated.</div>
+            <div class="au-hint" id="passHint" hidden>
+              <ul class="pw-rules" id="pwRules" aria-live="polite">
+                <li data-r="len">At least 10 characters</li>
+                <li data-r="up">An uppercase letter</li>
+                <li data-r="lo">A lowercase letter</li>
+                <li data-r="num">A number</li>
+                <li data-r="sym">A symbol, like ! or #</li>
+              </ul>
+              <div class="pw-bar" aria-hidden="true"><i id="pwBar"></i></div>
+            </div>
             <div class="au-err" id="errPass" role="alert" hidden></div>
           </div>
 
@@ -1019,6 +1036,41 @@
          back to a field that is already in error reads the reason again
          rather than just "invalid". The pair is WCAG 3.3.1's whole point:
          identify the error AND describe it, to everyone. */
+      /* PASSWORD RULES (Eden, 2026-10-11), for creating an account or setting a new
+         password: 10+ characters with upper, lower, a number and a symbol, and not
+         built from the person's own email or name. Signing IN is untouched: an
+         existing 8-character password must still work. This is the browser's check;
+         the project's own password policy (Supabase Auth settings) should say the
+         same so it also holds for anyone who skips this page. */
+      var PW_COMMON = ['password', 'passw0rd', 'qwerty', '12345678', 'letmein', 'welcome', 'iloveyou', 'admin', 'synapse', 'nigeria', 'lagos', 'abc123'];
+      function pwProblems(p, email, name) {
+        var out = [];
+        if (!p || p.length < 10) out.push('len');
+        if (!/[A-Z]/.test(p || '')) out.push('up');
+        if (!/[a-z]/.test(p || '')) out.push('lo');
+        if (!/[0-9]/.test(p || '')) out.push('num');
+        if (!/[^A-Za-z0-9]/.test(p || '')) out.push('sym');
+        var low = String(p || '').toLowerCase(), local = String(email || '').split('@')[0].toLowerCase();
+        var bad = PW_COMMON.some(function (w) { return low.indexOf(w) !== -1; })
+          || (local.length >= 4 && low.indexOf(local) !== -1)
+          || (name && String(name).trim().length >= 4 && low.indexOf(String(name).trim().toLowerCase().replace(/\s+/g, '')) !== -1);
+        if (bad) out.push('weak');
+        return out;
+      }
+      var PW_MSG = { len: 'at least 10 characters', up: 'an uppercase letter', lo: 'a lowercase letter', num: 'a number', sym: 'a symbol', weak: 'nothing common or taken from your name or email' };
+      function pwMessage(list) {
+        var parts = list.map(function (k) { return PW_MSG[k]; });
+        return 'Your password needs ' + parts.join(', ') + '.';
+      }
+      function paintPwRules(p) {
+        var probs = pwProblems(p, el('auEmail').value, el('auName').value), box = el('pwRules');
+        if (!box) return;
+        [].forEach.call(box.querySelectorAll('li'), function (li) { li.classList.toggle('ok', probs.indexOf(li.getAttribute('data-r')) === -1); });
+        var score = 5 - probs.filter(function (k) { return k !== 'weak'; }).length - (probs.indexOf('weak') !== -1 ? 1 : 0);
+        var bar = el('pwBar'); if (bar) { bar.style.width = Math.max(0, score) * 20 + '%'; bar.style.background = score >= 5 ? '#25683F' : score >= 3 ? '#B45309' : '#C2410C'; }
+      }
+      el('auPass').addEventListener('input', function () { if (mode === 'up' || el('passHint') && !el('passHint').hidden) paintPwRules(el('auPass').value); });
+
       function fieldError(inputId, errId, msg) {
         el(errId).textContent = msg; el(errId).hidden = false;
         el(inputId).setAttribute('aria-invalid', 'true');
@@ -1234,23 +1286,36 @@
          gone. Knowing beforehand is the only way to fail gracefully, and it is
          what stops a dead button writing a PKCE verifier into storage that
          nothing ever comes back to consume. */
+      /* THE BUTTON IS THERE FROM THE FIRST PAINT (Eden, 2026-10-11: "the page loads and
+         then after about five seconds the Google button comes up"). It used to stay
+         hidden until the auth-settings request came back, so it popped in late and
+         pushed the form down. Now it is drawn with everything else; the question
+         "is Google switched on?" is asked in the background and only matters in two
+         ways: if the answer is no, the button goes away; and pressing it waits for
+         the answer first, so nobody is ever thrown out to a raw error page. The last
+         answer is remembered, so a project with Google off never flashes it. */
+      try { if (localStorage.getItem('syn_google_on') === '0') el('auOauth').hidden = true; } catch (e) {}
       SynAuth.enabledProviders().then(function (list) {
-        if (list.indexOf('google') === -1) return;      // off on the project: draw nothing
-        el('auOauth').hidden = false;
-        el('auGoogle').addEventListener('click', function () {
-          if (busy) return;
-          busy = true;
-          el('auGoogle').disabled = true;
-          el('auGoogleLabel').textContent = 'Taking you to Google...';
+        var on = list.indexOf('google') !== -1;
+        try { localStorage.setItem('syn_google_on', on ? '1' : '0'); } catch (e) {}
+        el('auOauth').hidden = !on;
+      });
+      el('auGoogle').addEventListener('click', function () {
+        if (busy) return;
+        busy = true;
+        el('auGoogle').disabled = true;
+        el('auGoogleLabel').textContent = 'Taking you to Google...';
+        SynAuth.enabledProviders().then(function (list) {
+          if (list.indexOf('google') === -1) throw new Error('Google sign-in is not available right now.');
           /* The role goes WITH them. Without it the return is
              indistinguishable from a buyer's, and a business would be
              provisioned as a consumer with no way back. */
-          SynAuth.signInWithProvider('google', next, role).catch(function (err) {
-            busy = false;
-            el('auGoogle').disabled = false;
-            el('auGoogleLabel').textContent = 'Continue with Google';
-            showNote('bad', friendly(err));
-          });
+          return SynAuth.signInWithProvider('google', next, role);
+        }).catch(function (err) {
+          busy = false;
+          el('auGoogle').disabled = false;
+          el('auGoogleLabel').textContent = 'Continue with Google';
+          showNote('bad', friendly(err));
         });
       });
 
@@ -1275,7 +1340,10 @@
             fieldError('auEmail', 'errEmail', 'Enter a valid email address.'); ok = false;
           }
           if (!pass || pass.length < 8) {
-            fieldError('auPass', 'errPass', 'Use at least 8 characters.'); ok = false;
+            fieldError('auPass', 'errPass', mode === 'up' ? pwMessage(pwProblems(pass, email, name)) : 'Use at least 8 characters.'); ok = false;
+          } else if (mode === 'up') {
+            var pp = pwProblems(pass, email, name);
+            if (pp.length) { fieldError('auPass', 'errPass', pwMessage(pp)); ok = false; }
           }
           if (!ok) return;
         }
@@ -1552,7 +1620,8 @@
         rpClearErrors();
         var p1 = el('rpPass1').value, p2 = el('rpPass2').value;
         var ok = true;
-        if (!p1 || p1.length < 8) { rpFieldError('rpPass1', 'errRp1', 'Use at least 8 characters.'); ok = false; }
+        var rpp = pwProblems(p1, '', '');
+        if (rpp.length) { rpFieldError('rpPass1', 'errRp1', pwMessage(rpp)); ok = false; }
         else if (p1 !== p2) { rpFieldError('rpPass2', 'errRp2', 'These two do not match.'); ok = false; }
         if (!ok) return;
 
