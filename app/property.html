@@ -2843,18 +2843,18 @@
          correctly while the panel beside it silently kept the previous tab's
          text. Anything missing here is now a real gap in the legend, not a
          crash. */
-      pharmacy: { i: 'hospital', col: '#b3506b', lbl: 'Pharmacies' },
+      pharmacy: { i: 'pharmacy', col: '#b3506b', lbl: 'Pharmacies' },
       market: { i: 'cart', col: '#a8742b', lbl: 'Markets & malls' },
-      bank: { i: 'cart', col: '#5a6b7a', lbl: 'Banks' },
+      bank: { i: 'bank', col: '#5a6b7a', lbl: 'Banks' },
       university: { i: 'school', col: '#2f6dbd', lbl: 'Universities' },
       transit: { i: 'bus', col: '#1d7a8c', lbl: 'Transport' },
-      park: { i: 'church', col: '#3f9c6d', lbl: 'Parks' },
+      park: { i: 'tree', col: '#3f9c6d', lbl: 'Parks' },
       cafe: { i: 'restaurant', col: '#c98b3a', lbl: 'Cafes' },
       /* Neither sits in a tab, so they show only under Nearby -- but a petrol
          station and a police post are things buyers here actually ask about,
          and a named legend beats a grey 'Other' pin. */
-      fuel: { i: 'cart', col: '#7a6a3f', lbl: 'Petrol stations' },
-      police: { i: 'church', col: '#4a5b8c', lbl: 'Police' },
+      fuel: { i: 'fuel', col: '#7a6a3f', lbl: 'Petrol stations' },
+      police: { i: 'police', col: '#4a5b8c', lbl: 'Police' },
       other: { i: 'cart', col: '#6B6B70', lbl: 'Other' },
     };
     /* Never index META directly again: an unknown category must degrade to a
@@ -4378,14 +4378,23 @@
         return;
       }
 
+      /* The nearest one of each kind, not just how many: "58 markets" says nothing about a home,
+         "nearest market 350 m" does. Closest kinds first; the catch-all 'other' is not a place
+         anyone is asking about, so it is not offered. */
       var counts = catCounts();
-      var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+      var nearest = {};
+      POI.forEach(function (p) {
+        var d = p.dm != null ? Number(p.dm) : haversineM(PROP, p.c);
+        if (isFinite(d) && (nearest[p.t] == null || d < nearest[p.t])) nearest[p.t] = d;
+      });
+      var keys = Object.keys(counts).filter(function (t) { return t !== 'other'; })
+        .sort(function (a, b) { return (nearest[a] == null ? 1e9 : nearest[a]) - (nearest[b] == null ? 1e9 : nearest[b]); });
       var rows = keys.map(function (t) {
         var m = metaFor(t);
         return '<button class="pvo-row" data-cat="' + escHtml(t) + '" type="button">'
           + '<span class="ic">' + poiSvg(m.i, 12) + '</span>'
           + '<span class="lb">' + escHtml(AMENITY_LABEL[t] || m.lbl) + '</span>'
-          + '<span class="n">' + counts[t] + '</span></button>';
+          + '<span class="n">' + (nearest[t] != null ? formatDist(nearest[t]) + ' · ' : '') + counts[t] + '</span></button>';
       });
       /* Commute sits in the same list as everything else. It used to be a tab
          of its own, which made it feel like a different mode of the map when
