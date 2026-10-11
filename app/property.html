@@ -4415,9 +4415,10 @@
       if (!rows.length) { overlay.innerHTML = NO_DATA; fit([PROP]); return; }
 
       overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
-        + '<div class="pvo-rows">' + rows.join('') + '</div>' + floodHtml();
+        + '<div class="pvo-rows">' + rows.join('') + '</div>';
       fit([PROP]);
-      loadFlood();
+      /* Flood exposure is stored per listing (property_flood) but not shown on this card: Eden, 2026-10-11.
+         loadFlood() and floodHtml() are kept for when it has a place of its own. */
     }
 
     /* river flood exposure (JRC GloFAS, stored per listing by property-flood). A RIVER flood
