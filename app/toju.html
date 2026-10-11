@@ -1609,7 +1609,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
