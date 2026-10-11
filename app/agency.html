@@ -2103,6 +2103,53 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ══ THE LISTING WIZARD (Eden, 2026-10-11) ═══════════════════════════════════════
+       A centred dialog on a computer, a full screen on a phone, never a side pane. ══ */
+    .drawer:has(.wz-head) { top: 50%; left: 50%; right: auto; width: min(760px, 96vw); max-width: none; height: min(90dvh, 880px); border: 1px solid var(--border); border-radius: 26px;
+      transform: translate(-50%, -46%) scale(.98); opacity: 0; box-shadow: 0 40px 100px rgba(20,26,38,.35); padding: 22px 26px 0; overflow-y: auto; }
+    .drawer.on:has(.wz-head) { transform: translate(-50%, -50%); opacity: 1; }
+    .drawer:has(.wz-head) { transition: transform var(--m-expanded) var(--m-ease-panel), opacity .2s ease, visibility 0s linear var(--m-expanded); }
+    .drawer.on:has(.wz-head) { transition: transform var(--m-expanded) var(--m-ease-panel), opacity .2s ease, visibility 0s linear 0s; }
+    .wz-head { position: sticky; top: -22px; z-index: 5; margin: 0 -26px 14px; padding: 12px 26px 10px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .wz-k { font: 700 13px var(--f-sans); letter-spacing: .02em; color: var(--ink); }
+    .wz-bar { height: 6px; border-radius: 6px; background: rgba(20,26,38,.1); margin: 8px 0 10px; overflow: hidden; }
+    .wz-bar i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #FF8A2D, #FFB36B); transition: width .35s ease; }
+    .wz-dots { list-style: none; display: flex; gap: 6px; margin: 0; padding: 0; overflow-x: auto; scrollbar-width: none; }
+    .wz-dots::-webkit-scrollbar { display: none; }
+    .wz-dots li { flex: 1 0 auto; }
+    .wz-dots button { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(20,26,38,.05); color: var(--ink-muted); font: 600 12.5px var(--f-sans); cursor: pointer; white-space: nowrap; }
+    .wz-dots button b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: rgba(20,26,38,.12); color: var(--ink); font-size: 11px; }
+    .wz-dots button.on { background: var(--ink); color: var(--surface); } .wz-dots button.on b { background: #FF8A2D; color: #15120F; }
+    .wz-dots button.done b { background: #25683F; color: #fff; }
+    html[data-theme="dark"] .wz-dots button { background: rgba(255,255,255,.08); } html[data-theme="dark"] .wz-dots button.on { background: #fff; color: #000; }
+    .wz-step[hidden] { display: none; }
+    .wz-step #lfFill { display: flex; margin: 10px 0 6px; } .wz-step #lfFillNote { display: block; margin: 0 0 16px; font-size: 12.5px; line-height: 1.5; }
+    .wz-step .lf-sec { border: 0; padding: 0; margin: 0 0 18px; }
+    .wz-step .lf-sec legend { font: 700 18px var(--f-sans); padding: 0; margin-bottom: 10px; }
+    .wz-fast { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: #FFF0E2; color: #15120F; font-size: 13.5px; line-height: 1.5; }
+    html[data-theme="dark"] .wz-fast { background: #2A1B0E; color: #F5F2EE; }
+    .wz-foot { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 10px; margin: 8px -26px 0; padding: 12px 26px calc(14px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--border); }
+    .wz-sp { flex: 1; }
+    .wz-foot .btn { min-height: 48px; padding: 0 22px; }
+    .wz-sum { display: grid; gap: 2px; margin: 4px 0 14px; }
+    .wz-row { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .wz-row span { color: var(--ink-muted); } .wz-row b { text-align: right; font-weight: 600; }
+    .wz-miss { margin: 0 0 14px; padding: 14px; border-radius: 16px; background: #FDE8E8; color: #5C1F1F; display: grid; gap: 8px; }
+    .wz-miss b { font-size: 14px; } .wz-miss p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+    .wz-miss button { text-align: left; border: 0; border-radius: 12px; padding: 10px 12px; background: rgba(255,255,255,.7); color: inherit; font: 600 13.5px var(--f-sans); cursor: pointer; }
+    .wz-miss button span { opacity: .7; margin-right: 6px; }
+    .wz-cac { background: #FFF0E2; color: #15120F; }
+    html[data-theme="dark"] .wz-miss { background: #3A1616; color: #FBD5D5; } html[data-theme="dark"] .wz-cac { background: #2A1B0E; color: #F5F2EE; }
+    html[data-theme="dark"] .wz-miss button { background: rgba(255,255,255,.1); }
+    @media (max-width: 720px) {
+      .drawer:has(.wz-head) { top: 0; left: 0; width: 100%; height: 100dvh; border-radius: 0; border: 0; padding: 14px 16px 0; transform: translateY(24px); }
+      .drawer.on:has(.wz-head) { transform: none; }
+      .wz-head { top: -14px; margin: 0 -16px 12px; padding: 12px 16px 10px; }
+      .wz-dots button span { display: none; } .wz-dots button { padding: 0; min-width: 40px; } .wz-dots button.on span { display: inline; padding-right: 10px; }
+      .wz-foot { margin: 8px -16px 0; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
+      #wzKeep { padding: 0 14px; font-size: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .wz-bar i { transition: none; } .drawer:has(.wz-head), .drawer.on:has(.wz-head) { transition: none; } }
     /* ── compact pipeline card (Eden, 2026-10-11): about the height of an empty column's placeholder ── */
     #pipeline .pcard.v2.cmp { padding: 10px; gap: 8px; border-radius: 14px; margin-bottom: 8px; min-width: 0; overflow: hidden; }
     #pipeline .pcard.v2.cmp .pc-title, #pipeline .pcard.v2.cmp .pc-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -8333,6 +8380,55 @@
        by the time a timer fires. */
     let LISTING_FORM_SEQ = 0;
     let LISTING_DRAFT_FLUSH = null;
+
+    /* ══ DRAFTS ON THE SERVER (Eden, 2026-10-11) ═══════════════════════════════════════
+       "Save drafts or incomplete listings if the agent exits before it completes." The one
+       draft above is the browser's own and stays as a fast, offline copy. This adds the real
+       thing: any number of drafts, saved to the agency's private listing_drafts table, so a
+       listing started on a phone is there on the laptop. A draft is not a property (buyers
+       never see it); it becomes one only when the wizard is finished and the normal create
+       runs, with all its checks. Saves are queued one at a time so a slow connection can
+       never create two rows for one draft. ═══════════════════════════════════════════════ */
+    const SD = { list: [], cur: null, loaded: false, timer: null, chain: Promise.resolve() };
+    function sdClient() {
+      if (!window.SynAuth || !window.SynListings || !SynListings.agencyId) return Promise.reject(new Error('offline'));
+      return SynAuth.client().then((c) => SynListings.agencyId().then((aid) => ({ c: c, aid: aid })));
+    }
+    function sdLoad() {
+      return sdClient().then((x) => x.c.from('listing_drafts').select('id,title,step,data,floor,updated_at').order('updated_at', { ascending: false }).limit(30))
+        .then((r) => { if (r.error) throw r.error; SD.list = r.data || []; SD.loaded = true; if (typeof renderListings === 'function') renderListings(); })
+        .catch(() => {});
+    }
+    function sdSaveNow(data, floor, step) {
+      SD.chain = SD.chain.then(() => sdClient().then((x) => {
+        if (!x.aid) return null;
+        const row = { data: data, floor: floor || null, step: step || 1 };
+        const cols = 'id,title,step,data,floor,updated_at';
+        return SD.cur
+          ? x.c.from('listing_drafts').update(row).eq('id', SD.cur).select(cols).single()
+          : x.c.from('listing_drafts').insert(Object.assign({ agency_id: x.aid }, row)).select(cols).single();
+      }).then((r) => {
+        if (!r || r.error || !r.data) return;
+        const first = !SD.list.some((d) => d.id === r.data.id);
+        SD.cur = r.data.id;
+        const i = SD.list.findIndex((d) => d.id === r.data.id);
+        if (i >= 0) SD.list[i] = r.data; else SD.list.unshift(r.data);
+        if (first && typeof renderListings === 'function') renderListings();
+      }).catch(() => {}));
+      return SD.chain;
+    }
+    function sdQueue(data, floor, step, immediate) {
+      clearTimeout(SD.timer);
+      if (immediate) return sdSaveNow(data, floor, step);
+      SD.timer = setTimeout(() => sdSaveNow(data, floor, step), 2200);
+    }
+    function sdDelete(id) {
+      if (!id) return Promise.resolve();
+      SD.list = SD.list.filter((d) => d.id !== id);
+      if (SD.cur === id) SD.cur = null;
+      return sdClient().then((x) => x.c.from('listing_drafts').delete().eq('id', id)).catch(() => {}).then(() => { if (typeof renderListings === 'function') renderListings(); });
+    }
+    setTimeout(sdLoad, 2600);
     /* A reload or a closed tab gives no warning beyond these two, and the
        debounce may be holding the last few keystrokes. */
     window.addEventListener('pagehide', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); });
@@ -8650,6 +8746,29 @@
         </div>`;
     }
 
+    const WZ_TOTAL = 6;
+    function sdCardHtml(d) {
+      const x = d.data || {};
+      const cover = listingCover(x.media) || '';
+      const price = Number(x.price) > 0 ? '\u20a6' + Number(x.price).toLocaleString('en-NG') : 'No price yet';
+      return `
+        <div class="card lcard ldraft" data-sd="${esc2(d.id)}">
+          <div class="media">
+            <span class="fresh draft">Draft \u00b7 step ${Math.min(d.step || 1, WZ_TOTAL)} of ${WZ_TOTAL}</span>
+            ${photoHtml(cover)}
+          </div>
+          <div class="bd">
+            <div class="pr">${esc2(price)}</div>
+            <div class="tt">${esc2(d.title || x.title || 'Untitled listing')}</div>
+            <div class="ft"><span class="st-chip draft">Draft</span><span class="ld">Saved ${esc2(draftAgo(Date.parse(d.updated_at)))}</span></div>
+            <div class="acts">
+              <button class="edit" data-sd-open="${esc2(d.id)}">Continue</button>
+              <button class="relist" data-sd-discard="${esc2(d.id)}">Discard</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderListings() {
       syncRelistAll();          // the bulk button appears, and counts, with the grid
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
@@ -8664,8 +8783,15 @@
       /* The unsaved listing, first, on the unfiltered view. It is not a
          listing yet, so the Verified / Pending / Expiring views -- which are
          questions about listings -- do not show it. */
-      const dr = (LIST.f === 'all' && !LIST.q) ? readListingDraft() : null;
-      const draftCard = dr ? draftCardHtml(dr) : '';
+      /* Server drafts first (any device), then the browser's own copy only when no server draft
+         already covers it. */
+      let draftCard = '';
+      if (LIST.f === 'all' && !LIST.q) {
+        const local = readListingDraft();
+        const covered = local && SD.list.some((d) => d.id === SD.cur || Math.abs(Date.parse(d.updated_at) - Number(local.at)) < 20000);
+        if (local && !covered) draftCard += draftCardHtml(local);
+        draftCard += SD.list.map(sdCardHtml).join('');
+      }
       if (!rows.length) {
         grid.innerHTML = draftCard || '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>';
         return;
@@ -8721,11 +8847,16 @@
     }
 
     // edit / create in the shared drawer
-    function listingForm(l, idx) {
+    function listingForm(l, idx, sd) {
       const isNew = idx === -1;
       /* A new listing opens on the one left unsaved, if there is one. `l`
-         carries it too because the gallery seeds its photos from l.media. */
-      const draft = isNew ? readListingDraft() : null;
+         carries it too because the gallery seeds its photos from l.media. A draft opened from
+         the shelf (`sd`) is the server's copy and carries the step it was left on. */
+      const draft = isNew
+        ? (sd ? { data: sd.data || {}, floor: sd.floor || null, at: Date.parse(sd.updated_at) || Date.now(), step: sd.step } : readListingDraft())
+        : null;
+      if (isNew) SD.cur = sd ? sd.id : (SD.cur && SD.list.some((d) => d.id === SD.cur) && readListingDraft() ? SD.cur : null);
+      let wzStep = (draft && draft.step) || 1;
       if (draft) l = Object.assign({}, l, draft.data);
       const d = isNew ? Object.assign(blankListing(), draft ? draft.data : {}) : l;
       const esc = s => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -9071,6 +9202,7 @@
          has been edited or the agency has tried to save. */
       const touched = {};
       let revealAllErrors = false;
+      let LAST_CHECKS = {};
       const ERR_OF = {
         lfTitle: 'e_title', lfDesc: 'e_desc', lfAddr: 'e_addr', lfCity: 'e_city',
         lfState: 'e_state', lfPrice: 'e_price', lfBeds: 'e_beds', lfImg: 'e_img',
@@ -9131,6 +9263,7 @@
           e_units: (g('lfUnits') && +g('lfUnits').value >= 1) ? '' : 'At least 1',
         };
         let ok = true;
+        LAST_CHECKS = checks;
         Object.keys(checks).forEach(k => { setErrGated(k, checks[k]); if (checks[k]) ok = false; });
         /* Left enabled deliberately. A disabled Save with no errors on screen
            is a dead end -- nothing tells you what is missing, and a disabled
@@ -10208,6 +10341,7 @@
              listing they just finished typing. */
           LISTING_DRAFT_FLUSH = null; LISTING_FORM_SEQ++;
           const kept = { data: data, floor: draftFloor() };
+          const sdId = SD.cur;
           clearListingDraft();
           const item = deriveLegacy(Object.assign(blankListing(), data, { verification_status: 'unverified', leads: 0, days: 0 }));
           LISTINGS_DATA.unshift(item);
@@ -10215,6 +10349,7 @@
             toast('Saving…');
             SynListings.create(data).then((id) => {
               item.id = id;
+              if (sdId) sdDelete(sdId);           /* finished: the draft has become a listing */
               toast('Listing created — saved, and unverified until the desk checks it');
               /* The floor needs the listing's id -- it lives in its own table
                  -- so it follows the create rather than riding on it. */
@@ -10229,6 +10364,7 @@
               const k = LISTINGS_DATA.indexOf(item);
               if (k >= 0) LISTINGS_DATA.splice(k, 1);
               writeListingDraft(kept.data, kept.floor);
+              SD.cur = sdId; sdQueue(kept.data, kept.floor, WZ_TOTAL, true);
               saveListings(); renderListings();
               toast('Not saved to the server: ' + ((e && e.message) || e) + ' — kept as a draft in Listings');
             });
@@ -10304,6 +10440,7 @@
         if (fresh) fresh.addEventListener('click', () => {
           if (!window.confirm('Start a blank listing? The one you had not saved will be discarded.')) return;
           LISTING_DRAFT_FLUSH = null;
+          const gone = SD.cur; SD.cur = null; if (gone) sdDelete(gone);
           clearListingDraft(); renderListings();
           listingForm({ st: 'pending' }, -1);
         });
@@ -10311,7 +10448,7 @@
         const seq = ++LISTING_FORM_SEQ;
         const note = g('lfDraftNote');
         let timer = null;
-        const snapshot = () => {
+        const snapshot = (immediate) => {
           clearTimeout(timer);
           const saveBtn = g('lfSave');
           if (seq !== LISTING_FORM_SEQ || !saveBtn || !drawer.contains(saveBtn)) return;
@@ -10323,6 +10460,7 @@
             && data.price == null && !(data.media || []).length && !fl.raw;
           if (empty) return;
           const first = !readListingDraft();
+          sdQueue(data, fl, wzStep, immediate === true);
           if (!writeListingDraft(data, fl)) return;
           if (note) note.textContent = 'Kept on this device as you type — close this and it will be here when you come back.';
           if (first) renderListings();
@@ -10330,7 +10468,7 @@
         const soon = () => { clearTimeout(timer); timer = setTimeout(snapshot, 600); };
         const root = drawer.querySelector('.lf');
         if (root) ['input', 'change', 'click', 'lf:changed'].forEach((t) => root.addEventListener(t, soon));
-        LISTING_DRAFT_FLUSH = snapshot;
+        LISTING_DRAFT_FLUSH = () => snapshot(true);
       } else {
         /* An edit form is open; nothing of a new listing's is at stake. */
         LISTING_FORM_SEQ++; LISTING_DRAFT_FLUSH = null;
@@ -10358,6 +10496,128 @@
             .catch((e) => toast('Removed here, but the server still has it: ' + ((e && e.message) || e)));
         } else { toast('Listing deleted'); }
       });
+
+      /* ══ THE LISTING WIZARD (Eden, 2026-10-11) ══════════════════════════════════════
+         "Instead of the side pane, use a form wizard that saves drafts." For a NEW listing the
+         long form is walked through in six steps (the home, where, details, price, photos,
+         review), 3 to 5 questions at a time, one column, big targets. It is the same form and
+         the same fields underneath, so every check, the pin map, the photo upload and "fill
+         from my description" work exactly as before; the steps only decide which part is on
+         screen. What was typed is saved as a draft after every change and when you leave
+         (see sdQueue), and the step you were on is remembered. Each step is checked when you
+         press Next, and Review lists anything still missing with a button back to it.
+         Editing an existing listing keeps the single side form. ═════════════════════════ */
+      if (isNew) (function wizardify() {
+        const root = drawer.querySelector('.lf'); if (!root) return;
+        const byLegend = {};
+        root.querySelectorAll('fieldset.lf-sec').forEach((fs) => { const lg = fs.querySelector('legend'); byLegend[(lg ? lg.textContent : '').trim().toLowerCase()] = fs; });
+        const pick = (...names) => names.map((n) => Object.keys(byLegend).find((k) => k.indexOf(n) === 0)).filter(Boolean).map((k) => byLegend[k]);
+        const STEPS = [
+          { id: 'home', t: 'The home', secs: pick('basics'), errs: ['e_title', 'e_desc'] },
+          { id: 'where', t: 'Where', secs: pick('location'), errs: ['e_addr', 'e_city', 'e_state', 'e_lat'] },
+          { id: 'details', t: 'Details', secs: pick('the deal', 'specifications'), errs: ['e_units', 'e_beds'] },
+          { id: 'price', t: 'Price & terms', secs: pick('pricing', 'negotiation', 'trust'), errs: ['e_price'] },
+          { id: 'photos', t: 'Photos', secs: pick('media'), errs: ['e_img'] },
+          { id: 'review', t: 'Review', secs: [], errs: [] },
+        ];
+        const inputOfErr = {}; Object.keys(ERR_OF).forEach((k) => { inputOfErr[ERR_OF[k]] = k; });
+        /* wrap each step's fieldsets */
+        const pages = STEPS.map((st) => {
+          const sec = document.createElement('section'); sec.className = 'wz-step'; sec.dataset.wz = st.id; sec.hidden = true;
+          st.secs.forEach((fs) => sec.appendChild(fs));
+          return sec;
+        });
+        const review = pages[pages.length - 1];
+        review.innerHTML = '<div id="wzReview"></div>';
+        const saveBtn = g('lfSave'), draftNote = g('lfDraftNote');
+        review.appendChild(saveBtn); if (draftNote) review.appendChild(draftNote);
+        pages.forEach((p) => root.appendChild(p));
+        /* The fast lane: the description, with its Fill button, goes FIRST on step one. */
+        const home = pages[0];
+        const descField = g('lfDesc') && g('lfDesc').closest('.field'), fillBtn = g('lfFill'), fillNote = g('lfFillNote');
+        const firstSec = home.querySelector('fieldset');
+        if (firstSec && descField) {
+          const lead = document.createElement('p'); lead.className = 'wz-fast';
+          lead.innerHTML = '<b>Fastest way to start:</b> paste the text you would send on WhatsApp below and press <b>Fill</b>. Synapse reads it and fills the rest for you to check.';
+          const anchor = firstSec.querySelector('legend').nextSibling;
+          [lead, descField, fillBtn, fillNote].filter(Boolean).forEach((n) => firstSec.insertBefore(n, anchor));
+        }
+        /* chrome: progress at the top, buttons at the bottom */
+        const head = document.createElement('div'); head.className = 'wz-head';
+        head.innerHTML = '<div class="wz-k" id="wzK" aria-live="polite"></div><div class="wz-bar" aria-hidden="true"><i id="wzBar"></i></div>'
+          + '<ol class="wz-dots">' + STEPS.map((st, i) => '<li><button type="button" data-wz-go="' + i + '" aria-label="Step ' + (i + 1) + ': ' + st.t + '"><b>' + (i + 1) + '</b><span>' + st.t + '</span></button></li>').join('') + '</ol>';
+        root.parentNode.insertBefore(head, root);
+        const foot = document.createElement('div'); foot.className = 'wz-foot';
+        foot.innerHTML = '<button type="button" class="btn btn-ghost" id="wzBack">Back</button><span class="wz-sp"></span>'
+          + '<button type="button" class="btn btn-ghost" id="wzKeep">Save draft &amp; close</button><button type="button" class="btn btn-primary" id="wzNext">Next</button>';
+        root.parentNode.appendChild(foot);
+
+        const nextBtn = g('wzNext'), backBtn = g('wzBack'), keepBtn = g('wzKeep');
+        let at = Math.min(Math.max(wzStep, 1), STEPS.length) - 1;
+        const stepErrs = (i) => STEPS[i].errs.filter((e) => LAST_CHECKS[e]);
+        function checkStep(i) {
+          STEPS[i].errs.forEach((e) => { if (inputOfErr[e]) touched[inputOfErr[e]] = true; });
+          validate();
+          const bad = stepErrs(i);
+          if (bad.length) {
+            const el = g(bad[0]); const f = el && el.closest('.field');
+            if (f && f.scrollIntoView) f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            toast(LAST_CHECKS[bad[0]] || 'Finish this step first');
+            return false;
+          }
+          return true;
+        }
+        function renderReview() {
+          const d = collectListing(); validate();
+          const row = (k, v) => v ? '<div class="wz-row"><span>' + k + '</span><b>' + esc2(String(v)) + '</b></div>' : '';
+          const where = [d.address, d.city, d.state].filter(Boolean).join(', ');
+          const missing = [];
+          STEPS.forEach((st, i) => { st.errs.forEach((e) => { if (LAST_CHECKS[e]) missing.push({ i: i, msg: LAST_CHECKS[e], st: st.t }); }); });
+          const photos = (d.media || []).length;
+          let html = '<div class="wz-sum">'
+            + row('Title', d.title) + row('Type', TYPE_LABEL[d.property_type] || d.property_type) + row('Deal', DEAL_LABEL[d.deal_structure || d.listing_type] || '')
+            + row('Where', where) + row('Price', Number(d.price) > 0 ? '\u20a6' + Number(d.price).toLocaleString('en-NG') + (d.price_period && d.price_period !== 'total' ? ' / ' + String(d.price_period).replace('per_', '') : '') : '')
+            + row('Bedrooms', d.bedrooms) + row('Photos', photos ? photos + (photos === 1 ? ' photo' : ' photos') : '') + '</div>';
+          if (missing.length) {
+            html += '<div class="wz-miss" role="alert"><b>Still needed before you can create it</b>' + missing.map((m) => '<button type="button" data-wz-go="' + m.i + '"><span>' + esc2(m.st) + '</span> ' + esc2(m.msg) + '</button>').join('') + '</div>';
+          }
+          /* No CAC certificate yet: the draft is kept and creating waits for the paper. */
+          const blocked = typeof LG !== 'undefined' && LG.known && !LG.ok;
+          if (blocked) html += '<div class="wz-miss wz-cac"><b>One more thing: your CAC certificate</b><p>It is not on file yet, so this listing stays a draft. Upload the certificate and come back to publish it.</p>'
+            + '<button type="button" data-wz-cac>Upload the certificate</button></div>';
+          g('wzReview').innerHTML = html;
+          saveBtn.hidden = !!missing.length || blocked;
+        }
+        function show(i, opts) {
+          at = Math.min(Math.max(i, 0), STEPS.length - 1); wzStep = at + 1;
+          pages.forEach((p, k) => { p.hidden = k !== at; });
+          const last = at === STEPS.length - 1;
+          g('wzK').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length + ' \u00b7 ' + STEPS[at].t;
+          g('wzBar').style.width = Math.round((at + 1) / STEPS.length * 100) + '%';
+          head.querySelectorAll('[data-wz-go]').forEach((b, k) => { b.classList.toggle('on', k === at); b.classList.toggle('done', k < at); if (k === at) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+          backBtn.hidden = at === 0; nextBtn.hidden = last;
+          if (last) renderReview(); else saveBtn.hidden = true;
+          if (!opts || !opts.quiet) { drawer.scrollTop = 0; root.dispatchEvent(new Event('lf:changed')); }
+          if (!opts || !opts.quiet) { const f = pages[at].querySelector('input:not([type=hidden]):not([type=checkbox]),textarea,select'); if (f && !(window.matchMedia && matchMedia('(max-width:720px)').matches)) f.focus({ preventScroll: true }); }
+          if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(pages[at]);
+        }
+        nextBtn.addEventListener('click', () => { if (checkStep(at)) show(at + 1); });
+        backBtn.addEventListener('click', () => show(at - 1));
+        keepBtn.addEventListener('click', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); toast('Draft saved. Find it in Listings.'); closeLead(); });
+        drawer.addEventListener('click', (e) => {
+          const go = e.target.closest('[data-wz-go]');
+          if (go && drawer.contains(go)) {
+            const to = +go.dataset.wzGo;
+            /* backwards is always free; forwards only once everything before it passes */
+            if (to <= at) { show(to); return; }
+            for (let k = at; k < to; k++) { if (!checkStep(k)) { show(k); return; } }
+            show(to); return;
+          }
+          if (e.target.closest('[data-wz-cac]')) { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); closeLead(); goToPane('verification'); }
+        });
+        const xb = drawer.querySelector('.x'); if (xb) xb.addEventListener('click', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); }, true);
+        show(at, { quiet: true });
+      })();
     }
 
     /* Find a listing by id rather than by index: the Overview and the Listings
@@ -10407,7 +10667,16 @@
         }, 260);
         return;
       }
-      if (e.target.closest('[data-draft-open]')) { listingForm({ st: 'pending' }, -1); return; }
+      const sdo = e.target.closest('[data-sd-open]');
+      if (sdo) { const d = SD.list.find((x) => x.id === sdo.dataset.sdOpen); if (d) listingForm({ st: 'pending' }, -1, d); return; }
+      const sdx = e.target.closest('[data-sd-discard]');
+      if (sdx) {
+        if (!window.confirm('Discard this draft? It cannot be brought back.')) return;
+        const id = sdx.dataset.sdDiscard;
+        const mine = SD.cur === id; sdDelete(id); if (mine) clearListingDraft();
+        toast('Draft discarded'); return;
+      }
+      if (e.target.closest('[data-draft-open]')) { SD.cur = null; listingForm({ st: 'pending' }, -1); return; }
       if (e.target.closest('[data-draft-discard]')) {
         if (!window.confirm('Discard this unsaved listing? It cannot be brought back.')) return;
         clearListingDraft(); renderListings(); toast('Draft discarded');
