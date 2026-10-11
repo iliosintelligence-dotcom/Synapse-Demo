@@ -2080,6 +2080,93 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ══ CRM TABLE v2 (Eden, 2026-10-11) ═══════════════════════════════════════
+       Desktop: a calm table, one line of meaning per cell. Phone: each lead is
+       a card with the three things you do with a lead -- see who it is and what
+       stage it is at, see what they want and when they last moved, and call or
+       WhatsApp them -- without opening anything. IDs, data-attributes and the
+       classes the handlers read (crm-row, data-i, data-stage-i, data-stop,
+       crm-chk, crm-more) are unchanged. ═══════════════════════════════════════ */
+    #pane-crm .crm-tablecard { border-radius: 18px; }
+    #pane-crm .crm-table thead th { padding: 12px 16px; font: 700 10.5px var(--f-sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink-dim); background: transparent; border-bottom: 1px solid var(--border); }
+    #pane-crm .crm-table th.sortable.on { color: var(--ink); }
+    #pane-crm .crm-table td { padding: 12px 16px; font-size: 13px; }
+    #pane-crm .crm-row { border-bottom: 1px solid var(--border); }
+    #pane-crm .crm-row:hover { background: color-mix(in srgb, var(--brand-tint) 70%, transparent); }
+    #pane-crm .c-chk { width: 40px; padding-right: 0; }
+    #pane-crm .c-lead > .cell { gap: 12px; }
+    #pane-crm .crm-av { position: relative; width: 38px; height: 38px; font: 700 12px var(--f-sans);
+      background: hsl(var(--av-h, 25) 62% 90%); color: hsl(var(--av-h, 25) 50% 26%); }
+    #pane-crm .crm-srcdot { position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--surface); }
+    #pane-crm .crm-lead-tx .nmx { font-size: 14px; font-weight: 700; }
+    #pane-crm .c-int { max-width: 260px; }
+    #pane-crm .c-int .int-t { display: block; font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #pane-crm .c-int .int-b { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #pane-crm .c-int .int-b b { color: var(--ink); font-weight: 700; font-variant-numeric: lining-nums; }
+    #pane-crm .stpill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px 5px 12px; border: 0; font: 700 11.5px var(--f-sans); }
+    #pane-crm .stpill svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: .6; }
+    #pane-crm .stpill-btn { min-height: 30px; }
+    #pane-crm .stpill.st-new { background: rgba(20,26,38,.07); border: 0; color: var(--ink-muted); }
+    #pane-crm .c-next .nbax { display: block; margin: 0; max-width: 210px; font: 500 12.5px var(--f-sans); color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #pane-crm .heat { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font: 700 11.5px var(--f-sans); }
+    #pane-crm .heat.hot { background: #FFE6D2; color: #8E4305; }
+    #pane-crm .heat.warm { background: #FFF1CC; color: #7A5410; }
+    #pane-crm .heat.cold { background: #E6EDF3; color: #435262; }
+    #pane-crm .heat.dormant { background: rgba(20,26,38,.07); color: var(--ink-muted); }
+    #pane-crm .heat.won { background: #DAF1E3; color: #1E5733; }
+    #pane-crm .scr { margin-left: 8px; font: 600 12px var(--f-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+    #pane-crm .failx { display: block; margin: 4px 0 0 0; }
+    #pane-crm .crm-wa svg { fill: currentColor; stroke: none; }
+    #pane-crm .c-status { white-space: normal; }
+    #pane-crm .c-act { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    #pane-crm .crm-call, #pane-crm .crm-wa, #pane-crm .crm-more { width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(20,26,38,.06); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+    #pane-crm .crm-call svg, #pane-crm .crm-wa svg, #pane-crm .crm-more svg { width: 16px; height: 16px; }
+    #pane-crm .crm-call:hover { background: #FFE6D2; color: #8E4305; }
+    #pane-crm .crm-wa:hover { background: #D5F3E0; color: #167A39; border: 0; }
+    #pane-crm .crm-more:hover { background: rgba(20,26,38,.12); }
+    #pane-crm .crm-call.off { opacity: .3; cursor: default; }
+    html[data-theme="dark"] #pane-crm .crm-av { background: hsl(var(--av-h, 25) 30% 22%); color: hsl(var(--av-h, 25) 70% 82%); }
+    html[data-theme="dark"] #pane-crm .heat.hot { background: #3A2210; color: #FFB074; }
+    html[data-theme="dark"] #pane-crm .heat.warm { background: #33290E; color: #F2CB6A; }
+    html[data-theme="dark"] #pane-crm .heat.cold { background: #1E2933; color: #A9BBCB; }
+    html[data-theme="dark"] #pane-crm .heat.dormant { background: rgba(255,255,255,.08); }
+    html[data-theme="dark"] #pane-crm .heat.won { background: #12301F; color: #6BD39B; }
+    html[data-theme="dark"] #pane-crm .stpill.st-new { background: rgba(255,255,255,.1); }
+    html[data-theme="dark"] #pane-crm .crm-call, html[data-theme="dark"] #pane-crm .crm-wa, html[data-theme="dark"] #pane-crm .crm-more { background: rgba(255,255,255,.1) !important; color: #E8E4DC !important; }
+    html[data-theme="dark"] #pane-crm .crm-call:hover { background: #3A2210; color: #FFB074; }
+    html[data-theme="dark"] #pane-crm .crm-wa:hover { background: #12301F; color: #6BD39B; }
+    @media (max-width: 720px) {
+      #pane-crm .crm-tablecard { overflow: clip; border-radius: 20px; }
+      #pane-crm .crm-table, #pane-crm .crm-table tbody { display: block; width: auto; }
+      #pane-crm .crm-table thead { display: none; }
+      #pane-crm .crm-table td { display: block; padding: 0; border: 0; width: auto; }
+      #pane-crm .crm-table tr.crm-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "lead lead stage" "int int time" "heat next act";
+        align-items: center; column-gap: 10px; row-gap: 8px; padding: 13px 14px 11px; }
+      #pane-crm .crm-row > .c-chk { display: none; }
+      #pane-crm .crm-row > .c-lead { grid-area: lead; min-width: 0; }
+      #pane-crm .crm-row > .c-stage { grid-area: stage; justify-self: end; }
+      #pane-crm .crm-row > .c-int { grid-area: int; max-width: none; padding-left: 52px; margin-top: -5px; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+      #pane-crm .crm-row > .c-int .int-t { flex: 0 1 auto; font-size: 13.5px; }
+      #pane-crm .crm-row > .c-int .int-b { flex: none; margin: 0; }
+      #pane-crm .crm-row .int-c { display: none; }
+      #pane-crm .crm-row > .c-time { grid-area: time; justify-self: end; font-size: 11.5px; color: var(--ink-dim); margin-top: -4px; }
+      #pane-crm .crm-row > .c-status { grid-area: heat; display: flex; align-items: center; flex-wrap: wrap; }
+      #pane-crm .crm-row > .c-next { grid-area: next; min-width: 0; }
+      #pane-crm .crm-row > .c-next .nbax { max-width: none; font-size: 12.5px; }
+      #pane-crm .crm-row > .c-act { grid-area: act; justify-self: end; }
+      #pane-crm .crm-row .scr { display: none; }
+      #pane-crm .crm-row .failx { display: none; }
+      #pane-crm .crm-row .nmx { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+      #pane-crm .crm-row .crm-more { display: none; }              /* the whole card opens the lead */
+      #pane-crm .crm-row .crm-call, #pane-crm .crm-row .crm-wa { width: 40px; height: 40px; }
+      #pane-crm .stpill-btn { min-height: 36px; }
+      #pane-crm .crm-av { cursor: pointer; pointer-events: auto; width: 40px; height: 40px; }
+      #pane-crm .crm-tablecard.selecting .crm-av { font-size: 0; color: transparent; background: var(--surface); border: 2px solid var(--border-strong); }
+      #pane-crm .crm-tablecard.selecting .crm-av::after { content: ''; }
+      #pane-crm .crm-tablecard.selecting .crm-row.sel .crm-av { background: var(--brand-deep); border-color: var(--brand-deep); }
+      #pane-crm .crm-tablecard.selecting .crm-row.sel .crm-av::after { content: '\2713'; font-size: 14px; font-weight: 700; color: #fff; }
+      #pane-crm .crm-tablecard.selecting .crm-srcdot { display: none; }
+    }
     /* ── magnetic drop zone (idea: dqnamo's Magnetic Drop Zone) ── */
     .mdz { --mx: 0px; --my: 0px; --ms: 1; position: relative; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px; border-radius: 18px;
       border: 1.5px dashed var(--border); background: var(--surface); cursor: pointer; will-change: transform;
@@ -3847,80 +3934,7 @@
       .crm-table, .crm-table tbody, .crm-table td { display: block; width: auto; }
       .crm-table td { padding: 0; border: none; }
 
-      /* A 3-TIER LEAD CARD, NOT A WRAPPED TABLE ROW.
-         This was nine cells at equal weight — checkbox, star score and the
-         WhatsApp icon competed with the lead's own name for attention, and
-         "untidy and scattered" was the accurate complaint. The fix is
-         hierarchy, not tidier wrapping:
-
-           tier 1 — identity:   who this is, and their stage, side by side
-                                 (that comparison is the one reason this
-                                 screen exists)
-           tier 2 — the action: temperature + what to do about it — the
-                                 single highest-value line on the card
-           tier 3 — meta:       budget, last activity, and the two things
-                                 you can actually do without opening the lead
-
-         Source chip and star score move behind the tap into openLead() —
-         that drawer already renders both, so this isn't losing the data,
-         it's stopping the card from restating the drawer's job. Hidden with
-         display:none rather than trimmed from the renderer, so desktop's
-         <td>s are provably unchanged. */
-      /* column 1 carries the identity block in row 1 (spanning col 1+2) but
-         stands alone in rows 2 and 3 (temp, budget). With `minmax(0,1fr)` as
-         its floor, Grid's own spec pushes a spanning item's width need onto
-         the *non-flexible* track it also spans (col 2) rather than growing
-         the flexible one -- col 1 measured 0px and row 2/3 landed exactly on
-         top of row 1's tail. A 150px floor is a track-sizing fix, not a
-         cosmetic one: it stops col 1 from being starved to nothing. */
-      .crm-table tr.crm-row {
-        display: grid;
-        grid-template-columns: minmax(150px,1fr) auto auto;
-        grid-template-areas:
-          "lead   lead   stage"
-          "temp   nba    nba"
-          "budget time   act";
-        align-items: center;
-        column-gap: 10px; row-gap: 6px;
-        padding: 14px 14px 15px;
-        border-bottom: 1px solid var(--border);
-      }
-      .crm-row > .c-chk    { display: none; }         /* the avatar is the tap target now */
-      .crm-row > .c-lead   { grid-area: lead; display: contents; }
-      .crm-row > .c-lead .cell { grid-area: lead; min-width: 0; }
-      .crm-row > td:not([class]) { display: none; }   /* Source — behind the tap */
-      .crm-row > .c-score  { display: none; }         /* Score — behind the tap */
-      .crm-row > .c-budget { grid-area: budget; font: 700 13.5px var(--f-sans); text-align: left; }
-      .crm-row > .c-stage  { grid-area: stage; display: contents; }
-      .crm-row > .c-stage .stpill-btn { grid-area: stage; justify-self: end; align-self: start; }
-      .crm-row > .c-stage .nbax {
-        grid-area: nba; margin: 0; font: 500 12.5px var(--f-sans); color: var(--ink-muted);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .crm-row > .c-status { grid-area: temp; justify-self: start; white-space: nowrap; }
-      .crm-row > .c-time   { grid-area: time; font-size: 11.5px; color: var(--ink-dim); }
-      .crm-row > .c-act    { grid-area: act; justify-self: end; display: flex; gap: 6px; }
-
-      /* Long names truncate rather than reflowing the card — the grid holds
-         its shape, so something has to give, and it should be the text. */
-      .crm-row .nmx { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-      .crm-row .crm-wa, .crm-row .crm-more { min-width: 44px; min-height: 44px;
-        display: inline-flex; align-items: center; justify-content: center; }
-
-      /* Tap the avatar, select the row — the checkbox itself still exists
-         (renderCrmTable gives it an id and the avatar a matching `for`), it
-         just isn't drawn; native label semantics do the toggling, so there
-         is no new listener to keep in sync with the desktop one. */
-      .crm-av { cursor: pointer; pointer-events: auto; }
-      /* selection mode: every avatar becomes an empty ring so the card says
-         "tap to select" without singling one lead out; the selected row's
-         ring fills in and shows a check — the same trade Gmail makes on
-         mobile so a photo grid can be a selection UI without a checkbox on
-         every tile. */
-      .crm-tablecard.selecting .crm-av { font-size: 0; color: transparent; background: var(--surface); border: 2px solid var(--border-strong); }
-      .crm-tablecard.selecting .crm-av::after { content: ''; }
-      .crm-tablecard.selecting .crm-row.sel .crm-av { background: var(--brand-deep); border-color: var(--brand-deep); }
-      .crm-tablecard.selecting .crm-row.sel .crm-av::after { content: '✓'; font-size: 14px; font-weight: 700; color: #fff; }
+      /* The phone lead card lives in the CRM redesign block (search: CRM TABLE v2). */
 
       /* pager: three rows, not three columns squeezed onto one */
       #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -5314,9 +5328,15 @@
          </button>${i<STAGE_ORDER.length-1?'<span class="fn-sep">›</span>':''}`).join('');
     }
     function renderCrmTable(){
-      const cols = [['',''],['Lead','lead'],['Source','src'],['Budget','budget'],['Stage','stage'],['Last activity','recent'],['Score','score'],['Status',''],['add','']];
+      /* THE CRM TABLE, REDESIGNED (Eden, 2026-10-11: "the actual table is
+         terrible"). It answers the question an agent opens it with: WHO is
+         this, WHAT do they want, WHERE are they in the pipeline, and WHAT
+         should I do next. Source is now a small dot on the avatar and the
+         score sits beside the heat, so two columns of furniture are gone and
+         "Interested in" (the property and the budget), which was missing, is
+         in. Sorting by source or score is still in the Sort menu. */
+      const cols = [['',''],['Lead','lead'],['Interested in','budget'],['Stage','stage'],['Next step',''],['Heat','score'],['Last activity','recent'],['','']];
       document.getElementById('crmHead').innerHTML = '<tr>' + cols.map(c => {
-        if(c[0]==='add') return '<th><button class="col-add" aria-label="Add column">+</button></th>';
         if(!c[1]) return `<th>${c[0]?`<span>${c[0]}</span>`:''}</th>`;
         const active = CRM.sortK===c[1];
         return `<th class="sortable ${active?'on':''}" data-sort="${c[1]}" aria-sort="${active?(CRM.sortDir<0?'descending':'ascending'):'none'}"><span>${c[0]}</span><span class="crt">${active&&CRM.sortDir>0?'▴':'▾'}</span></th>`;
@@ -5340,7 +5360,7 @@
         const filtered = !!(CRM.fStage || CRM.fSrc);
         const bare = !CRM.loaded || CRM.error || !filtered;
         if (head) head.hidden = bare;
-        body.innerHTML = '<tr class="crm-empty"><td colspan="9">' + (
+        body.innerHTML = '<tr class="crm-empty"><td colspan="8">' + (
           CRM.error
             ? '<div class="ov-blank"><b>Could not load your leads</b><p>' + esc2(CRM.error) + '</p></div>'
             : !CRM.loaded
@@ -5371,18 +5391,23 @@
       if (head) head.hidden = false;
       body.innerHTML = all.slice(start, start+CRM.per).map(({l,oi}) => {
         const sel = CRM.sel.has(oi);
+        const hue = Array.from(String(l.nm || '')).reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 360, 7);
+        const ch = CH[l.attr.channel] || CH.direct;
+        const wl = l.ph ? wa(l.ph, l.pr) : '';
+        const telh = l.ph ? 'tel:' + String(l.ph).replace(/[^\d+]/g, '') : '';
+        const want = String(l.pr || '').split(' \u00b7 ');
+        const why = l.failed ? String(l.failReason || 'Could not notify the agency automatically').replace(/[.\s]+$/, '') : '';
         return `<tr class="crm-row ${sel?'sel':''}" data-i="${oi}">
           <td class="c-chk"><input type="checkbox" class="crm-chk" id="crmsel-${oi}" data-sel="${oi}" ${sel?'checked':''} aria-label="Select ${l.nm}"></td>
-          <td class="c-lead"><span class="cell"><label for="crmsel-${oi}" class="crm-av" data-stop title="Select ${l.nm}">${initials(l.nm)}</label><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
+          <td class="c-lead"><span class="cell"><label for="crmsel-${oi}" class="crm-av" data-stop title="Select ${l.nm}" style="--av-h:${hue}">${initials(l.nm)}<i class="crm-srcdot" style="background:${ch.color}" title="Came from ${ch.label}"></i></label><span class="crm-lead-tx"><span class="nmx">${l.nm}</span><span class="phx">${
       l.agentId ? (ROSTER_BY_ID[l.agentId] || 'Assigned') : (l.ph || 'No phone yet')
     }</span></span></span></td>
-          <td><span class="crm-srcchip"><i style="background:${CH[l.attr.channel].color}"></i>${CH[l.attr.channel].label}</span></td>
-          <td class="c-budget">${l.price}</td>
-          <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}</button><span class="nbax">→ ${l.nba.do}</span></td>
+          <td class="c-int"><span class="int-t">${esc2(want[0] || 'Listing unavailable')}</span><span class="int-b"><b>${l.price}</b>${want[1] ? '<span class="int-c"> \u00b7 ' + esc2(want[1]) + '</span>' : ''}</span></td>
+          <td class="c-stage"><button class="stpill stpill-btn ${STAGE_CLS[l.stage]}" data-stage-i="${oi}" aria-label="Change stage for ${l.nm} - currently ${l.stage}">${l.stage}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></td>
+          <td class="c-next"><span class="nbax">\u2192 ${l.nba.do}</span></td>
+          <td class="c-status"><span class="heat ${l.temp}">${TEMP_LABEL[l.temp]}</span>${l.score != null ? `<span class="scr" title="Lead score">${l.score}</span>` : ''}${l.failed ? `<span class="failx" title="${esc2(why)}">\u26a0 Not notified</span>` : ''}</td>
           <td class="c-time">${l.t}</td>
-          <td class="c-score">${crmStars(l.score)}</td>
-          <td class="c-status"><span class="stat-dot ${l.temp}"></span><span class="stat-w">${TEMP_LABEL[l.temp]}</span>${l.failed?`<span class="failx" title="${esc2(String(l.failReason || 'Could not notify the agency automatically').replace(/[.\s]+$/, ''))} — the lead itself is saved.">⚠ Not notified</span>`:''}</td>
-          <td class="c-act">${l.ph ? `<a class="crm-wa" href="${wa(l.ph,l.pr)}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}">${SynIcons.svg('phone')}</a>` : '<span class="crm-wa off" title="No phone number on this lead" aria-hidden="true">' + SynIcons.svg('phone') + '</span>'}<button class="crm-more" aria-label="Open ${l.nm}">${SynIcons.svg('more')}</button></td>
+          <td class="c-act">${l.ph ? `<a class="crm-call" href="${telh}" data-stop aria-label="Call ${l.nm}" title="Call">${SynIcons.svg('phone')}</a><a class="crm-wa" href="${wl}" target="_blank" rel="noreferrer" data-stop aria-label="WhatsApp ${l.nm}" title="WhatsApp">${chMark('whatsapp', 18)}</a>` : '<span class="crm-call off" title="No phone number on this lead" aria-hidden="true">' + SynIcons.svg('phone') + '</span>'}<button class="crm-more" aria-label="Open ${l.nm}" title="Open">${SynIcons.svg('more')}</button></td>
         </tr>`;
       }).join('');
       let nums = '';
