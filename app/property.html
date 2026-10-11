@@ -4442,22 +4442,14 @@
         .then(function () { if (PANEL && PANEL.mode === 'cats') showCats(); });
     }
     function floodHtml() {
+      /* Only a warning is worth the space on the card. Nothing is shown for a home outside the zone
+         (silence there is not a safety claim, and the card stays short). The source rides in the
+         tooltip rather than as a line of small print. */
       var r = FLOOD.row;
-      if (FLOOD.state === 'loading' || FLOOD.state === 'idle') return '';
-      if (!r || r.covered === false) return '';
-      var head, body, cls;
-      if (r.in_zone_100) {
-        cls = ' warn';
-        head = 'Inside a modelled river flood zone';
-        body = 'In a major river flood (about a 1-in-100-year event) water could reach roughly <b>' + Number(r.depth_100_m).toFixed(1) + ' m</b> here'
-          + (r.in_zone_10 ? ', and the same spot is also reached in a 1-in-10-year flood, so it is not rare' : '') + '. Ask the agency about drainage, past flooding and insurance.';
-      } else {
-        cls = '';
-        head = 'Outside the modelled river flood zone';
-        body = 'This model covers rivers only. It does not cover heavy-rain drainage or coastal and lagoon flooding, so ask about the street itself.';
-      }
-      return '<div class="pvo-flood' + cls + '"><div class="pvo-flood-h">' + head + '</div><p>' + body + '</p>'
-        + '<div class="pvo-flood-s">Source: JRC / Copernicus GloFAS river flood hazard maps, 90 m. A model, not an official Nigerian government map.</div></div>';
+      if (FLOOD.state !== 'done' || !r || r.covered === false || !r.in_zone_100) return '';
+      return '<div class="pvo-flood warn" title="JRC / Copernicus GloFAS river flood hazard maps, 90 m. A model, not an official map; it does not cover drainage or coastal flooding.">'
+        + '<div class="pvo-flood-h">Inside a modelled river flood zone</div>'
+        + '<p>A major river flood could reach about <b>' + Number(r.depth_100_m).toFixed(1) + ' m</b> here' + (r.in_zone_10 ? ', and a 1-in-10-year flood reaches it too' : '') + '.</p></div>';
     }
 
     /* ── state 2: one kind, pinned ───────────────────────────────────── */
