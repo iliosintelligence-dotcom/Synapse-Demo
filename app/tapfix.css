@@ -1,0 +1,20 @@
+/* NO BLUE BOX ON A PHONE (Eden, 2026-10-11: "whenever I type anything on the
+   mobile version, there's always a blue box").
+
+   Two causes, both the browser's own defaults rather than anything we drew:
+   1. Chrome on Android flashes a translucent blue rectangle (rgba(51,181,229,.4))
+      over whatever you tap, inputs and buttons included, unless the page turns
+      it off. Every page was leaving it on.
+   2. Chrome paints autofilled fields pale blue (or yellow). A transition with an
+      absurd duration is the long-standing way to keep the field's own colours,
+      and unlike a fixed background it still works in dark mode.
+   Focus is NOT removed: each field keeps its own border/ring change when focused,
+   which is what tells a keyboard or screen-reader user where they are. */
+html, body, * { -webkit-tap-highlight-color: transparent; }
+::selection { background: rgba(255, 138, 45, .32); color: inherit; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active,
+textarea:-webkit-autofill, select:-webkit-autofill {
+  transition: background-color 600000s 0s, color 600000s 0s;
+  caret-color: currentColor;
+}
+input, textarea, [contenteditable] { -webkit-touch-callout: default; }
