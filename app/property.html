@@ -1963,6 +1963,17 @@
         for (const prev of seen) if (prev.includes(k)) return false;
         seen.add(k); return true;
       }).join(', '));
+      /* Introduced buyers (a lead on this home) get the exact address back; everyone else sees
+         the street without its house number. The server decides, never this page. */
+      if (p.id && window.SynAuth) {
+        SynAuth.client().then((c) => c.rpc('property_exact_for_me', { p_property: p.id })).then((r) => {
+          const row = r && r.data && r.data[0];
+          if (!row || !row.address) return;
+          set('pvLoc', [row.address, p.city, p.state].filter(Boolean).join(', '));
+          const el = document.getElementById('pvLoc');
+          if (el && !el.querySelector('.exact')) { const t = document.createElement('small'); t.className = 'exact'; t.style.cssText = 'display:block;margin-top:4px;font-size:12px;opacity:.7'; t.textContent = 'Exact address, shared because you have been introduced to the agency'; el.appendChild(t); }
+        }).catch(() => {});
+      }
 
       // ₦/m² only when area is actually recorded; no invented median comparison.
       if (p.area_sqm && p.price) {
