@@ -82,10 +82,33 @@
        SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
   <script src="syndication-audit.js"></script>
   <style>
-    .bz-card { margin: 14px 0; padding: 14px 16px; border-radius: 16px; background: #FFF0E2; color: #15120F; font-size: 14.5px; line-height: 1.45; }
-    .bz-bar { display: block; height: 8px; margin-top: 10px; border-radius: 8px; background: rgba(21,18,15,.12); overflow: hidden; }
-    .bz-bar i { display: block; height: 100%; border-radius: 8px; background: #FF8A2D; }
-    html[data-theme="dark"] .bz-card { background: #2A1B0E; color: #F5F2EE; }
+    /* ── refer agents, get a free month (Eden, 2026-10-11; replaces the 2026 bonanza) ── */
+    .ref-card { margin: 14px 0; padding: 18px 18px 16px; border-radius: 20px; background: #FFF0E2; color: #15120F; }
+    .ref-card h3 { margin: 0; font: 700 17px/1.25 var(--f-sans); }
+    .ref-card p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: rgba(21,18,15,.78); }
+    .ref-steps { display: flex; gap: 6px; margin: 14px 0 6px; }
+    .ref-steps i { flex: 1; height: 10px; border-radius: 6px; background: rgba(21,18,15,.14); position: relative; }
+    .ref-steps i.on { background: #FF8A2D; }
+    .ref-steps i.gift { background: rgba(21,18,15,.14); }
+    .ref-line { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 12.5px; color: rgba(21,18,15,.7); }
+    .ref-line b { color: #15120F; font-weight: 700; }
+    .ref-link { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .ref-link code { flex: 1; min-width: 0; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.75); font: 600 12.5px ui-monospace, Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #15120F; }
+    .ref-link .btn { flex: none; min-height: 42px; padding: 0 16px; }
+    .ref-list { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+    .ref-list li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+    .ref-list li span:last-child { font-weight: 700; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; background: rgba(21,18,15,.08); }
+    .ref-list li.ok span:last-child { background: #DAF1E3; color: #1E5733; }
+    .ref-earned { display: inline-flex; margin-top: 10px; padding: 4px 11px; border-radius: 999px; background: #15120F; color: #FFE6D2; font: 700 12px var(--f-sans); }
+    html[data-theme="dark"] .ref-card { background: #2A1B0E; color: #F5F2EE; }
+    html[data-theme="dark"] .ref-card p, html[data-theme="dark"] .ref-line { color: rgba(245,242,238,.74); }
+    html[data-theme="dark"] .ref-line b { color: #F5F2EE; }
+    html[data-theme="dark"] .ref-steps i { background: rgba(255,255,255,.16); }
+    html[data-theme="dark"] .ref-steps i.on { background: #FF8A2D; }
+    html[data-theme="dark"] .ref-link code { background: rgba(0,0,0,.35); color: #F5F2EE; }
+    html[data-theme="dark"] .ref-list li span:last-child { background: rgba(255,255,255,.1); }
+    html[data-theme="dark"] .ref-list li.ok span:last-child { background: #12301F; color: #6BD39B; }
+    html[data-theme="dark"] .ref-earned { background: #FFE6D2; color: #15120F; }
     /* Held open until the portal's data has landed (bootDone), then lifted. */
     #syn-load { animation: none !important; }
     #syn-load.go { animation: synLoadOut .45s ease forwards !important; }
@@ -4696,7 +4719,7 @@
                numbers: "0 of 20" is a confident claim about somebody's
                account that happens to be untrue. -->
           <div class="plan-usage" id="planUsage" hidden></div>
-          <div class="bz-card" id="bonanzaCard" hidden></div>
+          <div class="ref-card" id="referralCard" hidden></div>
           <a class="bl-link" href="#billing" data-open-billing>Billing, payments and add-ons <span aria-hidden="true">&rarr;</span></a>
 
           <div class="pr-table-wrap"><div class="pr-compare" id="pricingGrid"></div></div>
@@ -16740,30 +16763,57 @@
           window.SYN_PAYWALL = r.data;
           if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
         }).catch(() => {});
-      /* The 2026 bonanza: 20 listings this year = a free year next year. */
-      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('bonanza_progress', { p_agency: aid }) : null))
+      /* Referrals: every 5 agents you refer = a month free. */
+      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('referral_overview', { p_agency: aid }) : null))
         .then((r) => {
           if (!r || r.error || !r.data) return;
-          window.SYN_BONANZA = r.data; paintBonanza();
+          window.SYN_REFERRAL = r.data; paintReferral();
           if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
         }).catch(() => {});
     }
-    function paintBonanza() {
-      const b = window.SYN_BONANZA, box = document.getElementById('bonanzaCard');
-      if (!box || !b || !b.on) return;
-      const have = Math.min(b.have, b.needed), pct = Math.round(have / b.needed * 100);
-      const until = b.free_until ? new Date(b.free_until).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    function referralLink(code) { return 'https://www.synapsecore.dev/?ref=' + encodeURIComponent(code); }
+    function paintReferral() {
+      const r = window.SYN_REFERRAL, box = document.getElementById('referralCard');
+      if (!box || !r || !r.on || !r.code) return;
+      const per = r.per_reward, into = r.into_next, left = per - into;
+      const steps = Array.from({ length: per }, (_, i) => '<i class="' + (i < into ? 'on' : '') + '"></i>').join('');
+      const month = r.months_per_reward === 1 ? 'month' : r.months_per_reward + ' months';
+      const recent = (r.recent || []).map((x) => '<li class="' + (x.counted ? 'ok' : '') + '"><span>' + esc2(x.name || 'An agency') + '</span><span>'
+        + (x.counted ? 'Counted' : 'Joined \u00b7 needs ' + r.listings_required + ' listings') + '</span></li>').join('');
       box.hidden = false;
-      /* The earned state is a prize, so it is drawn as foil; the open state
-         stays the plain orange card. */
-      box.classList.toggle('irid', !!b.earned); box.classList.toggle('fill', !!b.earned);
-      box.innerHTML = b.earned
-        ? '<b>You earned the 2026 bonanza.</b> Synapse is free for you, on the Leader plan, until ' + until + '. Nothing to pay and nothing to do.'
-        : b.open
-          ? '<b>2026 bonanza: upload ' + b.needed + ' listings this year and 2027 is free.</b> You are at ' + have + ' of ' + b.needed + '.'
-            + '<span class="bz-bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>'
-          : 'The 2026 bonanza has closed.';
+      box.innerHTML = '<h3>Refer agents, get a free ' + (r.months_per_reward === 1 ? 'month' : 'stretch') + '</h3>'
+        + '<p>Every ' + per + ' agencies you bring to Synapse earn you ' + (r.months_per_reward === 1 ? 'one month' : month) + ' free. An agency counts once it has uploaded ' + r.listings_required + ' listings.</p>'
+        + '<div class="ref-steps" aria-hidden="true">' + steps + '</div>'
+        + '<div class="ref-line"><span><b>' + into + ' of ' + per + '</b> toward your next free month</span><span>' + r.counted + ' counted' + (r.pending ? ' \u00b7 ' + r.pending + ' joined' : '') + '</span></div>'
+        + (r.months_earned ? '<span class="ref-earned">' + r.months_earned + (r.months_earned === 1 ? ' month' : ' months') + ' earned</span>' : '')
+        + '<div class="ref-link"><code id="refLinkTxt">' + esc2(referralLink(r.code)) + '</code><button type="button" class="btn btn-primary" id="refCopy">Copy link</button></div>'
+        + (recent ? '<ul class="ref-list" aria-label="Agencies you referred">' + recent + '</ul>' : '');
+      box.classList.toggle('irid', r.months_earned > 0);
+      const cp = document.getElementById('refCopy');
+      if (cp) cp.addEventListener('click', () => {
+        const link = referralLink(r.code);
+        const done = () => { if (typeof toast === 'function') toast('Link copied. Send it to another agent.'); };
+        if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) { navigator.share({ title: 'Synapse for agencies', text: 'Try Synapse for your agency:', url: link }).catch(() => {}); return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, () => {});
+        else { const t = document.getElementById('refLinkTxt'); if (t) { const rg = document.createRange(); rg.selectNodeContents(t); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg); } }
+      });
     }
+    /* A visitor who arrived through someone's link claims it once they have an
+       agency. The database decides whether it counts; this only passes the code
+       on and then forgets it, unless the answer is "not yet" (no agency yet) or
+       the network failed. */
+    function claimPendingReferral() {
+      let raw = null;
+      try { raw = JSON.parse(localStorage.getItem('syn_ref') || 'null'); } catch (e) { return; }
+      if (!raw || !raw.c || (Date.now() - (raw.t || 0)) > 30 * 864e5) { try { localStorage.removeItem('syn_ref'); } catch (e) {} return; }
+      if (!window.SynAuth) return;
+      SynAuth.client().then((c) => c.rpc('referral_claim', { p_code: raw.c })).then((r) => {
+        if (!r || r.error) return;
+        const why = r.data && r.data.reason;
+        if (why !== 'no_agency') { try { localStorage.removeItem('syn_ref'); } catch (e) {} }
+      }).catch(() => {});
+    }
+    setTimeout(claimPendingReferral, 4000);
     setTimeout(loadPaywallInfo, 2500);
     /* Kept fresh (Greptile): a portal left open past the free date must not
        go on saying it is free. */
@@ -17575,16 +17625,13 @@
           title: 'Synapse is free for you until ' + until,
           sub: 'After that, your plan\u2019s limits apply. See what each plan includes.', group: 'Today' });
       }
-      /* THE BONANZA, in the bell while it is open and not yet earned. */
+      /* REFERRALS, in the bell: how far you are toward the next free month. */
       try {
-        const bz = window.SYN_BONANZA;
-        if (bz && bz.on && bz.open && !bz.earned) {
-          out.unshift({ type: 'billing', tag: 'Bonanza', icon: 'card', pane: 'subscription',
-            title: 'Upload ' + bz.needed + ' listings this year, get 2027 free',
-            sub: 'You are at ' + Math.min(bz.have, bz.needed) + ' of ' + bz.needed + '. Ends 31 December 2026.', group: 'Today' });
-        } else if (bz && bz.on && bz.earned) {
-          out.unshift({ type: 'billing', tag: 'Bonanza', icon: 'card', pane: 'subscription',
-            title: 'You earned a free 2027', sub: 'Leader plan, free until the end of 2027.', group: 'Today' });
+        const rf = window.SYN_REFERRAL;
+        if (rf && rf.on) {
+          out.unshift({ type: 'billing', tag: 'Referrals', icon: 'users', pane: 'subscription',
+            title: rf.into_next ? 'You are ' + rf.into_next + ' of ' + rf.per_reward + ' toward a free month' : 'Refer ' + rf.per_reward + ' agents, get a month free',
+            sub: 'Share your link from Plans. An agency counts once it has uploaded ' + rf.listings_required + ' listings.', group: 'Today' });
         }
       } catch (e) {}
       /* GETTING STARTED (Eden, 2026-10-07): a new agency is told what to do first, in the bell, without waiting for an
