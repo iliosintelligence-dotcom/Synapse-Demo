@@ -2103,6 +2103,62 @@
     .ced-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ced-foot .sp { flex: 1; }
     .ced button[disabled] { opacity: .5; cursor: default; }
+    /* ══ SETUP ANCHOR (Eden, 2026-10-11) ═══════════════════════════════════════════
+       A ring in the top bar and a "your next step" card on Overview, both fed by
+       agency_setup_progress(). Together they answer the question people were
+       texting Eden: "what should I do next?" ═══════════════════════════════════ */
+    .setup-ring { position: relative; display: inline-grid; place-items: center; padding: 0; }
+    .setup-ring svg { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); transform: rotate(-90deg); }
+    .setup-ring .sr-bg { fill: none; stroke: rgba(20,26,38,.12); stroke-width: 3.5; }
+    .setup-ring .sr-fg { fill: none; stroke: #FF8A2D; stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray .6s cubic-bezier(.2,.8,.2,1); }
+    .setup-ring .sr-n { position: relative; font: 800 11.5px var(--f-sans); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .setup-ring.nudge { animation: srNudge 2.4s ease-in-out 3; }
+    @keyframes srNudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,45,.5); } 50% { box-shadow: 0 0 0 8px rgba(255,138,45,0); } }
+    html[data-theme="dark"] .setup-ring .sr-bg { stroke: rgba(255,255,255,.18); }
+    .next-card { display: flex; align-items: center; gap: 16px; margin: 0 0 18px; padding: 16px 18px; border-radius: 20px; background: #FFF0E2; color: #15120F; }
+    .next-card[hidden] { display: none; }
+    .nc-ico { flex: none; width: 46px; height: 46px; border-radius: 14px; background: #FF8A2D; color: #15120F; display: grid; place-items: center; }
+    .nc-ico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nc-tx { flex: 1; min-width: 0; }
+    .nc-k { font: 700 11px var(--f-sans); letter-spacing: .1em; text-transform: uppercase; color: rgba(21,18,15,.65); }
+    .nc-t { margin: 3px 0 0; font: 700 17px/1.25 var(--f-sans); }
+    .nc-w { margin: 4px 0 0; font-size: 13.5px; line-height: 1.45; color: rgba(21,18,15,.78); }
+    .nc-bar { display: flex; gap: 4px; margin-top: 10px; }
+    .nc-bar i { flex: 1; height: 5px; border-radius: 4px; background: rgba(21,18,15,.14); }
+    .nc-bar i.on { background: #15120F; }
+    .nc-go { flex: none; display: grid; gap: 6px; justify-items: stretch; }
+    .nc-go .btn { white-space: nowrap; justify-content: center; }
+    .nc-all { border: 0; background: none; font: 600 12.5px var(--f-sans); color: rgba(21,18,15,.72); text-decoration: underline; cursor: pointer; padding: 2px; }
+    html[data-theme="dark"] .next-card { background: #2A1B0E; color: #F5F2EE; }
+    html[data-theme="dark"] .nc-k, html[data-theme="dark"] .nc-w, html[data-theme="dark"] .nc-all { color: rgba(245,242,238,.72); }
+    html[data-theme="dark"] .nc-bar i { background: rgba(255,255,255,.16); } html[data-theme="dark"] .nc-bar i.on { background: #FF8A2D; }
+    .setup-pop { position: fixed; z-index: 95; top: 64px; right: 76px; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 90px); overflow: auto;
+      border-radius: 22px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(20,26,38,.28); padding: 18px 18px 14px; }
+    .setup-pop[hidden] { display: none; }
+    .sp-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .sp-h h3 { margin: 0; font: 700 17px var(--f-sans); color: var(--ink); }
+    .sp-h span { font: 700 12.5px var(--f-sans); color: var(--ink-muted); }
+    .sp-bar { height: 8px; border-radius: 6px; background: rgba(20,26,38,.1); margin: 12px 0 8px; overflow: hidden; }
+    .sp-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #FF8A2D, #FFB36B); transition: width .5s ease; }
+    .sp-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+    .sp-list li { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 14px; }
+    .sp-list li.next { background: #FFF0E2; }
+    html[data-theme="dark"] .sp-list li.next { background: #2A1B0E; }
+    .sp-dot { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-strong); display: grid; place-items: center; margin-top: 1px; }
+    .sp-dot svg { width: 13px; height: 13px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+    .sp-list li.done .sp-dot { background: #25683F; border-color: #25683F; } .sp-list li.done .sp-dot svg { opacity: 1; }
+    .sp-list li.next .sp-dot { border-color: #FF8A2D; }
+    .sp-t { font: 600 14px/1.3 var(--f-sans); color: var(--ink); }
+    .sp-list li.done .sp-t { color: var(--ink-muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+    .sp-w { margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: var(--ink-muted); }
+    .sp-list li .btn { margin-top: 8px; min-height: 38px; padding: 0 16px; font-size: 13px; }
+    @media (max-width: 720px) {
+      .next-card { flex-wrap: wrap; align-items: flex-start; }
+      .nc-go { width: 100%; grid-template-columns: 1fr auto; align-items: center; }
+      .setup-pop { top: auto; right: 0; left: 0; bottom: 0; width: 100%; max-height: 82dvh; border-radius: 26px 26px 0 0; padding: 8px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -24px 60px rgba(20,26,38,.3); }
+      .setup-pop::before { content: ''; display: block; width: 40px; height: 5px; border-radius: 5px; background: rgba(0,0,0,.18); margin: 4px auto 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .setup-ring.nudge { animation: none; } .setup-ring .sr-fg, .sp-bar i { transition: none; } }
     /* ══ CRM TABLE v2 (Eden, 2026-10-11) ═══════════════════════════════════════
        Desktop: a calm table, one line of meaning per cell. Phone: each lead is
        a card with the three things you do with a lead -- see who it is and what
@@ -4478,6 +4534,13 @@
          destination. It is a real control now -- see rmLoad() -- and it lives
          in the appbar rather than the phone taskbar so desktop and mobile get
          it from this one element instead of two that can drift apart. -->
+    <!-- THE SETUP ANCHOR (Eden, 2026-10-11). A ring that shows how far you are through
+         getting set up and opens the checklist. Hidden until it has real numbers, and
+         gone for good once everything is done. -->
+    <button class="bell setup-ring" id="setupBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="setupPop" aria-label="Getting set up" hidden>
+      <svg viewBox="0 0 36 36" aria-hidden="true"><circle class="sr-bg" cx="18" cy="18" r="15"/><circle class="sr-fg" id="setupArc" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="0 100"/></svg>
+      <span class="sr-n" id="setupNum">0</span>
+    </button>
     <button class="bell" id="rmBtn" aria-label="Contact Synapse" aria-haspopup="dialog" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
     </button>
@@ -4601,6 +4664,7 @@
       <main>
         <!-- ══ OVERVIEW ══ -->
         <section class="pane on" id="pane-overview">
+          <div class="next-card" id="nextCard" hidden></div>
           <div class="ov-head">
             <div>
               <div class="eyebrow" data-agency-eyebrow>Your agency</div>
@@ -5228,6 +5292,7 @@
        writing. Rendered against a real listing of the agency's own. -->
 
   <!-- social composer: pick a listing → AI captions per channel → schedule -->
+  <div class="setup-pop" id="setupPop" role="dialog" aria-label="Getting set up" hidden></div>
   <div class="modal-scrim" id="cmpScrim"></div>
   <div class="modal" id="cmpModal"></div>
 
@@ -16814,6 +16879,107 @@
       }).catch(() => {});
     }
     setTimeout(claimPendingReferral, 4000);
+
+    /* ══ THE SETUP ANCHOR (Eden, 2026-10-11) ══════════════════════════════════════
+       "People come to use the app and usually end up texting me later to ask what
+       they should do next." So the portal now always knows, and always says. One
+       read-only call (agency_setup_progress) reports what the agency has really done;
+       the steps below are ordered, and the first one not done is THE NEXT STEP,
+       shown as a card at the top of Overview and as a ring in the top bar that opens
+       the whole list. Steps an agent cannot do (logo, papers, inviting people)
+       are not shown to an agent. When everything is done the anchor disappears. ═ */
+    const SETUP = { p: null, steps: [], pop: false };
+    const SETUP_ICO = {
+      logo: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+      cac: '<path d="M12 3 4.5 6v5.5c0 4.4 3 8 7.5 9.5 4.5-1.5 7.5-5.1 7.5-9.5V6z"/><path d="m8.6 12 2.4 2.4 4.4-4.8"/>',
+      listing: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+      channel: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/>',
+      post: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
+      team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M17 11a3 3 0 1 0 0-6M18.5 14.7c2 .6 3.4 2.2 3.8 5.3"/>',
+      lead: '<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/>',
+      refer: '<path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>'
+    };
+    function setupSteps(p) {
+      const boss = p.role === 'agency_owner' || p.role === 'agency_admin';
+      const all = [
+        { id: 'logo', boss: true, ico: 'logo', title: 'Add your logo', why: 'Buyers trust a listing more when they can see whose it is. It also goes on every post Synapse makes for you.', cta: 'Add your logo', done: !!p.logo, go: () => goToPane('brand') },
+        { id: 'cac', boss: true, ico: 'cac', title: 'Upload your CAC certificate', why: 'You cannot publish a listing until it is on file. It takes a minute, and the verification team reviews it after.', cta: 'Upload it', done: !!p.cac, go: () => goToPane('verification') },
+        { id: 'listing', ico: 'listing', title: 'Add your first listing', why: 'Buyers cannot find you until a listing is live. About three minutes: photos, price and a pin on the map.', cta: 'Add a listing', done: p.listings > 0, go: () => { goToPane('listings'); setTimeout(() => { const b = document.getElementById('newListingBtn'); if (b) b.click(); }, 350); } },
+        { id: 'channel', boss: true, ico: 'channel', title: 'Connect a social account', why: 'Connect Instagram, Facebook, TikTok or Telegram once, and Synapse can post your listings for you.', cta: 'Connect one', done: p.channels > 0, go: () => { goToPane('social'); setTimeout(() => { try { openAddChannel('instagram'); } catch (e) {} }, 500); } },
+        { id: 'post', ico: 'post', title: 'Post a listing', why: 'Pick a listing, tick where it goes, and let Synapse write the captions. This is how enquiries start.', cta: 'Make a post', done: p.posts > 0, go: () => { goToPane('social'); setTimeout(() => { const b = document.getElementById('newPostBtn'); if (b) b.click(); }, 350); } },
+        { id: 'team', boss: true, ico: 'team', title: 'Invite a teammate', why: 'Add the agents who will answer buyers. Leads can be assigned to them, and the work stops sitting on one person.', cta: 'Invite someone', done: p.team > 1, go: () => { try { openInvite(); } catch (e) { goToPane('agents'); } } },
+        { id: 'lead', ico: 'lead', title: 'Reply to your first lead', why: p.leads > 0 ? 'A buyer has asked about a home. Fast replies win; open it and call or message them.' : 'Your first enquiry lands here the moment a buyer taps Contact agent. Share a listing to get one sooner.', cta: p.leads > 0 ? 'Open your leads' : 'Share a listing', done: false, doneLead: true, go: () => goToPane(p.leads > 0 ? 'crm' : 'listings') },
+        { id: 'refer', boss: true, ico: 'refer', title: 'Refer another agency', why: 'Every 5 agencies you bring earn you a free month. Your link is on the Plans page.', cta: 'Get my link', done: p.referrals > 0, go: () => goToPane('subscription') }
+      ];
+      return all.filter((st) => !st.boss || boss).map((st) => { if (st.doneLead) st.done = p.leads > 0 && false; return st; });
+    }
+    function setupSvg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (SETUP_ICO[k] || SETUP_ICO.listing) + '</svg>'; }
+    const SETUP_TICK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+    function paintSetup() {
+      const p = SETUP.p; if (!p) return;
+      const steps = setupSteps(p); SETUP.steps = steps;
+      /* "Reply to your first lead" is done once any lead has been moved past New:
+         the portal knows that from its own lead list, not from this call. */
+      const lead = steps.find((x) => x.id === 'lead');
+      if (lead && typeof leads !== 'undefined' && leads.some((l) => l.stage && l.stage !== 'New')) lead.done = true;
+      const doneN = steps.filter((x) => x.done).length, total = steps.length;
+      const next = steps.find((x) => !x.done);
+      const btn = document.getElementById('setupBtn'), card = document.getElementById('nextCard'), pop = document.getElementById('setupPop');
+      if (!btn) return;
+      if (!next) { btn.hidden = true; if (card) card.hidden = true; if (pop) pop.hidden = true; return; }
+      btn.hidden = false;
+      document.getElementById('setupNum').textContent = doneN + '/' + total;
+      document.getElementById('setupArc').setAttribute('stroke-dasharray', Math.round(doneN / total * 100) + ' 100');
+      btn.setAttribute('aria-label', 'Getting set up: ' + doneN + ' of ' + total + ' done. Next: ' + next.title);
+      if (card) {
+        card.hidden = false;
+        card.innerHTML = '<div class="nc-ico">' + setupSvg(next.ico) + '</div>'
+          + '<div class="nc-tx"><div class="nc-k">Your next step \u00b7 ' + (doneN + 1) + ' of ' + total + '</div><p class="nc-t">' + esc2(next.title) + '</p><p class="nc-w">' + esc2(next.why) + '</p>'
+          + '<div class="nc-bar" aria-hidden="true">' + steps.map((x) => '<i class="' + (x.done ? 'on' : '') + '"></i>').join('') + '</div></div>'
+          + '<div class="nc-go"><button type="button" class="btn btn-primary" data-setup-go="' + next.id + '">' + esc2(next.cta) + ' \u2192</button><button type="button" class="nc-all" data-setup-all>See all steps</button></div>';
+      }
+      if (pop) {
+        pop.innerHTML = '<div class="sp-h"><h3>Getting set up</h3><span>' + doneN + ' of ' + total + '</span></div>'
+          + '<div class="sp-bar" aria-hidden="true"><i style="width:' + Math.round(doneN / total * 100) + '%"></i></div>'
+          + '<ul class="sp-list">' + steps.map((x) => {
+            const isNext = x === next;
+            return '<li class="' + (x.done ? 'done' : isNext ? 'next' : '') + '"><span class="sp-dot">' + SETUP_TICK + '</span><div><div class="sp-t">' + esc2(x.title) + '</div>'
+              + (isNext ? '<div class="sp-w">' + esc2(x.why) + '</div><button type="button" class="btn btn-primary" data-setup-go="' + x.id + '">' + esc2(x.cta) + ' \u2192</button>' : '') + '</div></li>';
+          }).join('') + '</ul>';
+      }
+      /* Say so when a step gets done, and what is next. */
+      try {
+        const key = 'syn_setup_done'; const before = parseInt(localStorage.getItem(key) || '-1', 10);
+        if (before >= 0 && doneN > before && doneN < total) { if (typeof toast === 'function') toast('Done: ' + steps.filter((x) => x.done).slice(-1)[0].title + '. Next: ' + next.title); }
+        localStorage.setItem(key, String(doneN));
+        if (before < 0 || doneN > before) btn.classList.add('nudge');
+      } catch (e) {}
+    }
+    function loadSetup() {
+      if (!window.SynAuth || !window.SynListings || !SynListings.agencyId) return;
+      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('agency_setup_progress', { p_agency: aid }) : null))
+        .then((r) => { if (!r || r.error || !r.data) return; SETUP.p = r.data; paintSetup(); })
+        .catch(() => {});
+    }
+    function toggleSetup(open) {
+      const pop = document.getElementById('setupPop'), btn = document.getElementById('setupBtn'); if (!pop || !btn) return;
+      const want = typeof open === 'boolean' ? open : pop.hidden;
+      pop.hidden = !want; btn.setAttribute('aria-expanded', String(want));
+      if (want) { btn.classList.remove('nudge'); const f = pop.querySelector('[data-setup-go]'); if (f) f.focus(); }
+    }
+    document.addEventListener('click', (e) => {
+      const go = e.target.closest('[data-setup-go]');
+      if (go) { const st = SETUP.steps.find((x) => x.id === go.dataset.setupGo); toggleSetup(false); if (st) st.go(); return; }
+      if (e.target.closest('[data-setup-all]')) { toggleSetup(true); return; }
+      if (e.target.closest('#setupBtn')) { toggleSetup(); return; }
+      const pop = document.getElementById('setupPop');
+      if (pop && !pop.hidden && !e.target.closest('#setupPop')) toggleSetup(false);
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const pop = document.getElementById('setupPop'); if (pop && !pop.hidden) { toggleSetup(false); const b = document.getElementById('setupBtn'); if (b) b.focus(); } } });
+    setTimeout(loadSetup, 2200);
+    setInterval(loadSetup, 90 * 1000);
+    document.addEventListener('syn:listings', () => setTimeout(loadSetup, 800));
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadSetup(); });
     setTimeout(loadPaywallInfo, 2500);
     /* Kept fresh (Greptile): a portal left open past the free date must not
        go on saying it is free. */
