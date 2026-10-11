@@ -210,13 +210,16 @@
        beds once you are choosing a HOME. */
     this._addPillImages();
 
+    /* Zoomed out, a home is a small capsule (the Airbnb way), not a dark dot: it reads as "a
+       place you can open" and does not fight the clusters, which stay dark. Selected goes dark. */
     map.addLayer({
-      id: 'syn-prop-dot', type: 'circle', source: SRC,
+      id: 'syn-prop-dot', type: 'symbol', source: SRC,
       filter: ['all', ['!', ['has', 'point_count']], ['<', ['zoom'], 13]],
-      paint: {
-        'circle-color': C.ink,
-        'circle-radius': ['case', ['==', ['get', 'sel'], true], px(7, k), px(5, k)],
-        'circle-stroke-width': 2, 'circle-stroke-color': '#fff',
+      layout: {
+        'icon-image': ['case', ['==', ['get', 'sel'], true], 'syn-mini-on', 'syn-mini'],
+        'icon-size': k,
+        'icon-allow-overlap': true,
+        'symbol-sort-key': ['case', ['==', ['get', 'sel'], true], 1, 0],
       },
     });
 
@@ -238,17 +241,17 @@
         'icon-image': ['case', ['==', ['get', 'sel'], true], 'syn-pill-on', 'syn-pill'],
         'icon-text-fit': 'both',
         /* Bottom padding clears the tail so the text stays in the body. */
-        'icon-text-fit-padding': [3, 8, 11, 8],
-        'icon-anchor': 'bottom',
-        'text-anchor': 'bottom',
+        'icon-text-fit-padding': [6, 12, 6, 12],
+        'icon-anchor': 'center',
+        'text-anchor': 'center',
         /* Lifts the text off the tail so it is optically centred in the body
            rather than in the whole drawing. */
-        'text-offset': [0, -0.55],
+        'text-offset': [0, 0.05],
         'text-field': ['step', ['zoom'],
           ['get', 'price'],
           15.5, ['concat', ['get', 'price'], '\n', ['get', 'beds']]],
         'text-font': ['Stadia Semibold'],
-        'text-size': px(11.5, k),
+        'text-size': px(14, k),
         'text-line-height': 1.15,
         'text-justify': 'center',
         'text-padding': 2,
@@ -277,48 +280,37 @@
      which is why every number here is double what it looks like on screen. */
   Renderer.prototype._addPillImages = function () {
     var map = this.map, C = window.SynMapStyle.COLOURS;
-    var W = 128, BODY = 56, H = 76, R = 16, TAIL = 12;
 
-    function pill(fill, stroke, shadow) {
-      var cv = document.createElement('canvas');
-      cv.width = W; cv.height = H;
-      var x = cv.getContext('2d');
-      x.clearRect(0, 0, W, H);
-
+    /* A capsule, no tail: fully rounded ends, a soft shadow and no outline, the way a price sits on
+       Airbnb's map. Drawn at 2x (pixelRatio 2); the stretch metadata is in bitmap pixels, so only
+       the flat middle grows to fit the price and the round ends never distort. */
+    function capsule(w, h, fill, shadow) {
+      var pad = 8, cv = document.createElement('canvas');
+      cv.width = w + pad * 2; cv.height = h + pad * 2;
+      var x = cv.getContext('2d'), r = h / 2;
       x.beginPath();
-      x.moveTo(R, 0);
-      x.arcTo(W, 0, W, BODY, R); x.arcTo(W, BODY, 0, BODY, R);
-      // the tail, cut into the bottom edge
-      x.lineTo(W / 2 + TAIL, BODY);
-      x.lineTo(W / 2, H);
-      x.lineTo(W / 2 - TAIL, BODY);
-      x.arcTo(0, BODY, 0, 0, R); x.arcTo(0, 0, W, 0, R);
+      x.moveTo(pad + r, pad);
+      x.arcTo(pad + w, pad, pad + w, pad + h, r); x.arcTo(pad + w, pad + h, pad, pad + h, r);
+      x.arcTo(pad, pad + h, pad, pad, r); x.arcTo(pad, pad, pad + w, pad, r);
       x.closePath();
-
-      if (shadow) {
-        x.shadowColor = 'rgba(18,18,18,0.22)';
-        x.shadowBlur = 10; x.shadowOffsetY = 3;
-      }
+      x.shadowColor = shadow ? 'rgba(18,18,18,0.30)' : 'transparent';
+      x.shadowBlur = 8; x.shadowOffsetY = 2.5;
       x.fillStyle = fill; x.fill();
-      x.shadowColor = 'transparent';
-      x.lineWidth = 3; x.strokeStyle = stroke; x.stroke();
-      return x.getImageData(0, 0, W, H);
+      if (fill === '#FFFFFF') { x.shadowColor = 'transparent'; x.lineWidth = 1.6; x.strokeStyle = 'rgba(20,20,18,0.22)'; x.stroke(); }
+      return x.getImageData(0, 0, cv.width, cv.height);
     }
-
-    var opts = {
+    var pad = 8, W = 120, H = 64;
+    var pillOpts = {
       pixelRatio: 2,
-      /* Only the middle of the body may stretch: the rounded ends keep their
-         radius and the tail stays centred and the same size. */
-      stretchX: [[R * 2, W - R * 2]],
-      stretchY: [[R + 4, BODY - 8]],
-      content: [18, 8, W - 18, BODY - 6],
+      stretchX: [[pad + 34, pad + W - 34]],
+      stretchY: [[pad + 26, pad + H - 26]],
+      content: [pad + 16, pad + 8, pad + W - 16, pad + H - 8],
     };
-    if (!map.hasImage('syn-pill')) {
-      map.addImage('syn-pill', pill('#FFFFFF', 'rgba(20,20,18,0.55)', true), opts);
-    }
-    if (!map.hasImage('syn-pill-on')) {
-      map.addImage('syn-pill-on', pill(C.ink, C.ink, true), opts);
-    }
+    if (!map.hasImage('syn-pill')) map.addImage('syn-pill', capsule(W, H, '#FFFFFF', true), pillOpts);
+    if (!map.hasImage('syn-pill-on')) map.addImage('syn-pill-on', capsule(W, H, C.ink, true), pillOpts);
+    /* The small capsule used when zoomed out. */
+    if (!map.hasImage('syn-mini')) map.addImage('syn-mini', capsule(34, 20, '#FFFFFF', true), { pixelRatio: 2 });
+    if (!map.hasImage('syn-mini-on')) map.addImage('syn-mini-on', capsule(40, 24, C.ink, true), { pixelRatio: 2 });
   };
 
   Renderer.prototype._wire = function () {
