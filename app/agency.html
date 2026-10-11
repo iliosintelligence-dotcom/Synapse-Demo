@@ -8444,6 +8444,13 @@
       return sdClient().then((x) => x.c.from('listing_drafts').delete().eq('id', id)).catch(() => {}).then(() => { if (typeof renderListings === 'function') renderListings(); });
     }
     setTimeout(sdLoad, 2600);
+    /* "+ Add a listing" in the landing page footer arrives as agency.html?add=1: open the wizard. */
+    try {
+      if (new URLSearchParams(location.search).get('add') === '1') {
+        history.replaceState(null, '', location.pathname + location.hash);
+        setTimeout(() => { if (typeof listingForm === 'function') listingForm({ st: 'pending' }, -1); }, 3200);
+      }
+    } catch (e) {}
     /* A reload or a closed tab gives no warning beyond these two, and the
        debounce may be holding the last few keystrokes. */
     window.addEventListener('pagehide', () => { if (LISTING_DRAFT_FLUSH) LISTING_DRAFT_FLUSH(); });
