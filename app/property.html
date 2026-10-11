@@ -483,6 +483,8 @@
     .sim .t { font-size: 12px; font-weight: 500; margin-top: 1px; }
     .sim .m { font-size: 12px; color: var(--ink-dim); margin-top: 1px; }
 
+    .cta-dock .dk-act { flex: none; min-height: 48px; padding: 0 16px; gap: 7px; }
+    .cta-dock .dk-act.on { color: #B3261E; border-color: #B3261E; }
     .cta-dock { position: sticky; bottom: 0; padding: 16px 0 24px; background: linear-gradient(transparent, var(--bg) 35%); display: flex; gap: 10px; }
     .btn-toju { flex: 1; background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); color: #121212; border: 1px solid rgba(54,54,54,0.3); }
 
@@ -490,6 +492,13 @@
     .glance { margin-top: 16px; padding: 12px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6;
       background: rgba(54,54,54,0.07); border: 1px solid rgba(54,54,54,0.18); color: var(--ink); }
     .glance b { color: #121212; }
+    .amen { display: flex; gap: 8px; margin: 12px -24px 0; padding: 2px 24px 6px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-left: 24px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+      -webkit-mask: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 28px), transparent 100%); mask: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 28px), transparent 100%); }
+    .amen::-webkit-scrollbar { display: none; }
+    .amen[hidden] { display: none; }
+    .amen span { flex: none; scroll-snap-align: start; padding: 8px 14px; border-radius: 999px; background: rgba(20,26,38,.06); color: var(--ink); font: 600 13px/1 var(--f-sans); white-space: nowrap; }
+    html[data-theme="dark"] .amen span { background: rgba(255,255,255,.1); }
 
     /* negotiation assistant */
     .neg-offer { font-family: var(--f-serif); font-weight: 600; font-size: 30px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); margin: 8px 0 2px; }
@@ -1125,6 +1134,9 @@
         </div>
       </div>
       <div class="glance" id="pvGlance" hidden></div>
+      <!-- Amenities: one swipeable row inside this first card, so a buyer sees all of them
+           without leaving it or scrolling the page (Eden, 2026-10-11). -->
+      <div class="amen" id="pvAmen" hidden aria-label="Amenities" role="list"></div>
     </div>
 
     <!-- Hidden until there is real enrichment behind it. The previous copy
@@ -1341,8 +1353,10 @@
          introducing. href is filled by paintProperty; without an id this
          would open a chat about nothing. -->
     <div class="cta-dock">
+      <button type="button" class="btn btn-ghost dk-act" id="dkSave" aria-pressed="false"><span class="dk-heart" aria-hidden="true">\u2661</span> <span>Save</span></button>
+      <button type="button" class="btn btn-ghost dk-act" id="dkShare"><span data-icon="share"></span> <span>Share</span></button>
       <a class="btn btn-primary" style="flex:1" id="replyBtn" href="toju.html">
-        <span data-icon="chat"></span> Discuss with an agent
+        <span data-icon="chat"></span> Contact
       </a>
     </div>
   </div><!-- /pdp -->
@@ -1836,26 +1850,33 @@
     // no property, and the page says so rather than substituting a specimen one.
     const PROP_ID = new URLSearchParams(window.location.search).get('id') || '';
     let savedSet = new Set(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'));
-    function paintSave() { saveBtn.textContent = savedSet.has(PROP_ID) ? '♥' : '♡'; saveBtn.classList.toggle('on', savedSet.has(PROP_ID)); }
-    saveBtn.addEventListener('click', () => {
+    const dkSave = document.getElementById('dkSave');
+    function paintSave() {
+      const on = savedSet.has(PROP_ID);
+      saveBtn.textContent = on ? '♥' : '♡'; saveBtn.classList.toggle('on', on);
+      if (dkSave) { dkSave.classList.toggle('on', on); dkSave.setAttribute('aria-pressed', String(on)); dkSave.querySelector('.dk-heart').textContent = on ? '\u2665' : '\u2661'; dkSave.querySelector('span:last-child').textContent = on ? 'Saved' : 'Save'; }
+    }
+    function toggleSaved() {
       savedSet.has(PROP_ID) ? savedSet.delete(PROP_ID) : savedSet.add(PROP_ID);
       localStorage.setItem(SAVED_KEY, JSON.stringify([...savedSet])); paintSave();
-    });
+    }
+    saveBtn.addEventListener('click', toggleSaved);
+    if (dkSave) dkSave.addEventListener('click', toggleSaved);
     paintSave();
-    document.getElementById('shareBtn').addEventListener('click', async () => {
+    const doShare = async () => {
       /* Was a hardcoded Lekki flat with an invented "Property Confidence 94"
          and a price that belonged to no listing on screen -- so sharing any
          home sent someone else's home. */
       const L = window.__pvListing || PROP || {};
       const where = [L.neighbourhood, L.city].filter(Boolean).join(', ');
-      const data = {
-        title: (L.title || document.title.replace(/ — Synapse$/, '') || 'A home on Synapse') + ' — Synapse',
-        text: [L.verification_status === 'verified' ? 'Verified' : null, where].filter(Boolean).join(' · '),
-        url: location.href,
-      };
-      if (navigator.share) { try { await navigator.share(data); } catch (e) {} }
-      else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
-    });
+      /* One share path for the page and the cards: the phone's own share sheet where there is
+         one (WhatsApp, Drive, Files...), a small one of ours where there is not. */
+      if (window.SynShare && PROP_ID) {
+        SynShare.open({ id: PROP_ID, title: L.title || document.title.replace(/ — Synapse$/, ''), price: document.getElementById('pvPrice') && document.getElementById('pvPrice').textContent, place: where });
+      } else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
+    };
+    document.getElementById('shareBtn').addEventListener('click', doShare);
+    const dkShare = document.getElementById('dkShare'); if (dkShare) dkShare.addEventListener('click', doShare);
 
     // lightweight feedback toast — speaks to the user, not the system
     function toast(msg, kind) {
@@ -2530,6 +2551,15 @@
       })();
 
       if (p.description) { set('pvGlance', p.description); show('pvGlance', true); }
+      /* Amenities as one horizontally scrollable row. Text only, escaped; nothing is invented
+         and a listing with none shows no row at all. */
+      (function () {
+        const el = document.getElementById('pvAmen');
+        const list = Array.isArray(p.amenities) ? p.amenities.map((a) => String(a || '').trim()).filter(Boolean).slice(0, 30) : [];
+        if (!el || !list.length) { if (el) el.hidden = true; return; }
+        el.innerHTML = list.map((a) => '<span role="listitem">' + esc(a.charAt(0).toUpperCase() + a.slice(1)) + '</span>').join('');
+        el.hidden = false;
+      })();
 
       const e = p.property_enrichment && (Array.isArray(p.property_enrichment) ? p.property_enrichment[0] : p.property_enrichment);
       if (e && e.toju_summary) { set('pvTake', e.toju_summary); show('pvTakeCard', true); if (window.__pvDeckChanged) window.__pvDeckChanged(); }
@@ -2737,6 +2767,7 @@
   <script src="map/style-synapse.js"></script>
   <script src="map/render.js"></script>
   <script src="stamp.js"></script>
+  <script src="share.js"></script>
   <script src="scramble.js"></script>
   <script src="icons.js"></script>
   <!-- Icon morphing for the taskbar's open/closed states. A module, so it is
