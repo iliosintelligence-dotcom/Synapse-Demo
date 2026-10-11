@@ -655,6 +655,13 @@
        property, those are the places. */
     .pv-home-pin.pv-home-on { background: #FF8A2D !important; border-color: #FF8A2D !important; }
     .pvo-rows { margin: 0; padding: 0; list-style: none; max-height: 34vh; overflow-y: auto; }
+    .pvo-flood { margin: 10px 0 2px; padding: 10px 12px; border-radius: 12px; background: rgba(20,26,38,.05); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+    .pvo-flood.warn { background: #FDE8E8; color: #5C1F1F; }
+    .pvo-flood-h { font-weight: 700; font-size: 12.5px; margin-bottom: 3px; }
+    .pvo-flood p { margin: 0; }
+    .pvo-flood-s { margin-top: 6px; font-size: 11px; opacity: .65; }
+    html[data-theme="dark"] .pvo-flood { background: rgba(255,255,255,.08); }
+    html[data-theme="dark"] .pvo-flood.warn { background: #3A1616; color: #FBD5D5; }
     .pvo-row {
       display: flex; align-items: center; gap: 10px; width: 100%;
       background: none; border: 0; border-top: 1px solid var(--border);
@@ -4408,8 +4415,49 @@
       if (!rows.length) { overlay.innerHTML = NO_DATA; fit([PROP]); return; }
 
       overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
-        + '<div class="pvo-rows">' + rows.join('') + '</div>';
+        + '<div class="pvo-rows">' + rows.join('') + '</div>' + floodHtml();
       fit([PROP]);
+      loadFlood();
+    }
+
+    /* river flood exposure (JRC GloFAS, stored per listing by property-flood). A RIVER flood
+       model only: no drainage or coastal/lagoon flooding. Said every time, and "outside the zone"
+       is never worded as safe. */
+    var FLOOD = { state: 'idle', row: null };
+    function loadFlood() {
+      var id = propIdForFetch();
+      if (FLOOD.state !== 'idle' || !id) return;
+      FLOOD.state = 'loading';
+      var U = 'https://bhrhejpekmhbhwryjhgk.supabase.co', K = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+      var H = { apikey: K, Authorization: 'Bearer ' + K };
+      fetch(U + '/rest/v1/property_flood?property_id=eq.' + encodeURIComponent(id) + '&select=*', { headers: H })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          if (rows && rows[0]) return rows[0];
+          return fetch(U + '/functions/v1/property-flood', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ property_id: id }) })
+            .then(function (r) { return r.ok ? r.json() : null; });
+        })
+        .then(function (row) { FLOOD.row = row && row.property_id ? row : null; FLOOD.state = 'done'; })
+        .catch(function () { FLOOD.state = 'done'; })
+        .then(function () { if (PANEL && PANEL.mode === 'cats') showCats(); });
+    }
+    function floodHtml() {
+      var r = FLOOD.row;
+      if (FLOOD.state === 'loading' || FLOOD.state === 'idle') return '';
+      if (!r || r.covered === false) return '';
+      var head, body, cls;
+      if (r.in_zone_100) {
+        cls = ' warn';
+        head = 'Inside a modelled river flood zone';
+        body = 'In a major river flood (about a 1-in-100-year event) water could reach roughly <b>' + Number(r.depth_100_m).toFixed(1) + ' m</b> here'
+          + (r.in_zone_10 ? ', and the same spot is also reached in a 1-in-10-year flood, so it is not rare' : '') + '. Ask the agency about drainage, past flooding and insurance.';
+      } else {
+        cls = '';
+        head = 'Outside the modelled river flood zone';
+        body = 'This model covers rivers only. It does not cover heavy-rain drainage or coastal and lagoon flooding, so ask about the street itself.';
+      }
+      return '<div class="pvo-flood' + cls + '"><div class="pvo-flood-h">' + head + '</div><p>' + body + '</p>'
+        + '<div class="pvo-flood-s">Source: JRC / Copernicus GloFAS river flood hazard maps, 90 m. A model, not an official Nigerian government map.</div></div>';
     }
 
     /* ── state 2: one kind, pinned ───────────────────────────────────── */
