@@ -370,7 +370,7 @@
                   aria-pressed="${saves.has(l.id)}"
                   aria-label="${saves.has(l.id) ? 'Remove' : 'Save'} ${esc(l.ttl)}">${icon('heart', saves.has(l.id) ? '♥' : '♡')}</button>
           <button type="button" class="share" data-share="${esc(l.id)}" data-title="${esc(l.ttl)}" data-price="${esc(money(l.priceN, l.currency))}" data-place="${esc(l.loc)}" aria-label="Share ${esc(l.ttl)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
-          <a class="contact" data-contact href="toju.html?reply=${encodeURIComponent(l.id)}" aria-label="Contact an agent about ${esc(l.ttl)}">Contact</a>
+          <a class="contact" data-contact href="toju.html?reply=${encodeURIComponent(l.id)}" aria-label="Contact an agent about ${esc(l.ttl)}" title="Contact an agent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg></a>
         </div>
       </div>`;
   }
