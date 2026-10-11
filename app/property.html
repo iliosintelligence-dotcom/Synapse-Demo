@@ -4571,7 +4571,12 @@
             im.data[i * 4] = c[0]; im.data[i * 4 + 1] = c[1]; im.data[i * 4 + 2] = c[2]; im.data[i * 4 + 3] = c[3];
           }
           cx.putImageData(im, 0, 0);
-          whenMap(function () { MAPR.imageOverlay('pv-flood', cv.toDataURL('image/png'), g.bbox, { opacity: 0.9 }); });
+          /* 90 m model cells drawn as hard squares look like blocks floating on the map. Scale up and
+             soften the edges so water reads as water, then lay it on with smooth resampling. */
+          var big = document.createElement('canvas'); big.width = g.cols * 4; big.height = g.rows * 4;
+          var bx = big.getContext('2d'); bx.imageSmoothingEnabled = true; bx.filter = 'blur(1.6px)';
+          bx.drawImage(cv, 0, 0, big.width, big.height);
+          whenMap(function () { MAPR.imageOverlay('pv-flood', big.toDataURL('image/png'), g.bbox, { opacity: 0.95, smooth: true }); });
           MAPR.flyTo(PROP[1], PROP[0], 14);
           leg.innerHTML = n
             ? '<span><i style="background:#8CC8FF"></i>Under 0.5 m</span><span><i style="background:#4696EB"></i>0.5 to 1.5 m</span><span><i style="background:#1E64D7"></i>1.5 to 3 m</span><span><i style="background:#0C32A0"></i>Over 3 m</span>'
