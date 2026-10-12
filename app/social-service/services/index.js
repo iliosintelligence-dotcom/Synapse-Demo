@@ -1,4 +1,3 @@
-export * from 'auth.service';
 export * from 'platform.service';
 export * from 'connection.service';
 export * from 'post.service';
