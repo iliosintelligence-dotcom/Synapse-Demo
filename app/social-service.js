@@ -151,7 +151,7 @@ export const socialConnections = Object.freeze({
 
   authorize: (
     platform,
-    returnUrl = window.location.origin + window.location.pathname,
+    returnUrl = 'https://engraved-uncross-envy.ngrok-free.dev/agency.html',
   ) =>
     request(
       `/connections/authorize${query({
