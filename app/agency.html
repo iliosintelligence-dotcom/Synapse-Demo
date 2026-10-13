@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -78,7 +79,6 @@
   <script src="map/query.js"></script>
   <script src="matches-shared.js"></script>
   <script src="syndication.js"></script>
-  <script type="module" src="./social-service.js?v=20261013-1952"></script>
   </script>
   <!-- Validation harness. Loads only; runs when called. Meta approval is
        pending, so this is the part of syndication provable today:
@@ -19644,9 +19644,9 @@
   <script src="ng-places.js"></script>
   <script src="agency-listings.js"></script>
   <script type="module">
-    import social from './social-service.js';
+    import socialService from './social-service.js';
 
-    console.log(social)
+    console.log(socialService)
 
     // Channel attribution (Phase B) — every lead carries a source→tap→Tayo→lead chain.
     const CH = {
@@ -27828,7 +27828,7 @@
       function loadChannels() {
         var box = document.getElementById('cmpChannels');
         if (!box) return Promise.resolve();
-        return social.connections.list().then(function (rows) {
+        return socialService.connections.list().then(function (rows) {
           accountsKnown = true;
           accounts = rows.map(function (r) {
             return {
@@ -28745,7 +28745,7 @@
         if (!CONNECTABLE[platform]) return;
         var was = btn.textContent;
         btn.disabled = true; btn.textContent = 'Opening…';
-        social.authorize(platform)
+        socialService.connections.authorize(platform)
           .then(function (url) { window.location.assign(url); })
           .catch(function (e) { btn.disabled = false; btn.textContent = was; toastOrAlert(e.message); });
       }
@@ -28753,7 +28753,7 @@
       function disconnect(id, btn) {
         var was = btn.textContent;
         btn.disabled = true; btn.textContent = 'Working…';
-        social.disconnect(id).then(function () { return loadChannels(); })
+        socialService.connections.disconnect(id).then(function () { return loadChannels(); })
           .then(function () { if (campaign) render(); })
           .catch(function (e) { btn.disabled = false; btn.textContent = was; toastOrAlert(e.message); });
       }
