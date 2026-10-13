@@ -10,6 +10,7 @@
  * the supplied OpenAPI schema has no short-link creation endpoint.
  */
 const BASE = 'https://synapse-social-service.onrender.com/api/v1';
+const API_KEY = 'syn_a228be02f55be5eeb681d5a6b5032868c880d6b495aef284a8d55d34f375356b';
 const PLATFORMS = new Set(['facebook', 'instagram', 'tiktok', 'telegram', 'youtube', 'x']);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -27,7 +28,7 @@ function query(params = {}) {
   return q.toString() ? `?${q}` : '';
 }
 async function request(path, { method = 'GET', body, signal } = {}) {
-  const options = { method, credentials: 'omit', headers: { Accept: 'application/json' }, signal };
+  const options = { method, credentials: 'omit', headers: { Accept: 'application/json', 'X-API-KEY': API_KEY }, signal };
   if (body !== undefined) {
     if (body instanceof FormData) options.body = body;
     else { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(body); }
