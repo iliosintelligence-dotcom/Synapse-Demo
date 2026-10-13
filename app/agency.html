@@ -75,8 +75,11 @@
   <script src="map/render.js"></script>
   <script src="map/card.js"></script>
   <script src="map/query.js"></script>
-  <script src="matches-shared.js"></script>
-  <script src="syndication.js"></script>
+  <scrip  <script type="module">
+    import social from "./social-service.js";
+    window.SynSocialService = social;
+    window.dispatchEvent(new Event("syn:social-ready"));
+  </script>
   <!-- Validation harness. Loads only; runs when called. Meta approval is
        pending, so this is the part of syndication provable today:
        SynSyndicateAudit.run().then(SynSyndicateAudit.print) -->
@@ -13668,6 +13671,32 @@
       /* The Pages Facebook shared, waiting for this agency to say which are
          its own (social-connect action=facebook-pick). id is the stash. */
       var FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
+      var FBP_NEST = null;
+      function nestSocial() {
+        if (!window.SynSocialService || !window.SynSocialService.connections)
+          return Promise.reject(new Error('Social Service has not loaded. Please reload and try again.'));
+        return Promise.resolve(window.SynSocialService.connections);
+      }
+      function nestData(response) {
+        return response && response.data && typeof response.data === 'object' ? response.data : response;
+      }
+      function nestFacebookHandoff(ticket) {
+        nestSocial().then(function (api) { return api.handoff(ticket); })
+          .then(function (response) {
+            var data = nestData(response) || {};
+            if (!data.pendingConnectionId || !Array.isArray(data.accounts))
+              throw new Error('The Facebook handoff did not contain an account selection.');
+            FBP_NEST = data;
+            FBP = { id: data.pendingConnectionId, data: null, chosen: {}, busy: false, note: '' };
+            ADD.open = true; ADD.pick = 'facebook';
+            setTimeout(function () {
+              try { if (typeof goToPane === 'function') goToPane('social'); } catch (e) {}
+            }, 0);
+            fbpLoad();
+          }).catch(function (error) {
+            toastOrAlert(error.message || 'Could not complete the Facebook connection.');
+          });
+      }
       var TGS = { linked: undefined, note: '', busy: '', poll: null, until: 0, sig: '',
                   code: '', exp: 0, st: '', channel: '', deleted: true, linkWait: false };
 
@@ -13810,6 +13839,13 @@
       function fbpLoad() {
         FBP.data = null; FBP.note = ''; FBP.chosen = {};
         renderAdd();
+        if (FBP_NEST && FBP.id === FBP_NEST.pendingConnectionId) {
+          FBP.data = { pages: FBP_NEST.accounts.map(function (a) {
+            return { id: a.id, name: a.name || a.id, instagram: null };
+          }) };
+          renderAdd();
+          return;
+        }
         tgApi('facebook-pick&pick=' + encodeURIComponent(FBP.id)).then(function (j) {
           FBP.data = j;
           /* Tick a Page that shares a word with the agency's name -- the
@@ -13834,6 +13870,21 @@
         if (!ids.length || FBP.busy) return;
         FBP.busy = true; FBP.note = '';
         renderAdd();
+        if (FBP_NEST && FBP.id === FBP_NEST.pendingConnectionId) {
+          nestSocial().then(function (api) { return api.complete(FBP.id, ids); })
+            .then(function () {
+              toastOrAlert('Selected Facebook Pages connected successfully.');
+              FBP_NEST = null;
+              FBP = { id: '', data: null, chosen: {}, busy: false, note: '' };
+              ADD.open = false; ADD.pick = '';
+              return loadChannels();
+            }).catch(function (error) {
+              FBP.busy = false;
+              FBP.note = error.message || 'Could not connect those Pages.';
+              renderAdd();
+            });
+          return;
+        }
         tgApi('facebook-pick', { method: 'POST', body: JSON.stringify({ pick: FBP.id, page_ids: ids }) })
           .then(function (j) {
             /* Names the agency, so a Page attached to the wrong one is
@@ -14317,6 +14368,302 @@
           }).catch(function (err) {
             btn.disabled = false;
             note.textContent = (err && err.message) || 'Could not save that'; planGate(err && err.message);
+          });
+        });
+      }
+
+      /* Must match bio_slug() in 0106 exactly: strip a leading @, lowercase,
+         and replace every run of anything outside [a-z0-9._-] with a hyphen.
+         A slug computed differently here points at a /go/ page that does not
+         resolve, which is a broken link in somebody's Instagram bio -- the
+         single worst place in this product for one. */
+      function bioSlug(handle) {
+        return String(handle || '').replace(/^\s*@/, '').trim().toLowerCase()
+          .replace(/[^a-z0-9._-]+/g, '-');
+      }
+
+      /* ── what is still outstanding, and only they can do ────────────────
+         A connection is reported as finished when steps remain that are
+         outside anything we can reach. They used to sit on the strip as a
+         standing checklist; they are handed to the task pop-ups now (see
+         "Things only a person can do"), which arrive once and live in the bell
+         until marked done. */
+      function publishTasks() {
+        if (typeof setTasks !== 'function') return;
+        var tasks = [];
+
+        accounts.forEach(function (ac) {
+          if (!ac.is_active) return;
+          var slug = bioSlug(ac.platform_username);
+          /* Telegram stores its own label -- an @name, or a title. */
+          var who = ac.platform === 'telegram'
+            ? (ac.platform_username || 'your channel')
+            : (ac.platform_username ? '@' + ac.platform_username : CONNECTABLE[ac.platform] || ac.platform);
+          var goUrl = slug ? 'https://synapsecore.dev/go/' + slug : '';
+
+          /* THE BIO LINK. On Telegram, straight into a new chat with Tayo --
+             the posts there carry their own button, so the description is for
+             somebody browsing the channel, and the useful thing is a
+             conversation. On Instagram, where captions cannot link, the page
+             of this account's homes is how a reader finds the one they saw. */
+          if (ac.platform === 'telegram') {
+            tasks.push({
+              id: 'bio:' + ac.id + ':tayo',
+              title: 'Put this link in ' + who + '\u2019s description',
+              body: 'Anyone browsing the channel can tap straight into a new chat with Tayo, '
+                + 'which asks which home caught their eye.',
+              copies: [{ text: 'https://synapsecore.dev/tayo/telegram' }],
+              where: 'Telegram \u2192 your channel \u2192 Edit \u2192 Description',
+            });
+          } else if (slug) {
+            tasks.push({
+              id: 'bio:' + ac.id + ':' + slug,
+              title: 'Put this link in ' + who + '\u2019s bio',
+              body: 'It lists the homes this account has posted, newest first, and each one opens '
+                + 'the right listing \u2014 so the posts have somewhere to send people.',
+              copies: [{ text: goUrl }],
+              where: ac.platform === 'instagram'
+                ? 'Instagram \u2192 Edit profile \u2192 Links'
+                : 'Facebook \u2192 your Page \u2192 Edit details \u2192 Website',
+            });
+          }
+
+          /* THE PAGE BUTTON. Read at connect time; null means we could not
+             look, and then this says nothing at all. */
+          if (ac.platform !== 'facebook' || !ac.page_cta_type) return;
+          var fix = 'Meta Business Suite \u2192 your Page \u2192 Edit action button';
+
+          if (ac.page_cta_type === 'NONE') {
+            tasks.push({
+              id: 'cta:' + ac.id + ':NONE',
+              title: 'Give ' + who + ' an action button',
+              body: 'This Page has none. One that points at your listings puts a tappable route '
+                + 'under every post, in the spot Facebook makes most prominent.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
+            return;
+          }
+
+          /* NO WEB ADDRESS means a call, a WhatsApp thread or a Messenger
+             window -- the buyer arrives with no listing attached and the
+             enquiry belongs to nothing. */
+          if (!ac.page_cta_url) {
+            tasks.push({
+              id: 'cta:' + ac.id + ':' + ac.page_cta_type,
+              title: 'Point ' + who + '\u2019s Page button at your listings',
+              body: 'It is set to ' + esc(String(ac.page_cta_type).toLowerCase().replace(/_/g, ' '))
+                + ', so it sends people to a message or a call. Facebook puts it under every post, '
+                + 'above your caption link, so most people tap it \u2014 and it arrives with no listing '
+                + 'attached. Keep the phone number on the Page; anyone who wants to call still can.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
+            return;
+          }
+
+          if (ac.page_cta_url.indexOf('synapsecore.dev') === -1) {
+            tasks.push({
+              id: 'cta:' + ac.id + ':url:' + ac.page_cta_url,
+              title: who + '\u2019s Page button goes somewhere else',
+              body: 'It opens <code>' + esc(ac.page_cta_url) + '</code>. That is fine if it is meant to; '
+                + 'pointing it at your Synapse listings means the taps are counted against the homes '
+                + 'they were about.',
+              copies: goUrl ? [{ text: goUrl }] : [], where: fix,
+            });
+          }
+        });
+
+        /* GETTING SET UP. An agency that has just signed up has nowhere for
+           a post to go, and nothing on the page says so until they open
+           Social studio. This asks once, straight after the brand checklist
+           (the brand is what Tayo writes the captions from, so it comes
+           first, and two getting-started asks at once is one too many). It
+           stays in the bell until a channel is connected, and then it is no
+           longer true, so it goes. */
+        if (accountsKnown && !accounts.length && canConnect() && window.SYN_BRAND_ONBOARDING === false) {
+          var ready = Object.keys(CONNECTABLE).filter(platformReady).map(function (k) { return CONNECTABLE[k]; });
+          if (ready.length) {
+            tasks.push({
+              id: 'onboard:channels',
+              eye: 'Getting set up',
+              title: 'Connect your social channels',
+              body: 'Synapse writes the captions and posts your listings to your own '
+                + esc(ready.length > 1 ? ready.slice(0, -1).join(', ') + ' or ' + ready[ready.length - 1] : ready[0])
+                + ', and every enquiry that comes back is counted against the home it was about. '
+                + 'Connect the accounts you already post from.',
+              where: 'Social studio → Channels → Add channel',
+              action: { label: 'Add a channel', run: function () { openAddChannel(); } },
+            });
+          }
+        }
+
+        setTasks('channels', tasks);
+      }
+      document.addEventListener('syn:brand-onboard', function () { publishTasks(); });
+
+      /* Re-render once the role is known. Without this the strip is whatever
+         it guessed before applyRole's round trip came back -- see the comment
+         at the dispatch. */
+      document.addEventListener('syn:role', function () { renderChannels(); });
+
+      document.addEventListener('click', function (e) {
+        /* clipboard.writeText is unavailable on insecure origins and can be
+           refused outright, and a Copy button that silently does nothing is
+           worse than none -- the link is visible either way, so the fallback
+           is to say "select it yourself" rather than to pretend. */
+        var cp = e.target.closest && e.target.closest('[data-copy]');
+        if (cp) {
+          e.preventDefault();
+          var text = cp.dataset.copy, was = cp.textContent;
+          var done = function (ok) {
+            cp.textContent = ok ? 'Copied' : 'Select it above';
+            setTimeout(function () { cp.textContent = was; }, 1800);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); },
+                                                     function () { done(false); });
+          } else { done(false); }
+          return;
+        }
+        var c = e.target.closest && e.target.closest('[data-connect]');
+        if (c) { e.preventDefault(); startConnect(c.dataset.connect, c); return; }
+        var d = e.target.closest && e.target.closest('[data-disconnect]');
+        if (d) { e.preventDefault(); disconnect(d.dataset.disconnect, d); }
+      });
+
+      function startConnect(platform, btn) {
+        if (!CONNECTABLE[platform]) return;
+        var was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Opening…';
+        if (platform === 'facebook') {
+          nestSocial().then(function (api) {
+            return api.authorize('facebook', location.origin + location.pathname);
+          }).then(function (response) {
+            var result = nestData(response) || {};
+            var url = result.authorizationUrl || result.url;
+            if (!url) throw new Error('The connect flow returned no URL.');
+            location.href = url;
+          }).catch(function (error) {
+            btn.disabled = false; btn.textContent = was;
+            toastOrAlert(error.message || 'Could not open Facebook authorization.');
+          });
+          return;
+        }
+        token().then(function (t) {
+          if (!t) throw new Error('Sign in again to connect an account.');
+          return fetch(SB_URL + '/functions/v1/social-connect?action=start&platform='
+              + encodeURIComponent(platform), {
+            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + t },
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok) throw new Error(j.error || ('Could not start the connection (' + r.status + ').'));
+              return j;
+            });
+          });
+        }).then(function (j) {
+          if (!j.url) throw new Error('The connect flow returned no URL.');
+          /* Full navigation, not a popup: the OAuth callback comes back as a
+             302 to this portal, and a popup that a blocker kills leaves the
+             agency staring at a button that did nothing. */
+          window.location.href = j.url;
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = was;
+          toastOrAlert(err.message || 'Could not open the connection.');
+        });
+      }
+
+      function disconnect(id, btn) {
+        var was = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Working…';
+        token().then(function (t) {
+          if (!t) throw new Error('Sign in again.');
+          return fetch(SB_URL + '/rest/v1/rpc/disconnect_social_account', {
+            method: 'POST',
+            headers: {
+              apikey: SB_KEY, Authorization: 'Bearer ' + t,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ p_account_id: id }),
+          });
+        }).then(function (r) {
+          if (!r.ok) throw new Error('Could not disconnect (' + r.status + ').');
+          return loadChannels();
+        }).then(function () {
+          if (campaign) render();
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = was;
+          toastOrAlert(err.message || 'Could not disconnect.');
+        });
+      }
+
+      function toastOrAlert(msg) {
+        if (typeof toast === 'function') toast(msg); else alert(msg);
+      }
+
+      /* WHAT TO DO NEXT, IN FULL (2026-10-02). social-connect's detail is
+         cut at 180 characters on its way here, and on 2 Oct the "no Page"
+         message arrived as its first half -- the half about our Meta
+         configuration -- with the part saying what to do cut off. The
+         function now sends a fixed `reason` beside the detail, and the steps
+         live here, where there is room for them. Every reason is a Facebook
+         one; the function sends none for other platforms. */
+      var FB_RESET = 'On Facebook, go to Settings & privacy → Settings → Business integrations '
+        + '(search Settings for “Business integrations” if you can’t see it), find Synapse and remove it.';
+      var CONNECT_HELP = {
+        no_pages: {
+          what: 'Facebook connected, but no Page came with it, so nothing was connected.',
+          steps: [
+            'Press Connect Facebook again. In Facebook’s window, tick every Page you post from, '
+              + 'and its Instagram account, then continue.',
+            'If Facebook shows no list of Pages and only offers “Continue as …”, it is reusing an earlier '
+              + 'choice. If the window has a link to edit that choice, use it; otherwise: ' + FB_RESET
+              + ' Then come back and connect again.',
+            'You need full control of the Page on Facebook.'],
+          retry: true },
+        stale_pages: {
+          what: 'Facebook is still pointing Synapse at Pages that no longer exist (most likely deleted), '
+            + 'and it skipped asking about your current ones.',
+          steps: [FB_RESET,
+            'Come back here and press Connect Facebook again.',
+            'In Facebook’s window, tick your current Pages and their Instagram accounts, then continue.'],
+          retry: true },
+        no_token: {
+          what: 'Facebook named your Pages but gave Synapse no permission to post to them.',
+          steps: ['Press Connect Facebook again and leave every permission switched on in Facebook’s window.',
+            'You need full control of the Page on Facebook; partial access is not enough to post.'],
+          retry: true },
+        missing_permission: {
+          what: 'Facebook did not give Synapse the permission it needs to list your Pages.',
+          steps: ['This is set in Synapse’s own Facebook app, not on your side. Send the message below to Synapse.'],
+          retry: false },
+        pages_unreadable: {
+          what: 'Facebook would not tell Synapse which Pages you run.',
+          steps: ['Press Connect Facebook again.',
+            'If it happens again, send the message below to Synapse.'],
+          retry: true },
+        unknown: {
+          what: 'Facebook shared no Page, and Synapse could not tell why.',
+          steps: ['Press Connect Facebook again.',
+            'If it happens again, send the message below to Synapse.'],
+          retry: true },
+        user_denied: {
+          what: 'Facebook’s window was closed or Cancel was pressed, so nothing was connected.',
+          steps: ['Press Connect Facebook again and continue through Facebook’s window to the end.'],
+          retry: true }
+      };
+
+      /* The portal returns from OAuth with ?connected= or ?connect_error= on
+         the URL. Read it once, tell the agency what happened, and strip it --
+         a reload should not replay a stale outcome. */
+      (function readConnectResult() {
+        var q = new URLSearchParams(location.search);
+        var handoff = q.get('social_handoff');
+        if (handoff) {
+          q.delete('social_handoff'); q.delete('platform');
+          history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+          setTimeout(function () { nestFacebookHandoff(handoff); }, 0);
+          return;
+        }
+&& err.message) || 'Could not save that'; planGate(err && err.message);
           });
         });
       }
@@ -19623,372 +19970,8 @@
       function confirmKey(s) {
         return String(s == null ? '' : s)
           .replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
-          .replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
-      }
-      function longDate(iso) {
-        var d = new Date(iso);
-        if (isNaN(d.getTime())) return 'the end of this period';
-        return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' });
-      }
-      function why(code) { return KEPT_BECAUSE[code] || 'something else on Synapse still needs it'; }
-
-      function readMark() {
-        try {
-          var m = JSON.parse(localStorage.getItem(MARK) || 'null');
-          return (m && typeof m.a === 'string') ? m.a : null;
-        } catch (e) { return null; }
-      }
-      function writeMark(aid) { try { localStorage.setItem(MARK, JSON.stringify({ a: aid })); } catch (e) {} }
-      function clearMark() { try { localStorage.removeItem(MARK); } catch (e) {} }
-
-      /* One request, always answered: { ok, status, data }, where status 0
-         means the function was never reached. functions.invoke carries the
-         session's token, which the function checks with Auth again. Its own
-         refusals come with a sentence written for the person pressing the
-         button (data.error, beside a data.code); anything else is described
-         here instead, because a gateway's error text is written for nobody. */
-      function call(body) {
-        return SynAuth.client().then(function (c) {
-          return c.functions.invoke(FN, { body: body });
-        }).then(function (r) {
-          if (!r.error) return { ok: true, status: 200, data: r.data || {} };
-          var ctx = r.error.context;
-          if (ctx && typeof ctx.json === 'function') {
-            var status = ctx.status || 0;
-            return ctx.json().then(
-              function (d) { return { ok: false, status: status, data: d || {} }; },
-              function () { return { ok: false, status: status, data: {} }; });
-          }
-          return { ok: false, status: 0, data: {} };
-        }, function () { return { ok: false, status: 0, data: {} }; });
-      }
-      function said(res) {
-        var d = res.data || {};
-        if (typeof d.error === 'string' && d.error && typeof d.code === 'string') return d.error;
-        if (res.status === 401) return 'Your session has ended. Sign in again, and this carries on from where it stopped.';
-        if (!res.status) return 'Synapse could not be reached. Check your connection; it is safe to try again.';
-        return 'Something went wrong part-way. It is safe to try again: it carries on from where it stopped.';
-      }
-      function errBox(text) {
-        return '<div class="da-err" role="alert"><span class="da-ic" aria-hidden="true">!</span>'
-          + '<span>' + esc(text) + '</span></div>';
-      }
-
-      /* ── the dialog ─────────────────────────────────────────────────── */
-      function build() {
-        if (scrim) return;
-        scrim = document.createElement('div');
-        scrim.className = 'da-scrim';
-        scrim.hidden = true;
-        scrim.innerHTML =
-          '<div class="da-dialog" role="dialog" aria-modal="true" aria-labelledby="daTitle">'
-          + '<div class="da-hd"><h2 class="da-title" id="daTitle" tabindex="-1"></h2>'
-          + '<button type="button" class="da-x" aria-label="Close">×</button></div>'
-          + '<div class="da-body"></div></div>';
-        document.body.appendChild(scrim);
-        dialog = scrim.firstChild;
-        titleEl = scrim.querySelector('.da-title');
-        bodyEl = scrim.querySelector('.da-body');
-        closeBtn = scrim.querySelector('.da-x');
-        closeBtn.addEventListener('click', close);
-        /* A tap on the veil does nothing. Somebody halfway through typing
-           their agency's name should not lose it to a stray touch. */
-        scrim.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-          if (e.key !== 'Tab') return;
-          /* The keyboard stays in here: behind the dialog is a portal that
-             may no longer have an agency to show. */
-          var f = [].slice.call(dialog.querySelectorAll(
-            'button:not([disabled]):not([hidden]), input:not([disabled]), a[href]'));
-          if (!f.length) return;
-          var first = f[0], last = f[f.length - 1];
-          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-        });
-      }
-      function open() {
-        build();
-        if (!scrim.hidden) return;
-        scrim.hidden = false;
-        document.documentElement.style.overflow = 'hidden';
-      }
-      function close() {
-        if (running || leaving || !scrim || scrim.hidden) return;
-        scrim.hidden = true;
-        document.documentElement.style.overflow = '';
-        if (opener && opener.focus && document.contains(opener)) opener.focus();
-        opener = null;
-      }
-      function show(title, html, focusSel) {
-        titleEl.textContent = title;
-        bodyEl.innerHTML = html;
-        closeBtn.hidden = running || leaving;
-        var f = focusSel && bodyEl.querySelector(focusSel);
-        (f || titleEl).focus();
-      }
-      function problem(title, text, retry) {
-        show(title, errBox(text) + '<div class="da-acts">'
-          + '<button type="button" class="da-btn" data-da="close">Close</button>'
-          + (retry ? '<button type="button" class="da-btn" data-da="retry">Try again</button>' : '')
-          + '</div>', retry ? '[data-da="retry"]' : '[data-da="close"]');
-        bodyEl.querySelector('[data-da="close"]').addEventListener('click', close);
-        if (retry) bodyEl.querySelector('[data-da="retry"]').addEventListener('click', retry);
-      }
-
-      /* ── 1. what would go ───────────────────────────────────────────── */
-      function start() {
-        open();
-        show('Delete agency', '<p class="da-p" role="status">Checking what would be deleted…</p>');
-        var aid = (window.SynListings && SynListings.agencyId)
-          ? SynListings.agencyId().catch(function () { return null; })
-          : Promise.resolve(null);
-        aid.then(function (a) {
-          var body = { action: 'preview' };
-          if (a) body.agency_id = a;       // without it, the server takes the one agency they own
-          return call(body);
-        }).then(function (res) {
-          if (!res.ok) {
-            /* "Try again" only where trying again could change the answer:
-               not for somebody who is not the owner, or an agency already gone. */
-            var code = (res.data && res.data.code) || '';
-            problem('Delete agency', said(res), (code === 'not_owner' || code === 'agency_not_found') ? null : start);
-            return;
-          }
-          route(res.data);
-        });
-      }
-      function route(d) {
-        pv = d || {};
-        if (pv.state === 'data_deleted') renderFinishOnly(null);
-        else renderConfirm(null);
-      }
-
-      function renderConfirm(errText) {
-        var c = pv.counts || {};
-        var login = pv.owner_login || {};
-        var removable = login.removable === true;
-        var name = String(pv.name || '').trim() || 'this agency';
-        var team = num(c.team_members);
-        var plan = pv.paid_plan || null;
-        var phrase = String(pv.confirm_phrase || '');
-        var begun = pv.state === 'begun';
-
-        /* Counted by the same SQL that will do the deleting, so these are the
-           numbers that go -- not an estimate drawn from what this page has
-           loaded. Every line here is fixed text and numbers; the agency's own
-           name only ever reaches the page escaped. */
-        var gone = [];
-        gone.push(plural(num(c.listings), 'listing')
-          + (num(c.listing_media) ? ', with ' + plural(num(c.listing_media), 'photo or video', 'photos and videos') : ''));
-        gone.push(plural(num(c.leads), 'lead') + ' in your CRM, with their notes, stages and history');
-        if (num(c.social_posts)) gone.push(plural(num(c.social_posts), 'post') + ' in the Social studio. Anything scheduled will not go out');
-        if (num(c.short_links)) gone.push(plural(num(c.short_links), 'share link') + '. Links you have sent out stop working');
-        if (num(c.social_accounts)) {
-          gone.push(plural(num(c.social_accounts), 'connected social account')
-            + '. Synapse’s access to them is removed; the accounts themselves stay yours');
-        }
-        if (num(c.campaigns)) gone.push(plural(num(c.campaigns), 'campaign'));
-        if (num(c.tours)) gone.push(plural(num(c.tours), 'tour or viewing slot', 'tours and viewing slots'));
-        if (num(c.documents)) gone.push(plural(num(c.documents), 'verification document'));
-        gone.push('Your brand and logo, team chat, invites, and the record of your plan payments in Synapse');
-        if (removable) gone.push('<b>Your own profile, photo and login.</b> You will be signed out');
-
-        /* What stays is said as plainly as what goes. Somebody told their
-           posts were "deleted" who then finds them on Instagram has been
-           misled, and so has somebody who thinks their team lost their
-           accounts with the agency. */
-        var kept = [];
-        kept.push('<b>Posts already published</b> on Facebook, Instagram, Telegram, TikTok or X stay up. '
-          + 'Synapse cannot recall them; delete them in those apps if you want them gone.');
-        kept.push('<b>Your team' + (team ? ' (' + plural(team, 'person', 'people') + ')' : '') + '</b> keep their own '
-          + 'Synapse logins and profiles. They lose access to this agency, and nothing else.');
-        if (!removable) kept.push('<b>Your login</b> stays, because ' + esc(why(login.kept_because)) + '.');
-        kept.push('Paystack keeps its own receipts for anything you paid.');
-        kept.push('Reports made to Synapse about this agency are kept, so deleting it cannot erase them.');
-        kept.push('A note that this agency was deleted: the date and how many items went, with no names in it.');
-
-        /* Paid up: allowed, and said in so many words first. There is no
-           recurring charge to stop and no refund to give, so the only thing
-           to agree to is that the days left are lost. */
-        var planHtml = plan
-          ? '<label class="da-plan"><input type="checkbox" id="daAck"><span>Your <b>'
-            + esc(TIER[plan.tier] || plan.tier) + '</b> plan is paid until <b>' + esc(longDate(plan.until))
-            + '</b>. Deleting does not refund the days left, and nothing more will be charged. I understand.</span></label>'
-          : '';
-
-        show('Delete ' + name, ''
-          + (begun
-              ? '<p class="da-p"><b>You started deleting this agency and it did not finish.</b> '
-                + 'Its listings are already off the site. Confirm below to finish the job.</p>'
-              : '<p class="da-p">This deletes ' + (removable
-                  ? 'the agency, everything in it, and your own Synapse account'
-                  : 'the agency and everything in it')
-                + '. It cannot be undone, and nobody at Synapse can bring it back.</p>')
-          + '<div class="da-group"><div class="da-k">What is deleted</div><ul class="da-list"><li>'
-          + gone.join('</li><li>') + '</li></ul></div>'
-          + '<div class="da-group"><div class="da-k">What is not</div><ul class="da-list"><li>'
-          + kept.join('</li><li>') + '</li></ul></div>'
-          + planHtml
-          + '<p class="da-note">Your listings come off the site the moment you press Delete; the rest takes '
-          + 'a few seconds. Keep this page open until it says it is done. If anything interrupts it, come '
-          + 'back here and it carries on from where it stopped.</p>'
-          /* A refusal (wrong name, box unticked) is shown here, beside the
-             field that puts it right -- focus lands in that field, and an
-             error at the top of a long dialog would be scrolled out of view. */
-          + (errText ? errBox(errText) : '')
-          + '<div class="da-confirm"><label for="daName">To confirm, type <b>' + esc(phrase) + '</b></label>'
-          + '<input id="daName" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div>'
-          + '<div class="da-acts">'
-          + '<button type="button" class="da-btn" data-da="keep">' + (begun ? 'Not now' : 'Keep my agency') + '</button>'
-          + '<button type="button" class="da-btn da-kill" data-da="kill" disabled>' + ICON_BIN
-          + '<span>' + (removable ? 'Delete agency and account' : 'Delete agency') + '</span></button>'
-          + '</div>', '#daName');
-
-        var input = bodyEl.querySelector('#daName');
-        var ack = bodyEl.querySelector('#daAck');
-        var kill = bodyEl.querySelector('[data-da="kill"]');
-        var want = confirmKey(phrase);
-        /* Live only when the name matches and, on a paid plan, the box is
-           ticked. The server checks both again; this only saves a refusal.
-           Deliberately no Enter-to-delete: it takes a press of the button. */
-        function arm() {
-          kill.disabled = !(want && confirmKey(input.value) === want && (!plan || (ack && ack.checked)));
-        }
-        input.addEventListener('input', arm);
-        if (ack) ack.addEventListener('change', arm);
-        bodyEl.querySelector('[data-da="keep"]').addEventListener('click', close);
-        kill.addEventListener('click', function () {
-          if (kill.disabled) return;
-          /* Sent in the form both sides compare, so an unusual space a
-             keyboard slipped in cannot make the server disagree with the
-             button it just let through. */
-          job = { confirm: confirmKey(input.value), ack: !!(ack && ack.checked), kept: !removable, keptBecause: login.kept_because || null };
-          run(0);
-        });
-      }
-
-      /* Past the data step there is nothing left to confirm: the agency is
-         gone, and what remains is the login the owner asked to be rid of. */
-      function renderFinishOnly(errText) {
-        var pending = pv.owner_login === 'pending';
-        job = { confirm: '', ack: false, kept: !pending, keptBecause: pv.kept_because || null };
-        show('Finish deleting', ''
-          + (errText ? errBox(errText) : '')
-          + '<p class="da-p">Your agency and everything in it have already been deleted. '
-          + (pending
-              ? 'One step is left: deleting your own login.'
-              : 'One step is left: closing up. Your login stays, because ' + esc(why(pv.kept_because)) + '.')
-          + '</p>'
-          + stepsHtml(3)
-          + '<div class="da-acts">'
-          + '<button type="button" class="da-btn" data-da="later">Not now</button>'
-          + '<button type="button" class="da-btn da-kill" data-da="finish">' + ICON_BIN
-          + '<span>' + (pending ? 'Delete my login' : 'Finish') + '</span></button>'
-          + '</div>', '[data-da="finish"]');
-        bodyEl.querySelector('[data-da="later"]').addEventListener('click', close);
-        bodyEl.querySelector('[data-da="finish"]').addEventListener('click', function () { run(3); });
-      }
-
-      /* ── 2. the run ─────────────────────────────────────────────────── */
-      function stepLabel(k) {
-        return [
-          'Taking your listings off the site and stopping anything scheduled',
-          'Deleting your photos, videos, logo and documents',
-          'Deleting listings, leads, posts and your team’s access',
-          job && job.kept ? 'Closing up' : 'Deleting your login',
-        ][k];
-      }
-      function stepsHtml(doneBefore) {
-        return '<ol class="da-steps">' + STEPS.map(function (s, k) {
-          var done = k < doneBefore;
-          return '<li class="' + (done ? 'is-done' : 'is-wait') + '" data-step="' + k + '">'
-            + '<span class="da-ic" aria-hidden="true">' + (done ? ICON_TICK : '') + '</span>'
-            + '<span class="da-sl">' + esc(stepLabel(k)) + '</span></li>';
-        }).join('') + '</ol>';
-      }
-      function setStep(k, state) {
-        var li = bodyEl.querySelector('[data-step="' + k + '"]');
-        if (!li) return;
-        li.className = 'is-' + state;
-        li.querySelector('.da-ic').innerHTML = state === 'done' ? ICON_TICK : (state === 'failed' ? '!' : '');
-        li.querySelector('.da-sl').textContent = stepLabel(k);
-      }
-      function status(text) {
-        var s = bodyEl.querySelector('#daStatus');
-        if (s) s.textContent = text;
-      }
-      function hold(e) { e.preventDefault(); e.returnValue = ''; return ''; }
-      function stop() {
-        running = false;
-        window.removeEventListener('beforeunload', hold);
-        if (closeBtn) closeBtn.hidden = leaving;
-      }
-
-      function run(from) {
-        if (running || leaving) return;
-        running = true;
-        /* Leaving mid-step is safe -- every step can be repeated -- but it
-           should be a choice, so the browser asks first. */
-        window.addEventListener('beforeunload', hold);
-        show(pv.name ? 'Deleting ' + pv.name : 'Deleting', ''
-          + '<p class="da-p" id="daStatus" role="status">Deleting. Keep this page open; it takes a few seconds.</p>'
-          + stepsHtml(from)
-          + '<div id="daAfter"></div>');
-        step(from);
-      }
-
-      function step(k) {
-        setStep(k, 'doing');
-        status(stepLabel(k) + '…');
-        var body = { action: STEPS[k], agency_id: pv.agency_id };
-        if (STEPS[k] === 'begin') {
-          body.confirm_name = job.confirm;
-          body.acknowledge_plan = job.ack;
-          /* Noted BEFORE the request, so an answer lost on the way back still
-             leaves this browser knowing to ask. A refused begin leaves a note
-             that the next load finds pointing at nothing, and clears. */
-          writeMark(pv.agency_id);
-        }
-        call(body).then(function (res) {
-          var d = res.data || {};
-          if (STEPS[k] === 'finish' && !res.ok && res.status === 401) {
-            /* The session's login is gone, which is what finish does: a first
-               attempt that removed it and then lost its answer looks exactly
-               like this from here. */
-            done({ owner_login: job.kept ? 'kept' : 'removed', kept_because: job.keptBecause });
-            return;
-          }
-          if (!res.ok) { failed(k, res); return; }
-
-          if (STEPS[k] === 'begin' && d.state === 'data_deleted') {
-            // Somebody (another tab) got further already: straight to the end.
-            setStep(0, 'done'); setStep(1, 'done'); setStep(2, 'done');
-            step(3);
-            return;
-          }
-          if (STEPS[k] === 'data') {
-            /* The database decides at this point whether the login can go
-               (erase_personal_data may find it is still needed elsewhere),
-               and the last row says which it decided. */
-            job.kept = d.owner_login === 'kept';
-            job.keptBecause = d.kept_because || null;
-          }
-          if (STEPS[k] === 'finish') {
-            if (d.state === 'complete') { done(d); return; }
-            failed(k, { ok: false, status: 200, data: { code: 'login', error: d.login_error
-              ? 'Your agency’s data is deleted, but your login could not be removed just now. Try again in a moment.'
-              : 'The last step did not finish. It is safe to try again.' } });
-            return;
-          }
-          setStep(k, 'done');
-          step(k + 1);
-        });
-      }
-
-      function failed(k, res) {
-        stop();
-        var code = (res.data && res.data.code) || '';
-        /* A wrong name or an unticked box goes back to the form, where it is
+          .replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+o the form, where it is
            put right. The server changed nothing. */
         if (k === 0 && (code === 'name_mismatch' || code === 'plan_not_acknowledged')) {
           if (pv.state === 'ready') clearMark();   // nothing was started to come back to
