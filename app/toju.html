@@ -714,6 +714,10 @@
   <script src="theme.js"></script>
   <script src="brand.js"></script>
   <link rel="stylesheet" href="tapfix.css" />
+  <link rel="stylesheet" href="loaders.css" />
+  <script src="loaders.js" defer></script>
+  <link rel="stylesheet" href="foil.css" />
+  <script src="foil.js" defer></script>
 </head>
 <body>
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -827,7 +831,7 @@
                thing they were trying to avoid. -->
           <div class="tj-reply" id="tjReply" hidden></div>
           <div id="tjHint" class="tj-hint" hidden></div>
-          <div class="chatbox">
+          <div class="chatbox irid neon">
             <div class="pillrow">
               <input id="tjInput" placeholder="Tell Tayo what you're looking for…" autocomplete="off" />
               <button class="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
@@ -1187,10 +1191,9 @@
       const el = document.createElement('div');
       el.className = 'msg toju typing m-enter';
       el.innerHTML = '<div class="av av-toju">' + (window.Zyn ? Zyn.img('typing', 58) : 'T') + '</div><div class="col"><div class="sender">Tayo</div>'
-        + '<div class="bubble"><span data-lottie="toju-typing" style="width:48px;height:20px"></span>'
+        + '<div class="bubble"><span class="sl sl-dots" role="status" aria-label="Tayo is typing"><i></i><i></i><i></i></span>'
         + '<span class="tj-stage" style="color:var(--ink-muted);font-style:italic">thinking…</span></div></div>';
       convo.appendChild(el);
-      if (window.synMotion) synMotion.mount(el.querySelector('[data-lottie]'));
 
       // aria-live so a screen-reader user hears the wait explained too, rather
       // than silence followed by a wall of text.
@@ -1404,7 +1407,7 @@
       const cs = Array.isArray(sm.concerns) && sm.concerns.length ? sm.concerns.join(' \u00b7 ') : '';
       const offer = H.openingOffer ? 'Opening at \u20a6' + Number(H.openingOffer).toLocaleString('en-NG') : '';
       const el = document.createElement('div');
-      el.className = 'ho-card'; el.id = 'hoCard';
+      el.className = 'ho-card irid neon'; el.id = 'hoCard';
       const picks = (slots || []).slice(0, 6);
       el.innerHTML = '<div class="ho-k">Handover to the agent</div><div class="ho-t">' + esc((H.home && H.home.title) || REPLY_TO.title || 'This home') + '</div>'
         + '<ul class="ho-sum">'

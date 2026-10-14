@@ -1054,6 +1054,8 @@
   <script src="theme.js"></script>
   <script src="brand.js"></script>
   <link rel="stylesheet" href="tapfix.css" />
+  <link rel="stylesheet" href="loaders.css" />
+  <script src="loaders.js" defer></script>
 </head>
 <body>
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -2157,7 +2159,7 @@
         el.textContent = (days <= 0 ? 'Confirmed today'
                         : days === 1 ? 'Confirmed yesterday'
                         : 'Confirmed ' + days + ' days ago') + ' · ' + fmtDate(conf);
-        if (days > 14) el.classList.add('stale');
+        if (days > 21) el.classList.add('stale');
       })();
 
       (function paintDeal() {
@@ -4398,7 +4400,7 @@
       if (!PROP) { overlay.innerHTML = NO_DATA; return; }
       if (poiState === 'loading') {
         overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
-          + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">Looking up real nearby places\u2026</p>';
+          + '<p style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 0">' + (window.SynLoad ? SynLoad.line('signal', 'Looking up real nearby places') : 'Looking up real nearby places\u2026') + '</p>';
         fit([PROP]); return;
       }
       if (poiState === 'error') {
@@ -4508,7 +4510,7 @@
       /* flood */
       var sc = floodScore(FLOOD.row), fr = FLOOD.row, tone = sc == null ? 'na' : sc <= 3 ? 'ok' : sc <= 6 ? 'mid' : 'bad';
       var word = sc == null ? '' : sc <= 3 ? 'Low' : sc <= 6 ? 'Moderate' : 'High';
-      var fsub = FLOOD.state !== 'done' ? 'Checking the flood model\u2026'
+      var fsub = FLOOD.state !== 'done' ? ''
         : sc == null ? 'Not assessed for this location.'
         : fr.in_zone_100 ? 'Inside the modelled 100-year river flood zone, up to ' + Number(fr.depth_100_m).toFixed(1) + ' m deep' + (fr.in_zone_10 ? ', and flooded in a 10-year event too' : '') + '.'
         : fr.nearest_flood_m != null && fr.nearest_flood_m > 0 ? 'Modelled river flood water about ' + (fr.nearest_flood_m >= 1000 ? (fr.nearest_flood_m / 1000).toFixed(1) + ' km' : Math.round(fr.nearest_flood_m / 10) * 10 + ' m') + ' away.'
@@ -4516,7 +4518,7 @@
       var fbtn = sc == null ? '' : '<button type="button" class="pi-btn" data-pi-flood>' + ic('waves') + ' View flood map</button>';
       rows.push('<div class="pi-row"><span class="pi-score ' + tone + '" title="River flood risk, 1 (lowest) to 10. Source: JRC / Copernicus GloFAS flood model. Covers rivers, not drainage or coastal flooding.">' + (sc == null ? '\u2013' : sc) + '</span>'
         + '<div class="pi-tx"><div class="pi-k">Flood risk</div><div class="pi-v">' + (sc == null ? 'Not assessed' : sc + ' out of 10' + chip(word, tone)) + '</div>'
-        + '<div class="pi-s">' + escHtml(fsub) + '</div>' + fbtn + '</div></div>');
+        + '<div class="pi-s">' + (FLOOD.state !== 'done' ? (window.SynLoad ? SynLoad.line('signal', 'Checking the flood model') : 'Checking the flood model\u2026') : escHtml(fsub)) + '</div>' + fbtn + '</div></div>');
 
       /* water */
       var water = has(/borehole|water\s*(storage|supply|tank|treatment|well)|\bwell\b|tank/i);
@@ -4557,7 +4559,7 @@
       markCardOn(true);
       overlay.className = 'pvc-overlay';
       overlay.innerHTML = BACK_BTN + '<div class="pvo-k">Flood map</div>'
-        + '<div class="pvo-leg" id="pvFloodLeg"><span>Loading the flood map\u2026</span></div>';
+        + '<div class="pvo-leg" id="pvFloodLeg"><span>' + (window.SynLoad ? SynLoad.line('signal', 'Loading the flood map') : 'Loading the flood map\u2026') + '</span></div>';
       fit([PROP]);
       revealMap();
       fetch(FN_URL + '/functions/v1/property-flood', { method: 'POST', headers: fnHeaders(), body: JSON.stringify({ property_id: propIdForFetch(), grid: true }) })

@@ -30,3 +30,14 @@
 :root[data-theme="dark"] .irid::after, html[data-theme="dark"] .irid::after { opacity: .12; }
 :root[data-theme="dark"] .irid.fill, html[data-theme="dark"] .irid.fill { background-blend-mode: normal; }
 @media (prefers-reduced-motion: reduce) { .irid::before, .irid::after { transition: none; } }
+
+/* NEON (Eden, 2026-10-14: "I like the dynamic neon edge around the Leader card ... put it on more things, but do not
+   overwhelm the user"). `irid neon` on a card: the same thin holographic edge, but its colours also drift slowly on
+   their own (so it is alive even before you touch the page), and in the dark it gives off a faint glow. It is used on
+   a handful of places that deserve the eye, never on lists or on every card:
+   the first-listing prompt and the next-step card, Tayo's message box, the homepage question box and Tayo's handover. */
+.irid.neon::before { padding: 1.5px; animation: neonHue 16s linear infinite; }
+@keyframes neonHue { to { filter: hue-rotate(360deg); } }
+html[data-theme="dark"] .irid.neon { box-shadow: 0 0 22px -8px rgba(150,120,255,.45), 0 0 38px -14px rgba(255,140,200,.35); }
+html[data-theme="dark"] .irid.neon::before { padding: 2px; filter: saturate(1.25) brightness(1.15); }
+@media (prefers-reduced-motion: reduce) { .irid.neon::before { animation: none; } }

@@ -529,6 +529,23 @@
       if (openState() && !wrap.contains(e.target)) open(null);
     });
 
+    /* THE MENU MUST NOT FOLLOW YOU (Eden, 2026-10-14: "when I click the navigation bar in mobile and it takes me to the
+       page I want, it doesn't close ... it shouldn't stay open and block me, especially if I'm a new user").
+       Choosing anything in the menu closes it; so does the page being left, restored from the back button's cache,
+       or the address changing. Filters are different (their controls stay in the sheet), so only the menu and the
+       search close on a choice. */
+    var shut = function () { if (openState()) open(null); };
+    wrap.addEventListener('click', function (e) {
+      if (openState() !== 'nav') return;
+      if (e.target.closest('a[href], .cnav-act, [role="menuitem"]')) setTimeout(shut, 0);
+    });
+    window.addEventListener('pageshow', shut);
+    window.addEventListener('pagehide', shut);
+    window.addEventListener('hashchange', shut);
+    window.addEventListener('popstate', shut);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) shut(); });
+    window.__cnavClose = shut;
+
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && openState()) {
         var was = openState();

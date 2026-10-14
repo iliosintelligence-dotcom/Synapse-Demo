@@ -169,11 +169,11 @@
     return row;
   }
 
-  /* The 14-day freshness rule, written into the row rather than left implied.
+  /* The 21-day freshness rule (was 14), written into the row rather than left implied.
      Until now "14 days" existed only as copy and as a `listed_at` filter in the
      matcher; `expires_at` was never set, so nothing actually expired. Listing
      and re-listing both restart the clock, which is what re-confirmation means. */
-  var FRESH_DAYS = 14;
+  var FRESH_DAYS = 21;
   function freshWindow() {
     var now = new Date();
     return {
@@ -1294,7 +1294,7 @@
       var build = function () {
         var row = withStatus(scrub(data));
         row.agency_id = aid;
-        Object.assign(row, freshWindow());   // starts the 14-day clock
+        Object.assign(row, freshWindow());   // starts the 21-day clock
         // verification_* and trust_score are deliberately never set here.
         return row;
       };
@@ -1344,7 +1344,7 @@
     });
   }
 
-  /* Re-listing is what the 14-day freshness rule measures against. */
+  /* Re-listing is what the 21-day freshness rule measures against. */
   /* Renewing a listing is the agency asserting the home is still available,
      so it goes through reconfirm_listing(): one statement that stamps
      availability_confirmed_at and moves expires_at together, with the

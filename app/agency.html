@@ -2526,7 +2526,7 @@
     .cmp-err { margin-top: 12px; font-size: 12.5px; color: #B91C1C; }
     .spin2 { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; animation: spin .7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
 
-    /* listing freshness + actions (14-day rule) */
+    /* listing freshness + actions (21-day rule) */
     .lcard { position: relative; }
     .lcard .fresh { position: absolute; top: 10px; left: 10px; z-index: 1; font: 700 12px var(--f-sans); padding: 4px 11px; border-radius: 100px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
     .lcard .fresh.ok { background: rgba(255,255,255,0.88); color: var(--ink-muted); }
@@ -4590,6 +4590,8 @@
   <script src="foil.js" defer></script>
   <script src="scramble.js"></script>
   <link rel="stylesheet" href="tapfix.css" />
+  <link rel="stylesheet" href="loaders.css" />
+  <script src="loaders.js" defer></script>
 </head>
 <body class="portal">
   <div id="syn-load" aria-hidden="true"><img class="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt=""></div>
@@ -4741,14 +4743,14 @@
       <main>
         <!-- ══ OVERVIEW ══ -->
         <section class="pane on" id="pane-overview">
-          <div class="fast-card" id="fastCard" hidden>
+          <div class="fast-card irid neon" id="fastCard" hidden>
             <div class="fc-k">Fast start</div>
             <h2 class="fc-t">Your first listing in about two minutes</h2>
             <p class="fc-w">Paste what you would send a buyer on WhatsApp: the price, the place, the rooms. Synapse reads it and fills the form for you to check.</p>
             <textarea id="fastText" rows="4" placeholder="e.g. 4 bedroom duplex in Bodija, Ibadan. 85m naira, C of O, BQ, 24hr power..." aria-label="Paste your listing text"></textarea>
             <div class="fc-row"><button type="button" class="btn btn-primary" id="fastGo">Read it and start</button><button type="button" class="btn btn-ghost" id="fastBlank">Start from a blank form</button></div>
           </div>
-          <div class="next-card" id="nextCard" hidden></div>
+          <div class="next-card irid neon" id="nextCard" hidden></div>
           <div class="ov-head">
             <div>
               <div class="eyebrow" data-agency-eyebrow>Your agency</div>
@@ -8340,8 +8342,8 @@
       else if (pipeDeskQ.addListener) pipeDeskQ.addListener(redraw);
     })();
 
-    // ── listings — editable, with the 14-day freshness rule ──
-    // Every listing must be re-listed every 14 days or it stops showing to
+    // ── listings — editable, with the 21-day freshness rule ──
+    // Every listing must be re-listed every 21 days or it stops showing to
     // buyers (matches Tayo's freshness filter). `days` = days since (re)listed.
     /* The database is the ONLY source of listings. There is no seed set and no
        fabricated inventory: an agency sees exactly the properties it has
@@ -8711,7 +8713,7 @@
           renderListings();
           if (ok === 0) { toast('Could not re-list those. Try one on its own.'); return; }
           toast(ok === res.length
-            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + ' for another 14 days'
+            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + ' for another 21 days'
             : 'Re-listed ' + ok + ' of ' + res.length + ' \u2014 the rest failed');
         });
       });
@@ -8726,7 +8728,7 @@
       else if (LIST.f === 'pending') a = a.filter(x => x.l.st === 'pending');
       else if (LIST.f === 'expiring') a = a.filter(x => freshness(x.l).warn);
       else if (LIST.f === 'expired') a = a.filter(x => freshness(x.l).expired);
-      if (LIST.sort === 'fresh') a.sort((p, q) => (14 - p.l.days) - (14 - q.l.days)); // fewest days left first (action queue)
+      if (LIST.sort === 'fresh') a.sort((p, q) => (21 - p.l.days) - (21 - q.l.days)); // fewest days left first (action queue)
       else if (LIST.sort === 'price') a.sort((p, q) => q.l.pr - p.l.pr);
       else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
       return a;
@@ -8878,7 +8880,7 @@
                 <div class="lc-menu" role="menu" hidden>
                   <button role="menuitem" data-edit="${oi}">Edit listing</button>
                   ${due ? `<button role="menuitem" data-post="${id}">Post about it</button>`
-                        : `<button role="menuitem" data-relist="${oi}">Re-list for 14 days</button>`}
+                        : `<button role="menuitem" data-relist="${oi}">Re-list for 21 days</button>`}
                 </div>
               </div>
             </div>
@@ -10761,10 +10763,10 @@
         saveListings(); renderListings();
         if (dbBacked && l.id) {
           SynListings.relist(l.id)
-            .then(() => toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days'))
+            .then(() => toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days'))
             .catch((e) => toast('Not re-listed on the server: ' + ((e && e.message) || e)));
         } else {
-          toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 14 days');
+          toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days');
         }
       }
     });
@@ -17431,7 +17433,7 @@
         ], 'Ask below what you still need to send.') },
       listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
         html: () => tpSummary('Keep your listings live', [
-          'Every listing expires 14 days after it was last confirmed.',
+          'Every listing expires 21 days after it was last confirmed.',
           'Tayo flags what has expired and what is about to, per listing.',
         ], 'The notification bell carries the same warnings, and takes you straight to the listing.') },
       social: { title: 'Content coach', sub: 'What to post next',
@@ -18345,6 +18347,8 @@
       if (pane === 'billing' && typeof loadBilling === 'function') loadBilling();
       if (window.syncFilterFab) setTimeout(window.syncFilterFab, 0);
       if (!pane) return;
+      /* Going somewhere puts every popup away: the taskbar sheets, the setup list, the bell and the account menu. */
+      try { if (window.closeAgencyPopups) window.closeAgencyPopups(); } catch (e) { /* the pane change still happens */ }
       navHistRecord(pane);
       const tab = document.querySelector('#tabs [data-pane="' + pane + '"]');
       document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a === tab));
@@ -18502,6 +18506,14 @@
           });
       }
       window.syncTaskbarIcons = syncTaskbarIcons;
+      window.closeAgencyPopups = function () {
+        closeAll();
+        try { if (typeof toggleSetup === 'function') toggleSetup(false); } catch (e) { /* not on this page */ }
+        try { if (typeof toggleNoti === 'function') toggleNoti(false); } catch (e) { /* not ready */ }
+        try { if (typeof toggleRm === 'function') toggleRm(false); } catch (e) { /* not ready */ }
+        const am = document.getElementById('acctMenu'); if (am) am.hidden = true;
+      };
+      window.addEventListener('pageshow', () => window.closeAgencyPopups());
 
       // ── nav menu, mirrored from the rail ──
       function buildNav() {

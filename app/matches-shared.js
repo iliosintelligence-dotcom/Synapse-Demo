@@ -305,7 +305,7 @@
     const days = Math.ceil(ms / 864e5);
     if (days > 3) return '';
     const label = days === 1 ? 'Expires tomorrow' : 'Expires in ' + days + ' days';
-    return `<span class="expiry" title="Listings come down after 14 days unless the agency re-lists them">${label}</span>`;
+    return `<span class="expiry" title="Listings come down after 21 days unless the agency re-lists them">${label}</span>`;
   }
 
   function listingCardHtml(l, i, opts) {
