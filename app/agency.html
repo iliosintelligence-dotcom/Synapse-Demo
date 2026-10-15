@@ -28746,7 +28746,9 @@
         var was = btn.textContent;
         btn.disabled = true; btn.textContent = 'Opening…';
         socialService.connections.authorize(platform)
-          .then(function (url) { window.location.assign(url); })
+          .then(function (res) {
+            window.location.replace(res.data.authorizationUrl);
+          })
           .catch(function (e) { btn.disabled = false; btn.textContent = was; toastOrAlert(e.message); });
       }
 

@@ -17,7 +17,7 @@
 
 const BASE = 'https://synapse-social-service.onrender.com/api/v1';
 
-const API_KEY = 'syn_4d31a03e7d34ceea39459bb4c3cd718495a1ddcefce8f7f6ae5f45a66e102833';
+const API_KEY = 'syn_a1ed681a2fca02ec96e0c6ca47630141620eef431be5ad6992df4938c1b61854';
 
 const PLATFORMS = new Set([
   'facebook',
@@ -84,7 +84,7 @@ async function request(
 
   const options = {
     method,
-    credentials: 'omit',
+    withCredentials: false,
     headers,
     signal,
     body: JSON.stringify(body),
@@ -151,7 +151,7 @@ export const socialConnections = Object.freeze({
 
   authorize: (
     platform,
-    returnUrl = 'https://engraved-uncross-envy.ngrok-free.dev/agency.html',
+    returnUrl = 'http://127.0.0.1:3000/app/agency.html#social',
   ) =>
     request(
       `/connections/authorize${query({
