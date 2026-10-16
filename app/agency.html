@@ -2122,6 +2122,12 @@
     .wz-dots button.on { background: var(--ink); color: var(--surface); } .wz-dots button.on b { background: #FF8A2D; color: #15120F; }
     .wz-dots button.done b { background: #25683F; color: #fff; }
     html[data-theme="dark"] .wz-dots button { background: rgba(255,255,255,.08); } html[data-theme="dark"] .wz-dots button.on { background: #fff; color: #000; }
+    .fa-scrim { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 20px; background: rgba(15,15,15,.55); backdrop-filter: blur(6px); }
+    .fa-card { width: min(460px, 100%); padding: 26px 26px 22px; border-radius: 24px; background: var(--surface, #fff); color: var(--ink, #15120F); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+    .fa-k { font: 700 11px var(--f-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+    .fa-t { margin: 8px 0 10px; font: 700 26px/1.2 var(--f-sans); } .fa-t em { font-style: normal; color: #E8761A; }
+    .fa-w { margin: 0 0 18px; font-size: 14.5px; line-height: 1.6; color: var(--ink-muted); }
+    .fa-row .btn { min-height: 48px; width: 100%; }
     .fast-card { margin: 0 0 18px; padding: 22px 24px; border-radius: 22px; background: linear-gradient(135deg, #FFF0E2, #FFE2C7); color: #15120F; display: grid; gap: 10px; }
     .fast-card[hidden] { display: none; }
     .fc-k { font: 700 12px var(--f-sans); letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
@@ -16700,7 +16706,29 @@
     }
     /* what: 'accelerator' (a month of it, the old call), or
        { plan, period } or { addon }. The function prices it, never the page. */
+    /* FOR NOW, NOBODY PAYS (Eden, 2026-10-16: "when users want to pay any tier, tell them they have free 30 days access to
+       the highest tier"). Pressing Pay on any plan or add-on shows this instead of opening Paystack. It is true because the
+       paywall is off (platform_settings paywall_enabled): every agency already has everything, which is the highest plan.
+       To bring payments back, set FREE_30_DAYS to false and the original checkout below runs again. */
+    const FREE_30_DAYS = true;
+    function showFreeAccess() {
+      const old = document.getElementById('freeAccess'); if (old) old.remove();
+      const el = document.createElement('div');
+      el.id = 'freeAccess'; el.className = 'fa-scrim';
+      el.innerHTML = '<div class="fa-card irid neon" role="dialog" aria-modal="true" aria-labelledby="faT">'
+        + '<div class="fa-k">Nothing to pay right now</div>'
+        + '<h2 id="faT" class="fa-t">You have <em>30 days free</em> on the highest plan.</h2>'
+        + '<p class="fa-w">Every feature of Market Leader is open to your agency for the next 30 days: unlimited listings, the studio, the proximity alerts and the negotiator. There is nothing to pay and no card to enter. We will tell you well before it ends.</p>'
+        + '<div class="fa-row"><button type="button" class="btn btn-primary" id="faOk">Great, carry on</button></div></div>';
+      document.body.appendChild(el);
+      const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
+      const onKey = (e) => { if (e.key === 'Escape') close(); };
+      document.addEventListener('keydown', onKey);
+      el.addEventListener('click', (e) => { if (e.target === el || e.target.closest('#faOk')) close(); });
+      setTimeout(() => { const b = document.getElementById('faOk'); if (b) b.focus(); }, 30);
+    }
     function startCheckout(what, btn) {
+      if (FREE_30_DAYS) { showFreeAccess(); return; }
       const req = typeof what === 'string' ? { plan: what, period: 'monthly' } : what;
       const label = btn ? btn.textContent : '';
       /* The plan picker stays usable while Paystack opens, so on failure the
