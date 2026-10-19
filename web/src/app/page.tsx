@@ -8,6 +8,7 @@ export default function Home() {
       <p>This app is being built beside the current site, one page at a time. Migrated so far:</p>
       <ul>
         <li><Link href="/agency/?id=0f90aa7a-4329-4bb8-b36d-18aa5079289d">Agency page</Link> (sample agency)</li>
+        <li><Link href="/property/?id=c0893b6a-ce6b-46c7-8030-bb55a2704532">Property page</Link> (sample listing; map, flood and viewing booking still on the old page)</li>
       </ul>
     </main>
   );

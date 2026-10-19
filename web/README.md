@@ -22,10 +22,12 @@ row-level security, auth, edge functions in `synapse-platform/supabase/functions
 src/
   app/                 routes only: thin pages that read the URL and render a feature
     agency/page.tsx    /agency/?id=<uuid>
+    property/page.tsx  /property/?id=<uuid>
   features/            one folder per product area; owns its queries, components and styles
     agency-profile/    queries.ts (Supabase reads) · AgencyProfile.tsx (UI) · AgencyProfile.module.css
+    property/          queries.ts · types.ts · labels.ts (coded values in words) · PropertyPage.tsx composes Gallery, Overview, CostsCard, ListedBy, WhatWeChecked, SimilarHomes
   components/          shared UI used by more than one feature (AgencyLogo)
-  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, CAC label), brand.ts (validation of agency input), types.ts
+  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, money, dates, CAC label), brand.ts (validation of agency input), media.ts (photo order, covers), saved.ts (saved homes), types.ts
 ```
 
 Conventions
@@ -41,7 +43,8 @@ Conventions
 | Page | Old file | Status |
 |---|---|---|
 | Agency page | `app/agency-profile.html` | migrated: `/agency/?id=` |
-| Property, Browse, Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
+| Property page | `app/property.html` | migrated in part: `/property/?id=`. Done: photos and viewer, overview, Tayo's take, deal and cost slip, listed by (agency and agent), what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers. Still on the old page: map and nearby, flood and property-intelligence rows, commute, viewing booking, the opening-offer block |
+| Browse, Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
 The links in migrated pages that point at old pages (`/app/toju.html`, `/app/property.html`) stay as they are until those pages move.
