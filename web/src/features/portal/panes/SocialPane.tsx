@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListingRefs, type ListingRef } from "../data/marketing";
 import { SCHEDULABLE, STAGE_INFO, buildCards, discardDraft, discardPost, fetchStudio, groupByDay, platformName, retryPost, saveDraftText, scheduleDraft, type Card, type Draft, type Stage } from "../data/social";
+import { ChannelsPanel } from "./ChannelsPanel";
 import { CampaignPanel } from "./CampaignPanel";
 import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
@@ -56,6 +57,8 @@ export function SocialPane() {
           <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setGen((v) => !v)}>{gen ? "Close generator" : "Generate captions"}</button>
         </div>
       </div>
+
+      <ChannelsPanel onChanged={() => void load()} />
 
       {gen && <CampaignPanel onSaved={() => void load()} onClose={() => setGen(false)} />}
 

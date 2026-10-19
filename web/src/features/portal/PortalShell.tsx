@@ -96,6 +96,9 @@ export function PortalShell() {
   // a referral code saved on arrival is handed to the database once there is an agency to credit
   useEffect(() => { if (side !== "ok") return; const t = setTimeout(() => { void claimPendingReferral(); }, 4000); return () => clearTimeout(t); }, [side]);
 
+  // Facebook, TikTok and Telegram send the browser back with the outcome in the address; it is read in the Social studio, so go there
+  useEffect(() => { if (side !== "ok") return; if (new URLSearchParams(window.location.search).has("connected") && !window.location.hash) window.location.hash = "social"; }, [side]);
+
   // The gate is a UX gate, never a security boundary: the database policies are. It stops a person seeing a screen they cannot use.
   useEffect(() => {
     if (side !== "out" && side !== "wrong") return;

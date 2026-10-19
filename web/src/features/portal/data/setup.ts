@@ -6,7 +6,7 @@ import type { PaneId } from "../roles";
 export interface Progress { role: string; logo: boolean; cac: boolean; listings: number; channels: number; posts: number; team: number; leads: number; referrals: number; repliedLead?: boolean }
 
 /** Where a step sends you, and what it asks that pane to do on arrival. */
-export type Intent = "new-listing" | "new-post" | "invite" | "profile";
+export type Intent = "new-listing" | "new-post" | "invite" | "profile" | "add-channel";
 export interface Step { id: string; title: string; why: string; cta: string; done: boolean; pane: PaneId; intent?: Intent; legacy?: string }
 
 /**
@@ -19,8 +19,7 @@ export function buildSteps(p: Progress): Step[] {
     { id: "logo", boss: true, title: "Add your logo", why: "Buyers trust a listing more when they can see whose it is. It also goes on every post Synapse makes for you.", cta: "Add your logo", done: !!p.logo, pane: "brand" },
     { id: "cac", boss: true, title: "Upload your CAC certificate", why: "You cannot publish a listing until it is on file. It takes a minute, and the verification team reviews it after.", cta: "Upload it", done: !!p.cac, pane: "verification" },
     { id: "listing", title: "Add your first listing", why: "Buyers cannot find you until a listing is live. About three minutes: photos, price and a pin on the map.", cta: "Add a listing", done: p.listings > 0, pane: "listings", intent: "new-listing" },
-    // connecting an account (Meta, Telegram) is still on the original portal
-    { id: "channel", boss: true, title: "Connect a social account", why: "Connect Instagram, Facebook, TikTok or Telegram once, and Synapse can post your listings for you.", cta: "Connect one", done: p.channels > 0, pane: "social", legacy: "/app/agency.html#social" },
+    { id: "channel", boss: true, title: "Connect a social account", why: "Connect Instagram, Facebook, TikTok or Telegram once, and Synapse can post your listings for you.", cta: "Connect one", done: p.channels > 0, pane: "social", intent: "add-channel" },
     { id: "post", title: "Post a listing", why: "Pick a listing, tick where it goes, and let Synapse write the captions. This is how enquiries start.", cta: "Make a post", done: p.posts > 0, pane: "social", intent: "new-post" },
     { id: "team", boss: true, title: "Invite a teammate", why: "Add the agents who will answer buyers. Leads can be assigned to them, and the work stops sitting on one person.", cta: "Invite someone", done: p.team > 1, pane: "agents", intent: "invite" },
     {
