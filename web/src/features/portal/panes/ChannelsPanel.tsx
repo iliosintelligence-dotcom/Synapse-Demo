@@ -6,6 +6,7 @@ import {
   stripConnectParams, suggestPages, telegramCodeStatus, telegramLinkStart, telegramLinkState, tileReady, type Account, type ConnectResult, type FbPick, type Readiness, type TgState,
 } from "../data/channels";
 import { goTo } from "./BillingPane";
+import { ReplyCard } from "./ReplyCard";
 import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Channels.module.css";
@@ -84,6 +85,8 @@ export function ChannelsPanel({ onChanged }: { onChanged: () => void }) {
           );
         }))}
       </div>
+
+      <ReplyCard />
 
       {adding && (
         <div className={s.add} role="group" aria-label="Add a channel">
