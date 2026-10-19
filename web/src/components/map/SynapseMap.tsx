@@ -35,13 +35,15 @@ interface Props {
   overlay?: ImageOverlay | null;
   className?: string;
   label?: string;
+  /** Called with where the map was tapped. Used where a person places something (a listing's pin). */
+  onMapClick?: (lng: number, lat: number) => void;
 }
 
 /**
  * The map. MapLibre is loaded only here, only in the browser, and only when a map is on screen. Pins are DOM markers so they stay
  * real links and buttons (keyboard and screen-reader reachable), not pixels on a canvas.
  */
-export function SynapseMap({ center, zoom = 14, pins, fit = false, overlay = null, className, label = "Map" }: Props) {
+export function SynapseMap({ center, zoom = 14, pins, fit = false, overlay = null, className, label = "Map", onMapClick }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markers = useRef<Marker[]>([]);
@@ -73,6 +75,17 @@ export function SynapseMap({ center, zoom = 14, pins, fit = false, overlay = nul
     // The map is created once; later changes to pins and overlay are applied by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // taps on the map itself
+  const clickRef = useRef(onMapClick);
+  useEffect(() => { clickRef.current = onMapClick; }, [onMapClick]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const h = (e: { lngLat: { lng: number; lat: number } }) => clickRef.current?.(e.lngLat.lng, e.lngLat.lat);
+    map.on("click", h);
+    return () => { map.off("click", h); };
+  }, [ready]);
 
   // pins
   useEffect(() => {

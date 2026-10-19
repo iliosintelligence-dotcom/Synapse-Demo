@@ -11,7 +11,7 @@ const norm = (v: string) => v.trim().toLowerCase();
  * common ones one spelling, while typing still adds anything it lacks (a specialty saved before the list existed opens as a chip and is kept).
  * Keyboard: arrows move, Enter chooses or adds, Escape closes, Backspace on an empty box removes the last chip.
  */
-export function SpecialtiesInput({ value, onChange, groups, id }: { value: string[]; onChange: (v: string[]) => void; groups: Group[]; id: string }) {
+export function SpecialtiesInput({ value, onChange, groups, id, placeholder = "Choose or type a specialty…", listLabel = "Specialties" }: { value: string[]; onChange: (v: string[]) => void; groups: Group[]; id: string; placeholder?: string; listLabel?: string }) {
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(-1);
@@ -57,12 +57,12 @@ export function SpecialtiesInput({ value, onChange, groups, id }: { value: strin
         ))}
         <input
           ref={input} id={id} className={s.input} type="text" role="combobox" aria-expanded={open} aria-controls={listId} aria-autocomplete="list" autoComplete="off"
-          placeholder="Choose or type a specialty…" value={typed}
+          placeholder={placeholder} value={typed}
           onChange={(e) => { setTyped(e.target.value); setOpen(true); setHi(-1); }} onFocus={() => setOpen(true)} onKeyDown={onKey}
         />
       </div>
       {open && (
-        <div className={s.menu} id={listId} role="listbox" aria-label="Specialties">
+        <div className={s.menu} id={listId} role="listbox" aria-label={listLabel}>
           {shown.map((x) => (
             <div key={x.g}>
               <div className={s.grp}>{x.g}</div>

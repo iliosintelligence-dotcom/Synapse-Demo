@@ -2,13 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListings, filterListings, freshness, locationOf, needsRenewal, priceLabel, relist, relistAll, removeListing, setListingActive, type Listing, type ListingFilter } from "../data/listings";
+import { ListingWizard } from "../listing-form/ListingWizard";
 import { useToast } from "../ui/Toast";
 import s from "./Listings.module.css";
 
 const FILTERS: Array<[ListingFilter, string]> = [["all", "All"], ["verified", "Verified"], ["pending", "Pending"], ["expiring", "Expiring soon"]];
 const reason = (e: unknown, fb: string) => (e instanceof Error && e.message ? e.message : fb);
-/** Adding and editing still use the original portal's wizard until it moves across. */
-const WIZARD = "/app/agency.html#listings";
 
 /** Your inventory. Expired listings are hidden from buyers until you re-list. */
 export function ListingsPane() {
@@ -18,6 +17,7 @@ export function ListingsPane() {
   const [filter, setFilter] = useState<ListingFilter>("all");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState("");
+  const [wizard, setWizard] = useState<{ id: string | null } | null>(null);
 
   const load = useCallback(async () => { try { setRows(await fetchListings()); setFailed(""); } catch (e) { setFailed(reason(e, "please refresh")); } }, []);
   useEffect(() => { void Promise.resolve().then(load); }, [load]);
@@ -40,12 +40,12 @@ export function ListingsPane() {
         <div className={s.acts}>
           <input className={s.search} type="search" placeholder="Search listings…" aria-label="Search listings" value={q} onChange={(e) => setQ(e.target.value)} />
           {due.length > 0 && <button type="button" className={s.btn} disabled={busy === "all"} onClick={() => void run("all", async () => { const r = await relistAll(due); return `Renewed ${r.done} of ${r.requested} listing${r.requested === 1 ? "" : "s"}.`; }, "Could not renew those.")}>Re-list {due.length} expiring</button>}
-          <a className={`${s.btn} ${s.solid}`} href={WIZARD}>+ Add listing</a>
+          <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setWizard({ id: null })}>+ Add listing</button>
         </div>
       </div>
 
       {!rows.length ? (
-        <div className={s.blank}><b>No listings yet</b><p className={s.muted}>Add your first property and the seven verification checks start automatically.</p><a className={`${s.btn} ${s.solid}`} href={WIZARD}>+ Add your first listing</a></div>
+        <div className={s.blank}><b>No listings yet</b><p className={s.muted}>Add your first property and the seven verification checks start automatically.</p><button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setWizard({ id: null })}>+ Add your first listing</button></div>
       ) : !shown.length ? (
         <div className={s.blank}><b>Nothing matches</b><button type="button" className={s.btn} onClick={() => { setFilter("all"); setQ(""); }}>Show all listings</button></div>
       ) : (
@@ -66,7 +66,7 @@ export function ListingsPane() {
                   <div className={s.acts}>
                     <button type="button" className={s.btn} disabled={busy === `r${l.id}`} onClick={() => void run(`r${l.id}`, async () => { await relist(l.id); return "Re-listed. It stays visible to buyers."; }, "Could not re-list that.")}>Re-list</button>
                     <button type="button" className={s.btn} disabled={busy === `a${l.id}`} onClick={() => void run(`a${l.id}`, async () => { await setListingActive(l.id, !l.active); return l.active ? "Hidden from buyers." : "Live again."; }, "Could not change that.")}>{l.active ? "Deactivate" : "Activate"}</button>
-                    <a className={s.btn} href={WIZARD}>Edit</a>
+                    <button type="button" className={s.btn} onClick={() => setWizard({ id: l.id })}>Edit</button>
                     <button type="button" className={`${s.btn} ${s.danger}`} disabled={busy === `d${l.id}`} onClick={() => { if (window.confirm(`Delete “${l.title}”? Its leads and viewings are kept.`)) void run(`d${l.id}`, async () => { await removeListing(l.id); return "Listing deleted."; }, "Could not delete that."); }}>Delete</button>
                   </div>
                 </div>
@@ -75,6 +75,7 @@ export function ListingsPane() {
           })}
         </div>
       )}
+    {wizard && <ListingWizard editId={wizard.id} onClose={() => setWizard(null)} onSaved={() => { setWizard(null); void load(); }} />}
     </>
   );
 }
