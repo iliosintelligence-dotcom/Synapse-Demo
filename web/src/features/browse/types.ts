@@ -112,6 +112,8 @@ export interface TojuMatch {
   neighbourhood?: { name?: string } | null;
   city?: string;
   trustScore?: number | string | null;
+  bedrooms?: number | null;
+  yieldPct?: number | null;
   why?: string;
   whatToWatch?: string;
   summary?: string;

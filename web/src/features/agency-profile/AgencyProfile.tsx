@@ -64,7 +64,7 @@ export function AgencyProfile({ id }: { id: string }) {
   const website = safeUrl(a.social?.website);
   const spec = (a.specialties ?? []).filter(Boolean);
   const heroStyle = { ["--ag" as string]: brandHex(a.brand_color) ?? "#141412" };
-  const askHref = `/app/toju.html?new=site&agency=${encodeURIComponent(a.id)}&ask=${encodeURIComponent(`Tell me about ${a.name}. Can I trust them?`)}`;
+  const askHref = routes.tayo(`?new=site&agency=${encodeURIComponent(a.id)}&ask=${encodeURIComponent(`Tell me about ${a.name}. Can I trust them?`)}`);
 
   return (
     <main className={s.page}>

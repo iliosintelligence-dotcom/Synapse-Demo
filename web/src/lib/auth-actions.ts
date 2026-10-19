@@ -113,6 +113,20 @@ export async function resetPassword(email: string): Promise<void> {
   throw Object.assign(new Error(j.msg || j.message || j.error_description || `Reset request failed (${r.status})`), { code: j.error_code || j.code || "", status: r.status });
 }
 
+/**
+ * Signs out. A global sign-out revokes the refresh token on the server and needs the network, but the button has to end the session on THIS
+ * device even when the network does not answer, so if it has not returned in 2.5 s the local session is cleared and we carry on.
+ * What the next person on this browser must not see goes too: Tayo's saved chat, its archived chats, and the id that restores them from the server.
+ */
+export async function signOut(): Promise<void> {
+  const global = supabase.auth.signOut();
+  const fallback = new Promise((resolve) => setTimeout(() => resolve(supabase.auth.signOut({ scope: "local" })), 2500));
+  await Promise.race([global, fallback]).catch(() => {});
+  try {
+    for (const k of ["toju_chat_v1", "toju_sessions_v1", "toju_visitor_v1", "synapse_proximity_v1"]) localStorage.removeItem(k);
+  } catch { /* nothing to clear */ }
+}
+
 export const updatePassword = (password: string) => supabase.auth.updateUser({ password });
 
 /* ── Google ──────────────────────────────────────────────────────────────────

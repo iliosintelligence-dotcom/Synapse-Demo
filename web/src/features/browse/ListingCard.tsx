@@ -4,6 +4,7 @@ import { AgencyLogo } from "@/components/AgencyLogo";
 import { brandHex } from "@/lib/brand";
 import { cacLabel } from "@/lib/format";
 import { moneyShort } from "@/lib/money";
+import { routes } from "@/lib/routes";
 import type { BrowseItem, DealInfo } from "./types";
 import s from "./Browse.module.css";
 
@@ -101,7 +102,7 @@ export function ListingCard({ l, saved, compareOn, picked, onSave, onPick, onOpe
         <button type="button" className={`${s.save} ${saved ? s.saveOn : ""}`} aria-pressed={saved} aria-label={`${saved ? "Remove" : "Save"} ${l.title}`} onClick={onSave}>
           {saved ? "♥" : "♡"}
         </button>
-        <a className={s.contact} href={`/app/toju.html?reply=${encodeURIComponent(l.id)}`} aria-label={`Contact an agent about ${l.title}`}>Contact</a>
+        <a className={s.contact} href={routes.tayoAbout(l.id)} aria-label={`Contact an agent about ${l.title}`}>Contact</a>
       </div>
     </article>
   );

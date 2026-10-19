@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { arrivalChannel, arrivalPost } from "@/lib/arrival";
 import { routes } from "@/lib/routes";
 import { useSaved } from "@/lib/saved";
 import { Commute } from "./Commute";
@@ -37,10 +38,11 @@ export function PropertyPage({ id }: { id: string }) {
     fetchExactAddress(id).then((a) => live && setExact(a)).catch(() => {});
 
     const q = new URLSearchParams(window.location.search);
-    const channel = q.get("ch");
+    // the channel in the address, else the one remembered from where this visitor first landed
+    const channel = q.get("ch") || arrivalChannel();
     if (channel) {
       try { localStorage.setItem("syn_last_home", JSON.stringify({ id, ch: channel, ts: Date.now() })); } catch { /* storage blocked */ }
-      recordChannelTouch(id, channel, q.get("post"));
+      recordChannelTouch(id, channel, q.get("post") || arrivalPost());
     }
     return () => { live = false; };
   }, [id]);
@@ -90,7 +92,7 @@ export function PropertyPage({ id }: { id: string }) {
       <div className={s.dock}>
         <button type="button" className={`${s.dockBtn} ${saved ? s.dockOn : ""}`} aria-pressed={saved} onClick={toggle}>{saved ? "♥ Saved" : "♡ Save"}</button>
         <button type="button" className={s.dockBtn} onClick={share}>Share</button>
-        <a className={s.contact} href={`/app/toju.html?reply=${encodeURIComponent(p.id)}`}>Contact</a>
+        <a className={s.contact} href={routes.tayoAbout(p.id)}>Contact</a>
       </div>
       {toast && <div className={s.toast} role="status">{toast}</div>}
     </main>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Josefin_Sans } from "next/font/google";
+import { ArrivalCapture } from "@/components/ArrivalCapture";
 import "./globals.css";
 
 const sans = Josefin_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-sans", display: "swap" });
@@ -13,7 +14,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={sans.variable}>
-      <body>{children}</body>
+      <body>
+        <ArrivalCapture />
+        {children}
+      </body>
     </html>
   );
 }
