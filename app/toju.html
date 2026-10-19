@@ -1717,6 +1717,14 @@
            something with a short answer, and then the answers sit in the reply. */
         renderSuggest(null, true);
         renderReply();   // the introduction unlocks once there is a conversation
+        /* A price was agreed: open the viewing card straight away (the agent's open times, then the introduction), so the
+           buyer is never left hunting for a button. Signed-out buyers keep the button, which sends them to sign in. */
+        if (data.offerViewing && REPLY_TO && !HANDED) {
+          setTimeout(async () => {
+            try { if (window.SynAuth && await SynAuth.ready()) handOff(); }
+            catch (e) { /* the button is still there */ }
+          }, 900);
+        }
       } catch (e) {
         clearTimeout(timer); t.remove();
         const kind = e && e.kind ? e.kind
