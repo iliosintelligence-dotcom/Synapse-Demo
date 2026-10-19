@@ -93,8 +93,8 @@ export async function revokeInvite(id: string): Promise<void> {
   if (r.error) throw r.error;
 }
 
-/** Until invite acceptance moves across, the link opens where acceptance lives. */
-export const inviteLink = (token: string): string => `${window.location.origin}/app/agency.html?invite=${token}`;
+/** The link opens the new portal, which accepts it (links already sent to the original portal still work there). */
+export const inviteLink = (token: string): string => `${window.location.origin}/portal/?invite=${token}`;
 
 export const validEmail = (v: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 

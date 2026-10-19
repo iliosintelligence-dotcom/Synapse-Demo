@@ -19,6 +19,8 @@ import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
+import { InviteGate } from "./InviteGate";
+import { takeJoined } from "./data/invite";
 import { ProfileDrawer } from "./ProfileDrawer";
 import { useIntent } from "./intent";
 import { Bell } from "./Bell";
@@ -80,15 +82,19 @@ export function PortalShell() {
   const [active, setActive] = useState<PaneId>("overview");
   const [collapsed, setCollapsed] = useState(false);
   const [profile, setProfile] = useState(false);
+  const [welcome, setWelcome] = useState(false);
   useIntent("profile", () => setProfile(true));
 
   const account = session?.user ?? null;
   const side = session === undefined ? "loading" : !account ? "out" : roleOf(account) !== "agency" ? "wrong" : "ok";
 
+  // straight after joining by invite: open the profile once, as a welcome rather than a chore
+  useEffect(() => { if (side !== "ok") return; if (takeJoined()) { const t = setTimeout(() => { setWelcome(true); setProfile(true); }, 900); return () => clearTimeout(t); } }, [side]);
+
   // The gate is a UX gate, never a security boundary: the database policies are. It stops a person seeing a screen they cannot use.
   useEffect(() => {
     if (side !== "out" && side !== "wrong") return;
-    const here = `/portal/${window.location.hash}`;
+    const here = `/portal/${window.location.search}${window.location.hash}`;
     window.location.replace(routes.signin(`?role=agency&next=${encodeURIComponent(here)}`));
   }, [side]);
 
@@ -126,6 +132,7 @@ export function PortalShell() {
   return (
     <ToastProvider>
     <SetupProvider onGo={go}>
+    <InviteGate />
     <div className={s.shell} data-collapsed={collapsed}>
       <aside className={s.side} id="tabs" aria-label="Workspace">
         <div className={s.brand}>
@@ -176,7 +183,7 @@ export function PortalShell() {
         </main>
       </div>
       <AdvisorPanel pane={active} />
-      {profile && <ProfileDrawer onClose={() => setProfile(false)} onSaved={() => window.dispatchEvent(new CustomEvent("portal:profile-saved"))} />}
+      {profile && <ProfileDrawer welcome={welcome} onClose={() => { setProfile(false); setWelcome(false); }} onSaved={() => window.dispatchEvent(new CustomEvent("portal:profile-saved"))} />}
     </div>
     </SetupProvider>
     </ToastProvider>
