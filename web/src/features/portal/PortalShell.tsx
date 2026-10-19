@@ -8,6 +8,7 @@ import { routes } from "@/lib/routes";
 import { fetchAgencyHeader, forgetAgency, initialsOf, myRole, tierLabel, type AgencyHeader } from "./data/agency";
 import { AgentsPane } from "./panes/AgentsPane";
 import { BrandPane } from "./panes/BrandPane";
+import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { ToastProvider } from "./ui/Toast";
 import { panesFor, resolvePane, type PaneId } from "./roles";
@@ -44,6 +45,7 @@ const ALL_PANES: PaneId[] = GROUPS.flatMap((g) => g.panes.map((p) => p.id));
 const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
   agents: () => <AgentsPane />,
   brand: () => <BrandPane />,
+  tours: () => <ToursPane />,
   verification: () => <VerificationPane />,
 };
 
