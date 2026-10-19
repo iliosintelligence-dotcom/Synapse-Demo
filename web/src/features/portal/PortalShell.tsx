@@ -19,6 +19,7 @@ import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
+import { PhoneBanner } from "./PhoneBanner";
 import { InviteGate } from "./InviteGate";
 import { takeJoined } from "./data/invite";
 import { ProfileDrawer } from "./ProfileDrawer";
@@ -176,6 +177,7 @@ export function PortalShell() {
           <button type="button" className={s.out} onClick={() => signOut().then(() => window.location.reload())}>Sign out</button>
         </div>
         <main className={s.main}>
+          <PhoneBanner />
           <div className={s.eyebrow}>{def.eyebrow}</div>
           <h1 className={s.h1}>{def.title}</h1>
           {def.sub && <p className={s.sub}>{def.sub}</p>}
