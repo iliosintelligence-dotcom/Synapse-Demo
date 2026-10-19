@@ -20,6 +20,7 @@ import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
 import { claimPendingReferral } from "./data/referral";
+import { DeletionHost } from "./DeleteAgency";
 import { PhoneBanner } from "./PhoneBanner";
 import { InviteGate } from "./InviteGate";
 import { takeJoined } from "./data/invite";
@@ -141,6 +142,7 @@ export function PortalShell() {
     <ToastProvider>
     <SetupProvider onGo={go}>
     <InviteGate />
+    <DeletionHost />
     <div className={s.shell} data-collapsed={collapsed}>
       <aside className={s.side} id="tabs" aria-label="Workspace">
         <div className={s.brand}>

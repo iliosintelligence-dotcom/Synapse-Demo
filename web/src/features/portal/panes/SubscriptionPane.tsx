@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TIER_NAME, fetchUsage, usageRow, type PlanCode, type PlanUsage } from "../data/billing";
 import { PLANS, ADDONS, ROI } from "../data/plans";
+import { DeleteSection } from "../DeleteAgency";
 import { ReferralCard } from "./ReferralCard";
 import { goTo, preferPlan } from "./BillingPane";
 import s from "./Billing.module.css";
@@ -80,7 +81,7 @@ export function SubscriptionPane() {
         <p><b>{ROI.close}</b></p>
       </div>
 
-      <p className={s.foot}>Need to close this agency? <a href="/app/agency.html#subscription" style={{ textDecoration: "underline" }}>Delete agency is on the original portal</a> until it moves across.</p>
+      <DeleteSection />
     </>
   );
 }
