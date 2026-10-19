@@ -5,6 +5,8 @@ import {
   CONNECTABLE, COMING_LATER, accountsOn, botName, connectPages, disconnect, fetchAccounts, fetchReadiness, isExpired, loadPick, minutesLeft, newTelegramCode, readConnectResult, startConnect,
   stripConnectParams, suggestPages, telegramCodeStatus, telegramLinkStart, telegramLinkState, tileReady, type Account, type ConnectResult, type FbPick, type Readiness, type TgState,
 } from "../data/channels";
+import { channelTasks } from "../data/tasks";
+import { useTasks } from "../Tasks";
 import { goTo } from "./BillingPane";
 import { ReplyCard } from "./ReplyCard";
 import { useIntent } from "../intent";
@@ -23,6 +25,7 @@ export function ChannelsPanel({ onChanged }: { onChanged: () => void }) {
   const [busy, setBusy] = useState("");
   const [result, setResult] = useState<ConnectResult | null>(null);
   const [stash, setStash] = useState("");
+  const { setTasks } = useTasks();
 
   const load = useCallback(async () => {
     try { setAccounts(await fetchAccounts()); } catch { setAccounts([]); }
@@ -30,6 +33,8 @@ export function ChannelsPanel({ onChanged }: { onChanged: () => void }) {
   }, [onChanged]);
   useEffect(() => { void Promise.resolve().then(load); fetchReadiness().then(setReady); }, [load]);
   useIntent("add-channel", () => setAdding(true));
+  // what only a person can do for these accounts (bio links, the Facebook Page button) is handed over each time the list is known
+  useEffect(() => { if (accounts) setTasks("channels", channelTasks(accounts)); }, [accounts, setTasks]);
 
   // the outcome Facebook, TikTok or Telegram sent us back with: read once, then stripped so a reload cannot replay it
   useEffect(() => {

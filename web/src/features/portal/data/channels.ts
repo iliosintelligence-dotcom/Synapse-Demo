@@ -8,7 +8,7 @@ import { accessToken } from "@/lib/functions";
 export const CONNECTABLE: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", telegram: "Telegram", tiktok: "TikTok" };
 export const COMING_LATER = ["LinkedIn", "X (your X posts go out on Synapse’s X for now)"];
 
-export interface Account { id: string; platform: string; platform_username: string | null; is_active: boolean; token_expires_at: string | null; connected_at: string | null }
+export interface Account { id: string; platform: string; platform_username: string | null; is_active: boolean; token_expires_at: string | null; connected_at: string | null; page_cta_type?: string | null; page_cta_url?: string | null }
 
 /** An expired token is a row, not a channel: shown greyed out with a reconnect, never as connected. */
 export const isExpired = (a: Pick<Account, "token_expires_at">, now = Date.now()): boolean => !!a.token_expires_at && new Date(a.token_expires_at).getTime() < now;
@@ -17,7 +17,7 @@ export const accountsOn = (all: Account[], platform: string): Account[] => all.f
 export const liveCount = (all: Account[]): number => Object.keys(CONNECTABLE).filter((p) => accountsOn(all, p).some((a) => !isExpired(a))).length;
 
 export async function fetchAccounts(): Promise<Account[]> {
-  const r = await supabase.from("social_accounts").select("id, platform, platform_username, is_active, token_expires_at, connected_at").eq("is_active", true).is("deleted_at", null);
+  const r = await supabase.from("social_accounts").select("id, platform, platform_username, is_active, token_expires_at, connected_at, page_cta_type, page_cta_url").eq("is_active", true).is("deleted_at", null);
   if (r.error) throw r.error;
   return (r.data ?? []) as Account[];
 }

@@ -7,12 +7,14 @@ import { fetchListings, type Listing } from "./data/listings";
 import { buildNotices, markHandled, noticeKey, readHandled, unhandled, type Notice } from "./data/notifications";
 import { fetchStudio } from "./data/social";
 import type { PaneId } from "./roles";
+import { useTasks } from "./Tasks";
 import { useToast } from "./ui/Toast";
 import s from "./Bell.module.css";
 
 /** The bell: what needs attention, derived from live state. Clicking one takes you to the pane it is about and marks it handled until the facts change. */
 export function Bell({ allowed, onGo }: { allowed: PaneId[]; onGo: (p: PaneId) => void }) {
   const toast = useToast();
+  const tasks = useTasks();
   const session = useSession();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<{ listings: Listing[]; leads: Lead[]; drafts: number } | null>(null);
@@ -36,15 +38,15 @@ export function Bell({ allowed, onGo }: { allowed: PaneId[]; onGo: (p: PaneId) =
 
   return (
     <>
-      <button type="button" className={s.bell} aria-label={`Notifications${shown.length ? `, ${shown.length} waiting` : ""}`} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <button type="button" className={s.bell} aria-label={`Notifications${shown.length + tasks.open.length ? `, ${shown.length + tasks.open.length} waiting` : ""}`} aria-haspopup="true" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-        {shown.length > 0 && <span className={s.badge}>{shown.length}</span>}
+        {shown.length + tasks.open.length > 0 && <span className={s.badge}>{shown.length + tasks.open.length}</span>}
       </button>
       {open && <div className={s.scrim} onClick={() => setOpen(false)} />}
       {open && (
         <div className={s.pop} role="dialog" aria-label="Notifications">
           <div className={s.top}><b>Notifications</b>{shown.length > 0 && <button type="button" className={s.clear} onClick={() => { setHandled((h) => markHandled(shown.map(noticeKey), h)); setOpen(false); toast("Notifications cleared"); }}>Clear all</button>}</div>
-          {!shown.length ? <div className={s.empty}>You’re all caught up ✦</div> : groups.map((g) => (
+          {!shown.length && !tasks.open.length ? <div className={s.empty}>You’re all caught up ✦</div> : groups.map((g) => (
             <div key={g.g}>
               <div className={s.group}>{g.g}</div>
               {g.items.map((n) => (
@@ -54,6 +56,16 @@ export function Bell({ allowed, onGo }: { allowed: PaneId[]; onGo: (p: PaneId) =
               ))}
             </div>
           ))}
+          {tasks.open.length > 0 && (
+            <div>
+              <div className={s.group}>To do</div>
+              {tasks.open.map((k) => (
+                <button key={k.id} type="button" className={`${s.item} ${s.setup}`} onClick={() => { setOpen(false); tasks.show(k); }}>
+                  <span className={s.ttl}>{k.title}</span><span className={s.sub}>Tap to see what to paste where</span><span className={s.tag}>Only you</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>

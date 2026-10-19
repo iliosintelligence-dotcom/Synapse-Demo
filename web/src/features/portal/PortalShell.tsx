@@ -20,6 +20,7 @@ import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
 import { claimPendingReferral } from "./data/referral";
+import { TasksProvider } from "./Tasks";
 import { DeletionHost } from "./DeleteAgency";
 import { PhoneBanner } from "./PhoneBanner";
 import { InviteGate } from "./InviteGate";
@@ -140,6 +141,7 @@ export function PortalShell() {
 
   return (
     <ToastProvider>
+    <TasksProvider>
     <SetupProvider onGo={go}>
     <InviteGate />
     <DeletionHost />
@@ -197,6 +199,7 @@ export function PortalShell() {
       {profile && <ProfileDrawer welcome={welcome} onClose={() => { setProfile(false); setWelcome(false); }} onSaved={() => window.dispatchEvent(new CustomEvent("portal:profile-saved"))} />}
     </div>
     </SetupProvider>
+    </TasksProvider>
     </ToastProvider>
   );
 }
