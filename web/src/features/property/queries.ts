@@ -49,3 +49,69 @@ export function recordChannelTouch(propertyId: string, channel: string, post: st
     /* storage blocked: no visitor id, no attribution */
   }
 }
+
+/* ── Reads for the extra cards: viewing booking, flood, nearby places, the opening offer ── */
+/* Reads that belong to the property page's extra cards: viewing booking, flood, nearby places, the opening offer. */
+
+export interface TourSlot { starts_at: string; capacity: number; taken: number; agent_name: string | null }
+export interface BookResult { ok: boolean; reason?: string; taken?: number }
+
+export async function fetchOpenSlots(propertyId: string, days = 21): Promise<TourSlot[]> {
+  const { data, error } = await supabase.rpc("open_inspection_slots", { p_property_id: propertyId, p_days: days });
+  if (error) throw error;
+  return (data as TourSlot[]) ?? [];
+}
+
+/** Has Tayo qualified this buyer for this home? Needs a session; a signed-out visitor simply is not ready. */
+export async function fetchInspectionReady(propertyId: string): Promise<boolean> {
+  const { data } = await supabase.rpc("inspection_readiness", { p_property_id: propertyId });
+  const row = Array.isArray(data) ? data[0] : data;
+  return !!row?.ready;
+}
+
+export async function bookInspection(propertyId: string, startsAt: string): Promise<BookResult> {
+  const { data, error } = await supabase.rpc("book_inspection", { p_property_id: propertyId, p_starts_at: startsAt });
+  if (error) throw error;
+  const res = Array.isArray(data) ? data[0] : data;
+  return (res as BookResult) ?? { ok: false };
+}
+
+/** River flood data for a listing (JRC / Copernicus GloFAS). Read from the table; if it has not been measured yet, ask the function to. */
+export interface FloodRow {
+  property_id: string;
+  measured?: boolean;
+  covered?: boolean;
+  in_zone_10?: boolean;
+  in_zone_100?: boolean;
+  depth_100_m?: number | null;
+  nearest_flood_m?: number | null;
+}
+export async function fetchFlood(propertyId: string): Promise<FloodRow | null> {
+  const { data } = await supabase.from("property_flood").select("*").eq("property_id", propertyId).limit(1).maybeSingle();
+  const row = data as FloodRow | null;
+  if (row && (row.measured || row.covered === false)) return row;
+  const res = await supabase.functions.invoke("property-flood", { body: { property_id: propertyId } });
+  const fresh = res.data as FloodRow | null;
+  return fresh && fresh.property_id ? fresh : null;
+}
+
+export interface Place { name: string | null; category: string; lat: number | null; lon: number | null; distance_m: number | null; drive_text: string | null; drive_seconds: number | null }
+export async function fetchSurroundings(propertyId: string): Promise<Place[]> {
+  const { data } = await supabase.rpc("property_surroundings", { p_property_id: propertyId, p_limit: 1000 });
+  return Array.isArray(data) ? (data as Place[]) : [];
+}
+
+export interface Offer { openingOffer: number | null; advice: string; draft: string }
+/** Tayo works out an opening offer and a message to send. `property` is the row the page already holds. */
+export async function fetchOpeningOffer(visitorId: string | null, property: Property): Promise<Offer> {
+  const { data, error } = await supabase.functions.invoke("toju-demo", { body: { action: "negotiate", visitorId, property } });
+  if (error || !data || data.error || (!data.openingOffer && !data.advice && !data.draft)) throw new Error("bad payload");
+  return { openingOffer: typeof data.openingOffer === "number" ? data.openingOffer : null, advice: String(data.advice ?? ""), draft: String(data.draft ?? "") };
+}
+
+/** The flood DEPTH grid around the public pin: 90 m cells in 5 cm steps (uint8, base64), for drawing the flood map. */
+export interface FloodGrid { depth_b64?: string; cols: number; rows: number; bbox: [number, number, number, number] }
+export async function fetchFloodGrid(propertyId: string): Promise<FloodGrid | null> {
+  const { data, error } = await supabase.functions.invoke("property-flood", { body: { property_id: propertyId, grid: true } });
+  return error || !data?.depth_b64 ? null : (data as FloodGrid);
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { routes } from "@/lib/routes";
 import { toggleSave, useSaves } from "@/lib/saved";
 import { CompareSheet } from "./CompareSheet";
+import { SynapseMap, type MapPin } from "@/components/map/SynapseMap";
 import { ListingCard } from "./ListingCard";
 import { applyFilters, sortItems } from "./filter";
 import { DEFAULT_PREFS, readPrefs, readViews, recordView, takeLastVisit, writePrefs, type Prefs, type ViewedHome } from "./local";
@@ -28,6 +29,7 @@ export function BrowsePage() {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [comparing, setComparing] = useState(false);
+  const [view, setView] = useState<"list" | "map">("list");
   const [recent, setRecent] = useState<ViewedHome[]>([]);
   const [lastVisit, setLastVisit] = useState<number | null>(null);
   const [visitor, setVisitor] = useState<string | null>(null);
@@ -61,6 +63,14 @@ export function BrowsePage() {
   const shown = useMemo(() => sortItems(applyFilters(base, prefs, query, null), prefs.sort), [base, prefs, query]);
   const compareOn = saves.size >= 2;
   const pickedItems = base.filter((l) => picked.includes(l.id));
+  const pins: MapPin[] = useMemo(
+    () =>
+      shown
+        .filter((l) => l.lat != null && l.lng != null)
+        .slice(0, 400)
+        .map((l): MapPin => ({ id: l.id, lng: Number(l.lng), lat: Number(l.lat), kind: "listing", label: moneyShort(l.priceN, l.currency), title: `${l.title}, ${moneyShort(l.priceN, l.currency)}`, href: routes.property(l.id) })),
+    [shown],
+  );
   const fresh = useMemo(
     () => (lastVisit && !mine ? shown.filter((l) => l.listedAt && Date.parse(l.listedAt) > lastVisit) : []),
     [shown, lastVisit, mine],
@@ -123,7 +133,18 @@ export function BrowsePage() {
         <button type="button" className={`${s.vtoggle} ${prefs.verifiedOnly ? s.on : ""}`} aria-pressed={prefs.verifiedOnly} onClick={() => update({ verifiedOnly: !prefs.verifiedOnly })} title="Show only homes Synapse has checked">
           <span className={s.box}>{prefs.verifiedOnly ? "✓" : ""}</span> Verified only
         </button>
+        <div className={s.viewseg} role="group" aria-label="View">
+          <button type="button" className={view === "list" ? s.on : ""} aria-pressed={view === "list"} onClick={() => setView("list")}>List</button>
+          <button type="button" className={view === "map" ? s.on : ""} aria-pressed={view === "map"} onClick={() => setView("map")}>Map</button>
+        </div>
       </div>
+
+      {view === "map" && (
+        <div className={s.mapWrap}>
+          <SynapseMap center={[3.45, 6.45]} zoom={9} pins={pins} fit={pins.length > 0} className={s.bigMap} label="Map of homes" />
+          {pins.length === 0 && <p className={s.dim}>None of the homes shown has a pin on the map yet.</p>}
+        </div>
+      )}
 
       {recent.length > 0 && (
         <section className={s.recent} aria-label="Recently viewed">
@@ -182,8 +203,6 @@ export function BrowsePage() {
           )}
         </div>
       )}
-
-      <p className={s.moved}>The map view is still on the <a href={routes.browse()}>original Browse page</a> while it moves across.</p>
 
       {picked.length >= 2 && (
         <div className={s.cmpbar}>

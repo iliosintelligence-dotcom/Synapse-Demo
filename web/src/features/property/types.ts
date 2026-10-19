@@ -23,6 +23,8 @@ export interface Property {
   listing_type: string | null;
   property_type: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   city: string | null;
   state: string | null;
   area_sqm: number | null;

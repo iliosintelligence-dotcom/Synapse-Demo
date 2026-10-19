@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "public/maplibre/**", // copied vendor files, not our code
     "next-env.d.ts",
   ]),
 ]);

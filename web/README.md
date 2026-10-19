@@ -27,8 +27,8 @@ src/
     agency-profile/    queries.ts (Supabase reads) · AgencyProfile.tsx (UI) · AgencyProfile.module.css
     browse/            queries.ts · shape.ts (feed row or Tayo match to one card shape) · filter.ts (search, filters, sort: pure) · local.ts (device storage) · ListingCard · CompareSheet · BrowsePage
     property/          queries.ts · types.ts · labels.ts (coded values in words) · PropertyPage.tsx composes Gallery, Overview, CostsCard, ListedBy, WhatWeChecked, SimilarHomes
-  components/          shared UI used by more than one feature (AgencyLogo)
-  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, money, dates, CAC label), brand.ts (validation of agency input), media.ts (photo order, covers), saved.ts (saved homes, live across tabs), money.ts (price in the listing's own currency), routes.ts (where each page lives: one line to change when a page moves), types.ts
+  components/          shared UI used by more than one feature (AgencyLogo; map/ = the Synapse map: recoloured Stadia style, pins, image overlay)
+  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, money, dates, CAC label), brand.ts (validation of agency input), auth.ts (session; shares the static site's sign-in), media.ts (photo order, covers), saved.ts (saved homes, live across tabs), money.ts (price in the listing's own currency), routes.ts (where each page lives: one line to change when a page moves), types.ts
 ```
 
 Conventions
@@ -44,8 +44,8 @@ Conventions
 | Page | Old file | Status |
 |---|---|---|
 | Agency page | `app/agency-profile.html` | migrated: `/agency/?id=` |
-| Property page | `app/property.html` | migrated in part: `/property/?id=`. Done: photos and viewer, overview, Tayo's take, deal and cost slip, listed by (agency and agent), what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers. Still on the old page: map and nearby, flood and property-intelligence rows, commute, viewing booking, the opening-offer block |
-| Browse | `app/browse.html` | migrated in part: `/browse/`. Done: the live feed (verified, other, shared slices), Tayo's matches for the visitor, search (including "under 150m"), deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, empty and error states. Still on the old page: the map view and "search this area" |
+| Property page | `app/property.html` | migrated except commute times: `/property/?id=`. Done: photos and viewer, overview, Tayo's take, deal and cost slip, opening offer, property intelligence with the flood score, the map with nearby places and the flood map, viewing booking, listed by (agency and agent), what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers. Still on the old page: commute intelligence (the buyer's own places and drive times) |
+| Browse | `app/browse.html` | migrated except "search this area": `/browse/`. Done: the live feed, Tayo's matches, search, deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, the map view with price pins, empty and error states. Still on the old page: "search this area" on the map |
 | Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
@@ -68,3 +68,15 @@ npx cap open ios        # or android
 Before submitting to the stores: an Apple Developer and a Google Play account in ILIOS Digital's name, privacy labels, an in-app
 account deletion flow (Apple requires it), the in-app browser plugin for the Meta and TikTok sign-in redirects, and a decision on
 Paystack (hosted page or native SDK).
+
+## The map
+
+`components/map/SynapseMap.tsx` wraps MapLibre. The style is Stadia's vector style recoloured to the Synapse "white matter" look
+(`style.ts`). Stadia authorises browsers **by domain**: register every domain the app is served from (production, previews,
+`localhost` ports you test on) in the Stadia dashboard, or tiles return 401. MapLibre's web worker is copied into `public/maplibre/`
+by `scripts/copy-maplibre-worker.mjs` before `dev` and `build`.
+
+## Signing in
+
+Sign-in itself is still the static page (`/app/signin.html`). The Supabase client uses the same storage key and PKCE flow as the
+static site, so a buyer signed in there is signed in here (viewing booking depends on it). That page moves with the sign-in migration.

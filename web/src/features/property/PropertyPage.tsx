@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import { useSaved } from "@/lib/saved";
 import { CostsCard } from "./CostsCard";
 import { Gallery } from "./Gallery";
+import { Intelligence } from "./Intelligence";
 import { ListedBy } from "./ListedBy";
+import { Nearby } from "./Nearby";
+import { OfferCard } from "./OfferCard";
 import { Overview } from "./Overview";
 import { SimilarHomes } from "./SimilarHomes";
+import { Viewing } from "./Viewing";
 import { WhatWeChecked } from "./WhatWeChecked";
 import { fetchExactAddress, fetchProperty, recordChannelTouch } from "./queries";
 import type { Property } from "./types";
@@ -70,11 +74,15 @@ export function PropertyPage({ id }: { id: string }) {
             </section>
           )}
           <CostsCard p={p} />
+          <OfferCard p={p} />
+          <Intelligence p={p} />
+          <Nearby p={p} />
+          <Viewing propertyId={p.id} />
           <ListedBy p={p} />
           <WhatWeChecked p={p} />
           <SimilarHomes city={p.city} excludeId={p.id} />
           <p className={s.moved}>
-            The map, what’s nearby, flood risk, commute times and viewing bookings are still on the{" "}
+            Commute times are still on the{" "}
             <a href={`/app/property.html?id=${encodeURIComponent(p.id)}`}>original page</a> while they move across.
           </p>
         </div>

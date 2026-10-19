@@ -56,6 +56,8 @@ export function shapeRow(p: FeedRow): BrowseItem {
     score: p.trust_score,
     why: factLine(p),
     agency: a?.name ? { name: a.name, logo: a.logo_url, color: a.brand_color, font: a.brand_font, cac: a.cac_number, cacDoc: !!a.cac_certificate_on_file } : null,
+    lat: p.latitude == null ? null : Number(p.latitude),
+    lng: p.longitude == null ? null : Number(p.longitude),
     whyLead: null,
   };
 }
@@ -87,6 +89,8 @@ export function shapeMatch(m: TojuMatch, i: number): BrowseItem {
     loc: m.neighbourhood?.name ? m.neighbourhood.name : m.city || "",
     score: m.trustScore == null || m.trustScore === "" ? null : Number(m.trustScore),
     why: m.why ? m.why : lead === "Worth checking" ? (m.whatToWatch ?? "") : m.summary ?? "",
+    lat: m.latitude == null ? null : Number(m.latitude),
+    lng: m.longitude == null ? null : Number(m.longitude),
     whyLead: lead,
   };
 }

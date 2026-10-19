@@ -3,7 +3,7 @@ import { shapeMatch, shapeRow } from "./shape";
 import type { BrowseItem, FeedRow, TojuMatch } from "./types";
 
 const FEED_SELECT =
-  "id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font,cac_number,cac_certificate_on_file)";
+  "id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,area_name,latitude,longitude,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font,cac_number,cac_certificate_on_file)";
 
 /** One slice of the live feed. Three slices keep the page balanced: verified homes, the rest, and shared rooms. */
 async function slice(filter: (q: ReturnType<typeof base>) => ReturnType<typeof base>, limit: number): Promise<FeedRow[]> {

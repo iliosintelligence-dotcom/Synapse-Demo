@@ -45,6 +45,8 @@ export interface BrowseItem {
   /** A short fact line under the title: beds, baths, size, or Tayo's reason. Plain text. */
   why: string;
   agency: CardAgency | null;
+  lat: number | null;
+  lng: number | null;
   /** Tayo's own wording prefix for a recommendation ("Recommended" / "Worth checking"), when the card came from a match. */
   whyLead: string | null;
 }
@@ -68,6 +70,8 @@ export interface FeedRow {
   listed_at: string | null;
   currency: string | null;
   area_name: string | null;
+  latitude: number | null;
+  longitude: number | null;
   deal_structure: string | null;
   build_stage: string | null;
   handover_date: string | null;
@@ -100,6 +104,8 @@ export interface TojuMatch {
   } | null;
   verificationStatus?: string;
   verified?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   agencyBrand?: { name: string; logo: string | null; color: string | null; font: string | null; cac?: string | null; cacDoc?: boolean } | null;
   price?: number;
   title?: string;
