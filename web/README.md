@@ -47,7 +47,8 @@ Conventions
 | Property page | `app/property.html` | migrated: `/property/?id=`. Photos and viewer, overview, Tayo's take, deal and cost slip, opening offer, property intelligence with the flood score, the map with nearby places and the flood map, commute times (stored survey with measured drive times, else OpenStreetMap and OSRM estimates, plus the buyer's own places), viewing booking, listed by, what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers |
 | Browse | `app/browse.html` | migrated except "search this area": `/browse/`. Done: the live feed, Tayo's matches, search, deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, the map view with price pins, empty and error states. Still on the old page: "search this area" on the map |
 | Sign in | `app/signin.html` | migrated: `/signin/`. Email and password, phone code, Google, agency sign-up, the one-more-thing agency form, password reset, confirmation resend, demo accounts, consent record, redirect safety. Emailed and Google return links still point at `/app/signin.html` until Supabase's redirect allow-list is updated (see `lib/auth-config.ts`) |
-| Tayo chat, Dream Home | `app/*.html` | not started |
+| Tayo chat | `app/toju.html` | migrated: `/tayo/`. Replies with matches, market history and checked-listings line, the matches canvas with map, quick answers, pin/share/rate, history, pinned, background, voice typing, replying about a home, the introduction (handover card, viewing times, ticket), asking about an agency, error and retry, memory note. Not ported: Zyn's fly-out emote (a face change and hop instead), and the "coming back from social" auto-open (dead code in the old page) |
+| Dream Home | `app/dream.html` | migrated: `/dream/`. Boards, modes, categories, vibes, signals, palette, pin by link, share target, the starter that never reaches Tayo until kept |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
 Links between pages go through `src/lib/routes.ts`. Property, Browse and Agency now point at the Next pages; Tayo chat and sign-in still point at `/app/*.html` until they move. The static `app/property.html`, `app/browse.html` and `app/agency-profile.html` are kept until the Next versions have been live and checked.
@@ -87,5 +88,5 @@ Google) must be on Supabase's redirect allow-list, which is set in the Supabase 
 `https://synapsecore.dev/signin/` (and preview domains) under Authentication, URL Configuration, then change `AUTH_RETURN_PATH` in
 `lib/auth-config.ts` to `/signin/`. Emails already sent still point at the old page, so keep it deployed for a few weeks after.
 
-Tests: `npm test` runs `src/lib/auth-actions.test.ts` (redirect safety, phone numbers, roles) and `src/features/signin/signin.test.ts`
-(password rules, error wording).
+Tests: `npm test` runs `src/lib/auth-actions.test.ts` (redirect safety, phone numbers, roles), `src/features/signin/signin.test.ts` (password rules, error wording),
+`src/features/chat/chat.test.ts` (unwrapping the model's reply, quick answers, context notes) and `src/features/dream/dream.test.ts` (what Tayo reads, the reducer).

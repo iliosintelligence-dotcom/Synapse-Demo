@@ -3,7 +3,7 @@ import { zynForReply } from "@/components/zynState";
 import { dreamContext, isHiddenNote, isPersonTurn, priceLine, replyContext } from "./context";
 import { unwrapEnvelope } from "./envelope";
 import { quickAnswers } from "./quick";
-import type { ReplyTo } from "./types";
+import type { ReplyTo, TojuResponse } from "./types";
 
 describe("unwrapEnvelope: raw JSON from the model must never reach the screen", () => {
   it("leaves ordinary prose alone", () => {
@@ -12,7 +12,7 @@ describe("unwrapEnvelope: raw JSON from the model must never reach the screen", 
     expect(d.reply).toBe("Here are three homes.");
   });
   it("unwraps a whole-reply JSON envelope and lifts out matches and suggestions", () => {
-    const d: { reply: string; matches?: unknown[]; suggestions?: unknown } = { reply: JSON.stringify({ reply: "Found two.", matches: [{ id: "a" }], suggestions: ["Yes", "No"] }) };
+    const d: TojuResponse = { reply: JSON.stringify({ reply: "Found two.", matches: [{ id: "a" }], suggestions: ["Yes", "No"] }) };
     unwrapEnvelope(d);
     expect(d.reply).toBe("Found two.");
     expect(d.matches).toEqual([{ id: "a" }]);
@@ -58,7 +58,7 @@ describe("quickAnswers: buttons only for a closed question", () => {
 const home: ReplyTo = { id: "x", title: "5-bed Duplex", price: 380_000_000, price_period: "total", currency: "NGN", listing_type: "sale", city: "Lagos", bedrooms: 5, bathrooms: 5, area_sqm: 450, latitude: 1, longitude: 1, verification_status: "unverified", trust_score: null, property_media: null };
 
 describe("replyContext: a sale and a rental are different conversations", () => {
-  it("says a rent is not negotiable", () => expect(replyContext({ ...home, listing_type: "rent", price_period: "per_year" })).toMatch(/RENTAL.*not negotiable/s));
+  it("says a rent is not negotiable", () => expect(replyContext({ ...home, listing_type: "rent", price_period: "per_year" })).toMatch(/RENTAL[\s\S]*not negotiable/));
   it("on a sale, never suggests going below the asking price and never claims verification", () => {
     const c = replyContext(home)!;
     expect(c).toMatch(/SALE/);
