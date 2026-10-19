@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TIER_NAME, fetchUsage, usageRow, type PlanCode, type PlanUsage } from "../data/billing";
 import { PLANS, ADDONS, ROI } from "../data/plans";
+import { ReferralCard } from "./ReferralCard";
 import { goTo, preferPlan } from "./BillingPane";
 import s from "./Billing.module.css";
 
@@ -38,6 +39,7 @@ export function SubscriptionPane() {
           <Row label="Team seats" used={usage.seats_used} max={usage.seats_max} />
         </div>
       )}
+      <ReferralCard />
       <a className={s.link} href="#billing">Billing, payments and add-ons →</a>
 
       <div className={s.plans}>

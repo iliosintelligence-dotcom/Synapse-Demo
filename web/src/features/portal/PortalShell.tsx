@@ -19,6 +19,7 @@ import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
+import { claimPendingReferral } from "./data/referral";
 import { PhoneBanner } from "./PhoneBanner";
 import { InviteGate } from "./InviteGate";
 import { takeJoined } from "./data/invite";
@@ -91,6 +92,9 @@ export function PortalShell() {
 
   // straight after joining by invite: open the profile once, as a welcome rather than a chore
   useEffect(() => { if (side !== "ok") return; if (takeJoined()) { const t = setTimeout(() => { setWelcome(true); setProfile(true); }, 900); return () => clearTimeout(t); } }, [side]);
+
+  // a referral code saved on arrival is handed to the database once there is an agency to credit
+  useEffect(() => { if (side !== "ok") return; const t = setTimeout(() => { void claimPendingReferral(); }, 4000); return () => clearTimeout(t); }, [side]);
 
   // The gate is a UX gate, never a security boundary: the database policies are. It stops a person seeing a screen they cannot use.
   useEffect(() => {
