@@ -10,6 +10,7 @@ import { AgentsPane } from "./panes/AgentsPane";
 import { BrandPane } from "./panes/BrandPane";
 import { BillingPane } from "./panes/BillingPane";
 import { MarketingPane } from "./panes/MarketingPane";
+import { NegotiatorPane } from "./panes/NegotiatorPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
@@ -50,6 +51,7 @@ const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
   brand: () => <BrandPane />,
   billing: () => <BillingPane />,
   marketing: () => <MarketingPane />,
+  negotiator: () => <NegotiatorPane />,
   subscription: () => <SubscriptionPane />,
   tours: () => <ToursPane />,
   verification: () => <VerificationPane />,
