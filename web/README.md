@@ -46,7 +46,8 @@ Conventions
 | Agency page | `app/agency-profile.html` | migrated: `/agency/?id=` |
 | Property page | `app/property.html` | migrated: `/property/?id=`. Photos and viewer, overview, Tayo's take, deal and cost slip, opening offer, property intelligence with the flood score, the map with nearby places and the flood map, commute times (stored survey with measured drive times, else OpenStreetMap and OSRM estimates, plus the buyer's own places), viewing booking, listed by, what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers |
 | Browse | `app/browse.html` | migrated except "search this area": `/browse/`. Done: the live feed, Tayo's matches, search, deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, the map view with price pins, empty and error states. Still on the old page: "search this area" on the map |
-| Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
+| Sign in | `app/signin.html` | migrated: `/signin/`. Email and password, phone code, Google, agency sign-up, the one-more-thing agency form, password reset, confirmation resend, demo accounts, consent record, redirect safety. Emailed and Google return links still point at `/app/signin.html` until Supabase's redirect allow-list is updated (see `lib/auth-config.ts`) |
+| Tayo chat, Dream Home | `app/*.html` | not started |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
 Links between pages go through `src/lib/routes.ts`. Property, Browse and Agency now point at the Next pages; Tayo chat and sign-in still point at `/app/*.html` until they move. The static `app/property.html`, `app/browse.html` and `app/agency-profile.html` are kept until the Next versions have been live and checked.
@@ -78,5 +79,13 @@ by `scripts/copy-maplibre-worker.mjs` before `dev` and `build`.
 
 ## Signing in
 
-Sign-in itself is still the static page (`/app/signin.html`). The Supabase client uses the same storage key and PKCE flow as the
-static site, so a buyer signed in there is signed in here (viewing booking depends on it). That page moves with the sign-in migration.
+`lib/auth-actions.ts` is the only place that talks to Supabase Auth; `features/signin/` is the page. The client uses the same storage
+key and PKCE flow as the static site, so someone signed in on either is signed in on both.
+
+**Before the old `app/signin.html` can be deleted:** every link that leaves the site and comes back (confirmation email, reset email,
+Google) must be on Supabase's redirect allow-list, which is set in the Supabase dashboard, not in code. Add
+`https://synapsecore.dev/signin/` (and preview domains) under Authentication, URL Configuration, then change `AUTH_RETURN_PATH` in
+`lib/auth-config.ts` to `/signin/`. Emails already sent still point at the old page, so keep it deployed for a few weeks after.
+
+Tests: `npm test` runs `src/lib/auth-actions.test.ts` (redirect safety, phone numbers, roles) and `src/features/signin/signin.test.ts`
+(password rules, error wording).

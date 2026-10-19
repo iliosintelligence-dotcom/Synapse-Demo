@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { routes } from "./routes";
 import { supabase } from "./supabase";
 
 /** The current session: undefined while it is being read, null when signed out. */
@@ -19,5 +20,5 @@ export function useSession(): Session | null | undefined {
   return session;
 }
 
-/** Where to send someone who has to sign in. Sign-in is still the static page; `next` brings them back here. */
-export const signInHref = (reason: string, next: string) => `/app/signin.html?reason=${encodeURIComponent(reason)}&next=${encodeURIComponent(next)}`;
+/** Where to send someone who has to sign in; `next` brings them back here. */
+export const signInHref = (reason: string, next: string) => routes.signin(`?reason=${encodeURIComponent(reason)}&next=${encodeURIComponent(next)}`);

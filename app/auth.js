@@ -149,7 +149,9 @@
       if (/^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.indexOf('//') === 0) return fallback;
       var u = new URL(raw, window.location.href);
       if (u.origin !== window.location.origin) return fallback;
-      return u.pathname + u.search + u.hash;
+      var path = u.pathname + u.search + u.hash;
+      /* A path that begins with // or /\ is a protocol-relative address to a browser: it would leave the site even though it parsed as same-origin. */
+      return /^\/[\/]/.test(path) ? fallback : path;
     } catch (e) { return fallback; }
   }
 
