@@ -18,6 +18,7 @@ import { SocialPane } from "./panes/SocialPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
+import { SetupProvider, SetupRing } from "./Setup";
 import { Bell } from "./Bell";
 import { AdvisorPanel } from "./AdvisorPanel";
 import { ToastProvider } from "./ui/Toast";
@@ -120,6 +121,7 @@ export function PortalShell() {
 
   return (
     <ToastProvider>
+    <SetupProvider onGo={go}>
     <div className={s.shell} data-collapsed={collapsed}>
       <aside className={s.side} id="tabs" aria-label="Workspace">
         <div className={s.brand}>
@@ -157,6 +159,7 @@ export function PortalShell() {
         <div className={s.topbar}>
           <span className={s.crumb}>{name}</span>
           <span className={s.spacer} />
+          <SetupRing />
           <Bell allowed={allowed} onGo={go} />
           <button type="button" className={s.out} onClick={() => signOut().then(() => window.location.reload())}>Sign out</button>
         </div>
@@ -169,6 +172,7 @@ export function PortalShell() {
       </div>
       <AdvisorPanel pane={active} />
     </div>
+    </SetupProvider>
     </ToastProvider>
   );
 }

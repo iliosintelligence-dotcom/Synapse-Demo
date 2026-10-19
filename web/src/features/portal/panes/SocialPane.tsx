@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListingRefs, type ListingRef } from "../data/marketing";
 import { SCHEDULABLE, STAGE_INFO, buildCards, discardDraft, discardPost, fetchStudio, groupByDay, platformName, retryPost, saveDraftText, scheduleDraft, type Card, type Draft, type Stage } from "../data/social";
 import { CampaignPanel } from "./CampaignPanel";
+import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Social.module.css";
 
@@ -24,6 +25,7 @@ export function SocialPane() {
   const [editing, setEditing] = useState<Draft | null>(null);
   const [busy, setBusy] = useState("");
   const [gen, setGen] = useState(false);
+  useIntent("new-post", () => setGen(true));
 
   const load = useCallback(async () => {
     try { const { drafts, posts } = await fetchStudio(); setCards(buildCards(drafts, posts)); setFailed(""); } catch (e) { setFailed(reason(e, "please refresh")); }

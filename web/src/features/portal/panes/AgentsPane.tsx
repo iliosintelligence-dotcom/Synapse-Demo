@@ -6,6 +6,7 @@ import {
   createInvite, fetchInvites, fetchOpenLeadCounts, fetchRoster, fetchThread, inviteLink, revokeInvite, sendTeamMessage, statusOf, validEmail,
   type Invite, type TeamMessage, type Teammate,
 } from "../data/agents";
+import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Agents.module.css";
 
@@ -21,6 +22,7 @@ export function AgentsPane() {
   const [sort, setSort] = useState<"name" | "open">("name");
   const [dialog, setDialog] = useState<"invite" | Teammate | null>(null);
   const [failed, setFailed] = useState(false);
+  useIntent("invite", () => setDialog("invite"));
 
   const load = useCallback(async () => {
     try {

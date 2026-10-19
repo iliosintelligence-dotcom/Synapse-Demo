@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListings, filterListings, freshness, locationOf, needsRenewal, priceLabel, relist, relistAll, removeListing, setListingActive, type Listing, type ListingFilter } from "../data/listings";
 import { ListingWizard } from "../listing-form/ListingWizard";
+import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Listings.module.css";
 
@@ -18,6 +19,7 @@ export function ListingsPane() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState("");
   const [wizard, setWizard] = useState<{ id: string | null } | null>(null);
+  useIntent("new-listing", () => setWizard({ id: null }));
 
   const load = useCallback(async () => { try { setRows(await fetchListings()); setFailed(""); } catch (e) { setFailed(reason(e, "please refresh")); } }, []);
   useEffect(() => { void Promise.resolve().then(load); }, [load]);

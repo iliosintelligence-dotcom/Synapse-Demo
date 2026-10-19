@@ -5,6 +5,7 @@ import { SynapseMap, type MapPin } from "@/components/map/SynapseMap";
 import { stageCounts } from "../data/crm";
 import { fetchLeads, nairaShort, type Lead } from "../data/leads";
 import { VERIFICATION_CHECKS, fetchListings, filterListings, freshness, locationOf, priceLabel, type Listing, type ListingFilter } from "../data/listings";
+import { NextCard } from "../Setup";
 import s from "./Listings.module.css";
 
 const FILTERS: Array<[ListingFilter, string]> = [["all", "All"], ["verified", "Verified"], ["pending", "Pending"], ["expiring", "Expiring soon"]];
@@ -35,16 +36,19 @@ export function OverviewPane() {
   // leads are matched to a listing by its name, the only link the lead row carries beyond the property join
   const leadsFor = (l: Listing) => leads.filter((x) => x.property.toLowerCase().startsWith(l.title.toLowerCase().split(",")[0]));
 
-  if (failed) return <div className={s.blank}><b>Could not load your listings</b><p className={s.muted}>{failed}</p></div>;
-  if (!listings) return <p className={s.muted} aria-busy="true">Loading your listings…</p>;
+  if (failed) return <><NextCard /><div className={s.blank}><b>Could not load your listings</b><p className={s.muted}>{failed}</p></div></>;
+  if (!listings) return <><NextCard /><p className={s.muted} aria-busy="true">Loading your listings…</p></>;
 
   if (!listings.length) {
     return (
+      <>
+      <NextCard />
       <div className={s.blank}>
         <b>No listings yet</b>
         <p className={s.muted}>Add your first property and the seven verification checks start automatically. Tayo can only match buyers to homes that are listed here.</p>
         <a className={`${s.btn} ${s.solid}`} href="#listings">+ Add your first listing</a>
       </div>
+      </>
     );
   }
 
@@ -54,6 +58,7 @@ export function OverviewPane() {
 
   return (
     <>
+      <NextCard />
       <div className={s.tools}>
         <div className={s.seg} role="group" aria-label="Filter listings">{FILTERS.map(([id, label]) => <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>
         <input className={s.search} type="search" placeholder="Search listings…" aria-label="Search listings" value={q} onChange={(e) => setQ(e.target.value)} />
