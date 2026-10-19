@@ -37,7 +37,7 @@ export function SignInPage() {
   /** A sign-in lands on Overview: `next` can carry the pane the session ended on (#social), which is right for a bounce but wrong after someone has actually signed in. Customer pages keep theirs. */
   const signedInDest = (fallback: string) => {
     const d = safeNext(next, fallback);
-    return /(^|\/)agency\.html/.test(d) ? d.replace(/#.*$/, "") : d;
+    return /(^|\/)(agency\.html|portal\/?)/.test(d) ? d.replace(/#.*$/, "") : d;
   };
   const go = (dest: string) => window.location.assign(dest);
 

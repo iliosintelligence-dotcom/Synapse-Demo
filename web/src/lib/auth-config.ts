@@ -19,4 +19,5 @@ export const POLICY_VERSION = "2026-09-19";
 
 /** Pages that are still the static site, for `next` destinations and defaults. */
 export const DEFAULT_CUSTOMER_DEST = "/chat/";
+/** The agency workspace. Still the static portal while its panes move; change this one line when it is ready to be the front door. */
 export const DEFAULT_AGENCY_DEST = "/app/agency.html";

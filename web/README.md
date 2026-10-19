@@ -49,7 +49,7 @@ Conventions
 | Sign in | `app/signin.html` | migrated: `/signin/`. Email and password, phone code, Google, agency sign-up, the one-more-thing agency form, password reset, confirmation resend, demo accounts, consent record, redirect safety. Emailed and Google return links still point at `/app/signin.html` until Supabase's redirect allow-list is updated (see `lib/auth-config.ts`) |
 | Tayo chat | `app/toju.html` | migrated: `/tayo/`. Replies with matches, market history and checked-listings line, the matches canvas with map, quick answers, pin/share/rate, history, pinned, background, voice typing, replying about a home, the introduction (handover card, viewing times, ticket), asking about an agency, error and retry, memory note. Not ported: Zyn's fly-out emote (a face change and hop instead), and the "coming back from social" auto-open (dead code in the old page) |
 | Dream Home | `app/dream.html` | migrated: `/dream/`. Boards, modes, categories, vibes, signals, palette, pin by link, share target, the starter that never reaches Tayo until kept |
-| Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
+| Agency portal | `app/agency.html` (20k lines) | started: `/portal/#<pane>`. Done: the shell (sign-in and role gate, sidebar by role, pane in the address, agency header) and the **Verification** pane (documents, CAC, state licences). The other 11 panes open on the original portal from the sidebar (marked ↗) until each moves: Overview, CRM, Tayo Negotiator, Listings, Social studio, Marketing, Agents, Tours, Brand, Subscription, Billing. The default sign-in destination stays `/app/agency.html` until the portal is ready to be the front door (`DEFAULT_AGENCY_DEST`) |
 
 Links between pages go through `src/lib/routes.ts`. Property, Browse and Agency now point at the Next pages; Tayo chat and sign-in still point at `/app/*.html` until they move. The static `app/property.html`, `app/browse.html` and `app/agency-profile.html` are kept until the Next versions have been live and checked.
 A page is removed from `../app` only after its replacement passes the same Playwright check.
@@ -90,3 +90,10 @@ Google) must be on Supabase's redirect allow-list, which is set in the Supabase 
 
 Tests: `npm test` runs `src/lib/auth-actions.test.ts` (redirect safety, phone numbers, roles), `src/features/signin/signin.test.ts` (password rules, error wording),
 `src/features/chat/chat.test.ts` (unwrapping the model's reply, quick answers, context notes) and `src/features/dream/dream.test.ts` (what Tayo reads, the reducer).
+
+## Moving a portal pane
+
+1. Read the pane's markup (`#pane-<id>` in `app/agency.html`) and its script, and the data functions it calls in `app/agency-listings.js`.
+2. Port the data calls into `features/portal/data/<area>.ts`, typed, with the rules as pure functions (see `verification.ts`) and a test.
+3. Build `features/portal/panes/<Pane>.tsx`; register it in `MIGRATED` in `PortalShell.tsx`. The sidebar drops its ↗ marker by itself.
+4. Check it against a real agency account, then delete the pane from `agency.html` only after the Next version has been live and checked.
