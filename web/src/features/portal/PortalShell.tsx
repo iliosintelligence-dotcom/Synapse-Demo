@@ -14,6 +14,7 @@ import { OverviewPane } from "./panes/OverviewPane";
 import { CrmPane } from "./panes/CrmPane";
 import { MarketingPane } from "./panes/MarketingPane";
 import { NegotiatorPane } from "./panes/NegotiatorPane";
+import { SocialPane } from "./panes/SocialPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
@@ -58,6 +59,7 @@ const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
   overview: () => <OverviewPane />,
   marketing: () => <MarketingPane />,
   negotiator: () => <NegotiatorPane />,
+  social: () => <SocialPane />,
   subscription: () => <SubscriptionPane />,
   tours: () => <ToursPane />,
   verification: () => <VerificationPane />,
