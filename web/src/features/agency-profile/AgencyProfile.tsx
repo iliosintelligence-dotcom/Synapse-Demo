@@ -147,7 +147,7 @@ function ListingTile({ p }: { p: PropertyCard }) {
     <a className={s.listing} href={`/app/property.html?id=${encodeURIComponent(p.id)}`}>
       <div className={s.photo}>
         {img ? (
-          // eslint-disable-next-line @next/next/no-img-element
+           
           <img src={img} alt="" loading="lazy" />
         ) : (
           "No photo yet"

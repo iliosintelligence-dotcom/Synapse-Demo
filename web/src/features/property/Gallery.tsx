@@ -49,14 +49,14 @@ export function Gallery({ media, verified }: { media: PropertyMedia[] | null; ve
         <div className={s.thumbs}>
           {items.map((m, k) => (
             <button key={m.url} type="button" className={k === i ? s.thumbOn : ""} aria-label={`Show photo ${k + 1}`} onClick={() => setI(k)}>
-              {isVideo(m) ? <span>▶</span> : /* eslint-disable-next-line @next/next/no-img-element */ <img src={m.url} alt="" loading="lazy" />}
+              {isVideo(m) ? <span>▶</span> :   <img src={m.url} alt="" loading="lazy" />}
             </button>
           ))}
         </div>
       )}
       {open && (
         <div className={s.lightbox} role="dialog" aria-modal="true" aria-label="Photos" onClick={() => setOpen(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          { }
           <img src={cur.url} alt="" onClick={(e) => e.stopPropagation()} />
           {n > 1 && (
             <>

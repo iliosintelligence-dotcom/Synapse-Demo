@@ -25,7 +25,7 @@ export function SimilarHomes({ city, excludeId }: { city: string | null; exclude
           const img = coverUrl(r.property_media);
           return (
             <a key={r.id} href={`/property/?id=${encodeURIComponent(r.id)}`}>
-              {img ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={img} alt="" loading="lazy" /> : <div className={s.simPh} />}
+              {img ?   <img src={img} alt="" loading="lazy" /> : <div className={s.simPh} />}
               <div className={s.simBody}>
                 <div className={s.simPrice}>{naira(r.price)}</div>
                 <div className={s.simTitle}>{r.title ?? "Listing"}</div>

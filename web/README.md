@@ -25,9 +25,10 @@ src/
     property/page.tsx  /property/?id=<uuid>
   features/            one folder per product area; owns its queries, components and styles
     agency-profile/    queries.ts (Supabase reads) · AgencyProfile.tsx (UI) · AgencyProfile.module.css
+    browse/            queries.ts · shape.ts (feed row or Tayo match to one card shape) · filter.ts (search, filters, sort: pure) · local.ts (device storage) · ListingCard · CompareSheet · BrowsePage
     property/          queries.ts · types.ts · labels.ts (coded values in words) · PropertyPage.tsx composes Gallery, Overview, CostsCard, ListedBy, WhatWeChecked, SimilarHomes
   components/          shared UI used by more than one feature (AgencyLogo)
-  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, money, dates, CAC label), brand.ts (validation of agency input), media.ts (photo order, covers), saved.ts (saved homes), types.ts
+  lib/                 shared logic with no UI: supabase.ts, format.ts (naira, money, dates, CAC label), brand.ts (validation of agency input), media.ts (photo order, covers), saved.ts (saved homes, live across tabs), money.ts (price in the listing's own currency), routes.ts (where each page lives: one line to change when a page moves), types.ts
 ```
 
 Conventions
@@ -44,7 +45,8 @@ Conventions
 |---|---|---|
 | Agency page | `app/agency-profile.html` | migrated: `/agency/?id=` |
 | Property page | `app/property.html` | migrated in part: `/property/?id=`. Done: photos and viewer, overview, Tayo's take, deal and cost slip, listed by (agency and agent), what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers. Still on the old page: map and nearby, flood and property-intelligence rows, commute, viewing booking, the opening-offer block |
-| Browse, Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
+| Browse | `app/browse.html` | migrated in part: `/browse/`. Done: the live feed (verified, other, shared slices), Tayo's matches for the visitor, search (including "under 150m"), deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, empty and error states. Still on the old page: the map view and "search this area" |
+| Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
 The links in migrated pages that point at old pages (`/app/toju.html`, `/app/property.html`) stay as they are until those pages move.

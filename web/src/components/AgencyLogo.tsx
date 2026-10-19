@@ -12,7 +12,7 @@ export function AgencyLogo({ name, logoUrl, className }: { name: string; logoUrl
     <div className={className} style={{ position: "relative", overflow: "hidden" }}>
       <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>{(name.trim()[0] ?? "?").toUpperCase()}</span>
       {url && !failed && (
-        // eslint-disable-next-line @next/next/no-img-element
+         
         <img
           src={url}
           alt={`${name} logo`}
