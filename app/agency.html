@@ -2122,6 +2122,8 @@
     .wz-dots button.on { background: var(--ink); color: var(--surface); } .wz-dots button.on b { background: #FF8A2D; color: #15120F; }
     .wz-dots button.done b { background: #25683F; color: #fff; }
     html[data-theme="dark"] .wz-dots button { background: rgba(255,255,255,.08); } html[data-theme="dark"] .wz-dots button.on { background: #fff; color: #000; }
+    .pilot-banner { margin: 0 0 16px; padding: 14px 18px; border-radius: 16px; background: #FFF0E2; color: #15120F; font-size: 14px; line-height: 1.5; }
+    html[data-theme="dark"] .pilot-banner { background: #2A1B0E; color: #F5F2EE; }
     .fa-scrim { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 20px; background: rgba(15,15,15,.55); backdrop-filter: blur(6px); }
     .fa-card { width: min(460px, 100%); padding: 26px 26px 22px; border-radius: 24px; background: var(--surface, #fff); color: var(--ink, #15120F); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
     .fa-k { font: 700 11px var(--f-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
@@ -4911,6 +4913,7 @@
         <section class="pane" id="pane-billing">
           <div class="eyebrow">Account</div>
           <div class="h1">Billing</div>
+          <div class="pilot-banner irid neon"><b>Free pilot.</b> Everything is open and nothing is charged while the pilot runs. This page stays so you can see how billing will work.</div>
           <p class="sub">Your plan, what you have paid, and extras. Payments go through Paystack to ILIOS Digital, the company behind Synapse. Card details never touch Synapse.</p>
           <div class="bl-grid">
             <div class="card bl-now" id="blNow"><div class="bl-k">Your plan</div><div class="bl-state">Loading&hellip;</div></div>
@@ -7200,6 +7203,10 @@
        the end; a plain tap only reminds you what to do. It sits in front of the
        board's own handlers (capture phase), so they run exactly as before, once,
        when the hold completes. */
+    /* ON A PHONE IT IS A TAP (Eden, 2026-10-19: "you can't long press on mobile"). Holding is for a mouse; a touch screen has
+       no hover and a thumb that rarely holds still, so there Discard and Remove act on one tap, as ordinary buttons. */
+    const touchy = () => !!(window.matchMedia && matchMedia('(hover: none), (pointer: coarse)').matches);
+    const holdLabel = (l) => touchy() ? String(l).replace(/^Hold to (\w)/, (m, c) => c.toUpperCase()) : l;
     (function holdToConfirm() {
       const HOLD = 700;
       let timer = null, cur = null;
@@ -7215,13 +7222,14 @@
           t.dataset.swallow = '1';   /* the click the browser sends when you let go is the same press */
         }, HOLD);
       };
-      document.addEventListener('pointerdown', (e) => { const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (b && e.button === 0) begin(b); });
+      document.addEventListener('pointerdown', (e) => { if (touchy()) return; const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (b && e.button === 0) begin(b); });
       ['pointerup', 'pointercancel'].forEach((t) => document.addEventListener(t, stop));
       document.addEventListener('pointermove', (e) => { if (cur && !cur.contains(document.elementFromPoint(e.clientX, e.clientY))) stop(); });
       document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (b) begin(b); } });
       document.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') stop(); });
       document.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('.pc-ib.hold')) e.preventDefault(); });
       document.addEventListener('click', (e) => {
+        if (touchy()) return;                     /* a tap goes straight through to the button's own handler */
         const b = e.target.closest && e.target.closest('.pc-ib.hold'); if (!b) return;
         if (b.dataset.held === '1') { delete b.dataset.held; return; }
         e.preventDefault(); e.stopImmediatePropagation();
@@ -7242,11 +7250,11 @@
         line = '<span class="pc-l">Writing the captions\u2026</span>';
       } else if (stage === 'approval') {
         line = '<span class="cap" data-capedit="' + id + '" role="button" tabindex="0" aria-label="Open this caption to edit" title="Tap to edit">' + esc2((p.caption || '').slice(0, 200)) + '</span>';
-        acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', 'Hold to discard', 'hold');
+        acts = pcBtn('approve', id, 'check', 'Keep &amp; schedule', 'pri') + pcIcon('discard', id, 'close', holdLabel('Hold to discard'), 'hold');
       } else if (stage === 'scheduled') {
         chip = p.failure ? pcChip('warn', 'Retrying', 'Tried already: ' + p.failure) : '';
         line = '<span class="pc-l">' + PCI.clock + esc2(p.when || 'No time set') + '</span>';
-        acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', 'Hold to remove', 'hold');
+        acts = pcBtn('sendnow', id, 'send', 'Send now', 'ok') + pcIcon('reschedule', id, 'move', 'Move to another time') + pcIcon('duplicate', id, 'copy', 'Copy') + pcIcon('remove', id, 'trash', holdLabel('Hold to remove'), 'hold');
       } else if (stage === 'published') {
         const up = p.mineLive || (p.ampLive && p.ampLive.length);
         if (p.inbox) chip = pcChip('info', 'TikTok draft', 'In your TikTok inbox. Open TikTok, add a sound and post it: until then it is a draft only you can see.');
@@ -7263,7 +7271,7 @@
         if (p.status === 'failed') {
           chip = pcChip('bad', 'Failed', p.failure || 'This did not go out.');
           line = '<span class="pc-l pc-why" title="' + esc2(p.failure || 'This did not go out.') + '">' + esc2((p.failure || 'This did not go out.').length > 80 ? (p.failure || '').slice(0, 79).trim() + '…' : (p.failure || 'This did not go out.')) + '</span>';
-          acts = pcBtn('sendnow', id, 'retry', 'Try again', 'pri') + pcIcon('remove', id, 'trash', 'Hold to remove', 'hold');
+          acts = pcBtn('sendnow', id, 'retry', 'Try again', 'pri') + pcIcon('remove', id, 'trash', holdLabel('Hold to remove'), 'hold');
         } else {
           chip = pcChip('warn', 'No taps yet', 'Live since ' + (p.when || 'a while back') + (p.clicksRaw ? ', ' + p.clicksRaw + ' preview fetches, but' : ',') + ' not one person has tapped the link.');
           line = '<span class="pc-l">Live since ' + esc2(p.when || 'a while') + '</span>';
@@ -14605,6 +14613,9 @@
         var reason = q.get('reason') || '';
         q.delete('connected'); q.delete('detail'); q.delete('reason');
         history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+        /* WHEREVER THE CONNECTION CAME FROM, THE AGENCY LANDS IN THE SOCIAL STUDIO (Eden, 2026-10-19: it went back to the Branding
+           page on desktop). After start-up, not during it: goToPane reads a const declared further down. */
+        setTimeout(function () { try { if (typeof goToPane === 'function') goToPane('social'); } catch (e) { /* stay put */ } }, 0);
         /* A function deployed before `reason` existed still says "shared no
            Page" in words; recognise those, so the steps arrive whichever of
            the portal and the function goes live first. */
@@ -16717,8 +16728,8 @@
       el.id = 'freeAccess'; el.className = 'fa-scrim';
       el.innerHTML = '<div class="fa-card irid neon" role="dialog" aria-modal="true" aria-labelledby="faT">'
         + '<div class="fa-k">Nothing to pay right now</div>'
-        + '<h2 id="faT" class="fa-t">You have <em>30 days free</em> on the highest plan.</h2>'
-        + '<p class="fa-w">Every feature of Market Leader is open to your agency for the next 30 days: unlimited listings, the studio, the proximity alerts and the negotiator. There is nothing to pay and no card to enter. We will tell you well before it ends.</p>'
+        + '<h2 id="faT" class="fa-t">You are in the <em>free pilot</em>.</h2>'
+        + '<p class="fa-w">Every feature is open to your agency while we run the pilot: unlimited listings, the studio, the proximity alerts and the negotiator. There is nothing to pay and no card to enter. Billing stays here, and we will tell you well before anything changes.</p>'
         + '<div class="fa-row"><button type="button" class="btn btn-primary" id="faOk">Great, carry on</button></div></div>';
       document.body.appendChild(el);
       const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };

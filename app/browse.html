@@ -1183,7 +1183,7 @@
     render();
     // Pull a balanced set so all three quick filters (Buy / Rent / Shared) have
     // homes: whole-home sale+rent by trust, plus a slice of shared rooms.
-    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font)'
+    const BROWSE_BASE = SUPABASE_URL + '/rest/v1/properties?select=id,title,city,state,listing_type,price_period,property_type,verification_status,price,bedrooms,bathrooms,area_sqm,trust_score,expires_at,listed_at,currency,latitude,longitude,area_name,deal_structure,build_stage,handover_date,build_progress_pct,payment_plan,deposit_pct,instalment_months,units_available,plot_count,plot_size_sqm,min_investment,property_media(url,display_order,media_type),neighbourhoods(name),agencies(name,logo_url,brand_color,brand_font,cac_number)'
       + '&status=eq.live&is_active=is.true';
     const BROWSE_HDR = { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
     // Freshest-first (not trust-first) so the feed spans many neighbourhoods
@@ -1263,7 +1263,7 @@
            drawn by listingCardHtml, which checks every field before using it. */
         agency: (function (a) {
           a = Array.isArray(a) ? a[0] : a;
-          return a && a.name ? { name: a.name, logo: a.logo_url, color: a.brand_color, font: a.brand_font } : null;
+          return a && a.name ? { name: a.name, logo: a.logo_url, color: a.brand_color, font: a.brand_font, cac: a.cac_number } : null;
         })(p.agencies),
         // Where the pin goes. `loc` above is the label; these are the place.
         lat: p.latitude == null ? null : Number(p.latitude),

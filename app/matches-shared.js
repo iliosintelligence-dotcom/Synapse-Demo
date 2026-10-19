@@ -74,6 +74,7 @@
       /* Shown once it has loaded: a large logo arriving slowly otherwise
          reads as an empty white square where the initial was. */
       + '.listing .agy-mark img.on{opacity:1;}'
+      + '.listing .agy-tx{display:grid;min-width:0;line-height:1.25;}.listing .agy-cac{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-muted,#6B6B70);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.listing .agy-cac.no{opacity:.65;font-weight:500;}'
       + '.listing .agy-nm{min-width:0;font-size:12.5px;font-weight:600;color:var(--ink,#1C1C1E);'
       + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}';
     document.head.appendChild(s);
@@ -89,8 +90,12 @@
       +   '<span aria-hidden="true">' + esc(ini) + '</span>'
       +   (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" onload="this.classList.add(\'on\')" onerror="this.remove()">' : '')
       + '</span>'
-      + '<span class="agy-nm"' + (font ? ' style="font-family:' + esc(font) + 'var(--f-sans,sans-serif)"' : '') + '>'
-      +   esc(a.name) + '</span></div>';
+      + '<span class="agy-tx"><span class="agy-nm"' + (font ? ' style="font-family:' + esc(font) + 'var(--f-sans,sans-serif)"' : '') + '>'
+      +   esc(a.name) + '</span>'
+      /* The agency's CAC registration, where buyers can check it themselves. When it is not on file it says so,
+         rather than leaving the slot blank. */
+      +   '<span class="agy-cac' + (a.cac ? '' : ' no') + '">' + (a.cac ? 'CAC ' + esc((function (v) { return /^[a-z]/i.test(v) ? v : 'RC ' + v; })(String(a.cac).trim())) : 'CAC not yet on file') + '</span>'
+      + '</span></div>';
   }
 
   /* ── Money, in whatever the listing is priced in ────────────────────────
