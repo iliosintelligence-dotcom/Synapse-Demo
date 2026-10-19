@@ -9,6 +9,7 @@ import { fetchAgencyHeader, forgetAgency, initialsOf, myRole, tierLabel, type Ag
 import { AgentsPane } from "./panes/AgentsPane";
 import { BrandPane } from "./panes/BrandPane";
 import { BillingPane } from "./panes/BillingPane";
+import { CrmPane } from "./panes/CrmPane";
 import { MarketingPane } from "./panes/MarketingPane";
 import { NegotiatorPane } from "./panes/NegotiatorPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
@@ -50,6 +51,7 @@ const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
   agents: () => <AgentsPane />,
   brand: () => <BrandPane />,
   billing: () => <BillingPane />,
+  crm: () => <CrmPane />,
   marketing: () => <MarketingPane />,
   negotiator: () => <NegotiatorPane />,
   subscription: () => <SubscriptionPane />,
