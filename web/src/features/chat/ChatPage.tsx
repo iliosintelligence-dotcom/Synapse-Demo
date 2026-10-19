@@ -14,7 +14,7 @@ import { initialChat, introUnlocked, useChat } from "./useChat";
 import { isHiddenNote } from "./context";
 import s from "./Chat.module.css";
 
-/** /tayo/. Opens with whatever the address says (?reply=, ?home=, ?ask=, ?new=, ?agency=) on top of what this device remembers. */
+/** /chat/. Opens with whatever the address says (?reply=, ?home=, ?ask=, ?new=, ?agency=) on top of what this device remembers. */
 export function ChatPage() {
   return <ClientOnly fallback={<div className={s.boot} aria-hidden="true" />}><ChatInner /></ClientOnly>;
 }

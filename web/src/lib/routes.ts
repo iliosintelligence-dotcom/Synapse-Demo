@@ -8,7 +8,8 @@ export const routes = {
   browse: () => "/browse/",
   /** Sign-in is a Next page, but emailed and Google return links still go to /app/signin.html (see lib/auth-config.ts). */
   signin: (query = "") => `/signin/${query}`,
-  tayo: (query = "") => `/tayo/${query}`,
-  tayoAbout: (listingId: string) => `/tayo/?reply=${encodeURIComponent(listingId)}`,
+  /** The chat lives at /chat/, NOT /tayo/: /tayo and /tayo/:ch are the Instagram bio and campaign links (see web/vercel.json), which redirect here with the channel attached. */
+  tayo: (query = "") => `/chat/${query}`,
+  tayoAbout: (listingId: string) => `/chat/?reply=${encodeURIComponent(listingId)}`,
   dream: () => "/dream/",
 } as const;

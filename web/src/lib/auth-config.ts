@@ -18,5 +18,5 @@ export const CANONICAL_ORIGIN = "https://synapsecore.dev";
 export const POLICY_VERSION = "2026-09-19";
 
 /** Pages that are still the static site, for `next` destinations and defaults. */
-export const DEFAULT_CUSTOMER_DEST = "/tayo/";
+export const DEFAULT_CUSTOMER_DEST = "/chat/";
 export const DEFAULT_AGENCY_DEST = "/app/agency.html";
