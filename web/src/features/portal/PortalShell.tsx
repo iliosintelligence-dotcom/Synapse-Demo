@@ -18,6 +18,7 @@ import { SocialPane } from "./panes/SocialPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
+import { Bell } from "./Bell";
 import { AdvisorPanel } from "./AdvisorPanel";
 import { ToastProvider } from "./ui/Toast";
 import { panesFor, resolvePane, type PaneId } from "./roles";
@@ -156,6 +157,7 @@ export function PortalShell() {
         <div className={s.topbar}>
           <span className={s.crumb}>{name}</span>
           <span className={s.spacer} />
+          <Bell allowed={allowed} onGo={go} />
           <button type="button" className={s.out} onClick={() => signOut().then(() => window.location.reload())}>Sign out</button>
         </div>
         <main className={s.main}>
