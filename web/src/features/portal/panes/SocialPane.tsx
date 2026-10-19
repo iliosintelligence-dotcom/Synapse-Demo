@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListingRefs, type ListingRef } from "../data/marketing";
 import { SCHEDULABLE, STAGE_INFO, buildCards, discardDraft, discardPost, fetchStudio, groupByDay, platformName, retryPost, saveDraftText, scheduleDraft, type Card, type Draft, type Stage } from "../data/social";
+import { CaptionEditor } from "./CaptionEditor";
+import { ComposerPanel } from "./ComposerPanel";
+import { loadBrand, type BrandRecord } from "../data/brand";
+import { listingFacts, type ListingFacts } from "../data/composer";
 import { ChannelsPanel } from "./ChannelsPanel";
 import { CampaignPanel } from "./CampaignPanel";
 import { useIntent } from "../intent";
@@ -26,7 +30,8 @@ export function SocialPane() {
   const [editing, setEditing] = useState<Draft | null>(null);
   const [busy, setBusy] = useState("");
   const [gen, setGen] = useState(false);
-  useIntent("new-post", () => setGen(true));
+  const [post, setPost] = useState(false);
+  useIntent("new-post", () => setPost(true));
 
   const load = useCallback(async () => {
     try { const { drafts, posts } = await fetchStudio(); setCards(buildCards(drafts, posts)); setFailed(""); } catch (e) { setFailed(reason(e, "please refresh")); }
@@ -54,12 +59,14 @@ export function SocialPane() {
             <button type="button" aria-pressed={view === "pipeline"} onClick={() => setView("pipeline")}>Pipeline</button>
             <button type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar</button>
           </div>
-          <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setGen((v) => !v)}>{gen ? "Close generator" : "Generate captions"}</button>
+          <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setPost((v) => !v)}>{post ? "Close composer" : "New post"}</button>
+          <button type="button" className={s.btn} onClick={() => setGen((v) => !v)}>{gen ? "Close generator" : "Generate a campaign"}</button>
         </div>
       </div>
 
       <ChannelsPanel onChanged={() => void load()} />
 
+      {post && <ComposerPanel onSent={() => void load()} onClose={() => setPost(false)} />}
       {gen && <CampaignPanel onSaved={() => void load()} onClose={() => setGen(false)} />}
 
       {!cards.length && <div className={s.blank}><b>No posts yet</b><p className={s.muted}>Generate captions for a listing, review them here, then choose when they go out.</p><button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setGen(true)}>Generate captions</button></div>}
@@ -120,6 +127,9 @@ function ScheduleDialog({ draft, listing, onClose, onDone }: { draft: Draft; lis
   const [at, setAt] = useState(defaultSlot);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [facts, setFacts] = useState<ListingFacts | null>(null);
+  const [brand, setBrand] = useState<Partial<BrandRecord> | null>(null);
+  useEffect(() => { let live = true; listingFacts(draft.propertyId).then((f) => live && setFacts(f)).catch(() => {}); loadBrand().then((b) => live && setBrand(b)).catch(() => {}); return () => { live = false; }; }, [draft.propertyId]);
   const go = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true); setErr("");
@@ -133,7 +143,7 @@ function ScheduleDialog({ draft, listing, onClose, onDone }: { draft: Draft; lis
     <div className={s.scrim} onClick={onClose}>
       <form className={s.dialog} role="dialog" aria-modal="true" aria-label="Review and schedule" onClick={(e) => e.stopPropagation()} onSubmit={go}>
         <b>{listing ?? "Review caption"}</b>
-        <label className={s.field}>Caption<textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} /></label>
+        <div className={s.field}>Caption<CaptionEditor value={text} onChange={setText} channel={platform} listingId={draft.propertyId} facts={facts} brand={brand} rows={7} /></div>
         <label className={s.field}>Channel<select value={platform} onChange={(e) => setPlatform(e.target.value)}>{SCHEDULABLE.map((p) => <option key={p} value={p}>{platformName(p)}</option>)}</select></label>
         <label className={s.field}>Post at<input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} /></label>
         <p className={s.muted} style={{ margin: 0, fontSize: 12.5 }}>This is a real post, not a rehearsal. It goes out on the account connected for that channel.</p>
