@@ -6,7 +6,9 @@ import { roleOf } from "@/lib/auth-actions";
 import { useSession } from "@/lib/auth";
 import { routes } from "@/lib/routes";
 import { fetchAgencyHeader, forgetAgency, initialsOf, myRole, tierLabel, type AgencyHeader } from "./data/agency";
+import { BrandPane } from "./panes/BrandPane";
 import { VerificationPane } from "./panes/VerificationPane";
+import { ToastProvider } from "./ui/Toast";
 import { panesFor, resolvePane, type PaneId } from "./roles";
 import s from "./Portal.module.css";
 
@@ -39,6 +41,7 @@ const ALL_PANES: PaneId[] = GROUPS.flatMap((g) => g.panes.map((p) => p.id));
 
 /** The panes that already live here. Everything else opens on the original portal until it moves; see README. */
 const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
+  brand: () => <BrandPane />,
   verification: () => <VerificationPane />,
 };
 
@@ -94,6 +97,7 @@ export function PortalShell() {
   const name = agency?.name || "Your agency";
 
   return (
+    <ToastProvider>
     <div className={s.shell} data-collapsed={collapsed}>
       <aside className={s.side} id="tabs" aria-label="Workspace">
         <div className={s.brand}>
@@ -141,6 +145,7 @@ export function PortalShell() {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }
 
