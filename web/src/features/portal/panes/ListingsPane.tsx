@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListings, filterListings, freshness, locationOf, needsRenewal, priceLabel, relist, relistAll, removeListing, setListingActive, type Listing, type ListingFilter } from "../data/listings";
+import { ShareKit } from "./ShareKit";
 import { ListingWizard } from "../listing-form/ListingWizard";
 import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
@@ -18,6 +19,7 @@ export function ListingsPane() {
   const [filter, setFilter] = useState<ListingFilter>("all");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState("");
+  const [share, setShare] = useState<string | null>(null);
   const [wizard, setWizard] = useState<{ id: string | null } | null>(null);
   useIntent("new-listing", () => setWizard({ id: null }));
 
@@ -66,6 +68,8 @@ export function ListingsPane() {
                     <span className={`${s.chip} ${f.cls === "warn" ? s.warn : f.cls === "dead" ? s.dead : ""}`}>{f.label}</span>
                   </div>
                   <div className={s.acts}>
+                    {!f.expired && <button type="button" className={s.btn} onClick={() => setShare(l.id)}>Share</button>}
+                    {!f.expired && <button type="button" className={s.btn} onClick={() => setShare(l.id)}>Share</button>}
                     <button type="button" className={s.btn} disabled={busy === `r${l.id}`} onClick={() => void run(`r${l.id}`, async () => { await relist(l.id); return "Re-listed. It stays visible to buyers."; }, "Could not re-list that.")}>Re-list</button>
                     <button type="button" className={s.btn} disabled={busy === `a${l.id}`} onClick={() => void run(`a${l.id}`, async () => { await setListingActive(l.id, !l.active); return l.active ? "Hidden from buyers." : "Live again."; }, "Could not change that.")}>{l.active ? "Deactivate" : "Activate"}</button>
                     <button type="button" className={s.btn} onClick={() => setWizard({ id: l.id })}>Edit</button>
@@ -77,6 +81,7 @@ export function ListingsPane() {
           })}
         </div>
       )}
+    {share && <ShareKit listingId={share} onClose={() => setShare(null)} />}
     {wizard && <ListingWizard editId={wizard.id} onClose={() => setWizard(null)} onSaved={() => { setWizard(null); void load(); }} />}
     </>
   );

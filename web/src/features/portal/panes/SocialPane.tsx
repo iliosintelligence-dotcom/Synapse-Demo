@@ -7,6 +7,7 @@ import { CaptionEditor } from "./CaptionEditor";
 import { ComposerPanel } from "./ComposerPanel";
 import { loadBrand, type BrandRecord } from "../data/brand";
 import { listingFacts, type ListingFacts } from "../data/composer";
+import { ShareKit } from "./ShareKit";
 import { ChannelsPanel } from "./ChannelsPanel";
 import { CampaignPanel } from "./CampaignPanel";
 import { useIntent } from "../intent";
@@ -31,6 +32,7 @@ export function SocialPane() {
   const [busy, setBusy] = useState("");
   const [gen, setGen] = useState(false);
   const [post, setPost] = useState(false);
+  const [share, setShare] = useState<string | null>(null);
   useIntent("new-post", () => setPost(true));
 
   const load = useCallback(async () => {
@@ -64,6 +66,7 @@ export function SocialPane() {
         </div>
       </div>
 
+      {share && <ShareKit listingId={share} onClose={() => setShare(null)} />}
       <ChannelsPanel onChanged={() => void load()} />
 
       {post && <ComposerPanel onSent={() => void load()} onClose={() => setPost(false)} />}
@@ -92,6 +95,7 @@ export function SocialPane() {
                         <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setEditing(draftOf(c))}>Review and schedule</button>
                         <button type="button" className={s.btn} disabled={busy === c.key} onClick={() => void run(c.key, async () => { await discardDraft(c.id); return "Draft discarded."; }, "Could not discard that.")}>Discard</button>
                       </>}
+                      {c.kind === "post" && c.post?.status === "published" && <button type="button" className={s.btn} onClick={() => setShare(c.propertyId)}>Share it too</button>}
                       {c.kind === "post" && c.post?.status === "failed" && <button type="button" className={s.btn} disabled={busy === c.key} onClick={() => void run(c.key, async () => { await retryPost(c.id); return "Back in the queue."; }, "Could not retry that.")}>Try again</button>}
                       {c.kind === "post" && c.post?.status !== "published" && <button type="button" className={s.btn} disabled={busy === `x${c.key}`} onClick={() => { if (window.confirm("Remove this post?")) void run(`x${c.key}`, async () => { await discardPost(c.id); return "Post removed."; }, "Could not remove that."); }}>Remove</button>}
                     </div>
