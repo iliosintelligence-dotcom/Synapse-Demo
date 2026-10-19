@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AgencyLogo } from "@/components/AgencyLogo";
 import { brandHex, safeUrl } from "@/lib/brand";
 import { cacLabel, naira, pricePeriod } from "@/lib/format";
+import { routes } from "@/lib/routes";
 import type { Agency, PropertyCard } from "@/lib/types";
 import { fetchAgency, fetchAgencyListings } from "./queries";
 import s from "./AgencyProfile.module.css";
@@ -144,7 +145,7 @@ function ListingTile({ p }: { p: PropertyCard }) {
   const place = [p.area_name && p.area_name.length <= 40 ? p.area_name : "", p.city].filter(Boolean).join(", ");
   const meta = [p.bedrooms ? `${p.bedrooms} bed` : "", p.verification_status === "verified" ? "Verified" : "Not yet verified"].filter(Boolean).join(" · ");
   return (
-    <a className={s.listing} href={`/app/property.html?id=${encodeURIComponent(p.id)}`}>
+    <a className={s.listing} href={routes.property(p.id)}>
       <div className={s.photo}>
         {img ? (
            

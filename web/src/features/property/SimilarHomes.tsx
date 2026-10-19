@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { naira } from "@/lib/format";
+import { routes } from "@/lib/routes";
 import { coverUrl } from "@/lib/media";
 import { fetchSimilar } from "./queries";
 import type { SimilarHome } from "./types";
@@ -24,7 +25,7 @@ export function SimilarHomes({ city, excludeId }: { city: string | null; exclude
         {rows.map((r) => {
           const img = coverUrl(r.property_media);
           return (
-            <a key={r.id} href={`/property/?id=${encodeURIComponent(r.id)}`}>
+            <a key={r.id} href={routes.property(r.id)}>
               {img ?   <img src={img} alt="" loading="lazy" /> : <div className={s.simPh} />}
               <div className={s.simBody}>
                 <div className={s.simPrice}>{naira(r.price)}</div>

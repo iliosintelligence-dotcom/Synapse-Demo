@@ -95,7 +95,18 @@ export async function fetchFlood(propertyId: string): Promise<FloodRow | null> {
   return fresh && fresh.property_id ? fresh : null;
 }
 
-export interface Place { name: string | null; category: string; lat: number | null; lon: number | null; distance_m: number | null; drive_text: string | null; drive_seconds: number | null }
+export interface Place {
+  name: string | null;
+  category: string;
+  lat: number | null;
+  lon: number | null;
+  distance_m: number | null;
+  drive_text: string | null;
+  drive_seconds: number | null;
+  drive_seconds_morning?: number | null;
+  drive_seconds_midday?: number | null;
+  drive_seconds_evening?: number | null;
+}
 export async function fetchSurroundings(propertyId: string): Promise<Place[]> {
   const { data } = await supabase.rpc("property_surroundings", { p_property_id: propertyId, p_limit: 1000 });
   return Array.isArray(data) ? (data as Place[]) : [];

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { routes } from "@/lib/routes";
 import { useSaved } from "@/lib/saved";
+import { Commute } from "./Commute";
 import { CostsCard } from "./CostsCard";
 import { Gallery } from "./Gallery";
 import { Intelligence } from "./Intelligence";
@@ -53,14 +55,14 @@ export function PropertyPage({ id }: { id: string }) {
 
   if (failed) return <main className={s.page}><p className={s.empty}>This listing couldn’t load. Check your connection and try again.</p></main>;
   if (p === undefined) return <main className={s.page}><p className={s.empty}>Loading listing…</p></main>;
-  if (p === null) return <main className={s.page}><p className={s.empty}>This home is no longer listed. <a href="/app/browse.html">Back to your matches</a></p></main>;
+  if (p === null) return <main className={s.page}><p className={s.empty}>This home is no longer listed. <a href={routes.browse()}>Back to your matches</a></p></main>;
 
   const takeRaw = Array.isArray(p.property_enrichment) ? p.property_enrichment[0] : p.property_enrichment;
   const take = takeRaw?.toju_summary ?? null;
 
   return (
     <main className={s.page}>
-      <a className={s.back} href="/app/browse.html">← Back to matches</a>
+      <a className={s.back} href={routes.browse()}>← Back to matches</a>
       <div className={s.layout}>
         <div className={s.left}>
           <Gallery media={p.property_media} verified={p.verification_status === "verified"} />
@@ -77,14 +79,11 @@ export function PropertyPage({ id }: { id: string }) {
           <OfferCard p={p} />
           <Intelligence p={p} />
           <Nearby p={p} />
+          <Commute p={p} />
           <Viewing propertyId={p.id} />
           <ListedBy p={p} />
           <WhatWeChecked p={p} />
           <SimilarHomes city={p.city} excludeId={p.id} />
-          <p className={s.moved}>
-            Commute times are still on the{" "}
-            <a href={`/app/property.html?id=${encodeURIComponent(p.id)}`}>original page</a> while they move across.
-          </p>
         </div>
       </div>
 

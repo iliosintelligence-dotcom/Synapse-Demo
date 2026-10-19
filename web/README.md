@@ -44,12 +44,12 @@ Conventions
 | Page | Old file | Status |
 |---|---|---|
 | Agency page | `app/agency-profile.html` | migrated: `/agency/?id=` |
-| Property page | `app/property.html` | migrated except commute times: `/property/?id=`. Done: photos and viewer, overview, Tayo's take, deal and cost slip, opening offer, property intelligence with the flood score, the map with nearby places and the flood map, viewing booking, listed by (agency and agent), what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers. Still on the old page: commute intelligence (the buyer's own places and drive times) |
+| Property page | `app/property.html` | migrated: `/property/?id=`. Photos and viewer, overview, Tayo's take, deal and cost slip, opening offer, property intelligence with the flood score, the map with nearby places and the flood map, commute times (stored survey with measured drive times, else OpenStreetMap and OSRM estimates, plus the buyer's own places), viewing booking, listed by, what we checked, similar homes, save, share, contact, channel attribution, exact address for introduced buyers |
 | Browse | `app/browse.html` | migrated except "search this area": `/browse/`. Done: the live feed, Tayo's matches, search, deal filters, sort, verified-only, saved homes, compare with Tayo's verdict, recently viewed, new since your last visit, the map view with price pins, empty and error states. Still on the old page: "search this area" on the map |
 | Tayo chat, Sign in, Dream Home | `app/*.html` | not started |
 | Agency portal | `app/agency.html` (20k lines) | not started; to be split by feature |
 
-The links in migrated pages that point at old pages (`/app/toju.html`, `/app/property.html`) stay as they are until those pages move.
+Links between pages go through `src/lib/routes.ts`. Property, Browse and Agency now point at the Next pages; Tayo chat and sign-in still point at `/app/*.html` until they move. The static `app/property.html`, `app/browse.html` and `app/agency-profile.html` are kept until the Next versions have been live and checked.
 A page is removed from `../app` only after its replacement passes the same Playwright check.
 
 ## Mobile (Capacitor)

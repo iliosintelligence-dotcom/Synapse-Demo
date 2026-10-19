@@ -9,7 +9,7 @@ export default function Home() {
       <ul>
         <li><Link href="/agency/?id=0f90aa7a-4329-4bb8-b36d-18aa5079289d">Agency page</Link> (sample agency)</li>
         <li><Link href="/browse/">Browse</Link> </li>
-        <li><Link href="/property/?id=c0893b6a-ce6b-46c7-8030-bb55a2704532">Property page</Link> (sample listing; commute times still on the old page)</li>
+        <li><Link href="/property/?id=c0893b6a-ce6b-46c7-8030-bb55a2704532">Property page</Link> (sample listing)</li>
       </ul>
     </main>
   );
