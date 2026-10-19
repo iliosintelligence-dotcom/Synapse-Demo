@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BrandRecord } from "../data/brand";
 import { QUICK_REWRITES, capWarnings, reviseCaption, type ListingFacts } from "../data/composer";
+import { TagRow } from "./TagRow";
 import s from "./Composer.module.css";
 
 /** One caption, at a readable size, with what it is missing and a place to ask for it to be changed in words. Undo steps back through every rewrite. */
@@ -28,6 +29,7 @@ export function CaptionEditor({ value, onChange, channel, listingId, facts, bran
     <div className={s.ced}>
       <textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} aria-label="Caption" disabled={busy} />
       <div className={s.meta}>{value.length} characters{warnings.length > 0 && <span className={s.warns}>{warnings.map((w) => <span key={w}>⚠ {w}</span>)}</span>}</div>
+      <TagRow value={value} onChange={onChange} />
       <div className={s.quick}>{QUICK_REWRITES.map(([label, q]) => <button key={label} type="button" disabled={busy} onClick={() => void rewrite(q)}>{label}</button>)}{history.length > 0 && <button type="button" disabled={busy} onClick={() => { onChange(history[history.length - 1]); setHistory((h) => h.slice(0, -1)); setNote("Undone."); }}>Undo</button>}</div>
       <div className={s.askRow}>
         <input type="text" placeholder="Ask for a change: “lead with the service charge”" value={ask} aria-label="Ask for a change" onChange={(e) => setAsk(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void rewrite(ask); } }} />
