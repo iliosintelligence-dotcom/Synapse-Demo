@@ -1439,7 +1439,7 @@
   var BRAND_FIELDS = [
     'name', 'tagline', 'description', 'specialties',
     'logo_url', 'logo_dark_url', 'brand_color', 'brand_color_secondary', 'brand_font',
-    'brand_voice', 'whatsapp_number', 'city', 'social',
+    'brand_voice', 'whatsapp_number', 'city', 'social', 'cac_number',
   ];
 
   function loadBrand() {
