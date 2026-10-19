@@ -6,7 +6,7 @@ import type { PaneId } from "../roles";
 export interface Progress { role: string; logo: boolean; cac: boolean; listings: number; channels: number; posts: number; team: number; leads: number; referrals: number; repliedLead?: boolean }
 
 /** Where a step sends you, and what it asks that pane to do on arrival. */
-export type Intent = "new-listing" | "new-post" | "invite";
+export type Intent = "new-listing" | "new-post" | "invite" | "profile";
 export interface Step { id: string; title: string; why: string; cta: string; done: boolean; pane: PaneId; intent?: Intent; legacy?: string }
 
 /**

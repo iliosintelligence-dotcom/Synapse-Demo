@@ -3,7 +3,7 @@ import { agencyId } from "./agency";
 
 export interface Teammate {
   id: string; name: string; role: string; joined: string | null; avatar: string | null;
-  years: number | null; areas: string[]; closed: number | null; followers: number | null; likes: number | null;
+  bio: string | null; years: number | null; areas: string[]; closed: number | null; followers: number | null; likes: number | null;
 }
 export interface Invite { id: string; email: string; role: string; token: string; expires_at: string }
 export interface TeamMessage { id: string; body: string; at: string; mine: boolean }
@@ -15,7 +15,7 @@ export async function fetchRoster(): Promise<Teammate[]> {
   const aid = await agencyId();
   if (!aid) return [];
   const r = await supabase.from("agency_members")
-    .select("profile_id, role, joined_at, profiles(full_name, avatar_url, agent_profiles(years_experience, areas_covered, closed_deals))")
+    .select("profile_id, role, joined_at, profiles(full_name, avatar_url, agent_profiles(bio, years_experience, areas_covered, closed_deals))")
     .eq("agency_id", aid).is("deleted_at", null);
   if (r.error) throw r.error;
   const rows = (r.data ?? []) as unknown as Array<Record<string, unknown>>;
@@ -35,6 +35,7 @@ export async function fetchRoster(): Promise<Teammate[]> {
       role: m.role as string,
       joined: (m.joined_at as string) ?? null,
       avatar: (p.avatar_url as string) ?? null,
+      bio: (ap.bio as string) || null,
       years: num(ap.years_experience),
       areas: (ap.areas_covered as string[]) ?? [],
       closed: num(ap.closed_deals),

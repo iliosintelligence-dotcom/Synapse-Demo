@@ -19,6 +19,8 @@ import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { SetupProvider, SetupRing } from "./Setup";
+import { ProfileDrawer } from "./ProfileDrawer";
+import { useIntent } from "./intent";
 import { Bell } from "./Bell";
 import { AdvisorPanel } from "./AdvisorPanel";
 import { ToastProvider } from "./ui/Toast";
@@ -77,6 +79,8 @@ export function PortalShell() {
   const [agency, setAgency] = useState<AgencyHeader | null>(null);
   const [active, setActive] = useState<PaneId>("overview");
   const [collapsed, setCollapsed] = useState(false);
+  const [profile, setProfile] = useState(false);
+  useIntent("profile", () => setProfile(true));
 
   const account = session?.user ?? null;
   const side = session === undefined ? "loading" : !account ? "out" : roleOf(account) !== "agency" ? "wrong" : "ok";
@@ -161,6 +165,7 @@ export function PortalShell() {
           <span className={s.spacer} />
           <SetupRing />
           <Bell allowed={allowed} onGo={go} />
+          <button type="button" className={s.out} onClick={() => setProfile(true)}>My profile</button>
           <button type="button" className={s.out} onClick={() => signOut().then(() => window.location.reload())}>Sign out</button>
         </div>
         <main className={s.main}>
@@ -171,6 +176,7 @@ export function PortalShell() {
         </main>
       </div>
       <AdvisorPanel pane={active} />
+      {profile && <ProfileDrawer onClose={() => setProfile(false)} onSaved={() => window.dispatchEvent(new CustomEvent("portal:profile-saved"))} />}
     </div>
     </SetupProvider>
     </ToastProvider>

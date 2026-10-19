@@ -6,7 +6,8 @@ import {
   createInvite, fetchInvites, fetchOpenLeadCounts, fetchRoster, fetchThread, inviteLink, revokeInvite, sendTeamMessage, statusOf, validEmail,
   type Invite, type TeamMessage, type Teammate,
 } from "../data/agents";
-import { useIntent } from "../intent";
+import { useSession } from "@/lib/auth";
+import { requestIntent, useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Agents.module.css";
 
@@ -31,6 +32,9 @@ export function AgentsPane() {
     } catch { setFailed(true); }
   }, []);
   useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  // a profile saved from the top bar changes this card
+  useEffect(() => { const h = () => void load(); window.addEventListener("portal:profile-saved", h); return () => window.removeEventListener("portal:profile-saved", h); }, [load]);
+  const myId = useSession()?.user?.id;
 
   const agents = useMemo(() => {
     const list = (team ?? []).filter((m) => m.role === "agent");
@@ -77,7 +81,7 @@ export function AgentsPane() {
                   <div><b>{dash(a.followers)}</b><span>Followers</span></div>
                   <div><b>{dash(a.likes)}</b><span>Likes</span></div>
                 </div>
-                <div className={s.acts}><button type="button" className={s.ghost} onClick={() => setDialog(a)}>Message</button></div>
+                <div className={s.acts}>{a.id === myId ? <button type="button" className={s.primary} onClick={() => requestIntent("profile")}>{a.bio ? "Edit my profile" : "Complete your profile"}</button> : <button type="button" className={s.ghost} onClick={() => setDialog(a)}>Message</button>}</div>
               </article>
             );
           })}
