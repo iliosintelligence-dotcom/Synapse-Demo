@@ -2205,8 +2205,8 @@
         const a = p.agencies && (Array.isArray(p.agencies) ? p.agencies[0] : p.agencies);
         const nm = (a && a.name) || 'Agency not published';
         set('pvAgencyName', nm);
-        /* the agency's CAC registration under its name (Eden, 2026-10-19) */
-        (function () { const mEl = document.getElementById('pvAgencyMeta'); if (mEl && !mEl.dataset.cac) { mEl.dataset.cac = '1'; mEl.textContent = (a && a.cac_number) ? 'CAC ' + (function (v) { return /^[a-z]/i.test(v) ? v : 'RC ' + v; })(String(a.cac_number).trim()) : 'CAC not yet on file'; } })();
+        /* the agency's CAC registration under its name (Eden, 2026-10-19); the final line is written with the tier below */
+        const cacTxt = (a && a.cac_number) ? 'CAC ' + (function (v) { return /^[a-z]/i.test(v) ? v : 'RC ' + v; })(String(a.cac_number).trim()) : (a && a.cac_certificate_on_file) ? 'CAC certificate on file' : 'CAC not yet on file';
         const agHref = p.agency_id ? 'agency-profile.html?id=' + encodeURIComponent(p.agency_id) : '';
         const agLink = document.getElementById('pvAgencyLink');
         const agPage = document.getElementById('pvAgencyPage');
@@ -2279,9 +2279,7 @@
         }
         const tier = a && a.verification_tier;
         AGENCY_VERIFIED = tier === 'verified';
-        set('pvAgencyMeta', tier === 'verified' ? '\u00b7 Verified'
-                          : tier ? '\u00b7 ' + tier
-                          : '\u00b7 Not yet verified');
+        set('pvAgencyMeta', cacTxt + (tier === 'verified' ? ' · Verified by Synapse' : ''));
       })();
 
       /* ── booking an inspection ────────────────────────────────────────
@@ -2671,7 +2669,7 @@
     (function hydrate() {
       if (!URL_ID) { fatal('No listing selected', 'Open a property from your matches or from Browse.'); return; }
       const q = SUPABASE_URL + '/rest/v1/properties'
-        + '?select=*,property_media(url,display_order,media_type),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline,social,cac_number)'
+        + '?select=*,property_media(url,display_order,media_type),property_enrichment(toju_summary,what_to_watch),agencies(name,verification_tier,logo_url,brand_color,brand_font,tagline,social,cac_number,cac_certificate_on_file)'
         // The neighbourhood record this listing is actually attached to.
         // Without it the section below had nothing to draw from, which is
         // why it was hardcoded to Lekki Phase 1 on every property.

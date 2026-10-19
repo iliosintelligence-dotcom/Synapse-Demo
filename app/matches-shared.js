@@ -94,7 +94,7 @@
       +   esc(a.name) + '</span>'
       /* The agency's CAC registration, where buyers can check it themselves. When it is not on file it says so,
          rather than leaving the slot blank. */
-      +   '<span class="agy-cac' + (a.cac ? '' : ' no') + '">' + (a.cac ? 'CAC ' + esc((function (v) { return /^[a-z]/i.test(v) ? v : 'RC ' + v; })(String(a.cac).trim())) : 'CAC not yet on file') + '</span>'
+      +   '<span class="agy-cac' + (a.cac || a.cacDoc ? '' : ' no') + '">' + (a.cac ? 'CAC ' + esc((function (v) { return /^[a-z]/i.test(v) ? v : 'RC ' + v; })(String(a.cac).trim())) : (a.cacDoc ? 'CAC certificate on file' : 'CAC not yet on file')) + '</span>'
       + '</span></div>';
   }
 
