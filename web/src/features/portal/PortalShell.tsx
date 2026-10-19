@@ -18,6 +18,7 @@ import { SocialPane } from "./panes/SocialPane";
 import { SubscriptionPane } from "./panes/SubscriptionPane";
 import { ToursPane } from "./panes/ToursPane";
 import { VerificationPane } from "./panes/VerificationPane";
+import { AdvisorPanel } from "./AdvisorPanel";
 import { ToastProvider } from "./ui/Toast";
 import { panesFor, resolvePane, type PaneId } from "./roles";
 import s from "./Portal.module.css";
@@ -164,6 +165,7 @@ export function PortalShell() {
           {Pane ? Pane() : <OriginalPane pane={def} />}
         </main>
       </div>
+      <AdvisorPanel pane={active} />
     </div>
     </ToastProvider>
   );
