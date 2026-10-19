@@ -6,6 +6,7 @@ import { roleOf } from "@/lib/auth-actions";
 import { useSession } from "@/lib/auth";
 import { routes } from "@/lib/routes";
 import { fetchAgencyHeader, forgetAgency, initialsOf, myRole, tierLabel, type AgencyHeader } from "./data/agency";
+import { AgentsPane } from "./panes/AgentsPane";
 import { BrandPane } from "./panes/BrandPane";
 import { VerificationPane } from "./panes/VerificationPane";
 import { ToastProvider } from "./ui/Toast";
@@ -41,6 +42,7 @@ const ALL_PANES: PaneId[] = GROUPS.flatMap((g) => g.panes.map((p) => p.id));
 
 /** The panes that already live here. Everything else opens on the original portal until it moves; see README. */
 const MIGRATED: Partial<Record<PaneId, () => React.ReactNode>> = {
+  agents: () => <AgentsPane />,
   brand: () => <BrandPane />,
   verification: () => <VerificationPane />,
 };
