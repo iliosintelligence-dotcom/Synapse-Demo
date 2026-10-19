@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchListingRefs, type ListingRef } from "../data/marketing";
 import { SCHEDULABLE, STAGE_INFO, buildCards, discardDraft, discardPost, fetchStudio, groupByDay, platformName, retryPost, saveDraftText, scheduleDraft, type Card, type Draft, type Stage } from "../data/social";
+import { CampaignPanel } from "./CampaignPanel";
 import { useToast } from "../ui/Toast";
 import s from "./Social.module.css";
 
@@ -10,7 +11,6 @@ const reason = (e: unknown, fb: string) => (e instanceof Error && e.message ? e.
 const ORDER: Stage[] = ["review", "scheduled", "published", "attention"];
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " · " + new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "");
 const dayName = (d: string) => new Date(`${d}T00:00`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-const WIZARD = "/app/agency.html#social";
 /** A sensible default slot: tomorrow at 6pm, when people are on their phones after work. */
 const defaultSlot = () => { const d = new Date(Date.now() + 864e5); d.setHours(18, 0, 0, 0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
@@ -23,6 +23,7 @@ export function SocialPane() {
   const [view, setView] = useState<"pipeline" | "calendar">("pipeline");
   const [editing, setEditing] = useState<Draft | null>(null);
   const [busy, setBusy] = useState("");
+  const [gen, setGen] = useState(false);
 
   const load = useCallback(async () => {
     try { const { drafts, posts } = await fetchStudio(); setCards(buildCards(drafts, posts)); setFailed(""); } catch (e) { setFailed(reason(e, "please refresh")); }
@@ -50,11 +51,13 @@ export function SocialPane() {
             <button type="button" aria-pressed={view === "pipeline"} onClick={() => setView("pipeline")}>Pipeline</button>
             <button type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar</button>
           </div>
-          <a className={`${s.btn} ${s.solid}`} href={WIZARD}>New post or campaign</a>
+          <button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setGen((v) => !v)}>{gen ? "Close generator" : "Generate captions"}</button>
         </div>
       </div>
 
-      {!cards.length && <div className={s.blank}><b>No posts yet</b><p className={s.muted}>Generate captions for a listing, review them here, then choose when they go out.</p><a className={`${s.btn} ${s.solid}`} href={WIZARD}>Generate captions</a></div>}
+      {gen && <CampaignPanel onSaved={() => void load()} onClose={() => setGen(false)} />}
+
+      {!cards.length && <div className={s.blank}><b>No posts yet</b><p className={s.muted}>Generate captions for a listing, review them here, then choose when they go out.</p><button type="button" className={`${s.btn} ${s.solid}`} onClick={() => setGen(true)}>Generate captions</button></div>}
 
       {cards.length > 0 && view === "pipeline" && (
         <div className={s.cols}>
