@@ -257,6 +257,12 @@
       display: flex; align-items: center; justify-content: center;
       font: 700 30px var(--f-sans); color: var(--brand); background-size: cover; background-position: 50% 28%; }
     .apc-photo.has-photo span { display: none; }
+    /* No named agent yet (the usual case): the big block is the AGENCY's identity, its logo or its colour and initial, and the
+       empty agent name and role lines stay out of sight until an agent really loads (Eden, 2026-10-19: the blank place). */
+    .apc:not(.has-agent) .apc-nm, .apc:not(.has-agent) .apc-role { display: none; }
+    .apc-photo.agency { aspect-ratio: 16 / 7; }
+    .apc-photo .ag-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 14px; background: #fff; opacity: 0; transition: opacity .2s; }
+    .apc-photo .ag-logo.on { opacity: 1; }
     .apc-body { padding: 13px 15px 15px; }
     .apc-nm { display: flex; align-items: center; gap: 7px; font: 700 18px var(--f-sans); color: var(--ink); }
     .apc-vf { width: 17px; height: 17px; flex: none; border-radius: 50%; background: var(--success);
@@ -2218,6 +2224,20 @@
         }
         const ini = document.getElementById('pvAgencyInitial');
         if (ini) ini.textContent = (nm[0] || '\u2014').toUpperCase();
+        /* the large block above the agency line shows the agency until a named agent loads */
+        const big = document.getElementById('pvAgentPhoto'), bigIni = document.getElementById('pvAgentInitials');
+        if (big && bigIni && !big.classList.contains('has-photo')) {
+          big.classList.add('agency'); bigIni.textContent = (nm[0] || '?').toUpperCase();
+          const bh = a && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(a.brand_color || '').trim()) ? String(a.brand_color).trim() : '';
+          if (bh) { big.style.background = bh; big.style.color = '#fff'; }
+          const bl = a ? String(a.logo_url || '').trim() : '';
+          if (/^https?:\/\//i.test(bl)) {
+            const bi = document.createElement('img');
+            bi.className = 'ag-logo'; bi.alt = nm + ' logo'; bi.loading = 'lazy';
+            bi.onload = () => bi.classList.add('on'); bi.onerror = () => bi.remove();
+            bi.src = bl; big.appendChild(bi);
+          }
+        }
 
         /* The agency as it designed itself on its Brand page: its colour
            behind the initial, its logo over it, its typeface on its name,
@@ -2537,6 +2557,9 @@
             if (!a || !a.full_name) return;
 
             const photo = document.getElementById('pvAgentPhoto');
+            card.classList.add('has-agent');
+            photo.classList.remove('agency'); photo.style.background = ''; photo.style.color = '';
+            const agImg = photo.querySelector('img.ag-logo'); if (agImg) agImg.remove();
             const inits = a.full_name.trim().split(/\s+/).slice(0, 2)
                             .map((w) => w[0]).join('').toUpperCase();
             document.getElementById('pvAgentInitials').textContent = inits;

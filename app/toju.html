@@ -1230,6 +1230,15 @@
        because it is the subject rather than one message's quote. */
     const REPLY_KEY = 'toju_reply_v1';
     let REPLY_TO = null;
+    /* ASKING ABOUT AN AGENCY (Eden, 2026-10-19): from "Ask Tayo about their homes" on an agency's page (?agency=<id>). While it
+       is set, and no single home is attached, Tayo answers from what Synapse holds about that agency. Kept for the tab so a
+       reload does not drop the subject, and dropped when a home is attached. */
+    let AGENCY_ID = null;
+    try {
+      const ap = new URLSearchParams(location.search).get('agency');
+      if (ap && /^[0-9a-f-]{36}$/i.test(ap)) { AGENCY_ID = ap; sessionStorage.setItem('syn_agency_ctx', ap); }
+      else AGENCY_ID = sessionStorage.getItem('syn_agency_ctx');
+    } catch (e) { /* storage blocked: the page still works for this visit */ }
     /* 'discuss' = they pressed Discuss with an agent (Tayo negotiates and hands over); 'info' = they came back to a home
        from a social post or campaign (the card, and answers). Kept across a reload with the listing. */
     const MODE_KEY = 'toju_reply_mode_v1';
@@ -1510,6 +1519,7 @@
     }
 
     async function attachReply(id) {
+      AGENCY_ID = null; try { sessionStorage.removeItem("syn_agency_ctx"); } catch (e) {}
       try {
         const r = await fetch(SUPABASE_URL + '/rest/v1/properties?id=eq.'
           + encodeURIComponent(id)
@@ -1689,7 +1699,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined, agencyId: (!REPLY_TO && AGENCY_ID) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
