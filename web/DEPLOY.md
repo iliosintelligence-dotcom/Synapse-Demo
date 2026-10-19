@@ -28,7 +28,35 @@ The existing project keeps serving `www.synapsecore.dev` and ignores `web/` (see
 
 ## 3. Going live (cutover)
 
-The agency portal is not migrated yet, so the live site must keep serving the static `app/*.html` files until it is. Then make this
-the one project: copy the static site (`index.html`, `buyers.html`, `app/`, `images/`, legal pages, `sitemap.xml`…) into `web/public/`,
-point `www.synapsecore.dev` at the project, and keep the `/app/…` redirects in `vercel.json` for the pages that have moved. Do it on
-a quiet day, with the staging copy already tested, and keep the old project for a week so it can be switched back.
+Every page and pane now lives in the Next app, so it can become the one project that serves `www.synapsecore.dev`. The plan keeps the old static
+pages in the deployment (nothing is deleted) and redirects `/app/agency.html` to `/portal/`, so the old portal is one redirect away if it is needed.
+
+**Order matters. Each step is safe to stop after.**
+
+| # | Step | Who | Undo |
+|---|------|-----|------|
+| 1 | Create the staging project (section 1) on `next.synapsecore.dev`. | You (Vercel) | Delete the project |
+| 2 | Supabase, Authentication, URL Configuration: add `https://next.synapsecore.dev/**` to Redirect URLs. | You (Supabase) | Remove it |
+| 3 | Test staging end to end (section 4). | You, with Claude | n/a |
+| 4 | Register `next.synapsecore.dev` on Stadia if maps are blank there. | You (Stadia) | n/a |
+| 5 | In this repo: `git rm web/src/app/page.tsx`, then `node web/scripts/assemble-static.mjs` (dry run), then `--apply`. Commit. | Claude | `git revert` |
+| 6 | Re-test staging: landing page, `/go/<handle>`, `/s/<token>`, `/buyers`, `/privacy`, `/terms`, `/your-data`, and `/app/agency.html?invite=x#crm` (should land on `/portal/?invite=x#crm`). | You, with Claude | n/a |
+| 7 | Supabase Redirect URLs: make sure `https://www.synapsecore.dev/**` is allowed (it already is, for the current site). | You | n/a |
+| 8 | Move the domain: Vercel, the new project, Domains, add `www.synapsecore.dev` (take it from `synapse-demo`). Keep `synapse-demo` for a week. | You (Vercel) | Move the domain back |
+| 9 | Supabase, Edge Functions, `social-connect`, secret `PORTAL_URL` = `https://www.synapsecore.dev/portal/`. (Until then OAuth returns to `/app/agency.html`, which now redirects to the portal, so it still works.) | You (Supabase) | Set it back |
+| 10 | Flip two constants in `web/src/lib/auth-config.ts`: `AUTH_RETURN_PATH` to `"/signin/"` and `DEFAULT_AGENCY_DEST` to `"/portal/"`. Only after step 7. | Claude | `git revert` |
+| 11 | Watch for a day: sign-in, email confirmation, password reset, Google, a lead arriving, a social connect. | You | Step 8's undo |
+
+**Rolling back.** Move the domain back to `synapse-demo` (step 8). Nothing in the database changes at any step, so there is no data to restore.
+
+**What changes for the old pages.** `/app/agency.html` redirects to `/portal/`. The other old `/app/*.html` pages that have moved redirect to their Next
+versions (see `vercel.json`). Pages with no Next version yet (`go.html`, `your-data.html`, `verify.html`, `synapse.html`, `synapse-join.html`) keep being served
+as files, and `/go/<handle>` and `/your-data` are rewritten to them.
+
+## 4. Test list for staging (signed in as an agency, then as a buyer)
+
+Agency (`/portal/`): the sidebar opens every pane; add a listing with photos and a pin; edit it; Share; generate captions, send for approval, schedule one;
+connect then disconnect a social account; invite someone and accept in a second browser; set a phone number; save My profile; open the bell and the Ask Tayo panel;
+the Delete agency dialog opens (**do not press Delete**).
+Buyer: the landing page, browse, a property page, Tayo chat, a Dream Home board, sign in and out.
+Redirects: the list in step 6 above.
