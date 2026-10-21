@@ -534,6 +534,12 @@
         + (picks.length
           ? '<div class="ho-slots" role="group" aria-label="Viewing times">' + picks.map((p) => '<button type="button" class="ho-slot" data-slot="' + esc(p.starts_at) + '">' + esc(slotLabel(p.starts_at)) + '</button>').join('') + '</div>'
           : '<p class="ho-note">The agent has not set viewing times for this home yet. They will propose one.</p>')
+        + '<div class="ho-k">How the agent can reach you</div>'
+        + '<p class="ho-note" style="margin:2px 0 0">Your email goes with this. Add a phone number or a social media handle if you would like the agent to reach you there. Both are optional.</p>'
+        + '<div class="ho-contact">'
+        + '<input id="hoPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="Phone or WhatsApp number (optional)" aria-label="Phone or WhatsApp number, optional">'
+        + '<input id="hoHandle" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="Instagram or TikTok handle (optional)" aria-label="Instagram or TikTok handle, optional">'
+        + '</div>'
         + '<div class="ho-row"><button type="button" class="btn btn-primary" id="hoSend">Send to the agent</button><button type="button" class="btn btn-ghost" id="hoCancel">Not yet</button></div>'
         + '<p class="ho-note">The agent gets this by WhatsApp and email. Nothing is sent until you press the button.</p>';
       convo.appendChild(el); scrollDown();
@@ -553,6 +559,19 @@
         const sess = await c.auth.getSession();
         const tok = sess && sess.data && sess.data.session && sess.data.session.access_token;
         if (!tok) throw new Error('Please sign in again to be introduced.');
+        /* The two optional contact fields are saved BEFORE the lead is written: create-lead copies the profile's phone onto the
+           lead, and the agent reads the handle from the profile. One that does not look right stops the introduction here with a
+           clear line, rather than being dropped without a word. */
+        const phoneIn = card.querySelector('#hoPhone'), handleIn = card.querySelector('#hoHandle');
+        const ph = phoneIn ? phoneIn.value.trim() : '', hd = handleIn ? handleIn.value.trim() : '';
+        if (ph) {
+          const r1 = await c.rpc('set_my_phone', { p_phone: ph });
+          if (r1.error) throw new Error('That phone number does not look complete. Check it, or leave it blank.');
+        }
+        if (hd) {
+          const r2 = await c.rpc('set_my_social_handle', { p_handle: hd });
+          if (r2.error) throw new Error('That does not look like a social media handle. Check it, or leave it blank.');
+        }
         const sm = H.summary || {};
         const res = await fetch(SUPABASE_URL + '/functions/v1/create-lead', {
           method: 'POST',

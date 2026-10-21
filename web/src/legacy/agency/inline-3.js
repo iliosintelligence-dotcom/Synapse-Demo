@@ -7752,12 +7752,96 @@
        condition this pane describes: Tayo qualified them and worked out a
        price. No negotiation, no card. */
     let HANDOFFS = [];
+    /* TAKE OVER (2026-10-21). The button used to change its own label and nothing else. It now calls take_over_lead, which hands
+       the lead to the agent who pressed it and returns the handover summary: the buyer's phone, email and social handle, what
+       Tayo agreed and how. The same summary is queued on WhatsApp to that agent, never to the buyer. A card is "taken" when the
+       lead is already this agent's, or was just taken in this session. */
+    const TAKEN = new Set();
+    let ME_ID = null, TAKING = false;
+    if (window.SynAuth && SynAuth.ready) {
+      Promise.resolve(SynAuth.ready()).then(function (u) { ME_ID = u && u.id ? u.id : null; if (ME_ID) renderHandoffs(); }).catch(function () {});
+    }
+    function isTaken(h) { return TAKEN.has(h.id) || (ME_ID !== null && h.agentId === ME_ID); }
+    function takeOver(i, btn) {
+      const h = HANDOFFS[i];
+      if (!h || !h.id || TAKING) return;
+      TAKING = true;
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Taking over…';
+      SynAuth.client()
+        .then(function (c) { return c.rpc('take_over_lead', { p_lead_id: h.id }); })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          TAKEN.add(h.id);
+          renderHandoffs();
+          openHandover(r.data);
+        })
+        .catch(function (err) {
+          btn.disabled = false; btn.textContent = label;
+          toast((err && err.message) || 'Could not take over that lead');
+          console.error('take_over_lead failed', err);
+        })
+        .then(function () { TAKING = false; });
+    }
+    /* What was queued, said plainly. Nothing here claims a message left: it waits in the outbox until Send is pressed, and
+       leaves once WhatsApp is switched on and the agent has a number on file. */
+    const WA_SAYS = {
+      queued: 'The same summary is queued on WhatsApp to your number. It waits in the outbox until you press Send.',
+      already_queued: 'This summary is already queued on WhatsApp to your number.',
+      no_phone: 'You have no phone number on file, so nothing was queued on WhatsApp. Add your number in My profile, then press the button again.',
+      failed: 'The WhatsApp message could not be queued. The summary here is complete.',
+      not_queued: 'Nothing was queued on WhatsApp.',
+    };
+    function openHandover(d) {
+      d = d || {};
+      const b = d.buyer || {};
+      const row = function (k, v, href) {
+        return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.18);font-size:13.5px">'
+          + '<span class="muted" style="min-width:74px">' + k + '</span>'
+          + (v ? (href ? '<a href="' + esc2(href) + '" style="word-break:break-all">' + esc2(v) + '</a>' : '<span style="word-break:break-all">' + esc2(v) + '</span>')
+               : '<span class="muted">Not given</span>')
+          + '</div>';
+      };
+      /* No link for the handle: it is Instagram or TikTok and the buyer does not say which, so a link would guess. */
+      const handleHref = '';
+      const plain = [
+        'Handover: ' + (b.name || 'Buyer') + ' for ' + (d.listing || 'the listing'),
+        'Phone: ' + (b.phone || 'not given'),
+        'Email: ' + (b.email || 'not given'),
+        'Social: ' + (b.handle || 'not given'),
+        d.agreed ? 'Tayo reached ' + d.agreed + (d.listed ? ' (listed ' + d.listed + ')' : '') : 'No agreed price yet' + (d.listed ? ' (listed ' + d.listed + ')' : ''),
+        d.advice ? 'Reasoning: ' + d.advice : '',
+        d.draft ? 'The buyer opened with: ' + d.draft : '',
+      ].filter(Boolean).join('\n');
+      drawer.innerHTML = '<button class="x" aria-label="Close">×</button>'
+        + '<div style="font-size:19px;font-weight:700">Taken over: ' + esc2(b.name || 'Buyer') + '</div>'
+        + '<p class="muted" style="font-size:12px;margin:6px 0 14px">' + esc2(d.listing || '') + '</p>'
+        + '<div class="sec"><div class="k">How to reach them</div>'
+        + row('Phone', b.phone, b.phone ? 'tel:' + b.phone : '')
+        + row('Email', b.email, b.email ? 'mailto:' + b.email : '')
+        + row('Social', b.handle, handleHref)
+        + '</div>'
+        + '<div class="sec" style="margin-top:14px"><div class="k">Where Tayo got to</div>'
+        + '<p style="margin-top:6px;font-size:13.5px">' + (d.agreed ? 'Reached <b>' + esc2(d.agreed) + '</b>' + (d.listed ? ', listed at ' + esc2(d.listed) : '') : 'No price agreed yet' + (d.listed ? ', listed at ' + esc2(d.listed) : '')) + '</p></div>'
+        + (d.advice ? '<div class="sec" style="margin-top:12px"><div class="k">Reasoning</div><p style="margin-top:6px;font-size:13px;line-height:1.6">' + esc2(d.advice) + '</p></div>' : '')
+        + (d.draft ? '<div class="sec" style="margin-top:12px"><div class="k">Message the buyer opened with</div><p style="margin-top:6px;font-size:13px;line-height:1.6">' + esc2(d.draft) + '</p></div>' : '')
+        + '<p class="muted" style="font-size:12px;margin:16px 0 10px">' + esc2(WA_SAYS[d.whatsapp] || WA_SAYS.not_queued) + '</p>'
+        + '<button class="btn btn-primary btn-block" id="hoCopy">Copy summary</button>';
+      const copy = document.getElementById('hoCopy');
+      if (copy) copy.addEventListener('click', function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(plain).then(function () { toast('Summary copied'); }, function () { toast('Could not copy. Select the text instead.'); });
+        else toast('Copying is not available here. Select the text instead.');
+      });
+      scrim.classList.add('on'); drawer.classList.add('on');
+    }
     function buildHandoffs(rows) {
       HANDOFFS = (rows || [])
         .filter(function (l) { return l.neg && l.neg.offer != null; })
         .map(function (l) {
           const listed = l.listPrice != null ? nairaShort(l.listPrice) : l.price;
           return {
+            id: l.id,
+            agentId: l.agentId,
             buyer: l.nm,
             prop: (l.pr || '').split(' · ')[0],
             source: ({ toju_chat: 'Tayo', contact_button: 'Contact button', browse: 'Browse' })[l.rawSource] || 'Direct',
@@ -7840,7 +7924,9 @@
             <div class="rp-sig">${h.signals.map(s => `<span class="sig">${s}</span>`).join('')}</div>
             <div class="rp-verdict"><span class="vi">✦</span><span>${h.rec}</span></div>
             <div class="rp-actions">
-              <button class="btn btn-primary" style="padding:10px 16px;font-size:13px" onclick="this.textContent='✓ Taken over'; this.disabled=true">Take over →</button>
+              ${isTaken(h)
+                ? `<button class="btn btn-primary" style="padding:10px 16px;font-size:13px" data-sum="${i}">✓ Taken over · Summary</button>`
+                : `<button class="btn btn-primary" style="padding:10px 16px;font-size:13px" data-take="${i}">Take over →</button>`}
               <button class="btn btn-ghost" style="padding:10px 16px;font-size:13px" data-tr="${i}">View full report</button>
             </div>
           </div>
@@ -7864,6 +7950,8 @@
     }
     document.getElementById('handoffs').addEventListener('click', (e) => {
       if (e.target.closest('[data-go-listings]')) { goToPane('listings'); return; }
+      const t = e.target.closest('[data-take],[data-sum]');
+      if (t) { takeOver(+(t.dataset.take !== undefined ? t.dataset.take : t.dataset.sum), t); return; }
       const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr);
     });
     renderHandoffs();
