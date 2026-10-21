@@ -1,0 +1,46 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Synapse seam — TURNED OFF. Read this before switching it back on.
+
+   WHAT IT WAS
+   Synapse is a static multi-page site, so every move between pages is a full
+   document navigation: a white flash and a redraw, with the taskbar blinking
+   out and back even though it sits in the same place on every page. This file
+   used cross-document view transitions to smooth that over — a cross-fade for
+   the body, named regions so the chrome held still, and a shared-element
+   morph from a listing card's photo into the property hero.
+
+   WHY IT IS OFF
+   It shipped, it was looked at, and it was rejected on sight: "it looks
+   terrible, it seems like a glitch is happening." That was an accurate
+   description, and the cause was mine — the rule meant to hold the chrome
+   still:
+
+       ::view-transition-old(syn-taskbar),
+       ::view-transition-new(syn-taskbar) { animation: none; }
+
+   `animation: none` on BOTH snapshots does not hold a bar still. It paints
+   the outgoing bar and the incoming bar, each at full opacity, on top of one
+   another for the whole transition. So the taskbar and the app bar doubled
+   and flickered on every navigation, and the one rule written to make the
+   shell feel continuous was the single thing making it look broken.
+
+   WHY OFF RATHER THAN FIXED
+   The specific bug has an obvious fix: name only one side, or give the pair a
+   real cross-fade instead of none. But a page transition is in the way of
+   what somebody asked for, every single time it plays, and one that has
+   already read as a glitch has spent whatever benefit of the doubt it had.
+   Off is the honest state until it can be rebuilt and watched on a real
+   device rather than reasoned about here.
+
+   Navigation is now exactly what it was before any of this existed.
+
+   WHAT SURVIVED
+   seam.js, and it is invisible: coming back to a list puts you where you
+   were, on the home you opened. That was always the part of "one place"
+   worth having, and it never needed any of this.
+
+   TO REVIVE IT
+   Restore `@view-transition { navigation: auto; }` and the root cross-fade
+   first, on its own, and look at it. Do not name the chrome again until the
+   doubling above is genuinely solved — that was the glitch, not the fade.
+   ───────────────────────────────────────────────────────────────────────── */

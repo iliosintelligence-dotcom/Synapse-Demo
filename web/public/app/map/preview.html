@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Synapse map — white matter (preview)</title>
+<!--
+  A harness, not a page. It exists so the base map can be judged on its own —
+  colour, weight, which POIs appear, what the marks look like — before any
+  property, card or Toju surface is built on top of it. Delete once the real
+  map ships, or keep it as the place to try a style change without loading the
+  whole app.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #FCFCFB; font: 13px/1.4 system-ui, sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .hud {
+    position: absolute; z-index: 5; left: 12px; top: 12px;
+    background: #fff; border: 1px solid #E6E6E2; border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 6px 22px rgba(20,20,20,0.07);
+    max-width: 260px;
+  }
+  .hud b { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6E6E6A; margin-bottom: 6px; }
+  .hud button { font: 600 12px system-ui; border: 1px solid #E0E0DC; background: #fff; border-radius: 8px; padding: 6px 10px; margin: 3px 3px 0 0; cursor: pointer; }
+  .hud button:hover { background: #F6F6F4; }
+  .syn-gesture-hint {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    z-index: 10; pointer-events: none; opacity: 0; transition: opacity .18s ease;
+    background: rgba(18,18,18,0.82); color: #fff; border-radius: 999px;
+    padding: 9px 16px; font: 600 12.5px/1.2 system-ui, sans-serif; white-space: nowrap;
+  }
+  .syn-gesture-hint.on { opacity: 1; }
+
+  /* THE CARD. Floats over the map; the map stays live behind it. The whole
+     point of the redesign is that pressing a home does NOT navigate: you look,
+     you swipe to the next one, you carry on panning. */
+  .card {
+    position: absolute; z-index: 6; left: 12px; right: 12px; bottom: 12px;
+    max-width: 380px; margin: 0 auto;
+    background: #fff; border: 1px solid #E7E7E3; border-radius: 18px;
+    box-shadow: 0 18px 44px rgba(20,20,18,0.16);
+    display: none; overflow: hidden;
+  }
+  .card.on { display: block; }
+  .card-row { display: flex; gap: 12px; padding: 12px; align-items: flex-start; }
+  .card-img {
+    width: 84px; height: 84px; flex: none; border-radius: 12px;
+    background: #F2F2EF center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; color: #8A8A84; text-align: center;
+  }
+  .card-main { flex: 1; min-width: 0; }
+  .card-price { font: 700 19px/1.15 system-ui, sans-serif; color: #141412; letter-spacing: -0.01em; }
+  .card-ttl { font-size: 13px; color: #33332F; margin-top: 3px;
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-loc { font-size: 12px; color: #6E6E68; margin-top: 2px; }
+  .card-chips { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .chip {
+    font: 600 10.5px system-ui; letter-spacing: .02em; padding: 3px 8px;
+    border-radius: 100px; border: 1px solid #E4E4E0; color: #45453F; background: #FAFAF8;
+  }
+  .chip.ok { border-color: #C9DFCE; color: #2E6B45; background: #F3F9F5; }
+  .chip.no { border-color: #E6DCC9; color: #7A6320; background: #FBF8F1; }
+  .card-cta { display: flex; gap: 8px; padding: 0 12px 12px; }
+  .card-cta button {
+    flex: 1; min-height: 40px; border-radius: 11px; cursor: pointer;
+    font: 600 13px system-ui; border: 1px solid #E0E0DC; background: #fff; color: #1B1B18;
+  }
+  .card-cta button.primary { background: #141412; border-color: #141412; color: #fff; }
+  .card-x {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+    border: 0; background: rgba(255,255,255,0.9); border-radius: 50%;
+    cursor: pointer; font-size: 15px; line-height: 1; color: #55554F;
+  }
+  .card-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px 10px; font-size: 11.5px; color: #8A8A84;
+  }
+  .card-nav button {
+    border: 1px solid #E4E4E0; background: #fff; border-radius: 8px;
+    width: 30px; height: 28px; cursor: pointer; font-size: 14px; color: #33332F;
+  }
+  .card-nav button[disabled] { opacity: .35; cursor: default; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="card" id="card">
+  <button class="card-x" id="cardX" aria-label="Close">&#215;</button>
+  <div class="card-row">
+    <div class="card-img" id="cardImg">no photo</div>
+    <div class="card-main">
+      <div class="card-price" id="cardPrice"></div>
+      <div class="card-ttl" id="cardTtl"></div>
+      <div class="card-loc" id="cardLoc"></div>
+      <div class="card-chips" id="cardChips"></div>
+    </div>
+  </div>
+  <div class="card-nav" id="cardNav" hidden>
+    <button id="cardPrev">&#8249;</button>
+    <span id="cardCount"></span>
+    <button id="cardNext">&#8250;</button>
+  </div>
+  <div class="card-cta">
+    <button class="primary" id="cardOpen">See this home</button>
+    <button id="cardAsk">Ask Tayo</button>
+  </div>
+</div>
+
+<div class="hud">
+  <b>White matter</b>
+  <div id="status">loading…</div>
+  <button data-go="7.4000,3.8900,12">All Ibadan</button>
+  <button data-go="7.4441,3.9026,15">Agbowo</button>
+  <button data-go="7.4306,3.9048,15">Bodija</button>
+  <button data-go="7.3944,3.8622,16">Jericho · close</button>
+</div>
+
+<script src="style-synapse.js"></script>
+<script src="render.js"></script>
+<script>
+  /* NOT `status`: at global scope in a classic script that binds to
+     window.status, a legacy DOM property that coerces whatever you
+     assign to a string -- so `hud.textContent = ...` becomes a silent
+     no-op and the HUD sits on "loading..." forever while the map behind
+     it works perfectly. */
+  var hud = document.getElementById('status');
+  var r = SynMapRender.create('map', { center: [3.8900, 7.4000], zoom: 12 });
+  r.ready().then(function () {
+    hud.textContent = 'style loaded · ' + r.map.getStyle().layers.length + ' layers';
+    loadReal();
+    /* Tap a pin -> card. Tap a cluster -> that area's homes become the set
+       you can page through, which is the closest this harness gets to the
+       swipe interaction the brief asks for. */
+    r.onSelect(function (id) { SET = null; showCard(id); });
+    r.onCluster(function (ids) {
+      SET = ids; IDX = 0;
+      hud.textContent = ids.length + ' homes in this area';
+      if (ids.length) showCard(ids[0]);
+    });
+    r.onViewport(function (v) {
+      hud.textContent = 'z' + v.zoom.toFixed(1) + ' · ' + v.centre.map(function (n) { return n.toFixed(3); }).join(', ');
+    });
+  }).catch(function (e) { hud.textContent = 'FAILED: ' + e.message; });
+
+  /* THE REAL THING. Straight PostgREST, no client library — the point of this
+     harness is to see 500 live rows cluster and step, not to exercise the app's
+     data layer. The map draws whatever it is handed; where the rows come from
+     is deliberately not its business. */
+  var SB = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  var KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+
+  function naira(n, period) {
+    n = Number(n) || 0;
+    var s = n >= 1e9 ? '₦' + (n / 1e9).toFixed(1).replace(/\.0$/, '') + 'b'
+          : n >= 1e6 ? '₦' + (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'm'
+          : n >= 1e3 ? '₦' + Math.round(n / 1e3) + 'k'
+          : '₦' + n;
+    return s + (period === 'per_year' ? '/yr' : period === 'per_month' ? '/mo' : '');
+  }
+
+  function loadReal() {
+    hud.textContent = 'fetching listings…';
+    var t0 = performance.now();
+    fetch(SB + '/rest/v1/properties'
+        + '?select=id,title,price,price_period,bedrooms,latitude,longitude,verification_status,city'
+        + '&status=eq.live&deleted_at=is.null&limit=2000',
+        { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
+      .then(function (res) { return res.json(); })
+      .then(function (rows) {
+        var ms = Math.round(performance.now() - t0);
+        var pts = (rows || [])
+          .filter(function (p) { return p.latitude != null && p.longitude != null; })
+          .map(function (p) {
+            return {
+              id: p.id, lat: p.latitude, lng: p.longitude,
+              price: naira(p.price, p.price_period),
+              beds: (p.bedrooms || 0) + ' bed',
+              verified: p.verification_status === 'verified',
+              title: p.title || '',
+              loc: p.city || ''
+            };
+          });
+        r.setProperties(pts);
+        r.fit(pts, 60);
+        hud.textContent = pts.length + ' listings · fetched in ' + ms + 'ms';
+      })
+      .catch(function (e) { hud.textContent = 'fetch failed: ' + e.message; });
+  }
+
+  /* the card */
+  var SET = null, IDX = 0;
+  var card = document.getElementById('card');
+
+  function showCard(id) {
+    var rec = r.select(id);
+    if (!rec) { card.classList.remove('on'); return; }
+    var p = rec.props;
+    document.getElementById('cardPrice').textContent = p.price || '';
+    document.getElementById('cardTtl').textContent = p.title || '';
+    document.getElementById('cardLoc').textContent = p.loc || '';
+    var img = document.getElementById('cardImg');
+    if (p.img) { img.style.backgroundImage = 'url(' + p.img + ')'; img.textContent = ''; }
+    else { img.style.backgroundImage = ''; img.textContent = 'no photo'; }
+    document.getElementById('cardChips').innerHTML =
+      '<span class="chip">' + (p.beds || '-') + '</span>'
+      + ((p.verified === true || p.verified === 'true')
+          ? '<span class="chip ok">Verified</span>'
+          : '<span class="chip no">Not verified</span>');
+
+    var nav = document.getElementById('cardNav');
+    if (SET && SET.length > 1) {
+      nav.hidden = false;
+      document.getElementById('cardCount').textContent = (IDX + 1) + ' of ' + SET.length + ' here';
+      document.getElementById('cardPrev').disabled = IDX === 0;
+      document.getElementById('cardNext').disabled = IDX === SET.length - 1;
+    } else { nav.hidden = true; }
+
+    card.classList.add('on');
+    /* Nudge the camera so the pin is not hidden behind the card, without
+       yanking the whole view. */
+    r.map.easeTo({ center: [rec.lng, rec.lat], offset: [0, -90], duration: 420 });
+  }
+
+  function step(d) {
+    if (!SET || !SET.length) return;
+    IDX = Math.max(0, Math.min(SET.length - 1, IDX + d));
+    showCard(SET[IDX]);
+  }
+  document.getElementById('cardPrev').addEventListener('click', function () { step(-1); });
+  document.getElementById('cardNext').addEventListener('click', function () { step(1); });
+  document.getElementById('cardX').addEventListener('click', function () {
+    card.classList.remove('on'); SET = null; r.clearSelection();
+  });
+  document.getElementById('cardOpen').addEventListener('click', function () {
+    hud.textContent = 'would open the property page';
+  });
+  document.getElementById('cardAsk').addEventListener('click', function () {
+    hud.textContent = 'would open Tayo about this home';
+  });
+
+  document.querySelector('.hud').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]'); if (!b) return;
+    var p = b.dataset.go.split(',').map(Number);
+    r.flyTo(p[1], p[0], p[2]);
+  });
+</script>
+</body>
+</html>
