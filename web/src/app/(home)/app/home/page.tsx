@@ -37,6 +37,7 @@ export default function Page() {
       <script src="notify.js" />
       <script src="motion.js" />
       <script src="home.js" />
+      <script src="onboarding.js" />
     </>
   );
 }

@@ -81,5 +81,8 @@
       if (n) hello.innerHTML = 'Hey <em>' + esc(n) + '</em>,<br>Welcome here';
     }).catch(function () { /* the plain greeting stays */ });
   }
-  show('rent');
+  /* the tab chosen in the welcome screens, if any */
+  var first = 'rent';
+  try { var d = localStorage.getItem('synapse_home_deal'); if (d && GROUPS[d]) first = d; } catch (e) { /* rent */ }
+  show(first);
 })();
