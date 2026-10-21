@@ -1,0 +1,40 @@
+
+    body { background: var(--bg); }
+    .legal { max-width: 720px; margin: 0 auto; padding: 64px 24px 100px; }
+    .legal-back { font-size: 13px; color: var(--text-dim); }
+    .legal-back:hover { color: var(--text); }
+    /* .legal-title rides alongside h1 because the desktop title is now a div
+       carrying role="heading" -- see the note in the markup. Same rule, so the
+       two cannot drift apart. */
+    .legal h1, .legal .legal-title { font-family: var(--f-serif); font-weight: 600; font-size: clamp(30px,4vw,42px); letter-spacing: -0.02em; margin-top: 22px; }
+    .legal .updated { font-size: 13px; color: var(--text-dim); margin-top: 8px; }
+    .legal-note { margin-top: 24px; padding: 14px 16px; border-radius: 12px; background: rgba(var(--tint),0.05); border: 1px solid rgba(var(--tint),0.18); font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+    .legal h2 { font-family: var(--f-serif); font-weight: 600; font-size: 21px; margin-top: 40px; letter-spacing: -0.01em; }
+    .legal h3 { font-size: 14.5px; font-weight: 700; margin-top: 22px; }
+    .legal p, .legal li { font-size: 15px; line-height: 1.75; color: var(--text-muted); margin-top: 12px; }
+    .legal ul { padding-left: 20px; }
+    .legal li { margin-top: 6px; }
+    .legal strong { color: var(--text); font-weight: 700; }
+    .legal a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+    .toc { margin-top: 28px; padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.6); }
+    .toc div { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+    /* These jump to a section and did not look like they did anything. The
+       only interactive signal was a colour change on hover, which a reader
+       has to already suspect a link to go looking for -- and on a touch
+       screen there is no hover at all, so it was invisible there by
+       definition. Underlined, in full-strength ink, each with the anchor
+       arrow that says "this moves you down the page" rather than "this leaves
+       the site". */
+    .toc a {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 13.5px; color: var(--text); padding: 7px 0;
+      text-decoration: underline; text-decoration-color: rgba(20,20,20,0.28);
+      text-underline-offset: 3px; text-decoration-thickness: 1px;
+    }
+    .toc a::before {
+      content: '\2193'; font-size: 11px; color: var(--text-dim);
+      flex: none; text-decoration: none;
+    }
+    .toc a:hover { text-decoration-color: currentColor; }
+    .toc a:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 3px; }
+  

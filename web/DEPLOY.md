@@ -1,5 +1,10 @@
 # Deploying the Next app
 
+> **Update 2026-10-21.** The site now serves the 17 original pages as Next pages at their original addresses (see `PAGES.md`); the React rebuild of the
+> same screens is parked behind redirects in `vercel.json`. `npm run build` is `next build && node scripts/strip-next-runtime.mjs`: the second step is
+> what makes the ported pages plain HTML, so the build command must stay `npm run build`. Before pushing a change to a page, run `tests/parity`
+> (instructions in `PAGES.md`). Steps below that mention `/portal/` and `/signin/` describe the parked React pages.
+
 The app builds to plain static files (`npm run build` writes `out/`). It needs no server: all server logic is Supabase.
 
 ## 1. A staging copy (safe: the live site is untouched)
