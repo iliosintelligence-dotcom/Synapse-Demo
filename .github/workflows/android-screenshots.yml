@@ -3,6 +3,9 @@ name: Android screenshots
 # phone shows can be checked without a phone. Run it: Actions > Android screenshots > Run workflow; download "android-screenshots".
 on:
   workflow_dispatch:
+  push:
+    branches: [app-top-bar]
+    paths: ['.github/workflows/android-screenshots.yml', '.github/scripts/android-shots.sh', 'web/android/**', 'web/capacitor.config.ts', 'web/public/app/native.js']
 permissions: { contents: read }
 jobs:
   shots:
