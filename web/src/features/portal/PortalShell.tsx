@@ -151,7 +151,7 @@ export function PortalShell() {
       <aside className={s.side} id="tabs" aria-label="Workspace">
         <div className={s.brand}>
           {/* The landing page is a static file, not a Next route, so a plain link is right here. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          { }
           <a href="/">Synapse</a>
         </div>
         <nav>

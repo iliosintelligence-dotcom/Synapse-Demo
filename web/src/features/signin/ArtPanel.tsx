@@ -65,7 +65,7 @@ export function ArtPanel({ role }: { role: Role }) {
         onError={() => { if (tries + 1 < set.length) { setTries(tries + 1); setI((i + 1) % set.length); } }}
       />
       {/* The landing page is a static file, not a Next route, so a plain link is right here. */}
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      { }
       <a className={s.brand} href="/index.html">
         { }
         <img src="/images/brand/mark-white-transparent.png" alt="" aria-hidden="true" />
