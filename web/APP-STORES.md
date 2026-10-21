@@ -23,6 +23,31 @@ GitHub builds both apps, because this PC has neither Android Studio nor a Mac.
 
 Change the icon or splash by replacing the PNGs in `resources/` and running `node scripts/make-app-icons.mjs`.
 
+## Permissions and notifications
+
+The first test build never asked for the camera or for notifications because Android only shows a permission dialog for a
+permission the app declares, and it declared only the internet. It now declares camera, microphone (Tayo's mic button), location
+(Nearby) and notifications (`android/app/src/main/AndroidManifest.xml`), so those dialogs appear the first time something needs them.
+
+A browser's web push does not exist inside an app, so notifications there use Firebase:
+
+- **In the app:** the site's own alerts switch (`app/notify.js`) asks Android for notification permission and registers the
+  phone with Firebase; `push-subscribe` stores the device token in `push_subscriptions` (platform `android`, endpoint `fcm:<token>`).
+- **On the server:** `proximity-report` sends to those rows through Firebase (`supabase/functions/_shared/fcm.ts`). It stays
+  silent until the `FCM_SERVICE_ACCOUNT` secret exists, so nothing changes for anyone until you finish the steps below.
+
+**What only you can do (Firebase is a Google account thing):**
+1. Go to console.firebase.google.com, create a project called Synapse (analytics can stay off).
+2. Add an Android app with the package name `dev.synapsecore.app`. Download `google-services.json` and put it in `web/android/app/`
+   (Gradle picks it up on the next build; it is not a secret).
+3. Project settings → Service accounts → *Generate new private key*. That JSON is a secret: set it as the Supabase secret
+   `FCM_SERVICE_ACCOUNT` with the repository's set-secret workflow, never in the repository.
+4. For iPhones as well: Project settings → Cloud Messaging → upload an APNs key from your Apple developer account, and add an iOS
+   app with the bundle ID `dev.synapsecore.app`.
+
+Today the only notification that exists is "a home near you" (Nearby); the new-match, price-drop and agent-reply notifications in
+`notify.js` are written but nothing sends them yet. Those are the next step once this path works.
+
 ## Accounts you need (held by ILIOS Digital)
 
 | Store | Cost | Notes |

@@ -48,4 +48,23 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android only shows its permission dialogs for permissions the app declares. With only INTERNET declared the app silently
+         refused all of these, which is why the first test build never asked for the camera or for notifications.
+         CAMERA: listing photos (a file field that offers the camera) and anything that opens the camera.
+         RECORD_AUDIO / MODIFY_AUDIO_SETTINGS: Tayo's microphone button.
+         ACCESS_*_LOCATION: "Nearby" and homes near you.
+         POST_NOTIFICATIONS: Android 13+ asks before an app may show any notification. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Not required, so phones without these still install the app. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 </manifest>

@@ -123,14 +123,66 @@
     });
   }
 
+  /* ── 2b · Inside the Synapse app (Capacitor) ───────────────────────────────
+     A browser's web push does not exist in an Android or iOS web view: there is no PushManager, and Notification.requestPermission()
+     never shows anything. The app has native push instead (Firebase on Android), reached through Capacitor's PushNotifications
+     plugin, which the app injects into the page. Every function below that the rest of this file calls (pushSupported, permission,
+     askPermission, subscribe) takes the native route first when it is there, so the callers do not change. */
+  function nativePush() {
+    var C = window.Capacitor;
+    return !!(C && C.isNativePlatform && C.isNativePlatform() && C.Plugins && C.Plugins.PushNotifications);
+  }
+  var nativePerm = 'default';
+  function mapPerm(r) { return r === 'granted' ? 'granted' : (r === 'denied' ? 'denied' : 'default'); }
+  if (nativePush()) {
+    var NP = window.Capacitor.Plugins.PushNotifications;
+    NP.checkPermissions().then(function (r) { nativePerm = mapPerm(r && r.receive); }).catch(function () {});
+    // Tapping a notification opens the page it is about.
+    NP.addListener('pushNotificationActionPerformed', function (a) {
+      var d = (a && a.notification && a.notification.data) || {};
+      if (typeof d.route === 'string' && /^\/(?!\/)/.test(d.route)) window.location.href = d.route;
+    });
+  }
+  function subscribeNative(side) {
+    if (nativePerm !== 'granted') return Promise.resolve(null);
+    var P = window.Capacitor.Plugins.PushNotifications;
+    var platform = window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : 'android';
+    return new Promise(function (resolve) {
+      var done = false, timer = null;
+      function finish(v) { if (!done) { done = true; clearTimeout(timer); resolve(v); } }
+      // Without Firebase set up for the app, register() never answers; do not leave the person waiting on it.
+      timer = setTimeout(function () { finish(null); }, 15000);
+      Promise.all([
+        P.addListener('registration', function (t) {
+          callFn('subscribe', { side: side, native: { token: t && t.value, platform: platform } })
+            .then(function (r) { return r && r.ok ? finish({ native: true }) : finish(null); })
+            .catch(function () { finish(null); });
+        }),
+        P.addListener('registrationError', function () { finish(null); }),
+      ])
+        .then(function () { return P.createChannel ? P.createChannel({ id: 'proximity', name: 'Homes near you', importance: 4 }).catch(function () {}) : null; })
+        .then(function () { return P.register(); })
+        .catch(function () { finish(null); });
+    });
+  }
+
   function pushSupported() {
+    if (nativePush()) return true;
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   }
-  function permission() { return ('Notification' in window) ? Notification.permission : 'unsupported'; }
+  function permission() {
+    if (nativePush()) return nativePerm;
+    return ('Notification' in window) ? Notification.permission : 'unsupported';
+  }
 
   // Ask ONLY on a real user gesture, and only once they have a reason to say
   // yes. A cold permission prompt on page load is how you get denied forever.
   function askPermission() {
+    if (nativePush()) {
+      return window.Capacitor.Plugins.PushNotifications.requestPermissions()
+        .then(function (r) { nativePerm = mapPerm(r && r.receive); return nativePerm; })
+        .catch(function () { return 'denied'; });
+    }
     if (!pushSupported()) return Promise.resolve('unsupported');
     if (Notification.permission !== 'default') return Promise.resolve(Notification.permission);
     return Notification.requestPermission();
@@ -138,6 +190,7 @@
 
   function subscribe(opts) {
     opts = opts || {};
+    if (nativePush()) return subscribeNative(opts.side || 'customer');
     if (!pushSupported()) return Promise.resolve(null);
     return registerSW().then(function (reg) {
       if (!reg || Notification.permission !== 'granted') return null;
