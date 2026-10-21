@@ -1,0 +1,44 @@
+name: Android screenshots
+# Builds the Android app, runs it in a phone emulator with a punch-hole camera cut-out, and saves screenshots of real pages, so what a
+# phone shows can be checked without a phone. Run it: Actions > Android screenshots > Run workflow; download "android-screenshots".
+on:
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    defaults: { run: { working-directory: web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci
+      - run: npx cap sync android
+      - name: Build the debug APK
+        working-directory: web/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+      - name: Let the emulator use hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          working-directory: web
+          disable-animations: true
+          script: bash ../.github/scripts/android-shots.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-screenshots
+          path: web/shots
+          if-no-files-found: warn
