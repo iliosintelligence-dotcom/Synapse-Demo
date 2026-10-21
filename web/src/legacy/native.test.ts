@@ -25,11 +25,14 @@ Object.defineProperty(HTMLInputElement.prototype, "files", {
   set(this: HTMLInputElement & { __files?: unknown }, v: unknown) { this.__files = v; },
 });
 
-function load(opts: { native: boolean; getPhoto?: () => Promise<unknown> }) {
+function load(opts: { native: boolean; getPhoto?: () => Promise<unknown>; plugins?: Record<string, unknown>; theme?: string }) {
   document.body.innerHTML = "";
+  document.head.innerHTML = "";
+  document.documentElement.className = "";
+  if (opts.theme) document.documentElement.setAttribute("data-theme", opts.theme); else document.documentElement.removeAttribute("data-theme");
   const w = window as unknown as { Capacitor?: unknown };
   w.Capacitor = opts.native
-    ? { isNativePlatform: () => true, Plugins: { Camera: { getPhoto: opts.getPhoto ?? (() => Promise.resolve({})) } } }
+    ? { isNativePlatform: () => true, Plugins: { Camera: { getPhoto: opts.getPhoto ?? (() => Promise.resolve({})) }, ...(opts.plugins ?? {}) } }
     : undefined;
   new Function(src)(); // the script is a plain browser script: run it against this window
 }
@@ -115,5 +118,32 @@ describe("native.js", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(changed).not.toHaveBeenCalled();
     expect(f.files!.length).toBe(0);
+  });
+
+  it("in the app the page keeps its bars below the camera cut-out; in a browser nothing changes", () => {
+    load({ native: false });
+    expect(document.documentElement.classList.contains("syn-app")).toBe(false);
+    expect(document.head.querySelector("style")).toBeNull();
+    load({ native: true });
+    expect(document.documentElement.classList.contains("syn-app")).toBe(true);
+    const css = document.head.querySelector("style")!.textContent!;
+    expect(css).toContain("env(safe-area-inset-top");
+    for (const sel of [".syn-app .nav", ".syn-app .appbar", ".syn-app .yd-wrap"]) expect(css).toContain(sel);
+  });
+
+  it("the status-bar icons follow the page: light icons on a dark page, dark icons on a light one, and again when the theme changes", async () => {
+    const setStyle = vi.fn(() => Promise.resolve());
+    load({ native: true, theme: "dark", plugins: { SystemBars: { setStyle } } });
+    expect(setStyle).toHaveBeenLastCalledWith({ style: "DARK" });
+    document.documentElement.setAttribute("data-theme", "light");
+    await vi.waitFor(() => expect(setStyle).toHaveBeenLastCalledWith({ style: "LIGHT" }));
+  });
+
+  it("a link to the site opens in the app; a link to anywhere else is ignored", () => {
+    let handler: ((e: { url: string }) => void) | null = null;
+    load({ native: true, plugins: { App: { addListener: (_n: string, fn: (e: { url: string }) => void) => { handler = fn; } } } });
+    expect(handler).not.toBeNull();
+    expect(() => handler!({ url: "https://evil.example/app/toju" })).not.toThrow();
+    expect(() => handler!({ url: "not a url" })).not.toThrow();
   });
 });

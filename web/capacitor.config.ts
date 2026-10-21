@@ -35,7 +35,9 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: { launchShowDuration: 0, backgroundColor: "#FAF6F0", showSpinner: false },
-    StatusBar: { style: "DARK", backgroundColor: "#FAF6F0", overlaysWebView: false },
+    // The page draws edge to edge, behind the status bar and the camera cut-out, and every page keeps its bar and logo below them
+    // (public/app/native.js, the app-only insets). The pages already say viewport-fit=cover; the hint stops a jump on first paint.
+    SystemBars: { insetsHandling: "css", initialViewportFitValueHint: "cover" },
   },
 };
 

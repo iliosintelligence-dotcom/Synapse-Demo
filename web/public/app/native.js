@@ -1,16 +1,60 @@
-/* THE SYNAPSE APP ONLY (Capacitor). Does nothing in an ordinary browser.
+/* THE SYNAPSE APP ONLY (Capacitor). Does nothing in an ordinary browser. Loaded by every page.
  *
- * A photo field (<input type="file" accept="image/*">) opens the phone's plain file picker inside the app, which has no camera in
- * it: an agency adding a listing could only choose photos that already existed. So in the app a tap on such a field first asks
- * "Take a photo" or "Choose from your photos". Choosing from photos is the normal file field, untouched (it handles several photos
- * at once). Taking a photo opens the camera, and the picture goes into the same field as if it had been chosen, so the page that
- * owns the field notices nothing different.
- *
- * Fields that are not for photos (spreadsheets, documents, video) are left alone.
+ * 1. Keeps each page's top bar and logo below the camera cut-out and the status bar while the page's background runs behind them,
+ *    colours the status-bar icons to suit the page, and opens site links in the app.
+ * 2. A photo field (<input type="file" accept="image/*">) opened only the phone's plain file picker, which has no camera in it, so in
+ *    the app a tap on one first asks "Take a photo" or "Choose from your photos". Choosing is the normal field, untouched (it takes
+ *    several photos at once). Taking a photo opens the camera and puts the picture into the same field as if it had been chosen, so
+ *    the page that owns the field notices nothing different. Fields that are not for photos (spreadsheets, documents, video) are
+ *    left alone.
  */
 (function () {
   var C = window.Capacitor;
   if (!(C && C.isNativePlatform && C.isNativePlatform())) return;
+  var root = document.documentElement;
+
+  /* ── 1 · Under the camera ──────────────────────────────────────────────────
+     The app draws edge to edge: the page's background runs behind the status bar and the camera cut-out, which is what it should.
+     What must not go there is anything a person reads or taps, so each page's top bar takes the cut-out's height as extra padding
+     (env(safe-area-inset-top) is that height; it is 0 in an ordinary browser, and a page that already handled it needs no rule
+     here: Tayo, Your matches, Dream boards, sign-in, the legal pages). */
+  root.classList.add('syn-app');
+  var st = document.createElement('style');
+  st.textContent = ':root.syn-app{--syn-top:env(safe-area-inset-top,0px)}'
+    + '.syn-app .nav{padding-top:var(--syn-top)}'                                 // landing page, customers page
+    + '.syn-app .appbar{padding-top:calc(14px + var(--syn-top))}'                 // the shared bar: portal, verification desk
+    + '.syn-app .wrap:has(>.brandbar){padding-top:calc(26px + var(--syn-top))}'   // a homes-we-just-posted link
+    + '.syn-app .yd-wrap{padding-top:calc(28px + var(--syn-top))}'                // your data
+    + '.syn-app .hero .actions{top:calc(12px + var(--syn-top))}';                 // a property's photo: save and share
+  (document.head || root).appendChild(st);
+
+  /* The clock, battery and signal icons are drawn over the page: light on a dark page, dark on a light one. The site's own
+     light and dark (set by the visitor's clock or their choice, not the phone's setting) decides, and is followed when it changes. */
+  var SB = C.Plugins && C.Plugins.SystemBars;
+  function isDark() {
+    var t = root.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(getComputedStyle(document.body || root).backgroundColor || '');
+    if (m && (m[4] === undefined || +m[4] > 0.5)) return (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) < 128;
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function paintBars() { if (SB && SB.setStyle) SB.setStyle({ style: isDark() ? 'DARK' : 'LIGHT' }).catch(function () {}); }
+  paintBars();
+  if (window.MutationObserver) new MutationObserver(paintBars).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* A link to the site (a /s/<token> short link from a post, an emailed link) opens in the app on the page it names. */
+  var AppPlugin = C.Plugins && C.Plugins.App;
+  if (AppPlugin && AppPlugin.addListener) {
+    AppPlugin.addListener('appUrlOpen', function (e) {
+      try {
+        var u = new URL(e.url);
+        if (u.hostname === 'www.synapsecore.dev' || u.hostname === 'synapsecore.dev') window.location.href = u.pathname + u.search + u.hash;
+      } catch (x) { /* not a link we understand */ }
+    });
+  }
+
+  /* ── 2 · A camera for photo fields ────────────────────────────────────────── */
   var Camera = C.Plugins && C.Plugins.Camera;
   if (!Camera) return;
 
