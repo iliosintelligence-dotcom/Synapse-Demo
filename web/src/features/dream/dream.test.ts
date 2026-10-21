@@ -94,6 +94,6 @@ describe("pins and the question to Tayo", () => {
     expect(safeImageUrl("not a url")).toBeNull();
   });
   it("asks Tayo from what the board holds", () => {
-    expect(tojuQuestion(mine({ name: "Lekki", vibe: ["calm"], images: [{ u: "u", c: "Lekki street", cat: "area" }] }))).toBe('Find me verified homes that match my "Lekki" board — vibe: calm; areas that feel right: Lekki street.');
+    expect(tojuQuestion(mine({ name: "Lekki", vibe: ["calm"], images: [{ u: "u", c: "Lekki street", cat: "area" }] }))).toBe('Find me verified homes that match my "Lekki" board, vibe: calm; areas that feel right: Lekki street.');
   });
 });

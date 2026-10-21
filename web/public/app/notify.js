@@ -1,20 +1,20 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — notifications & proximity (client)
+   Synapse, notifications & proximity (client)
 
    Three jobs:
-     1. TYPES — one table mapping every notification kind to its copy and the
+     1. TYPES, one table mapping every notification kind to its copy and the
         screen it opens, for both sides of the marketplace. Routing lives here
         as data, so nothing downstream needs a switch statement.
-     2. PUSH — register the service worker, ask permission at a moment that
+     2. PUSH, register the service worker, ask permission at a moment that
         makes sense, store the subscription server-side.
-     3. PROXIMITY — report position so the SERVER can evaluate the geofence.
+     3. PROXIMITY, report position so the SERVER can evaluate the geofence.
 
    HONEST LIMIT, stated once and repeated in the UI:
    a browser cannot watch your location once the page is closed. There is no
    web geofencing API. While a Synapse tab is open we report position and the
    server evaluates; with the tab closed, pings only continue if the native app
    is installed and reporting in the background. Everything else in this
-   pipeline — matching, dedupe, quiet hours, delivery — is identical either way,
+   pipeline, matching, dedupe, quiet hours, delivery, is identical either way,
    so the native app plugs in without changing any of it.
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
@@ -39,7 +39,7 @@
        missing because somebody renamed a column has to read as NOT verified.
        The safe default for a claim is refusing to make it.
 
-       "not yet verified" and not "unverified" — the listing is not accused of
+       "not yet verified" and not "unverified", the listing is not accused of
        anything, it has simply not been checked yet. Same words property.html
        uses, so the notification and the page it opens agree. */
     proximity_match:    { side: 'customer', icon: 'pin',      route: 'property.html',
@@ -60,7 +60,7 @@
                           body: function (d) { return d.title + ' dropped to ' + d.price + '.'; } },
     expiring_saved:     { side: 'customer', icon: 'pending',  route: 'browse.html',
                           title: 'A saved home is about to disappear',
-                          body: function (d) { return d.title + ' has not been re-confirmed — it drops off in ' + d.days + ' days.'; } },
+                          body: function (d) { return d.title + ' has not been re-confirmed, it drops off in ' + d.days + ' days.'; } },
     agent_replied:      { side: 'customer', icon: 'chat',     route: 'property.html',
                           title: 'The agent replied',
                           body: function (d) { return d.agency + ' answered about ' + d.title + '.'; } },
@@ -95,7 +95,7 @@
     /* A title may be a string or a function, because one of them has to change
        with the data: proximity cannot call a home verified until it knows that
        it is. Every other entry stays a plain string and is unaffected. Wrapped
-       in the same try/catch as the body — a copy function that throws must
+       in the same try/catch as the body, a copy function that throws must
        cost the wording, never the notification. */
     var title = typeof t.title === 'function'
       ? (function () { try { return t.title(data || {}); } catch (e) { return ''; } })()
@@ -215,7 +215,7 @@
   }
 
   /* Both of these used to POST straight to /rest/v1. Neither table allows an
-     anonymous write — the policy is `authenticated` AND user_id = auth.uid() —
+     anonymous write, the policy is `authenticated` AND user_id = auth.uid() -
      so proximity could never be switched on without an account, which is the
      opposite of the intent. push-subscribe now owns both writes with the
      service role and binds each row to the caller's own identity. */
@@ -330,7 +330,7 @@
   }
 
   // While a page is open we report position; the SERVER decides everything
-  // else. Throttled hard — a property search does not need metre-by-metre
+  // else. Throttled hard, a property search does not need metre-by-metre
   // tracking, and battery matters more than precision here.
   function startWatching() {
     if (watchId != null || !navigator.geolocation) return;
@@ -339,7 +339,7 @@
       if (now - lastReport < 60000) return;            // at most once a minute
       lastReport = now;
       report(pos.coords.latitude, pos.coords.longitude);
-    }, function () { /* denied or unavailable — stay quiet */ },
+    }, function () { /* denied or unavailable, stay quiet */ },
       { enableHighAccuracy: false, maximumAge: 120000, timeout: 30000 });
   }
   function stopWatching() {
@@ -354,7 +354,7 @@
         headers: Object.assign({ 'Content-Type': 'application/json' }, h),
         body: JSON.stringify({ lat: lat, lon: lon, visitorId: visitorId(), watchSecret: watchSecret() }),
       });
-    }).catch(function () { /* offline is fine — the next fix will report */ });
+    }).catch(function () { /* offline is fine, the next fix will report */ });
   }
 
   /* "Not now" on a notification with no tab open: the service worker opens
@@ -409,13 +409,13 @@
     askPermission: askPermission, subscribe: subscribe,
     enableProximity: enableProximity, setProximity: setProximity, proximityOn: proximityOn,
     fetchNotifications: fetchNotifications, markRead: markRead,
-    // true only while a page is open — see the note at the top of this file
+    // true only while a page is open, see the note at the top of this file
     backgroundCapable: function () { return false; },
   };
 
   /* ── opt-in control ────────────────────────────────────────────────────
      Mounts into <div data-proximity-slot></div>. Deliberately plain about
-     what it does and what it cannot do — location is not something to opt
+     what it does and what it cannot do, location is not something to opt
      someone into with a cheerful half-truth. */
   function mountProximity() {
     document.querySelectorAll('[data-proximity-slot]').forEach(function (slot) {
@@ -445,7 +445,7 @@
        anything and is right to be disabled. What was wrong was WHERE the
        explanation lived: a title tooltip, which on a phone has no hover to
        reveal it and is simply unreachable. A tester on Android got a dead
-       button reading "Blocked" and nowhere to find out why — which is the
+       button reading "Blocked" and nowhere to find out why, which is the
        whole of the failure, since the fix is thirty seconds in site settings.
        It goes in the card now, where a thumb can read it. */
     var blocked = (perm === 'denied' && !on);
@@ -458,7 +458,7 @@
                                : 'Tell me when I walk past one')) + '</b>'
       /* "Verified homes only" was true until proximity started including
          unverified listings and labelling them instead. Leaving it would have
-         promised a filter that no longer exists — the same stale claim the
+         promised a filter that no longer exists, the same stale claim the
          push templates carried, in the one place a person reads before opting
          in. Say what actually happens: everything near you, each one told
          straight. */
@@ -470,10 +470,10 @@
         + '</span>'
       + (blocked
           ? '<span class="prox-note">To turn it back on: open your browser’s settings for this site '
-            + '— in Chrome, tap ⋮ → Site settings → Notifications; on iPhone, Settings → '
-            + 'Notifications → Synapse — set it to Allow, then reload this page.</span>'
+            + '- in Chrome, tap ⋮ → Site settings → Notifications; on iPhone, Settings → '
+            + 'Notifications → Synapse, set it to Allow, then reload this page.</span>'
           : '')
-      + (on ? '<span class="prox-note">Walking around with Synapse closed needs the mobile app — a browser cannot check your location once the tab is gone.</span>' : '')
+      + (on ? '<span class="prox-note">Walking around with Synapse closed needs the mobile app, a browser cannot check your location once the tab is gone.</span>' : '')
       + '</div>'
       + '<button type="button" class="prox-btn">' + (on ? 'Turn off' : (blocked ? 'Blocked' : 'Turn on')) + '</button>'
       + '</div>';
@@ -486,7 +486,7 @@
         btn.disabled = true; btn.textContent = 'Turning off…';
         setProximity(false).then(function (r) {
           paint(slot);
-          if (r && !r.ok) { var b2 = slot.querySelector('.prox-btn'); if (b2) b2.textContent = 'Couldn’t turn off — try again'; }
+          if (r && !r.ok) { var b2 = slot.querySelector('.prox-btn'); if (b2) b2.textContent = 'Couldn’t turn off, try again'; }
         });
         return;
       }

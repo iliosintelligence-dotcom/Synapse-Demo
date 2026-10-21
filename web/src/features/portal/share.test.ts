@@ -20,7 +20,7 @@ describe("share kit", () => {
     expect(t).toContain("• Semi-furnished");
     expect(t).toContain("Total to move in: ₦5,300,000");
     expect(t).toContain("• Gym");
-    expect(t.endsWith("— Prestige")).toBe(true);
+    expect(t.endsWith("- Prestige")).toBe(true);
   });
   it("never uses the street address", () => { expect(shareCaption({ ...l, ...{ address: "12 Secret Road" } } as ShareListing, "full", "x")).not.toContain("Secret"); });
   it("land has no bedrooms in its headline", () => { expect(shareCaption({ ...l, property_type: "land", listing_type: "sale" }, "short", "x")).toContain("🏡 LAND FOR SALE"); });

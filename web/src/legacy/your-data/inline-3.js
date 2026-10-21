@@ -5,7 +5,7 @@
 
     /* Every local key this app writes about a person. Enumerated rather than
        matched on a prefix, because a prefix match would sweep up whatever a
-       future feature happens to name similarly — and a delete button that
+       future feature happens to name similarly, and a delete button that
        removes more than it says is as bad as one that removes less. */
     var LOCAL_KEYS = [
       ['toju_visitor_v1',        'Your visitor id'],
@@ -51,13 +51,13 @@
       }
       if (VISITOR) {
         $('whoP').textContent = 'You are not signed in. Your data is stored against a random id '
-          + 'created by this browser — it is not linked to your name.';
+          + 'created by this browser, it is not linked to your name.';
         $('whoId').textContent = VISITOR;
         return;
       }
       $('whoP').textContent = 'Nothing identifies you yet. You have not talked to Tayo or saved '
         + 'anything from this browser.';
-      $('whoId').textContent = '—';
+      $('whoId').textContent = '-';
       $('whoId').classList.add('yd-none');
     }
 
@@ -80,7 +80,7 @@
          pretending otherwise would be the dishonest version of a data-rights
          page. */
       $('heldNote').innerHTML = 'This lists what is on this device. We also hold records on our '
-        + 'servers — conversations, leads, and alerts. The download below is a copy of this device only; '
+        + 'servers, conversations, leads, and alerts. The download below is a copy of this device only; '
         + 'to get the server records, email ilios.intelligence@gmail.com. Deleting below removes both. '
         + '<a href="/privacy">The policy</a> lists them all.';
     }
@@ -126,7 +126,7 @@
       if (window.SynLoader) SynLoader.show('Deleting your data…');
 
       /* The server first. Clearing this browser before the server call would
-         throw away the visitor id the call needs — and would leave somebody
+         throw away the visitor id the call needs, and would leave somebody
          believing their data was gone while it sat on a server they could no
          longer name. */
       var server = Promise.resolve({ ok: true, skipped: true });
@@ -167,7 +167,7 @@
         } else {
           /* Named, not swallowed. Somebody who asked for erasure is entitled
              to know it did not fully happen, and to be told what to do next
-             — a green tick over a failed call is the worst outcome here. */
+, a green tick over a failed call is the worst outcome here. */
           note.innerHTML = 'This device is cleared, but the server refused: '
             + String(res.error || 'unknown error').slice(0, 120)
             + '. Please email us and quote the id above so we can complete it by hand.';
@@ -178,7 +178,7 @@
 
     $('copyId').addEventListener('click', function () {
       var t = $('whoId').textContent;
-      if (!t || t === '—') return;
+      if (!t || t === '-') return;
       try {
         navigator.clipboard.writeText(t).then(function () {
           $('copyId').textContent = 'Copied';
@@ -187,7 +187,7 @@
       } catch (e) { /* selection is user-select: all, so it can be copied by hand */ }
     });
 
-    /* Signed in or not, the page works — it just has a different handle on
+    /* Signed in or not, the page works, it just has a different handle on
        you. Resolved before the first paint so the id shown is the right one. */
     function start() {
       paintWho(); paintHeld();

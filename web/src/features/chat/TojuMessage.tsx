@@ -132,8 +132,8 @@ export function TojuMessage({ m, live, onQuick, greeting }: { m: ChatMessage; li
                   <div className={s.pttl}>{x.title}</div>
                   <div className={s.vrow}><span className={s.vchip}>{VERIFY[x.verificationStatus ?? ""] ?? (x.verified ? "✓ Verified" : "◌ Not verified")}</span></div>
                   <div className={s.pmeta}><span title="Property Confidence: how much of our verification this home has passed">Confidence {Number(x.trustScore) || 0}</span> · {x.city}{x.yieldPct != null && x.yieldPct > 0 ? ` · ${x.yieldPct}% yield` : ""}</div>
-                  {x.why && <div className={s.watch}><b>Recommended — </b>{x.why}</div>}
-                  {x.whatToWatch && x.whatToWatch !== "No major synthetic flags" && <div className={s.watch}><b>Worth checking — </b>{x.whatToWatch}</div>}
+                  {x.why && <div className={s.watch}><b>Recommended, </b>{x.why}</div>}
+                  {x.whatToWatch && x.whatToWatch !== "No major synthetic flags" && <div className={s.watch}><b>Worth checking, </b>{x.whatToWatch}</div>}
                 </div>
               </a>
             ))}

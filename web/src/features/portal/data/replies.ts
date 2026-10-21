@@ -36,7 +36,7 @@ export const LINK_STAND_IN = "synapsecore.dev/s/…";
 export function replyPreview(message: string): string {
   let text = String(message || "").replace(/\{\{\s*link\s*\}\}/g, LINK_STAND_IN);
   if (!text.includes(LINK_STAND_IN)) text = `${text.trim()}\n\n${LINK_STAND_IN}`;
-  if (!/automat|bot\b|auto-?reply/i.test(text)) text += "\n\n(Automated reply — say anything here and a real person will see it.)";
+  if (!/automat|bot\b|auto-?reply/i.test(text)) text += "\n\n(Automated reply, say anything here and a real person will see it.)";
   return text;
 }
 

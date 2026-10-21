@@ -58,7 +58,7 @@ export function PinsPanel({ onClose }: { onClose: () => void }) {
         <div className={s.histEmpty}>Nothing pinned yet.<br />Tap the pin under any reply from Tayo to keep it, and the homes with it, here.</div>
       ) : (
         <>
-          <button type="button" className={s.histRowBtn} onClick={() => share(pins.map(shareText).join("\n\n—\n\n"))}>
+          <button type="button" className={s.histRowBtn} onClick={() => share(pins.map(shareText).join("\n\n-\n\n"))}>
             <div className={s.t}>Share everything pinned</div><div className={s.d}>{pins.length} pinned{flash ? ` · ${flash}` : ""}</div>
           </button>
           {pins.map((x) => (

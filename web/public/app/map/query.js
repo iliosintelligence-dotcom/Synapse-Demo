@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   SynMapQuery — asking the database what is on screen.
+   SynMapQuery, asking the database what is on screen.
 
    Until now every map in this product was handed a list the page had already
    fetched and drew whatever it was given. That is fine at seven listings and
@@ -7,14 +7,14 @@
    one neighbourhood, and "search this area" has no server side at all.
 
    This calls properties_in_view(), which is a bounding-box query against the
-   GiST index on properties.location — an index that had existed since the
+   GiST index on properties.location, an index that had existed since the
    schema was written and that nothing had ever used. Measured on the live
    database: 32 rows out of 507 in 1.37ms, Bitmap Index Scan.
 
    TWO THINGS IT DELIBERATELY DOES NOT DO.
 
    It does not fetch while you pan. The renderer debounces viewport events, and
-   even then this only runs when someone ASKS — the "Search this area" pill.
+   even then this only runs when someone ASKS, the "Search this area" pill.
    A map that refetches on every idle is a map that fights you: results change
    under your thumb while you are still deciding where to look.
 
@@ -25,7 +25,7 @@
   'use strict';
 
   /* Keyed by a rounded box, so nudging the map a few metres and asking again
-     is free. Five decimal places is about a metre — far finer than anyone
+     is free. Five decimal places is about a metre, far finer than anyone
      pans deliberately, and coarse enough to actually hit. */
   var cache = new Map();
   var CACHE_MAX = 40;
@@ -124,7 +124,7 @@
 
   /* ── "SEARCH THIS AREA" ─────────────────────────────────────────────────
      The pill only appears once the map has moved far enough that the results
-     on screen are genuinely stale — otherwise it sits there permanently,
+     on screen are genuinely stale, otherwise it sits there permanently,
      nagging, and stops meaning anything. "Far enough" is measured against the
      box that was last searched: a pan of more than about a third of the view,
      or a zoom step, counts.
@@ -174,7 +174,7 @@
              here is indistinguishable from "there is nothing here", which is
              a different and much more misleading answer. */
           if (window.console) console.warn('area search failed:', e.message);
-          btn.textContent = 'Could not search — try again';
+          btn.textContent = 'Could not search, try again';
           setTimeout(function () { btn.textContent = 'Search this area'; }, 2600);
           throw e;
         })

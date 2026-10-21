@@ -18,7 +18,7 @@
       }
 
       // 'in' | 'up'. Honours ?mode=up so a "Create account" link elsewhere
-      // actually lands on the create-account form — without this every entry
+      // actually lands on the create-account form, without this every entry
       // point, register or login, dropped the visitor on the same sign-in tab.
       var mode = params.get('mode') === 'up' ? 'up' : 'in';
       var busy = false;  // single-flight guard: blocks double-submit races
@@ -28,13 +28,13 @@
 
       /* When a recovery/magic link's one-time token is already spent, Supabase
          redirects back here with the failure in the hash fragment rather than
-         establishing a session — so no PASSWORD_RECOVERY event ever fires and
+         establishing a session, so no PASSWORD_RECOVERY event ever fires and
          this would otherwise look like an ordinary, unexplained sign-in page.
          The common real-world cause: mail providers and corporate security
          scanners "pre-visit" links in emails to check for phishing, which
          silently consumes the single-use token before the person ever clicks
          it themselves. Name that, rather than leaving them guessing. */
-      // Captured now, shown after setMode() runs at the bottom of this script —
+      // Captured now, shown after setMode() runs at the bottom of this script -
       // setMode() calls clearErrors(), which wipes #auNote, so showing this
       // immediately just gets erased a few lines later.
       var expiredLinkMsg = null;
@@ -43,15 +43,15 @@
         var code = hash.get('error_code');
         if (!code) return;
         expiredLinkMsg = (code === 'otp_expired')
-          ? 'That reset link has already been used or opened — some mail apps open links automatically to scan them, which can use it up before you click it yourself. Request a fresh one below.'
-          : 'That link did not work — request a fresh one below.';
+          ? 'That reset link has already been used or opened, some mail apps open links automatically to scan them, which can use it up before you click it yourself. Request a fresh one below.'
+          : 'That link did not work, request a fresh one below.';
         history.replaceState(null, '', location.pathname + location.search);
       })();
 
       /* ── framing: why am I here? ─────────────────────────────────────── */
       var WHY = {
         contact: { t: 'One step before we introduce you.',
-                   d: 'We ask for an account before sharing your details with an agent — so you can see every conversation in one place, and so no agency ever gets your number without you choosing.' },
+                   d: 'We ask for an account before sharing your details with an agent, so you can see every conversation in one place, and so no agency ever gets your number without you choosing.' },
         agency:  { t: 'Set up your agency workspace.',
                    d: 'Your listings, leads and verification all live behind this login.' },
         idle:    { t: 'You were signed out.',
@@ -71,7 +71,7 @@
            to someone at the end of a search and the wrong thing entirely to
            someone arriving at work. This is about the leads waiting, the
            follow-ups overdue, and the posts that brought them in. */
-        el('artSub').textContent = 'Every enquiry, every reply and every post that brought them in — '
+        el('artSub').textContent = 'Every enquiry, every reply and every post that brought them in, '
           + 'in one place your whole team works from.';
         if (!reason) mode = 'up';
       }
@@ -110,7 +110,7 @@
         el('passHint').hidden = !up;
         /* Here rather than in syncSubmitLabel, because this is where every
            other field's visibility is decided and setMode does not route
-           through that function — hooking it left the block hidden while the
+           through that function, hooking it left the block hidden while the
            button already read "Create account". */
         syncConsent();
         el('auH').textContent = up
@@ -189,7 +189,7 @@
       function showNote(kind, msg) {
         note.innerHTML = '<div class="au-note ' + kind + '" role="status">' + msg + '</div>';
       }
-      // Never reveal whether an email exists — that is an account-enumeration
+      // Never reveal whether an email exists, that is an account-enumeration
       // oracle. Sign-in failures are always the same sentence.
       function friendly(err) {
         var m = String((err && err.message) || '').toLowerCase();
@@ -209,11 +209,11 @@
            contain -- so it fell through to the catch-all. Matched by code
            first, and by the words GoTrue actually uses. */
         if (code === 'same_password' || m.indexOf('different from the old password') > -1)
-          return 'That is already your password — choose a different one, or simply sign in with it.';
+          return 'That is already your password, choose a different one, or simply sign in with it.';
         /* The server states the actual rule it applied, which is more useful
            than any paraphrase of it. Escaped: it goes into innerHTML. */
         if (code === 'weak_password')
-          return escHtml((err && err.message) || 'That password is too weak — choose a stronger one.');
+          return escHtml((err && err.message) || 'That password is too weak, choose a stronger one.');
         if (code === 'reauthentication_needed')
           return 'For security, sign in again before changing your password.';
 
@@ -223,7 +223,7 @@
            a mystery: nothing the person did was wrong, and no one else was
            using the app. Name the real cause. */
         if (code === 'over_email_send_rate_limit' || m.indexOf('email rate limit') > -1)
-          return 'The project has sent as many emails as it is allowed this hour — this is our sending limit, not anything you did. Wait an hour, or turn off email confirmation while testing.';
+          return 'The project has sent as many emails as it is allowed this hour, this is our sending limit, not anything you did. Wait an hour, or turn off email confirmation while testing.';
         if (code === 'over_request_rate_limit')
           return 'Too many requests from this device just now. Wait a minute and try again.';
         if (code === 'over_sms_send_rate_limit' || (m.indexOf('sms') > -1 && m.indexOf('rate') > -1))
@@ -236,7 +236,7 @@
           return 'That code has expired. Ask for a new one.';
         if (code === 'user_already_exists'
             || m.indexOf('already registered') > -1 || m.indexOf('already been registered') > -1)
-          return 'There is already an account with that email — try signing in instead.';
+          return 'There is already an account with that email, try signing in instead.';
         if (code === 'email_not_confirmed')
           return 'That account still needs confirming. Check your email for the link we sent.';
 
@@ -245,17 +245,17 @@
         if (m.indexOf('invalid') > -1 && (m.indexOf('otp') > -1 || m.indexOf('token') > -1))
           return 'That code is not right. Check it and try again.';
         if (m.indexOf('password') > -1 && m.indexOf('short') > -1)
-          return 'That password is too short — use at least 8 characters.';
+          return 'That password is too short, use at least 8 characters.';
         if (m.indexOf('weak') > -1 || m.indexOf('pwned') > -1 || m.indexOf('compromised') > -1)
           return 'That password has appeared in a known breach. Please choose a different one.';
         if (m.indexOf('same') > -1 && m.indexOf('password') > -1)
-          return 'That is your current password — choose a different one.';
+          return 'That is your current password, choose a different one.';
         if (m.indexOf('provider is not enabled') > -1)
           return 'That sign-in method is not switched on for this project yet.';
         if (m.indexOf('fetch') > -1 || m.indexOf('network') > -1 || m.indexOf('unreachable') > -1)
           return 'We could not reach the sign-in service. Check your connection and try again.';
         if (m.indexOf('session') > -1 || m.indexOf('expired') > -1 || m.indexOf('token') > -1)
-          return 'This reset link has expired — request a new one and use it within a few minutes.';
+          return 'This reset link has expired, request a new one and use it within a few minutes.';
 
         /* Broad, and last, so it can never shadow a specific one again.
            "For security purposes, you can only request this after N seconds"
@@ -282,7 +282,7 @@
 
       /* ── THE DEMO ACCOUNTS ────────────────────────────────────
          This used to be unconditional. Whatever anybody typed, both tabs
-         signed them into one of two shared accounts — which made the whole
+         signed them into one of two shared accounts, which made the whole
          page a facade: nobody could create a real account, Create account
          provisioned nothing, and any two visitors were writing into the same
          agency at once.
@@ -294,8 +294,8 @@
          credential check against a real account.
 
          It signs into a genuine fixed account rather than faking the UI, so
-         every real dependent — RLS, the agency-portal role gate, notify.js
-         reading SynAuth.user().id — behaves exactly as it does for anybody
+         every real dependent, RLS, the agency-portal role gate, notify.js
+         reading SynAuth.user().id, behaves exactly as it does for anybody
          else. */
       var DEMO_ACCOUNTS = {
         customer: { email: 'demo-customer@synapse.ng', password: 'SynDemo-Cust-9f42x' },
@@ -306,13 +306,13 @@
       /* The note has to describe the page the visitor is actually on. Leaving
          "any email and password gets you in" beside a form that now checks
          credentials would send somebody with a typo'd password round in
-         circles — the page would be telling them it cannot fail. */
+         circles, the page would be telling them it cannot fail. */
       if (demoRequested) {
-        el('demoNote').textContent = 'Demo mode — this opens a shared example account.';
+        el('demoNote').textContent = 'Demo mode, this opens a shared example account.';
       } else {
         el('demoNote').innerHTML = 'Just looking? <button type="button" class="au-linkbtn" '
           + 'id="demoBtn">Open a demo ' + (role === 'agency' ? 'agency' : 'account')
-          + '</button> instead — no signup.';
+          + '</button> instead, no signup.';
         el('demoBtn').addEventListener('click', function () {
           if (busy) return;
           /* Routed through the form's own submit rather than duplicating the
@@ -506,7 +506,7 @@
         /* The demo short-circuits to the shared account, so a link in a deck
            or an email opens the product with nothing to type. Everything else
            is the real thing: Create account provisions the profile, and for an
-           agency the agencies row and the owner membership with it — all three
+           agency the agencies row and the owner membership with it, all three
            atomically inside the handle_new_user trigger, so closing the tab
            can never leave an account half-made. */
         /* Four entrances, one completion path below. The phone flow's first
@@ -543,7 +543,7 @@
           var session = res && res.data && res.data.session;
           if (mode === 'up' && !session) {
             // Supabase intentionally returns 200 with no error when the email
-            // is already registered — that's how it avoids leaking which
+            // is already registered, that's how it avoids leaking which
             // emails have accounts via an error message. But it means "check
             // your email to confirm" is a LIE for someone who already has an
             // account: nothing about their password changed, and re-showing
@@ -555,7 +555,7 @@
             var u = res && res.data && res.data.user;
             var alreadyExists = u && Array.isArray(u.identities) && u.identities.length === 0;
             if (alreadyExists) {
-              // setMode() calls clearErrors(), which wipes #auNote — call it
+              // setMode() calls clearErrors(), which wipes #auNote, call it
               // BEFORE showNote(), not after (this exact ordering mistake
               // already bit the expired-link message earlier in this file).
               setMode('in');
@@ -567,7 +567,7 @@
             showNote('ok', 'Check your email to confirm your account, then sign in.');
             return;
           }
-          // A brand-new agency goes straight into setting up its brand — that
+          // A brand-new agency goes straight into setting up its brand, that
           // is the first thing Tayo needs before it can write anything on their
           // behalf, and an empty brand is the one gap a new account always has.
           // Existing sign-ins are untouched, and an explicit ?next= still wins.
@@ -606,7 +606,7 @@
               SynAuth.resendConfirmation(email, { role: role })
                 .then(function (r) {
                   if (r && r.error) throw r.error;
-                  showNote('ok', 'A new link is on its way. Open it on any device — '
+                  showNote('ok', 'A new link is on its way. Open it on any device, '
                     + 'it goes to synapsecore.dev now, not to this computer.');
                 })
                 .catch(function (e2) { showNote('bad', friendly(e2)); });
@@ -665,7 +665,7 @@
         if (busy) return;
         busy = true;
         SynAuth.resetPassword(email).then(function () {
-          // Deliberately unconditional — confirming whether the address exists
+          // Deliberately unconditional, confirming whether the address exists
           // would leak account membership.
           showNote('ok', 'If there is an account for that email, a reset link is on its way.');
         }).catch(function (e) {
@@ -686,7 +686,7 @@
       /* ── password recovery ───────────────────────────────────────────────
          THE BUG THIS FIXES: clicking a "reset password" email link makes
          Supabase issue a real session for that visitor (that is how the link
-         proves who they are) — but a session is not a new password. The page
+         proves who they are), but a session is not a new password. The page
          used to treat "there is a session" and "they are done" as the same
          thing and just redirected into the app, so nobody who used the reset
          link ever actually got to change their password. They landed in the
@@ -695,7 +695,7 @@
 
          Supabase's SDK fires a dedicated 'PASSWORD_RECOVERY' auth event when
          the link is a recovery link (as opposed to a normal sign-in). That is
-         the only reliable signal — the URL itself does not visibly say so. */
+         the only reliable signal, the URL itself does not visibly say so. */
       var recovering = false;
 
       function enterRecoverMode() {
@@ -705,7 +705,7 @@
         form.hidden = true;
         el('auAlt').hidden = true;
         el('auH').textContent = 'Choose a new password';
-        el('auP').textContent = 'You are signed in for this one step only — set a password and you are done.';
+        el('auP').textContent = 'You are signed in for this one step only, set a password and you are done.';
         el('recoverForm').hidden = false;
       }
 
@@ -787,7 +787,7 @@
 
       // Event-driven, not timer-based: a setTimeout heuristic here would be
       // guessing at a race between two async operations. Instead, act only on
-      // the FIRST relevant signal the SDK itself sends — verified empirically
+      // the FIRST relevant signal the SDK itself sends, verified empirically
       // (see commit note) that INITIAL_SESSION fires exactly once on a normal
       // load, and PASSWORD_RECOVERY fires instead of it when the visitor
       // arrived via a recovery link. Whichever one arrives is authoritative;
@@ -940,7 +940,7 @@
             // THE LOOP THIS FIXES: this used to redirect on session EXISTENCE
             // alone. Someone signed in on the customer side, then sent to
             // signin.html?role=agency by agency.html's own requireAuth() (it
-            // correctly saw the wrong role and sent them here to fix it) —
+            // correctly saw the wrong role and sent them here to fix it) -
             // this handler saw "a session exists" and bounced them straight
             // back to agency.html before they ever saw the form, which
             // bounced them right back here. Neither page could ever win,

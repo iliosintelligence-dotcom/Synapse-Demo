@@ -1,9 +1,9 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — Nigerian places, for filling a listing without typing.
+   Synapse, Nigerian places, for filling a listing without typing.
 
    State, city and area were three free-text boxes. That meant "Lagos", "lagos",
    "Lagos State" and "LAG" were four different cities as far as search, matching
-   and the map were concerned — and an agency posting its first property had to
+   and the map were concerned, and an agency posting its first property had to
    type all three from memory.
 
    WHY STATE IS A HARD SELECT AND THE OTHERS ARE NOT.
@@ -13,7 +13,7 @@
    Cities and areas are the opposite: Nigeria has thousands of towns and every
    neighbourhood name below is a convenience, not a register. A hard select
    would block a legitimate listing in a town we forgot, which is a worse
-   failure than an inconsistent spelling. Both are therefore type-ahead —
+   failure than an inconsistent spelling. Both are therefore type-ahead -
    suggestions that fill themselves in, with typing still allowed.
 
    The area lists cover the cities this product actually serves. Everywhere
@@ -34,7 +34,7 @@
     'Zamfara',
   ];
 
-  /* Main towns per state — the capital first, then the places somebody would
+  /* Main towns per state, the capital first, then the places somebody would
      plausibly list a home in. Not exhaustive by design. */
   var CITIES = {
     'Abia': ['Umuahia', 'Aba', 'Ohafia', 'Arochukwu'],

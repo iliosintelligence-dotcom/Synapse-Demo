@@ -1,14 +1,14 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — shared match module
+   Synapse, shared match module
    Single source of truth for everything the "Your matches" page (browse.html)
    and the Tayo canvas (toju.html) render from a Tayo match payload:
-     · shapeTojuMatch()  — Tayo API match  →  card item (one shape, both pages)
-     · listingCardHtml() — the .listing card markup (identical on both pages)
-     · drawMatchMap()    — the vector map (see app/map/render.js)
-     · naira / esc / verifyChip / coords / IMG_POOL — shared helpers
+     · shapeTojuMatch(), Tayo API match  →  card item (one shape, both pages)
+     · listingCardHtml(), the .listing card markup (identical on both pages)
+     · drawMatchMap(), the vector map (see app/map/render.js)
+     · naira / esc / verifyChip / coords / IMG_POOL, shared helpers
    Full data contract: docs/STATE_CONTRACT.md. Plain script (no build step);
    exposes window.SynMatches. Keep page-level CSS for .listing/.price-pin in
-   sync between browse.html and toju.html — markup lives here, styles there.
+   sync between browse.html and toju.html, markup lives here, styles there.
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
   'use strict';
@@ -106,7 +106,7 @@
      Abbreviation is deliberately currency-aware. "₦165M" reads naturally where
      a home costs hundreds of millions; "£0.4M" does not. So we only abbreviate
      once the number is genuinely long, and otherwise let Intl produce the
-     conventional form for that currency — including where the symbol goes,
+     conventional form for that currency, including where the symbol goes,
      which differs by locale and is the sort of thing that quietly marks a
      product as foreign. */
   const CURRENCY_FALLBACK = 'NGN';
@@ -140,7 +140,7 @@
     n = Number(n) || 0;
     const code = /^[A-Za-z]{3}$/.test(currency || '') ? String(currency).toUpperCase() : CURRENCY_FALLBACK;
     /* narrowSymbol is what turns NGN into ₦. Without it Intl prints the ISO
-       code for any currency the viewer's locale does not consider local — so a
+       code for any currency the viewer's locale does not consider local, so a
        Nigerian on a phone set to en-GB, which is most of them, was reading
        "NGN 3.2M" on every card while the rest of the app said ₦. It stays
        currency-aware: £, $ and R still come out right, and a currency with no
@@ -170,7 +170,7 @@
      by market. New code should call money(amount, listing.currency). */
   const naira = (n) => money(n, CURRENCY_FALLBACK);
 
-  // deterministic photo pool — cards without a real image cycle through these
+  // deterministic photo pool, cards without a real image cycle through these
   /* Retained only because it is still exported on window.SynMatches and other
      pages may reference it. The card renderer no longer uses it: see
      listingCardHtml. Do not reintroduce it as a fallback for a missing photo. */
@@ -214,7 +214,7 @@
     return [base[0] + (i % 3) * 0.004, base[1] + (i % 2) * 0.004];
   }
 
-  // Deep link to the property page. Every card tap must carry the listing id —
+  // Deep link to the property page. Every card tap must carry the listing id -
   // a bare property.html opens the wrong (demo) property. encodeURIComponent
   // output is also safe inside a double-quoted HTML attribute.
   function propertyHref(id) {
@@ -236,12 +236,12 @@
   }
 
   // Tayo API match (toju-demo `chat` / `matches` actions) → the card item both
-  // pages render. ONE shape — if you need a new field, add it here, not inline.
+  // pages render. ONE shape, if you need a new field, add it here, not inline.
   function shapeTojuMatch(m, i) {
     return {
       id: (typeof m.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(m.id)) ? m.id : 'r' + i,
       /* THE LISTING'S OWN PHOTOGRAPH. This was hardcoded null with the note
-         "renderer falls back to IMG_POOL", and that fallback is gone — it
+         "renderer falls back to IMG_POOL", and that fallback is gone, it
          dressed a real home in a stock flat, which a buyer cannot tell from a
          real photo of the place they are about to enquire about. So the cards
          went blank instead, while the agency's 21 uploaded photos sat in
@@ -264,7 +264,7 @@
       /* "Area, City, State" as the card prints it: each part once, in the order a person says an address. */
       where: [m.neighbourhood && m.neighbourhood.name, m.city, m.state].filter((x, i, a) => typeof x === 'string' && x.trim() && a.findIndex((y) => typeof y === 'string' && y.trim().toLowerCase() === x.trim().toLowerCase()) === i).map((x) => x.trim()).join(', '),
       // Tayo shows every matching home and labels each one. This MUST come from
-      // the row — hardcoding 'verified' here would stamp the badge on listings
+      // the row, hardcoding 'verified' here would stamp the badge on listings
       // nobody has checked, which is the single worst thing this UI could do.
       vstatus: m.verificationStatus || (m.verified ? 'verified' : 'unverified'),
       // { name, logo, color, font } from the agency's Brand page, or null.
@@ -289,23 +289,23 @@
       flood: m.neighbourhood ? m.neighbourhood.flood : null,
       power: m.neighbourhood ? m.neighbourhood.power : null,
       yield: m.yieldPct,
-      why: m.why ? '<b>Recommended —</b> ' + esc(m.why)
+      why: m.why ? '<b>Recommended -</b> ' + esc(m.why)
         : (m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
-          ? '<b>Worth checking —</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
+          ? '<b>Worth checking -</b> ' + esc(m.whatToWatch) : esc(m.summary || '')),
     };
   }
 
   // One .listing card. opts:
-  //   saves   — Set of saved ids (localStorage `synapse_saved`)
-  //   compare — include the compare checkbox (browse-only tool; the canvas
-  //             deliberately omits it — on the canvas you just tell Tayo)
-  //   picked  — Set of ids ticked for compare
-  /* Expiry chip — real scarcity, not manufactured.
+  //   saves, Set of saved ids (localStorage `synapse_saved`)
+  //   compare, include the compare checkbox (browse-only tool; the canvas
+  //             deliberately omits it, on the canvas you just tell Tayo)
+  //   picked, Set of ids ticked for compare
+  /* Expiry chip, real scarcity, not manufactured.
      It says "expires", never "re-confirmation due": `expires_at` is the
      listing's own visibility window, and a re-confirmation claim would assert a
      verification re-check that nothing performs. The date is enforced, not
-     decorative — properties_select_public hides the row past it and Tayo's
-     matcher uses the same clock — so a buyer acting on this chip is acting on
+     decorative, properties_select_public hides the row past it and Tayo's
+     matcher uses the same clock, so a buyer acting on this chip is acting on
      something true. Shown only inside the last 3 days; a fortnight-long
      countdown is just pressure. */
   function expiryChip(l) {
@@ -421,7 +421,7 @@
 
   // Leaflet price-pin map. `st` is a persistent {map, layer} state object owned
   // by the page; pass the same object every call. Safe when the container was
-  // display:none a moment ago (canvas morph) — it re-measures before fitting.
+  // display:none a moment ago (canvas morph), it re-measures before fitting.
   /* ── THE MATCHES MAP ───────────────────────────────────────────────────
      Same signature it has always had -- drawMatchMap(state, elementId, items)
      -- so browse, Tayo and the agency portal call it exactly as before and
@@ -630,15 +630,15 @@
     st.r.setProperties(list);
     /* RESIZE BEFORE FITTING, which is the whole bug. fitBounds solves for the
        viewport it can see at the time, and this called it BEFORE resize() told
-       MapLibre the container's real size — so the camera was framed for one
+       MapLibre the container's real size, so the camera was framed for one
        box and then shown in another. With a single pin nobody notices, because
        flyTo centres it regardless. With two it is obvious: one sits centred
        and the other hangs off toward an edge, which is exactly how it was
        reported.
 
        It shows up here rather than everywhere because these maps are painted
-       while the pane they live in is still settling — the sheet is opening, the
-       column is still laying out — so the size at fit time is genuinely stale.
+       while the pane they live in is still settling, the sheet is opening, the
+       column is still laying out, so the size at fit time is genuinely stale.
        Resizing first costs one extra layout read and makes the fit correct. */
     st.r.resize();
     /* Padding has to fit inside what it is padding. 56px a side needs 112px of
@@ -659,14 +659,14 @@
     return Math.max(0, Math.min(want, Math.floor(Math.min(w, h) / 2) - 24));
   }
 
-  /* ── Saved homes — race-safe across tabs ────────────────────────────────
+  /* ── Saved homes, race-safe across tabs ────────────────────────────────
      Every page used to read `synapse_saved` into a Set at load and then write
      the whole Set back on each toggle. With two tabs open that is a lost-update
      race: tab B saves a home, tab A (holding a stale Set) saves a different one
      and wipes B's. Both users see hearts silently un-heart themselves.
 
      Fix: never write from a stale snapshot. Re-read at the moment of the
-     change, apply the single delta, write back — and listen to `storage` so
+     change, apply the single delta, write back, and listen to `storage` so
      other tabs repaint instead of drifting. */
   const SAVES_KEY = 'synapse_saved';
   function readSaves() {
@@ -688,7 +688,7 @@
     });
   }
 
-  /* ── Recently viewed — device-local history ─────────────────────────────
+  /* ── Recently viewed, device-local history ─────────────────────────────
      A small snapshot of each listing the user actually opened, newest first,
      capped. Only ever written at the moment of a real card tap, so the rail
      can never show a home the user hasn't seen. Same race-safe discipline as

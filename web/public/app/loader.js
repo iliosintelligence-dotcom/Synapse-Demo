@@ -6,7 +6,7 @@
      SynLoader.hide()
 
    NOT SHOWN IMMEDIATELY. A loader that appears for 80ms is a flash of
-   something the person cannot read and did not need — it makes a fast app
+   something the person cannot read and did not need, it makes a fast app
    feel busy. Nothing is drawn until the work has been running long enough to
    be worth remarking on, and if it finishes first nothing is ever drawn at
    all. 260ms is roughly where a wait stops reading as responsiveness.

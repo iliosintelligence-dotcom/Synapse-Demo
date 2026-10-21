@@ -107,7 +107,7 @@ export default function Page() {
           <div className="deck" id="deck">
             <div className="card summary" data-title="Overview">
               <div className="price" id="pvPrice">
-                —
+                -
               </div>
               <div className="ctx" id="pvCtx" hidden></div>
               <div className="ttl" id="pvTitle" role="heading" aria-level="1">
@@ -117,7 +117,7 @@ export default function Page() {
               <div className="facts" id="pvFacts"></div>
               <div className="pvtrust-row" id="pvTrust" hidden>
                 <div className="ringbig" id="pvRing">
-                  —
+                  -
                 </div>
                 <div>
                   <div style={{ "fontWeight": "600", "fontSize": "14px", "display": "flex", "alignItems": "center", "gap": "6px" }} id="pvVerifyLine"></div>
@@ -167,7 +167,7 @@ export default function Page() {
                 </div>
               </div>
               <p className="cost-handoff">
-                {"Ready to move on this? Tayo takes your brief first, then\n        introduces the agency with it — so the agent you meet already knows\n        what you can afford and what you asked about."}
+                {"Ready to move on this? Tayo takes your brief first, then\n        introduces the agency with it, so the agent you meet already knows\n        what you can afford and what you asked about."}
               </p>
             </div>
             <div className="card section" id="piCard">
@@ -202,7 +202,7 @@ export default function Page() {
                 {" Viewing assistant"}
               </div>
               <div className="vcheck" id="vcheck"></div>
-              <textarea className="vnotes" id="vnotes" placeholder={"Notes from the viewing — water pressure, smells, the agent's answers…"} />
+              <textarea className="vnotes" id="vnotes" placeholder={"Notes from the viewing, water pressure, smells, the agent's answers…"} />
               <div className="vphotos" id="vphotos"></div>
               <input type="file" id="vfile" accept="image/*" hidden />
             </div>
@@ -220,13 +220,13 @@ export default function Page() {
               <div className="apc" id="pvAgentCard">
                 <div className="apc-photo" id="pvAgentPhoto">
                   <span id="pvAgentInitials">
-                    —
+                    -
                   </span>
                 </div>
                 <div className="apc-body">
                   <div className="apc-nm">
                     <span id="pvAgentName">
-                      —
+                      -
                     </span>
                     <span className="apc-vf" id="pvAgentVf" hidden>
                       ✓
@@ -237,11 +237,11 @@ export default function Page() {
                   <a className="apc-agency apc-ag-open" id="pvAgencyLink" href="#">
                     {" "}
                     <span className="apc-ag-logo" id="pvAgencyInitial">
-                      —
+                      -
                     </span>
                     {" "}
                     <span className="apc-ag-nm" id="pvAgencyName">
-                      —
+                      -
                     </span>
                     {" "}
                     <span className="apc-ag-meta" id="pvAgencyMeta"></span>
@@ -310,7 +310,7 @@ export default function Page() {
               <div className="verify-summary">
                 <div className="verify-ring" id="pvChecksRing">
                   <span>
-                    —
+                    -
                   </span>
                 </div>
                 <div className="verify-summary-txt">
@@ -327,7 +327,7 @@ export default function Page() {
                 </span>
                 {" "}
                 <span className="avail-val" id="pvAvailVal">
-                  —
+                  -
                 </span>
               </div>
             </div>

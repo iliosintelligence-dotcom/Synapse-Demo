@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — the customer taskbar.
+   Synapse, the customer taskbar.
 
    Tayo, Your matches and Dream Home are one product, and until now each page
    carried its own copy of the links between them as a row of pills under the
@@ -278,7 +278,7 @@
       /* Say it once, properly, for anyone not looking at the pill. */
       fbtn.setAttribute('aria-label',
         (deal || verified)
-          ? 'Filter and sort — ' + (deal ? deal.textContent.trim() : 'all homes')
+          ? 'Filter and sort, ' + (deal ? deal.textContent.trim() : 'all homes')
             + (verified ? ', verified only' : '')
           : 'Filter and sort');
     };
@@ -495,7 +495,7 @@
 
     /* Each trigger's icon states whether its own sheet is open, travelling to
        a cross and back rather than being swapped out underneath you. Driven
-       off `which` so one call keeps both honest — opening the filters has to
+       off `which` so one call keeps both honest, opening the filters has to
        return the nav icon to a grid, not leave two crosses on the bar.
 
        Guarded: SynMorph is a module and this file is a classic script, so on a

@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-synapse.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={"Synapse Core — Terms of Service"} />
+        <meta property="og:image:alt" content={"Synapse Core, Terms of Service"} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Terms of Service" />
         <meta name="twitter:description" content={"The terms that govern using Synapse Core: what the platform is, what “verified” means and does not mean, and what Synapse Core does not promise."} />

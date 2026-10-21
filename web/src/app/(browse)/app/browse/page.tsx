@@ -61,7 +61,7 @@ export default function Page() {
             <path d="M21 21l-4.3-4.3" />
           </svg>
           {" "}
-          <input id="searchInput" type="text" placeholder={"Search by area, city, type or price — e.g. Lekki, 3-bed, duplex, under 150M…"} autoComplete="off" />
+          <input id="searchInput" type="text" placeholder={"Search by area, city, type or price, e.g. Lekki, 3-bed, duplex, under 150M…"} autoComplete="off" />
           <button id="searchClear" hidden aria-label="Clear">
             ✕
           </button>

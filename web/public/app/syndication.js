@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — campaign generation & social syndication
+   Synapse, campaign generation & social syndication
    An Omneky-style engine: take ONE verified property, fan it into many creative
    variants, validate each against the real constraints of each platform, then
    push them through a publish queue.
@@ -10,8 +10,8 @@
    Social access tokens NEVER appear in this file or any client file. Publishing
    is delegated to a server-side endpoint (`social-publish` edge function) that
    reads them from Supabase secrets. This module can therefore run in two modes:
-     · 'dry'  — generate, validate and queue; render exactly what WOULD be sent.
-     · 'live' — same pipeline, but the queue POSTs to the publish endpoint.
+     · 'dry', generate, validate and queue; render exactly what WOULD be sent.
+     · 'live', same pipeline, but the queue POSTs to the publish endpoint.
    Dry is the default and is honest about being a rehearsal: nothing it does
    touches a real account. Live requires the endpoint to exist AND the operator
    to opt in per run, because publishing is irreversible and public.
@@ -19,7 +19,7 @@
 (function () {
   'use strict';
 
-  /* ── Platform specs — real limits, not decoration ───────────────────────
+  /* ── Platform specs, real limits, not decoration ───────────────────────
      These are what make a variant valid or not. Getting them wrong is how you
      end up with a truncated caption or a rejected upload at 2am. */
   var PLATFORMS = {
@@ -78,7 +78,7 @@
       requiresVerified: true,   // its entire premise is that the checks passed
       hook: function (p) { return 'Somebody stood in this ' + p.kind + ' and checked it.'; },
       body: function (p) {
-        return 'Title, structure, flood risk, legal status, ownership — seven checks, all passed, re-confirmed within the last 21 days.\n\n'
+        return 'Title, structure, flood risk, legal status, ownership, seven checks, all passed, re-confirmed within the last 21 days.\n\n'
           + p.bedrooms + '-bed ' + p.kind + ' in ' + p.area + '. ' + p.priceLine + '.';
       },
       cta: 'See exactly what we checked →',
@@ -122,7 +122,7 @@
     },
     {
       id: 'scarcity', name: 'Freshness',
-      why: 'Uses the 21-day rule as honest urgency — the listing really does expire.',
+      why: 'Uses the 21-day rule as honest urgency, the listing really does expire.',
       hook: function (p) {
         return p.daysLeft == null
           ? 'This one disappears in 21 days if it is not re-confirmed.'
@@ -228,11 +228,11 @@
      Normalises the agency's `agencies` row into the pieces this module can
      actually use. Two honest categories:
 
-       CONCRETE (name, tagline, handle, colours, logo, typeface) — applied
+       CONCRETE (name, tagline, handle, colours, logo, typeface), applied
        deterministically here: sign-off, mention, and the values the UI paints
        creatives with.
 
-       VOICE (free prose describing how they want to sound) — a template cannot
+       VOICE (free prose describing how they want to sound), a template cannot
        honour it. It is carried on the campaign so the AI composer can use it,
        and is deliberately NOT used to fake tone in the fixed angle copy. */
   function brandBits(brand) {
@@ -258,7 +258,7 @@
      left blank simply does not appear. */
   function signOff(b) {
     if (!b || !b.name) return '';
-    return '\n\n— ' + b.name + (b.tagline ? ' · ' + b.tagline : '');
+    return '\n\n- ' + b.name + (b.tagline ? ' · ' + b.tagline : '');
   }
 
   function hashtagsFor(p, platform, b) {
@@ -281,7 +281,7 @@
       base.push('#' + cityTag + 'RealEstate');
     }
     base.push('#' + (cityTag || 'Nigeria') + (p.rent ? 'Rent' : 'Property'));
-    // The agency's own tag leads when it has one — this is their post.
+    // The agency's own tag leads when it has one, this is their post.
     if (b && b.handle) base.unshift('#' + b.handle.replace(/[^a-z0-9]/gi, ''));
     if (p.verified) base.push('#VerifiedListing');   // only when it actually is
     base.push('#Synapse');
@@ -339,7 +339,7 @@
     var body = angle.body(p);
     var tags = hashtagsFor(p, platform, b);
     // WhatsApp Status takes no hashtags, so the sign-off is the only branding
-    // that survives there — which is exactly where it matters most.
+    // that survives there, which is exactly where it matters most.
     var caption = shapeCaption(platform, hook, body, angle.cta)
       + signOff(b)
       + (tags.length ? '\n\n' + tags.join(' ') : '');
@@ -560,12 +560,12 @@
     var out = [];
     if (!spec) return ['Unknown platform.'];
     if (v.caption.length > spec.captionMax - LINK_RESERVE)
-      out.push('Caption is ' + v.caption.length + ' characters — ' + spec.label + ' allows '
+      out.push('Caption is ' + v.caption.length + ' characters, ' + spec.label + ' allows '
         + spec.captionMax + ', and ' + LINK_RESERVE + ' are held for the tracked link.');
     if (spec.hashtagMax === 0 && v.hashtags.length)
       out.push(spec.label + ' does not use hashtags.');
     if (v.hashtags.length > spec.hashtagMax)
-      out.push(v.hashtags.length + ' hashtags — ' + spec.label + ' allows ' + spec.hashtagMax + '.');
+      out.push(v.hashtags.length + ' hashtags, ' + spec.label + ' allows ' + spec.hashtagMax + '.');
     if (spec.needsTitle && !v.title) out.push(spec.label + ' needs a title.');
     if (spec.needsTitle && v.title && v.title.length > spec.titleMax)
       out.push('Title is over ' + spec.titleMax + ' characters.');
@@ -574,7 +574,7 @@
       if (spec.media.indexOf(v.media.kind) === -1)
         out.push(spec.label + ' does not accept ' + v.media.kind + '.');
       if (v.media.kind === 'video' && spec.videoMaxSec && v.media.seconds > spec.videoMaxSec)
-        out.push('Video is ' + v.media.seconds + 's — ' + spec.label + ' caps at ' + spec.videoMaxSec + 's.');
+        out.push('Video is ' + v.media.seconds + 's, ' + spec.label + ' caps at ' + spec.videoMaxSec + 's.');
       if (v.ratio && spec.ratios.indexOf(v.ratio) === -1)
         out.push(v.ratio + ' does not fit ' + spec.label + ' (' + spec.ratios.join(', ') + ').');
     }
@@ -587,7 +587,7 @@
        · idempotency key per variant, so a retry cannot double-post
        · bounded concurrency, so we do not open 25 sockets at once
        · per-item status, so a partial failure is visible rather than silent
-       · dry mode by default — nothing leaves the browser unless asked */
+       · dry mode by default, nothing leaves the browser unless asked */
   function createQueue(opts) {
     opts = opts || {};
     var mode = opts.mode === 'live' ? 'live' : 'dry';

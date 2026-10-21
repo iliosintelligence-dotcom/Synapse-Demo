@@ -36,7 +36,7 @@ export default function Page() {
       <main className="ap" id="ap">
         <section className="ap-hero" id="apHero">
           <div className="ap-logo" id="apLogo">
-            —
+            -
           </div>
           <div className="ap-id">
             <h1 className="ap-name" id="apName">

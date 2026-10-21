@@ -1,4 +1,4 @@
-/* Synapse landing — shared by index.html (buyers) and agencies.html (agencies).
+/* Synapse landing, shared by index.html (buyers) and agencies.html (agencies).
    Extracted from the old single-page build so the two journeys can live on
    separate pages without duplicating ~1,700 lines of CSS. */
 
@@ -18,7 +18,7 @@ a.m-agencies-link {
   text-decoration: none;
 }
 
-/* Form controls do not inherit font-family — without this a styled <button>
+/* Form controls do not inherit font-family, without this a styled <button>
    silently falls back to the UA font (Arial on Windows) next to the Josefin
    Sans everything around it uses. font-family only: `font: inherit` would
    also reset size and weight and undo the controls' own labels. */
@@ -26,8 +26,8 @@ button, input, select, textarea, optgroup { font-family: inherit; }
 
 /* ─── BRAND FONTS ───
    EB Garamond (display/headings/prices) + Lato (body, UI, all-caps accents).
-   Both load from Google Fonts (see <head>). The "accent" role is a recipe —
-   Lato 700, uppercase, +0.14em tracking — not a separate face. */
+   Both load from Google Fonts (see <head>). The "accent" role is a recipe -
+   Lato 700, uppercase, +0.14em tracking, not a separate face. */
 
 :root {
   /* ── GRAIN ────────────────────────────────────────────────────────────────
@@ -42,18 +42,18 @@ button, input, select, textarea, optgroup { font-family: inherit; }
      One SVG turbulence, inlined so it costs no request. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E");
 
-  /* crypt.ee monochrome — near-black accents on light grey, no terracotta */
+  /* crypt.ee monochrome, near-black accents on light grey, no terracotta */
   --brand: #121212;
   --brand-dim: #000000;
   --brand-glow: rgba(54,54,54,0.10);
   --bg: #f5f5f5;
   --bg-1: #ededed;
   --text: #1a1a1a;
-  /* Body copy was rgba(54,54,54,0.62) — which flattens to #7F7F7F on our
+  /* Body copy was rgba(54,54,54,0.62), which flattens to #7F7F7F on our
      #f5f5f5 page: 3.65:1, below the 4.5:1 AA floor. Josefin Sans also has a
      small x-height, so it read even worse than the number suggests. These are
      solid colours (no alpha guesswork) at 6.8:1 and 4.5:1. */
-  --text-muted: #545454;   /* 6.84:1 on --bg — body copy */
+  --text-muted: #545454;   /* 6.84:1 on --bg, body copy */
   /* Measured, not estimated. The old value was #6e6e6e with a comment
      claiming 4.51:1 -- correct against --bg (#f5f5f5, where it is really
      4.68) and wrong everywhere it is actually used most: the footer sits
@@ -64,7 +64,7 @@ button, input, select, textarea, optgroup { font-family: inherit; }
      every ground this token can land on. */
   --text-dim:   #6b6b6b;   /* 4.90:1 on bone */
 
-  /* surface tokens — neutral, flat, monochrome */
+  /* surface tokens, neutral, flat, monochrome */
   --crystal-bg: rgba(20,20,20,0.025);
   --crystal-border: rgba(20,20,20,0.10);
   --crystal-border-bright: rgba(20,20,20,0.22);
@@ -74,7 +74,7 @@ button, input, select, textarea, optgroup { font-family: inherit; }
   --crystal-chroma-r: rgba(54,54,54,0.04);
   --crystal-chroma-b: rgba(54,54,54,0.04);
 
-  /* Josefin Sans — one family; headings/wordmark 600–700 tracked, body 400 */
+  /* Josefin Sans, one family; headings/wordmark 600–700 tracked, body 400 */
   --f-sans: 'Josefin Sans', system-ui, sans-serif;
   --f-serif: 'Josefin Sans', system-ui, sans-serif;
   --f-accent: 'Josefin Sans', system-ui, sans-serif;
@@ -82,7 +82,7 @@ button, input, select, textarea, optgroup { font-family: inherit; }
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* These two were referenced by the audience toggle but only ever defined
-     in app/app.css, which the landing pages do not load — so the toggle's
+     in app/app.css, which the landing pages do not load, so the toggle's
      border and active pill were resolving to nothing. Defined here. */
   /* Not pure white. #FFFFFF is the default nobody chose, and against a warm
      brand it reads as a screen rather than a surface. This is white
@@ -94,10 +94,10 @@ button, input, select, textarea, optgroup { font-family: inherit; }
 
   /* ── The silver lining ──────────────────────────────────────────────────
      crypt.ee monochrome stays the palette. One warm accent, sampled from the
-     Synapse mark, never touches type or large areas — it survives only on
+     Synapse mark, never touches type or large areas, it survives only on
      small non-text elements (a pip, a countdown bar, a map ping). That is the
      whole lining: you feel the warmth, you never see orange. */
-  --tint: 255, 138, 45;                          /* #FF8A2D — Primary Orange, from the
+  --tint: 255, 138, 45;                          /* #FF8A2D, Primary Orange, from the
                                                     brand sheet. Was 199,106,26, which
                                                     was estimated from the artwork before
                                                     the real palette existed. */
@@ -132,7 +132,7 @@ body {
   overflow: hidden;
 }
 
-/* The top-edge light catch — light entering the crystal from above */
+/* The top-edge light catch, light entering the crystal from above */
 .crystal::before {
   content: '';
   position: absolute;
@@ -148,7 +148,7 @@ body {
   z-index: 1;
 }
 
-/* Prismatic corner catch — chromatic split where light enters at angles */
+/* Prismatic corner catch, chromatic split where light enters at angles */
 .crystal::after {
   content: '';
   position: absolute;
@@ -162,7 +162,7 @@ body {
   z-index: 1;
 }
 
-/* Box-shadow for optical depth — not just a drop shadow */
+/* Box-shadow for optical depth, not just a drop shadow */
 .crystal-depth {
   box-shadow:
     inset 0 1px 0 var(--crystal-highlight-top),
@@ -174,7 +174,7 @@ body {
     0 0 120px var(--crystal-glow);
 }
 
-/* Minimal blur — 1px, not 20px. We want transmission, not fog */
+/* Minimal blur, 1px, not 20px. We want transmission, not fog */
 .crystal-trans {
   backdrop-filter: blur(1px) brightness(1.04) saturate(1.15) contrast(0.97);
   -webkit-backdrop-filter: blur(1px) brightness(1.04) saturate(1.15) contrast(0.97);
@@ -200,16 +200,16 @@ nav.solid {
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
 }
 
-/* nav CTAs carry a function icon — keep them on one line (they default to
+/* nav CTAs carry a function icon, keep them on one line (they default to
    display:block, which turns an icon + label into a two-line circle) */
 #nav-primary, #nav-secondary { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 #nav-primary .syn-i, #nav-secondary .syn-i { width: 15px; height: 15px; flex: none; }
 
-/* Interaction layer — keyboard focus is always visible, press feedback is
+/* Interaction layer, keyboard focus is always visible, press feedback is
    consistent, inert states look inert. Mirrors app/app.css. */
 :root { --ring: rgba(18,18,18,0.62); }
 /* !important: components set their own box-shadow and :where() has zero
-   specificity — focus visibility must not lose that fight. */
+   specificity, focus visibility must not lose that fight. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--bg, #f5f5f5), 0 0 0 4px var(--ring) !important;
@@ -222,7 +222,7 @@ nav.solid {
   :where(.btn-brand, .btn-ghost, .btn-large-brand, .btn-cta-primary, .panel-btn-primary, .panel-btn-secondary):not(:disabled):active { transform: none; }
 }
 
-/* Logo page-load splash — bars build, then the veil lifts. Pure CSS, no FOUC,
+/* Logo page-load splash, bars build, then the veil lifts. Pure CSS, no FOUC,
    reduced-motion safe. Mirrors app/app.css #syn-load. */
 #syn-load { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: var(--bg, #f5f5f5); animation: synLoadOut .5s ease 1.02s forwards; }
 #syn-load .syn-load-mark { width: 46px; height: 66px; 
@@ -246,7 +246,7 @@ nav.solid {
   color: var(--text);
 }
 .nav-logo-mark svg,
-.nav-logo-mark img { width: 26px; height: 37px; }   /* real mark is 64×92 — keep its aspect */
+.nav-logo-mark img { width: 26px; height: 37px; }   /* real mark is 64×92, keep its aspect */
 /* THE REAL MARK, AS A PICTURE.
    The nav used to draw the monogram from eight <rect>s. Side by side with the
    artwork that is a different logo -- the drawn one has the bars floating
@@ -338,7 +338,7 @@ nav.solid {
   }
 }
 
-/* Audience segmented toggle — the core of the nav */
+/* Audience segmented toggle, the core of the nav */
 .aud-toggle {
   display: flex;
   gap: 4px;
@@ -371,7 +371,7 @@ nav.solid {
 /* Toggling which audience's sections are shown */
 .aud-hidden { display: none !important; }
 
-/* ─── HERO — clean editorial split (one per audience) ─── */
+/* ─── HERO, clean editorial split (one per audience) ─── */
 .hero-section {
   position: relative;
   width: 100%;
@@ -463,7 +463,7 @@ nav.solid {
 .hero-trust span { display: flex; align-items: center; gap: 5px; }
 .hero-trust b { color: var(--brand); font-weight: 600; }
 
-/* Right — sharp, full-colour image. No haze, no overlay wash. */
+/* Right, sharp, full-colour image. No haze, no overlay wash. */
 .hero-media {
   position: relative;
   height: min(620px, 68vh);
@@ -477,7 +477,7 @@ nav.solid {
   object-fit: cover;
   display: block;
 }
-/* One quiet glass chip — Tayo speaking, not a card cluster */
+/* One quiet glass chip, Tayo speaking, not a card cluster */
 .hero-toju-chip {
   position: absolute;
   left: 18px; right: 18px; bottom: 18px;
@@ -508,7 +508,7 @@ nav.solid {
 }
 .hero-chip-msg { font-size: 13px; color: var(--text); line-height: 1.45; font-weight: 400; }
 
-/* Stats — a typographic strip, not cards */
+/* Stats, a typographic strip, not cards */
 .hero-statline {
   margin-top: 72px;
   border-top: 1px solid rgba(15,18,24,0.09);
@@ -659,14 +659,14 @@ section { padding: 120px 0; }
    Gated on .anim-ready, which the page adds to <html> only after confirming
    GSAP and ScrollTrigger actually loaded. These rules hide 27 elements across
    the two marketing pages, and every path that un-hides them runs through
-   GSAP — including the "fail-safe" reveal, which calls gsap.to() itself. So a
+   GSAP, including the "fail-safe" reveal, which calls gsap.to() itself. So a
    cdnjs outage did not degrade the animation, it left the whole lower page
    invisible. Unhidden by default now: no library, no hiding. */
 .anim-ready .reveal { opacity: 0; transform: translateY(44px); }
 .anim-ready .reveal-l { opacity: 0; transform: translateX(-52px); }
 .anim-ready .reveal-r { opacity: 0; transform: translateX(52px); }
 
-/* ─── FOR EVERYONE — numbered editorial list ─── */
+/* ─── FOR EVERYONE, numbered editorial list ─── */
 #for-everyone {
   background: var(--bg-1);
   border-top: 1px solid rgba(15,18,24,0.04);
@@ -759,7 +759,7 @@ section { padding: 120px 0; }
   }
 }
 
-/* ─── ROADMAP — 3-step journey ─── */
+/* ─── ROADMAP, 3-step journey ─── */
 #roadmap {
   background: var(--bg);
   position: relative;
@@ -1142,7 +1142,7 @@ section { padding: 120px 0; }
   position: relative;
   overflow: hidden;
 }
-/* Dark environment — single verification mark, luxury financial feel */
+/* Dark environment, single verification mark, luxury financial feel */
 .trust-void {
   position: absolute;
   inset: 0;
@@ -1270,7 +1270,7 @@ section { padding: 120px 0; }
   border-radius: 24px;
   overflow: hidden;
 }
-/* Crystal overlay on photo — light transmission through architectural glass */
+/* Crystal overlay on photo, light transmission through architectural glass */
 .coliving-glass-overlay {
   position: absolute;
   inset: 0;
@@ -1357,7 +1357,7 @@ section { padding: 120px 0; }
   position: relative;
   overflow: hidden;
 }
-/* Abstract architectural glass — no people, no buildings. Visual metaphor. */
+/* Abstract architectural glass, no people, no buildings. Visual metaphor. */
 .flexpay-abstract {
   position: absolute;
   inset: 0;
@@ -1530,7 +1530,7 @@ section { padding: 120px 0; }
   z-index: 1;
 }
 
-/* Crystal window — a browser frame */
+/* Crystal window, a browser frame */
 .browse-window {
   background: rgba(15,18,24,0.018);
   border: 1px solid rgba(15,18,24,0.08);
@@ -1661,7 +1661,7 @@ section { padding: 120px 0; }
   position: relative;
   overflow: hidden;
 }
-/* drawn, not photographed — a faint architectural grid instead of a stock
+/* drawn, not photographed, a faint architectural grid instead of a stock
    photo, so the landing pages carry no image files at all */
 .cta-ambient {
   position: absolute;
@@ -1756,7 +1756,7 @@ footer {
   border-top: 1px solid rgba(15,18,24,0.05);
   font-size: 12px; color: var(--text-dim);
 }
-/* the positioning line and legal details live here — not in the hero */
+/* the positioning line and legal details live here, not in the hero */
 .footer-tagline { font-size: 13px; line-height: 1.65; color: var(--text-muted); max-width: 560px; font-weight: 500; }
 .footer-legal { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; letter-spacing: .05em;
   text-transform: uppercase; color: var(--text-dim); }
@@ -1791,7 +1791,7 @@ footer {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
 
-/* Agency landing — scannable, outcome-first rebuild */
+/* Agency landing, scannable, outcome-first rebuild */
 .ag-growthbar { border-top: 1px solid var(--crystal-border); border-bottom: 1px solid var(--crystal-border); background: linear-gradient(180deg, rgba(54,54,54,0.05), transparent); }
 .ag-growthbar .container { padding: 30px 56px; }
 .ag-tagline { text-align: center; font-family: var(--f-serif); font-weight: 500; font-size: clamp(23px,3.5vw,33px); letter-spacing: -0.01em; }
@@ -1862,14 +1862,14 @@ footer {
 .ng-card .lbl .s { font-size: 12px; opacity: .85; margin-top: 1px; }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   REBUILT LANDING — Hick's Law layout
+   REBUILT LANDING, Hick's Law layout
    Every screen carries ONE idea, ONE image and at most ONE decision. Sections
    alternate image-led / text-led so the eye always has somewhere to rest, and
    the warm tint appears only as a wash or a hairline. Motion stays under
    ~300ms end-to-end (Doherty) so the page never feels like it is thinking.
    ══════════════════════════════════════════════════════════════════════ */
 /* Negative space is the design. Sections breathe at ~1/6 of the viewport top
-   and bottom, and nothing sits closer to the edge than it has to — the eye
+   and bottom, and nothing sits closer to the edge than it has to, the eye
    needs somewhere to rest between ideas, and crowding is what made the page
    feel busy even after the content was cut. */
 /* ── Section partitioning ──────────────────────────────────────────────
@@ -1920,7 +1920,7 @@ footer {
    Black sections give the page rhythm and let a single idea land hard. Text
    tokens are re-pointed rather than overridden per-element, so anything
    dropped inside is legible by default. Contrast on #0e0e0e: body copy
-   #d4d4d4 = 11.6:1, secondary #a8a8a8 = 7.1:1 — both far past AA. */
+   #d4d4d4 = 11.6:1, secondary #a8a8a8 = 7.1:1, both far past AA. */
 .s-band.dark, .s-close.dark {
   background: #0e0e0e;
   --text: #f5f5f5;
@@ -1947,7 +1947,7 @@ footer {
 .s-kicker::before { content: ''; width: 22px; height: 1.5px; background: currentColor; opacity: .55; }
 .s-h2 { font-family: var(--f-serif); font-weight: 600; font-size: clamp(30px, 4.6vw, 52px);
   line-height: 1.08; letter-spacing: -0.02em; margin-top: 14px; }
-/* headline emphasis stays crypt.ee monochrome — colour on display type turns
+/* headline emphasis stays crypt.ee monochrome, colour on display type turns
    a lining into a colour scheme. Emphasis comes from weight, not hue. */
 .s-h2 em { font-style: normal; color: var(--brand); }
 .s-sub { font-size: clamp(16.5px, 1.6vw, 18px); color: var(--text-muted); line-height: 1.72; margin-top: 16px; font-weight: 500; max-width: 580px; }
@@ -1976,7 +1976,7 @@ footer {
   .s-split.flip > .s-media, .s-split.flip > .demo { order: 0; }
 }
 
-/* three steps — the only place the page asks you to hold a sequence */
+/* three steps, the only place the page asks you to hold a sequence */
 .s-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 68px; }
 .s-step { padding: 34px 30px 36px; border-radius: 18px; background: rgba(255,255,255,0.6);
   border: 1px solid var(--tint-edge); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
@@ -1988,20 +1988,20 @@ footer {
 .s-step .d { font-size: 15.5px; color: var(--text-muted); line-height: 1.68; margin-top: 8px; font-weight: 500; }
 @media (max-width: 800px) { .s-steps { grid-template-columns: 1fr; } }
 
-/* the freshness pip — the one element allowed the accent at full strength */
+/* the freshness pip, the one element allowed the accent at full strength */
 .pip { display: inline-flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .pip i { width: 9px; height: 9px; border-radius: 50%; background: var(--tint-ink); flex: none;
   box-shadow: 0 0 0 4px rgba(var(--tint), 0.16); animation: pipPulse 2.6s ease-in-out infinite; }
 @keyframes pipPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(var(--tint),0.16); } 50% { box-shadow: 0 0 0 7px rgba(var(--tint),0.05); } }
 @media (prefers-reduced-motion: reduce) { .pip i { animation: none; } }
 
-/* countdown strip — makes "14 days" concrete instead of abstract */
+/* countdown strip, makes "14 days" concrete instead of abstract */
 .fresh-days { display: flex; gap: 5px; margin-top: 26px; }
 .fresh-days span { flex: 1; height: 7px; border-radius: 4px; background: rgba(var(--tint), 0.16); }
 .fresh-days span.gone { background: rgba(20,20,20,0.06); }
 .fresh-note { font-size: 13px; color: var(--text-muted); margin-top: 12px; font-weight: 500; }
 
-/* proximity — a map-ish stage */
+/* proximity, a map-ish stage */
 .prox-stage { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 4/3;
   box-shadow: 0 26px 60px rgba(20,26,38,0.16); }
 .prox-stage img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2020,14 +2020,14 @@ footer {
 .soon { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
   color: #f5f5f5; background: var(--brand); border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
 
-/* the glimpse is its own object — drop the photo frame's box, height and
+/* the glimpse is its own object, drop the photo frame's box, height and
    shadow so the app window floats rather than sitting in a grey panel */
 .hero-media.hero-peek { height: auto; border-radius: 0; overflow: visible; box-shadow: none; background: none; }
 
 /* ── App glimpse ───────────────────────────────────────────────────────────
    The product, working, on the landing page. A visitor should understand what
    using Synapse feels like before they click anything. Strictly crypt.ee
-   monochrome — the only warmth is the single live pip. */
+   monochrome, the only warmth is the single live pip. */
 .hero-peek { position: relative; display: flex; align-items: center; justify-content: center; }
 .peek { position: relative; z-index: 1; width: 100%; max-width: 520px; border-radius: 18px; overflow: hidden;
   background: #fbfbfb; border: 1px solid rgba(20,20,20,0.12);
@@ -2040,14 +2040,14 @@ footer {
 .peek-url { margin-left: 10px; font-size: 11px; letter-spacing: .04em; color: var(--text-dim); font-weight: 600; }
 .peek-body { padding: 18px 16px; min-height: 236px; display: flex; flex-direction: column; gap: 11px; }
 
-/* chat bubbles — same language as the real Tayo screen */
+/* chat bubbles, same language as the real Tayo screen */
 .pk-msg { display: flex; max-width: 88%; opacity: 0; transform: translateY(8px);
   transition: opacity .3s var(--ease), transform .3s var(--ease); }
 .pk-msg.in { opacity: 1; transform: none; }
 .pk-msg.me { align-self: flex-end; }
 .pk-bub { font-size: 13.5px; line-height: 1.5; padding: 10px 13px; border-radius: 15px; font-weight: 500; }
 /* Fixed light background regardless of section theme (a chat bubble should
-   look the same on a dark marketing band as anywhere else) — so its text
+   look the same on a dark marketing band as anywhere else), so its text
    must be fixed too, not var(--text): that variable flips to near-white
    inside .s-band.dark for the surrounding page copy, which made this bubble
    render near-white text on its own permanently-light #efefef background. */
@@ -2058,7 +2058,7 @@ footer {
 .pk-dots i:nth-child(2){ animation-delay:.16s } .pk-dots i:nth-child(3){ animation-delay:.32s }
 @keyframes pkD { 0%,60%,100%{opacity:.25} 30%{opacity:1} }
 
-/* the result card — the payoff of the demo */
+/* the result card, the payoff of the demo */
 .pk-card { display: flex; gap: 11px; align-items: center; padding: 10px; border-radius: 13px;
   background: var(--surface); border: 1px solid rgba(20,20,20,0.10); box-shadow: 0 8px 20px rgba(20,20,20,0.07);
   opacity: 0; transform: translateY(8px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
@@ -2066,7 +2066,7 @@ footer {
 .pk-card img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; flex: none; }
 .pk-card .c1 { flex: 1; min-width: 0; }
 /* Same fixed-background issue as .pk-msg.you above: this card is always
-   white, in every section, so its text needs fixed colours too — c-p had
+   white, in every section, so its text needs fixed colours too, c-p had
    no colour at all and was inheriting the section's (possibly near-white)
    --text, and c-t used var(--text-muted), which is near-white inside
    .s-band.dark. */
@@ -2077,7 +2077,7 @@ footer {
 
 .peek-composer { display: flex; align-items: center; gap: 9px; padding: 11px 13px;
   border-top: 1px solid rgba(20,20,20,0.08); background: var(--surface); }
-/* Real controls now, not spans dressed as them — reset the browser chrome so
+/* Real controls now, not spans dressed as them, reset the browser chrome so
    the live composer looks exactly like the mock it replaced. */
 .peek-field { flex: 1; font-size: 12.5px; color: var(--text); font-weight: 500;
   font-family: var(--f-sans); border: none; outline: none; background: transparent;
@@ -2095,7 +2095,7 @@ footer {
 .peek-send:active { transform: none; }
 @media (prefers-reduced-motion: reduce) { .peek-send { transition: none; } .peek-send:hover { transform: none; } }
 
-/* agency variant — leads landing in the portal */
+/* agency variant, leads landing in the portal */
 .pp-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px 0; }
 .pp-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
 .pp-live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
@@ -2140,8 +2140,8 @@ footer {
 
 /* ── Generated demos (no photography anywhere on the landing) ──────────────
    Every "image" on this page is the product drawn in CSS. It stays sharp at
-   any size, weighs nothing, is readable by a screen reader, and — unlike a
-   stock photo — actually shows what Synapse does. */
+   any size, weighs nothing, is readable by a screen reader, and, unlike a
+   stock photo, actually shows what Synapse does. */
 .demo { position: relative; border-radius: 18px; overflow: hidden; background: #fbfbfb;
   border: 1px solid rgba(20,20,20,0.12); box-shadow: 0 30px 66px rgba(20,20,20,0.18); }
 .s-band.dark .demo { background: #171717; border-color: rgba(255,255,255,0.14); box-shadow: 0 30px 66px rgba(0,0,0,0.55); }
@@ -2153,7 +2153,7 @@ footer {
 .demo-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--tint-ink); }
 .demo-body { padding: 18px 16px; display: flex; flex-direction: column; gap: 11px; }
 
-/* a listing row, drawn — used across several demos */
+/* a listing row, drawn, used across several demos */
 .d-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 13px;
   background: var(--surface); border: 1px solid rgba(20,20,20,0.10); }
 .s-band.dark .d-row { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
@@ -2207,14 +2207,14 @@ footer {
 .d-row.expired { opacity: .45; }
 .d-row.expired .d-p { text-decoration: line-through; }
 
-/* freshness demo — a listing ageing out in front of you */
+/* freshness demo, a listing ageing out in front of you */
 .d-age { display: flex; gap: 4px; margin-top: 9px; }
 .d-age span { flex: 1; height: 6px; border-radius: 3px; background: rgba(var(--tint), 0.20); transition: background .3s var(--ease); }
 .d-age span.gone { background: rgba(20,20,20,0.08); }
 .s-band.dark .d-age span.gone { background: rgba(255,255,255,0.10); }
 .d-cap { font-size: 12.5px; color: var(--text-dim); font-weight: 600; }
 
-/* verification demo — seven checks landing one by one */
+/* verification demo, seven checks landing one by one */
 .d-check { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text-muted);
   opacity: 0; transform: translateX(-6px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
 .d-check.in { opacity: 1; transform: none; }
@@ -2223,7 +2223,7 @@ footer {
 .d-check .b.wait { background: rgba(20,20,20,0.08); color: var(--text-dim); }
 .s-band.dark .d-check .b.wait { background: rgba(255,255,255,0.10); color: var(--text-dim); }
 
-/* map demo — a neighbourhood drawn, not photographed */
+/* map demo, a neighbourhood drawn, not photographed */
 .d-map { position: relative; height: 300px; background: #efefef; overflow: hidden; }
 .s-band.dark .d-map { background: #1c1c1c; }
 .d-map .road { position: absolute; background: var(--surface); }
@@ -2241,7 +2241,7 @@ footer {
   box-shadow: 0 12px 30px rgba(20,20,20,0.20); display: flex; align-items: center; gap: 11px; }
 .s-band.dark .d-note { background: rgba(28,28,28,0.95); border-color: rgba(255,255,255,0.16); }
 
-/* syndication demo — one upload, every channel */
+/* syndication demo, one upload, every channel */
 .d-fan { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 .d-chan { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 12px;
   background: var(--surface); border: 1px solid rgba(20,20,20,0.10); font-size: 13px; font-weight: 600;
@@ -2253,7 +2253,7 @@ footer {
 .s-band.dark .d-chan .k { background: rgba(255,255,255,0.10); color: var(--text-muted); }
 .d-chan .ok { margin-left: auto; font-size: 11px; color: #2e7d4f; font-weight: 700; }
 
-/* phone demo — a proximity alert arriving */
+/* phone demo, a proximity alert arriving */
 .d-phone { width: 232px; margin: 0 auto; border-radius: 30px; padding: 12px 10px 16px;
   background: #0e0e0e; border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 26px 60px rgba(0,0,0,0.5); }
 .d-phone .notch { width: 62px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.22); margin: 2px auto 14px; }
@@ -2275,7 +2275,7 @@ footer {
    One section, several promises. Horizontal scroll-snap so it swipes natively
    on touch, with buttons and dots for pointer and keyboard. This is how the
    page carries shared living, flex plans and investing without spending four
-   more screens on them — the choice is there when wanted, invisible when not. */
+   more screens on them, the choice is there when wanted, invisible when not. */
 .car { position: relative; margin-top: 64px; }
 .car-track { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory;
   scroll-behavior: smooth; padding: 4px 4px 20px; margin: -4px -4px 0;
@@ -2337,7 +2337,7 @@ footer {
 
 /* ── Agency pricing ────────────────────────────────────────────────────────
    Three columns, real numbers, no "contact us for pricing". Mirrors PRICING
-   in app/agency.html — keep them in step. */
+   in app/agency.html, keep them in step. */
 /* ── Billing period toggle (item 43) ─────────────────────────────────── */
 .pr-toggle { display: inline-flex; gap: 2px; margin: 30px auto 0; padding: 4px;
   border-radius: 100px; border: 1px solid var(--crystal-border); background: rgba(20,20,20,0.03); }
@@ -2365,7 +2365,7 @@ footer {
 .pr-compare > summary::-webkit-details-marker { display: none; }
 .pr-compare > summary::after { content: ' ↓'; }
 .pr-compare[open] > summary::after { content: ' ↑'; }
-/* wide tables scroll inside their own box — the page never scrolls sideways */
+/* wide tables scroll inside their own box, the page never scrolls sideways */
 .pr-tablewrap { overflow-x: auto; margin-top: 18px; }
 .pr-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
 .pr-table th, .pr-table td { padding: 11px 14px; text-align: center;
@@ -2400,7 +2400,7 @@ footer {
 .pr-cta { margin-top: auto; padding-top: 0; align-self: stretch; text-align: center;
   margin-block-start: 22px; padding: 12px 18px; border-radius: 100px; font-size: 13.5px; font-weight: 700; }
 
-/* Section CTA — the SAME single destination repeated, which is Hick's-Law
+/* Section CTA, the SAME single destination repeated, which is Hick's-Law
    safe: the law penalises competing choices, not a repeated one. */
 .s-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 26px;
   font-size: 14px; font-weight: 700; color: var(--brand);
@@ -2423,7 +2423,7 @@ footer {
 
 /* ── Sticky CTA bar ────────────────────────────────────────────────────────
    A floating pill above the fold's edge. Monochrome ink like every other
-   button; no tint, no glow. Enters and leaves on transform/opacity only —
+   button; no tint, no glow. Enters and leaves on transform/opacity only -
    visibility flips discretely (not animated) so the off-screen bar can never
    be tabbed into. Bottom offset respects notched phones. */
 .sticky-cta {
@@ -2562,7 +2562,7 @@ footer {
    The ring above is right for buttons, links and cards, which only show it
    on keyboard navigation. Text fields are different: browsers treat them as
    always :focus-visible, so the 4px halo appears the moment you click into
-   one and stays there the whole time you type — a rectangle drawn around
+   one and stays there the whole time you type, a rectangle drawn around
    your own sentence. Text inputs and textareas get a quiet border shift
    instead; the caret already says where focus is. Everything else keeps the
    ring, so keyboard accessibility is untouched. */
@@ -2590,7 +2590,7 @@ textarea:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   BRAND LAYER — from the Synapse brand sheets.
+   BRAND LAYER, from the Synapse brand sheets.
 
    The page read as colourless because the palette was a monochrome with a
    0.022-alpha orange wash. The brand system is not monochrome: it is a
@@ -2697,7 +2697,7 @@ textarea:focus-visible {
    questions with a paragraph each; in the default auto-fit grid they came out
    235px wide and 341px tall, which is a column of text rather than a card.
    The rail goes with it: it threads horizontally along one row, so across two
-   rows it would connect the top pair and leave the bottom pair hanging — and
+   rows it would connect the top pair and leave the bottom pair hanging, and
    these are four independent pains, not a sequence to be walked through. */
 .s-steps.pairs { grid-template-columns: repeat(2, 1fr); gap: 26px; }
 .s-steps.pairs::before { display: none; }
@@ -2774,7 +2774,7 @@ textarea:focus-visible {
   .s-step, .car-card, .panel-btn-primary, .m-btn-primary { transition: none; }
 }
 
-/* ═══ HERO STAT STRIP — full-bleed dark ════════════════════════════════════
+/* ═══ HERO STAT STRIP, full-bleed dark ════════════════════════════════════
    The three facts under the hero now sit on the same near-black as the dark
    bands elsewhere (#0e0e0e), so the page has one dark language rather than
    two treatments of the same idea.
