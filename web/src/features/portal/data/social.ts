@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { addWatch } from "./statusOffer";
 import { agencyId } from "./agency";
 import { CHANNEL_LABEL } from "./marketing";
 
@@ -95,6 +96,8 @@ export async function scheduleDraft(d: Draft, platform: string, at: Date, text: 
     p_property_id: d.propertyId, p_platform: platform, p_social_account_id: null, p_caption: text, p_media_urls: [], p_scheduled_at: at.toISOString(), p_dry_run: false, p_payload: d.angle ? { angle: d.angle } : null,
   });
   if (q.error) throw q.error;
+  // remembered on this device, so the person who scheduled it is asked about WhatsApp Status once it is live
+  addWatch(q.data as string, d.propertyId);
   // bookkeeping: link the post to its draft, then mark the draft scheduled; neither failing loses the post itself
   await supabase.from("social_posts").update({ content_id: d.id }).eq("id", q.data as string).then(() => null, () => null);
   await supabase.from("generated_content").update({ status: "scheduled", approved_by: me, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", d.id).then(() => null, () => null);

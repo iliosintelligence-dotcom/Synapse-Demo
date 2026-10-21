@@ -7,11 +7,11 @@ import { useToast } from "../ui/Toast";
 import s from "./Share.module.css";
 
 /** Share this listing from your own phone: the photo, a caption written for where it is going, and a link that is yours. */
-export function ShareKit({ listingId, onClose }: { listingId: string; onClose: () => void }) {
+export function ShareKit({ listingId, onClose, startOn }: { listingId: string; onClose: () => void; startOn?: string }) {
   const toast = useToast();
   const [l, setL] = useState<ShareListing | null>(null);
   const [agency, setAgency] = useState<string | null>(null);
-  const [dest, setDest] = useState<Dest>(SHARE_DEST[0]);
+  const [dest, setDest] = useState<Dest>(() => SHARE_DEST.find((d) => d.id === startOn) ?? SHARE_DEST[0]);
   const [links, setLinks] = useState<Record<string, ShareLink>>({});
   const [text, setText] = useState("");
   const [edited, setEdited] = useState(false);
