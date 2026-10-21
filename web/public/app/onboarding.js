@@ -9,7 +9,7 @@
 
   var SLIDES = [
     { icon: 'chat', title: 'Tell Tayo what you want', text: 'Ask in English, Pidgin, Yoruba, Igbo or Hausa. Tayo looks through live homes and tells you which ones fit and what to check.' },
-    { icon: 'home', title: 'Homes that were checked', text: 'Every home shows whether it has been verified. Save the ones you like and compare them side by side.' },
+    { icon: 'home', title: 'Browse and save homes', text: 'Look around when you like. Save the ones you love, compare them, and see what has been verified.' },
     { icon: 'boards', title: 'Build a dream board', text: 'Collect photos and places that feel right. Tayo reads your board and finds homes that match it.' },
     { icon: 'user', title: 'Meet the agency, your way', text: 'When one home stands out, Tayo introduces you and shows you where your introduction stands.' }
   ];
