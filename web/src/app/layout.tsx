@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Josefin_Sans } from "next/font/google";
 import { ArrivalCapture } from "@/components/ArrivalCapture";
+import { IdleGuard } from "@/components/IdleGuard";
 import "./globals.css";
 
 const sans = Josefin_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-sans", display: "swap" });
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={sans.variable}>
       <body>
         <ArrivalCapture />
+        <IdleGuard />
         {children}
       </body>
     </html>

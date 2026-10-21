@@ -3186,6 +3186,20 @@
     .cmp-gen.collapsed .cmp-head .sub { display: none; }
     .cmp-gen.collapsed .cmp-min svg { transform: rotate(180deg); }
     .cmp-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    .pcard.pl-sel { outline: 2px solid var(--ink); outline-offset: 2px; background: rgba(0,0,0,0.04); }
+    .pl-box { position: fixed; z-index: 90; border: 1px solid var(--ink); background: rgba(18,18,18,0.08); border-radius: 4px; pointer-events: none; }
+    #pipeline { user-select: none; }
+    #pipeline.pl-selecting .pcard { cursor: pointer; }
+    .pl-mode { margin-left: 8px; border: 1px solid var(--border); background: transparent; color: var(--ink-muted); padding: 7px 14px; border-radius: 999px; font: 600 12.5px var(--f-sans); cursor: pointer; }
+    .pl-mode.on { background: var(--ink); color: var(--bg, #fff); border-color: var(--ink); }
+    .pl-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%) translateY(140%); z-index: 91; display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 999px; background: var(--ink); color: var(--bg, #fff); box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform .18s ease; }
+    .pl-bar.on { transform: translateX(-50%) translateY(0); }
+    .pl-bar button { border: 1px solid rgba(255,255,255,0.35); background: transparent; color: inherit; padding: 7px 14px; border-radius: 999px; font: 600 13px var(--f-sans); cursor: pointer; }
+    .pl-bar .pl-del { color: #ffb4ab; border-color: #ffb4ab; }
+    @media (prefers-reduced-motion: reduce) { .pl-bar { transition: none; } }
+    .cmp-pick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .cmp-pick button { border: 1px solid var(--border); background: transparent; color: var(--ink-muted); padding: 6px 13px; border-radius: 999px; font: 600 12.5px var(--f-sans); cursor: pointer; }
+    .cmp-pick button[aria-pressed="true"] { background: var(--ink); color: var(--bg, #fff); border-color: var(--ink); }
     .cmp-controls select { flex: 1; min-width: 220px; padding: 11px 13px; border-radius: 12px;
       border: 1px solid var(--border); background: #fff; font: 13.5px var(--f-sans); color: var(--ink); }
     .cmp-out { margin-top: 18px; }
@@ -4961,6 +4975,10 @@
               <select id="cmpProp" aria-label="Listing"></select>
               <button class="btn btn-primary" id="cmpGo" style="padding:11px 18px;font-size:13.5px"><span data-icon="spark"></span> Generate</button>
             </div>
+            <!-- WHICH CHANNELS. Generate used to write for all six platforms every time, and "Publish for real" posted every
+                 version on every connected channel (and Synapse's own), whatever the agency wanted. It now writes for, and
+                 posts to, only the channels ticked here. -->
+            <div class="cmp-pick" id="cmpPick" role="group" aria-label="Channels to write for and post to"></div>
             <!-- Which accounts this agency can actually post to. Until one is
                  connected, everything below is a rehearsal, and the strip is
                  the only place that says so honestly. -->
@@ -7293,8 +7311,42 @@
         + extra
         + (acts ? '<div class="pc-acts">' + acts + '</div>' : '') + '</div>';
     }
+    /* A REDRAW MUST NOT MOVE THE PERSON. Every delete used to rebuild the whole board from the database, which reset the page's
+       scroll and re-collapsed the columns they had opened -- so clearing drafts one by one threw them back to the top of the
+       Social studio after each one. The scroll, the open and expanded columns and the selection are put back after a redraw. */
+    function pipeScrollHost(el) {
+      for (var n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+        var oy = getComputedStyle(n).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+      }
+      return null;
+    }
+    function pipeCapture(el) {
+      var host = pipeScrollHost(el), cols = {};
+      el.querySelectorAll('.col').forEach(function (c) {
+        var b = c.querySelector('.col-body');
+        cols[c.dataset.stage] = { open: c.classList.contains('open'), expanded: c.classList.contains('expanded'),
+          sheet: c.classList.contains('sheet'), top: b ? b.scrollTop : 0 };
+      });
+      return { cols: cols, y: window.scrollY, host: host, hostTop: host ? host.scrollTop : 0, hadFocus: document.activeElement };
+    }
+    function pipeRestore(el, k) {
+      el.querySelectorAll('.col').forEach(function (c) {
+        var s = k.cols[c.dataset.stage]; if (!s) return;
+        c.classList.toggle('open', s.open); c.classList.toggle('expanded', s.expanded); c.classList.toggle('sheet', s.sheet);
+        var h = c.querySelector('.ch'); if (h) h.setAttribute('aria-expanded', String(s.open));
+        var b = c.querySelector('.col-body'); if (b) b.scrollTop = s.top;
+      });
+      var back = function () {
+        if (k.host) k.host.scrollTop = k.hostTop;
+        window.scrollTo(0, k.y);
+      };
+      back(); requestAnimationFrame(back);
+      if (typeof plApply === 'function') plApply();
+    }
     function renderPipeline(){
       const el = document.getElementById('pipeline'); if (!el) return;
+      const keep = pipeCapture(el);
       el.innerHTML = PSTAGES.map(s => {
         const col = posts.filter(p => p.stage === s.id);
         const open = !!PSTAGE_ACTION[s.id];
@@ -7317,6 +7369,7 @@
         </div>`;
       }).join('');
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
+      pipeRestore(el, keep);
     }
 
     /* "+4 more" opens that stage over the screen instead of continuing the
@@ -8235,16 +8288,18 @@
         openScheduler(p, 'duplicate');
       } else if (act === 'discard') {
         if (!p.contentId) return;
-        b.disabled = true;
+        /* IN PLACE. The card leaves the board at once and nothing else moves; the write follows, and the reload (which only
+           confirms what is already on screen) waits until they have stopped. A failure puts it back by reloading now. */
+        pipeDrop([p]);
         SynListings.setContentStatus(p.contentId, 'archived')
-          .then(() => { toast('Discarded — it is out of your review queue'); loadPipeline(); })
-          .catch((err) => { b.disabled = false; toast((err && err.message) || 'Could not discard that'); });
+          .then(() => { toast('Discarded'); pipeSoon(); })
+          .catch((err) => { toast((err && err.message) || 'Could not discard that'); loadPipeline(); });
       } else if (act === 'remove') {
         if (!p.postId) return;
-        b.disabled = true;
+        pipeDrop([p]);
         SynListings.deleteSocialPost(p.postId)
-          .then(() => { toast('Taken off the schedule'); loadPipeline(); })
-          .catch((err) => { b.disabled = false; toast((err && err.message) || 'Could not remove that'); });
+          .then(() => { toast('Taken off the schedule'); pipeSoon(); })
+          .catch((err) => { toast((err && err.message) || 'Could not remove that'); loadPipeline(); });
       } else if (act === 'openlink') {
         /* The tracked link, opened in a new tab. This is the same URL that is
            in the caption, so opening it here records a click like any other --
@@ -8297,6 +8352,127 @@
       const open = col.classList.toggle('open');
       h.setAttribute('aria-expanded', String(open));
     });
+    /* TAKE CARDS OFF THE BOARD WITHOUT REBUILDING IT. Out of the arrays the board is built from (so a redraw cannot bring them
+       back before the write lands), then one redraw that keeps the view. The confirming reload is debounced: clearing twenty
+       drafts is twenty clicks, not twenty round trips and twenty redraws. */
+    var pipeTimer = null;
+    function pipeSoon() { clearTimeout(pipeTimer); pipeTimer = setTimeout(loadPipeline, 2500); }
+    function pipeDrop(list) {
+      const posts_ = new Set(list.map((x) => x.postId).filter(Boolean));
+      const drafts_ = new Set(list.map((x) => x.contentId).filter(Boolean));
+      const ids = new Set(list.map((x) => x.id));
+      PIPE.social = (PIPE.social || []).filter((r) => !posts_.has(r.id));
+      PIPE.drafts = (PIPE.drafts || []).filter((r) => !drafts_.has(r.id));
+      posts = posts.filter((x) => !ids.has(x.id));
+      ids.forEach((i) => PL.sel.delete(i));
+      repaintSocial();
+      plBar();
+    }
+
+    /* ── SELECT SEVERAL, THEN DELETE ───────────────────────────────────────────────────────────────────────────────
+       Drag a box over the cards on a mouse; on a phone, turn on Select and tap them. Ctrl or Shift and click adds or removes
+       one. Only what can be removed is selectable: a draft is discarded and a scheduled or failed post is taken off the
+       schedule, but a post that is already live on a channel cannot be recalled from here, so it is never offered. */
+    /* var, not const: the first redraw happens at page load, before this line has run, and renderPipeline reaches plApply() */
+    var PL = { sel: new Set(), mode: false, box: null, from: null, bar: null };
+    const plRemovable = (p) => !!p && ((p.contentId && p.stage === 'approval') || (p.postId && p.status !== 'published'));
+    function plApply() {
+      if (!PL) return;
+      document.querySelectorAll('#pipeline .pcard').forEach((c) => c.classList.toggle('pl-sel', PL.sel.has(c.dataset.pid)));
+    }
+    function plBar() {
+      if (!PL.bar) {
+        PL.bar = document.createElement('div');
+        PL.bar.className = 'pl-bar'; PL.bar.setAttribute('role', 'toolbar'); PL.bar.setAttribute('aria-label', 'Selected posts');
+        PL.bar.innerHTML = '<span class="pl-n"></span><button type="button" data-pl="del" class="pl-del">Delete</button>'
+          + '<button type="button" data-pl="clear" aria-label="Clear selection">\u00d7</button>';
+        document.body.appendChild(PL.bar);
+        PL.bar.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-pl]'); if (!b) return;
+          if (b.dataset.pl === 'clear') { PL.sel.clear(); plApply(); plBar(); return; }
+          plDelete();
+        });
+      }
+      const n = PL.sel.size;
+      PL.bar.classList.toggle('on', n > 0);
+      PL.bar.querySelector('.pl-n').textContent = n + ' selected';
+      const sw = document.getElementById('plSelectMode');
+      if (sw) { sw.classList.toggle('on', PL.mode); sw.setAttribute('aria-pressed', String(PL.mode)); }
+    }
+    function plDelete() {
+      const picked = [...PL.sel].map((id) => posts.find((x) => x.id === id)).filter(plRemovable);
+      if (!picked.length) { PL.sel.clear(); plBar(); return; }
+      const drafts = picked.filter((x) => x.contentId && x.stage === 'approval').length;
+      if (!window.confirm('Delete ' + picked.length + ' item' + (picked.length === 1 ? '' : 's') + '? '
+          + (drafts ? drafts + ' draft' + (drafts === 1 ? ' is' : 's are') + ' discarded; ' : '')
+          + 'anything scheduled is taken off the schedule. Posts already live stay up.')) return;
+      pipeDrop(picked);                        // gone from the board at once; the view does not move
+      Promise.all(picked.map((x) => (x.contentId && x.stage === 'approval'
+        ? SynListings.setContentStatus(x.contentId, 'archived')
+        : SynListings.deleteSocialPost(x.postId)).then(() => true, () => false)))
+        .then((oks) => {
+          const bad = oks.filter((o) => !o).length;
+          toast(bad ? (picked.length - bad) + ' of ' + picked.length + ' deleted \u2014 ' + bad + ' could not be' : picked.length + ' deleted');
+          if (bad) loadPipeline(); else pipeSoon();
+        });
+    }
+    (function () {
+      const pipe = document.getElementById('pipeline');
+      if (!pipe) return;
+      /* A button in the board's own header, for phones (where a finger drag is a scroll, not a box). */
+      const view = document.getElementById('socialView');
+      if (view && !document.getElementById('plSelectMode')) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.id = 'plSelectMode'; b.className = 'pl-mode'; b.setAttribute('aria-pressed', 'false');
+        b.textContent = 'Select';
+        view.parentNode.insertBefore(b, view.nextSibling);
+        b.addEventListener('click', () => { PL.mode = !PL.mode; if (!PL.mode) { PL.sel.clear(); plApply(); } plBar(); pipe.classList.toggle('pl-selecting', PL.mode); });
+      }
+      const toggle = (card) => {
+        const id = card.dataset.pid, p = posts.find((x) => x.id === id);
+        if (!plRemovable(p)) return false;
+        if (PL.sel.has(id)) PL.sel.delete(id); else PL.sel.add(id);
+        return true;
+      };
+      /* A tap in select mode, or Ctrl/Shift + click, picks a card instead of opening it. Capture phase, so it runs before the
+         board's own click handler (which would open the preview). */
+      pipe.addEventListener('click', (e) => {
+        const card = e.target.closest('.pcard');
+        if (!card || !(PL.mode || e.ctrlKey || e.metaKey || e.shiftKey)) return;
+        e.preventDefault(); e.stopPropagation();
+        if (toggle(card)) { plApply(); plBar(); } else toast('That one is live on a channel, so it cannot be deleted from here');
+      }, true);
+      /* The box: press on the board's empty space (not on a card or a control) and drag. */
+      pipe.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch' || e.button !== 0) return;
+        if (e.target.closest('.pcard, button, a, input, select, textarea, .col-more')) return;
+        PL.from = { x: e.clientX, y: e.clientY, add: e.ctrlKey || e.metaKey || e.shiftKey };
+        if (!PL.from.add) { PL.sel.clear(); plApply(); }
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!PL.from) return;
+        const dx = e.clientX - PL.from.x, dy = e.clientY - PL.from.y;
+        if (!PL.box && Math.abs(dx) + Math.abs(dy) < 6) return;       // a click, not a drag
+        if (!PL.box) { PL.box = document.createElement('div'); PL.box.className = 'pl-box'; document.body.appendChild(PL.box); }
+        const x = Math.min(e.clientX, PL.from.x), y = Math.min(e.clientY, PL.from.y);
+        PL.box.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + Math.abs(dx) + 'px;height:' + Math.abs(dy) + 'px';
+        const r = { l: x, t: y, r: x + Math.abs(dx), b: y + Math.abs(dy) };
+        pipe.querySelectorAll('.pcard').forEach((c) => {
+          const q = c.getBoundingClientRect();
+          const hit = !(q.right < r.l || q.left > r.r || q.bottom < r.t || q.top > r.b);
+          const p = posts.find((z) => z.id === c.dataset.pid);
+          if (hit && plRemovable(p)) PL.sel.add(c.dataset.pid);
+          else if (!hit && !PL.from.add) PL.sel.delete(c.dataset.pid);
+        });
+        plApply(); plBar();
+        e.preventDefault();
+      });
+      window.addEventListener('pointerup', () => { PL.from = null; if (PL.box) { PL.box.remove(); PL.box = null; } });
+      pipe.addEventListener('dragstart', (e) => { if (PL.from) e.preventDefault(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && PL.sel.size) { PL.sel.clear(); plApply(); plBar(); }
+      });
+    })();
     // view switcher: pipeline ⇄ calendar
     document.getElementById('socialView').addEventListener('click', (e) => {
       const b = e.target.closest('[data-sv]'); if (!b) return;
@@ -13469,6 +13645,48 @@
       if (!sel || !go || !window.SynSyndicate) return;
       var S = window.SynSyndicate, rows = [], campaign = null, running = false;
 
+      /* THE CHANNELS THIS CAMPAIGN IS FOR. Kept on this device. With nothing chosen yet it starts from the accounts the
+         agency has actually connected, else Instagram and Facebook, so nobody pays for six captions to post on two. */
+      var PICK_KEY = 'syn_cmp_chans_v1';
+      var CMP_PLATS = Object.keys(S.PLATFORMS);
+      var pickSel = null;
+      try {
+        var saved = JSON.parse(localStorage.getItem(PICK_KEY) || 'null');
+        if (Array.isArray(saved)) {
+          saved = saved.filter(function (x) { return CMP_PLATS.indexOf(x) > -1; });
+          if (saved.length) pickSel = saved;
+        }
+      } catch (e) { pickSel = null; }
+      function pickedPlats() {
+        if (pickSel && pickSel.length) return pickSel.slice();
+        var live = [];
+        try {
+          live = CMP_PLATS.filter(function (pl) { var a = connectedTo(pl); return a && !expired(a); });
+        } catch (e) { live = []; }
+        if (live.length) return live;
+        return ['instagram', 'facebook'].filter(function (pl) { return CMP_PLATS.indexOf(pl) > -1; });
+      }
+      function paintPick() {
+        var box = document.getElementById('cmpPick');
+        if (!box) return;
+        var on = pickedPlats();
+        box.innerHTML = CMP_PLATS.map(function (pl) {
+          var spec = S.PLATFORMS[pl];
+          return '<button type="button" data-pick="' + pl + '" aria-pressed="' + (on.indexOf(pl) > -1) + '">' + esc(spec.label || pl) + '</button>';
+        }).join('');
+      }
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('#cmpPick [data-pick]');
+        if (!b) return;
+        var pl = b.getAttribute('data-pick'), on = pickedPlats();
+        on = on.indexOf(pl) > -1 ? on.filter(function (x) { return x !== pl; }) : on.concat(pl);
+        if (!on.length) { toastOrAlert('Pick at least one channel.'); return; }
+        pickSel = on;
+        try { localStorage.setItem(PICK_KEY, JSON.stringify(on)); } catch (err) { /* stays for this visit */ }
+        paintPick();
+      });
+      setTimeout(paintPick, 0);
+
       /* SINGLE SOURCE: the Listings pane.
          This picker used to fetch /rest/v1/properties with the anon key, which
          RLS answers with the PUBLIC policy — every live listing on the platform,
@@ -13731,6 +13949,7 @@
         box.innerHTML = html;
         wireReply();
         renderAdd();
+        if (typeof paintPick === 'function') paintPick();
         publishTasks();
       }
 
@@ -14751,8 +14970,10 @@
          button not working. */
       function publishLiveWith(syn) {
         if (running || !campaign) return;
+        var wanted = pickedPlats();
         var ready = campaign.variants.filter(function (v) {
           if (v.issues.length) return false;
+          if (wanted.indexOf(v.platform) < 0) return false;   // never a channel that was not picked
           var mine = CONNECTABLE[v.platform] && connectedTo(v.platform)
             && !expired(connectedTo(v.platform));
           return mine || syn.has(v.platform);
@@ -15230,7 +15451,7 @@
                projection, which has no charges, no amenities and no title
                type. */
             property: fullListing(row && row.id) || row,
-            channels: Object.keys(S.PLATFORMS),
+            channels: pickedPlats(),
             usedAngles: (typeof anglesUsedFor === 'function' ? anglesUsedFor(row.id) : []),
             brand: window.BRAND ? {
               name: window.BRAND.name || null,
@@ -15246,6 +15467,8 @@
             throw new Error((d && d.error) || 'The writer did not return anything usable.');
           }
           campaign = S.aiCampaign(row, d, { brand: window.BRAND });
+          var wanted = pickedPlats();
+          campaign.variants = campaign.variants.filter(function (v) { return wanted.indexOf(v.platform) > -1; });
           if (!campaign.variants.length) throw new Error('Nothing came back for those channels.');
           /* Spent, so the next press starts somewhere else. */
           if (typeof rememberAngles === 'function') {

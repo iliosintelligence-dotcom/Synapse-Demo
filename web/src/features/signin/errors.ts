@@ -54,5 +54,6 @@ export const WHY: Record<string, { title: string; body: string }> = {
   },
   agency: { title: "Set up your agency workspace.", body: "Your listings, leads and verification all live behind this login." },
   saved: { title: "Keep your saved homes.", body: "An account keeps them on every device instead of just this browser." },
+  idle: { title: "You were signed out.", body: "For your security we sign you out after a couple of hours away. Sign in again to carry on." },
   inspection: { title: "Sign in to book a tour.", body: "A tour is booked in your name, so the agent knows who is coming." },
 };

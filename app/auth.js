@@ -605,6 +605,59 @@
     });
   }
 
+  /* ── LEFT FOR A COUPLE OF HOURS ─────────────────────────────────────────────────────────────────────────────────
+     For security, somebody who has been away for two hours is signed out and has to sign in again. They are not taken back
+     to the page they were on: the session ends, and the sign-in page says why.
+
+     "Away" is measured from the last time they did anything in ANY tab of this browser (a timestamp in localStorage, shared
+     between tabs), so a second tab left open does not keep a first one alive and a busy tab is never cut off. It is checked
+     when the page opens, when it comes back to the front (a laptop waking, a phone unlocked), and once a minute while open.
+     No timestamp yet (a session from before this existed) counts as "just now", so nobody is signed out by the rollout. */
+  var IDLE_KEY = 'synapse_last_active_v1';
+  var IDLE_MS = 2 * 60 * 60 * 1000;
+  var lastNote = 0;
+  function idleStamp() { try { return Number(localStorage.getItem(IDLE_KEY)) || 0; } catch (e) { return 0; } }
+  function noteActive(force) {
+    var now = Date.now();
+    if (!force && now - lastNote < 15000) return;       // a stamp every fifteen seconds is plenty, and cheap
+    lastNote = now;
+    try { localStorage.setItem(IDLE_KEY, String(now)); } catch (e) { /* storage blocked: the guard simply cannot tell */ }
+  }
+  function idleExpired(stamp, now) { return !!stamp && (now || Date.now()) - stamp > IDLE_MS; }
+  var idleLeaving = false;
+  function idleOut() {
+    if (idleLeaving) return;
+    idleLeaving = true;
+    var role = roleOf(cachedUser);
+    signOut().then(function () {
+      try { localStorage.removeItem(IDLE_KEY); } catch (e) {}
+      // Not the page they were on, and no `next` to bring them back to it. The sign-in page itself needs no redirect.
+      if (/signin(\.html)?\/?$/.test(location.pathname)) { location.reload(); return; }
+      var base = /\/app\//.test(location.pathname) ? 'signin.html' : 'app/signin.html';
+      location.replace(base + '?reason=idle' + (role === 'agency' ? '&role=agency' : ''));
+    });
+  }
+  function idleCheck() {
+    if (!cachedUser || idleLeaving) return;
+    var stamp = idleStamp();
+    if (idleExpired(stamp)) { idleOut(); return; }
+    if (!stamp) noteActive(true);
+  }
+  function startIdleGuard(u) {
+    if (!u) { try { localStorage.removeItem(IDLE_KEY); } catch (e) {} return; }   // signed out: nothing to time
+    idleCheck();                                // BEFORE the first stamp, or opening the page would reset the clock
+    if (idleLeaving) return;
+    noteActive(true);
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (ev) {
+      window.addEventListener(ev, function () { noteActive(false); }, { passive: true, capture: true });
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') { idleCheck(); if (!idleLeaving) noteActive(true); }
+    });
+    window.addEventListener('focus', function () { idleCheck(); });
+    setInterval(idleCheck, 60 * 1000);
+  }
+
   window.SynAuth = {
     client: client, ready: ready, user: function () { return cachedUser; },
     getUser: getUser, roleOf: roleOf, safeNext: safeNext,
@@ -621,6 +674,6 @@
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { ready().then(paintAll); });
-  } else { ready().then(paintAll); }
+    document.addEventListener('DOMContentLoaded', function () { ready().then(paintAll); ready().then(startIdleGuard); });
+  } else { ready().then(paintAll); ready().then(startIdleGuard); }
 })();
