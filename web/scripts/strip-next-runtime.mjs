@@ -50,4 +50,6 @@ for (const [key, spec] of Object.entries(PAGES)) {
   }
   pages++; bytesBefore += before.length; bytesAfter += html.length;
 }
+writeFileSync(join(out, "__strip.txt"), `stripped ${pages} pages at ${new Date().toISOString()}
+`);
 console.log(`Stripped Next's runtime from ${pages} ported pages: ${(bytesBefore / 1e6).toFixed(1)} MB -> ${(bytesAfter / 1e6).toFixed(1)} MB.`);
