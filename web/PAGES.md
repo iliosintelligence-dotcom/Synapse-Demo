@@ -1,27 +1,27 @@
 # Every page of the original site, and where it lives in Next
 
 The original site is 17 HTML pages. Each is now a Next.js page, written out as JSX from the original file, with the original stylesheets and scripts in the
-original order. They keep their original addresses, so every link, email, QR code and bookmark still works.
+original order. Addresses are the original ones without `.html` (`/app/toju`, `/buyers`); the old `.html` addresses redirect to them with their query string, so every link, email, QR code and bookmark still works.
 
 | # | Address | Original file | Next source (the page's markup) | What it is |
 |---|---------|---------------|---------------------------------|------------|
 | 1 | `/` | `index.html` | `src/app/(index)/page.tsx` | Landing page for agencies |
-| 2 | `/buyers.html` | `buyers.html` | `src/app/(buyers)/buyers/page.tsx` | Landing page for customers |
-| 3 | `/privacy.html` | `privacy.html` | `src/app/(privacy)/privacy/page.tsx` | Privacy policy |
-| 4 | `/terms.html` | `terms.html` | `src/app/(terms)/terms/page.tsx` | Terms of service |
-| 5 | `/app/toju.html` | `app/toju.html` | `src/app/(toju)/app/toju/page.tsx` | Tayo, the chat |
-| 6 | `/app/browse.html` | `app/browse.html` | `src/app/(browse)/app/browse/page.tsx` | Your matches / since you last visited |
-| 7 | `/app/property.html` | `app/property.html` | `src/app/(property)/app/property/page.tsx` | One property |
-| 8 | `/app/dream.html` | `app/dream.html` | `src/app/(dream)/app/dream/page.tsx` | Dream boards |
-| 9 | `/app/signin.html` | `app/signin.html` | `src/app/(signin)/app/signin/page.tsx` | Sign in / sign up / reset |
-| 10 | `/app/agency-profile.html` | `app/agency-profile.html` | `src/app/(agency-profile)/app/agency-profile/page.tsx` | An agency's public page |
-| 11 | `/app/agency.html` | `app/agency.html` | `src/app/(agency)/app/agency/page.tsx` | The agency portal |
-| 12 | `/app/go.html` (`/go/<handle>`) | `app/go.html` | `src/app/(go)/app/go/page.tsx` | Bio link: homes an agency just posted |
-| 13 | `/app/your-data.html` (`/your-data`) | `app/your-data.html` | `src/app/(your-data)/app/your-data/page.tsx` | Download or delete your data |
-| 14 | `/app/synapse.html` | `app/synapse.html` | `src/app/(synapse)/app/synapse/page.tsx` | Synapse studio (team only) |
-| 15 | `/app/synapse-join.html` | `app/synapse-join.html` | `src/app/(synapse-join)/app/synapse-join/page.tsx` | Team invitation |
-| 16 | `/app/verify.html` | `app/verify.html` | `src/app/(verify)/app/verify/page.tsx` | Verification desk (team only) |
-| 17 | `/app/syndication-test.html` | `app/syndication-test.html` | `src/app/(syndication-test)/app/syndication-test/page.tsx` | Syndication engine checks (team only) |
+| 2 | `/buyers` | `buyers.html` | `src/app/(buyers)/buyers/page.tsx` | Landing page for customers |
+| 3 | `/privacy` | `privacy.html` | `src/app/(privacy)/privacy/page.tsx` | Privacy policy |
+| 4 | `/terms` | `terms.html` | `src/app/(terms)/terms/page.tsx` | Terms of service |
+| 5 | `/app/toju` | `app/toju.html` | `src/app/(toju)/app/toju/page.tsx` | Tayo, the chat |
+| 6 | `/app/browse` | `app/browse.html` | `src/app/(browse)/app/browse/page.tsx` | Your matches / since you last visited |
+| 7 | `/app/property` | `app/property.html` | `src/app/(property)/app/property/page.tsx` | One property |
+| 8 | `/app/dream` | `app/dream.html` | `src/app/(dream)/app/dream/page.tsx` | Dream boards |
+| 9 | `/app/signin` | `app/signin.html` | `src/app/(signin)/app/signin/page.tsx` | Sign in / sign up / reset |
+| 10 | `/app/agency-profile` | `app/agency-profile.html` | `src/app/(agency-profile)/app/agency-profile/page.tsx` | An agency's public page |
+| 11 | `/app/agency` | `app/agency.html` | `src/app/(agency)/app/agency/page.tsx` | The agency portal |
+| 12 | `/app/go` (`/go/<handle>`) | `app/go.html` | `src/app/(go)/app/go/page.tsx` | Bio link: homes an agency just posted |
+| 13 | `/app/your-data` (`/your-data`) | `app/your-data.html` | `src/app/(your-data)/app/your-data/page.tsx` | Download or delete your data |
+| 14 | `/app/synapse` | `app/synapse.html` | `src/app/(synapse)/app/synapse/page.tsx` | Synapse studio (team only) |
+| 15 | `/app/synapse-join` | `app/synapse-join.html` | `src/app/(synapse-join)/app/synapse-join/page.tsx` | Team invitation |
+| 16 | `/app/verify` | `app/verify.html` | `src/app/(verify)/app/verify/page.tsx` | Verification desk (team only) |
+| 17 | `/app/syndication-test` | `app/syndication-test.html` | `src/app/(syndication-test)/app/syndication-test/page.tsx` | Syndication engine checks (team only) |
 
 Not ported, on purpose: `agencies.html` (a redirect to `/`, already handled by `vercel.json`) and `design-sample.html` (a design scratch pad, "not part of the app").
 
