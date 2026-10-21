@@ -28,10 +28,27 @@
   /* The three consumer surfaces, in the order someone meets them: talk first,
      then what that produced, then what they are saving toward. */
   var PAGES = [
+    { file: 'home.html',   label: 'Home',         sub: 'Start here',          icon: 'home'   },
     { file: 'toju.html',   label: 'Tayo',         sub: 'Ask about anything',  icon: 'chat'   },
     { file: 'browse.html', label: 'Your matches', sub: 'Homes that fit',      icon: 'home'   },
     { file: 'dream.html',  label: 'Dream boards', sub: 'What you are saving', icon: 'boards' },
   ];
+
+  /* THE LANDING PAGE IS FOR ARRIVING. Once a person has opened the app, the way back is Home, not the page that sells it to
+     strangers. The app (Capacitor) always counts; on a phone in a browser it counts from the first app page they open. Links that
+     lead to the landing page (the logo, "Back to the landing page") are pointed at Home from then on. */
+  var STARTED = 'synapse_app_started';
+  var SEEN_BEFORE = false;
+  try { SEEN_BEFORE = localStorage.getItem(STARTED) === '1'; localStorage.setItem(STARTED, '1'); } catch (e) { /* private window: only the app counts */ }
+  function pointLandingLinksHome() {
+    var inApp = document.documentElement.classList.contains('syn-app');
+    var phone = window.matchMedia('(max-width: 1024px)').matches;
+    if (!(inApp || (phone && SEEN_BEFORE))) return;
+    var links = document.querySelectorAll('a[href$="buyers.html"], a[href$="buyers"], a.home[href="../"], a.brand[href="../"]');
+    for (var i = 0; i < links.length; i++) links[i].setAttribute('href', '/app/home');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pointLandingLinksHome);
+  else pointLandingLinksHome();
 
   function currentFile() {
     var p = window.location.pathname;
