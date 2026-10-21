@@ -807,6 +807,36 @@
       }
     }
 
+    /* LIVE CONTEXT. What this device knows about what the buyer is doing, sent with every message so Tayo does not start from nothing:
+       where they are (the app or the website), the home they last opened and the post it came from, the homes they looked at lately
+       and the ones they saved, and the hour on their clock. Only ids and a few closed words leave the phone; the server reads the
+       homes from the database by id and ignores anything it does not recognise (toju-demo/live-context.ts). No location, no name,
+       nothing typed. */
+    function liveContext() {
+      const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const c = {
+        v: 1, where: 'tayo',
+        surface: document.documentElement.classList.contains('syn-app') ? 'app' : 'web',
+        tzOffsetMin: -new Date().getTimezoneOffset(),
+        language: String(navigator.language || '').slice(0, 12),
+      };
+      try {
+        if (window.SynMatches) {
+          const saved = Array.from(SynMatches.readSaves()).filter((x) => typeof x === 'string' && UUID.test(x)).slice(-8);
+          const recent = SynMatches.readViews().map((v) => v && v.id).filter((x) => typeof x === 'string' && UUID.test(x)).slice(0, 8);
+          if (saved.length) c.saved = saved;
+          if (recent.length) c.recent = recent;
+        }
+      } catch (e) { /* no saves is fine */ }
+      try {
+        const lh = JSON.parse(localStorage.getItem('syn_last_home') || 'null');
+        if (lh && typeof lh.id === 'string' && UUID.test(lh.id)) {
+          c.lastHome = { id: lh.id, ch: String(lh.ch || '').slice(0, 20), ageMin: lh.ts ? Math.max(0, Math.round((Date.now() - Number(lh.ts)) / 60000)) : null };
+        }
+      } catch (e) { /* none */ }
+      return c;
+    }
+
     async function ask() {
       clearError();
       const t = typing();
@@ -824,7 +854,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, listingId: (REPLY_TO && REPLY_TO.id) || undefined, agencyId: (!REPLY_TO && AGENCY_ID) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, context: liveContext(), listingId: (REPLY_TO && REPLY_TO.id) || undefined, agencyId: (!REPLY_TO && AGENCY_ID) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
