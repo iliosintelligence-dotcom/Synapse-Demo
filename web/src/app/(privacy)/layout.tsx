@@ -14,6 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
         <script  dangerouslySetInnerHTML={{ __html: inline("privacy", "inline-1.js") }} />
         <script src="/consent.js" defer />
+        <script src="/app/native.js" defer />
         <title>{"Privacy Policy · Synapse Core"}</title>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

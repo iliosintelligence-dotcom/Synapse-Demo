@@ -14,6 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
         <script  dangerouslySetInnerHTML={{ __html: inline("agency", "inline-1.js") }} />
         <script src="/consent.js" defer />
+        <script src="/app/native.js" defer />
         <meta name="theme-color" content="#F7F7F8" />
         <title>{"Agency Portal · Synapse"}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
