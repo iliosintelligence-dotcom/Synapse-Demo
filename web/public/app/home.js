@@ -13,6 +13,11 @@
   var list = document.getElementById('hmList'), empty = document.getElementById('hmEmpty');
   var hello = document.getElementById('hmHello');
   var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  /* HOME IS A PHONE SCREEN. On a desktop the landing page stays the front door, so a desktop visitor who lands here (a shared
+     link, a bookmark) is sent there. The Capacitor app always counts as a phone. */
+  var inApp = document.documentElement.classList.contains('syn-app') || /SynapseApp\//.test(navigator.userAgent);
+  if (!inApp && !window.matchMedia('(max-width: 1024px)').matches) { window.location.replace('/buyers'); return; }
+
   var cache = {}, current = 'rent';
 
   function saves() { try { var r = JSON.parse(localStorage.getItem(SAVES) || '[]'); return new Set(Array.isArray(r) ? r : []); } catch (e) { return new Set(); } }

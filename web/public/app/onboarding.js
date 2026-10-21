@@ -4,6 +4,7 @@
 (function () {
   'use strict';
   var DONE = 'synapse_onboarded_v1', DEAL = 'synapse_home_deal';
+  if (!document.documentElement.classList.contains('syn-app') && !window.matchMedia('(max-width: 1024px)').matches) return; // a phone screen
   try { if (localStorage.getItem(DONE) === '1') return; } catch (e) { /* private window: show it, it just returns next visit */ }
 
   var SLIDES = [
