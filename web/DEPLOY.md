@@ -39,8 +39,8 @@ pages in the deployment (nothing is deleted) and redirects `/app/agency.html` to
 | 2 | Supabase, Authentication, URL Configuration: add `https://next.synapsecore.dev/**` to Redirect URLs. | You (Supabase) | Remove it |
 | 3 | Test staging end to end (section 4). | You, with Claude | n/a |
 | 4 | Register `next.synapsecore.dev` on Stadia if maps are blank there. | You (Stadia) | n/a |
-| 5 | In this repo: `git rm web/src/app/page.tsx`, then `node web/scripts/assemble-static.mjs` (dry run), then `--apply`. Commit. | Claude | `git revert` |
-| 6 | Re-test staging: landing page, `/go/<handle>`, `/s/<token>`, `/buyers`, `/privacy`, `/terms`, `/your-data`, and `/app/agency.html?invite=x#crm` (should land on `/portal/?invite=x#crm`). | You, with Claude | n/a |
+| 5 | ~~In this repo: remove the placeholder home page and run the static assembler.~~ **Done 2026-10-21.** Staging now serves the landing page, `/buyers`, `/privacy`, `/terms`, `/your-data`, `/go/<handle>` and the old `/app/*.html` pages. | Claude | `git revert` |
+| 6 | ~~Re-test staging~~ **Done for everything that needs no login** (all pages, redirects, short links `/s/…`, image resizer, headers, `/web/` blocked). Still to do signed in: sign-in and email flows, the portal panes, Google sign-in. Original list: landing page, `/go/<handle>`, `/s/<token>`, `/buyers`, `/privacy`, `/terms`, `/your-data`, and `/app/agency.html?invite=x#crm` (should land on `/portal/?invite=x#crm`). | You, with Claude | n/a |
 | 7 | Supabase Redirect URLs: make sure `https://www.synapsecore.dev/**` is allowed (it already is, for the current site). | You | n/a |
 | 8 | Move the domain: Vercel, the new project, Domains, add `www.synapsecore.dev` (take it from `synapse-demo`). Keep `synapse-demo` for a week. | You (Vercel) | Move the domain back |
 | 9 | Supabase, Edge Functions, `social-connect`, secret `PORTAL_URL` = `https://www.synapsecore.dev/portal/`. (Until then OAuth returns to `/app/agency.html`, which now redirects to the portal, so it still works.) | You (Supabase) | Set it back |

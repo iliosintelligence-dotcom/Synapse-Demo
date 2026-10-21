@@ -27,7 +27,7 @@ import { PhoneBanner } from "./PhoneBanner";
 import { InviteGate } from "./InviteGate";
 import { takeJoined } from "./data/invite";
 import { ProfileDrawer } from "./ProfileDrawer";
-import { useIntent } from "./intent";
+import { requestIntent, useIntent } from "./intent";
 import { Bell } from "./Bell";
 import { AdvisorPanel } from "./AdvisorPanel";
 import { ToastProvider } from "./ui/Toast";
@@ -101,6 +101,17 @@ export function PortalShell() {
 
   // Facebook, TikTok and Telegram send the browser back with the outcome in the address; it is read in the Social studio, so go there
   useEffect(() => { if (side !== "ok") return; if (new URLSearchParams(window.location.search).has("connected") && !window.location.hash) window.location.hash = "social"; }, [side]);
+
+  // The landing page's "Add your listing" arrives as /portal/?add=1: open the listing form, as the original portal did, and drop the parameter so a reload does not reopen it
+  useEffect(() => {
+    if (side !== "ok") return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("add") !== "1") return;
+    q.delete("add");
+    window.history.replaceState({}, "", `${window.location.pathname}${q.toString() ? `?${q}` : ""}#listings`);
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    setTimeout(() => requestIntent("new-listing"), 400);
+  }, [side]);
 
   // The gate is a UX gate, never a security boundary: the database policies are. It stops a person seeing a screen they cannot use.
   useEffect(() => {
