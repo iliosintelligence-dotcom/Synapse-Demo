@@ -19,8 +19,18 @@
      (env(safe-area-inset-top) is that height; it is 0 in an ordinary browser, and a page that already handled it needs no rule
      here: Tayo, Your matches, Dream boards, sign-in, the legal pages). */
   root.classList.add('syn-app');
+  // MainActivity has normally set --syn-native-* already (before the page painted); ask again in case its start script could not run.
+  var NI = window.SynInsets;
+  if (NI) {
+    try {
+      root.style.setProperty('--syn-native-top', NI.top() + 'px');
+      root.style.setProperty('--syn-native-bottom', NI.bottom() + 'px');
+      root.style.setProperty('--syn-native-left', NI.left() + 'px');
+      root.style.setProperty('--syn-native-right', NI.right() + 'px');
+    } catch (x) { /* the page falls back to env() below */ }
+  }
   var st = document.createElement('style');
-  st.textContent = ':root.syn-app{--syn-top:env(safe-area-inset-top,0px)}'
+  st.textContent = ':root.syn-app{--syn-top:var(--syn-native-top,env(safe-area-inset-top,0px));--syn-bottom:var(--syn-native-bottom,env(safe-area-inset-bottom,0px))}'
     + '.syn-app .nav{padding-top:var(--syn-top)}'                                 // landing page, customers page
     + '.syn-app .appbar{padding-top:calc(14px + var(--syn-top))}'                 // the shared bar: portal, verification desk
     + '.syn-app .wrap:has(>.brandbar){padding-top:calc(26px + var(--syn-top))}'   // a homes-we-just-posted link

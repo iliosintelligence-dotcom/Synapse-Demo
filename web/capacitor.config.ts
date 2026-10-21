@@ -35,9 +35,10 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: { launchShowDuration: 0, backgroundColor: "#FAF6F0", showSpinner: false },
-    // The page draws edge to edge, behind the status bar and the camera cut-out, and every page keeps its bar and logo below them
-    // (public/app/native.js, the app-only insets). The pages already say viewport-fit=cover; the hint stops a jump on first paint.
-    SystemBars: { insetsHandling: "css", initialViewportFitValueHint: "cover" },
+    // The page draws edge to edge, behind the status bar and the camera cut-out, on every Android WebView version. Capacitor's own
+    // inset handling pads the web view on older versions (which left a blank bar above the page), so it is off; MainActivity measures
+    // the insets and gives them to the page (public/app/native.js: --syn-top and --syn-bottom), and every page keeps its bar below them.
+    SystemBars: { insetsHandling: "disable" },
   },
 };
 

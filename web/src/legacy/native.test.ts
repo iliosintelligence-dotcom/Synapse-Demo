@@ -29,6 +29,7 @@ function load(opts: { native: boolean; getPhoto?: () => Promise<unknown>; plugin
   document.body.innerHTML = "";
   document.head.innerHTML = "";
   document.documentElement.className = "";
+  document.documentElement.removeAttribute("style");
   if (opts.theme) document.documentElement.setAttribute("data-theme", opts.theme); else document.documentElement.removeAttribute("data-theme");
   const w = window as unknown as { Capacitor?: unknown };
   w.Capacitor = opts.native
@@ -129,6 +130,19 @@ describe("native.js", () => {
     const css = document.head.querySelector("style")!.textContent!;
     expect(css).toContain("env(safe-area-inset-top");
     for (const sel of [".syn-app .nav", ".syn-app .appbar", ".syn-app .yd-wrap"]) expect(css).toContain(sel);
+  });
+
+  it("uses the insets the app measured (older WebViews report none), and falls back to the browser's own", () => {
+    (window as unknown as { SynInsets?: unknown }).SynInsets = { top: () => 51, bottom: () => 24, left: () => 0, right: () => 0 };
+    load({ native: true });
+    const s = document.documentElement.style;
+    expect(s.getPropertyValue("--syn-native-top")).toBe("51px");
+    expect(s.getPropertyValue("--syn-native-bottom")).toBe("24px");
+    const css = document.head.querySelector("style")!.textContent!;
+    expect(css).toContain("--syn-top:var(--syn-native-top,env(safe-area-inset-top,0px))");
+    delete (window as unknown as { SynInsets?: unknown }).SynInsets;
+    load({ native: true });
+    expect(document.documentElement.style.getPropertyValue("--syn-native-top")).toBe("");
   });
 
   it("the status-bar icons follow the page: light icons on a dark page, dark icons on a light one, and again when the theme changes", async () => {

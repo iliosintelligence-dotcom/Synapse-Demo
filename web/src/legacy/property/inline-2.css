@@ -29,7 +29,7 @@
     .pvlb-stage { position: relative; width: 100%; height: 100%;
       overscroll-behavior: contain;
       display: flex; align-items: center; justify-content: center;
-      padding: 60px 12px calc(56px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+      padding: 60px 12px calc(56px + var(--syn-bottom, env(safe-area-inset-bottom, 0px))); box-sizing: border-box; }
     .pvlb-stage video { max-width: 100%; max-height: 100%; object-fit: contain;
       display: block; position: relative; z-index: 0; background: #0d0d0f; }
     .pvlb-stage img[hidden], .pvlb-stage video[hidden] { display: none; }
@@ -41,13 +41,13 @@
          While this is open it owns the gesture -- there is nothing here to
          scroll, and the drag below is doing the work. */
       touch-action: none; will-change: transform; }
-    .pvlb-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px;
+    .pvlb-x { position: absolute; top: calc(10px + var(--syn-top, env(safe-area-inset-top, 0px))); right: 12px;
       width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
       background: rgba(255,255,255,.14); color: #fff; font-size: 19px; line-height: 1;
       display: grid; place-items: center; }
     .pvlb-x:hover { background: rgba(255,255,255,.26); }
     .pvlb-x:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .pvlb-n { position: absolute; bottom: calc(16px + env(safe-area-inset-bottom));
+    .pvlb-n { position: absolute; bottom: calc(16px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
       left: 50%; transform: translateX(-50%);
       font-size: 12.5px; color: rgba(255,255,255,.82); letter-spacing: .04em;
       font-variant-numeric: tabular-nums; }
@@ -592,7 +592,7 @@
     .pv-home-pin.pv-home-on { background: #FF8A2D !important; border-color: #FF8A2D !important; }
     .pvo-rows { margin: 0; padding: 0; list-style: none; max-height: 34vh; overflow-y: auto; }
     /* the floating menu button must not sit on the map's "What's nearby" pill (the dock it clears is behind the sheet) */
-    body.pv-map-open .cnav { bottom: calc(18px + env(safe-area-inset-bottom)) !important; }
+    body.pv-map-open .cnav { bottom: calc(18px + var(--syn-bottom, env(safe-area-inset-bottom, 0px))) !important; }
     /* THE DEAL, inside the costs card */
     #costCard #pvDealCard { margin: 0 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
     /* PROPERTY INTELLIGENCE */
@@ -807,7 +807,7 @@
 
       .cta-dock {
         position: sticky; bottom: 0;
-        padding: 12px 0 calc(14px + env(safe-area-inset-bottom));
+        padding: 12px 0 calc(14px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
       }
       .cta-dock .btn { min-height: 48px; }
 
@@ -882,7 +882,7 @@
       .pvm-close { display: none !important; }
 
       .pvc-head {
-        padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+        padding: calc(10px + var(--syn-top, env(safe-area-inset-top, 0px))) 14px 10px;
         gap: 10px; align-items: flex-start;
       }
       .pvm-close {
@@ -916,7 +916,7 @@
       .pvc-overlay, .pvc-overlay.wide {
         position: fixed; z-index: 58;
         left: 10px; right: 10px; top: auto;
-        bottom: calc(78px + env(safe-area-inset-bottom));
+        bottom: calc(78px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
         width: auto; max-height: 44vh; overflow-y: auto;
         border-radius: 16px; padding: 12px 14px;
         background: rgba(255,255,255,0.97);
@@ -948,7 +948,7 @@
       body.pv-map-open .pvm-nearbtn {
         display: inline-flex; align-items: center; gap: 7px;
         position: fixed; z-index: 71;
-        left: 16px; bottom: calc(78px + env(safe-area-inset-bottom));
+        left: 16px; bottom: calc(78px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
         min-height: 46px; padding: 0 16px; border-radius: 100px;
         background: #141412; color: #fff; border: 0;
         font: 600 13px var(--f-sans); cursor: pointer;
@@ -960,7 +960,7 @@
       body.pv-map-open .pvm-backpill {
         display: inline-flex; align-items: center; gap: 6px;
         position: fixed; z-index: 72;
-        left: 70px; bottom: calc(18px + env(safe-area-inset-bottom));
+        left: 70px; bottom: calc(18px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
         height: 46px; padding: 0 18px 0 12px; border-radius: 100px; border: 0;
         background: var(--orange, #FF8A2D); color: #15120F;
         font: 700 14px var(--f-sans); cursor: pointer;
