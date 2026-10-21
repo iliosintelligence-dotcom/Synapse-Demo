@@ -61,7 +61,7 @@
     html[data-theme="dark"] .acct-sep { background: rgba(255,255,255,0.12); }
     html[data-theme="dark"] .acct-out { color: #F28B82; }
     @media (prefers-reduced-motion: reduce) { .acct-menu { animation: none; } }
-    /* Agency portal — separate world from the customer app. Customer pages
+    /* Agency portal, separate world from the customer app. Customer pages
        never link here; you arrive via "For Agencies" on the landing page.
        App shell: the nav rail is pinned to the far-left edge of the screen
        (Gemini-canvas style) and the content pane fills the rest. */
@@ -69,7 +69,7 @@
     /* ── Collapsing rail ──────────────────────────────────────────────────
        Rests at icon width and expands on hover. The rail keeps its 66px slot
        in the flex row while the panel itself overlays on expand, so the
-       content never reflows — no layout thrash, and the page behind stays
+       content never reflows, no layout thrash, and the page behind stays
        exactly where the eye left it. Keyboard users get the same expansion
        via :focus-within, and touch devices (no hover) keep it open. */
     /* the rail is taken OUT of the flex flow and the shell reserves its 66px,
@@ -94,7 +94,7 @@
     .side .grp, .side .me .who { opacity: 0; transition: opacity var(--m-standard) var(--m-ease); pointer-events: none; }
     .side:hover .grp, .side:focus-within .grp,
     .side:hover .me .who, .side:focus-within .me .who { opacity: 1; pointer-events: auto; }
-    /* collapsed, every group is open — there is no room for headers */
+    /* collapsed, every group is open, there is no room for headers */
     .side:not(:hover):not(:focus-within) .grp-sec .grp-items { max-height: 400px !important; opacity: 1 !important; }
     .side:not(:hover):not(:focus-within) .grp { height: 0; padding: 0; overflow: hidden; }
     @media (hover: none) {
@@ -145,7 +145,7 @@
     .wa { background: var(--brand); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 100px; }
     .time { font-size: 12px; color: var(--ink-dim); }
 
-    /* ── pricing: a comparison table, not three separate cards — tiers as
+    /* ── pricing: a comparison table, not three separate cards, tiers as
        columns, every benefit as its own row, so reading across a row tells
        you exactly which plans include it. ── */
     .pr-table-wrap { overflow-x: auto; margin-top: 28px; border-radius: 20px; border: 1px solid var(--border); }
@@ -372,11 +372,11 @@
     .pill-st.q { color: var(--warn-ink); background: rgba(176,125,43,0.1); border: 1px solid rgba(176,125,43,0.25); }
     .pill-st.p { color: var(--success); background: rgba(46,125,79,0.1); border: 1px solid rgba(46,125,79,0.25); }
 
-    /* content pipeline (Phase A — brought over from the standalone dashboard) */
+    /* content pipeline (Phase A, brought over from the standalone dashboard) */
     .pipeline { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-top: 10px; }
     .col { min-width: 208px; flex: 1; background: rgba(0,0,0,0.015); border: 1px solid var(--border); border-radius: 16px; padding: 10px; }
     /* .ch is a <button> (mobile turns it into an accordion header) even on
-       desktop, where it stays inert chrome — these resets strip the browser's
+       desktop, where it stays inert chrome, these resets strip the browser's
        default button appearance back to what the plain <div> used to render. */
     .col > .ch { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 10px;
       width: 100%; background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: default; }
@@ -956,7 +956,7 @@
       .chan .tog::after, button.s-tile, .s-tile .cbar i, .pcard, .s-cal .cev { transition: none; }
       .pcard.justpub, .pcard .skel span, .spin { animation: none; }
     }
-    /* property preview ("zoom to confirm") — from a pipeline card or a calendar event */
+    /* property preview ("zoom to confirm"), from a pipeline card or a calendar event */
     .pprev-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(20,18,16,0.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; padding: 20px; }
     .pprev-scrim.on { display: flex; }
     .pprev { width: 384px; max-width: 100%; background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: 0 40px 90px rgba(20,26,38,0.42); transform: translateY(10px) scale(.98); opacity: 0; transition: transform var(--m-standard), opacity var(--m-standard); }
@@ -987,7 +987,7 @@
     .h2 { font-family: var(--f-serif); font-weight: 500; font-size: 22px; margin: 26px 0 4px; }
     .sub { font-size: 13px; color: var(--ink-muted); }
 
-    /* CRM attribution (Phase B — brought over from the standalone dashboard) */
+    /* CRM attribution (Phase B, brought over from the standalone dashboard) */
     .brk { padding: 14px 18px; margin-bottom: 14px; }
     .brk .hd { display: flex; justify-content: space-between; align-items: center; }
     .brk .hd .l { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
@@ -1040,7 +1040,7 @@
     .ap-do { display: flex; gap: 8px; margin-top: 16px; }
     .ap-do .ac-btn { flex: 1; min-height: 44px; }
     /* The invite link is the deliverable, so it is shown in full and is
-       selectable by hand — clipboard access can be refused and the agency must
+       selectable by hand, clipboard access can be refused and the agency must
        still be able to get the link out. */
     .inv-link { font: 12.5px/1.5 var(--f-mono, ui-monospace, monospace); word-break: break-all;
       background: var(--brand-tint); border-radius: 12px; padding: 12px 14px; color: var(--ink); user-select: all; }
@@ -1119,7 +1119,7 @@
     .tm-msg { max-width: 82%; padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.5;
       word-break: break-word; overflow-wrap: anywhere; }
     .tm-msg i { display: block; font-style: normal; font-size: 10.5px; opacity: .6; margin-top: 4px; }
-    /* Yours right and dark, theirs left and light — the oldest convention in
+    /* Yours right and dark, theirs left and light, the oldest convention in
        messaging, so it needs no label to be read correctly. */
     .tm-msg.mine { align-self: flex-end; background: var(--brand-deep); color: #fff; border-bottom-right-radius: 5px; }
     .tm-msg.theirs { align-self: flex-start; background: var(--brand-tint); color: var(--ink); border-bottom-left-radius: 5px; }
@@ -1237,13 +1237,13 @@
        displayed wearing someone else's, and a buyer had no way to tell it
        from a real photo of the place they were about to enquire about.
 
-       Same treatment the consumer side already ships — see
+       Same treatment the consumer side already ships, see
        `.listing .img.no-photo` in browse.html / toju.html and the comment in
        listingCardHtml() (matches-shared.js).
 
        Two selectors, because there are two ways to have no photo:
        :not(:has(img)) is "we never had a URL", .no-photo is "the URL did not
-       load" — photoHtml()'s onerror drops the broken <img> and adds it. */
+       load", photoHtml()'s onerror drops the broken <img> and adds it. */
     .lph { position: relative; overflow: hidden; flex: none;
       display: flex; align-items: center; justify-content: center;
       background: repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px); }
@@ -1330,18 +1330,18 @@
     .lcard .ld b { color: var(--ink); font-size: 14px; }
 
     /* agents */
-    /* Profile facts that are lists — areas, specialisms, languages. Quiet by
+    /* Profile facts that are lists, areas, specialisms, languages. Quiet by
        design: they are reference, not controls, so they must not read as
        tappable next to the real buttons in the same drawer. */
     .ag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .ag-chip { font: 500 12px var(--f-sans); color: var(--ink); background: var(--brand-tint); border-radius: 100px; padding: 5px 11px; }
     .agrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; margin-top: 18px; }
 
-    /* Form fields — the foundational rule every .field wrapper in this file
+    /* Form fields, the foundational rule every .field wrapper in this file
        (Brand, invite-agent, new-campaign) relies on. Labels stack above
        inputs; inputs get the same border/radius/background language as the
        rest of the app. Without this, .field renders as bare unstyled HTML
-       controls — labels and inputs running together with no spacing. */
+       controls, labels and inputs running together with no spacing. */
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
     .field label { font: 700 12px var(--f-sans); color: var(--ink-muted); }
     .field input, .field textarea, .field select {
@@ -1446,7 +1446,7 @@
        The TARGET is 44px: the button is padded out to the floor and the colour
        is painted by an inner span, so a thumb gets a full-size hit area without
        the palette turning into forty-four-pixel blocks. gap goes negative-free
-       by shrinking to 0 — the padding now provides the separation. */
+       by shrinking to 0, the padding now provides the separation. */
     .sw-presets { display: flex; flex-wrap: wrap; gap: 0; margin: -11px 0 0 -11px; }
     .sw-presets button {
       width: 44px; height: 44px; padding: 11px; margin: 0;
@@ -1645,7 +1645,7 @@
        and a clear order of importance below that.
 
        The hierarchy is the brief. Message and Assign lead are what an agency
-       DOES with an agent, so they are the loudest thing on the card — a filled
+       DOES with an agent, so they are the loudest thing on the card, a filled
        pill and an outlined one, full width. The numbers are reference, not
        actions, so they sit under the fold of the card as small figures with
        quiet labels. Nothing is boxed. */
@@ -1699,7 +1699,7 @@
 
     /* PRIMARY. What the agency came here to do. */
     .ac-acts { display: flex; gap: 8px; margin-top: 14px; }
-    /* 42px on Message and Assign lead — the two controls this card exists
+    /* 42px on Message and Assign lead, the two controls this card exists
        for, and the ones singled out as mattering more than any figure on it. */
     .ac-btn { flex: 1; border-radius: 100px; padding: 10px; cursor: pointer; min-height: 44px;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -1732,7 +1732,7 @@
     @media (max-width: 560px){ .ag-kpis { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce){ .acard, .acard.enter { animation: none; transition: none; } }
 
-    /* ── chart primitives — single hue on a muted track, labels in ink ── */
+    /* ── chart primitives, single hue on a muted track, labels in ink ── */
     .hbars { display: flex; flex-direction: column; gap: 9px; }
     .hbars .hrow { display: flex; align-items: center; gap: 11px; }
     .hbars .hlb { width: 96px; font-size: 12px; color: var(--ink-muted); flex: none; text-align: right; }
@@ -1770,7 +1770,7 @@
     .chk.pass { background: rgba(46,125,79,0.1); color: var(--success); }
     .chk.wait { background: rgba(176,125,43,0.1); color: var(--warn-ink); }
 
-    /* AI-native CRM — decisions, not records */
+    /* AI-native CRM, decisions, not records */
     .temp { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
     .temp.hot { color: #1C1C1E; background: rgba(255,138,45,0.14); border: 1px solid rgba(255,138,45,0.34); }
     .temp.warm { color: var(--warn-ink); background: rgba(176,125,43,0.12); border: 1px solid rgba(176,125,43,0.3); }
@@ -1879,7 +1879,7 @@
     #handoffs { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 18px; margin-top: 14px; }
     /* Was a photo card: 470px tall, a dark gradient behind a listing image, and
      the report floating over it on frosted glass. The image went when propImg()
-     turned out not to exist, which left the frame with nothing to frame — a
+     turned out not to exist, which left the frame with nothing to frame, a
      dark square wrapped around a white panel. It is a card like the rest of the
      portal now: the report IS the card, not something laid on top of one. */
 .handoff { position: relative; padding: 0; overflow: hidden; background: var(--surface); }
@@ -1905,7 +1905,7 @@
     .handoff .rp-actions { display: flex; gap: 10px; margin-top: 14px; }
     /* Layout only. Taking a negotiation over is the one thing this card exists
        to make you do, so it wears the app's action orange like every other
-       primary — .btn-primary already pairs var(--action) with var(--action-on),
+       primary, .btn-primary already pairs var(--action) with var(--action-on),
        dark ink on the orange at 8.25:1. Overriding one half of a colour pair
        without the other is what once rendered this button black on black. */
     .handoff .rp-actions .btn-primary { flex: 1; }
@@ -2581,7 +2581,7 @@
     .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(80px); background: #17191d; color: #fff; font-size: 13px; padding: 12px 20px; border-radius: 100px; box-shadow: 0 14px 40px rgba(0,0,0,0.3); z-index: 99; transition: transform var(--m-expanded) var(--m-ease-panel); }
     .toast.on { transform: translateX(-50%) translateY(0); }
 
-    /* marketing — what each post earned. Modelled on an AI ad studio
+    /* marketing, what each post earned. Modelled on an AI ad studio
        once: generated creatives, a CTR, scaling the winner. None of that
        was ever measured and all of it is gone. What is here now is counted
        from our own short links. */
@@ -2819,7 +2819,7 @@
     /* the floating taskbar never exists above the phone breakpoint */
     .agd-bar, .agd-scrim { display: none; }
 
-    /* ══ MOBILE (≤720px) — the portal as a floating dock ═══════════════
+    /* ══ MOBILE (≤720px), the portal as a floating dock ═══════════════
        The rail is gone on a phone. Navigation and the primary create action
        live in two thumb-reachable buttons at the bottom of the screen, the
        way a taskbar does: tap the left one and the menu files out in groups;
@@ -2828,12 +2828,12 @@
        controls sit where a thumb already is rather than at the top. */
 
     /* ═══ Design-system alignment (docs/DESIGN_SYSTEM.md) ═══ */
-    /* deeper terracotta for text/fills — plain --brand on off-white is only 2.3:1 */
+    /* deeper terracotta for text/fills, plain --brand on off-white is only 2.3:1 */
     :root { --brand-deep: #121212; --brand-text: #363636;
       --brand-tint: rgba(54,54,54,0.09); --success-tint: rgba(46,125,79,0.12);
       --warn-tint: rgba(156,122,30,0.14); --info: #2f6dbd; --info-tint: rgba(47,109,189,0.12);
       --danger: #b23b3b; --border-strong: rgba(15,18,24,0.16); --border-glass: rgba(255,255,255,0.7); }
-    /* visible focus everywhere — the audit flagged outline:none across the app */
+    /* visible focus everywhere, the audit flagged outline:none across the app */
     /* `input` is deliberately not in this list: browsers treat text fields as
        always :focus-visible, so it drew a box around the field for the whole
        time you were typing in it. app.css gives them a quiet border shift
@@ -2946,7 +2946,7 @@
     .ovtab:hover:not(.on) { color: var(--ink); }
     .ov-grid { display: grid; grid-template-columns: 384px 1fr; gap: 18px; align-items: start; }
     .ov-list { display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 258px); overflow-y: auto; padding: 2px 6px 2px 2px; }
-    /* font: inherit is load-bearing — .ovi is a <button>, and a button does not
+    /* font: inherit is load-bearing, .ovi is a <button>, and a button does not
        inherit font-family from the page: the UA gives it its own default. The
        rule reset text-align and width but never the font, so every property
        title and address in this list was rendering in Arial while the rest of
@@ -2978,7 +2978,7 @@
        just as much to a dense card. Tracking is opened slightly at the small
        end for the same reason. */
     .ovi .rf { font: 700 10px var(--f-sans); letter-spacing: .08em; color: var(--ink-dim); text-transform: uppercase; }
-    /* Was one line with an ellipsis, which cut every single title in the list —
+    /* Was one line with an ellipsis, which cut every single title in the list -
        "Jericho Heights 4-Bedro…", "Haven Manor 2-Bedroo…". The title is how you
        tell one listing from another, so it gets two lines before it clips. */
     .ovi .tt { font-size: 15.5px; font-weight: 600; letter-spacing: -0.005em; line-height: 1.32; margin: 3px 0 2px;
@@ -2992,7 +2992,7 @@
        the column instead of shuffling with each digit's width. */
     .ovi .pr { font: 600 16px var(--f-sans); font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "lnum" 1, "tnum" 1; color: var(--brand-text); line-height: 1.1; }
     /* chevron affordance for the row-as-navigation reading it gets on a
-       phone (see the ≤1024px block) — off by default so desktop, where the
+       phone (see the ≤1024px block), off by default so desktop, where the
        row selects rather than navigates, doesn't grow a stray ›. */
     .ovi-chv { display: none; }
     .ovs { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 100px; display: inline-block; letter-spacing: .01em; }
@@ -3094,8 +3094,8 @@
        get back. */
     /* ...EXCEPT THE CHANNELS STRIP, which is not generator UI. It is the
        account state, and the only route to connecting one. Collapsing this
-       card is a statement about the GENERATOR — "I am not making a campaign
-       right now" — and folding the connect buttons away with it reproduces
+       card is a statement about the GENERATOR, "I am not making a campaign
+       right now", and folding the connect buttons away with it reproduces
        the same bug by a second road: a phone where nothing can be connected,
        this time because of a localStorage flag set on a desktop weeks ago. */
     .cmp-gen.collapsed > *:not(.cmp-head):not(.cmp-channels) { display: none; }
@@ -3405,7 +3405,7 @@
 
     .ov-detail { position: sticky; top: 0; }
     /* Sheet-only header (back button + selected listing's name). Hidden here
-       so desktop — where .ov-detail never leaves the grid — never shows a
+       so desktop, where .ov-detail never leaves the grid, never shows a
        "back" affordance to nowhere; the ≤1024px block turns it on. */
     .ov-sheet-hd { display: none; }
     .ov-map { height: 300px; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); position: relative; z-index: 0; background: rgba(0,0,0,0.03); }
@@ -3415,7 +3415,7 @@
     .ov-dtab.on { background: var(--surface); color: var(--brand-text); box-shadow: 0 4px 12px rgba(20,26,38,0.09); }
     .ov-dtab:hover:not(.on) { color: var(--ink); }
     .ov-body { padding: 18px 16px 12px; }
-    /* The detail led with a 34px price above a 15px title — smaller than the
+    /* The detail led with a 34px price above a 15px title, smaller than the
        same title in the list beside it, so opening a listing made its identity
        shrink. The title leads now and the price supports it. */
     .ovd-ttl { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; margin: 0 0 4px; }
@@ -3662,14 +3662,14 @@
     .crm-wa, .crm-more { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink-muted); cursor: pointer; font-size: 14px; margin-left: 4px; }
     .crm-wa:hover { color: #1a9e4b; border-color: rgba(37,211,102,0.5); } .crm-more:hover { color: var(--brand-deep); }
     /* Three groups that will not fit on one narrow line, so they wrap into
-       three 44px rows. The gap is tight because the rows are already tall —
+       three 44px rows. The gap is tight because the rows are already tall -
        the touch floor buys the height, spacing does not need to add to it. */
     .crm-pg { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid var(--border); }
     .pg-l, .pg-go { font-size: 12.5px; color: var(--ink-muted); }
     .crm-pg select, .crm-pg input { font: 600 12.5px var(--f-sans); min-height: 44px; border: 1px solid var(--border-strong); border-radius: 9px; padding: 5px 8px; background: var(--surface); color: var(--ink); }
     .crm-pg #crmGo { width: 52px; }
     .pg-nav { display: flex; gap: 4px; }
-    /* Leaflet's own 30px zoom buttons. Same override as property.html —
+    /* Leaflet's own 30px zoom buttons. Same override as property.html -
        both pages mount a map and neither should inherit a vendor default
        that sits below the touch floor. */
     .leaflet-touch .leaflet-bar a,
@@ -3684,7 +3684,7 @@
     .crm-bulk button:hover { color: var(--brand-deep); border-color: rgba(54,54,54,0.4); }
     .crm-bulk button.dgr:hover { color: var(--danger); border-color: rgba(178,59,59,0.4); }
     /* flex: none matters as much as the width here. In a flex row a plain
-       `width` is only a basis — this button was being shrunk to 20px. */
+       `width` is only a basis, this button was being shrunk to 20px. */
     .crm-bulk .bk-x { width: 44px; height: 44px; flex: none; padding: 0; border-radius: 50%; }
     .crm-menu { position: fixed; z-index: 70; background: var(--glass); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 56px rgba(20,26,38,0.22); padding: 6px; min-width: 176px; }
     .cm-i { display: block; width: 100%; text-align: left; font: 600 13px var(--f-sans); color: var(--ink); background: none; border: none; padding: 9px 12px; border-radius: 9px; cursor: pointer; }
@@ -3697,7 +3697,7 @@
        table that had to scroll; the row is a grid card now, so the rule could
        only ever re-enable a sideways drag we deliberately removed. It also
        read as a 721-900px hole in the fix, which cost a review cycle to
-       disprove — dead CSS that implies a bug is worse than none. */
+       disprove, dead CSS that implies a bug is worse than none. */
     /* ── MOBILE OVERRIDES LIVE LAST ──────────────────────────────────
        This block sat above the component rules it overrides. A media
        query adds no specificity, so every later rule of equal weight
@@ -3707,18 +3707,18 @@
       .shell{ flex-direction: column; height: auto; padding-left: 0; }
       /* The page scrolls one way. `overflow: auto` made the body a scroll
          container on BOTH axes, so every sideways-overflow bug this file has
-         ever had was silently scrollable rather than visible — which is how
+         ever had was silently scrollable rather than visible, which is how
          a 322vw calendar survived. Clipping x (not `hidden`, which would
          force y into its own scroll container) makes a sideways drag
          structurally impossible instead of merely absent today. Fixed
-         children — the taskbar, the AI button, the off-canvas panels — are
+         children, the taskbar, the AI button, the off-canvas panels, are
          not clipped by this, since body establishes no containing block. */
       body.portal{ overflow-y: auto; overflow-x: clip; }
       .side{ display: none; }                       /* replaced by the dock */
       .content{ padding: 12px 16px 132px; }         /* room for the dock */
 
       /* The top bar carried 504px of controls in a 375px box, so "Sign out"
-         and "Back to site" started at x=384 and x=483 — literally off the
+         and "Back to site" started at x=384 and x=483, literally off the
          side of the screen and unreachable. On a phone it keeps only what
          must be glanceable (brand, notifications, who you are); the two
          account actions move into the taskbar menu, where a Start menu puts
@@ -3736,7 +3736,7 @@
 
       /* ── MINIMAL PANE CHROME ON A PHONE ───────────────────────────────
          Every pane used to open with an agency name, a page title and a
-         paragraph of description — roughly a third of the screen spent before
+         paragraph of description, roughly a third of the screen spent before
          a single control. The eyebrow and the lede are still gone: one
          restates the account you are signed into, the other is reading matter
          on a working screen.
@@ -3744,7 +3744,7 @@
          The title stays. Hiding it too left all nine panes unlabelled: you tap
          something in the taskbar, the screen changes, and nothing confirms
          what it changed to. The argument for cutting it was that the taskbar
-         already names the current pane — but it only does so while the sheet
+         already names the current pane, but it only does so while the sheet
          is open, which is the one moment you do not need telling. Compact
          rather than absent. */
       .pane .eyebrow { display: none; }
@@ -3759,7 +3759,7 @@
       .crm-tools { flex-wrap: wrap; }
       .tbtn { min-height: 44px; }
       /* Sort and Filter were a plain flex row, so at 375px they wrapped or
-         sat at whatever width their labels happened to need — one ragged
+         sat at whatever width their labels happened to need, one ragged
          row instead of a deliberate pair. They're the only two controls
          above the list, so make that pairing obvious: one row, equal
          width, both a real 44px target. */
@@ -3773,7 +3773,7 @@
          wording is not fixed, it is lucky.
 
          So it wraps, and the 22px desktop gutters come in to 12px to buy
-         real slack — the four tabs now sit on one row with room to spare,
+         real slack, the four tabs now sit on one row with room to spare,
          and a fifth filter would drop to a second row instead of starting a
          sideways drag. Each label still keeps nowrap so "Expiring soon"
          breaks between tabs, never mid-phrase. */
@@ -3785,7 +3785,7 @@
       .ovtab { margin-right: 12px; }
 
       /* ══ Subscription ══════════════════════════════════════════════════
-         The comparison grid stays a horizontal scroll — the sticky row-label
+         The comparison grid stays a horizontal scroll, the sticky row-label
          column means you keep the benefit name in view while swiping across
          tiers, which is the right pattern here and already works. Only the
          add-ons lede goes, consistent with the other panes. */
@@ -3795,7 +3795,7 @@
 
       /* ══ Brand ══════════════════════════════════════════════════════════
          The .sub items on this pane are field help ("Tayo writes captions in
-         this tone — be specific"), not page chrome, so they stay: hiding them
+         this tone, be specific"), not page chrome, so they stay: hiding them
          would remove the guidance that makes the field answerable. */
       #pane-brand .field { margin-bottom: 14px; }
       #pane-brand input, #pane-brand textarea, #pane-brand select { font-size: 16px; }
@@ -3813,7 +3813,7 @@
       #mkBoard, #campaigns { grid-template-columns: 1fr; gap: 12px; }
 
       /* ══ Social studio ═════════════════════════════════════════════════
-         The section lede goes, same as the page ledes — "Content pipeline"
+         The section lede goes, same as the page ledes, "Content pipeline"
          with the Pipeline/Calendar switch beside it already says what this
          is. That header alone was 143px before a single stage appeared. */
       .s-work-hd { margin: 16px 0 8px; gap: 10px; }
@@ -3824,12 +3824,12 @@
       /* ── THE CARD COMES BACK TO MOBILE ────────────────────────────────
          It was taken off entirely, and the reasoning was sound as far as it
          went: the + in the taskbar opens openComposer(), which picks a
-         listing, chooses channels and calls social-generate — everything
+         listing, chooses channels and calls social-generate, everything
          this card does and more, so two routes to one job read as a phone
          screen wasted.
 
          WHAT THAT MISSED IS THE CHANNELS STRIP. It lives inside this card,
-         and the composer cannot connect an account — it can only post to one
+         and the composer cannot connect an account, it can only post to one
          already connected. So hiding the card also removed the only place on
          a phone where Facebook or Instagram can be connected AT ALL. One
          deletion, two casualties, and the second was invisible because
@@ -3849,7 +3849,7 @@
       .cmp-gen { padding: 16px 15px 18px; }
 
       /* ── PIPELINE → STAGE ACCORDION, NOT A SWIPE STRIP ────────────────
-         This used to be a snap-scrolling strip of six 78%-wide columns —
+         This used to be a snap-scrolling strip of six 78%-wide columns -
          1655px of kanban in a 343px box, i.e. exactly the sideways drag the
          brief rules out. Mobile kanban converges on one vertical scroll axis
          with sections grouped by what used to be a column and collapsible
@@ -3857,7 +3857,7 @@
          list below a viewport threshold), so that's what this is: the six
          stages stack, each opens to show its cards, and the two stages that
          actually need you (Awaiting approval, Underperforming) start open
-         while the four "nothing to do here yet" stages start collapsed —
+         while the four "nothing to do here yet" stages start collapsed -
          see ACTION_STAGES in renderPipeline(). */
       /* Reverted to the swipe strip at the user's request: the accordion that
          replaced it was not liked. Narrower columns so the next stage peeks,
@@ -3935,7 +3935,7 @@
 
       /* ══ Tayo Negotiator ══════════════════════════════════════════════
          The handoff cards are 400px-minimum on desktop; one per row here.
-         The section lede goes the way of the page ledes — the heading above
+         The section lede goes the way of the page ledes, the heading above
          the list is enough to say what the list is. */
       #handoffs { grid-template-columns: 1fr; gap: 12px; margin-top: 10px; }
       #pane-negotiator .h2 { margin-top: 0 !important; font-size: 18px; }
@@ -3946,7 +3946,7 @@
          could never see a lead's name and its stage at the same time, which
          is the one comparison this screen exists for. Each row becomes a
          card instead. The cells already carry semantic classes, so this is
-         pure layout — the renderer is untouched and desktop keeps its
+         pure layout, the renderer is untouched and desktop keeps its
          table. */
       /* ── TOOL RAILS WRAP, THEY DO NOT SWIPE ───────────────────────────
          These were `nowrap + overflow-x: auto`, i.e. a swipe strip. On
@@ -3962,7 +3962,7 @@
 
       /* Controls size to their label and flow, rather than each stretching to
          fill its row. Stretching looked tidy with two buttons and turned the
-         rail into three tall bands of mostly empty pill — about 300px of
+         rail into three tall bands of mostly empty pill, about 300px of
          chrome before the first lead. Packing them puts the same controls in
          two short rows and gets the data above the fold. */
       .crm-tools > *, .crm-tools-l > *, .crm-tools-r > * { flex: 0 1 auto; }
@@ -3971,7 +3971,7 @@
       /* A segmented control with five options (Listings: All/Verified/
          Pending/Expiring/Expired) cannot be one pill row at 375px. It keeps
          its grouping and wraps internally, so the radius relaxes from a pill
-         to a rounded block — a wrapped pill reads as broken. Where it does
+         to a rounded block, a wrapped pill reads as broken. Where it does
          fit (Table/Board, two options) it stays inline with Filter and Sort. */
       .crm-tools .seg { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; border-radius: 14px; }
       .crm-tools .seg-b { flex: 0 1 auto; min-height: 38px; border-radius: 11px; white-space: nowrap; }
@@ -3980,19 +3980,19 @@
       .lsearch { flex: 1 1 100%; min-width: 0; width: 100%; height: 40px; font-size: 16px; }
       /* .content carries overflow-y:auto so it can scroll independently of the
          desktop rail beside it. On a phone the rail is gone and the page itself
-         scrolls, but the overflow stayed — leaving a scroll container that never
+         scrolls, but the overflow stayed, leaving a scroll container that never
          scrolls, which is the exact condition where position:sticky silently
          does nothing. Hand the scrolling back to the page. */
       .content { overflow: visible; }
       /* Clears the appbar, which stays sticky at 69px on a phone too. Pinning
          at 6px looked correct to a measurement (top: 6, stuck) and was
-         invisible on screen — parked behind an element with a higher z-index.
+         invisible on screen, parked behind an element with a higher z-index.
          16px on the input keeps iOS from zooming the page when it takes focus. */
       .pane-search { top: 75px; padding: 8px 14px; }
       .pane-search .lsearch { height: auto; font-size: 16px; }
 
       /* the funnel was a strip you swiped (1180px of five cards in a 343px
-         box) — a wrapping grid instead, same as the tool rails above. The ›
+         box), a wrapping grid instead, same as the tool rails above. The ›
          separators implied a horizontal flow between cards; with no flow
          left to imply, they go. */
       /* Sized for the taskbar sheet it now lives in, not for the page. These
@@ -4017,7 +4017,7 @@
 
       /* `overflow-x: visible` here did NOT do what it says. The base rule is
          `overflow: hidden` (to clip the table to the card's radius), and CSS
-         resolves `visible` to `auto` when the other axis is not visible — so
+         resolves `visible` to `auto` when the other axis is not visible, so
          this card computed to overflow-x: auto and stayed a horizontal scroll
          container at every mobile width. It never scrolled only because the
          grid card fits. `clip` keeps the corner clipping and cannot scroll. */
@@ -4034,7 +4034,7 @@
       /* pager: three rows, not three columns squeezed onto one */
       #crmPager { flex-direction: column; align-items: flex-start; gap: 10px; }
       .pg-nav { flex-wrap: wrap; }
-      /* This used to drop pagination to 38px — on the one platform where
+      /* This used to drop pagination to 38px, on the one platform where
          the target actually has to survive a thumb. The wrap above is what
          mobile needed; the shrink was never the point. */
       .pg-n { min-width: 44px; min-height: 44px; }
@@ -4044,7 +4044,7 @@
         transform: translateY(14px); border-radius: 16px; justify-content: space-between; }
       .crm-bulk.on { transform: none; }
 
-      /* the list becomes the whole pane, and stops being an inner scroller —
+      /* the list becomes the whole pane, and stops being an inner scroller -
          a scroll region inside a scrolling page is a trap on a phone, and
          the page itself is the natural scroller here */
       .ov-grid { grid-template-columns: 1fr; gap: 14px; }
@@ -4054,7 +4054,7 @@
          `.ov-detail { position: static }` was the only rule here before,
          and it was written for tablets: at phone width it left the map and
          detail card sitting BELOW the entire list in source order, so
-         selectOv() was updating a map and a card the tap couldn't see —
+         selectOv() was updating a map and a card the tap couldn't see -
          potentially thousands of pixels down, with a border-colour change
          on the row as the only visible feedback. That's not a collapsed
          layout, it's a broken one.
@@ -4062,14 +4062,14 @@
          This file already has the right idiom, twice (.tpanel, #drawer):
          a record opens as a full-screen sheet sliding in from the right,
          not a card appended to the page. `.ov-detail` becomes that sheet
-         here — same transform and timing as `.tpanel`, and the same
+         here, same transform and timing as `.tpanel`, and the same
          z-index tier (97, one above .tpanel's 96) so it simply paints over
          the taskbar (60) and the AI button the way `.tpanel` already does.
          Nothing about the taskbar or the button changes; the sheet just
          sits above them. selectOv() adds `.on` and pans the map to the
          tapped listing; the back button, Escape, and `#ovBack` remove it.
          Desktop keeps `.ov-detail { position: sticky }` above this
-         breakpoint — verified unchanged at 1440. */
+         breakpoint, verified unchanged at 1440. */
       .ov-detail {
         position: fixed; inset: 0; z-index: 97;
         background: var(--surface);
@@ -4102,7 +4102,7 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
 
-      /* scoped to whatever listing was tapped — selectOv() already pans it
+      /* scoped to whatever listing was tapped, selectOv() already pans it
          there, so this is no longer a 240px map guessed at before anything
          is selected, it's the map for the record you're reading */
       #ovMap { height: 220px; }
@@ -4117,7 +4117,7 @@
          taskbar exists to remove.
 
          Scoped to `.pane` so the rule stops applying the moment one is moved
-         into #agdFilterSheet — the same reason .cnav-group #bmMap works on the
+         into #agdFilterSheet, the same reason .cnav-group #bmMap works on the
          consumer side. */
       .pane [data-pane-filters] { display: none; }
 
@@ -4139,7 +4139,7 @@
          and flex wrapping left the last row ragged with the pill flush to the
          edge. Grid gives every option the same cell whatever the count, and a
          25px radius reads as a stadium at one row (50px tall) and as a rounded
-         block at two — so both shapes look deliberate. */
+         block at two, so both shapes look deliberate. */
       #agdFilterSheet .seg {
         display: grid; width: 100%;
         grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
@@ -4154,7 +4154,7 @@
       /* ── campaigns ────────────────────────────────────────────────────
          "+ New campaign" appeared twice on one screen: once in the pane header
          and again inside the empty state a few hundred pixels below. The
-         header copy goes on a phone — the taskbar's create button already
+         header copy goes on a phone, the taskbar's create button already
          offers New campaign on this pane, and the empty state keeps its own,
          so the action is never further than one tap either way. */
       #pane-marketing > div > #newCampBtn { display: none; }
@@ -4168,8 +4168,8 @@
       #pane-marketing .seg-b .syn-i,
       #pane-marketing #mkSort .syn-i { width: 15px; height: 15px; }
 
-      /* Explanations off the brand page. Five blocks of prose — the pane lede
-         plus a subtitle under each of Identity, Look, Voice and Links — came
+      /* Explanations off the brand page. Five blocks of prose, the pane lede
+         plus a subtitle under each of Identity, Look, Voice and Links, came
          to 232px of reading before the first thing you can change. The field
          labels and the format hints inside them stay: "Comma separated" tells
          you how to fill a box, which is instruction, not explanation.
@@ -4182,7 +4182,7 @@
 
       /* ── brand ────────────────────────────────────────────────────────
          Save sat at the top of a pane 3.2 screens long, 465px above the first
-         field you can edit — so the shape of the job was: scroll down, fill it
+         field you can edit, so the shape of the job was: scroll down, fill it
          in, scroll all the way back up to keep it. It rides above the taskbar
          instead, in reach from wherever you have got to. */
       #pane-brand #brandSave {
@@ -4192,7 +4192,7 @@
         box-shadow: 0 10px 28px rgba(15,15,15,0.22);
       }
 
-      /* The preview is a desktop row — logo, mark, name, tagline, accent chip.
+      /* The preview is a desktop row, logo, mark, name, tagline, accent chip.
          At 375px it squeezed the name into 62px: three lines for the name and
          four for the tagline. The marks and the chip keep their row; the words
          drop underneath and take the full width. */
@@ -4200,8 +4200,8 @@
       .brand-preview .bp-txt { flex: 1 0 100%; order: 3; }
       .brand-preview .bp-chip { margin-left: auto; order: 2; }
 
-      /* The row was four columns wide on a 343px tile — photo, text, price,
-         chevron — which left the text column 138px. Every title truncated at
+      /* The row was four columns wide on a 343px tile, photo, text, price,
+         chevron, which left the text column 138px. Every title truncated at
          two lines and the location wrapped to three, while the price column
          reserved 70px to display 34px of number.
 
@@ -4233,7 +4233,7 @@
       .ovi-chv { display: block; font-size: 19px; line-height: 1; color: var(--ink-dim); flex: none; margin-left: 2px; }
 
       /* the title was nowrap+ellipsis, so a card read "Haven Manor
-         2-Bedroom Apart…" — cutting off the part that actually tells one
+         2-Bedroom Apart…", cutting off the part that actually tells one
          listing from another. Same fix as .lcard .tt above: let it wrap to
          two lines instead of truncating the distinguishing half. */
       .ovi .tt {
@@ -4254,7 +4254,7 @@
       }
       .agd-scrim.on{ opacity: 1; pointer-events: auto; }
 
-      /* the taskbar itself — one pill, both controls inside it */
+      /* the taskbar itself, one pill, both controls inside it */
       .agd-bar{
         display: flex; align-items: center; gap: 2px;
         position: fixed; z-index: 60;
@@ -4310,7 +4310,7 @@
         padding: 6px; overflow: hidden;
         transform-origin: bottom left;
         opacity: 0; transform: translateY(10px) scale(0.96); pointer-events: none;
-        /* One easing for both halves — the fade and the rise are one gesture,
+        /* One easing for both halves, the fade and the rise are one gesture,
            and running them on different curves made the sheet's opacity arrive
            on a different schedule from its position. */
         transition: opacity var(--m-standard) var(--m-ease-panel),
@@ -4325,7 +4325,7 @@
         .agd-sheet{ transition: none; } .agd-fab{ transition: none; }
       }
 
-      /* group header — tap to file its items out */
+      /* group header, tap to file its items out */
       .agd-grp{
         width: 100%; display: flex; align-items: center; justify-content: space-between;
         background: none; border: none; cursor: pointer;
@@ -4350,7 +4350,7 @@
       .agd-item.on .syn-i{ opacity: 1; }
       .agd-sep{ height: 1px; background: var(--border); margin: 4px 8px; }
 
-      /* the create fan — labelled actions stacked above the + */
+      /* the create fan, labelled actions stacked above the + */
       .agd-act{
         width: 100%; display: flex; align-items: center; gap: 10px;
         background: none; border: none; cursor: pointer; text-align: left;

@@ -47,7 +47,7 @@ export function CompareSheet({ items, visitorId, onClose }: { items: BrowseItem[
             </thead>
             <tbody>
               <tr><td className={s.h}>Price</td>{items.map((l) => <td key={l.id}><span className={l.priceN === bestPrice ? s.best : ""}>{naira(l.priceN)}</span></td>)}</tr>
-              <tr><td className={s.h}>Property confidence</td>{items.map((l) => <td key={l.id}>{l.score == null ? "—" : <span className={l.score === bestScore ? s.best : ""}>{l.score}</span>}</td>)}</tr>
+              <tr><td className={s.h}>Property confidence</td>{items.map((l) => <td key={l.id}>{l.score == null ? "-" : <span className={l.score === bestScore ? s.best : ""}>{l.score}</span>}</td>)}</tr>
               <tr><td className={s.h}>Deal</td>{items.map((l) => <td key={l.id}>{l.deal}</td>)}</tr>
               <tr><td className={s.h}>Where</td>{items.map((l) => <td key={l.id}>{l.loc}</td>)}</tr>
               <tr><td className={s.h}>Verified</td>{items.map((l) => <td key={l.id}>{l.vstatus === "verified" ? "Yes" : "Not yet"}</td>)}</tr>

@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   SynMapRender — THE ONLY FILE THAT KNOWS MAPLIBRE EXISTS.
+   SynMapRender, THE ONLY FILE THAT KNOWS MAPLIBRE EXISTS.
 
    The brief asked that the rendering provider be replaceable without
    rebuilding Synapse's search and intelligence. That is a real constraint and

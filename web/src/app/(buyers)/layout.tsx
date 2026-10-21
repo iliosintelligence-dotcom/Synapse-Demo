@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-buyers.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={"Synapse — Find a home that's actually right for you"} />
+        <meta property="og:image:alt" content={"Synapse, Find a home that's actually right for you"} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Find a home that's actually right for you" />
         <meta name="twitter:description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />

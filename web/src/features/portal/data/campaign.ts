@@ -33,7 +33,7 @@ export interface AiResponse { captions?: Record<string, string>; angles?: Record
 export interface Variant { platform: string; angle: string; angleName: string; hook: string; body: string; caption: string; hashtags: string[]; title: string | null; issues: string[] }
 export interface Facts { id: string; title: string; kind: string; area: string; city: string; bedrooms: number | null; priceShort: string }
 
-export const signOff = (b: Partial<BrandRecord> | null): string => (b?.name?.trim() ? `\n\n— ${b.name.trim()}${b.tagline?.trim() ? ` · ${b.tagline.trim()}` : ""}` : "");
+export const signOff = (b: Partial<BrandRecord> | null): string => (b?.name?.trim() ? `\n\n- ${b.name.trim()}${b.tagline?.trim() ? ` · ${b.tagline.trim()}` : ""}` : "");
 
 /** The facts a title is built from. The area is what the agent typed, else the city. */
 export function factsOf(row: Record<string, unknown>): Facts {

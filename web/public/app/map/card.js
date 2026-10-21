@@ -1,10 +1,10 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   SynMapCard — what happens when you press a home.
+   SynMapCard, what happens when you press a home.
 
    THE INTERACTION THIS REPLACES
    Pressing a price pin used to open a Leaflet popup naming the home, with a
    link out to its own page. So the shape of looking at three homes was:
-   map, pin, page, back, map, pin, page, back — and every "back" threw away the
+   map, pin, page, back, map, pin, page, back, and every "back" threw away the
    viewport, the zoom and the sense of where you were.
 
    This card floats OVER the map instead. The map stays live behind it, the
@@ -14,7 +14,7 @@
    choose to go.
 
    It knows nothing about MapLibre. It takes a renderer that exposes select()
-   and easeTo-ish behaviour, so it survives the provider being swapped — the
+   and easeTo-ish behaviour, so it survives the provider being swapped, the
    same discipline render.js follows.
 
    CSS is injected once rather than living in three page stylesheets, because
@@ -277,7 +277,7 @@
          plainly rather than being left blank and read as verified. */
       var ver = (p.verified === true || p.verified === 'true');
       q('[data-chips]').innerHTML =
-        '<span class="syn-mcard-chip">' + esc(p.beds || '—') + '</span>'
+        '<span class="syn-mcard-chip">' + esc(p.beds || '-') + '</span>'
         + '<span class="syn-mcard-chip ' + (ver ? 'ok' : 'no') + '">'
         + (ver ? 'Verified' : 'Not verified') + '</span>';
 

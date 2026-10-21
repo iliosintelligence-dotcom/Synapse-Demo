@@ -162,7 +162,7 @@ export function ListingWizard({ editId, onClose, onSaved }: { editId?: string | 
           {input("address", "Address", { req: true, err: "address", ph: "Street / estate" })}
           <div className={s.two}>
             <Field label="State" req error={show("state")}>
-              <select value={form.state} onChange={(e) => set("state", e.target.value)}><option value="">— Select a state —</option>{NG_STATES.map((x) => <option key={x}>{x}</option>)}</select>
+              <select value={form.state} onChange={(e) => set("state", e.target.value)}><option value="">- Select a state -</option>{NG_STATES.map((x) => <option key={x}>{x}</option>)}</select>
             </Field>
             {input("city", "City", { req: true, err: "city", ph: "Ibadan" })}
           </div>
@@ -217,7 +217,7 @@ export function ListingWizard({ editId, onClose, onSaved }: { editId?: string | 
           {inv && <><div className={s.two}>{input("min_investment", "Minimum investment (₦)", { type: "number" })}{input("investment_term_months", "Term (months)", { type: "number", min: 1, max: 600 })}</div>{input("stated_return_pct", "Return you state (% over the term)", { type: "number" })}</>}
 
           <h3 className={s.h3}>Trust</h3>
-          <div className={s.two}>{select("title_type", "Title document", TITLE_TYPES.map((v) => [v, TITLE_LABEL[v]]), { blank: "— Select —" })}{input("yield_pct", "Gross yield (%)", { type: "number" })}</div>
+          <div className={s.two}>{select("title_type", "Title document", TITLE_TYPES.map((v) => [v, TITLE_LABEL[v]]), { blank: "- Select -" })}{input("yield_pct", "Gross yield (%)", { type: "number" })}</div>
 
           <h3 className={s.h3}>Negotiation</h3>
           <div className={s.two}>

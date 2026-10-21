@@ -11,7 +11,7 @@ import { requestIntent, useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Agents.module.css";
 
-const dash = (v: number | null) => (v == null ? "—" : String(v));
+const dash = (v: number | null) => (v == null ? "-" : String(v));
 const reason = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong. Try again.");
 
 /** Your team: who is on the floor, how loaded they are, who has an invite out. */

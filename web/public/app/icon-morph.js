@@ -1,8 +1,8 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — icon morphing
+   Synapse, icon morphing
 
    Bridges app/icons.js to morphicons (vendored, app/vendor/morphicons). Where
-   an icon stands for a state that flips — a sheet open or shut — it now travels
+   an icon stands for a state that flips, a sheet open or shut, it now travels
    between the two shapes instead of being swapped out underneath you.
 
    Two mismatches to reconcile, and both are handled here so no caller has to
@@ -20,7 +20,7 @@
 
    Loaded as a module. Everything degrades to an instant swap: no module, no
    morphicons, an unknown icon name, or reduced motion, and the icon still
-   changes — it just does not travel.
+   changes, it just does not travel.
    ─────────────────────────────────────────────────────────────────────────── */
 import { createMorph, canonicalD } from './vendor/morphicons/dom.js';
 
@@ -77,7 +77,7 @@ export function morphTo(host, name, spring) {
 
 /* Bind a button whose icon reflects an open/closed state. `isOpen` is read on
    demand rather than tracked here, so the icon follows the real state even when
-   something else closes the sheet — a scrim tap, Escape, a route change. */
+   something else closes the sheet, a scrim tap, Escape, a route change. */
 export function bindToggle(host, restName, openName, opts) {
   if (!host) return null;
   const o = opts || {};

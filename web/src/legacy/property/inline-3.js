@@ -1,6 +1,6 @@
 
     /* Gallery. PHOTOS starts EMPTY and is filled from property_media by
-       hydrate() — the page used to ship five stock interiors, so every listing
+       hydrate(), the page used to ship five stock interiors, so every listing
        showed the same apartment regardless of which home you opened. */
     let PHOTOS = [];
     const hero = document.getElementById('heroImg');
@@ -315,7 +315,7 @@
 
       /* A trackpad and a keyboard deserve the same gallery. */
       stage.setAttribute('tabindex', '0');
-      stage.setAttribute('aria-label', 'Property photos — use the arrow keys');
+      stage.setAttribute('aria-label', 'Property photos, use the arrow keys');
       stage.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight') { e.preventDefault(); goToPhoto(photoIndex + 1); }
         if (e.key === 'ArrowLeft') { e.preventDefault(); goToPhoto(photoIndex - 1); }
@@ -326,7 +326,7 @@
 
     /* ── swipe deck: cards move left/right, image stays put ── */
     const deck = document.getElementById('deck');
-    // deckLabel is gone — see the deckbar markup for why.
+    // deckLabel is gone, see the deckbar markup for why.
     const deckDots = document.getElementById('deckDots');
     const deckPrev = document.getElementById('deckPrev');
     const deckNext = document.getElementById('deckNext');
@@ -335,7 +335,7 @@
        "Tayo's take" ships hidden and is revealed only when the listing has
        real enrichment behind it. A hidden card takes no space in the scroll
        flow but was still counted here, so every heading after it named the
-       wrong card and the counter read one too many — the offset between the
+       wrong card and the counter read one too many, the offset between the
        heading and the card underneath it.
 
        The map view each card drives is stamped onto the element up front,
@@ -377,7 +377,7 @@
       if (!deckCards.length) return;
       // clientWidth is 0 while the deck is unlaid-out (hidden tab, zero-size
       // container). Dividing by it yields NaN, which indexes to `undefined` and
-      // threw here — taking the rest of this script block with it, including
+      // threw here, taking the rest of this script block with it, including
       // the code that loads the listing. Fall back to the current card.
       const w = deck.clientWidth || 0;
       const i = w ? Math.round(deck.scrollLeft / w) : deckIdx;
@@ -442,7 +442,7 @@
     // save + share
     const saveBtn = document.getElementById('saveBtn');
     const SAVED_KEY = 'synapse_saved';
-    // Same id the page is keyed on below — saving must follow the listing you
+    // Same id the page is keyed on below, saving must follow the listing you
     // actually opened, not the demo default.
     // The listing id from the URL. No demo fallback: if there is no id there is
     // no property, and the page says so rather than substituting a specimen one.
@@ -470,13 +470,13 @@
       /* One share path for the page and the cards: the phone's own share sheet where there is
          one (WhatsApp, Drive, Files...), a small one of ours where there is not. */
       if (window.SynShare && PROP_ID) {
-        SynShare.open({ id: PROP_ID, title: L.title || document.title.replace(/ — Synapse$/, ''), price: document.getElementById('pvPrice') && document.getElementById('pvPrice').textContent, place: where });
-      } else { await navigator.clipboard.writeText(location.href); toast('Link copied — paste it anywhere to share'); }
+        SynShare.open({ id: PROP_ID, title: L.title || document.title.replace(/, Synapse$/, ''), price: document.getElementById('pvPrice') && document.getElementById('pvPrice').textContent, place: where });
+      } else { await navigator.clipboard.writeText(location.href); toast('Link copied, paste it anywhere to share'); }
     };
     document.getElementById('shareBtn').addEventListener('click', doShare);
     const dkShare = document.getElementById('dkShare'); if (dkShare) dkShare.addEventListener('click', doShare);
 
-    // lightweight feedback toast — speaks to the user, not the system
+    // lightweight feedback toast, speaks to the user, not the system
     function toast(msg, kind) {
       let t = document.getElementById('synToast');
       if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
@@ -512,8 +512,8 @@
 
     /* ── the listing itself ───────────────────────────────────────────────
        PROP is null until the database answers. It used to be a hardcoded
-       3-bed in Lekki Phase 1, which meant every match card — whichever home
-       it described — opened this same invented flat. Nothing on this page may
+       3-bed in Lekki Phase 1, which meant every match card, whichever home
+       it described, opened this same invented flat. Nothing on this page may
        assert a property fact that did not come from the row below. */
     let PROP = null;
 
@@ -547,7 +547,7 @@
       const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
       const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
 
-      document.title = p.title + ' — Synapse';
+      document.title = p.title + ', Synapse';
       set('pvPrice', naira(p.price) + (PERIOD_SUFFIX[p.price_period] || ''));
       set('pvTitle', p.title);
       // De-duplicate: agencies routinely type the city into the address line,
@@ -605,10 +605,10 @@
       if (fEl) fEl.innerHTML = facts.join('');
 
       /* Verification, stated plainly either way. Unverified is not an
-         accusation and not a warning — it is a fact the buyer is entitled to
+         accusation and not a warning, it is a fact the buyer is entitled to
          weigh, so it is shown with the same prominence as a pass. */
       const verified = p.verification_status === 'verified';
-      const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '—');
+      const ringVal = verified && p.trust_score != null ? p.trust_score : (verified ? '✓' : '-');
       const lineTxt = verified ? 'Verified by Synapse' : 'Not yet verified';
       /* The stamp goes on the photograph, only for an explicit 'verified'. */
       const hs = document.getElementById('heroStamp');
@@ -623,8 +623,8 @@
       const noteTxt = verified
         ? 'What Synapse checked on this listing'
         : 'Listed by the agency; Synapse has not run its checks on this home yet.';
-      // Painted twice — .pvtrust-row (mobile, inline in the card) and
-      // .pvc-trust (desktop, in the map canvas header) — CSS shows only one
+      // Painted twice, .pvtrust-row (mobile, inline in the card) and
+      // .pvc-trust (desktop, in the map canvas header), CSS shows only one
       // per breakpoint, see the min-width:901px rule above .pvtrust-row.
       show('pvTrust', true);
       set('pvRing', ringVal);
@@ -717,7 +717,7 @@
         const expired = exp && exp.getTime() < Date.now();
         if (expired) {
           el.textContent = 'Not confirmed since ' + (conf ? fmtDate(conf) : 'listing') +
-            ' — ask the agency before viewing';
+            ', ask the agency before viewing';
           el.classList.add('stale');
           return;
         }
@@ -870,7 +870,7 @@
          pre-cleared and books one.
 
          Every slot row states how many people are already going, because
-         consolidating trips is the entire point — a buyer joining three others
+         consolidating trips is the entire point, a buyer joining three others
          should be able to see that they are. */
       function wireInspection(a) {
         const wrap = document.getElementById('pvInsp');
@@ -890,7 +890,7 @@
           sign_in:  ['Sign in to book a tour.', 'Sign in', () => {
             location.href = 'signin.html?reason=inspection&next=' + encodeURIComponent(location.pathname + location.search);
           }],
-          contact:  ['Talk to Tayo about this home first — then you can book a tour.', 'Reply about this home', () => {
+          contact:  ['Talk to Tayo about this home first, then you can book a tour.', 'Reply about this home', () => {
             // Straight to the chat with the listing attached. This used to
             // click the Contact agent button, which no longer exists: the
             // agency is introduced by Tayo, not by a button on a listing.
@@ -962,7 +962,7 @@
               const n = Number(res.taken) || 1;
               panel.innerHTML = '<div class="insp-ok"><b>You are booked in.</b><br>'
                 + esc(fmtWhen(startsAt)) + ' with ' + esc(a.full_name || 'your agent') + '. '
-                + (n > 1 ? n + ' people are going — you will get a reminder to confirm the day before.'
+                + (n > 1 ? n + ' people are going, you will get a reminder to confirm the day before.'
                          : 'You will get a reminder to confirm the day before.')
                 + '</div>';
               btn.disabled = true;
@@ -974,7 +974,7 @@
         /* Opening the panel just lists times now. Readiness is settled BEFORE
            the button is ever shown (see below), so by the time a buyer can tap
            this they are already through priming. book_inspection still
-           re-checks server-side — the UI is not the gate, it only decides
+           re-checks server-side, the UI is not the gate, it only decides
            whether to offer the step yet. */
         btn.addEventListener('click', () => {
           if (!panel.hidden) { panel.hidden = true; return; }
@@ -996,7 +996,7 @@
         /* Two conditions, both required, and this is the "end of priming" rule:
            the agent must have times to offer, AND Tayo must already have
            qualified this buyer for this home. A visitor who has not been primed
-           never sees a tour button at all — their next step is the
+           never sees a tour button at all, their next step is the
            conversation, and offering a booking first would skip the very
            qualification that stops an agent's day being wasted.
 
@@ -1018,7 +1018,7 @@
       }
 
       /* Follow and Like. Both are counted rows, one per person per agent, with
-         the pair as the primary key — so tapping twice cannot inflate a count
+         the pair as the primary key, so tapping twice cannot inflate a count
          and the toggle is just an insert or a delete.
 
          The count renders straight from the view; the pressed state comes from
@@ -1067,7 +1067,7 @@
               nEl.textContent = Math.max(0, Number(String(nEl.textContent).replace(/[^0-9]/g, '')) + (on ? -1 : 1)).toLocaleString();
               paint(btn, !on, isFollow);
             })
-            .catch(() => toast('Could not save that just now — please try again.'))
+            .catch(() => toast('Could not save that just now, please try again.'))
             .then(() => { delete btn.dataset.busy; });
         };
 
@@ -1094,14 +1094,14 @@
       /* The named agent. Second request rather than an embed: listing_agent_cards
          is a view, so PostgREST has no foreign key to join it on.
 
-         The view exists because profiles RLS is own-or-colleague — a buyer can
-         read no profile row at all — and a row-level policy wide enough to fix
+         The view exists because profiles RLS is own-or-colleague, a buyer can
+         read no profile row at all, and a row-level policy wide enough to fix
          that would expose phone and whatsapp with it. The view returns identity
          and track record only.
 
          Nothing here invents a credential: each fact is appended only if the
          column actually has a value, and a listing with no agent leaves the
-         block hidden. Areas covered is deliberately not shown — it describes
+         block hidden. Areas covered is deliberately not shown, it describes
          where the agent works, not this property, and reading "Central Lekki"
          under an Ibadan listing would look like a claim about the home. */
       (function paintAgent() {
@@ -1217,7 +1217,7 @@
          ?ch= is only present when a short link pointed straight at a listing.
          Somebody who came through the Instagram bio landed in Tayo's chat
          instead, spent a while describing what they wanted, and arrived here
-         through the app — by which point the channel was long gone from the
+         through the app, by which point the channel was long gone from the
          URL and this visit looked organic. SynArrival kept it. */
       const channel = q.get('ch')
         || (window.SynArrival ? SynArrival.channel() : '');
@@ -1283,11 +1283,11 @@
 
     /* ── 13 · AI negotiation assistant ── */
     /* Null until Tayo has actually run the numbers. A lead sent before that
-       simply carries no negotiation, which is honest — it is not an offer of
+       simply carries no negotiation, which is honest, it is not an offer of
        zero. */
     let NEGOTIATION = null;
     /* The listing agent's name, once paintAgent has resolved one. Only used to
-       say who received the request — null on a listing with no named agent, and
+       say who received the request, null on a listing with no named agent, and
        every message below falls back to the agency wording. */
     let AGENT_NAME = null;
     /* The agency's verification standing, read once when the agency is painted
@@ -1297,7 +1297,7 @@
     negBtn.addEventListener('click', async () => {
       // Nothing to negotiate over until the listing has loaded. Sending a null
       // property would have Tayo invent an offer for a home it cannot see.
-      if (!PROP) { toast('Still loading this listing — one moment.'); return; }
+      if (!PROP) { toast('Still loading this listing, one moment.'); return; }
       negBtn.disabled = true; negBtn.textContent = 'Tayo is working the numbers…';
       clearNegError();
       const ctrl = new AbortController();
@@ -1336,10 +1336,10 @@
     function clearNegError() { const p = document.getElementById('negErr'); if (p) p.remove(); }
     function showNegError(kind) {
       const msg = kind === 'offline'
-        ? 'You’re offline — reconnect and I’ll run the numbers.'
+        ? 'You’re offline, reconnect and I’ll run the numbers.'
         : kind === 'timeout'
           ? 'That took longer than expected. The connection is slow right now.'
-          : 'I couldn’t work the numbers just now — this is on our side, not yours.';
+          : 'I couldn’t work the numbers just now, this is on our side, not yours.';
       const p = document.createElement('p');
       p.id = 'negErr'; p.className = 'inline-err'; p.setAttribute('role', 'alert');
       p.textContent = msg + ' Nothing was sent to the agency.';
@@ -1351,7 +1351,7 @@
         await navigator.clipboard.writeText(document.getElementById('negDraft').textContent);
         btn.textContent = 'Copied ✓';
       } catch (e) {
-        // clipboard blocked (insecure context / denied) — tell them, don't go silent
+        // clipboard blocked (insecure context / denied), tell them, don't go silent
         btn.textContent = 'Press Ctrl+C to copy';
         try {
           const r = document.createRange(); r.selectNodeContents(document.getElementById('negDraft'));

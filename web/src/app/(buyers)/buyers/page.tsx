@@ -253,7 +253,7 @@ export default function Page() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Each home shows what is around it — hospitals, schools, markets, transport — on a map beside its photographs.
+                  Each home shows what is around it, hospitals, schools, markets, transport, on a map beside its photographs.
                 </p>
               </div>
               <div className="frame p-nearby">

@@ -1,5 +1,5 @@
 
-  /* Reactive map canvas — mirrors the swipe deck. Each card maps to a view:
+  /* Reactive map canvas, mirrors the swipe deck. Each card maps to a view:
      what's nearby (schools/gyms/restaurants/churches/mosques), commute/traffic by
      time of day, route to the listing agency, cost breakdown, legal & documents. */
   (function () {
@@ -8,15 +8,15 @@
     /* This module used to hardcode one Lekki flat's surroundings: seven named
        schools/gyms/restaurants with invented walking times, two commute
        destinations with invented ETAs, and a named agency with a rating and a
-       deal count. Rendered against any other listing — an Ibadan flat, say —
+       deal count. Rendered against any other listing, an Ibadan flat, say -
        every one of those was a false statement about a real place.
 
        "Nearby" now queries OpenStreetMap's live Overpass API for whatever is
-       actually around the listing's real coordinates — real amenities, real
+       actually around the listing's real coordinates, real amenities, real
        names, real distances. Clicking one asks OSRM's public routing API for
        a real walking route and a real duration, not a guessed one. Both are
        free, keyless, public APIs; both can be slow or briefly unavailable,
-       so every call has a timeout and an honest failure message — we would
+       so every call has a timeout and an honest failure message, we would
        rather say "couldn't reach it, try again" than show a stale or
        invented answer. */
     var PROP = null;                 // [lat, lng] from the listing
@@ -1055,7 +1055,7 @@
           bits.push(m.confidence === 'exact'
             ? ('Your ' + where + ' (' + esc(m.label) + ') is about ' + d + ' from here, in a straight line.')
             : ('Your ' + where + ' (' + esc(m.label) + ') looks to be roughly ' + d
-               + ' away — we could not pin that address exactly, so treat it as a rough guide.'));
+               + ' away, we could not pin that address exactly, so treat it as a rough guide.'));
         });
       }
 
@@ -1313,7 +1313,7 @@
     var CONGEST = { morning: { lbl: 'Morning', color: '#d9534f', etas: [] }, midday: { lbl: 'Midday', color: '#e0a83b', etas: [] }, evening: { lbl: 'Evening', color: '#d9534f', etas: [] } };
     var AGENCY = null;               // filled from the listing's agency
     /* CARD_VIEWS moved next to the deck as CARD_VIEW_ORDER and is stamped
-       onto each card as data-view — see the deck setup. */
+       onto each card as data-view, see the deck setup. */
 
     var NO_DATA = '<div class="pvo-k">Neighbourhood detail</div>'
       + '<p style="font-size:12.5px;line-height:1.55;color:var(--ink-muted);margin:6px 0 0">'

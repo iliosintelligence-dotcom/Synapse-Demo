@@ -1,15 +1,15 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — authentication
+   Synapse, authentication
    A thin wrapper over Supabase Auth (GoTrue) so every page speaks to sessions
    the same way. Loads @supabase/supabase-js from CDN and exposes window.SynAuth.
 
    SECURITY NOTES (deliberate, please keep):
-   · The publishable key below is PUBLIC by design — it identifies the project
+   · The publishable key below is PUBLIC by design, it identifies the project
      and carries no privileges of its own. All real authorisation lives in
      Postgres RLS. Never put a service-role key in this file or any client file.
    · Sessions are held by supabase-js in localStorage and auto-refreshed. We do
      NOT hand-roll token storage, and we never read the JWT to make trust
-     decisions — the server re-verifies on every request.
+     decisions, the server re-verifies on every request.
    · `requireAuth()` is a UX gate, not a security boundary. It stops an
      unauthenticated person seeing a screen; it does not protect data. Data
      protection is RLS. Treat any client check as advisory.
@@ -68,7 +68,7 @@
           autoRefreshToken: true,
           detectSessionInUrl: true,   // handles the email-confirmation callback
           storageKey: 'synapse_auth_v1',
-          flowType: 'pkce',           // PKCE — no token ever rides in a URL fragment
+          flowType: 'pkce',           // PKCE, no token ever rides in a URL fragment
         },
       });
       c.auth.onAuthStateChange(function (_evt, session) {
@@ -99,7 +99,7 @@
   // The app only cares about two sides (customer / agency), but the database
   // trigger that provisions public.profiles on signup (handle_new_user) casts
   // raw_user_meta_data->>'role' to a real Postgres enum: consumer, agent,
-  // agency_admin, agency_owner, platform_admin — NOT the literal strings
+  // agency_admin, agency_owner, platform_admin, NOT the literal strings
   // 'customer'/'agency' this file used to send. Sending an invalid value
   // aborts the trigger's transaction and 500s the whole signup (confirmed via
   // Supabase's own auth logs: every signup was failing this way). Fixed by
@@ -115,7 +115,7 @@
 
   /* ── redirect safety ──────────────────────────────────────────────────── */
   // Only ever navigate to a same-origin path. Anything absolute, protocol-
-  // relative or cross-origin is discarded rather than "cleaned" — rejecting is
+  // relative or cross-origin is discarded rather than "cleaned", rejecting is
   // safer than trying to sanitise a hostile URL.
   /* Where a link that travels through EMAIL must point.
 
@@ -327,10 +327,10 @@
   function signUp(email, password, opts) {
     opts = opts || {};
     return client().then(function (c) {
-      // 'consumer' / 'agency_owner': real handle_new_user enum values — see
+      // 'consumer' / 'agency_owner': real handle_new_user enum values, see
       // the note above roleOf(). A self-serve agency signup is treated as
       // that agency's owner, and the DB trigger provisions the agencies row
-      // + owner membership atomically with the profile (migration 0039) —
+      // + owner membership atomically with the profile (migration 0039) -
       // the client deliberately does NOT sequence any of that, so closing
       // the tab can never leave an account half-provisioned.
       var meta = {

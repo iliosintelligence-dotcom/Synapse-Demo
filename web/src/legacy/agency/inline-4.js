@@ -1,5 +1,5 @@
 
-    /* The portal is an agency workspace — there is no anonymous view of it.
+    /* The portal is an agency workspace, there is no anonymous view of it.
        This is a UX gate: it stops the screen rendering for a signed-out
        visitor. The actual protection for agency data is RLS in Postgres, which
        is what stops a signed-in customer reading another tenant's rows. */

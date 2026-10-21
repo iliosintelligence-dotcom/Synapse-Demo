@@ -446,7 +446,7 @@ export default function Page() {
                 Get verified
               </div>
               <p className="sub">
-                {"Buyers see a verified badge on every listing you publish.\n             Your documents are private — kept in a closed store, opened only by\n             you and the Synapse verification desk, never shown on your public page."}
+                {"Buyers see a verified badge on every listing you publish.\n             Your documents are private, kept in a closed store, opened only by\n             you and the Synapse verification desk, never shown on your public page."}
               </p>
               <div id="vfBody"></div>
             </section>
@@ -473,7 +473,7 @@ export default function Page() {
                 Grow as you need
               </div>
               <p className="sub">
-                Top up a plan without upgrading — one-off or monthly.
+                Top up a plan without upgrading, one-off or monthly.
               </p>
               <div className="addons-grid" id="addonsGrid"></div>
               <div className="card roi" id="roiSection"></div>
@@ -540,7 +540,7 @@ export default function Page() {
                     Social studio
                   </div>
                   <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                    Every verified listing becomes content — captioned by AI, posted on schedule, everywhere at once.
+                    Every verified listing becomes content, captioned by AI, posted on schedule, everywhere at once.
                   </p>
                 </div>
                 <button className="btn btn-primary" id="newPostBtn" style={{ "padding": "11px 18px", "fontSize": "13.5px" }}>
@@ -608,7 +608,7 @@ export default function Page() {
                     Marketing
                   </div>
                   <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                    What each listing earned once it went out — taps, listings opened, enquiries. Counted from your own links, not estimated.
+                    What each listing earned once it went out, taps, listings opened, enquiries. Counted from your own links, not estimated.
                   </p>
                 </div>
                 <button className="btn btn-primary" id="newCampBtn">
@@ -645,7 +645,7 @@ export default function Page() {
                 Tayo Negotiator
               </div>
               <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                Every lead — from any channel — is qualified, pitched and pre-negotiated by Tayo before it reaches a human. You inherit warm, ready buyers.
+                Every lead, from any channel, is qualified, pitched and pre-negotiated by Tayo before it reaches a human. You inherit warm, ready buyers.
               </p>
               <div className="h2" style={{ "marginTop": "22px" }}>
                 Ready for handoff
@@ -870,7 +870,7 @@ export default function Page() {
                       <label htmlFor="bkTagline">
                         Tagline
                       </label>
-                      <input id="bkTagline" placeholder={"One line — what you want to be known for"} />
+                      <input id="bkTagline" placeholder={"One line, what you want to be known for"} />
                     </div>
                     <div className="field">
                       <label htmlFor="bkDesc">
@@ -945,7 +945,7 @@ export default function Page() {
                           </button>
                         </div>
                         <div className="lt-note" id="bkLogoDarkNote">
-                          Optional — for dark creatives
+                          Optional, for dark creatives
                         </div>
                       </div>
                     </div>
@@ -1000,7 +1000,7 @@ export default function Page() {
                       Voice
                     </div>
                     <p className="sub" style={{ "marginBottom": "14px" }}>
-                      Tayo writes captions and replies in this tone. Be specific — “warm and plain-spoken, never salesy” beats “professional”.
+                      Tayo writes captions and replies in this tone. Be specific, “warm and plain-spoken, never salesy” beats “professional”.
                     </p>
                     <div className="field">
                       <label htmlFor="bkVoice">

@@ -84,7 +84,7 @@ export function ListingCard({ l, saved, compareOn, picked, onSave, onPick, onOpe
         <h3 className={s.ttl}><a href={href} onClick={onOpen}>{l.title}</a></h3>
         <div className={s.loc}>{l.loc}</div>
         {deal && <div className={s.dealLine}>{deal}</div>}
-        {l.why && <div className={s.why}>{l.whyLead && <b>{l.whyLead} — </b>}{l.why}</div>}
+        {l.why && <div className={s.why}>{l.whyLead && <b>{l.whyLead}, </b>}{l.why}</div>}
         {verified && l.score != null && <div className={s.score}><span className={s.ring}>{l.score}</span> Property Confidence</div>}
         {l.agency && (
           <div className={s.agency}>

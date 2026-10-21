@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-synapse.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={"Synapse Core — Privacy Policy"} />
+        <meta property="og:image:alt" content={"Synapse Core, Privacy Policy"} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Privacy Policy" />
         <meta name="twitter:description" content="What Synapse Core collects, why it collects it, where it is stored, and how to see or delete your data." />

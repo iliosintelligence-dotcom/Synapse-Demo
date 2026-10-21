@@ -29,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={"Synapse — Grow your agency. Not your workload."} />
+        <meta property="og:image:alt" content={"Synapse, Grow your agency. Not your workload."} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Grow your agency. Not your workload." />
         <meta name="twitter:description" content="Synapse helps Nigerian estate agencies publish a listing once and reach every channel, qualify enquiries with an AI advisor, and see which channels actually produce buyers. Free to start." />

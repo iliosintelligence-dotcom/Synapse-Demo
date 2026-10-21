@@ -11,7 +11,7 @@ import { useToast } from "../ui/Toast";
 import s from "./Brand.module.css";
 
 const SKIP_KEY = "synapse_brand_onboard_skipped";
-const initialsOf = (n: string) => n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "—";
+const initialsOf = (n: string) => n.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "-";
 
 /** Only a plain font name is ever put in a style attribute. */
 const fontOf = (f: string) => (/^[A-Za-z0-9][A-Za-z0-9 ]{1,39}$/.test(f.trim()) ? `'${f.trim()}', var(--font-sans)` : undefined);

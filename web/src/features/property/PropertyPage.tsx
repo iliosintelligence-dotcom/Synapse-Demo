@@ -32,7 +32,7 @@ export function PropertyPage({ id }: { id: string }) {
       .then((row) => {
         if (!live) return;
         setP(row);
-        if (row) document.title = `${row.title} — Synapse`;
+        if (row) document.title = `${row.title}, Synapse`;
       })
       .catch(() => live && setFailed(true));
     fetchExactAddress(id).then((a) => live && setExact(a)).catch(() => {});

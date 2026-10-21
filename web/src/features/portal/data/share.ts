@@ -67,7 +67,7 @@ export function shareCaption(l: ShareListing, form: "short" | "full", link: stri
   if (charges.length) out.push(`Other charges: ${charges.join(" · ")}`);
   if (l.listing_type === "rent" && n(l.move_in_cost)) out.push(`Total to move in: ${money(l.move_in_cost)}`);
   out.push("", "Full details, photos and inspection booking:", link);
-  if (agency) out.push("", `— ${agency}`);
+  if (agency) out.push("", `- ${agency}`);
   return out.join("\n");
 }
 

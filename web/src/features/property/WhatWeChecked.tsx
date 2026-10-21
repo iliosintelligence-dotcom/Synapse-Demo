@@ -25,7 +25,7 @@ export function WhatWeChecked({ p }: { p: Property }) {
       <h2 className={s.lbl}>What we checked</h2>
       <div className={s.verifySummary}>
         <div className={s.verifyRing} style={{ background: nodes.length ? `conic-gradient(#15803d 0% ${pct}%, rgba(0,0,0,0.08) ${pct}% 100%)` : "rgba(0,0,0,0.06)" }}>
-          <span>{nodes.length && score != null ? score : isV ? "✓" : "—"}</span>
+          <span>{nodes.length && score != null ? score : isV ? "✓" : "-"}</span>
         </div>
         <div>
           <b>{isV ? "Verified by Synapse" : nodes.length ? "What has been checked" : "Not yet verified"}</b>
@@ -44,7 +44,7 @@ export function WhatWeChecked({ p }: { p: Property }) {
         return (
           <div key={k} className={`${s.verifyRow} ${ok ? s.pass : n.status === "pending" ? s.pending : s.fail}`}>
             <span aria-hidden="true">{ok ? "✓" : "…"}</span>
-            <span>{label}{ok ? "" : ` — ${n.status || "not passed"}`}</span>
+            <span>{label}{ok ? "" : `, ${n.status || "not passed"}`}</span>
           </div>
         );
       })}

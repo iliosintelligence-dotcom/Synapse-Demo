@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Synapse motion system (web) — mirrors packages/ui/src/motion/tokens.ts.
+   Synapse motion system (web), mirrors packages/ui/src/motion/tokens.ts.
    Three durations govern everything; no hardcoded ms elsewhere.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
@@ -71,7 +71,7 @@
   :where(button, .btn, [role="button"]):active { transform: none; }
 }
 
-/* Scroll reveal — elements marked [data-reveal] (cards are tagged by motion.js)
+/* Scroll reveal, elements marked [data-reveal] (cards are tagged by motion.js)
    rise 14px and fade in when they enter the viewport, staggered by --reveal-i. */
 [data-reveal] {
   opacity: 0;
@@ -86,7 +86,7 @@
   transform: none;
 }
 
-/* Message entrance in chat — used by toju.html */
+/* Message entrance in chat, used by toju.html */
 .m-enter {
   animation: mEnter var(--m-expanded) var(--m-ease-spring) both;
 }
@@ -95,7 +95,7 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* Press feedback — micro scale on anything tappable (motion.js adds .m-press)
+/* Press feedback, micro scale on anything tappable (motion.js adds .m-press)
 
    THE `transition` DECLARATION THAT USED TO LIVE HERE IS GONE, AND THAT IS
    THE POINT. motion.js adds this class to every `button, .btn, .f, .wa,
@@ -116,13 +116,13 @@
 [data-lottie] { display: inline-block; line-height: 0; }
 [data-lottie] svg { display: block; }
 
-/* Ambient orb halo wrapper — keeps always-on pulse subtle (≤ 0.6 opacity) */
+/* Ambient orb halo wrapper, keeps always-on pulse subtle (≤ 0.6 opacity) */
 .m-orb { position: relative; }
 .m-orb > .m-orb-halo {
   position: absolute; inset: -26px; opacity: 0.55; pointer-events: none;
 }
 
-/* Accessibility — the whole system stands down for reduced motion */
+/* Accessibility, the whole system stands down for reduced motion */
 @media (prefers-reduced-motion: reduce) {
   /* The catch-all comes first, so anything below can still opt back in.
      Enumerating selectors per page was never going to hold: every new
@@ -134,8 +134,8 @@
      motion in the same frame, but the animation still *runs*: fill-mode still
      resolves, so an entrance that starts at opacity 0 lands on its end state
      instead of reverting, and transitionend/animationend still fire for any
-     script that later comes to depend on them. Nothing does today — that was
-     checked — and this way nothing breaks when something does.
+     script that later comes to depend on them. Nothing does today, that was
+     checked, and this way nothing breaks when something does.
 
      iteration-count caps the infinite ones: typing dots, the mic ring, the
      spinners. Each stops at its resting state, which still reads as "typing"

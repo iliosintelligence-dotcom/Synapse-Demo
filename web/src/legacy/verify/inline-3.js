@@ -1,7 +1,7 @@
 
     /* The seven checks, named exactly as they are stored in
        properties.verification_nodes so the desk never invents a vocabulary.
-       NOTE: these names do not match the seven listed in terms.html — that
+       NOTE: these names do not match the seven listed in terms.html, that
        mismatch predates this page and is tracked separately; it is deliberately
        NOT papered over here by renaming one side. */
     const CHECKS = ['Title', 'Survey', 'Structure', 'Flood', 'Legal', 'Area', 'Financial'];
@@ -108,7 +108,7 @@
       if (on && nodes.filter((n) => n.status === 'passed').length !== CHECKS.length) {
         toast('All seven checks must pass first'); return;
       }
-      // verified_at records when this actually happened — the field that was
+      // verified_at records when this actually happened, the field that was
       // missing entirely until now, and the reason no listing could show a date.
       const patch = on
         ? { verification_status: 'verified', verified_at: new Date().toISOString(), verification_nodes: nodes }
@@ -117,7 +117,7 @@
       if (error) { toast('Could not save: ' + error.message); return; }
       Object.assign(row, patch);
       render();
-      toast(on ? 'Verified — the date is now on the record' : 'Verification withdrawn');
+      toast(on ? 'Verified, the date is now on the record' : 'Verification withdrawn');
     }
 
     listEl.addEventListener('click', (e) => {

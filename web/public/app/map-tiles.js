@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — where map tiles come from.
+   Synapse, where map tiles come from.
 
    ONE place, because there are two maps: the shared one in matches-shared.js
    (browse, Tayo, the agency portal) and property.html's own. They both used to
@@ -9,7 +9,7 @@
 
    ── STADIA MAPS, AND WHY THERE IS NO KEY IN THIS FILE ─────────────────────
    Stadia authenticates browsers by DOMAIN, not by key. You register
-   synapsecore.dev once in their dashboard and requests from it are served —
+   synapsecore.dev once in their dashboard and requests from it are served -
    nothing secret ships in the page, nothing to leak from a public repository,
    nothing to rotate. That is a better arrangement than any key we could hide,
    and it is why this file holds no credentials.
@@ -23,7 +23,7 @@
      Stadia dashboard → Manage Properties → Authentication Configuration
        → add domain:  synapsecore.dev
      Add www.synapsecore.dev as well if their matcher does not cover
-     subdomains — the site serves from www.
+     subdomains, the site serves from www.
 
    A key is only needed for server-side or non-browser access. If that ever
    comes up, put it in KEY below and it is appended as api_key. Leave it empty
@@ -90,7 +90,7 @@
         swapped = true;
         try { map.removeLayer(layer); } catch (e) {}
         // eslint-disable-next-line no-console
-        console.warn('Stadia tiles unavailable (' + why + ') — using OpenStreetMap. '
+        console.warn('Stadia tiles unavailable (' + why + '), using OpenStreetMap. '
           + 'Register this domain under Manage Properties → Authentication Configuration.');
         self._osm(map);
       }

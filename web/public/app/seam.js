@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Synapse seam (runtime) — the half of the shared-element morph that CSS
+   Synapse seam (runtime), the half of the shared-element morph that CSS
    cannot express.
 
    seam.css claims the RECEIVING end of the photo morph, because that one is
