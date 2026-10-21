@@ -156,6 +156,7 @@ a { color: inherit; }
 :root[data-theme="dark"] .aud { background: #16181C; }
 :root[data-theme="dark"] .aud-seg.on { background: #FFFFFF; color: #000000; box-shadow: none; }
 .float-cta { display: none; }
+.nav-burger, .nav-sheet { display: none; }
 .mode {
   width: 38px; height: 38px; border-radius: 999px; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -597,25 +598,46 @@ a { color: inherit; }
   .rl-ctrl .next { right: max(6px, calc(var(--gutter) - 14px)); }
 }
 @media (max-width: 720px) {
-  body { font-size: 17px; }
+  /* THE PHONE'S TYPE AND MARGINS (Eden, 2026-10-21, after a mobile site he likes): a side margin of about 5% of the width, a big
+     heading that is large but not the whole screen, and small text that is genuinely small. Each size has a floor and a ceiling so
+     it scales across phones without ever becoming unreadable or huge. */
+  :root { --gutter: clamp(18px, 5vw, 28px); }
+  body { font-size: 16px; }
   .sec { padding-top: 104px; }
   .intro { padding-top: 82px; }
   .hero { padding-top: 28px; }
-  .lede { font-size: 17px; }
+  .h1 { font-size: clamp(30px, 8.2vw, 46px); line-height: 1.1; }
+  .h2 { font-size: clamp(26px, 6.6vw, 38px); line-height: 1.12; }
+  .lede { font-size: clamp(15px, 3.9vw, 17px); line-height: 1.5; }
+  .btn { height: 44px; padding: 0 22px; font-size: 15px; }
+  .hero-cta { margin-top: 26px; }
   .nav-cta { display: none; }
-  /* Which side you are on, said plainly: on a phone the switch gets its own
-     full-width row under the bar, the two halves as wide as the screen and
-     the current side filled, like the pill the page had before (Eden: the
-     way across "is not really obvious"). */
-  /* ONE ROW (Eden, 2026-10-21: the mark on one row and the switch on another took 122px of a phone screen). The mark, the
-     switch with its two halves (the current side still filled), the mode button and Sign in now share a 56px bar. The switch
-     takes whatever width the others leave, and its halves share it equally. */
+  /* ONE LAYER (Eden, 2026-10-21: two rows took 122px of a phone screen). The bar is the mark and the name at the left and a menu
+     button at the right, 56px tall. The For agencies / For customers switch, the page links, Sign in, the main button and
+     light/dark are in the menu, where the switch is two wide, filled halves that cannot be missed. */
   .nav-in { flex-wrap: nowrap; gap: 8px; height: 56px; padding-top: 0; padding-bottom: 0; }
-  .logo { margin-right: 0; flex: none; }
-  .aud { flex: 1 1 0; min-width: 0; margin: 0; padding: 3px; }
-  .aud-seg { flex: 1 1 0; min-width: 0; padding: 9px 4px; font-size: 13px; text-align: center; white-space: nowrap; }
+  .nav-in > .aud, .nav-in > .mode, .nav-in > .nav-signin { display: none; }
+  .logo { margin-right: auto; flex: none; }
+  .nav-burger {
+    display: inline-flex; flex-direction: column; justify-content: center; gap: 6px; flex: none;
+    width: 44px; height: 44px; margin-right: -10px; padding: 0 10px; border: 0; background: none; color: var(--ink);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .nav-burger span { display: block; height: 2px; border-radius: 2px; background: currentColor; transition: transform .2s ease, opacity .2s ease; }
+  .nav-open .nav-burger span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+  .nav-open .nav-burger span:nth-child(2) { opacity: 0; }
+  .nav-open .nav-burger span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+  /* The menu: a panel under the bar over a dimmed page. */
+  .nav-sheet { display: block; position: fixed; z-index: 49; left: 0; right: 0; bottom: 0; top: calc(56px + env(safe-area-inset-top, 0px)); background: rgba(0, 0, 0, 0.4); }
+  .nav-sheet[hidden] { display: none; }
+  .sheet-panel { display: grid; gap: 2px; padding: 10px var(--gutter) 22px; background: var(--bg); max-height: 100%; overflow-y: auto; box-shadow: 0 18px 30px -18px rgba(0, 0, 0, 0.35); }
+  .sheet-aud { display: flex; padding: 4px; margin: 6px 0 8px; }
+  .sheet-aud .aud-seg { flex: 1; text-align: center; padding: 11px 8px; font-size: 15px; }
   .aud-seg.on { background: var(--btn); color: var(--btn-ink); box-shadow: none; }
   :root[data-theme="dark"] .aud-seg.on { background: #FFFFFF; color: #000000; }
+  .sheet-link { display: flex; align-items: center; min-height: 52px; font-size: 19px; font-weight: 500; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .sheet-cta { width: 100%; margin-top: 14px; }
+  .sheet-mode { margin-top: 6px; min-height: 48px; border: 0; background: none; color: var(--muted); font: 600 15px inherit; font-family: inherit; cursor: pointer; }
   /* The channels run past like a news ticker: two copies of the list moving
      together, so the loop has no seam. */
   .rail .wrap { padding: 0; }
@@ -640,7 +662,7 @@ a { color: inherit; }
   .frame .shot.bleed, .frame .shot.under { width: 165%; left: 6%; top: 8%; }
   .frame .phone { width: 40%; right: 5%; }
   .frame .phone.solo { width: 54%; }
-  .row-text .h2 { font-size: 32px; }
+  .row-text .h2 { font-size: clamp(26px, 6.6vw, 38px); }
   .statement { font-size: 25px; }
   .end .frame { padding: 52px 20px; }
   .pr-card { padding: 26px 22px 28px; }
@@ -652,17 +674,6 @@ a { color: inherit; }
   }
   .wide { aspect-ratio: 4 / 3.2; }
   .wide .shot { width: 150%; left: 5%; transform: none; }
-  .nav-signin { padding: 8px 2px; font-size: 14px; white-space: nowrap; flex: none; }
-}
-/* The word beside the mark needs room the one-row bar does not have until a tablet. */
-@media (max-width: 560px) {
-  .logo-word { display: none; }
-}
-@media (max-width: 370px) {
-  .nav-in { gap: 6px; }
-  .aud-seg { font-size: 12px; padding: 9px 2px; }
-  .nav-signin { font-size: 13px; }
-  .mode { width: 34px; height: 34px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rail-list { animation: none !important; }

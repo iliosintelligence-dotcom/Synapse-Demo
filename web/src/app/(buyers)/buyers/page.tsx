@@ -56,8 +56,41 @@ export default function Page() {
           <a className="btn btn-solid btn-sm nav-cta" href="app/toju.html?new=site">
             Talk to Tayo
           </a>
+          {" "}
+          <button type="button" className="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navSheet">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
       </header>
+      <div className="nav-sheet" id="navSheet" hidden>
+        <nav className="sheet-panel" aria-label="Menu">
+          <div className="aud sheet-aud" role="group" aria-label="Who Synapse is for">
+            <a className="aud-seg" href="index.html">
+              For agencies
+            </a>
+            <a className="aud-seg on" href="buyers.html" aria-current="page">
+              For customers
+            </a>
+          </div>
+          <a className="sheet-link" href="#how">
+            How it works
+          </a>
+          <a className="sheet-link" href="app/browse.html">
+            Your matches
+          </a>
+          <a className="sheet-link" href={"app/signin.html?role=customer&next=toju.html"}>
+            Sign in
+          </a>
+          <a className="btn btn-solid sheet-cta" href={"app/toju.html?new=site"}>
+            Talk to Tayo
+          </a>
+          <button type="button" className="sheet-mode" id="sheetMode">
+            Switch to dark mode
+          </button>
+        </nav>
+      </div>
       <main id="main" tabIndex="-1">
         <section className="hero">
           <div className="wrap">
@@ -344,6 +377,7 @@ export default function Page() {
         Talk to Tayo, free
       </a>
       <script src="home.js" />
+      <script src="home-nav.js" />
       <script src="app/stamp.js" />
       <script src="app/share.js" />
       <script src="home-feed.js" />

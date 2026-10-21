@@ -55,8 +55,41 @@ export default function Page() {
           <a className="btn btn-solid btn-sm nav-cta" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
             Try free
           </a>
+          {" "}
+          <button type="button" className="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navSheet">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
       </header>
+      <div className="nav-sheet" id="navSheet" hidden>
+        <nav className="sheet-panel" aria-label="Menu">
+          <div className="aud sheet-aud" role="group" aria-label="Who Synapse is for">
+            <a className="aud-seg on" href="index.html" aria-current="page">
+              For agencies
+            </a>
+            <a className="aud-seg" href="buyers.html">
+              For customers
+            </a>
+          </div>
+          <a className="sheet-link" href="#product">
+            Product
+          </a>
+          <a className="sheet-link" href="#pricing">
+            Free pilot
+          </a>
+          <a className="sheet-link" href={"app/signin.html?role=agency&reason=agency&next=agency.html"}>
+            Sign in
+          </a>
+          <a className="btn btn-solid sheet-cta" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
+            Try free
+          </a>
+          <button type="button" className="sheet-mode" id="sheetMode">
+            Switch to dark mode
+          </button>
+        </nav>
+      </div>
       <main id="main" tabIndex="-1">
         <section className="hero">
           <div className="wrap">
@@ -854,6 +887,7 @@ export default function Page() {
         {" "}
       </a>
       <script src="home.js" />
+      <script src="home-nav.js" />
       <script src="app/stamp.js" />
       <script src="app/share.js" />
       <script src="home-feed.js" />
