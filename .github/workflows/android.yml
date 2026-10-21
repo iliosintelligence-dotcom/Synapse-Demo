@@ -24,7 +24,9 @@ jobs:
       - run: npx cap sync android
       - name: Build the debug APK
         working-directory: web/android
-        run: ./gradlew --no-daemon assembleDebug
+        run: |
+          chmod +x gradlew   # a file made on Windows is not marked runnable
+          ./gradlew --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: synapse-debug-apk
