@@ -42,9 +42,9 @@ pages in the deployment (nothing is deleted) and redirects `/app/agency.html` to
 | 5 | ~~In this repo: remove the placeholder home page and run the static assembler.~~ **Done 2026-10-21.** Staging now serves the landing page, `/buyers`, `/privacy`, `/terms`, `/your-data`, `/go/<handle>` and the old `/app/*.html` pages. | Claude | `git revert` |
 | 6 | ~~Re-test staging~~ **Done for everything that needs no login** (all pages, redirects, short links `/s/…`, image resizer, headers, `/web/` blocked). Still to do signed in: sign-in and email flows, the portal panes, Google sign-in. Original list: landing page, `/go/<handle>`, `/s/<token>`, `/buyers`, `/privacy`, `/terms`, `/your-data`, and `/app/agency.html?invite=x#crm` (should land on `/portal/?invite=x#crm`). | You, with Claude | n/a |
 | 7 | Supabase Redirect URLs: make sure `https://www.synapsecore.dev/**` is allowed (it already is, for the current site). | You | n/a |
-| 8 | Move the domain: Vercel, the new project, Domains, add `www.synapsecore.dev` (take it from `synapse-demo`). Keep `synapse-demo` for a week. | You (Vercel) | Move the domain back |
-| 9 | Supabase, Edge Functions, `social-connect`, secret `PORTAL_URL` = `https://www.synapsecore.dev/portal/`. (Until then OAuth returns to `/app/agency.html`, which now redirects to the portal, so it still works.) | You (Supabase) | Set it back |
-| 10 | Flip two constants in `web/src/lib/auth-config.ts`: `AUTH_RETURN_PATH` to `"/signin/"` and `DEFAULT_AGENCY_DEST` to `"/portal/"`. Only after step 7. | Claude | `git revert` |
+| 8 | ~~Move the domain~~ **Done.** Original:  Vercel, the new project, Domains, add `www.synapsecore.dev` (take it from `synapse-demo`). Keep `synapse-demo` for a week. | You (Vercel) | Move the domain back |
+| 9 | **Done (optional).** Supabase, Edge Functions, `social-connect`, secret `PORTAL_URL` = `https://www.synapsecore.dev/portal/`. (Until then OAuth returns to `/app/agency.html`, which now redirects to the portal, so it still works.) | You (Supabase) | Set it back |
+| 10 | **Done 2026-10-21.** Flip two constants in `web/src/lib/auth-config.ts`: `AUTH_RETURN_PATH` to `"/signin/"` and `DEFAULT_AGENCY_DEST` to `"/portal/"`. Only after step 7. | Claude | `git revert` |
 | 11 | Watch for a day: sign-in, email confirmation, password reset, Google, a lead arriving, a social connect. | You | Step 8's undo |
 
 **Rolling back.** Move the domain back to `synapse-demo` (step 8). Nothing in the database changes at any step, so there is no data to restore.

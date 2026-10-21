@@ -106,11 +106,14 @@ export function PortalShell() {
   useEffect(() => {
     if (side !== "ok") return;
     const q = new URLSearchParams(window.location.search);
-    if (q.get("add") !== "1") return;
-    q.delete("add");
-    window.history.replaceState({}, "", `${window.location.pathname}${q.toString() ? `?${q}` : ""}#listings`);
+    const add = q.get("add") === "1";
+    // a brand-new agency (sign-up lands on /portal/?welcome=agency) starts on the Brand pane, where the setup steps are
+    const welcome = q.get("welcome") === "agency";
+    if (!add && !welcome) return;
+    q.delete("add"); q.delete("welcome");
+    window.history.replaceState({}, "", `${window.location.pathname}${q.toString() ? `?${q}` : ""}#${add ? "listings" : "brand"}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
-    setTimeout(() => requestIntent("new-listing"), 400);
+    if (add) setTimeout(() => requestIntent("new-listing"), 400);
   }, [side]);
 
   // The gate is a UX gate, never a security boundary: the database policies are. It stops a person seeing a screen they cannot use.
