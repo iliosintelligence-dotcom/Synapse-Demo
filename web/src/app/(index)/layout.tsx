@@ -52,6 +52,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script src="app/loaders.js" defer />
         <link rel="stylesheet" href="app/landing-bits.css" />
         <script src="app/ref.js" />
+        <link rel="stylesheet" href="/app/swipe-landing.css" />
+        <script src="/app/swipe-vt.js" />
+        <script src="/app/swipe-nav.js" defer />
+        <script src="/app/swipe-landing.js" defer />
       </head>
       <body>{children}</body>
     </html>
