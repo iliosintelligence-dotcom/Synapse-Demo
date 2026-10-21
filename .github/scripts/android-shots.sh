@@ -13,6 +13,9 @@ adb shell am force-stop dev.synapsecore.app
 adb shell am start -n dev.synapsecore.app/.MainActivity
 sleep 45
 adb exec-out screencap -p > shots/01-start-tayo.png
+# what views are on screen, with their classes and bounds: finds the bar that covers the top of the page
+adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml shots/ui.xml || true
+adb shell dumpsys activity top | head -80 > shots/activity-top.txt || true
 i=2
 for page in "" "buyers" "app/browse" "app/dream" "app/signin"; do
   adb shell am start -a android.intent.action.VIEW -d "https://www.synapsecore.dev/$page" dev.synapsecore.app
