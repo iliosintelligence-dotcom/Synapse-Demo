@@ -3,7 +3,7 @@
 import { chromium } from "playwright-core";
 import fs from "node:fs";
 const base = (process.argv[2] || "https://www.synapsecore.dev").replace(/\/$/, "");
-const pages = ["/", "/buyers.html", "/privacy.html", "/terms.html", "/app/toju.html", "/app/browse.html", "/app/property.html", "/app/dream.html", "/app/signin.html", "/app/agency-profile.html", "/app/agency.html", "/app/go.html", "/app/your-data.html", "/app/verify.html", "/app/synapse.html"];
+const pages = ["/", "/buyers", "/privacy", "/terms", "/app/toju", "/app/browse", "/app/property", "/app/dream", "/app/signin", "/app/agency-profile", "/app/agency", "/app/go", "/app/your-data", "/app/verify", "/app/synapse"];
 const exe = ["C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"].find((p) => fs.existsSync(p));
 const browser = await chromium.launch({ executablePath: exe, headless: true });
 let bad = 0;
