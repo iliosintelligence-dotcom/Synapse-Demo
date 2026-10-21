@@ -90,6 +90,10 @@ export default function Page() {
                 <span data-icon="heart" aria-hidden="true"></span>
                 Pinned
               </button>
+              <button id="tjMem" type="button" className="cnav-mi" role="menuitem">
+                <span data-icon="user" aria-hidden="true"></span>
+                What Tayo remembers
+              </button>
               <button id="tjBg" type="button" className="cnav-mi" role="menuitem">
                 <span data-icon="boards" aria-hidden="true"></span>
                 Change background
@@ -142,6 +146,19 @@ export default function Page() {
                 </button>
               </div>
               <div className="tj-hist-list" id="tjPinList"></div>
+            </div>
+            <div className="tj-handoff" id="tjHandoffStatus" role="status" hidden></div>
+            <div className="tj-hist" id="tjMemPanel" hidden>
+              <div className="tj-hist-head">
+                <span>
+                  <span data-icon="user"></span>
+                  {" What Tayo remembers"}
+                </span>
+                <button id="tjMemClose" aria-label="Close what Tayo remembers">
+                  ×
+                </button>
+              </div>
+              <div className="tj-hist-list" id="tjMemList"></div>
             </div>
             <div className="convo-scroll" aria-live="polite">
               <div className="convo" id="convo"></div>

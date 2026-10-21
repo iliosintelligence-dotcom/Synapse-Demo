@@ -577,6 +577,7 @@
         if (!(res.ok || res.status === 207) || !d.lead_id) throw new Error((d && d.error) || 'That introduction did not go through.');
         try { if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {}); } catch (e) { /* the lead stands */ }
         HANDED = true; HO_BUSY = false; renderReply();
+        setTimeout(refreshHandoff, 1500);
         card.querySelectorAll('button').forEach((b) => { b.disabled = true; });
         /* Say exactly what happened, and no more. */
         const by = d.delivery_status === 'delivered' ? (d.email === 'sent' ? 'on WhatsApp and by email' : 'on WhatsApp')
@@ -1410,7 +1411,7 @@
           + '</div><span class="pin-acts"><button type="button" data-pin-share="' + esc(x.id) + '">Share</button><button type="button" data-pin-del="' + esc(x.id) + '">Unpin</button></span></div>').join('');
     }
     function closePins() { pinPanel.hidden = true; }
-    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
+    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; memPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
     document.getElementById('tjPinClose').addEventListener('click', closePins);
     pinList.addEventListener('click', (e) => {
       const pins = loadPins();
@@ -1420,6 +1421,65 @@
       if (sh) { const pl = pins.find((x) => x.id === sh.dataset.pinShare); if (pl) shareOut(shareText(pl), sh); return; }
       const all = e.target.closest('[data-pin-share-all]');
       if (all) shareOut(pins.map(shareText).join('\n\n\u2014\n\n'), all);
+    });
+
+    /* WHERE YOUR INTRODUCTION IS. A signed-in buyer who has been introduced to an agency sees, here, whether the agency has it,
+       whether an agent holds it, and whether one has taken over the conversation. Only the agency's name is ever shown. A visitor
+       who is not signed in, or has no introduction, sees nothing at all. */
+    const hoStatus = document.getElementById('tjHandoffStatus');
+    const HO_STEPS = [['sent', 'Sent to'], ['with_agent', 'With an agent at'], ['taken_over', 'An agent has taken over at']];
+    function renderHandoff(rows) {
+      if (!rows.length) { hoStatus.hidden = true; hoStatus.innerHTML = ''; return; }
+      hoStatus.innerHTML = rows.slice(0, 2).map((r) => {
+        const at = Math.max(0, HO_STEPS.findIndex((s) => s[0] === r.stage));
+        return '<div class="tj-ho-row"><div class="tj-ho-t">' + esc(HO_STEPS[at][1]) + ' ' + esc(r.agency) + ' <span>· ' + esc(r.listing) + '</span></div>'
+          + '<div class="tj-ho-bar" aria-hidden="true">' + HO_STEPS.map((s, i) => '<i class="' + (i <= at ? 'on' : '') + '"></i>').join('') + '</div></div>';
+      }).join('');
+      hoStatus.hidden = false;
+    }
+    function refreshHandoff() {
+      if (!window.SynAuth) return;
+      SynAuth.client().then((c) => c.auth.getSession().then((s) => {
+        if (!(s && s.data && s.data.session)) { renderHandoff([]); return null; }
+        return c.rpc('my_handoff_status');
+      })).then((r) => { if (r) renderHandoff(!r.error && Array.isArray(r.data) ? r.data : []); }).catch(() => {});
+    }
+    refreshHandoff();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshHandoff(); });
+
+    /* What Tayo remembers: the facts kept about this visitor, each one deletable. The server owns the list; the page only shows it. */
+    const memPanel = document.getElementById('tjMemPanel');
+    const memList = document.getElementById('tjMemList');
+    function memCall(body) {
+      return fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify(Object.assign({ visitorId: VISITOR }, body)),
+      }).then((r) => r.json());
+    }
+    function renderMem(facts) {
+      if (!facts.length) { memList.innerHTML = '<div class="hist-empty">Tayo is not holding anything about you yet.<br>What you tell it about where, how much and who it is for will show up here, and you can delete any of it.</div>'; return; }
+      memList.innerHTML = facts.map((f) => '<div class="hist-row pin-row"><div class="mid"><div class="d">' + esc(f.label) + '</div><div class="t">' + esc(f.value) + '</div></div>'
+        + '<span class="pin-acts"><button type="button" data-mem-del="' + esc(f.key) + '">Forget</button></span></div>').join('')
+        + '<button class="hist-row" data-mem-all type="button"><div class="mid"><div class="t">Forget everything</div><div class="d">Tayo starts from nothing next time</div></div></button>';
+    }
+    function loadMem() {
+      memList.innerHTML = '<div class="hist-empty">One moment…</div>';
+      memCall({ action: 'memory' }).then((d) => renderMem(Array.isArray(d.facts) ? d.facts : []))
+        .catch(() => { memList.innerHTML = '<div class="hist-empty">Could not load this just now. Try again in a moment.</div>'; });
+    }
+    function closeMem() { memPanel.hidden = true; }
+    document.getElementById('tjMem').addEventListener('click', () => {
+      if (!memPanel.hidden) { closeMem(); return; }
+      histPanel.hidden = true; pinPanel.hidden = true; loadMem(); memPanel.hidden = false;
+    });
+    document.getElementById('tjMemClose').addEventListener('click', closeMem);
+    memList.addEventListener('click', (e) => {
+      const one = e.target.closest('[data-mem-del]');
+      const all = e.target.closest('[data-mem-all]');
+      if (!one && !all) return;
+      if (all && !window.confirm('Forget everything Tayo knows about you?')) return;
+      memCall({ action: 'forget', keys: all ? 'all' : [one.dataset.memDel] }).then((d) => renderMem(Array.isArray(d.facts) ? d.facts : [])).catch(() => {});
     });
 
     const histPanel = document.getElementById('tjHistPanel');
