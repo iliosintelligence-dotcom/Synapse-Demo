@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   SYNAPSE MAP STYLE — white matter.
+   SYNAPSE MAP STYLE, white matter.
 
    THE BRIEF, LITERALLY: "make the map black and white like neurons in white
    matter, and change the shape and designs of things like schools." So: a

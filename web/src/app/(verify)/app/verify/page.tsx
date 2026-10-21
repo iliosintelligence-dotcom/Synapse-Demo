@@ -35,7 +35,7 @@ export default function Page() {
             Verification desk
           </h1>
           <p className="vd-note">
-            {"\n        Marking a listing verified records the date it happened and which checks passed.\n        Agencies cannot do this to their own listings — the database refuses it — which is\n        the point: the badge means something because the party who benefits from it cannot grant it.\n        A listing needs all seven checks to be marked verified; anything less is\n        "}
+            {"\n        Marking a listing verified records the date it happened and which checks passed.\n        Agencies cannot do this to their own listings, the database refuses it, which is\n        the point: the badge means something because the party who benefits from it cannot grant it.\n        A listing needs all seven checks to be marked verified; anything less is\n        "}
             <em>
               still checking
             </em>

@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — unified icon set
+   Synapse, unified icon set
    One stroke-based line-icon language across every page, so an icon reads its
    function even without a label. Feather-style: 24×24 grid, 1.75 stroke, round
    caps/joins, no fill, inherits currentColor + sizes to 1em (font-size driven).
@@ -8,7 +8,7 @@
      · Markup   <span data-icon="pin"></span>         (hydrated on load)
      · JS       SynIcons.svg('pin', { cls:'x', size:18 })
 
-   Add an icon by adding its inner paths to PATHS — never inline a one-off SVG
+   Add an icon by adding its inner paths to PATHS, never inline a one-off SVG
    again, so the whole app stays one visual system.
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
@@ -28,7 +28,7 @@
     'boards':     '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>',
     // canvas / property facets
     'pin':        '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
-    // neighbourhood amenity categories — map pins, same stroke language as
+    // neighbourhood amenity categories, map pins, same stroke language as
     // everything else, so a pin reads its category without relying on emoji
     // (which render inconsistently, and sometimes in full colour, across OS).
     'school':     '<path d="M12 3l10 5-10 5L2 8z"/><path d="M6 10.3V15c0 1.4 2.9 2.7 6 2.7s6-1.3 6-2.7v-4.7"/><path d="M22 8v6.5"/>',
@@ -69,7 +69,7 @@
     'chart':      '<path d="M4 20v-6M9 20V8M14 20v-9M19 20V5"/><path d="M3 20h18"/>',
     'card':       '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
     'arrow-right':'<path d="M4 12h16M14 6l6 6-6 6"/>',
-    // toolbar verbs — added so the portal's toolbars stop standing in glyphs
+    // toolbar verbs, added so the portal's toolbars stop standing in glyphs
     // (▤ ▦ ↕ ⚙ ⇪ ▽ ⋯ ✆) for icons
     'sort':       '<path d="M7 4.5v15M7 4.5L4.2 7.6M7 4.5l2.8 3.1"/><path d="M17 19.5v-15M17 19.5l-2.8-3.1M17 19.5l2.8-3.1"/>',
     'filter':     '<path d="M3.5 5.5h17l-6.6 7.6v5.4l-3.8 1.9v-7.3z"/>',

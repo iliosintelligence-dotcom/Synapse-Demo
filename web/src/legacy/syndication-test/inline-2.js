@@ -8,7 +8,7 @@
       ok ? pass++ : fail++;
       var d = document.createElement('div');
       d.className = 't ' + (ok ? 'p' : 'f');
-      d.textContent = (ok ? '✓ ' : '✗ ') + name + (err ? ' — ' + err : '');
+      d.textContent = (ok ? '✓ ' : '✗ ') + name + (err ? ', ' + err : '');
       out.appendChild(d);
     }
 
@@ -135,7 +135,7 @@
       t('nothing left queued or sending after run', function () {
         return !sum.queued && !sum.sending;
       });
-      t('bounded concurrency (3) — not all fired at once', function () {
+      t('bounded concurrency (3), not all fired at once', function () {
         // 25 items @ ~0.22–0.48s each, 3 at a time => must exceed ~1.8s
         return ms > 1500;
       });

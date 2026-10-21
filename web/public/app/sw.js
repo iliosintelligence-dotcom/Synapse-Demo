@@ -1,10 +1,10 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse service worker — push delivery + notification routing
+   Synapse service worker, push delivery + notification routing
 
    WHAT THIS CAN AND CANNOT DO (please read before promising otherwise):
    ✓ Show a notification when the TAB is closed. The worker outlives the page.
    ✓ Route a tap to the right screen, focusing an existing tab if one is open.
-   ✗ Track location in the background. There is no web geofencing API — the
+   ✗ Track location in the background. There is no web geofencing API, the
      Geofencing API was removed from Chrome in 2018, and watchPosition() stops
      the moment the page is unloaded. A notification can only arrive here if a
      SERVER decided to send it.
@@ -13,7 +13,7 @@
    in Postgres), and something reports the device's position to it. On the web
    that reporting only happens while a page is open. For true "walk past a house
    with the app fully closed", the native app reports position in the
-   background — and it pushes into this exact same pipeline. Nothing here
+   background, and it pushes into this exact same pipeline. Nothing here
    changes when that lands.
    ───────────────────────────────────────────────────────────────────────── */
 
@@ -69,7 +69,7 @@ self.addEventListener('notificationclick', function (event) {
 function openRoute(route, data) {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     .then(function (list) {
-      // Prefer focusing a tab that is already open — do not pile up windows.
+      // Prefer focusing a tab that is already open, do not pile up windows.
       for (var i = 0; i < list.length; i++) {
         var c = list[i];
         if ('focus' in c) {

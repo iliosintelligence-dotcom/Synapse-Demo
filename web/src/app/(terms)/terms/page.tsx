@@ -83,7 +83,7 @@ export default function Page() {
             What "Verified" means
           </h2>
           <p>
-            Our verification standard covers seven points — title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.
+            Our verification standard covers seven points, title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.
           </p>
           <p>
             Availability is a separate claim from verification, and we show it separately. A listing carries the date the agency last confirmed the home is still available. A home can be verified and no longer on the market, so we never present the two as the same thing. Listings that are not re-confirmed expire and stop being offered to buyers.
@@ -92,13 +92,13 @@ export default function Page() {
             <strong>
               Verified is a process, not a guarantee.
             </strong>
-            {" It means those specific checks passed on that date. It does not mean Synapse Core guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review — including your own lawyer's title search — before paying for or committing to any property."}
+            {" It means those specific checks passed on that date. It does not mean Synapse Core guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review, including your own lawyer's title search, before paying for or committing to any property."}
           </p>
           <h2 id="m-toju-terms">
             Tayo
           </h2>
           <p>
-            Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess — but you should independently confirm anything material before making a decision.
+            Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess, but you should independently confirm anything material before making a decision.
           </p>
           <h2 id="m-buyers">
             If you're browsing or buying
@@ -108,12 +108,12 @@ export default function Page() {
               Browsing listings and talking to Tayo is free, with no obligation, and doesn't require an account.
             </li>
             <li>
-              Creating an account is required only when you choose to contact an agency about a specific home — at that point, your contact details are shared with that agency so they can respond to you.
+              Creating an account is required only when you choose to contact an agency about a specific home, at that point, your contact details are shared with that agency so they can respond to you.
             </li>
             <li>
-              {"Any transaction you enter into — a purchase, a rental, a payment plan — is between you and the agency or seller, not with Synapse Core. Synapse Core does not process, hold, or guarantee any funds. "}
+              {"Any transaction you enter into, a purchase, a rental, a payment plan, is between you and the agency or seller, not with Synapse Core. Synapse Core does not process, hold, or guarantee any funds. "}
               <span className="m-legal-flag">
-                [NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches — none exists today.]
+                [NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches, none exists today.]
               </span>
             </li>
           </ul>
@@ -125,10 +125,10 @@ export default function Page() {
               Listings you submit must be accurate and must be properties you are authorised to market. Misrepresenting a listing is grounds for removal from the platform.
             </li>
             <li>
-              Verification status is determined solely by Synapse Core's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs — never on payment.
+              Verification status is determined solely by Synapse Core's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs, never on payment.
             </li>
             <li>
-              Subscription tiers (Free, Accelerate, Leader) determine platform features — listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.
+              Subscription tiers (Free, Accelerate, Leader) determine platform features, listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.
             </li>
             <li>
               Leads delivered through Synapse Core are provided as-is; Synapse Core does not guarantee lead volume, quality, or conversion.
@@ -228,7 +228,7 @@ export default function Page() {
           What "Verified" means
         </h2>
         <p>
-          Our verification standard covers seven points — title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.
+          Our verification standard covers seven points, title documentation, ground survey, structural assessment, flood risk, ownership documentation, legal review, and media accuracy. Where a listing shows as "Verified", we show you the date it was verified, and, where we have recorded them, which individual checks it passed. Where we have not published the individual results, we say so rather than implying a score.
         </p>
         <p>
           Availability is a separate claim from verification, and we show it separately. A listing carries the date the agency last confirmed the home is still available. A home can be verified and no longer on the market, so we never present the two as the same thing. Listings that are not re-confirmed expire and stop being offered to buyers.
@@ -237,13 +237,13 @@ export default function Page() {
           <strong>
             Verified is a process, not a guarantee.
           </strong>
-          {" It means those specific checks passed on that date. It does not mean Synapse Core guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review — including your own lawyer's title search — before paying for or committing to any property."}
+          {" It means those specific checks passed on that date. It does not mean Synapse Core guarantees the property's condition, its final sale price, or the outcome of any transaction. You are strongly encouraged to conduct your own independent legal review, including your own lawyer's title search, before paying for or committing to any property."}
         </p>
         <h2 id="toju-terms">
           Tayo
         </h2>
         <p>
-          Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess — but you should independently confirm anything material before making a decision.
+          Tayo is an AI advisor. Its responses are generated to be helpful and honest based on available data, but they are not financial, investment, or legal advice, and Tayo does not guarantee any outcome. Where something can't be verified, Tayo is designed to say so rather than guess, but you should independently confirm anything material before making a decision.
         </p>
         <h2 id="buyers">
           If you're browsing or buying
@@ -253,12 +253,12 @@ export default function Page() {
             Browsing listings and talking to Tayo is free, with no obligation, and doesn't require an account.
           </li>
           <li>
-            Creating an account is required only when you choose to contact an agency about a specific home — at that point, your contact details are shared with that agency so they can respond to you.
+            Creating an account is required only when you choose to contact an agency about a specific home, at that point, your contact details are shared with that agency so they can respond to you.
           </li>
           <li>
-            {"Any transaction you enter into — a purchase, a rental, a payment plan — is between you and the agency or seller, not with Synapse Core. Synapse Core does not process, hold, or guarantee any funds. "}
+            {"Any transaction you enter into, a purchase, a rental, a payment plan, is between you and the agency or seller, not with Synapse Core. Synapse Core does not process, hold, or guarantee any funds. "}
             <span style={{ "background": "rgba(var(--tint),0.12)", "padding": "1px 4px", "borderRadius": "4px" }}>
-              [NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches — none exists today.]
+              [NEEDS LEGAL: a payments clause is required before any in-app payment or escrow feature launches, none exists today.]
             </span>
           </li>
         </ul>
@@ -270,10 +270,10 @@ export default function Page() {
             Listings you submit must be accurate and must be properties you are authorised to market. Misrepresenting a listing is grounds for removal from the platform.
           </li>
           <li>
-            Verification status is determined solely by Synapse Core's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs — never on payment.
+            Verification status is determined solely by Synapse Core's own checks, against a single published standard that is the same for every agency regardless of what they pay us. Verification cannot be bought. No subscription tier changes the checks we run, the evidence we require, or the outcome we reach. Tayo's recommendations rank purely on fit to a buyer's needs, never on payment.
           </li>
           <li>
-            Subscription tiers (Free, Accelerate, Leader) determine platform features — listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.
+            Subscription tiers (Free, Accelerate, Leader) determine platform features, listing limits, team seats, marketing tools, and the support you get while you are being reviewed. A tier never changes a verification outcome, never buys a badge, and never changes how Tayo ranks your listings to buyers.
           </li>
           <li>
             Leads delivered through Synapse Core are provided as-is; Synapse Core does not guarantee lead volume, quality, or conversion.

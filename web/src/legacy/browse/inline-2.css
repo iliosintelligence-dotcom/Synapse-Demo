@@ -1,5 +1,5 @@
 
-    /* Not a catalogue — only the homes Tayo picked for this brief.
+    /* Not a catalogue, only the homes Tayo picked for this brief.
        Map + sort + compare + saves: Zillow-grade tools, advisory framing. */
     body { background: var(--bg); }
     /* WHY THE BACKGROUND JUMPED ON EVERY SCROLL.
@@ -41,7 +41,7 @@
       backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); }
 
 
-    /* map — the Zillow-parity view, but only YOUR pins */
+    /* map, the Zillow-parity view, but only YOUR pins */
     #map { height: 250px; border-radius: var(--radius); margin-bottom: 16px; position: relative; z-index: 1;
       border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 18px 44px rgba(122,62,22,0.13);
       transition: height .28s cubic-bezier(.22,1,.36,1); }
@@ -56,7 +56,7 @@
 
     /* Map view: the map becomes the page. The list, the novelty shelf and the
        recently-viewed rail step aside rather than competing for the same
-       screen — but the toolbar stays, because filters must keep working. */
+       screen, but the toolbar stays, because filters must keep working. */
     /* 100svh, not 100dvh. dvh tracks the viewport as the URL bar hides and
        shows -- and #map carries `transition: height .28s`, so every scroll that
        moved the chrome kicked off a 280ms height animation on a Leaflet canvas.
@@ -70,13 +70,13 @@
     body.view-map .empty { display: none; }
 
     /* Stays on screen. Searching is how this page is operated, and it used to
-       scroll away with the title the moment you looked at the second result —
+       scroll away with the title the moment you looked at the second result -
        so refining a search meant scrolling back up to reach the box.
 
        Sticks below the appbar, which is itself sticky at 64px. On a phone the
        appbar collapses to zero height and the taskbar takes over, so the offset
        drops to a small gap (see the ≤720px block). The z-index is scoped inside
-       .wrap, which is its own stacking context under the appbar — the bar can
+       .wrap, which is its own stacking context under the appbar, the bar can
        never cover the appbar, only the cards it scrolls over. */
     .searchbar { position: sticky; top: 72px; z-index: 40;
       display: flex; align-items: center; gap: 10px; padding: 0 16px; margin-bottom: 16px; border-radius: 100px;
@@ -85,7 +85,7 @@
     .searchbar svg { flex: none; color: #121212; }
     /* The input fills the bar's full height so the whole bar is the target.
        It was 16px tall inside a 42px bar, and the surrounding padding had no
-       handler on it — tapping the obvious place to tap did nothing. */
+       handler on it, tapping the obvious place to tap did nothing. */
     .searchbar input { flex: 1; align-self: stretch; min-height: 44px; border: none; outline: none; background: transparent; font: 14.5px var(--f-sans); color: var(--ink); }
     .searchbar input::placeholder { color: var(--ink-dim); }
     .searchbar button { flex: none; border: none; background: rgba(0,0,0,0.05); color: var(--ink-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 12px; }
@@ -114,8 +114,8 @@
     .listing .body { padding: 18px 18px 14px; }
     .listing .tags { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; flex-wrap: wrap; }
     .listing .match { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: #121212; background: rgba(54,54,54,0.1); border: 1px solid rgba(54,54,54,0.22); padding: 3px 9px; border-radius: 100px; }
-    /* Expiry chip. Uses the tint — the palette reserves it for pips, hairlines
-       and countdowns, which is exactly this — and stays quiet rather than
+    /* Expiry chip. Uses the tint, the palette reserves it for pips, hairlines
+       and countdowns, which is exactly this, and stays quiet rather than
        alarming: the listing is going, not the buyer's chance of a home. */
     .listing .expiry { font-size: 12px; font-weight: 700; letter-spacing: .04em;
       color: #1C1C1E; background: rgba(255,138,45,0.12); border: 1px solid rgba(255,138,45,0.30);
@@ -124,7 +124,7 @@
     .listing .cmpbox input { accent-color: #121212; }
     .listing .price { font-family: var(--f-serif); font-weight: 600; font-size: 27px; font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; color: var(--brand); }
     .listing .ttl { font-size: 14.5px; font-weight: 500; margin-top: 2px; }
-    /* The title is a link now, so it has to look exactly as it did — the card
+    /* The title is a link now, so it has to look exactly as it did, the card
        is the affordance, not blue underlined text. Focus is the exception: a
        keyboard user needs to see where they are, which is the whole point of
        making it a link. */
@@ -159,7 +159,7 @@
       display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: transform var(--m-micro) var(--m-ease); }
     .listing .save.on { color: #121212; background: rgba(255,255,255,0.85); }
     .listing .save:active { transform: scale(0.85); }
-    /* The heart stays 34px — bigger looks wrong sitting on the photo. The
+    /* The heart stays 34px, bigger looks wrong sitting on the photo. The
        TARGET grows to 44px underneath it instead, which costs nothing
        visually and is the difference between hitting it and missing it. */
     .listing .save::before { content: ''; position: absolute; top: 50%; left: 50%;
@@ -187,9 +187,9 @@
     .cmptable .warn { color: #B91C1C; font-weight: 600; }
     .cmpclose { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 17px; color: var(--ink-dim); cursor: pointer; }
 
-    /* visibility is owned by JS (the [hidden] attribute), not by :empty —
+    /* visibility is owned by JS (the [hidden] attribute), not by :empty -
        the copy differs for loading vs load-failed vs nothing-matched */
-    /* sits on its own frosted surface — this page has a photographic
+    /* sits on its own frosted surface, this page has a photographic
        background, and body copy must never be read against it directly */
     .empty { display: flex; flex-direction: column; align-items: center; gap: 6px;
       padding: 48px 28px; color: var(--ink-muted); font-size: 14px; text-align: center;
@@ -203,7 +203,7 @@
     .empty-acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     .empty-acts .btn { font-size: 13px; padding: 10px 16px; }
 
-    /* ── skeleton cards — ONLY while the listings request is in flight ──
+    /* ── skeleton cards, ONLY while the listings request is in flight ──
        render() gates these on loadState === 'loading'; the moment the request
        settles they are replaced by real cards or the honest .empty surface.
        They never stand in for content that does not exist. Motion composes the
@@ -235,11 +235,11 @@
     .nav-saved b { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
     .nav-saved.pop { animation: savePop var(--m-expanded) var(--m-ease-spring); }
 
-    /* ── recently viewed rail — device-local history only; when there is no
+    /* ── recently viewed rail, device-local history only; when there is no
        history the whole section is [hidden] (no placeholder cards, ever) ── */
     .recent { margin-bottom: 16px; }
     .recent[hidden] { display: none; }
-    /* New since your last visit — same card grid, its own heading. Sits above
+    /* New since your last visit, same card grid, its own heading. Sits above
        the full list because novelty is the reason to come back. */
     .fresh-since { margin-bottom: 26px; }
     .fresh-since[hidden] { display: none; }
@@ -258,7 +258,7 @@
       backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
       border: 1px solid rgba(255,255,255,0.85); box-shadow: 0 10px 26px rgba(122,62,22,0.08);
       transition: transform var(--m-standard) var(--m-ease); }  @media (hover: hover) and (pointer: fine) {
-    /* transform only — no shadow repaints */
+    /* transform only, no shadow repaints */
       .rc:hover { transform: translateY(-2px); }
   }
     .rc-price { font-weight: 600; font-size: 15.5px; color: var(--brand); font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
@@ -310,7 +310,7 @@
     .cnav-group #bmMap { display: flex; }
 
     /* ══ MOBILE (≤720px) ═══════════════════════════════════════════════
-       This page had no responsive rules at all — it was a desktop grid on a
+       This page had no responsive rules at all, it was a desktop grid on a
        phone. Rebuilt around what someone actually does here: search, scan a
        single column of homes, and occasionally look at where they are.
 
@@ -318,7 +318,7 @@
        the first home, so the fold carried a map you can barely read and no
        listings. The page already has a List/Map toggle, so on mobile the
        list view drops the map entirely and Map view gives it the whole
-       screen — one thing at a time, properly, instead of two things badly. */
+       screen, one thing at a time, properly, instead of two things badly. */
     @media (max-width: 1024px) {
       .appbar { display: none; }
 
@@ -349,8 +349,8 @@
       /* The summary card and the List/Map segment are both gone: between
          them they pushed the first home most of a screen down, so a page
          whose whole job is showing homes opened on no homes. Everything
-         they carried — the live/verified counts, the route to Tayo, the
-         route to the map — moves into one line below the search. */
+         they carried, the live/verified counts, the route to Tayo, the
+         route to the map, moves into one line below the search. */
       .viewseg { display: none; }
 
       /* Same reasoning as the summary card: this is an opt-in prompt, not
@@ -362,7 +362,7 @@
       .prox-txt b { font-size: 13.5px; }
 
       /* 16px floor: below it iOS zooms the page on focus */
-      /* No appbar to clear on a phone — it collapses to 0 height here. */
+      /* No appbar to clear on a phone, it collapses to 0 height here. */
       .searchbar { top: 8px; padding: 0 14px; gap: 8px; }
       .searchbar input { font-size: 16px; }
       .searchbar button { width: 30px; height: 30px; }
@@ -384,7 +384,7 @@
       }
       .toolbar > * { flex: none; }
       /* 40px here beat the 44px in app.css purely on specificity (#id vs
-         .class descendant) — the floor was declared and then silently
+         .class descendant), the floor was declared and then silently
          overridden. Kept as an id rule so the font-size override still
          applies, but no longer below the touch minimum. */
       #sortSel { min-height: 44px; font-size: 13px; }
@@ -395,7 +395,7 @@
 
       /* Readability over the glass effect, same call as the chat page. A card
          on a phone spans the full width, so the wallpaper runs directly under
-         the body copy — at 46% alpha the brief was barely legible.
+         the body copy, at 46% alpha the brief was barely legible.
 
          MATCHED TO .rc, the recently-viewed tile, because the two sit inches
          apart on this page and did not look related: .rc was 0.72 and this was
@@ -431,7 +431,7 @@
         border-radius: 22px 22px 0 0;
       }
       .cmpsheet h3 { font-size: 21px; }
-      /* the comparison is genuinely wide — let it scroll rather than crush */
+      /* the comparison is genuinely wide, let it scroll rather than crush */
       #cmpTable { overflow-x: auto; }
       .cmptable { min-width: 520px; }
     }

@@ -9,7 +9,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <title>{"Syndication engine — tests"}</title>
+        <title>{"Syndication engine, tests"}</title>
         <meta name="robots" content="noindex, nofollow" />
         <style  dangerouslySetInnerHTML={{ __html: inline("syndication-test", "inline-1.css") }} />
       </head>

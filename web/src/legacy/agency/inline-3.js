@@ -1,5 +1,5 @@
 
-    // Channel attribution (Phase B) — every lead carries a source→tap→Tayo→lead chain.
+    // Channel attribution (Phase B), every lead carries a source→tap→Tayo→lead chain.
     const CH = {
       instagram: { label: 'Instagram', color: '#DD2A7B', short: 'IG' },
       tiktok:    { label: 'TikTok',    color: '#161616', short: 'TT' },
@@ -55,7 +55,7 @@
     const scoreTone = s => s >= 80 ? 'color:var(--success);border-color:var(--success)' : s >= 60 ? 'color:var(--brand);border-color:var(--brand)' : 'color:var(--ink-dim);border-color:var(--ink-dim)';
     const chnBadge = c => `<span class="chn" style="background:${CH[c].color}" title="Attributed to ${CH[c].label}">${chMark(c, 12)}</span>`;
 
-    // ══════════ CRM — pipeline table ══════════
+    // ══════════ CRM, pipeline table ══════════
     const STAGE_ORDER = ['New','Contacted','Viewing','Negotiation','Won'];
     const STAGE_CLS = { New:'st-new', Contacted:'st-cont', Viewing:'st-view', Negotiation:'st-nego', Won:'st-won' };
     const CRM = { page:1, per:10, sortK:'recent', sortDir:-1, fStage:null, fSrc:null, sel:new Set(), loaded:false, error:null };
@@ -78,7 +78,7 @@
       a.sort((p,q)=>{ const pv=key(p), qv=key(q); return pv<qv?-dir : pv>qv?dir : 0; });
       return a;
     }
-    // ── attribution breakdown bar — moved into the Ask-Tayo side panel
+    // ── attribution breakdown bar, moved into the Ask-Tayo side panel
     // (PANEL.crm below); only rendered while that panel is open, hence the
     // null check rather than assuming the element is on the page. ──
     function renderBrk(){
@@ -90,7 +90,7 @@
         ? `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
          <div class="chips">${order.map(c => `<span class="c2">${chnBadge(c)} ${CH[c].label} <b>${counts[c]}</b></span>`).join('')}</div>
          <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`
-        : '<p class="muted" style="font-size:13px;margin:0">No leads yet — attribution fills in once one arrives.</p>';
+        : '<p class="muted" style="font-size:13px;margin:0">No leads yet, attribution fills in once one arrives.</p>';
     }
     function renderCrmFunnel(){
       /* Five stages reading zero, above an empty table, is a row of furniture
@@ -200,7 +200,7 @@
       document.getElementById('crmBulk').classList.toggle('on', n>0);
       document.getElementById('crmBulkN').textContent = n + ' selected';
       // On mobile there's no checkbox on every card (the avatar doubles as
-      // the tap target) — .selecting turns every avatar into a selection
+      // the tap target), .selecting turns every avatar into a selection
       // ring the moment one lead is picked, so the affordance is visible
       // without a checkbox drawn on nine rows at once. No-op on desktop,
       // which still shows a real checkbox per row.
@@ -354,7 +354,7 @@
         leads = rows.map(mapLead);
         CRM.loaded = true; CRM.error = null;
         renderCrm();
-        // the negotiator pane reads the same rows — no second fetch
+        // the negotiator pane reads the same rows, no second fetch
         buildHandoffs(leads); renderHandoffs();
         /* Whichever of the two requests lands second completes the picture:
            the roster supplies the people, the leads supply their workload. */
@@ -459,7 +459,7 @@
                 const who = id ? (people.find(m => m.id === id) || {}).name : 'nobody';
                 toast(updated === requested
                   ? updated + ' lead' + (updated !== 1 ? 's' : '') + ' assigned to ' + who
-                  : updated + ' of ' + requested + ' assigned to ' + who + ' — the rest could not be changed');
+                  : updated + ' of ' + requested + ' assigned to ' + who + ', the rest could not be changed');
                 CRM.sel.clear();
                 return loadLeads();
               })
@@ -470,7 +470,7 @@
           });
         };
         loadRoster().then(people => {
-          if (!people.length) { toast('Could not load your team — try again in a moment'); return; }
+          if (!people.length) { toast('Could not load your team, try again in a moment'); return; }
           show(people);
         });
       }
@@ -544,8 +544,8 @@
           SynListings.queueMessages(picked.map(l => l.id), body)
             .then(({ queued, requested, error }) => {
               toast(queued === requested
-                ? queued + ' handoff' + (queued !== 1 ? 's' : '') + ' queued — press Send when ready'
-                : queued + ' of ' + requested + ' queued — ' + (error || 'the rest were refused'));
+                ? queued + ' handoff' + (queued !== 1 ? 's' : '') + ' queued, press Send when ready'
+                : queued + ' of ' + requested + ' queued, ' + (error || 'the rest were refused'));
               CRM.sel.clear(); renderCrmTable();
               openOutbox();
             })
@@ -629,7 +629,7 @@
             .then((r) => {
               btn.disabled = false; btn.textContent = 'Send now';
               toast(!r.claimed ? 'Nothing waiting to send'
-                : r.sent + ' sent' + (r.failed ? ', ' + r.failed + ' failed — see below' : ''));
+                : r.sent + ' sent' + (r.failed ? ', ' + r.failed + ' failed, see below' : ''));
               paintOutbox();
               paintWaiting();
             })
@@ -659,7 +659,7 @@
           // null means we could not tell. Silence beats a wrong warning.
           if (!r || r.twilioReady !== false) { box.hidden = true; return; }
           box.innerHTML = '<b>WhatsApp is not connected yet</b>'
-            + '<p>Messages stay queued and unharmed — nothing is lost and nothing '
+            + '<p>Messages stay queued and unharmed, nothing is lost and nothing '
             + 'has failed. Sending needs these on the project first:</p>'
             + '<code>' + (r.missing || []).join('<br>') + '</code>';
           box.hidden = false;
@@ -688,7 +688,7 @@
             </div>`;
           }).join('');
         }).catch(err => {
-          host.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load the outbox — ' +
+          host.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load the outbox, ' +
             esc((err && err.message) || 'please try again') + '</p>';
           console.error('listOutbox failed', err);
         });
@@ -717,7 +717,7 @@
           .then(({ deleted, requested, error }) => {
             toast(deleted === requested
               ? deleted + ' lead' + (deleted !== 1 ? 's' : '') + ' deleted'
-              : deleted + ' of ' + requested + ' deleted — ' + (error || 'the rest could not be removed'));
+              : deleted + ' of ' + requested + ' deleted, ' + (error || 'the rest could not be removed'));
             CRM.sel.clear();
             return loadLeads();
           })
@@ -731,7 +731,7 @@
         const b = e.target.closest('[data-bulk]'); if(!b) return;
         const act = b.dataset.bulk;
         if (act === 'clear') { CRM.sel.clear(); renderCrmTable(); return; }
-        if (!window.SynListings) { toast('Cannot do that right now — the data layer did not load'); return; }
+        if (!window.SynListings) { toast('Cannot do that right now, the data layer did not load'); return; }
         if (act === 'assign') return bulkAssign(b);
         if (act === 'message') return bulkMessage();
         if (act === 'delete') return bulkDelete();
@@ -740,7 +740,7 @@
       document.getElementById('crmAdd').addEventListener('click', () => { toast('Refreshing leads...'); CRM.loaded = false; CRM.error = null; renderCrmTable(); loadLeads(); });
       document.getElementById('crmBoardBtn').addEventListener('click', () => toast('Board view is coming next'));
 
-      /* TODAY — everything owed, across every lead, in the order it is owed.
+      /* TODAY, everything owed, across every lead, in the order it is owed.
          RLS narrows tasks to the caller's own unless they are an admin or
          owner, which is the right default: an agent opening this wants their
          list, not the agency's. */
@@ -993,8 +993,8 @@
         </div>
         <!-- Handing a lead over is the last thing this screen is for, and
              WhatsApp was the only way out of it. The number was printed as
-             plain text — unTAPPABLE on the one device where a phone number is
-             a button — and there was no email route at all. All three are
+             plain text, unTAPPABLE on the one device where a phone number is
+             a button, and there was no email route at all. All three are
              offered now, and each is hidden rather than faked when the lead
              did not leave that detail. -->
         <div class="lead-ho">
@@ -1069,7 +1069,7 @@
     scrim.addEventListener('click', closeLead);
     /* One listener on the container instead of one per render. The drawer's
        innerHTML is replaced by eleven different templates and each used to
-       re-query the close button by id and bind again — eleven copies of the
+       re-query the close button by id and bind again, eleven copies of the
        same line, and eleven elements sharing one id. The container outlives
        every template, so delegation is the honest shape for this. */
     drawer.addEventListener('click', (e) => { if (e.target.closest('.x')) closeLead(); });
@@ -1083,7 +1083,7 @@
     };
     const PSTAGES = [
       { id: 'uploaded', label: 'Listing uploaded', who: 'Auto-generation triggers' },
-      { id: 'generating', label: 'Content generating', who: 'GPT-4o — no action needed' },
+      { id: 'generating', label: 'Content generating', who: 'GPT-4o, no action needed' },
       { id: 'approval', label: 'Draft', who: 'You review before publishing' },
       { id: 'scheduled', label: 'Scheduled', who: 'Auto-publishes at best time' },
       { id: 'published', label: 'Published', who: 'Live \u2014 click-throughs counted' },
@@ -1102,8 +1102,8 @@
     ];
     // Mobile collapses the pipeline into an accordion (see renderPipeline);
     // these two are the only stages where the agent has something to do, so
-    // they're the only ones that start open. Desktop ignores this — every
-    // .col-body is always visible there — so it costs nothing on the
+    // they're the only ones that start open. Desktop ignores this, every
+    // .col-body is always visible there, so it costs nothing on the
     // columns' native home.
     const PSTAGE_ACTION = { approval: true, attention: true };
     /* One glyph per stage, so a column reads as itself before the sentence
@@ -1926,7 +1926,7 @@
         const bodyId = 'colbody-' + s.id;
         // .ch is a real <button> so mobile can make it an accordion header
         // without a second click handler duplicating what [data-act] and
-        // .pcard already do below — see the dedicated listener after the
+        // .pcard already do below, see the dedicated listener after the
         // pipeline's action handler. Desktop keeps it looking like the old
         // div: .col > .ch resets the button chrome back to flush/borderless.
         return `<div class="col${open ? ' open' : ''}" data-stage="${s.id}">
@@ -2054,7 +2054,7 @@
       // `empty` drives the mobile agenda list: days with nothing scheduled
       // are omitted there (Google Calendar's mobile Schedule view does the
       // same), except `today`, which stays as the "you are here" anchor even
-      // when it's empty — desktop ignores the class and renders all seven.
+      // when it's empty, desktop ignores the class and renders all seven.
       el.innerHTML = names.map((dn, i) => `
         <div class="cday ${i === ti ? 'today' : ''}${!buckets[i].length ? ' empty' : ''}">
           <div class="dh"><span class="dn">${dn}</span><span class="dd">${nums[i]}</span></div>
@@ -2333,7 +2333,7 @@
       scrim.classList.add('on'); drawer.classList.add('on');
 
       /* WHAT WILL ACTUALLY GO OUT. A listing with twelve photographs posts as
-         a carousel of ten, because that is Meta's limit — and an agency that
+         a carousel of ten, because that is Meta's limit, and an agency that
          uploaded twelve and was told nothing would reasonably assume all
          twelve went. Silent truncation is the kind of small lie that is only
          ever discovered by someone scrolling their own post. */
@@ -2521,7 +2521,7 @@
                "scheduled" was a safe word; it is not any more, and the toast is
                the only place a person finds that out before the time arrives. */
             else if (!now) toast(n + (n === 1 ? ' post scheduled' : ' posts scheduled')
-              + ' — going out for real at that time');
+              + ', going out for real at that time');
             /* What actually happened, from the publisher's own count, rather
                than "sent" on the strength of having asked. A drain that could
                not run leaves them queued, and saying so is the difference
@@ -2904,20 +2904,20 @@
         b.disabled = true; b.textContent = 'Queueing…';
         SynListings.updateSocialPost(p.postId, { at: new Date().toISOString() })
           .then(() => {
-            toast('Moved to the front of the queue — it goes out once a channel is connected');
+            toast('Moved to the front of the queue, it goes out once a channel is connected');
             loadPipeline();
           })
           .catch((err) => { b.disabled = false; b.textContent = 'Send now'; toast((err && err.message) || 'Could not do that'); });
       }
       if (window.synMotion) synMotion.refresh();
     });
-    // stage accordion header — same expand/collapse idiom as the nav rail's
+    // stage accordion header, same expand/collapse idiom as the nav rail's
     // .grp-sec (line ~67) and the taskbar's .agd-sec (line ~1469), so there
     // is one accordion pattern in this codebase, not three. A second
     // listener rather than folding into the one above: that one already
     // returns early for anything that isn't [data-act] or inside .pcard, so
     // a .ch click reaches here safely without also trying to open a preview.
-    // Harmless above 1024px — .col-body only ever gets display:none inside
+    // Harmless above 1024px, .col-body only ever gets display:none inside
     // the mobile block, so toggling .open there has nothing to show or hide.
     document.getElementById('pipeline').addEventListener('click', (e) => {
       const h = e.target.closest('.ch'); if (!h) return;
@@ -3055,7 +3055,7 @@
       document.getElementById('calendar').style.display = cal ? 'grid' : 'none';
       if (cal) renderCalendar();
     });
-    // bento "needs approval" jumps to the approval column — bento now lives
+    // bento "needs approval" jumps to the approval column, bento now lives
     // in the Ask-Tayo panel (PANEL.social.after, below), so it only exists
     // in the DOM while that panel is open; this is wired there instead.
     function jumpToApproval(e) {
@@ -3107,7 +3107,7 @@
       else if (pipeDeskQ.addListener) pipeDeskQ.addListener(redraw);
     })();
 
-    // ── listings — editable, with the 21-day freshness rule ──
+    // ── listings, editable, with the 21-day freshness rule ──
     // Every listing must be re-listed every 21 days or it stops showing to
     // buyers (matches Tayo's freshness filter). `days` = days since (re)listed.
     /* The database is the ONLY source of listings. There is no seed set and no
@@ -3360,7 +3360,7 @@
        never a source of truth and never a seed. The old `…_v2` fallback was
        removed deliberately: reading it back resurrected demo listings that had
        been deleted, so a property the agency never uploaded reappeared. Empty
-       is the correct starting state — hydrateListings() fills it from the
+       is the correct starting state, hydrateListings() fills it from the
        database, and an agency with no uploads sees none. */
     /* NOT SEEDED FROM localStorage ANY MORE (Eden, 2026-10-07). The saved copy was painted first and the database
        answer replaced it a moment later, so an agency saw listings from two weeks ago (some since deleted) flash and
@@ -3484,7 +3484,7 @@
       });
     })();
 
-    // listings toolbar state (filter / search / sort) — operates on LISTINGS_DATA
+    // listings toolbar state (filter / search / sort), operates on LISTINGS_DATA
     const LIST = { f: 'all', q: '', sort: 'fresh' };
     function listFiltered() {
       let a = LISTINGS_DATA.map((l, i) => ({ l, oi: i }));
@@ -3586,7 +3586,7 @@
         [LISTINGS_DATA.length, 'Total'],
         [LISTINGS_DATA.filter(l => l.st === 'verified').length, 'Verified'],
         [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
-        [exp, 'Expired — re-list'],
+        [exp, 'Expired, re-list'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
       const rows = listFiltered(), grid = document.getElementById('lgrid');
@@ -3739,12 +3739,12 @@
             <!-- State first, because it decides the other two. It is a real
                  select: there are 36 states and the FCT, that list does not
                  change, and anything outside it is a mistake worth refusing.
-                 City and area stay inputs with a suggestion list — Nigeria has
+                 City and area stay inputs with a suggestion list, Nigeria has
                  thousands of towns, and blocking a listing in one we forgot is
                  a worse failure than an inconsistent spelling. -->
             <div class="row2">
               <div class="field"><label>State *</label>
-                <select id="lfState"><option value="">— Select a state —</option></select>
+                <select id="lfState"><option value="">- Select a state -</option></select>
                 <span class="ferr" id="e_state" role="alert"></span></div>
               <div class="field"><label>City *</label>
                 <div class="combo" id="lfCityCombo">
@@ -3771,7 +3771,7 @@
             <!-- Latitude and longitude were two number fields on the form an
                  agency fills to post its first property. Nobody selling a house
                  knows its coordinates, and the pair was optional, so the honest
-                 outcome was that most listings simply had none — no map pin, no
+                 outcome was that most listings simply had none, no map pin, no
                  proximity matching. They are looked up from the address now and
                  kept here, so the save path below is unchanged. -->
             <input type="hidden" id="lfLat" value="${esc(d.latitude)}">
@@ -3899,7 +3899,7 @@
           </fieldset>
           <fieldset class="lf-sec"><legend>Trust &amp; documents</legend>
             <div class="row2">
-              <div class="field"><label>Title document</label><select id="lfTitleType"><option value="">— Select —</option>${opt(TITLE_TYPES, d.title_type || '', TITLE_LABEL)}</select></div>
+              <div class="field"><label>Title document</label><select id="lfTitleType"><option value="">- Select -</option>${opt(TITLE_TYPES, d.title_type || '', TITLE_LABEL)}</select></div>
               <div class="field"><label>Gross yield (%)</label><input id="lfYield" type="number" inputmode="decimal" min="0" max="100" step="any" value="${esc(d.yield_pct)}" placeholder="optional"></div>
             </div>
             <div class="lf-ro"><span class="k">Verification</span><span class="v">${vLabel}</span></div>
@@ -4097,15 +4097,15 @@
          places: free, no key, and asked with the city because "Bodija" alone
          matches in several countries.
 
-         Runs on blur of the address, city or state — one request when they
+         Runs on blur of the address, city or state, one request when they
          have finished typing, not one per keystroke. Failure is silent and
          costs only the pin: coordinates were always optional here, and a
          listing that cannot be geocoded is still a listing. It never blocks
          the save. */
       /* ONE QUESTION WAS THE WRONG QUESTION, AND IT ASKED IT ONCE.
          This sent the address exactly as typed and gave up on a miss. Every
-         listing a real agency has ever uploaded came out with no pin —
-         invisible on every map — while the 501 seeded ones looked fine because
+         listing a real agency has ever uploaded came out with no pin -
+         invisible on every map, while the 501 seeded ones looked fine because
          the seed wrote coordinates directly. Two for two, silently.
 
          The reason is in the data, not the agent. Measured against Nominatim:
@@ -4116,8 +4116,8 @@
          Nigerian OSM holds streets but almost no house numbers, so leading
          "Number 4," guarantees a miss on an address that is otherwise findable.
          And it goes further: "Awolowo Road, Bodija" and "Okeola Agbowo Street"
-         both miss even with the number stripped — those streets are not mapped
-         at all — while "Bodija, Ibadan" and "Agbowo, Ibadan" both resolve.
+         both miss even with the number stripped, those streets are not mapped
+         at all, while "Bodija, Ibadan" and "Agbowo, Ibadan" both resolve.
 
          So the ladder ends at the AREA, because the area is the thing Nigerian
          map data actually has. A pin in the right neighbourhood is worth far
@@ -4126,7 +4126,7 @@
 
          What it must not do is imply a doorstep it does not know. Each rung
          says which one it landed on, so nobody mistakes an area centroid for a
-         surveyed address — and the lat/lng fields stay editable for an agency
+         surveyed address, and the lat/lng fields stay editable for an agency
          that wants to place it exactly. */
       const HOUSE_NO =
         /^\s*(?:(?:no|number|nos|house|flat|plot|suite|apt|apartment|block)\s*\.?\s*)?\d+\s*[a-z]?\s*(?:[,/-]\s*|\s+)/i;
@@ -4135,7 +4135,7 @@
         const A = addr.trim(), H = hood.trim(), C = city.trim(), S = state.trim();
         /* The area belongs in the street rungs too, unless the address already
            says it. "Okeola Agbowo Street, Ibadan" asks a bigger question than
-           "Okeola Agbowo Street, Agbowo, Ibadan" — several cities have a street
+           "Okeola Agbowo Street, Agbowo, Ibadan", several cities have a street
            of the same name, and the area is what separates them. Skipped when
            the address already contains it so the query does not read
            "...Bodija, Bodija, Ibadan". */
@@ -4157,7 +4157,7 @@
 
       const GEO_SAYS = {
         address: () => 'Map pin found from the address.',
-        street:  () => 'Map pin found from the street — house numbers are not mapped in Nigeria.',
+        street:  () => 'Map pin found from the street, house numbers are not mapped in Nigeria.',
         area:    (w) => 'That street is not on the map, so the pin sits on ' + w + '. '
                       + 'Good enough to show the area; edit the pin if you need it exact.',
         city:    (w) => 'Pinned to ' + w + ' only. Add the area above to place it closer.',
@@ -4452,7 +4452,7 @@
           if (!hits.length) {
             /* Not an error state. Somewhere we have no list for is a place an
                agency may still legitimately be selling a house. */
-            list.innerHTML = '<div class="combo-empty">No match — type it in and carry on.</div>';
+            list.innerHTML = '<div class="combo-empty">No match, type it in and carry on.</div>';
           } else {
             list.innerHTML = hits.slice(0, 60).map((v, i) => {
               let label = esc(v);
@@ -4527,7 +4527,7 @@
          posting its first property typed all three from memory.
 
          The lists narrow as you go, and choosing a city fills the state in
-         when it is still blank — plenty of people think of the town first, and
+         when it is still blank, plenty of people think of the town first, and
          being made to answer in our order is the kind of small rudeness that
          makes a form feel like paperwork. */
       (function places() {
@@ -4549,7 +4549,7 @@
                     .filter(Boolean);
         }
 
-        stateEl.innerHTML = '<option value="">— Select a state —</option>'
+        stateEl.innerHTML = '<option value="">- Select a state -</option>'
           + SynPlaces.STATES.map((st) =>
               '<option value="' + esc(st) + '">' + esc(st) + '</option>').join('');
         /* Canonicalised, or an existing "Oyo state" listing opens with an
@@ -4570,8 +4570,8 @@
           const hint = g('lfHoodHint');
           if (hint) {
             hint.textContent = list.length
-              ? list.length + ' areas in ' + city + ' — start typing, or enter your own.'
-              : (city ? 'Type the area — we have no list for ' + city + ' yet.' : '');
+              ? list.length + ' areas in ' + city + ', start typing, or enter your own.'
+              : (city ? 'Type the area, we have no list for ' + city + ' yet.' : '');
           }
         }
 
@@ -4641,7 +4641,7 @@
            Recording what was drawn made that detectable; this tells somebody.
 
            COMPARED HERE, NOT BY THE DATABASE. Both strings come from the same
-           naira(), so the comparison is consistent by construction — and
+           naira(), so the comparison is consistent by construction, and
            asking the server would add a round trip to answer a question
            already in hand, plus a second formatter that has to agree with the
            first. */
@@ -4807,7 +4807,7 @@
           galNote(`Uploading ${files.length} ${label}…`);
 
           /* DRAWN WITH WHAT IS ON SCREEN. The price is whatever is in the
-             form, which may not be saved yet — and that is the right value:
+             form, which may not be saved yet, and that is the right value:
              it is the price this listing is about to have. Verification is
              not the agency's to type, so it comes from the saved row. */
           const brandOpts = (window.BRAND && (window.BRAND.logo_url || '').trim())
@@ -4823,7 +4823,7 @@
 
           SynListings.uploadPropertyPhotos(files, (done, total, name) => {
             Dyn.set(pick, done >= total ? 'Finishing…' : `Uploading ${done + 1} of ${total}…`);
-            if (name) galNote(`Uploading ${done + 1} of ${total} — ${name}`);
+            if (name) galNote(`Uploading ${done + 1} of ${total}, ${name}`);
           }, brandOpts)
             .then(({ urls, items, failed }) => {
               (items || []).forEach((it) => {
@@ -4884,7 +4884,7 @@
          findPin() above geocodes while the agent types, which is worth having
          because they see the pin land and can correct it. But a form is not a
          guarantee: it only runs when somebody uses this screen, in a browser,
-         with the network holding — and an agent who pastes an address and hits
+         with the network holding, and an agent who pastes an address and hits
          Save immediately can outrun it. Every listing a real agency had
          uploaded before today was unplaced, and nothing said so.
 
@@ -5121,7 +5121,7 @@
           electricity_band: g('lfBand').value || null,
           // Split on comma, pipe OR newline. People paste amenity lists straight
           // out of a brochure and those use pipes and line breaks at least as
-          // often as commas — comma-only silently stored the whole list as ONE
+          // often as commas, comma-only silently stored the whole list as ONE
           // amenity, which looks fine in the form and breaks every filter.
           amenities: g('lfAmen').value.split(/[|,\n;]+/).map(s => s.trim()).filter(Boolean),
           title_type: g('lfTitleType').value || null, yield_pct: num(g('lfYield').value),
@@ -5175,7 +5175,7 @@
             SynListings.create(data).then((id) => {
               item.id = id;
               if (sdId) sdDelete(sdId);           /* finished: the draft has become a listing */
-              toast('Listing created — saved, and unverified until the desk checks it');
+              toast('Listing created, saved, and unverified until the desk checks it');
               /* The floor needs the listing's id -- it lives in its own table
                  -- so it follows the create rather than riding on it. */
               saveFloor(id, floor);
@@ -5191,10 +5191,10 @@
               writeListingDraft(kept.data, kept.floor);
               SD.cur = sdId; sdQueue(kept.data, kept.floor, WZ_TOTAL, true);
               saveListings(); renderListings();
-              toast('Not saved to the server: ' + ((e && e.message) || e) + ' — kept as a draft in Listings');
+              toast('Not saved to the server: ' + ((e && e.message) || e) + ', kept as a draft in Listings');
             });
           } else {
-            toast('Listing created here only — sign in as an agency to save it');
+            toast('Listing created here only, sign in as an agency to save it');
           }
         } else {
           Object.assign(LISTINGS_DATA[idx], data); // verification_status left untouched (system-owned)
@@ -5210,7 +5210,7 @@
               .catch((e) => toast('Not saved to the server: ' + ((e && e.message) || e)));
             saveFloor(id, floor);
           } else {
-            toast(dbBacked ? 'Updated here only — this listing has no server record' : 'Listing updated');
+            toast(dbBacked ? 'Updated here only, this listing has no server record' : 'Listing updated');
           }
         }
         saveListings(); renderListings(); closeLead();
@@ -5287,7 +5287,7 @@
           const first = !readListingDraft();
           sdQueue(data, fl, wzStep, immediate === true);
           if (!writeListingDraft(data, fl)) return;
-          if (note) note.textContent = 'Kept on this device as you type — close this and it will be here when you come back.';
+          if (note) note.textContent = 'Kept on this device as you type, close this and it will be here when you come back.';
           if (first) renderListings();
         };
         const soon = () => { clearTimeout(timer); timer = setTimeout(snapshot, 600); };
@@ -5528,10 +5528,10 @@
         saveListings(); renderListings();
         if (dbBacked && l.id) {
           SynListings.relist(l.id)
-            .then(() => toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days'))
+            .then(() => toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days'))
             .catch((e) => toast('Not re-listed on the server: ' + ((e && e.message) || e)));
         } else {
-          toast('Re-listed — “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days');
+          toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days');
         }
       }
     });
@@ -5605,13 +5605,13 @@
 
     /* ── database hydration ───────────────────────────────────────────────
        Listings used to live in localStorage only, so nothing an agency
-       created ever reached the database — Tayo and browse could not see it.
+       created ever reached the database, Tayo and browse could not see it.
        When the visitor is signed in as a member of an agency, the database
        becomes the source of truth and replaces the local copy. When they are
        not, the local demo data stands so the dashboard still demonstrates.
 
        `dbBacked` gates every write below. It exists so the UI never claims a
-       save persisted when it only touched this browser — the failure mode
+       save persisted when it only touched this browser, the failure mode
        this whole change was made to remove. */
     let dbBacked = false;
     function fromDbRow(p) {
@@ -5639,14 +5639,14 @@
           announceListings();
           bootDone('listings');
         });
-      }).catch((e) => { console.warn('listings: could not load —', (e && e.message) || e); bootDone('listings'); });
+      }).catch((e) => { console.warn('listings: could not load -', (e && e.message) || e); bootDone('listings'); });
     }
     /* Start as soon as the page is parsed, not at window load: load waits for every image and font, which is time the
        agency spends looking at the opening screen for nothing. */
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hydrateListings);
     else hydrateListings();
 
-    // ── marketing — findings first, then the posts that produced them ──
+    // ── marketing, findings first, then the posts that produced them ──
     // Campaigns own their creatives; each creative is measured on its own
     // (CTR, leads) and the AI scales winners / pauses losers.
     const MK_KEY = 'synapse_agency_campaigns_v1';
@@ -5749,7 +5749,7 @@
       /* THREE OF THESE FOUR TILES REPORTED THINGS NOTHING MEASURES.
          Ad spend, cost per lead and best-creative CTR were read from
          CAMPAIGNS[].spend and .ctr -- columns no code path ever writes. They
-         rendered as "₦0k", "—" and "0.0%", which does not read as "not
+         rendered as "₦0k", "-" and "0.0%", which does not read as "not
          built"; it reads as "measured, and the answer is zero". An agency
          would reasonably conclude its campaigns were reaching nobody.
 
@@ -5929,7 +5929,7 @@
       drawer.innerHTML = `
         <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">New campaign</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 18px">Pick a listing and an audience — the AI generates the first three ad creatives and starts learning.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 18px">Pick a listing and an audience, the AI generates the first three ad creatives and starts learning.</p>
         <div class="lf">
           <div class="field"><label>Campaign name</label><input id="cfN" placeholder="e.g. Ikoyi penthouse push"></div>
           <div class="field"><label>Listing</label>
@@ -5939,7 +5939,7 @@
                budget (₦ thousands)" wrapped mid-phrase. Audience carries the
                longest strings in the form, so it gets a full line like Listing
                above it, and the budget's unit moves out of the label and into
-               the field — where it reads as ₦15k / day, the same way the
+               the field, where it reads as ₦15k / day, the same way the
                campaign card already states it. -->
 
           <!-- WAS "Daily budget", ₦15k/day. Synapse does not buy advertising:
@@ -5954,7 +5954,7 @@
                nobody chose. -->
           <div class="field"><label>Run until</label>
             <input id="cfEnd" type="date" value="${cfDefaultEnd()}">
-            <div class="lf-hint">Starts today. The creatives stay in the pipeline after this date — nothing is deleted.</div>
+            <div class="lf-hint">Starts today. The creatives stay in the pipeline after this date, nothing is deleted.</div>
           </div>
           <div class="field"><label>Channels</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap" id="cfC">
@@ -6307,7 +6307,7 @@
       }).catch((err) => {
         // Leave the key in place: a failed import must not destroy the only copy.
         console.error('campaign import failed', err);
-        toast('Some saved campaigns could not be moved — they are still on this device');
+        toast('Some saved campaigns could not be moved, they are still on this device');
         return false;
       });
     }
@@ -6575,7 +6575,7 @@
     // defer the first render so it runs after the chart primitives initialize
     setTimeout(function () { renderBoard(); loadBoard(); }, 0);
 
-    // ── chart primitives — one brand hue on a muted track; labels wear ink ──
+    // ── chart primitives, one brand hue on a muted track; labels wear ink ──
     const C_BRAND = '#121212', C_TRACK = 'rgba(0,0,0,0.06)';
     function sparkSVG(pts, o) {
       o = o || {};
@@ -6619,7 +6619,7 @@
 
     // ── overview + CRM stat tiles (hero number + 8-week trend) ──
     /* Counted from real records. These were fixed numbers with invented 8-week
-       sparklines — "₦2.4B sales value" and "128 leads" on an account that has
+       sparklines, "₦2.4B sales value" and "128 leads" on an account that has
        neither. Sparklines are omitted entirely: a trend line needs history, and
        inventing the shape of a trend is worse than showing none. */
     const wonLeads = () => leads.filter(l => l.stage === 'Won');
@@ -6637,7 +6637,7 @@
       `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0, { label: (leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0) + '%' })}</div></div>` +
       statTile(fmtB(salesValue()), 'Sales', null);
 
-    /* ── agents — the real roster ─────────────────────────────────────────
+    /* ── agents, the real roster ─────────────────────────────────────────
        This was `const AGENTS = []` with a comment saying it would fill once
        you invited someone. It never could: nothing ever wrote to it. Meanwhile
        agency_members, profiles and agent_profiles already held the team, so an
@@ -6645,19 +6645,19 @@
 
        It reads SynListings.roster() now. Numbers the database actually keeps
        (career closed deals, rating, response rate, years, areas, languages)
-       are shown; numbers it does not keep are shown as "—" rather than
+       are shown; numbers it does not keep are shown as "-" rather than
        computed from nothing. Win rate and average first reply are the two that
        went: agent_daily_snapshots is empty, so every value they had was
-       invented. Active leads is real — it is counted off the leads this portal
+       invented. Active leads is real, it is counted off the leads this portal
        has already loaded, by assigned_agent_id. */
     let AGENTS = [];
     let PENDING = [];   // live invites, shown beside the people who have joined
     const first = n => String(n || '').split(' ')[0];
     const AG = { loaded: false, error: null };
 
-    /* "—" for absent, the number for present. `|| '—'` would turn a real 0
+    /* "-" for absent, the number for present. `|| '-'` would turn a real 0
        closed deals into a dash, which is a different statement. */
-    const agNum = (v, suffix) => v == null ? '—' : (v + (suffix || ''));
+    const agNum = (v, suffix) => v == null ? '-' : (v + (suffix || ''));
 
     /* Your own profile id, so the roster can tell you apart from your team.
        Resolved once, best-effort: a card that cannot tell is a card that shows
@@ -6678,10 +6678,10 @@
         /* Owners and admins are on agency_members, but this pane is "who's on
            the floor". Rendering them put the signed-in account on its own
            roster as a teammate, and a seeded profile named after the agency
-           beside it. Filtered at the source so nothing downstream — sort,
-           summary, top-performer — has to know about them. */
+           beside it. Filtered at the source so nothing downstream, sort,
+           summary, top-performer, has to know about them. */
         /* Pending invites ride on the roster as their own cards, so an agency
-           can see who has been asked and has not joined yet — otherwise an
+           can see who has been asked and has not joined yet, otherwise an
            invite disappears the moment the drawer closes. */
         if (window.SynListings && SynListings.invites) {
           SynListings.invites()
@@ -6748,7 +6748,7 @@
     STATS.agents = '';   // rebuilt from real numbers by renderAgentSummary
     /* The KPI strip and the two performance charts now live in the Ask-Tayo
        side panel, so the Agents pane is just the roster. These render into the
-       panel's markup, which only exists while that panel is open — hence the
+       panel's markup, which only exists while that panel is open, hence the
        null checks rather than assuming the elements are on the page. */
     function renderAgentSummary() {
       /* Owners and admins are on the roster but are not carrying leads, so
@@ -6764,10 +6764,10 @@
         /* Career totals, not "this quarter": closed_deals is a lifetime count
            on the profile. Labelling it by a period we do not measure would be
            a claim the data cannot support. */
-        ['Closed · career', real.reduce((s, a) => s + (a.closed || 0), 0) || '—'],
+        ['Closed · career', real.reduce((s, a) => s + (a.closed || 0), 0) || '-'],
         ['Avg rating', rated.length
           ? (rated.reduce((s, a) => s + a.rating, 0) / rated.length).toFixed(1)
-          : '—'],
+          : '-'],
       ].map(k => `<div class="ag-kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
 
       const blank = '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
@@ -6799,7 +6799,7 @@
       const real = AGENTS.filter(a => !a.pending);
       /* Ranked on closed deals alone now. The tie-breaker used to be win rate,
          which nothing records. Only agents with a recorded count can top the
-         list — an agent with no number is unranked, not last. */
+         list, an agent with no number is unranked, not last. */
       const ranked = real.filter(a => a.closed != null);
       const top = ranked.length ? ranked.reduce((b, a) => a.closed > b.closed ? a : b, ranked[0]) : null;
       const topIdx = top ? AGENTS.indexOf(top) : -1;
@@ -6850,14 +6850,14 @@
         const busy = a.active >= 10;
         const me = a.id === ME;
         /* Only figures the database actually holds. Followers and likes are
-           counted rows; no stars anywhere. Absent stays "—". */
+           counted rows; no stars anywhere. Absent stays "-". */
         const figs = [
           [a.active, 'active'],
           [agNum(a.closed), 'closed'],
           [agNum(a.followers), 'followers'],
           [agNum(a.likes), 'likes'],
         ];
-        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${esc2(a.nm)}'s profile — ${esc2(a.rl)}" style="animation-delay:${i * 45}ms">
+        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${esc2(a.nm)}'s profile, ${esc2(a.rl)}" style="animation-delay:${i * 45}ms">
           <div class="ac-cover">
             ${a.avatar ? `<img src="${esc2(a.avatar)}" alt="" loading="lazy">` : ''}
             <span class="ac-dot ${me ? 'me' : busy ? 'busy' : 'free'}">${me ? 'You' : busy ? 'At capacity' : 'Available'}</span>
@@ -6878,7 +6878,7 @@
           </div>
         </div>`;
       }).join('');
-      /* The empty state hydrated its icon and this branch never did — harmless
+      /* The empty state hydrated its icon and this branch never did, harmless
          until the cards themselves carried icons, which they now do. */
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('agrid'));
     }
@@ -6895,7 +6895,7 @@
     })();
 
     /* Arriving on an invite link. requireAuth has already sent an unauthenticated
-       visitor to sign in and back, so by here there is a session — the function
+       visitor to sign in and back, so by here there is a session, the function
        still checks that the invite belongs to THIS account's email address, so a
        forwarded link cannot let the wrong person in. */
     (function acceptInviteFromLink() {
@@ -7331,7 +7331,7 @@
 
     document.getElementById('agrid').addEventListener('click', (e) => {
       /* Both of these used to be toasts describing work you then had to go and
-         do somewhere else — one sent you to WhatsApp, the other told you to
+         do somewhere else, one sent you to WhatsApp, the other told you to
          find the lead in the CRM yourself. They open the drawer and do it. */
       const mine = e.target.closest('[data-myprofile]');
       if (mine) { e.stopPropagation(); openMyProfile(); return; }
@@ -7349,7 +7349,7 @@
       if (rv) {
         e.stopPropagation(); rv.disabled = true;
         SynListings.revokeInvite(rv.dataset.invRevoke)
-          .then(() => { toast('Invite revoked — that link no longer works.'); loadAgents(); })
+          .then(() => { toast('Invite revoked, that link no longer works.'); loadAgents(); })
           .catch(() => { rv.disabled = false; toast('Could not revoke that.'); });
         return;
       }
@@ -7363,7 +7363,7 @@
     });
     /* ── tours ────────────────────────────────────────────────────────────
        Upcoming group inspections. The agency confirms a slot it has already
-       pre-cleared — accept or adjust, not open-ended scheduling — and can see
+       pre-cleared, accept or adjust, not open-ended scheduling, and can see
        exactly who is coming before the day.
 
        Headcount is deliberately split into "booked" and "confirmed": someone
@@ -7379,7 +7379,7 @@
       return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
         + ' \u00b7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     }
-    /* Reconfirmation is due inside 48h — that is the window where an accurate
+    /* Reconfirmation is due inside 48h, that is the window where an accurate
        headcount still changes what the agent does with their day. */
     const tourDueSoon = (iso) => {
       const h = (new Date(iso) - Date.now()) / 36e5;
@@ -7430,7 +7430,7 @@
           + (people ? '<div class="tour-people">' + people + '</div>' : '')
           + (dead
               /* The pathway back. Cancelling already returned these buyers to
-                 `qualified`, so the tour button is live again on the listing —
+                 `qualified`, so the tour button is live again on the listing -
                  this tells them so, through the same outbox every other message
                  to a buyer uses. */
               ? (t.people.length
@@ -7483,7 +7483,7 @@
            `qualified` so they can be offered a new time. */
         SynListings.cancelTour(no.dataset.tourCancel)
           .then((res) => {
-            toast('Tour cancelled — ' + res.affected + ' ' + (res.affected === 1 ? 'buyer' : 'buyers')
+            toast('Tour cancelled, ' + res.affected + ' ' + (res.affected === 1 ? 'buyer' : 'buyers')
               + ' affected' + (res.leadsReset ? ', ' + res.leadsReset + ' back in the pipeline' : '') + '.');
             loadTours();
           })
@@ -7499,7 +7499,7 @@
         re.disabled = true; re.textContent = 'Inviting…';
         SynListings.queueMessages(leadIds,
           'The viewing you booked has been cancelled, and we are sorry for the change. '
-          + 'New times are open on the listing now — you can pick one that suits you.')
+          + 'New times are open on the listing now, you can pick one that suits you.')
           .then((res) => { toast('Queued for ' + res.queued + ' ' + (res.queued === 1 ? 'buyer' : 'buyers') + ' in the outbox.'); })
           .catch((err) => { re.disabled = false; re.textContent = 'Invite back to pick a new time';
                             toast((err && err.message) || 'Could not queue that.'); });
@@ -7566,7 +7566,7 @@
       } else {
         SynListings.thread(a.id)
           .then((t) => { msgs = t.messages; paint(msgs); })
-          .catch((err) => { box.innerHTML = '<div class="tm-empty">Could not load this thread — '
+          .catch((err) => { box.innerHTML = '<div class="tm-empty">Could not load this thread, '
             + esc2((err && err.message) || 'please try again') + '</div>'; });
       }
 
@@ -7579,7 +7579,7 @@
         send.disabled = true; input.disabled = true;
         SynListings.sendTeamMessage(a.id, text)
           .then((m) => { msgs.push(m); paint(msgs); input.value = ''; })
-          .catch((err) => toast('Not sent — ' + ((err && err.message) || 'please try again')))
+          .catch((err) => toast('Not sent, ' + ((err && err.message) || 'please try again')))
           .then(() => { send.disabled = false; input.disabled = false; input.focus(); });
       });
       setTimeout(() => { SynMatches.focusUnlessTouch(document.getElementById('tmInput')); }, 60);
@@ -7596,7 +7596,7 @@
       drawer.innerHTML = `
         <button class="x" aria-label="Close">×</button>
         <div style="font-size:19px;font-weight:700">Assign a lead</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it — whoever holds it now is shown under each one.</p>
+        <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it, whoever holds it now is shown under each one.</p>
         <div id="asgList">${
           open.length
             ? open.map((l) => {
@@ -7662,7 +7662,7 @@
         send.disabled = !ok; send.setAttribute('aria-disabled', String(!ok));
       });
       email.focus();
-      /* This pushed a fake row onto AGENTS and toasted "Invite sent — they get
+      /* This pushed a fake row onto AGENTS and toasted "Invite sent, they get
          a link to join this workspace". Nothing was sent: no row was written,
          no email left the browser, and the fake teammate disappeared on the
          next refresh. Now that the roster is read from agency_members, a
@@ -7670,7 +7670,7 @@
 
          It cannot be finished from here. Adding someone means inserting into
          agency_members with their profile_id, and an email address cannot be
-         resolved to a profile client-side — `profiles` has no email column and
+         resolved to a profile client-side, `profiles` has no email column and
          auth.users is not readable from the browser. That needs an
          agency_invites table and a function that emails the link. Until then
          this says so instead of pretending. */
@@ -7691,7 +7691,7 @@
               + '<div class="inv-link" id="invLink">' + esc2(url) + '</div>'
               + '<button class="btn btn-primary btn-block" id="invCopy" style="margin-top:12px">Copy link</button>';
             document.getElementById('invCopy').addEventListener('click', () => {
-              const done = () => toast('Link copied — send it to ' + inv.email + '.');
+              const done = () => toast('Link copied, send it to ' + inv.email + '.');
               if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(url).then(done).catch(() => selectLink());
               } else selectLink();
@@ -7721,7 +7721,7 @@
     // Verification lives on the listing cards (verified/pending badge + freshness),
     // so there is no standalone Verification pane.
 
-    // ── AI business advisor (overview) — prescriptive, not just dashboards ──
+    // ── AI business advisor (overview), prescriptive, not just dashboards ──
     /* The ADVISOR array and renderAdvisor() lived here: three fixed questions
        -- "Why are sales down this month?", "Where should I focus today?",
        "Which listings are underperforming?" -- rendered as buttons with
@@ -7736,15 +7736,15 @@
     // ── Tayo Negotiator (Phase C) ──
     // Negotiation authority: the floor is an encrypted, engine-only field.
     // Negotiation authority (per-property floors) was removed with the
-    // property grid it rendered into — see #pane-negotiator.
+    // property grid it rendered into, see #pane-negotiator.
 
-    // Handoff summaries — Tayo pre-negotiated, ready to close.
+    // Handoff summaries, Tayo pre-negotiated, ready to close.
     // Tayo-negotiated handoffs. Empty until Tayo actually negotiates a real
-    // lead on a real listing — this held five invented buyers with invented
+    // lead on a real listing, this held five invented buyers with invented
     // transcripts, offers and agreed prices for properties that never existed.
     /* Real ones only. This array held five invented buyers with invented
        transcripts for properties that never existed, and was emptied for that
-       reason — but it was then left with no data path at all, so the pane
+       reason, but it was then left with no data path at all, so the pane
        could never show anything however much the agency did.
 
        It fills from leads now. A lead carries preferences.negotiation when the
@@ -7855,7 +7855,7 @@
         });
     }
     /* Both new segments follow the pattern the other panes use: flip the .on
-       class, set the state, re-render. Neither invents data — the rating is
+       class, set the state, re-render. Neither invents data, the rating is
        what buildHandoffs already derived, and the roster sort reads the same
        rows the grid draws from. */
     let HF = 'all';
@@ -7886,7 +7886,7 @@
           + '<span class="ov-blank-i" data-icon="negotiate"></span>'
           + '<b>Nothing ready to close yet</b>'
           + '<p>Tayo hands a buyer over once it has qualified them and agreed a price. '
-          + 'That happens on your live listings — once those are up and leads start '
+          + 'That happens on your live listings, once those are up and leads start '
           + 'arriving, finished negotiations land here with the full transcript.</p>'
           + '<button class="btn btn-ghost" type="button" data-go-listings>Go to listings</button>'
           + '</div>';
@@ -7901,10 +7901,10 @@
         return;
       }
       document.getElementById('handoffs').innerHTML = shown.map((h, i) => `
-        <div class="card handoff" role="group" aria-label="Tayo deal report — ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
+        <div class="card handoff" role="group" aria-label="Tayo deal report, ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
           <!-- propImg() went with the invented handoffs and was never replaced,
                so this line threw the moment the array had anything in it. It
-               never fired before because the array was permanently empty — the
+               never fired before because the array was permanently empty, the
                pane could not fail because it could not render. The card's own
                gradient is a dark ground built for white text, so there is
                nothing to fall back to. -->
@@ -7937,10 +7937,10 @@
       drawer.innerHTML = `<button class="x" aria-label="Close">×</button>
         <div style="display:flex;align-items:center;gap:10px"><span class="o" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#121212,#121212);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">T</span><div><div style="font-size:18px;font-weight:700">${h.buyer}</div><div class="ph">${h.prop} · ${h.price}</div></div></div>
         ${Array.isArray(h.transcript) && h.transcript.length
-          ? `<p class="muted" style="font-size:12px;margin-top:10px">Tayo&#39;s full conversation — the five stages, verbatim. Every price exchange is logged to the deal room.</p>
+          ? `<p class="muted" style="font-size:12px;margin-top:10px">Tayo&#39;s full conversation, the five stages, verbatim. Every price exchange is logged to the deal room.</p>
              <div class="tr">${h.transcript.map(t => t.stage ? `<div class="stg">${t.stage}</div>` : `<div class="msg ${t.who}">${t.text}</div>`).join('')}</div>`
           /* No verbatim transcript exists for a lead negotiated on the property
-             page — what Tayo produced there is the reasoning and the opening
+             page, what Tayo produced there is the reasoning and the opening
              message, and that is what gets shown. Inventing a conversation to
              fill the panel would be worse than an honest, shorter one. */
           : `<p class="muted" style="font-size:12px;margin-top:10px">What Tayo worked out with this buyer before they made contact.</p>
@@ -8132,7 +8132,7 @@
     document.addEventListener('syn:listings', rebuildPostListings);
     const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X', telegram: 'Telegram' };
 
-    /* ═══ Things only a person can do — as pop-ups, not fixtures ═══════════
+    /* ═══ Things only a person can do, as pop-ups, not fixtures ═══════════
        Eden: "things that need you to copy and paste, don't have them fixed on
        the page. Let them come as a pop-up ... Don't have it permanently on the
        page. Do this for every single page that has this sort of thing."
@@ -8297,7 +8297,7 @@
     /* ── Campaign generator ────────────────────────────────────────────────
        Pulls real verified listings from the database, fans each into every
        angle × platform, and shows what passed validation before anything can
-       be queued. Publishing runs in rehearsal mode — see syndication.js for
+       be queued. Publishing runs in rehearsal mode, see syndication.js for
        why tokens never live in the client. */
     (function () {
       var sel = document.getElementById('cmpProp');
@@ -8350,18 +8350,18 @@
 
       /* SINGLE SOURCE: the Listings pane.
          This picker used to fetch /rest/v1/properties with the anon key, which
-         RLS answers with the PUBLIC policy — every live listing on the platform,
+         RLS answers with the PUBLIC policy, every live listing on the platform,
          from every agency. An agency could therefore build and queue a campaign
          for a property it does not represent. It now reads the same
          LISTINGS_DATA the Listings pane owns, so "what I have listed" has one
          definition across the whole portal and cannot drift.
 
-         Verification is still not a filter — an agency may market a listing it
+         Verification is still not a filter, an agency may market a listing it
          has just put up. syndication.js decides what may honestly be CLAIMED
          about an unverified home (it drops the verified-first angle and the
          #VerifiedListing tag), which is the right place for that judgement. */
       /* Local escaper. The page's other `esc` is declared INSIDE listingForm(),
-         so it is not in scope here — the previous version of this block called
+         so it is not in scope here, the previous version of this block called
          it from inside a .then(), where the ReferenceError was swallowed by the
          .catch() and surfaced as a misleading "could not load listings". Define
          it here rather than reach for a helper that only looks global. */
@@ -8776,7 +8776,7 @@
         }
         return '<div class="ch-step">'
           + '<div class="cmp-ch-note">You will be sent to ' + esc(CONNECTABLE[pl]) + ' to sign in. '
-          + 'Use the account that administers <b>this agency’s</b> page — '
+          + 'Use the account that administers <b>this agency’s</b> page, '
           + 'you are only ever offered the pages that account manages.</div>'
           + '<div><button class="cmp-ch-btn primary" data-connect="' + pl + '">Continue to '
           + esc(CONNECTABLE[pl]) + ' →</button></div>'
@@ -9641,7 +9641,7 @@
         });
         if (!ready.length) {
           toastOrAlert(syn.size
-            ? 'Nothing to publish yet — every channel here still has something to fix.'
+            ? 'Nothing to publish yet, every channel here still has something to fix.'
             : 'Nothing to publish: connect Instagram or Facebook first.');
           return;
         }
@@ -9901,7 +9901,7 @@
         go.style.opacity = rows.length ? '' : '.5';
         go.title = rows.length ? '' : 'Add a listing under Listings first';
         if (!rows.length) {
-          sel.innerHTML = '<option value="">No active listings yet — add one under Listings first</option>';
+          sel.innerHTML = '<option value="">No active listings yet, add one under Listings first</option>';
           return;
         }
         sel.innerHTML = rows.map(function (r, i) {
@@ -10183,7 +10183,7 @@
       function render() {
         var ok = campaign.variants.filter(function (v) { return !v.issues.length; });
         var bad = campaign.variants.length - ok.length;
-        // Count the angles actually used, not the catalogue — an unverified
+        // Count the angles actually used, not the catalogue, an unverified
         // listing legitimately generates fewer, and saying "5 angles" over four
         // of them is the small kind of untrue this product cannot afford.
         var used = {};
@@ -10191,7 +10191,7 @@
         var angleCount = Object.keys(used).length || campaign.variants.length;
         var skipped = campaign.skipped || [];
         // Creatives carry the agency's identity, not Synapse's. Falls back to
-        // the app's own ink when no brand colour has been set — never a
+        // the app's own ink when no brand colour has been set, never a
         // stand-in colour pretending to be theirs.
         var B = campaign.brand || {};
         var brandBar = B.isSet
@@ -10203,7 +10203,7 @@
             + (B.colorAlt ? '<span class="bb-dot" style="background:' + esc(B.colorAlt) + '"></span>' : '')
             + '<span class="bb-note">Every caption below signs off as you</span>'
             + '</div>'
-          : '<div class="cmp-brandbar plain"><span class="bb-note">No brand set — '
+          : '<div class="cmp-brandbar plain"><span class="bb-note">No brand set, '
             + 'these post unsigned. Add your name, colours and voice under <b>Team → Brand</b>.</span></div>';
         /* A WAY OUT, AND IT STAYS ON SCREEN.
            Generating replaced this panel with several screens of cards and
@@ -10225,7 +10225,7 @@
           + (skipped.length
             ? '<div class="muted" style="font-size:12.5px;margin:-4px 0 12px">'
               + skipped.map(function (s) { return esc(s.name); }).join(', ')
-              + (skipped.length === 1 ? ' is' : ' are') + ' unavailable until this listing is verified — '
+              + (skipped.length === 1 ? ' is' : ' are') + ' unavailable until this listing is verified, '
               + 'those angles claim the seven checks passed.</div>'
             : '');
 
@@ -10315,7 +10315,7 @@
           + '<div id="cmpResults"></div>'
           + (live
               ? '<p class="cmp-note"><b>' + live + ' channel' + (live === 1 ? '' : 's') + ' connected.</b> '
-                + '<b>Publish for real</b> writes each post to the queue and then sends it — it is public and cannot be undone from here. '
+                + '<b>Publish for real</b> writes each post to the queue and then sends it, it is public and cannot be undone from here. '
                 + '<b>Rehearse</b> runs the same validation and shows what would go, without touching an account.'
                 + (sendable ? '' : ' Nothing in this campaign targets a connected channel yet.')
                 + '</p>'
@@ -10538,7 +10538,7 @@
           method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (tk || SB_KEY) },
           // Voice is the one brand field a fixed template cannot honour, so it
           // goes to the model that can. Sent only when the agency actually
-          // wrote one — an absent voice must not become an invented one.
+          // wrote one, an absent voice must not become an invented one.
           body: JSON.stringify({
             /* The row, not POST_LISTINGS' projection of it -- see fullListing.
                Falls back to the projection if the listing has gone from
@@ -10563,7 +10563,7 @@
              reply was cut off" from "unreadable" from a transport fault, and
              flattening all three into one sentence is what let a truncation
              bug sit unnoticed behind "please try again". */
-          cmp.err = (d && d.error) || 'Couldn’t generate captions right now — please try again.';
+          cmp.err = (d && d.error) || 'Couldn’t generate captions right now, please try again.';
           renderComposer(); return;
         }
         cmp.captions = d.captions; cmp.hashtags = d.hashtags || []; cmp.note = d.note || ''; cmp.rec = d.recommendedChannel || '';
@@ -10897,11 +10897,11 @@
       { id: 'whatsapp', label: 'WhatsApp', channel: 'whatsapp_campaign', form: 'short',
         how: 'For your Status or your broadcast list. Save the photo, post it to your Status, and paste the caption with it.' },
       { id: 'facebook', label: 'Facebook groups', channel: 'facebook', form: 'full',
-        how: 'Paste it into the property groups for this area that you belong to. Groups set their own rules — some only allow listings on certain days.' },
+        how: 'Paste it into the property groups for this area that you belong to. Groups set their own rules, some only allow listings on certain days.' },
       { id: 'telegram', label: 'Telegram groups', channel: 'telegram', form: 'full',
         how: 'Paste it into the Telegram groups you are in. Housing groups for students and corps members move fast.' },
       { id: 'other', label: 'Anywhere else', channel: 'referral', form: 'full',
-        how: 'Nairaland, X, an email to a client — wherever it goes, the link still says it was yours.' },
+        how: 'Nairaland, X, an email to a client, wherever it goes, the link still says it was yours.' },
     ];
     const FURN_LABEL = { unfurnished: 'Unfurnished', semi: 'Semi-furnished', fully: 'Fully furnished' };
 
@@ -10960,7 +10960,7 @@
       if (l.listing_type === 'rent' && n(l.move_in_cost)) out.push('Total to move in: ' + money(l.move_in_cost));
       out.push('', 'Full details, photos and inspection booking:', link);
       const agency = window.BRAND && window.BRAND.name;
-      if (agency) out.push('', '— ' + agency);
+      if (agency) out.push('', '- ' + agency);
       return out.join('\n');
     }
 
@@ -11021,7 +11021,7 @@
 
     function openShareKit(id) {
       const l = fullListing(id);
-      if (!l || !l.id) { toast('Save the listing first — a share link needs the saved listing'); return; }
+      if (!l || !l.id) { toast('Save the listing first, a share link needs the saved listing'); return; }
       if (!SHK) {
         const el = document.createElement('div');
         el.className = 'shk-scrim';
@@ -11126,7 +11126,7 @@
       SHK.copyLink.disabled = false; SHK.copyCap.disabled = false;
       if (k.plain) {
         SHK.note.textContent = 'Your personal link could not be made'
-          + (k.why ? ' (' + k.why + ')' : '') + ', so this is the plain listing link — visits through it are not credited to you.';
+          + (k.why ? ' (' + k.why + ')' : '') + ', so this is the plain listing link, visits through it are not credited to you.';
         return;
       }
       SHK.note.textContent = 'This link is yours: visits and leads that come through it are credited to you.';
@@ -11145,7 +11145,7 @@
       const fallback = () => {
         /* The clipboard is refused on some in-app browsers: select the text
            so a long-press still copies it. */
-        try { SHK.text.focus(); SHK.text.select(); toast('Selected — copy it with a long-press'); } catch (e) {}
+        try { SHK.text.focus(); SHK.text.select(); toast('Selected, copy it with a long-press'); } catch (e) {}
       };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
       else fallback();
@@ -11289,7 +11289,7 @@
       const l = POST_LISTINGS[cmp.li];
       cmpModal.querySelectorAll('textarea[data-cap]').forEach((t) => { cmp.captions[t.dataset.cap] = t.value; });
       const chans = [...cmp.chans].filter((c) => cmp.captions[c]);
-      if (!chans.length) { toast('Nothing to send yet — generate the captions first'); return; }
+      if (!chans.length) { toast('Nothing to send yet, generate the captions first'); return; }
 
       const btn = document.getElementById('cmpSchedule');
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
@@ -11318,8 +11318,8 @@
 
       SynListings.saveGeneration(l.id, variants).then((r) => {
         const n = (r && r.saved) || 0;
-        if (!n) throw new Error('Nothing could be filed — none of those channels has a content type yet.');
-        toast(n + (n === 1 ? ' caption' : ' captions') + ' sent for approval — review them in Draft');
+        if (!n) throw new Error('Nothing could be filed, none of those channels has a content type yet.');
+        toast(n + (n === 1 ? ' caption' : ' captions') + ' sent for approval, review them in Draft');
         closeComposer();
         if (typeof loadPipeline === 'function') loadPipeline();
       }).catch((err) => {
@@ -11345,9 +11345,9 @@
       clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800);
     }
     const CTA_TOASTS = {
-      '+ New listing': 'Listing upload — add photos and the 7-node verification kicks off automatically.',
-      '+ New campaign': 'Campaign builder — target Tayo briefs by area, budget and intent.',
-      'Current plan': 'You’re on Free — free forever. Upgrade any time.',
+      '+ New listing': 'Listing upload, add photos and the 7-node verification kicks off automatically.',
+      '+ New campaign': 'Campaign builder, target Tayo briefs by area, budget and intent.',
+      'Current plan': 'You’re on Free, free forever. Upgrade any time.',
       'See how it works': 'A 2-minute tour of the agency portal is on the way.',
     };
     document.querySelectorAll('button').forEach((b) => {
@@ -11385,9 +11385,9 @@
           cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
             ['Up to 20 active listings', 'Room to grow your catalogue'],
             ['2 team members', 'Bring on a partner'],
-            ['CRM with WhatsApp handoff', 'Never lose a lead — buyers land on your phone'],
+            ['CRM with WhatsApp handoff', 'Never lose a lead, buyers land on your phone'],
             ['Tayo AI referrals', 'Get matched to buyers already looking for what you list'],
-            ['Standard verification', 'Your listings become trusted — at the normal queue speed'],
+            ['Standard verification', 'Your listings become trusted, at the normal queue speed'],
             ['Basic analytics', 'See your leads and listings at a glance'],
           ], tradeoffs: ['Slower verification queue', 'No marketing automation or social syndication', 'Limited AI'] },
         { id: 'accelerator', name: 'Accelerate', headline: 'Grow faster with AI-powered marketing and verification.',
@@ -11396,7 +11396,7 @@
             ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
             ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
             ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
-            ['AI writes and posts for you', 'Captions and scheduling handled — no marketing hire'],
+            ['AI writes and posts for you', 'Captions and scheduling handled, no marketing hire'],
             ['Know which channels make buyers', 'Lead analytics + buyer-engagement metrics'],
             ['Marketing performance dashboard', 'See exactly what your spend returns'],
           ] },
@@ -11407,7 +11407,7 @@
             ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
             ['Every marketing channel + AI campaigns', 'Tayo generates whole campaigns for you'],
             ['Proximity marketing', 'Reach buyers the moment they walk past your listing'],
-            ['Dedicated verification desk', 'Your listings clear the trust queue fastest — Tayo still ranks purely on buyer fit, never payment'],
+            ['Dedicated verification desk', 'Your listings clear the trust queue fastest, Tayo still ranks purely on buyer fit, never payment'],
             ['Dedicated verification desk + priority support', 'A team on standby for your deals'],
             ['Premium analytics', 'Attribution from first touch to closed ₦'],
           ] },
@@ -11427,7 +11427,7 @@
       addons: [
         { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
         { ico: 'spark', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
-        { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels — never affects Tayo\'s ranking.', price: '₦10k', unit: 'each' },
+        { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels, never affects Tayo\'s ranking.', price: '₦10k', unit: 'each' },
         { ico: 'shield', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
         { ico: 'chart',  name: 'Campaign Boost', desc: 'Extra reach behind a marketing campaign that\'s working.', price: '₦20k', unit: 'each' },
       ],
@@ -11439,7 +11439,7 @@
       },
     };
     const nairaPlan = (n) => n === 0 ? '₦0' : '₦' + (n / 1000) + 'k';
-    // Comparison table: tiers as columns, benefits as rows — read a row
+    // Comparison table: tiers as columns, benefits as rows, read a row
     // across to see which plans include it, instead of parsing three
     // separate feature lists. Rows are a synthesis of each plan's own
     // features/tradeoffs above into shared dimensions every plan has a
@@ -11455,7 +11455,7 @@
       { label: 'AI writes captions & auto-posts', vals: [false, true, true, true] },
       { label: 'AI-generated marketing campaigns', vals: [false, false, true, true] },
       { label: 'Proximity marketing', vals: [false, false, true, true] },
-      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium — full attribution', 'Premium — full attribution'] },
+      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium, full attribution', 'Premium, full attribution'] },
       { label: 'Support', vals: ['Standard', 'Standard', 'Priority', 'Dedicated manager'] },
     ];
     function pricingCellCls(p) { return (p.feature ? ' feature' : '') + (p.gold ? ' gold-plan' : ''); }
@@ -11471,7 +11471,7 @@
           + r.vals.map((v, i) => {
             const p = plans[i];
             const content = v === true ? '<span class="pr-check">✓</span>'
-              : v === false ? '<span class="pr-dash">—</span>'
+              : v === false ? '<span class="pr-dash">-</span>'
               : `<span class="pr-val">${v}</span>`;
             return `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}">${content}</div>`;
           }).join('');
@@ -11520,7 +11520,7 @@
         <div class="rgrid">${r.points.map((p) => `<div>${p}</div>`).join('')}</div>
         <p class="rclose">${r.close}</p>`;
     }
-    // Re-run whenever the real plan loads (renderPricing, below) — a plain
+    // Re-run whenever the real plan loads (renderPricing, below), a plain
     // dataset.wired guard on each fresh button is enough to keep re-renders
     // safe without double-binding.
     function wirePricingToasts() {
@@ -11589,7 +11589,7 @@
     document.getElementById('roiSection').innerHTML = roiHTML(PRICING.roi);
 
     // ── real checkout: Paystack, hosted redirect ──
-    // No Paystack key ever touches this page — the client only ever talks to
+    // No Paystack key ever touches this page, the client only ever talks to
     // the paystack-checkout edge function, which holds the secret key and
     // does the real work. See synapse-platform/supabase/functions/paystack-*.
     /* Resolves to null rather than throwing, on every path. It is called
@@ -11694,7 +11694,7 @@
     const pricingCardsEl = document.getElementById('pricingCards');
     if (pricingCardsEl) pricingCardsEl.addEventListener('click', onPlanPick);
 
-    // Paystack redirects back here as ?reference=... — that query param is
+    // Paystack redirects back here as ?reference=..., that query param is
     // an untrusted browser redirect (spoofable), used only as a lookup key.
     // The real answer always comes from asking our own edge function, which
     // re-verifies with Paystack directly rather than trusting anything in
@@ -11724,7 +11724,7 @@
       }).catch(() => {});
     })();
 
-    // The plan actually on the agency's record, not a hardcoded default —
+    // The plan actually on the agency's record, not a hardcoded default -
     // Free was previously hardcoded as `current: true` regardless of what an
     // agency had actually paid for.
     function refreshCurrentPlan() {
@@ -12308,7 +12308,7 @@
       negotiator: { title: 'How Tayo negotiates', sub: 'The funnel, the rules, the 5 stages',
         html: () => `
           <div class="tp-sec"><div class="tp-k">The rule</div>
-            <div class="rule" style="margin:0"><span class="ic">⚖️</span><div class="t"><b>Tayo advises within the range you authorise — it never makes a binding commitment.</b> It can discuss flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div></div>
+            <div class="rule" style="margin:0"><span class="ic">⚖️</span><div class="t"><b>Tayo advises within the range you authorise, it never makes a binding commitment.</b> It can discuss flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div></div>
           </div>
           <div class="tp-sec"><div class="tp-k">Where a lead comes from, and what happens to it</div>
             <ol class="fnl">
@@ -12317,7 +12317,7 @@
               <li class="is-tayo"><span class="fnl-k">Tayo picks it up</span>
                 <span class="fnl-v">Qualifies the budget, presents the fit, handles the objections, and negotiates only inside the range you set.</span></li>
               <li class="is-out"><span class="fnl-k">You get a warm one</span>
-                <span class="fnl-v">The conversation arrives with it — what they want, what they can pay, what they already asked.</span></li>
+                <span class="fnl-v">The conversation arrives with it, what they want, what they can pay, what they already asked.</span></li>
             </ol>
           </div>
           <div class="tp-sec"><div class="tp-k">The five stages</div>
@@ -12334,7 +12334,7 @@
       crm: { title: 'Pipeline read', sub: 'Tayo’s take on your leads',
         html: () => tpSummary('Where your attention pays off', [
           'Tayo ranks your leads by intent, deal value and how close the SLA is.',
-          'No leads yet — this fills in the moment a buyer reaches you.',
+          'No leads yet, this fills in the moment a buyer reaches you.',
         ], 'Connect a channel or share a listing, and the first real lead lands here.')
         + `<div class="tp-sec"><div class="tp-k">Where your leads come from</div><div class="card brk" id="brk"></div></div>`,
         after: () => renderBrk() },
@@ -12367,7 +12367,7 @@
         html: () => tpSummary('Move the needle', [
           'Tayo compares reach, DMs and leads per format and channel.',
           'Nothing has been published yet, so there is no performance to read.',
-        ], 'Generate a campaign from one of your listings and publish it — the first numbers land here.')
+        ], 'Generate a campaign from one of your listings and publish it, the first numbers land here.')
         + `<div class="tp-sec"><div class="tp-k">Where it posts</div><div class="channels" id="socialChannels">
             <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">Not connected</div></div><div class="tog"></div></div>
             <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">Not connected</div></div><div class="tog"></div></div>
@@ -12386,7 +12386,7 @@
         html: () => tpSummary('Coach the floor', [
           'Tayo reads first-reply times, win rates and stalled leads per agent.',
           'Coaching notes appear once your team has real activity to read.',
-        ], 'Invite your agents and route some leads — the read below is built from their actual numbers.')
+        ], 'Invite your agents and route some leads, the read below is built from their actual numbers.')
         // The roster's summary lives here now, beside the cards rather than
         // stacked above them.
         + `<div class="tp-sec"><div class="tp-k">The floor</div><div class="ag-kpis" id="agKpis"></div></div>`
@@ -12402,7 +12402,7 @@
           'Free: list, generate campaigns, and rehearse them.',
           'Accelerate: publish for real to your connected channels.',
           'Leader: unlimited listings and syndication.',
-        ], 'Ask below what your own numbers would look like on another plan — the answer uses your listings and leads, not an example.') },
+        ], 'Ask below what your own numbers would look like on another plan, the answer uses your listings and leads, not an example.') },
     };
     const snapshotHTML = (pane) => STATS[pane]
       ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
@@ -12453,7 +12453,7 @@
        actually say, not as report titles. */
     const STAGE_QS = {
       new: [
-        'I just signed up — what should I do first?',
+        'I just signed up, what should I do first?',
         'How do I add my first listing?',
         'What does Synapse do for me once a listing is up?',
       ],
@@ -12590,13 +12590,13 @@
     document.getElementById('tpClose').addEventListener('click', closeToju);
     tpScrim.addEventListener('click', closeToju);
 
-    /* ═══════════ Overview — command center (list · map · tabbed detail) ═══════════
+    /* ═══════════ Overview, command center (list · map · tabbed detail) ═══════════
        Master-detail built on the same LISTINGS_DATA the Listings pane uses, plus the
        shared SynMatches map helper. Overview is the default pane (see markup). */
     const OV = { f: 'all', sel: 0, dtab: 'details', q: '', map: {} };
     const OV_CHECKS = ['Title deed', 'Structural survey', 'Flood assessment', 'Legal search', 'Ownership KYC', 'Media validation', 'Freshness'];
     // Single source of truth for the breakpoint where .ov-detail becomes a
-    // slide-in sheet instead of a sticky sidebar — matches the CSS media
+    // slide-in sheet instead of a sticky sidebar, matches the CSS media
     // query at max-width:1024px. Anything that needs to know whether the
     // Overview pane is in "phone" mode calls this instead of a second copy
     // of 1024 living in the JS.
@@ -12634,10 +12634,10 @@
       });
       return out.join(', ');
     };
-    const ovBeds = (t) => { const m = t.match(/(\d+)\s*-?\s*bed/i); return m ? m[1] : '—'; };
+    const ovBeds = (t) => { const m = t.match(/(\d+)\s*-?\s*bed/i); return m ? m[1] : '-'; };
 
     /* Reads the listing's real verification_nodes. This used to DERIVE a check
-       count from a hash of the title — "3 to 5 of 7", invented deterministically
+       count from a hash of the title, "3 to 5 of 7", invented deterministically
        so it looked stable across reloads. It reported verification progress that
        had never happened, on the one number a buyer most needs to trust. */
     const ovChecks = (l) => {
@@ -12646,7 +12646,7 @@
     };
 
     /* Real leads attached to this listing. Previously it manufactured buyer
-       names from a fixed list keyed by a hash of the title — inventing named
+       names from a fixed list keyed by a hash of the title, inventing named
        people who had supposedly enquired about a specific home. */
     function ovLeads(l) {
       if (typeof leads === 'undefined' || !Array.isArray(leads)) return [];
@@ -12722,7 +12722,7 @@
     }
     /* Two different situations were showing the same sentence: an agency with
        no listings at all, and an agency whose filter happens to match none.
-       They need different words and different actions — one is "add your
+       They need different words and different actions, one is "add your
        first listing", the other is "you have listings, just not these".
        The detail column is also hidden while empty: renderOvDetail(null) only
        blanked the card, leaving an empty grey panel and a map of nothing
@@ -12746,7 +12746,7 @@
             + '<span class="ov-blank-i" data-icon="search"></span>'
             + '<b>Nothing in ' + (filterName || 'this view') + '</b>'
             + '<p>You have ' + LISTINGS_DATA.length + ' listing' + (LISTINGS_DATA.length === 1 ? '' : 's')
-            + (OV.q ? ' — none match "' + escT(OV.q) + '" in this view.' : ', just none in this one.') + '</p>'
+            + (OV.q ? ', none match "' + escT(OV.q) + '" in this view.' : ', just none in this one.') + '</p>'
             + '<button class="btn btn-ghost" type="button" data-ov-all>Show all listings</button>'
             + '</div>';
         if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(listEl);
@@ -12825,9 +12825,9 @@
        are different concerns on a phone, where .ov-detail is a fixed
        full-screen sheet rather than the sticky sidebar it is at width. On
        desktop the sheet is never opened, so it never needs closing either
-       — the CSS media query and the ovIsMobile() check below stay in sync. */
+, the CSS media query and the ovIsMobile() check below stay in sync. */
     let ovSheetTrigger = null;
-    // Off-canvas via `transform` still leaves the sheet in the a11y tree —
+    // Off-canvas via `transform` still leaves the sheet in the a11y tree -
     // unlike `hidden`/`display:none`, a translateX(100%) panel is fully
     // reachable by tab and by a screen reader even though nothing is on
     // screen. aria-hidden is what actually removes it while it's closed;
@@ -12850,7 +12850,7 @@
       // Leaflet measures its container at creation time; a container that
       // was off-canvas (translateX(100%)) sizes to 0 and paints grey tiles
       // forever unless told to re-measure. invalidateSize() is already used
-      // for the same reason in goToPane() (~line 5132) — this waits past
+      // for the same reason in goToPane() (~line 5132), this waits past
       // the .32s slide so the container has an actual size when it fires.
       if (OV.map.map) setTimeout(() => OV.map.map.invalidateSize(), 360);
       const back = document.getElementById('ovBack');
@@ -12862,9 +12862,9 @@
       detail.classList.remove('on');
       detail.removeAttribute('role');
       detail.removeAttribute('aria-modal');
-      // OV.sel is deliberately untouched — closing is "go back", not
+      // OV.sel is deliberately untouched, closing is "go back", not
       // "deselect", so reopening lands on the same listing.
-      // Move focus out before hiding the sheet from assistive tech —
+      // Move focus out before hiding the sheet from assistive tech -
       // aria-hidden on a container that still holds focus is itself an
       // a11y bug, so the order here matters.
       if (ovSheetTrigger && ovSheetTrigger.focus) ovSheetTrigger.focus();
@@ -12937,7 +12937,7 @@
       document.querySelectorAll('#ovList .ovi').forEach((b, k) => b.classList.toggle('on', k === i));
       renderOvDetail(list[i]);
       focusOvMap(list[i], i);
-      // On a phone the map and card above just updated off-screen — .tpanel
+      // On a phone the map and card above just updated off-screen, .tpanel
       // and #drawer's own idiom is the fix: push the detail in as a sheet
       // instead of leaving the result of the tap invisible below the list.
       if (ovIsMobile()) openOvSheet(trigger || document.querySelector('#ovList .ovi.on'));
@@ -12950,7 +12950,7 @@
       }
       if (e.target.closest('[data-ov-all]')) {
         OV.f = 'all'; OV.q = '';
-        // was `.ov-tab`, which matches nothing — the class is `.ovtab`
+        // was `.ov-tab`, which matches nothing, the class is `.ovtab`
         // (see #ovTabs markup and the correct query in the tab-click
         // handler below). With the wrong selector this reset the filter
         // but left the previous tab looking active, so "Show all listings"
@@ -12976,7 +12976,7 @@
         const a = document.querySelector(`#tabs a[data-pane="${go.dataset.goto}"]`);
         if (a) a.click();
         /* "Open in Listings" used to land you on the pane and leave you to find
-           the listing again among all of them — which is the one thing you had
+           the listing again among all of them, which is the one thing you had
            already told it. Carry the id across and open that property. The pane
            renders on click, so this waits a frame for the card to exist. */
         const lid = go.dataset.gotoListing;
@@ -12992,12 +12992,12 @@
     });
     document.getElementById('ovFilter').addEventListener('click', () => document.getElementById('ovSearch').focus());
 
-    /* ═══ Notification bell — the single home for every alert AND reminder ═══ */
+    /* ═══ Notification bell, the single home for every alert AND reminder ═══ */
     /* Notifications are DERIVED from real state, never authored. The previous
        list named a buyer, a lead SLA and three properties that do not exist, so
        the bell always showed four unread items about nothing. Each item now
        carries a `pane` (and optionally a listing id) so clicking it takes you to
-       the thing it is about — which is the only reason to show it at all. */
+       the thing it is about, which is the only reason to show it at all. */
     let NOTI = [];
     let notiCleared = false;
     /* A notification you have opened (or cleared) is dealt with: it leaves the bell.
@@ -13327,7 +13327,7 @@
        Navigation and creation as two thumb-reachable buttons, taskbar-style.
 
        The nav menu is generated FROM the rail (#tabs) every time it opens,
-       so a pane added to the rail appears here automatically — a hand-copied
+       so a pane added to the rail appears here automatically, a hand-copied
        menu would be a second list to remember, and this file has already had
        one bug of exactly that shape.
 
@@ -13386,7 +13386,7 @@
         lent.forEach(({ el, parent, next }) => parent.insertBefore(el, next));
         lent = [];
       }
-      /* Nothing to filter on Brand, Agents, Subscription or the Negotiator —
+      /* Nothing to filter on Brand, Agents, Subscription or the Negotiator -
          the button goes rather than opening on an empty sheet. */
       function syncFilterFab() {
         const pane = document.querySelector('.pane.on') || document.querySelector('.pane:not([hidden])');
@@ -13418,7 +13418,7 @@
          cross and back rather than being swapped underneath you.
 
          State is read off the DOM every time instead of being tracked here, so
-         the icon stays truthful no matter what closed the sheet — the scrim,
+         the icon stays truthful no matter what closed the sheet, the scrim,
          Escape, picking an item, or another fab opening. Guarded throughout:
          with no module loaded this is a no-op and the icons sit still, which is
          exactly what they did before. */
@@ -13462,10 +13462,10 @@
             + '<div class="agd-items">' + items + '</div></div>';
         });
         /* The agency's own name was repeated at the foot of this sheet. You do
-           not need telling whose portal you are in from inside it — it is on
-           the pane you came from and in the top bar — and it cost a row of a
+           not need telling whose portal you are in from inside it, it is on
+           the pane you came from and in the top bar, and it cost a row of a
            menu whose whole point is getting somewhere. */
-        /* the two actions the top bar can no longer fit — a Start menu keeps
+        /* the two actions the top bar can no longer fit, a Start menu keeps
            its account controls at the foot, so they belong here anyway */
         html += '<div class="agd-sep"></div>'
           + '<button class="agd-item" role="menuitem" data-nav-site>'
@@ -13552,7 +13552,7 @@
       goToPane(tab.dataset.pane);
     });
 
-    // sidebar group expand/collapse (Supabase-style) — headers have no data-pane, so
+    // sidebar group expand/collapse (Supabase-style), headers have no data-pane, so
     // they fall through the tab handler above; this handles the toggle separately.
     document.getElementById('tabs').addEventListener('click', (e) => {
       const g = e.target.closest('.grp'); if (!g) return;
@@ -13725,7 +13725,7 @@
 
       /* Nearest common colour name for a hex, so the button announces
          "Deep teal" rather than "#1F4E5F". Distance in plain RGB is enough at
-         this palette size — these are twenty well-separated brand colours, not
+         this palette size, these are twenty well-separated brand colours, not
          a continuous picker. */
       const SW_NAMES = [
         ['#000000','Black'], ['#FFFFFF','White'], ['#6E6E73','Grey'],
@@ -13757,7 +13757,7 @@
           const target = f(host.dataset.for);
           if (!target || host.childElementCount) return;
           /* Named, not just tinted. A hex code in a `title` is not an accessible
-             name — title is not reliably announced, and "#1F4E5F" is not a
+             name, title is not reliably announced, and "#1F4E5F" is not a
              colour anyone recognises. aria-pressed carries the selected state,
              which was previously conveyed by a ring and nothing else. */
           host.innerHTML = SWATCHES.map((c) =>
@@ -13982,7 +13982,7 @@
         const logo = f('bkLogo').value.trim();
         const logoDark = f('bkLogoDark').value.trim();
         const font = f('bkFont').value.trim();
-        const initials = nm.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '—';
+        const initials = nm.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '-';
         f('bkPreview').innerHTML =
           (logo ? `<img src="${esc2(logo)}" alt="" onerror="this.remove()">` : '')
           + `<div class="bp-mark" style="background:${esc2(c1)}">${esc2(initials)}</div>`
@@ -14002,7 +14002,7 @@
 
         // (hex readouts are handled above, where chosen-vs-default is known)
 
-        // Type specimen — the typeface rendered large, at real size, rather
+        // Type specimen, the typeface rendered large, at real size, rather
         // than a name typed into a box with no visual feedback.
         const sn = f('bkSpecimenName'), sg = f('bkSpecimenGlyphs'), ss = f('bkSpecimenSample');
         if (sn) sn.textContent = font || 'Default';
@@ -14011,7 +14011,7 @@
       }
 
       /* A colour <input> always reports a value, so an untouched picker looks
-         identical to a deliberate choice — and collect() would have saved the
+         identical to a deliberate choice, and collect() would have saved the
          page's own default swatch as "their brand colour", then signed their
          posts with it. Track real interaction, and treat a colour as set only
          when the agency picked it or the database already held one. */
@@ -14047,14 +14047,14 @@
         const patch = {};
         Object.keys(FIELDS).forEach(id => {
           const el = f(id); if (!el) return;
-          // Skip colours the agency never actually chose — sending the default
+          // Skip colours the agency never actually chose, sending the default
           // would record a decision they did not make.
           if (el.type === 'color' && !colourChosen(id)) return;
           patch[FIELDS[id]] = el.value.trim ? el.value.trim() : el.value;
         });
         patch.specialties = f('bkSpecialties').value.split(/[|,;\n]+/).map(x => x.trim()).filter(Boolean);
         /* `social` is NOT NULL with a '{}' default, so sending null failed the
-           whole update — which meant an agency with no Instagram or website
+           whole update, which meant an agency with no Instagram or website
            could never save its brand at all, not even its name. Empty means
            an empty object, not null. */
         const ig = f('bkInstagram').value.trim(), web = f('bkWebsite').value.trim();
@@ -14118,7 +14118,7 @@
         localStorage.setItem(SKIP_KEY, '1');
         onboard.hidden = true;
         tellBrandState(false);
-        toast('Skipped — your brand lives under Team → Brand whenever you want it');
+        toast('Skipped, your brand lives under Team → Brand whenever you want it');
       });
 
       if (!window.SynListings) return;
@@ -14141,14 +14141,14 @@
         if (view) view.hidden = true;
         if (editBtn) editBtn.hidden = true;
         gate.hidden = false;
-        gate.textContent = 'Could not load your brand details — check your connection and reload.';
+        gate.textContent = 'Could not load your brand details, check your connection and reload.';
         tellBrandState(false);
       });
 
       /* ── logo upload ──────────────────────────────────────────────────
          The file goes to storage immediately and the resulting public URL is
          written into the hidden input, so the existing collect()/saveBrand
-         path persists it with everything else — no second save path.
+         path persists it with everything else, no second save path.
 
          Uploading a replacement deletes the file it replaced, so an agency
          that iterates on its mark does not leave a trail of dead objects in
@@ -14158,7 +14158,7 @@
         light: { url: 'bkLogo', file: 'bkLogoFile', prev: 'bkLogoPrevLight', note: 'bkLogoNote',
                  idle: 'PNG, JPG, WEBP or SVG · up to 2MB' },
         dark:  { url: 'bkLogoDark', file: 'bkLogoDarkFile', prev: 'bkLogoPrevDark', note: 'bkLogoDarkNote',
-                 idle: 'Optional — for dark creatives' },
+                 idle: 'Optional, for dark creatives' },
       };
 
       function paintLogo(slot) {
@@ -14199,7 +14199,7 @@
               f(S.url).value = url;
               paintLogo(slot);
               preview();                          // hero + specimen follow the new mark
-              note(slot, 'Uploaded — save to apply it everywhere');
+              note(slot, 'Uploaded, save to apply it everywhere');
               return SynListings.removeBrandAsset(previous);
             })
             .catch((e) => note(slot, (e && e.message) || 'Upload failed', true))
@@ -14210,7 +14210,7 @@
           const previous = (f(S.url).value || '').trim();
           f(S.url).value = '';
           paintLogo(slot); preview();
-          note(slot, 'Removed — save to apply');
+          note(slot, 'Removed, save to apply');
           SynListings.removeBrandAsset(previous);
         });
       });
@@ -14227,8 +14227,8 @@
             // remaining step ticking off is the thing that ends onboarding.
             refreshOnboard(patch);
             toast(isFirstRun(patch)
-              ? 'Saved — finish the remaining steps whenever you like'
-              : 'Brand saved — Tayo will use it from the next post');
+              ? 'Saved, finish the remaining steps whenever you like'
+              : 'Brand saved, Tayo will use it from the next post');
           })
           .catch((e) => { restore(); toast('Not saved: ' + ((e && e.message) || e)); });
       });

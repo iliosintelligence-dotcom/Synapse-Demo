@@ -83,7 +83,7 @@ export default function Page() {
           <p>
             {"Synapse Core is built so that "}
             <strong>
-              using it — browsing homes, talking to Tayo — never requires an account.
+              using it, browsing homes, talking to Tayo, never requires an account.
             </strong>
             {" We only collect what each feature genuinely needs:"}
           </p>
@@ -98,7 +98,7 @@ export default function Page() {
               <strong>
                 Your conversation with Tayo
               </strong>
-              {" — what you tell Tayo about the home you're looking for, your budget, and household. This is what lets Tayo stop asking questions you've already answered."}
+              {", what you tell Tayo about the home you're looking for, your budget, and household. This is what lets Tayo stop asking questions you've already answered."}
             </li>
             <li>
               <strong>
@@ -110,7 +110,7 @@ export default function Page() {
               <strong>
                 Approximate location
               </strong>
-              , only if you explicitly turn on proximity alerts — see below.
+              , only if you explicitly turn on proximity alerts, see below.
             </li>
             <li>
               <strong>
@@ -122,11 +122,11 @@ export default function Page() {
               <strong>
                 How the site is used
               </strong>
-              {", measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it — your questions to Tayo, searches, and sign-in or password-reset links — so none of that reaches Google. Google Analytics sets cookies (named "}
+              {", measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it, your questions to Tayo, searches, and sign-in or password-reset links, so none of that reaches Google. Google Analytics sets cookies (named "}
               <code>
                 _ga
               </code>
-              {", to tell one visit from the next) only if you accept them in the banner we show on your first visit. Until you accept, or if you say no, it sets no cookies and keeps no identifier for you; Google still receives a cookieless signal that a page was viewed — the trimmed page address, your device and browser type, and the rough location it works out from your connection — which it uses to estimate overall visits. You can change your choice at any time with "}
+              {", to tell one visit from the next) only if you accept them in the banner we show on your first visit. Until you accept, or if you say no, it sets no cookies and keeps no identifier for you; Google still receives a cookieless signal that a page was viewed, the trimmed page address, your device and browser type, and the rough location it works out from your connection, which it uses to estimate overall visits. You can change your choice at any time with "}
               <a href="#" data-cookie-settings="">
                 Cookie settings
               </a>
@@ -160,19 +160,19 @@ export default function Page() {
             {" and require you to explicitly turn them on, on the browse page. When on, your device reports an approximate position (throttled to roughly once a minute) so our server can check it against verified homes matching your brief. We do not track your location when the feature is off, and turning it off stops reporting immediately."}
           </p>
           <p>
-            Nothing about your location is shown to an agency, another user, or anyone else — it is only compared against listing coordinates to decide whether to send you a notification.
+            Nothing about your location is shown to an agency, another user, or anyone else, it is only compared against listing coordinates to decide whether to send you a notification.
           </p>
           <h2 id="m-accounts">
             Accounts
           </h2>
           <p>
-            We ask you to create an account at one specific moment: when you choose to contact an agent about a home. That's deliberate — browsing and talking to Tayo stay anonymous, and we only ask for your details at the point they'd actually be used. Your password is never visible to us; it's handled entirely by Supabase Auth.
+            We ask you to create an account at one specific moment: when you choose to contact an agent about a home. That's deliberate, browsing and talking to Tayo stay anonymous, and we only ask for your details at the point they'd actually be used. Your password is never visible to us; it's handled entirely by Supabase Auth.
           </p>
           <h2 id="m-agencies">
             If you're an agency
           </h2>
           <p>
-            Agency accounts additionally involve listings you upload, leads assigned to you, and — if you use the campaign tools — draft social media copy generated on your behalf. Verification checks we run on your listings (title, structural, flood risk, and so on) are stored so buyers can see what passed and when.
+            Agency accounts additionally involve listings you upload, leads assigned to you, and, if you use the campaign tools, draft social media copy generated on your behalf. Verification checks we run on your listings (title, structural, flood risk, and so on) are stored so buyers can see what passed and when.
           </p>
           <h2 id="m-social">
             Social accounts an agency connects
@@ -226,7 +226,7 @@ export default function Page() {
               <strong>
                 An agency
               </strong>
-              {" — only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that."}
+              {", only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that."}
             </li>
             <li>
               <strong>
@@ -344,7 +344,7 @@ export default function Page() {
         <p>
           {"Synapse Core is built so that "}
           <strong>
-            using it — browsing homes, talking to Tayo — never requires an account.
+            using it, browsing homes, talking to Tayo, never requires an account.
           </strong>
           {" We only collect what each feature genuinely needs:"}
         </p>
@@ -359,7 +359,7 @@ export default function Page() {
             <strong>
               Your conversation with Tayo
             </strong>
-            {" — what you tell Tayo about the home you're looking for, your budget, and household. This is what lets Tayo stop asking questions you've already answered."}
+            {", what you tell Tayo about the home you're looking for, your budget, and household. This is what lets Tayo stop asking questions you've already answered."}
           </li>
           <li>
             <strong>
@@ -371,7 +371,7 @@ export default function Page() {
             <strong>
               Approximate location
             </strong>
-            , only if you explicitly turn on proximity alerts — see below.
+            , only if you explicitly turn on proximity alerts, see below.
           </li>
           <li>
             <strong>
@@ -383,11 +383,11 @@ export default function Page() {
             <strong>
               How the site is used
             </strong>
-            {", measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it — your questions to Tayo, searches, and sign-in or password-reset links — so none of that reaches Google. Google Analytics sets cookies (named "}
+            {", measured with Google Analytics: which pages are visited, roughly where from (the country and city Google works out from your connection), your device and browser, and which link or campaign brought you here. Before anything is sent, we remove from the page address whatever you typed or were sent in it, your questions to Tayo, searches, and sign-in or password-reset links, so none of that reaches Google. Google Analytics sets cookies (named "}
             <code>
               _ga
             </code>
-            {", to tell one visit from the next) only if you accept them in the banner we show on your first visit. Until you accept, or if you say no, it sets no cookies and keeps no identifier for you; Google still receives a cookieless signal that a page was viewed — the trimmed page address, your device and browser type, and the rough location it works out from your connection — which it uses to estimate overall visits. You can change your choice at any time with "}
+            {", to tell one visit from the next) only if you accept them in the banner we show on your first visit. Until you accept, or if you say no, it sets no cookies and keeps no identifier for you; Google still receives a cookieless signal that a page was viewed, the trimmed page address, your device and browser type, and the rough location it works out from your connection, which it uses to estimate overall visits. You can change your choice at any time with "}
             <a href="#" data-cookie-settings="">
               Cookie settings
             </a>
@@ -421,19 +421,19 @@ export default function Page() {
           {" and require you to explicitly turn them on, on the browse page. When on, your device reports an approximate position (throttled to roughly once a minute) so our server can check it against verified homes matching your brief. We do not track your location when the feature is off, and turning it off stops reporting immediately."}
         </p>
         <p>
-          Nothing about your location is shown to an agency, another user, or anyone else — it is only compared against listing coordinates to decide whether to send you a notification.
+          Nothing about your location is shown to an agency, another user, or anyone else, it is only compared against listing coordinates to decide whether to send you a notification.
         </p>
         <h2 id="accounts">
           Accounts
         </h2>
         <p>
-          We ask you to create an account at one specific moment: when you choose to contact an agent about a home. That's deliberate — browsing and talking to Tayo stay anonymous, and we only ask for your details at the point they'd actually be used. Your password is never visible to us; it's handled entirely by Supabase Auth.
+          We ask you to create an account at one specific moment: when you choose to contact an agent about a home. That's deliberate, browsing and talking to Tayo stay anonymous, and we only ask for your details at the point they'd actually be used. Your password is never visible to us; it's handled entirely by Supabase Auth.
         </p>
         <h2 id="agencies">
           If you're an agency
         </h2>
         <p>
-          Agency accounts additionally involve listings you upload, leads assigned to you, and — if you use the campaign tools — draft social media copy generated on your behalf. Verification checks we run on your listings (title, structural, flood risk, and so on) are stored so buyers can see what passed and when.
+          Agency accounts additionally involve listings you upload, leads assigned to you, and, if you use the campaign tools, draft social media copy generated on your behalf. Verification checks we run on your listings (title, structural, flood risk, and so on) are stored so buyers can see what passed and when.
         </p>
         <h2 id="social">
           Social accounts an agency connects
@@ -487,7 +487,7 @@ export default function Page() {
             <strong>
               An agency
             </strong>
-            {" — only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that."}
+            {", only your name and contact details, and only after you choose to contact them about a specific home. We never hand these over before that."}
           </li>
           <li>
             <strong>

@@ -6,7 +6,7 @@ const facts = factsOf({ id: "p", title: "Flat", property_type: "apartment", area
 describe("campaign rules", () => {
   it("reads the area the agent typed, without a bracketed note", () => { expect(facts.area).toBe("Bodija"); expect(facts.priceShort).toBe("₦45M"); });
   it("signs off as the agency, and says nothing when no name is set", () => {
-    expect(signOff({ name: "Prestige", tagline: "Homes" })).toBe("\n\n— Prestige · Homes");
+    expect(signOff({ name: "Prestige", tagline: "Homes" })).toBe("\n\n- Prestige · Homes");
     expect(signOff({ name: "" })).toBe("");
   });
   it("holds room for the tracked link", () => {
@@ -26,7 +26,7 @@ describe("campaign rules", () => {
     expect(x.hashtags).toEqual(["#a", "#b"]);
     expect(wa.hashtags).toEqual([]);
     expect(x.angleName).toBe("The money");
-    expect(x.caption).toContain("— Prestige");
+    expect(x.caption).toContain("- Prestige");
   });
   it("builds a youtube title from the listing's own facts", () => {
     const [v] = buildVariants({ captions: { youtube: "A body of text" } }, facts, null);

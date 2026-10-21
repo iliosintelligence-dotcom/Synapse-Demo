@@ -1,27 +1,27 @@
 
     const BKEY = 'synapse_dream_boards_v1';   // all boards
-    const MIRROR = 'synapse_moodboard_v1';    // active board — what Tayo reads
+    const MIRROR = 'synapse_moodboard_v1';    // active board, what Tayo reads
     const SAVES = 'synapse_saved';            // ♥'d homes → watchlist count
 
     const PALETTE = [
-      // housing — the building itself
+      // housing, the building itself
       { u: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=70', c: 'Modern facade', cat: 'housing' },
       { u: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&q=70', c: 'Detached duplex', cat: 'housing' },
       { u: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=500&q=70', c: 'Terrace houses', cat: 'housing' },
-      // areas — neighbourhood & setting
+      // areas, neighbourhood & setting
       { u: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500&q=70', c: 'Leafy estate street', cat: 'area' },
       { u: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=500&q=70', c: 'Waterfront view', cat: 'area' },
       { u: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=500&q=70', c: 'City skyline', cat: 'area' },
-      // décor — interiors
+      // décor, interiors
       { u: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70', c: 'Open plan', cat: 'decor' },
       { u: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500&q=70', c: 'Quiet bedroom', cat: 'decor' },
       { u: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=500&q=70', c: 'Kitchen', cat: 'decor' },
       { u: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=500&q=70', c: 'Living room', cat: 'decor' },
-      // lifestyle — how you'll live there
+      // lifestyle, how you'll live there
       { u: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=70', c: 'Lounge', cat: 'lifestyle' },
       { u: 'https://images.unsplash.com/photo-1585128792020-803d29415281?w=500&q=70', c: 'Terrace view', cat: 'lifestyle' },
       { u: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500&q=70', c: 'Poolside', cat: 'lifestyle' },
-      // palette — colour, light & material
+      // palette, colour, light & material
       { u: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=500&q=70', c: 'Warm minimal', cat: 'palette' },
       { u: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70', c: 'Soft light', cat: 'palette' },
       { u: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&q=70', c: 'Bright & airy', cat: 'palette' },
@@ -46,18 +46,18 @@
       if (/pool|gym|garden|terrace|lounge|workspace|balcony|patio|rooftop|bar|spa/.test(c)) return 'lifestyle';
       return 'decor';
     }
-    // the three board modes — one board, a mode switch that reframes it
+    // the three board modes, one board, a mode switch that reframes it
     const MODES = [
-      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist — homes & must-haves. This is what Tayo matches you to.',
+      { id: 'dream',  lbl: 'Dream',  hint: 'Your concrete wishlist, homes & must-haves. This is what Tayo matches you to.',
         /* Same mode, board Tayo cannot see yet. */
-        hintUnadopted: 'Your concrete wishlist — homes & must-haves. Keep this board and Tayo starts matching you to it.' },
-      { id: 'mood',   lbl: 'Mood',   hint: 'The feeling — palettes, textures and interior vibe.' },
-      { id: 'vision', lbl: 'Vision', hint: 'The whole outcome — home, neighbourhood and lifestyle you\'re aiming for.' },
+        hintUnadopted: 'Your concrete wishlist, homes & must-haves. Keep this board and Tayo starts matching you to it.' },
+      { id: 'mood',   lbl: 'Mood',   hint: 'The feeling, palettes, textures and interior vibe.' },
+      { id: 'vision', lbl: 'Vision', hint: 'The whole outcome, home, neighbourhood and lifestyle you\'re aiming for.' },
     ];
 
-    // ── starter board — INSPIRATION CONTENT, never listings ──────────────────
+    // ── starter board, INSPIRATION CONTENT, never listings ──────────────────
     // Guardrail: nothing here may look like inventory. No prices, no addresses,
-    // no verification chips, no agency names — just interiors and light to
+    // no verification chips, no agency names, just interiors and light to
     // react to. A starter board never mirrors to Tayo (that would be a signal
     // the visitor didn't send); it only becomes theirs via "Keep this board".
     const STARTER_PINS = [
@@ -78,7 +78,7 @@
     try { state = JSON.parse(localStorage.getItem(BKEY)); } catch (e) {}
     if (!state || !Array.isArray(state.boards)) {
       // migrate a legacy single mood board, else offer the labelled starter
-      // board — never a pre-filled board presented as the visitor's own.
+      // board, never a pre-filled board presented as the visitor's own.
       let legacy = null;
       try { legacy = JSON.parse(localStorage.getItem(MIRROR)); } catch (e) {}
       const first = legacy && (legacy.images || legacy.vibe)
@@ -100,14 +100,14 @@
     const activeBoard = () => state.boards.find((b) => b.id === state.activeId) || null;
     let boardCat = 'all'; // active category filter inside a board
 
-    // mirror the active board into the shape Tayo reads — now split by category
+    // mirror the active board into the shape Tayo reads, now split by category
     // so Tayo treats Area pins as a location signal, Housing as a type signal,
     // and Décor/Palette as aesthetic. Keeps name/vibe/images for backward-compat.
     function mirror() {
       const b = activeBoard();
       if (!b) return;
       // A starter board is inspiration we authored, not the visitor's taste.
-      // It must never reach Tayo as a signal — leave the mirror untouched
+      // It must never reach Tayo as a signal, leave the mirror untouched
       // (it still holds the last board the visitor actually curated).
       if (b.starter) return;
       const capsOf = (id) => (b.images || []).filter((im) => (im.cat || 'decor') === id).map((im) => im.c).filter(Boolean);
@@ -133,7 +133,7 @@
           ? imgs.map((im) => `<img src="${esc(im.u)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`).join('')
           : '<div class="bempty" aria-hidden="true"></div>';
         const meta = b.starter
-          ? 'Inspiration — not real listings'
+          ? 'Inspiration, not real listings'
           : `${(b.images || []).length} pin${(b.images || []).length === 1 ? '' : 's'}${b.vibe && b.vibe.length ? ' · ' + b.vibe.length + ' vibes' : ''}`;
         return `<button class="bcard" data-open="${b.id}">
           <div class="bcover">${cover}</div>
@@ -167,7 +167,7 @@
 
     function createBoard() {
       const raw = prompt('Name your new board', 'New board');
-      if (raw === null) return; // cancelled — don't create an empty board
+      if (raw === null) return; // cancelled, don't create an empty board
       const b = { id: uid(), name: raw.trim() || 'New board', vibe: [], images: [] };
       state.boards.push(b); saveState();
       openBoard(b.id);
@@ -175,7 +175,7 @@
 
     /* The mobile bar mirrors whichever view is open and whatever the board
        is called. Routed through one function so a future view cannot forget
-       it — the browse page had exactly that bug. */
+       it, the browse page had exactly that bug. */
     function syncMobileBar() {
       if (!window.CustNav) return;
       // Inside a board, back means back to the boards -- leaving the page
@@ -189,14 +189,14 @@
       state.activeId = id; boardCat = 'all'; saveState(); mirror();
       homeView.classList.add('hidden'); boardView.classList.remove('hidden');
       window.scrollTo(0, 0);
-      prevSig = null; // fresh board — no pip pop on first paint
+      prevSig = null; // fresh board, no pip pop on first paint
       renderMode(); renderCatTabs(); renderCatPicker(); renderStarterNote();
       renderBoard(); renderVibe(); renderPalette(); renderSignals(); updateToju();
       syncMobileBar();
       document.getElementById('boardTitle').value = activeBoard().name || '';
     }
 
-    // ── starter-board note — labels the inspiration, offers adoption ──
+    // ── starter-board note, labels the inspiration, offers adoption ──
     function renderStarterNote() {
       const el = document.getElementById('starterNote');
       const b = activeBoard();
@@ -204,14 +204,14 @@
       el.classList.remove('hidden');
       /* The three-line explanation is gone; the action it wrapped is not.
          What it said is still said where it is needed: the board's own card in
-         the grid reads "Inspiration — not real listings", so nobody opens this
+         the grid reads "Inspiration, not real listings", so nobody opens this
          thinking these are homes for sale. Repeating it inside the board, in a
          paragraph, was telling someone a second time what they had already
          read on the way in. */
       el.innerHTML = `<div class="t">Nothing here is a Synapse listing.</div>
         <button class="keep" id="keepBtn">Keep this board</button>`;
       document.getElementById('keepBtn').addEventListener('click', () => {
-        delete b.starter; saveState(); mirror(); // now it's theirs — Tayo may read it
+        delete b.starter; saveState(); mirror(); // now it's theirs, Tayo may read it
         /* renderMode() too: the Dream hint is worded off b.starter, so without
            it the board stayed labelled "Keep this board and Tayo starts
            matching you to it" after you had already kept it. */
@@ -219,14 +219,14 @@
       });
     }
 
-    // ── board signal summary — what the board says, honestly. No score, no
+    // ── board signal summary, what the board says, honestly. No score, no
     //    percentage: there is no scoring model, so we only surface the signals
     //    the board actually holds (vibe + categorised pins) and which are thin. ──
     const SIGNALS = [
       { id: 'style',     lbl: 'Style',     tip: 'pin an interior or a palette you love' },
       { id: 'area',      lbl: 'areas',     tip: 'pin a street, skyline or neighbourhood that feels right' },
       { id: 'housing',   lbl: 'housing',   tip: 'pin the kind of building you see yourself in' },
-      { id: 'lifestyle', lbl: 'lifestyle', tip: 'pin how you want to live — a pool, a terrace, a workspace' },
+      { id: 'lifestyle', lbl: 'lifestyle', tip: 'pin how you want to live, a pool, a terrace, a workspace' },
     ];
     let prevSig = null; // last rendered counts, so only newly-lit pips animate
     function signalCounts(b) {
@@ -259,14 +259,14 @@
       const read = document.getElementById('sigRead');
       const total = SIGNALS.reduce((t, s) => t + n[s.id], 0);
       if (total === 0) {
-        read.innerHTML = 'Nothing pinned yet — each pin teaches this board something: style, an area, a kind of home, a way of living.';
+        read.innerHTML = 'Nothing pinned yet, each pin teaches this board something: style, an area, a kind of home, a way of living.';
       } else {
         const sorted = SIGNALS.slice().sort((a, c) => n[c.id] - n[a.id]);
         const strong = sorted[0], weak = sorted[sorted.length - 1];
         if (n[weak.id] === 0) {
-          read.innerHTML = `This board says ${n[strong.id] >= 3 ? 'a lot' : 'a little'} about <b>${strong.lbl.toLowerCase()}</b>, nothing yet about <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+          read.innerHTML = `This board says ${n[strong.id] >= 3 ? 'a lot' : 'a little'} about <b>${strong.lbl.toLowerCase()}</b>, nothing yet about <b>${weak.lbl.toLowerCase()}</b>, ${weak.tip}.`;
         } else if (n[weak.id] < 3) {
-          read.innerHTML = `Every signal has something. The thinnest is <b>${weak.lbl.toLowerCase()}</b> — ${weak.tip}.`;
+          read.innerHTML = `Every signal has something. The thinnest is <b>${weak.lbl.toLowerCase()}</b>, ${weak.tip}.`;
         } else {
           read.innerHTML = 'Style, areas, housing and lifestyle all come through clearly. This board is ready for Tayo.';
         }
@@ -279,7 +279,7 @@
       const b = activeBoard(); const cur = b.mode || 'dream';
       document.getElementById('modeSwitch').innerHTML = MODES.map((m) =>
         `<button role="tab" class="ms ${m.id === cur ? 'on' : ''}" data-mode="${m.id}" aria-selected="${m.id === cur}">${m.lbl}</button>`).join('');
-      /* The Dream hint ends "This is what Tayo matches you to" — true only once
+      /* The Dream hint ends "This is what Tayo matches you to", true only once
          the board is theirs. mirror() skips starter boards on purpose, so on
          one of those the sentence asserted the opposite of what the code does.
          The starter note directly below already offers Keep this board. */
@@ -329,7 +329,7 @@
       if (!confirm('Delete this board? Its pins will be removed.')) return;
       state.boards = state.boards.filter((b) => b.id !== state.activeId);
       if (state.boards.length === 0) state.boards.push({ id: uid(), name: 'My dream home', vibe: [], images: [] });
-      // the deleted board must stop informing Tayo — clear the mirror until
+      // the deleted board must stop informing Tayo, clear the mirror until
       // the visitor opens another board (which re-mirrors it)
       try { localStorage.removeItem(MIRROR); } catch (e) {}
       saveState(); toHome();
@@ -343,7 +343,7 @@
     function renderBoard() {
       const b = activeBoard();
       if (!b.images.length) {
-        boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape — Tayo does the rest.</p></div></div>';
+        boardEl.innerHTML = '<div class="card add-card"><div style="text-align:center;padding:40px 0;color:var(--ink-muted)"><p style="max-width:400px;margin:0 auto;font-size:14.5px">This board is empty. Pin a few images below and it starts to take shape, Tayo does the rest.</p></div></div>';
         return;
       }
       // keep original indices so remove/lookup stays correct under a filter
@@ -395,7 +395,7 @@
       if (housing.length) parts.push('home type: ' + housing.join(', '));
       if (areas.length) parts.push('areas that feel right: ' + areas.join(', '));
       const q = 'Find me verified homes that match my "' + (b.name || 'dream') + '" board'
-        + (parts.length ? ' — ' + parts.join('; ') : '') + '.';
+        + (parts.length ? ', ' + parts.join('; ') : '') + '.';
       document.getElementById('tojuBtn').href = 'toju.html?ask=' + encodeURIComponent(q);
     }
 
@@ -428,7 +428,7 @@
     // The manifest's share_target (GET) lands shares here as ?share_title/
     // share_text/share_url. HONEST SCOPE: the OS share sheet only offers
     // Synapse after the PWA is INSTALLED (Chromium on Android/desktop). In a
-    // normal browser tab nothing new appears in the share sheet — this page
+    // normal browser tab nothing new appears in the share sheet, this page
     // just also understands those params if a link carries them. We never
     // auto-pin: the shared link is previewed into the pin box for the visitor
     // to confirm, because a share is not yet a decision.
@@ -437,14 +437,14 @@
       const su = firstUrl(qp.get('share_url')) || firstUrl(qp.get('share_text'));
       if (!su) return false;
       const label = (qp.get('share_title') || '').trim().slice(0, 80);
-      // land in a board the visitor owns — never the inspiration starter
+      // land in a board the visitor owns, never the inspiration starter
       let b = activeBoard();
       if (!b || b.starter) b = state.boards.find((x) => !x.starter);
       if (!b) { b = { id: uid(), name: 'My pins', vibe: [], images: [] }; state.boards.push(b); saveState(); }
       openBoard(b.id);
       const note = document.getElementById('shareNote');
       note.classList.remove('hidden');
-      note.innerHTML = `<div class="t"><b>Shared to Synapse${label ? ' — “' + esc(label) + '”' : ''}.</b>
+      note.innerHTML = `<div class="t"><b>Shared to Synapse${label ? ', “' + esc(label) + '”' : ''}.</b>
           The link is ready below: pick a category and hit <b>Pin it</b> to add it to “${esc(b.name)}”.
           If the link isn't a direct image it may not render as a tile.</div>
         <button class="sn-x" aria-label="Dismiss shared link">×</button>`;
@@ -460,7 +460,7 @@
     // notify.js performs lazily, so this is idempotent.
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
 
-    // boot — a share lands first, then deep link ?board=<id>, else boards home.
+    // boot, a share lands first, then deep link ?board=<id>, else boards home.
     // Re-mirror the last-active board so synapse_moodboard_v1 (what Tayo
     // reads) is always in step with the boards store, even after edits made
     // in another tab or an interrupted session.

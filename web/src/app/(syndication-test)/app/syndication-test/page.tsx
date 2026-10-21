@@ -7,7 +7,7 @@ export default function Page() {
   return (
     <>
       <h1>
-        Syndication engine — tests
+        Syndication engine, tests
       </h1>
       <div id="out"></div>
       <div className="sum" id="sum"></div>

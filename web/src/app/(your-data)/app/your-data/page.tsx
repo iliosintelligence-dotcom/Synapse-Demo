@@ -25,10 +25,10 @@ export default function Page() {
             Checking…
           </p>
           <div className="yd-id" id="whoId">
-            —
+            -
           </div>
           <p className="yd-note">
-            {"\n        This is the identifier your data is stored against. Quote it if you write to us about\n        your data — without it we cannot find you, because there is no name attached to it.\n      "}
+            {"\n        This is the identifier your data is stored against. Quote it if you write to us about\n        your data, without it we cannot find you, because there is no name attached to it.\n      "}
           </p>
           <div className="yd-row" style={{ "marginTop": "12px" }}>
             <button className="yd-btn" id="copyId" type="button">
@@ -80,10 +80,10 @@ export default function Page() {
             <b>
               Your sign-in stays.
             </b>
-            {" We keep your email address and password so the account still\n        works — nothing else. If you want the account itself gone as well, say so when you write\n        to us and we will remove it; you are entitled to that and we will not argue about it.\n      "}
+            {" We keep your email address and password so the account still\n        works, nothing else. If you want the account itself gone as well, say so when you write\n        to us and we will remove it; you are entitled to that and we will not argue about it.\n      "}
           </p>
           <p className="yd-note">
-            {"\n        If an agency has already been introduced to you, they keep the record that an\n        introduction happened — which home, which agency, and when. Your name, number, budget\n        and preferences are removed from it.\n      "}
+            {"\n        If an agency has already been introduced to you, they keep the record that an\n        introduction happened, which home, which agency, and when. Your name, number, budget\n        and preferences are removed from it.\n      "}
           </p>
           <div className="yd-confirm">
             <label className="yd-note" htmlFor="confirmBox">

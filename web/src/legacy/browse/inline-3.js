@@ -2,7 +2,7 @@
     const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
     const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
     const VISITOR = localStorage.getItem('toju_visitor_v1');
-    // card markup, shaper, map and helpers shared with the Tayo canvas —
+    // card markup, shaper, map and helpers shared with the Tayo canvas -
     // matches-shared.js + docs/STATE_CONTRACT.md
     const { naira, esc } = window.SynMatches;
 
@@ -12,7 +12,7 @@
     let items = [];
     let loadState = 'loading';   // loading | ready | failed
     let saves = SynMatches.readSaves();
-    // another tab hearted something — repaint from storage, do not drift
+    // another tab hearted something, repaint from storage, do not drift
     SynMatches.onSavesChanged(function (s) { saves = s; render(); });
     let picked = new Set();
     let searchQ = '';
@@ -61,7 +61,7 @@
 
     /* ── "New since your last visit" (item 14) ────────────────────────────
        The baseline is read ONCE at load and the clock is reset immediately, so
-       the comparison is always "since the previous visit" — not "since a moment
+       the comparison is always "since the previous visit", not "since a moment
        ago", which is what you get if you reset it on every render and the
        section quietly empties while you are looking at it.
 
@@ -70,7 +70,7 @@
          hidden rather than declaring everything new.
        · Only `listed_at` counts. A listing that existed before and was merely
          re-listed is not new to this person, so re-listing cannot manufacture
-         novelty — which is exactly the fake-freshness the product exists to
+         novelty, which is exactly the fake-freshness the product exists to
          replace.
        · No "0 new" state. Nothing new means no section. */
     const VISIT_KEY = 'synapse_last_visit';
@@ -89,7 +89,7 @@
       const wrap = document.getElementById('freshSince');
       const grid = document.getElementById('freshGrid');
       if (!wrap || !grid) return;
-      if (!lastVisitAt) { wrap.hidden = true; return; }   // first visit — claim nothing
+      if (!lastVisitAt) { wrap.hidden = true; return; }   // first visit, claim nothing
 
       const fresh = shownItems.filter((l) => {
         const t = l.listedAt ? Date.parse(l.listedAt) : NaN;
@@ -108,17 +108,17 @@
       const grid = document.getElementById('grid');
       // HARD RULE: skeletons only while the listings request is genuinely in
       // flight. loadState flips to ready/failed the moment it settles, and the
-      // next render paints real cards or the honest empty state — a skeleton
+      // next render paints real cards or the honest empty state, a skeleton
       // never stands in for content that does not exist.
       if (loadState === 'loading' && !hasSessionView && items.length === 0) {
         renderSkeletons(grid);
-        updateSavedNav();   // the counter is real data — it shouldn't wait for listings
+        updateSavedNav();   // the counter is real data, it shouldn't wait for listings
         return;
       }
       grid.removeAttribute('aria-busy');
       setGridStatus('');
       sortItems();
-      // Compare is a shortlist tool — it appears once a shortlist exists.
+      // Compare is a shortlist tool, it appears once a shortlist exists.
       // Before two homes are ♥'d, the checkboxes and the bar are just noise.
       const compareOn = saves.size >= 2;
       if (!compareOn && picked.size) picked.clear();
@@ -163,7 +163,7 @@
     }
 
     /* The empty area speaks for whichever of three situations is true. It is
-       never filled with sample homes — an empty result is shown as empty. */
+       never filled with sample homes, an empty result is shown as empty. */
     function renderEmptyState() {
       const box = document.querySelector('.empty');
       if (!box) return;
@@ -171,7 +171,7 @@
       box.hidden = false;
 
       // While the request is in flight the grid shows skeletons instead (render()
-      // returns early) — unless a real Tayo session already answered with an
+      // returns early), unless a real Tayo session already answered with an
       // empty match list, in which case the honest "nothing fit" copy below is
       // the truth and must not be replaced by shimmer.
       if (loadState === 'loading' && !hasSessionView) {
@@ -185,7 +185,7 @@
         setMobileCount('Couldn’t load homes');
         box.innerHTML = '<div class="empty-ttl">Nothing to show right now</div>'
           + '<p class="empty-sub">' + (navigator.onLine
-              ? 'We couldn’t reach our listings — nothing was found. This is on our side, not yours.'
+              ? 'We couldn’t reach our listings, nothing was found. This is on our side, not yours.'
               : 'You’re offline, so nothing could be found. Reconnect and try again.') + '</p>'
           + '<div class="empty-acts">'
           + '<button class="btn btn-primary" type="button" id="retryLoad">Try again</button>'
@@ -194,7 +194,7 @@
         if (r) r.addEventListener('click', () => location.reload());
         return;
       }
-      // loaded fine — genuinely nothing matched this brief/filters
+      // loaded fine, genuinely nothing matched this brief/filters
       box.innerHTML = '<div class="empty-ttl">No homes fit this exact brief yet</div>'
         + '<p class="empty-sub">That usually just means the brief is a little tight. Try one of these:</p>'
         + '<div class="empty-acts">'
@@ -221,11 +221,11 @@
 
     /* ── List ⇄ Map (item 20) ────────────────────────────────────────────
        Both views render the same filtered set, so switching never changes
-       which homes you are looking at — only how. The toolbar stays in map
+       which homes you are looking at, only how. The toolbar stays in map
        view because filtering is the point of a map.
 
        Leaflet caches its container size, so a map whose box just changed
-       renders into the old dimensions — grey tiles, pins in the wrong place.
+       renders into the old dimensions, grey tiles, pins in the wrong place.
        invalidateSize() after the height transition is what keeps it honest. */
     let viewMode = 'list';
     function setView(mode, opts) {
@@ -247,7 +247,7 @@
       if (b) setView(b.dataset.view);
     });
 
-    /* The mobile Map chip drives the same setView as the desktop segment —
+    /* The mobile Map chip drives the same setView as the desktop segment -
        one source of truth for the view, two ways in. */
     (function () {
       const chip = document.getElementById('bmMap');
@@ -267,7 +267,7 @@
 
     /* One handler, both grids. The "new since your last visit" section renders
        the same cards, so saving, comparing and opening a home must behave
-       identically there — a card that looks live but does nothing is worse than
+       identically there, a card that looks live but does nothing is worse than
        no section at all. Fully delegated, so it works wherever it is attached. */
     function onGridClick(e) {
       const sv = e.target.closest('[data-save]');
@@ -281,7 +281,7 @@
           // heart (render() replaced the node, so tag the new one)
           const heart = document.querySelector('[data-save="' + id + '"]');
           if (heart) heart.classList.add('pop');
-          toast('Saved — your ♥ homes stay on this device.');
+          toast('Saved, your ♥ homes stay on this device.');
         } else {
           toast('Removed from your saved homes.');
         }
@@ -301,12 +301,12 @@
       const card = e.target.closest('.listing');
       if (card) {
         const id = card.getAttribute('data-id');
-        // record the visit locally BEFORE navigating — this is the only writer
+        // record the visit locally BEFORE navigating, this is the only writer
         // of the recently-viewed history, so the rail can only ever show homes
         // this device really opened
         const viewed = shownItems.find((l) => l.id === id) || items.find((l) => l.id === id);
         if (viewed) SynMatches.recordView(viewed);
-        /* The title is a real link now, and a link navigates itself — including
+        /* The title is a real link now, and a link navigates itself, including
            cmd/ctrl-click, which fires a click event AND opens a new tab. Falling
            through to location.href would send this tab to the listing at the
            same moment the new one opened. The visit is still recorded above,
@@ -320,7 +320,7 @@
 
     document.getElementById('sortSel').addEventListener('change', () => { writePrefs(); render(); });
 
-    // lightweight feedback toast — same voice + surface as property.html (#synToast in app.css)
+    // lightweight feedback toast, same voice + surface as property.html (#synToast in app.css)
     function toast(msg, kind) {
       let t = document.getElementById('synToast');
       if (!t) { t = document.createElement('div'); t.id = 'synToast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
@@ -330,7 +330,7 @@
       clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3600);
     }
 
-    // ── saved counter in the appbar — a true count of the shared save store,
+    // ── saved counter in the appbar, a true count of the shared save store,
     //    hidden entirely at zero (an empty counter is noise, not information) ──
     let lastSavedCount = null;
     function updateSavedNav() {
@@ -349,7 +349,7 @@
       lastSavedCount = n;
     }
 
-    // ── recently viewed rail — reads only the local view history; with no
+    // ── recently viewed rail, reads only the local view history; with no
     //    history the section stays [hidden] (never placeholder cards) ──
     function renderRecent() {
       const rail = document.getElementById('recentRail');
@@ -376,7 +376,7 @@
     });
     searchClear.addEventListener('click', () => { searchInput.value = ''; searchQ = ''; searchClear.hidden = true; render(); searchInput.focus(); });
 
-    // quick deal-type filters (Buy / Rent / Shared living) — click again to clear
+    // quick deal-type filters (Buy / Rent / Shared living), click again to clear
     document.getElementById('dealFilter').addEventListener('click', (e) => {
       const b = e.target.closest('[data-deal]'); if (!b) return;
       const d = b.getAttribute('data-deal');
@@ -386,7 +386,7 @@
       render();
     });
 
-    // "Verified only" — the customer's choice to hide unverified/in-progress homes
+    // "Verified only", the customer's choice to hide unverified/in-progress homes
     const verifyToggle = document.getElementById('verifyToggle');
     verifyToggle.addEventListener('click', () => {
       verifiedOnly = !verifiedOnly;
@@ -445,7 +445,7 @@
            "Flood risk 64/100 ⚠" -- a warning triangle, a denominator, a
            winner highlighted in green -- off a random number. Somebody was
            going to rule out a house on it. */
-        ['Gross yield', sel.map((l) => l.yield ?? '—'), (v, b) => typeof v !== 'number' ? '—' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
+        ['Gross yield', sel.map((l) => l.yield ?? '-'), (v, b) => typeof v !== 'number' ? '-' : `<span class="${v === b ? 'best' : ''}">${v}%</span>`, 'max'],
       ];
       let html = '<table class="cmptable"><tr><th></th>' + sel.map((l) => `<th>${esc(l.ttl)}</th>`).join('') + '</tr>';
       rows.forEach(([label, vals, fmt, dir]) => {
@@ -475,8 +475,8 @@
             }),
           });
           const d = await r.json();
-          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">Tayo:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Tayo — try again.';
-        } catch (e) { box.textContent = 'Connection hiccup — try again.'; }
+          box.innerHTML = d.verdict ? '<b style="color:var(--ink)">Tayo:</b> ' + esc(d.verdict) : 'Hmm, I could not reach Tayo, try again.';
+        } catch (e) { box.textContent = 'Connection hiccup, try again.'; }
       });
     });
     /* The compare sheet covers the screen, and the listing behind it was still
@@ -506,7 +506,7 @@
     });
 
     /* The mobile row replaces the summary card, so anything that writes the
-       summary has to write this too — the matched view updated only the card
+       summary has to write this too, the matched view updated only the card
        and left the row stuck on "Loading homes…". */
     function setMobileCount(html) {
       const el = document.getElementById('bmCount');
@@ -543,7 +543,7 @@
       const rows = [...verifiedRows, ...unvRows, ...sharedRows];
       loadState = 'ready';
       if (hasSessionView) return;
-      if (rows.length === 0) { render(); return; }   // truly nothing live — say so
+      if (rows.length === 0) { render(); return; }   // truly nothing live, say so
 /* THE COVER IS A PHOTO (Eden, 2026-10-02): a listing whose first upload
          was a video showed a blank card, because the video's URL went into an
          <img>. The first photo in display order is the cover; a video-only
@@ -614,7 +614,7 @@
            below DOES stay long, because there it is carrying something the
            chip cannot -- what unverified actually means and what to do next. */
         /* Was "<b>3 beds</b> · ask Tayo if it fits your life" on every verified
-           card — the same sentence under every home, telling you nothing about
+           card, the same sentence under every home, telling you nothing about
            the one you are looking at. The card's job while you scan is to say
            what this home IS, so it carries the facts: beds, baths, floor area.
            Each part is dropped rather than guessed when the column is empty.
@@ -651,7 +651,7 @@
         body: JSON.stringify({ action: 'matches', visitorId: VISITOR }),
       }).then((r) => r.json()).then((d) => {
         // A real session exists but nothing matched: show the honest empty
-        // state — never fall back to other homes silently.
+        // state, never fall back to other homes silently.
         if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
           hasSessionView = true;
           items = []; picked = new Set();
@@ -664,7 +664,7 @@
         if (!Array.isArray(d.matches) || d.matches.length === 0) return;
         hasSessionView = true;
         setMatchedHeadings();
-        // SAME shaper the Tayo canvas uses — the canvas is an exact preview of this page
+        // SAME shaper the Tayo canvas uses, the canvas is an exact preview of this page
         items = d.matches.map(SynMatches.shapeTojuMatch);
         picked = new Set();
         setMobileCount('<b>' + items.length + '</b> match your brief');

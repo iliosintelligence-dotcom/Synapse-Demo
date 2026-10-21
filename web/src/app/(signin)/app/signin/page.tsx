@@ -28,7 +28,7 @@ export default function Page() {
               The last step before the keys.
             </p>
             <p className="au-sub" id="artSub">
-              Your account keeps your saved homes, your conversations with Tayo, and the agents you have spoken to — on every device.
+              Your account keeps your saved homes, your conversations with Tayo, and the agents you have spoken to, on every device.
             </p>
             <div className="au-marks">
               <span>
@@ -148,7 +148,7 @@ export default function Page() {
                 {" "}
                 <input className="au-input" id="auStaffPhone" name="staffPhone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" />
                 <div className="au-hint">
-                  Where Tayo sends you a lead the moment it qualifies. Any format — 08…, 234… or +234…
+                  Where Tayo sends you a lead the moment it qualifies. Any format, 08…, 234… or +234…
                 </div>
                 <div className="au-err" id="errStaffPhone" role="alert" hidden></div>
               </div>
@@ -197,7 +197,7 @@ export default function Page() {
                 {" "}
                 <input className="au-input" id="auPhone" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="0803 123 4567" />
                 <div className="au-hint">
-                  Nigerian numbers welcome in any format — 08…, 234… or +234…
+                  Nigerian numbers welcome in any format, 08…, 234… or +234…
                 </div>
                 <div className="au-err" id="errPhone" role="alert" hidden></div>
               </div>
@@ -232,7 +232,7 @@ export default function Page() {
                   {" "}
                 </label>
                 <p className="au-consent-note">
-                  {"\n              Synapse uses an AI advisor. Your messages and the details you share are processed\n              by providers outside Nigeria — the Privacy Policy lists who, and what for.\n            "}
+                  {"\n              Synapse uses an AI advisor. Your messages and the details you share are processed\n              by providers outside Nigeria, the Privacy Policy lists who, and what for.\n            "}
                 </p>
                 <div className="au-err" id="errConsent" role="alert" hidden></div>
               </div>

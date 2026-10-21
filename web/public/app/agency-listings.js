@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Synapse — agency listings persistence.
+   Synapse, agency listings persistence.
 
    The agency dashboard kept listings in localStorage only: `toPropertyRow()`
    existed in agency.html and was never called, so a listing an agency created
@@ -9,7 +9,7 @@
    TRUST BOUNDARY (the important part):
    An agency may create and edit its own listings. It may never certify them.
    `verification_status`, `verification_nodes`, `trust_score` and `verified_at`
-   are omitted from every write here, and the database refuses them too — the
+   are omitted from every write here, and the database refuses them too, the
    RLS insert policy pins verification to 'unverified' on creation and the
    update policy forbids changing it afterwards. A listing an agency creates is
    unverified and stays unverified until the platform says otherwise. Client
@@ -25,14 +25,14 @@
 
   /* Columns an agency is allowed to write. Anything absent from this list is
      system-owned or derived and is dropped before the request rather than sent
-     and rejected — a field silently stripped by RLS is far harder to debug
+     and rejected, a field silently stripped by RLS is far harder to debug
      than one that was never sent. */
   var WRITABLE = [
     'title', 'description', 'property_type', 'listing_type',
     'price', 'price_period', 'move_in_cost', 'service_charge',
     /* The agency fee and the legal fee. Writable by the agency like every
        other charge, and deliberately absent from the social caption payload
-       in social-generate — the listing page shows them, a post does not. */
+       in social-generate, the listing page shows them, a post does not. */
     'agency_fee', 'legal_fee',
     'address', 'city', 'state', 'country', 'latitude', 'longitude',
     /* The Area field. The form and every card call it `neighbourhood`;
@@ -149,7 +149,7 @@
     if (!hit) return false;
     absent[hit] = true;
     if (window.console) {
-      console.warn('[listings] "' + hit + '" is not in the database yet — saving without it. '
+      console.warn('[listings] "' + hit + '" is not in the database yet, saving without it. '
         + 'Run the pending migration to store it.');
     }
     return true;
@@ -157,7 +157,7 @@
 
   /* An agency's own switch controls visibility, so mirror it into `status`.
      `properties_select_public` requires is_active AND status='live', so a row
-     left at the 'draft' default would be invisible to buyers and to browse —
+     left at the 'draft' default would be invisible to buyers and to browse -
      which is exactly the "it saved but nothing happened" failure this module
      exists to remove. */
   function withStatus(row) {
@@ -183,7 +183,7 @@
   }
 
   /* ── media ───────────────────────────────────────────────────────────────
-     property_media has no is_primary column — order is the primary signal, so
+     property_media has no is_primary column, order is the primary signal, so
      display_order 0 IS the cover image. Rewriting media as delete-then-insert
      keeps ordering honest without diffing. */
   function writeMedia(c, propertyId, media) {
@@ -246,7 +246,7 @@
       if (!aid) return { data: [], error: null };
       /* Scoped by agency_id EXPLICITLY, not left to RLS. Postgres permissive
          policies OR together, and `properties_select_public` matches every
-         live listing on the platform — so relying on RLS alone would hand this
+         live listing on the platform, so relying on RLS alone would hand this
          agency every other agency's inventory. RLS is the security floor; the
          query still has to ask the right question. */
       return c1.from('properties')
@@ -303,7 +303,7 @@
      explicitly rather than trusting RLS to be the only filter.
 
      `lost` leads are excluded because this feeds a live pipeline view whose
-     funnel has no column for them — they are not hidden data, they are simply
+     funnel has no column for them, they are not hidden data, they are simply
      not pipeline. Soft-deleted rows are excluded for the same reason as
      listings. The joined property supplies the title and price the agency
      needs to recognise which listing the lead is actually about. */
@@ -686,7 +686,7 @@
      The invite is a record with a token; the email is matched server-side when
      the invitee accepts, because an address cannot be resolved to a profile
      from the browser. Delivery is not configured, so the caller gets a link to
-     share — everything after that link is real. */
+     share, everything after that link is real. */
   function invites() {
     var c1;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
@@ -812,7 +812,7 @@
         .select('id, agent_id, property_id, starts_at, duration_minutes, capacity, status, agency_note, properties(title, city), profiles:agent_id(full_name)')
         .eq('agency_id', aid)
         /* Cancelled tours are kept, not hidden. A tour that was called off is
-           part of the record — who had booked, and that it did not happen —
+           part of the record, who had booked, and that it did not happen -
            and an agency that cannot see it cannot answer for it. Buyers are a
            different matter: open_inspection_slots still excludes cancelled, so
            nobody can join one. */
@@ -871,7 +871,7 @@
   /* One call, so a cancellation cannot half-happen: the slot, the attendance
      rows and the affected leads all move together, and every buyer whose only
      tour this was goes back to `qualified` so they can be offered a new time.
-     Nothing is deleted — cancelled rows stay as the record. */
+     Nothing is deleted, cancelled rows stay as the record. */
   function cancelTour(id) {
     return client().then(function (c) {
       return c.rpc('cancel_inspection_slot', { p_slot_id: id });
@@ -898,7 +898,7 @@
   /* ── team messaging ──────────────────────────────────────────────────────
      The agency's own thread with one of its people, in the app. RLS already
      restricts a row to its two participants inside an agency they share, so
-     the query does not re-implement that — it only has to ask for the pair in
+     the query does not re-implement that, it only has to ask for the pair in
      both directions, because a thread is what each said to the other. */
   function thread(agentId) {
     var c1, me;
@@ -968,7 +968,7 @@
          view: the numbers are public, the people behind them are not, so nobody
          can enumerate who follows an agent. Second request rather than an embed
          because a view carries no foreign key to join on. Failure here degrades
-         to nulls — the card then prints "—" rather than a zero it cannot back. */
+         to nulls, the card then prints "-" rather than a zero it cannot back. */
       var ids = rows.map(function (m) { return m.profile_id; });
       if (!ids.length) return { rows: rows, social: {} };
       return c1.from('agent_social_counts').select('agent_id, followers, likes')
@@ -1362,7 +1362,7 @@
     });
   }
 
-  /* The agency's own record — name and verification tier. The portal used to
+  /* The agency's own record, name and verification tier. The portal used to
      hardcode "Prestige Realty Ltd. · Gold Verified" in its header, so every
      agency saw someone else's name and an unearned trust tier on their own
      dashboard. */
@@ -1389,7 +1389,7 @@
   }
 
   /* Paints [data-agency-name] / [data-agency-initials] / [data-agency-tier] /
-     [data-agency-eyebrow] wherever they appear. Silent when signed out — the
+     [data-agency-eyebrow] wherever they appear. Silent when signed out, the
      markup ships with neutral placeholders, never a specimen agency. */
   function paintAgency() {
     return agency().then(function (a) {
@@ -1402,7 +1402,7 @@
          tier that was special-cased. That made the risky branch the fallback:
          any tier that was not literally "verified" had the word appended to
          it, and the four agencies whose tier is "unverified" read
-         "✦ Unverified verified" — a contradiction wearing a badge glyph, on
+         "✦ Unverified verified", a contradiction wearing a badge glyph, on
          every page of their portal.
 
          Only GOLD and BASIC are qualifiers that need the word ("Gold
@@ -1507,7 +1507,7 @@
       return Promise.reject(new Error('Use a PNG, JPG, WEBP or SVG'));
     }
     if (file.size > LOGO_MAX_BYTES) {
-      return Promise.reject(new Error('That file is ' + Math.ceil(file.size / 1024 / 1024) + 'MB — keep a logo under 2MB'));
+      return Promise.reject(new Error('That file is ' + Math.ceil(file.size / 1024 / 1024) + 'MB, keep a logo under 2MB'));
     }
     var c1, aid;
     return client().then(function (c) { c1 = c; return agencyId(); }).then(function (a) {
@@ -1803,7 +1803,7 @@
     if (file.size > cap) {
       return Promise.reject(new Error(
         'That ' + (isVideo ? 'video' : 'photo') + ' is '
-        + Math.ceil(file.size / 1024 / 1024) + 'MB — keep it under '
+        + Math.ceil(file.size / 1024 / 1024) + 'MB, keep it under '
         + Math.round(cap / 1024 / 1024) + 'MB'));
     }
 
@@ -2155,7 +2155,7 @@
     }).then(function (r) {
       if (r.error) throw r.error;
       if (!r.data || !r.data.length) {
-        throw new Error('That caption could not be changed — it may already have been approved or removed.');
+        throw new Error('That caption could not be changed, it may already have been approved or removed.');
       }
       return true;
     });
@@ -2841,7 +2841,7 @@
      A file that fails does not stop the rest. The caller is handed both lists
      and decides what to say; losing seven good photos because the eighth was a
      screenshot of a PDF would be its own bug. */
-  /** brand: { logoUrl, price, verified } — optional. When given, a marked
+  /** brand: { logoUrl, price, verified }, optional. When given, a marked
    *  copy of each photograph is uploaded beside the original and described in
    *  `items`. `urls` keeps its old shape so every existing caller is
    *  untouched. */

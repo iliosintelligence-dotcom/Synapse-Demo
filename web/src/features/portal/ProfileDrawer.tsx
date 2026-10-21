@@ -77,9 +77,9 @@ export function ProfileDrawer({ welcome = false, onClose, onSaved }: { welcome?:
             <fieldset className={s.sec}>
               <legend>Your record</legend>
               <div className={s.record}>
-                <div><b>{me.closed ?? "—"}</b><span>closed</span></div>
-                <div><b>{me.rating ?? "—"}</b><span>rating</span></div>
-                <div><b>{me.responseRate == null ? "—" : `${me.responseRate}%`}</b><span>reply rate</span></div>
+                <div><b>{me.closed ?? "-"}</b><span>closed</span></div>
+                <div><b>{me.rating ?? "-"}</b><span>rating</span></div>
+                <div><b>{me.responseRate == null ? "-" : `${me.responseRate}%`}</b><span>reply rate</span></div>
               </div>
               <p className={s.hint}>Synapse records these from your actual deals and replies. They are not editable, which is what makes them worth anything to a buyer.</p>
             </fieldset>

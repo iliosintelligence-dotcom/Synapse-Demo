@@ -160,7 +160,7 @@ export function tojuQuestion(b: Board): string {
   if (b.vibe.length) parts.push(`vibe: ${b.vibe.join(", ")}`);
   if (caps("housing").length) parts.push(`home type: ${caps("housing").join(", ")}`);
   if (caps("area").length) parts.push(`areas that feel right: ${caps("area").join(", ")}`);
-  return `Find me verified homes that match my "${b.name || "dream"}" board${parts.length ? ` — ${parts.join("; ")}` : ""}.`;
+  return `Find me verified homes that match my "${b.name || "dream"}" board${parts.length ? `, ${parts.join("; ")}` : ""}.`;
 }
 
 /* ── the reducer: every change to the boards, in one place ───────────────────── */

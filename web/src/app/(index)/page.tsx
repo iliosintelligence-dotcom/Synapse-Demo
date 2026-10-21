@@ -529,7 +529,7 @@ export default function Page() {
               Synapse
             </h2>
             <p className="statement">
-              {"The work you have been doing by hand — the posting, the chasing, the checking — "}
+              {"The work you have been doing by hand, the posting, the chasing, the checking, "}
               <em>
                 done once, properly, and on its own.
               </em>
@@ -550,7 +550,7 @@ export default function Page() {
                   Upload once. Synapse writes the copy in your agency’s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.
                 </p>
                 <p className="lede">
-                  Each version is checked against that platform’s real limits — caption length, aspect ratio, video duration — and it never claims “verified” on a listing that is not.
+                  Each version is checked against that platform’s real limits, caption length, aspect ratio, video duration, and it never claims “verified” on a listing that is not.
                 </p>
                 <p className="lede">
                   No agency retainer. No social media manager. No waiting on a designer.
@@ -571,7 +571,7 @@ export default function Page() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Every lead arrives with the city, the budget and the brief already attached — and Tayo’s opening position with it.
+                  Every lead arrives with the city, the budget and the brief already attached, and Tayo’s opening position with it.
                 </p>
                 <p className="lede">
                   Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.
@@ -647,7 +647,7 @@ export default function Page() {
                     </em>
                   </h2>
                   <p className="lede">
-                    Every listing, lead and verification in a single view — with the next action already decided for each one.
+                    Every listing, lead and verification in a single view, with the next action already decided for each one.
                   </p>
                   <div className="vc-reel" id="vcReel" role="group" aria-roledescription="carousel" aria-label="Three things Synapse keeps in view">
                     <div className="vc-track" id="vcTrack">
@@ -672,7 +672,7 @@ export default function Page() {
                           Know what worked
                         </h3>
                         <p>
-                          Every closed deal traced back to the post that started it — so you spend on what actually sells.
+                          Every closed deal traced back to the post that started it, so you spend on what actually sells.
                         </p>
                       </article>
                     </div>
@@ -804,7 +804,7 @@ export default function Page() {
               {" "}
             </a>
             <p className="foot-tag">
-              Synapse — by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.
+              Synapse, by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.
             </p>
             <p className="foot-tag">
               Screens on this page are the Synapse portal and Tayo with real listings; the leads, posts and chat in them are samples.

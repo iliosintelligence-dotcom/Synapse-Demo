@@ -56,7 +56,7 @@
       saved = []; persist();
     }
 
-    // shared with browse.html — see matches-shared.js + docs/STATE_CONTRACT.md
+    // shared with browse.html, see matches-shared.js + docs/STATE_CONTRACT.md
     const { esc, naira } = window.SynMatches;
     const convoScroll = document.querySelector('.convo-scroll');
     const scrollDown = () => {
@@ -68,7 +68,7 @@
       }
     };
 
-    /* ── right-side MATCHES CANVAS — a live preview of the Your-matches page.
+    /* ── right-side MATCHES CANVAS, a live preview of the Your-matches page.
        Cards, map and layout mirror browse.html EXACTLY (keep in sync with that
        page). No toolbar: whatever the user wants changed, they tell Tayo. The
        page opens as a centered chat and morphs to 25/75 when matches land. ── */
@@ -83,7 +83,7 @@
     }
 
     // browse.html parity: shaper, card markup and map all come from
-    // matches-shared.js — the canvas renders the SAME card browse.html does
+    // matches-shared.js, the canvas renders the SAME card browse.html does
     // (compare checkboxes are a browse-only tool; here you just tell Tayo).
     let cvSaves = SynMatches.readSaves();
     SynMatches.onSavesChanged(function (s) { cvSaves = s; renderCanvas(); });
@@ -131,14 +131,14 @@
     function matchesHtml(matches) {
       if (!Array.isArray(matches) || matches.length === 0) return '';
       const cards = matches.map((m) => {
-        const why = m.why ? '<div class="watch reason"><b>Recommended —</b> ' + esc(m.why) + '</div>' : '';
+        const why = m.why ? '<div class="watch reason"><b>Recommended -</b> ' + esc(m.why) + '</div>' : '';
         const room = m.room ? '<div class="watch">' +
           (m.room.totalRooms - m.room.housematesIn) + ' of ' + m.room.totalRooms + ' rooms free · ' +
           (m.room.genderPreference === 'any' ? 'any gender' : m.room.genderPreference + '-only') +
           (m.room.ensuite ? ' · ensuite' : '') + (m.room.billsIncluded ? ' · bills incl.' : '') +
           (m.room.vibe ? ' · ' + esc(m.room.vibe) : '') + '</div>' : '';
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
-          ? '<div class="watch"><b>Worth checking —</b> ' + esc(m.whatToWatch) + '</div>' : '';
+          ? '<div class="watch"><b>Worth checking -</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
         return '<a class="pcard" href="' + SynMatches.propertyHref(m.id) + '">'
           + (m.deal && m.deal.propertyType === 'land'
@@ -285,12 +285,12 @@
        moments a person starts to doubt the page.
 
        The wording is the doctrine's, not invented here, and it is deliberately
-       non-specific about counts — Tayo never claims to be "checking 214
+       non-specific about counts, Tayo never claims to be "checking 214
        listings" unless it is. Cleared by remove(), so a fast reply never shows
        a stage at all. */
     const TYPING_STAGES = [
       { at: 2500, text: 'Checking this against our verified listings…' },
-      { at: 6000, text: 'Still with you — I’d rather get this right than fast.' },
+      { at: 6000, text: 'Still with you, I’d rather get this right than fast.' },
     ];
 
     function typing() {
@@ -324,7 +324,7 @@
     // message is sent to the model but never rendered in the chat.
     const DREAM_CTX_PREFIX = '[Background from my Dream Home mood board';
     // The dream context is sent to the model but must never surface in the UI:
-    // the server persists it, so restored threads carry it — filter everywhere.
+    // the server persists it, so restored threads carry it, filter everywhere.
     const isDreamCtx = (m) => m && m.role === 'user' && typeof m.content === 'string' && m.content.startsWith(DREAM_CTX_PREFIX);
     /* ── the listing this conversation is about ───────────────────────────
        Arrives as ?reply=<id> from the listing page. Looked up here rather
@@ -784,7 +784,7 @@
         inner = JSON.parse(raw);
       } catch (e) {
         /* Envelopes arrive truncated or with a malformed tail often enough
-           that a strict parse is not sufficient — that is exactly the case
+           that a strict parse is not sufficient, that is exactly the case
            that was leaking JSON to the screen. Salvage just the reply string,
            which is the only part the reader actually needs. */
         const m = raw.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
@@ -863,7 +863,7 @@
         if (data.error || !data.reply) throw Object.assign(new Error('empty reply'), { kind: 'server' });
         /* Guard: the function normally parses the model's JSON envelope and
            returns its fields at the top level, but when that parse fails it
-           passes the raw text straight through — and the user gets a screenful
+           passes the raw text straight through, and the user gets a screenful
            of {"reply": …} on the main product surface. Seen intermittently in
            testing. Unwrap it here so a server-side parse miss can never surface
            as raw JSON; the real fix belongs in the toju-demo function. */
@@ -902,20 +902,20 @@
 
     /* ── error states ──────────────────────────────────────────────────────
        An error is NOT a Tayo message: it never enters the saved thread and
-       never speaks in Tayo's voice (he didn't say it — the connection failed).
+       never speaks in Tayo's voice (he didn't say it, the connection failed).
        It's a system notice that names the real cause, says what happens to the
        user's question, and offers the one action that fixes it. */
     const ERRORS = {
       offline:  { icon: 'unverified', ttl: "You're offline",
                   msg: 'Your question is saved. I’ll answer as soon as you’re back online.', auto: true },
       timeout:  { icon: 'pending', ttl: 'That took too long',
-                  msg: 'The connection is slow right now. Your question is still here — try again?' },
+                  msg: 'The connection is slow right now. Your question is still here, try again?' },
       busy:     { icon: 'pending', ttl: 'A lot of people are asking at once',
-                  msg: 'Give it a few seconds and try again — your question is saved.' },
+                  msg: 'Give it a few seconds and try again, your question is saved.' },
       server:   { icon: 'unverified', ttl: 'I couldn’t reach my advisor service',
-                  msg: 'This is on our side, not yours. Your question is saved — try again in a moment.' },
+                  msg: 'This is on our side, not yours. Your question is saved, try again in a moment.' },
       network:  { icon: 'unverified', ttl: 'Couldn’t connect',
-                  msg: 'Check your connection and try again — your question is saved.' },
+                  msg: 'Check your connection and try again, your question is saved.' },
     };
     let errEl = null;
     function clearError() { if (errEl) { errEl.remove(); errEl = null; } }
@@ -938,7 +938,7 @@
       if (busy) return;
       clearError();
       busy = true;
-      ask();   // the user's message is already in `saved` — just re-ask
+      ask();   // the user's message is already in `saved`, just re-ask
     }
     // came back online with a question still unanswered → answer it, no tap needed
     window.addEventListener('online', () => {
@@ -958,7 +958,7 @@
       ask();
     }
 
-    // suggestions are DYNAMIC — Tayo sends tap-to-answer options for the
+    // suggestions are DYNAMIC, Tayo sends tap-to-answer options for the
     // question it just asked ("Married with kids", "Just me", …)
     const suggestEl = document.getElementById('tjSuggest');
     /* `let`, because the grounded set replaces this once inventory has been
@@ -1020,25 +1020,25 @@
         switch (e.error) {
           case 'not-allowed': case 'service-not-allowed':
             hint(inIframe
-              ? 'Open this page in its own browser tab to use voice — it’s blocked inside the embedded preview.'
+              ? 'Open this page in its own browser tab to use voice, it’s blocked inside the embedded preview.'
               : 'Microphone is blocked. Click the 🔒 icon in the address bar → Allow, then tap the mic again.'); break;
-          case 'no-speech': hint('Didn’t catch that — tap the mic and speak.'); break;
-          case 'audio-capture': hint('No microphone found — check it’s connected, then try again.'); break;
-          case 'network': hint('Voice needs a connection — check your network and try again.'); break;
-          case 'aborted': break; // user stopped it — no message needed
+          case 'no-speech': hint('Didn’t catch that, tap the mic and speak.'); break;
+          case 'audio-capture': hint('No microphone found, check it’s connected, then try again.'); break;
+          case 'network': hint('Voice needs a connection, check your network and try again.'); break;
+          case 'aborted': break; // user stopped it, no message needed
           case 'language-not-supported':
             if (recog.lang !== 'en-US') { recog.lang = 'en-US'; try { recog.start(); listening = true; micBtn.classList.add('listening'); return; } catch (e2) {} }
-            hint('Voice isn’t available in your browser here — try Chrome or Edge.'); break;
-          default: hint('Voice hit a snag — tap the mic to try again.');
+            hint('Voice isn’t available in your browser here, try Chrome or Edge.'); break;
+          default: hint('Voice hit a snag, tap the mic to try again.');
         }
       };
       recog.onend = () => stopMicUI();
       try { recog.start(); listening = true; micBtn.classList.add('listening'); input.placeholder = 'Listening… speak now'; input.focus(); }
-      catch (err) { stopMicUI(); hint('Couldn’t start voice — tap the mic to try again.'); }
+      catch (err) { stopMicUI(); hint('Couldn’t start voice, tap the mic to try again.'); }
     }
     async function toggleMic() {
       if (!SR) { hint('Voice typing needs Chrome or Edge on this device.'); return; }
-      if (!window.isSecureContext) { hint('Voice needs a secure page — open the app on localhost or https, not a raw IP address.'); return; }
+      if (!window.isSecureContext) { hint('Voice needs a secure page, open the app on localhost or https, not a raw IP address.'); return; }
       if (listening) { try { recog && recog.stop(); } catch (e) {} stopMicUI(); return; }
       // Ask for mic permission the reliable way (getUserMedia shows the prompt);
       // SpeechRecognition alone often throws "not-allowed" without ever asking.
@@ -1051,12 +1051,12 @@
           const n = err && err.name;
           if (n === 'NotAllowedError' || n === 'SecurityError') {
             hint(inIframe
-              ? 'Open this page in its own browser tab to use voice — the embedded preview blocks the mic.'
+              ? 'Open this page in its own browser tab to use voice, the embedded preview blocks the mic.'
               : 'Mic access is blocked for this site. Click the 🔒 (or camera) icon in the address bar → set Microphone to Allow → then tap the mic again.');
           } else if (n === 'NotFoundError' || n === 'DevicesNotFoundError') {
             hint('No microphone found on this device.');
           } else {
-            hint('Couldn’t reach the mic — check your browser’s microphone permissions and try again.');
+            hint('Couldn’t reach the mic, check your browser’s microphone permissions and try again.');
           }
           return;
         }
@@ -1068,7 +1068,7 @@
     // restore the saved conversation so people continue where they left off:
     // local copy renders instantly, then the server copy (visitor id) wins.
     /* First-visit greeting. Mirrors FIRST_VISIT_GREETING in the toju-demo edge
-       function — see the placeholder contract documented above that constant.
+       function, see the placeholder contract documented above that constant.
        `{{LISTING_COUNT}}` sits immediately before "the homes" so the substituted
        value carries its own trailing text; an unknown count degrades to "the
        homes agencies have listed with us", which still reads correctly.
@@ -1076,12 +1076,12 @@
        Never hardcode a number here: a stale count is a trust bug. The count
        arrives with the restore response and the greeting is rewritten in place.
 
-       It deliberately does not promise everything is verified — Tayo shows both
+       It deliberately does not promise everything is verified, Tayo shows both
        and says which is which. The old copy ("verified homes that fit", with a
        hardcoded "Good afternoon" that was wrong most of the day) promised the
        opposite of what Tayo now does. */
     /* The count substitutes as "the 6 " rather than "6 of ". The old form
-       read "a home from 6 of the homes agencies have listed" — ungrammatical,
+       read "a home from 6 of the homes agencies have listed", ungrammatical,
        and "6 of the homes" claims a subset when it is in fact all of them.
        The token carries its own article so the sentence still stands when no
        count is available. */
@@ -1097,7 +1097,7 @@
     const arrivalGreeting = (from) =>
       "I'm Tayo, Synapse's property advisor. "
       + (from ? 'Did a home on our ' + from + ' catch your eye?' : 'Did one of our posts catch your eye?')
-      + ' Tell me which one — the area or the price is enough — or tell me what you’re looking for.';
+      + ' Tell me which one, the area or the price is enough, or tell me what you’re looking for.';
     const FIRST_GREETING = ARRIVAL.social ? arrivalGreeting(ARRIVAL.from) : GREETING;
 
     /* ── suggestions, from what is actually listed ──────────────────────────
@@ -1174,7 +1174,7 @@
     if (saved.some(isDreamCtx)) { saved = saved.filter((m) => !isDreamCtx(m)); persist(); }
     if (saved.length === 0) { saved = [{ role: 'assistant', content: FIRST_GREETING }]; persist(); }
     render();
-    // Server restore — strictly a fallback for continuing on another device.
+    // Server restore, strictly a fallback for continuing on another device.
     // Guard rails: drop hidden dream-context messages, ignore the response if
     // the visitor rotated (New chat) meanwhile, and never let a server copy
     // (which has no per-message matches) clobber an equally long local thread.
@@ -1201,15 +1201,15 @@
         persist(); render();
       }
 
-      // Item 3 — make the memory visible. Tayo already remembered; nothing said
+      // Item 3, make the memory visible. Tayo already remembered; nothing said
       // so, which is the whole point of the feature: the reason to come back
       // here instead of scrolling Instagram again is that it kept your thread.
       showMemoryNote(d.criteria, msgs);
     }).catch(() => {});
 
     /* A quiet line above the conversation on return, stating what Tayo actually
-       still holds. Rendered ONLY from real restored state — the brief the user
-       themselves gave — never a generic "welcome back". If there is no brief and
+       still holds. Rendered ONLY from real restored state, the brief the user
+       themselves gave, never a generic "welcome back". If there is no brief and
        no prior exchange, nothing appears. */
     function showMemoryNote(criteria, msgs) {
       const hasThread = Array.isArray(msgs) && msgs.some((m) => m.role === 'user');
@@ -1244,7 +1244,7 @@
     // deep link from a listing: ?ask=... pre-fills the composer
     /* Deep link from a listing or the landing hero: ?ask=…
        It used to only pre-fill the composer, leaving the visitor to press send
-       on their own words — a pointless second step. It now sends, so someone who
+       on their own words, a pointless second step. It now sends, so someone who
        typed their brief on the landing page lands mid-conversation rather than
        staring at their own sentence. The URL is cleaned afterwards so a reload
        doesn't re-ask the same thing. */
@@ -1442,7 +1442,7 @@
     function renderHist() {
       const sessions = loadSessions();
       if (!sessions.length) {
-        histList.innerHTML = '<div class="hist-empty">No past conversations yet.<br>When you start a new chat, the old one is saved here — with every home Tayo recommended.</div>';
+        histList.innerHTML = '<div class="hist-empty">No past conversations yet.<br>When you start a new chat, the old one is saved here, with every home Tayo recommended.</div>';
         return;
       }
       histList.innerHTML = sessions.map((s) => {
@@ -1475,7 +1475,7 @@
       persist(); render(); closeHist();
     });
 
-    // new chat — archive the old thread, then a fresh visitor id so the
+    // new chat, archive the old thread, then a fresh visitor id so the
     // server thread starts clean too
     function newChat() {
       archiveCurrent();

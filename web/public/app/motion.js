@@ -3,7 +3,7 @@
    - Mounts Lottie animations on [data-lottie="name"] via lottie-web (CDN).
    - Scroll-reveals cards/sections ([data-reveal], auto-tagged on .card).
    - Adds micro press feedback to tappable elements.
-   Mirrors the RN system in packages/ui/src/motion — same JSON files,
+   Mirrors the RN system in packages/ui/src/motion, same JSON files,
    same tokens (see motion.css).
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
@@ -49,7 +49,7 @@
     }).catch(() => {});
   }
 
-  /* Only run looping animations while visible — battery + perf rule */
+  /* Only run looping animations while visible, battery + perf rule */
   const lottieIO = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       const p = players.get(e.target);
@@ -118,7 +118,7 @@
 /* ── Start-at-top + resize auto-fit ──────────────────────────────────────────
    UX principles: clarity (every reload starts at the top of the page, never a
    restored mid-scroll position) and feedback (when any panel changes size, maps
-   and flex canvases re-fit instead of clipping). Page-agnostic — no per-page
+   and flex canvases re-fit instead of clipping). Page-agnostic, no per-page
    wiring needed; reduced-motion has no bearing here. */
 (function () {
   // 1) always land at the top on load/reload, unless the URL deep-links an anchor

@@ -1,12 +1,12 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   Synapse — syndication validation harness.
+   Synapse, syndication validation harness.
 
    Runs every real listing through every platform and reports what would be
    rejected, BEFORE any of it is queued. Meta approval is pending, so this is
    the part of syndication that can be proven today: whether the captions and
    media we generate actually satisfy each platform's limits.
 
-   The failures this catches are the ones that are worst to discover live — a
+   The failures this catches are the ones that are worst to discover live, a
    caption truncated mid-sentence in the feed, an aspect ratio a provider
    refuses, a video over the length cap. Each is silent until it is public.
 
@@ -116,7 +116,7 @@
    *  be asserted against in a test without parsing prose. */
   function print(r) {
     var lines = [];
-    lines.push('SYNDICATION AUDIT — ' + r.ranAt);
+    lines.push('SYNDICATION AUDIT, ' + r.ranAt);
     lines.push(r.listings + ' listings x ' + r.platforms.length + ' platforms = '
       + r.totalVariants + ' variants');
     lines.push(r.clean + ' clean, ' + r.withIssues + ' with issues');
@@ -138,10 +138,10 @@
 
     if (r.skippedAngles.length) {
       lines.push('');
-      lines.push('ANGLES SKIPPED (not failures — the generator declining to overclaim)');
+      lines.push('ANGLES SKIPPED (not failures, the generator declining to overclaim)');
       var seen = {};
       r.skippedAngles.forEach(function (s) {
-        var k = s.angle + ' — ' + s.reason;
+        var k = s.angle + ', ' + s.reason;
         if (seen[k]) return;
         seen[k] = 1;
         lines.push('  ' + k);

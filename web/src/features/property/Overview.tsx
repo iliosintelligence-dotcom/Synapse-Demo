@@ -35,7 +35,7 @@ export function Overview({ p, exactAddress }: { p: Property; exactAddress: strin
       <div className={s.loc}>{place}</div>
       <div className={s.facts}>{factsOf(p)}</div>
       <div className={s.trust}>
-        <div className={s.ring}>{verified && p.trust_score != null ? p.trust_score : verified ? "✓" : "—"}</div>
+        <div className={s.ring}>{verified && p.trust_score != null ? p.trust_score : verified ? "✓" : "-"}</div>
         <div>
           <strong>{verified ? "Verified by Synapse" : "Not yet verified"}</strong>
           <div className={s.dim}>

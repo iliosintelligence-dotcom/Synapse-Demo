@@ -10,7 +10,7 @@ export interface TeamMessage { id: string; body: string; at: string; mine: boole
 
 const num = (v: unknown): number | null => (v == null ? null : Number(v));
 
-/** The team, with public social counts. The counts come from a view (numbers public, people not) in a second request that may fail: then the card prints "—", never a zero it cannot back. */
+/** The team, with public social counts. The counts come from a view (numbers public, people not) in a second request that may fail: then the card prints "-", never a zero it cannot back. */
 export async function fetchRoster(): Promise<Teammate[]> {
   const aid = await agencyId();
   if (!aid) return [];
