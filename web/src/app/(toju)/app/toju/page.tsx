@@ -147,6 +147,7 @@ export default function Page() {
               </div>
               <div className="tj-hist-list" id="tjPinList"></div>
             </div>
+            <div className="tj-handoff" id="tjHandoffStatus" role="status" hidden></div>
             <div className="tj-hist" id="tjMemPanel" hidden>
               <div className="tj-hist-head">
                 <span>

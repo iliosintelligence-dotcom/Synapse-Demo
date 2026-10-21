@@ -587,6 +587,7 @@
         if (!(res.ok || res.status === 207) || !d.lead_id) throw new Error((d && d.error) || 'That introduction did not go through.');
         try { if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {}); } catch (e) { /* the lead stands */ }
         HANDED = true; HO_BUSY = false; renderReply();
+        setTimeout(refreshHandoff, 1500);
         card.querySelectorAll('button').forEach((b) => { b.disabled = true; });
         /* Say exactly what happened, and no more. */
         const by = d.delivery_status === 'delivered' ? (d.email === 'sent' ? 'on WhatsApp and by email' : 'on WhatsApp')
@@ -1429,6 +1430,30 @@
       const all = e.target.closest('[data-pin-share-all]');
       if (all) shareOut(pins.map(shareText).join('\n\n\u2014\n\n'), all);
     });
+
+    /* WHERE YOUR INTRODUCTION IS. A signed-in buyer who has been introduced to an agency sees, here, whether the agency has it,
+       whether an agent holds it, and whether one has taken over the conversation. Only the agency's name is ever shown. A visitor
+       who is not signed in, or has no introduction, sees nothing at all. */
+    const hoStatus = document.getElementById('tjHandoffStatus');
+    const HO_STEPS = [['sent', 'Sent to'], ['with_agent', 'With an agent at'], ['taken_over', 'An agent has taken over at']];
+    function renderHandoff(rows) {
+      if (!rows.length) { hoStatus.hidden = true; hoStatus.innerHTML = ''; return; }
+      hoStatus.innerHTML = rows.slice(0, 2).map((r) => {
+        const at = Math.max(0, HO_STEPS.findIndex((s) => s[0] === r.stage));
+        return '<div class="tj-ho-row"><div class="tj-ho-t">' + esc(HO_STEPS[at][1]) + ' ' + esc(r.agency) + ' <span>· ' + esc(r.listing) + '</span></div>'
+          + '<div class="tj-ho-bar" aria-hidden="true">' + HO_STEPS.map((s, i) => '<i class="' + (i <= at ? 'on' : '') + '"></i>').join('') + '</div></div>';
+      }).join('');
+      hoStatus.hidden = false;
+    }
+    function refreshHandoff() {
+      if (!window.SynAuth) return;
+      SynAuth.client().then((c) => c.auth.getSession().then((s) => {
+        if (!(s && s.data && s.data.session)) { renderHandoff([]); return null; }
+        return c.rpc('my_handoff_status');
+      })).then((r) => { if (r) renderHandoff(!r.error && Array.isArray(r.data) ? r.data : []); }).catch(() => {});
+    }
+    refreshHandoff();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshHandoff(); });
 
     /* What Tayo remembers: the facts kept about this visitor, each one deletable. The server owns the list; the page only shows it. */
     const memPanel = document.getElementById('tjMemPanel');
