@@ -607,10 +607,13 @@ a { color: inherit; }
      full-width row under the bar, the two halves as wide as the screen and
      the current side filled, like the pill the page had before (Eden: the
      way across "is not really obvious"). */
-  .nav-in { flex-wrap: wrap; gap: 8px; height: auto; padding-top: 10px; padding-bottom: 10px; }
-  .logo { order: 0; }
-  .aud { order: 5; flex: 1 0 100%; padding: 4px; margin-top: 2px; }
-  .aud-seg { flex: 1; text-align: center; padding: 10px 12px; font-size: 15px; }
+  /* ONE ROW (Eden, 2026-10-21: the mark on one row and the switch on another took 122px of a phone screen). The mark, the
+     switch with its two halves (the current side still filled), the mode button and Sign in now share a 56px bar. The switch
+     takes whatever width the others leave, and its halves share it equally. */
+  .nav-in { flex-wrap: nowrap; gap: 8px; height: 56px; padding-top: 0; padding-bottom: 0; }
+  .logo { margin-right: 0; flex: none; }
+  .aud { flex: 1 1 0; min-width: 0; margin: 0; padding: 3px; }
+  .aud-seg { flex: 1 1 0; min-width: 0; padding: 9px 4px; font-size: 13px; text-align: center; white-space: nowrap; }
   .aud-seg.on { background: var(--btn); color: var(--btn-ink); box-shadow: none; }
   :root[data-theme="dark"] .aud-seg.on { background: #FFFFFF; color: #000000; }
   /* The channels run past like a news ticker: two copies of the list moving
@@ -649,10 +652,17 @@ a { color: inherit; }
   }
   .wide { aspect-ratio: 4 / 3.2; }
   .wide .shot { width: 150%; left: 5%; transform: none; }
-  .nav-signin { padding: 8px 6px; }
+  .nav-signin { padding: 8px 2px; font-size: 14px; white-space: nowrap; flex: none; }
 }
-@media (max-width: 400px) {
+/* The word beside the mark needs room the one-row bar does not have until a tablet. */
+@media (max-width: 560px) {
   .logo-word { display: none; }
+}
+@media (max-width: 370px) {
+  .nav-in { gap: 6px; }
+  .aud-seg { font-size: 12px; padding: 9px 2px; }
+  .nav-signin { font-size: 13px; }
+  .mode { width: 34px; height: 34px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rail-list { animation: none !important; }
