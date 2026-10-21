@@ -1418,7 +1418,7 @@
           + '</div><span class="pin-acts"><button type="button" data-pin-share="' + esc(x.id) + '">Share</button><button type="button" data-pin-del="' + esc(x.id) + '">Unpin</button></span></div>').join('');
     }
     function closePins() { pinPanel.hidden = true; }
-    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
+    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; memPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
     document.getElementById('tjPinClose').addEventListener('click', closePins);
     pinList.addEventListener('click', (e) => {
       const pins = loadPins();
@@ -1428,6 +1428,41 @@
       if (sh) { const pl = pins.find((x) => x.id === sh.dataset.pinShare); if (pl) shareOut(shareText(pl), sh); return; }
       const all = e.target.closest('[data-pin-share-all]');
       if (all) shareOut(pins.map(shareText).join('\n\n\u2014\n\n'), all);
+    });
+
+    /* What Tayo remembers: the facts kept about this visitor, each one deletable. The server owns the list; the page only shows it. */
+    const memPanel = document.getElementById('tjMemPanel');
+    const memList = document.getElementById('tjMemList');
+    function memCall(body) {
+      return fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
+        body: JSON.stringify(Object.assign({ visitorId: VISITOR }, body)),
+      }).then((r) => r.json());
+    }
+    function renderMem(facts) {
+      if (!facts.length) { memList.innerHTML = '<div class="hist-empty">Tayo is not holding anything about you yet.<br>What you tell it about where, how much and who it is for will show up here, and you can delete any of it.</div>'; return; }
+      memList.innerHTML = facts.map((f) => '<div class="hist-row pin-row"><div class="mid"><div class="d">' + esc(f.label) + '</div><div class="t">' + esc(f.value) + '</div></div>'
+        + '<span class="pin-acts"><button type="button" data-mem-del="' + esc(f.key) + '">Forget</button></span></div>').join('')
+        + '<button class="hist-row" data-mem-all type="button"><div class="mid"><div class="t">Forget everything</div><div class="d">Tayo starts from nothing next time</div></div></button>';
+    }
+    function loadMem() {
+      memList.innerHTML = '<div class="hist-empty">One moment…</div>';
+      memCall({ action: 'memory' }).then((d) => renderMem(Array.isArray(d.facts) ? d.facts : []))
+        .catch(() => { memList.innerHTML = '<div class="hist-empty">Could not load this just now. Try again in a moment.</div>'; });
+    }
+    function closeMem() { memPanel.hidden = true; }
+    document.getElementById('tjMem').addEventListener('click', () => {
+      if (!memPanel.hidden) { closeMem(); return; }
+      histPanel.hidden = true; pinPanel.hidden = true; loadMem(); memPanel.hidden = false;
+    });
+    document.getElementById('tjMemClose').addEventListener('click', closeMem);
+    memList.addEventListener('click', (e) => {
+      const one = e.target.closest('[data-mem-del]');
+      const all = e.target.closest('[data-mem-all]');
+      if (!one && !all) return;
+      if (all && !window.confirm('Forget everything Tayo knows about you?')) return;
+      memCall({ action: 'forget', keys: all ? 'all' : [one.dataset.memDel] }).then((d) => renderMem(Array.isArray(d.facts) ? d.facts : [])).catch(() => {});
     });
 
     const histPanel = document.getElementById('tjHistPanel');
