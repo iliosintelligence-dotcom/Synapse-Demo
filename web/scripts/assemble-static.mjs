@@ -15,8 +15,8 @@ const publicDir = resolve(here, "../public");
 const apply = process.argv.includes("--apply");
 
 // Allow-list, not a block-list: a new folder at the repo root (a worktree, test output, a design scratch pad) must never go live by accident.
+// The HTML pages themselves are NOT copied any more: they are Next pages now (scripts/port-legacy.mjs), built into out/ with the rest of the app.
 const ITEMS = [
-  "index.html", "buyers.html", "agencies.html", "privacy.html", "terms.html",
   "consent.js", "home-feed.js", "home.css", "home.js", "landing.css", "landing-mobile.css",
   "robots.txt", "sitemap.xml", "favicon.ico", "apple-touch-icon.png",
   "app", "images",
@@ -46,6 +46,7 @@ for (const item of ITEMS) {
   const files = statSync(from).isDirectory() ? [...walk(from)] : [from];
   for (const f of files) {
     const rel = relative(root, f);
+    if (rel.endsWith(".html")) continue; // a page: built by Next, not copied
     const to = join(publicDir, rel);
     if (existsSync(to)) { conflicts.push(rel); skipped++; continue; }
     copied++;

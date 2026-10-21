@@ -1,0 +1,69 @@
+
+    /* THE BACKGROUND (Eden, 2026-10-05). Everyone starts on the interior photograph (the
+       picture is the default, 2026-10-06); the warm colour the landing page paints is one of the choices. A signed-in visitor can switch
+       to the interior photograph or a quiet pattern; each has a day and a
+       night version. scene.css paints the night photograph with !important,
+       so these outrank it by carrying more attribute selectors. */
+    :root:root[data-tjbg="tint"] .tj-bg {
+      background-image: url('../images/home/bg-tayo-light.webp') !important;
+      background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important;
+    }
+    :root:root[data-theme="dark"][data-tjbg="tint"] .tj-bg {
+      background-image: url('../images/home/bg-tayo-dark.webp') !important;
+    }
+    :root:root[data-tjbg="pattern"] .tj-bg {
+      background-image: radial-gradient(circle at 1px 1px, rgba(190,110,50,0.26) 1.3px, transparent 1.6px), linear-gradient(135deg, #FFF1E6, #F3E4F3) !important;
+      background-size: 22px 22px, cover !important; background-position: 0 0, center !important; background-repeat: repeat, no-repeat !important;
+    }
+    :root:root[data-tjbg="pattern"][data-theme="dark"] .tj-bg {
+      background-image: radial-gradient(circle at 1px 1px, rgba(255,160,90,0.17) 1.3px, transparent 1.6px), linear-gradient(135deg, #1D1411, #130E14) !important;
+    }
+
+    /* Status dots beside words are gone. */
+    .tj-title span[aria-hidden="true"], .tj-dot, .tjm-status i { display: none !important; }
+
+    /* Reply actions as icons, the way ChatGPT does them. */
+    .tj-acts { gap: 2px; margin-top: 8px; }
+    .tj-acts .tj-ib { position: relative; width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 9px; display: inline-grid; place-items: center; color: var(--ink-muted); transition: background-color .15s ease, color .15s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-acts .tj-ib svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .tj-acts .tj-ib:hover { background: rgba(0,0,0,0.06); color: var(--ink); }
+    .tj-acts .tj-ib[aria-pressed="true"] { color: var(--ink); }
+    .tj-acts .tj-ib[aria-pressed="true"] svg { fill: currentColor; }
+    .tj-acts .tj-ib:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 1px; }
+    .tj-acts .tj-ib.tip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); padding: 4px 9px; border-radius: 7px; background: #15120F; color: #fff; font: 600 11.5px var(--f-sans); white-space: nowrap; pointer-events: none; }
+    html[data-theme="dark"] .tj-acts .tj-ib:hover { background: rgba(255,255,255,0.1); }
+    html[data-theme="dark"] .tj-acts .tj-ib.tip::after { background: #fff; color: #000; }
+
+    /* Answers a closed question can be tapped. */
+    .tj-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .tj-quick button { min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(21,18,15,0.18); background: rgba(255,255,255,0.72); color: var(--ink); font: 600 13.5px var(--f-sans); cursor: pointer; transition: background-color .15s ease, border-color .15s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-quick button:hover { background: #fff; border-color: rgba(21,18,15,0.4); }
+    .tj-quick button:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 2px; }
+    html[data-theme="dark"] .tj-quick button { background: #fff; color: #000; border-color: transparent; }
+
+    /* The background chooser. */
+    .tj-bgp { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(15,12,10,0.38); }
+    .tj-bgp[hidden] { display: none; }
+    .tj-bgp-card { width: min(440px, 100%); padding: 24px 22px 22px; border-radius: 22px; background: var(--surface, #fff); color: var(--ink); box-shadow: 0 30px 70px -20px rgba(20,12,6,0.5); }
+    html[data-theme="dark"] .tj-bgp-card { background: #111214; }
+    .tj-bgp-t { font: 600 20px/1.2 var(--f-serif, serif); }
+    .tj-bgp-s { margin: 8px 0 16px; font-size: 14px; line-height: 1.5; color: var(--ink-muted); }
+    .tj-bgp-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .tj-bgp-opt { display: grid; gap: 8px; padding: 8px 8px 10px; border-radius: 14px; border: 1px solid rgba(21,18,15,0.14); background: transparent; color: var(--ink); font: 600 13px var(--f-sans); text-align: center; cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease; -webkit-tap-highlight-color: transparent; }
+    .tj-bgp-opt[aria-pressed="true"] { border-color: var(--orange, #FF8A2D); box-shadow: inset 0 0 0 1px var(--orange, #FF8A2D); }
+    html[data-theme="dark"] .tj-bgp-opt { border-color: transparent; background: #1B1D20; }
+    html[data-theme="dark"] .tj-bgp-opt[aria-pressed="true"] { border-color: var(--orange, #FF8A2D); }
+    .tj-bgp-opt:focus-visible, .tj-bgp-x:focus-visible, .tj-bgp-go:focus-visible { outline: 2px solid var(--orange, #FF8A2D); outline-offset: 2px; }
+    .tj-sw { display: block; aspect-ratio: 4 / 3; border-radius: 9px; background-size: cover; background-position: center; }
+    .tj-sw.tint { background-image: url('../images/home/bg-tayo-light.webp'); }
+    .tj-sw.photo { background-image: url('https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=400&q=60'); }
+    .tj-sw.pattern { background-image: radial-gradient(circle at 1px 1px, rgba(190,110,50,0.4) 1.3px, transparent 1.6px), linear-gradient(135deg, #FFF1E6, #F3E4F3); background-size: 12px 12px, cover; }
+    html[data-theme="dark"] .tj-sw.tint { background-image: url('../images/home/bg-tayo-dark.webp'); }
+    html[data-theme="dark"] .tj-sw.photo { background-image: url('../images/interior-night.jpg'); }
+    html[data-theme="dark"] .tj-sw.pattern { background-image: radial-gradient(circle at 1px 1px, rgba(255,160,90,0.3) 1.3px, transparent 1.6px), linear-gradient(135deg, #1D1411, #130E14); }
+    .tj-bgp-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .tj-bgp-x, .tj-bgp-go { min-height: 42px; padding: 0 20px; border-radius: 999px; border: 1px solid rgba(21,18,15,0.18); background: transparent; color: var(--ink); font: 600 14px var(--f-sans); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+    .tj-bgp-go { background: var(--orange, #FF8A2D); border-color: transparent; color: #15120F; }
+    html[data-theme="dark"] .tj-bgp-x { background: #fff; color: #000; border-color: transparent; }
+    @media (prefers-reduced-motion: reduce) { .tj-acts .tj-ib, .tj-quick button, .tj-bgp-opt { transition: none; } }
+  
