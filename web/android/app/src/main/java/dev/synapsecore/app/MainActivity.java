@@ -38,6 +38,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // the launch theme has an action bar (a cream title bar over the page); this is the theme without one
+        setTheme(R.style.AppTheme_NoActionBar);
         EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
 
