@@ -24,13 +24,11 @@ for (const path of PAGES) {
   });
 }
 
-test('landing: four plans, a working carousel, no sideways page scroll', async ({ page }) => {
+test('landing: the free pilot offer shows, and the page does not scroll sideways', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#prGrid .pr-card')).toHaveCount(4);
   await page.locator('#pricing').scrollIntoViewIfNeeded();
-  await page.locator('#prNext').click();
-  await page.waitForTimeout(700);
-  expect(await page.evaluate(() => document.getElementById('prGrid').scrollLeft)).toBeGreaterThan(0);
+  await expect(page.locator('#pricing .pilot')).toBeVisible();
+  await expect(page.locator('#pricing a.btn-solid')).toContainText('free pilot');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
 
