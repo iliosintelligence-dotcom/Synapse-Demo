@@ -193,6 +193,10 @@
   var providersPromise = null;
   function enabledProviders() {
     if (providersPromise) return providersPromise;
+    /* Inside the Synapse app (Capacitor, which adds "SynapseApp/" to the user agent) no provider is offered yet: Google refuses to
+       run in an embedded browser, and a sign-in finished in the phone's own browser could not complete here, because the PKCE
+       verifier lives in this one. Email and password work. Every caller already treats an empty list as "show no button". */
+    if (/SynapseApp\//.test(navigator.userAgent || '')) { providersPromise = Promise.resolve([]); return providersPromise; }
     providersPromise = fetch(SUPABASE_URL + '/auth/v1/settings', {
       headers: { apikey: PUBLISHABLE_KEY },
     })

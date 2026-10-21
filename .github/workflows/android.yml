@@ -1,0 +1,32 @@
+name: Android app
+# Builds the Android app (web/android, a Capacitor shell around www.synapsecore.dev) and hands back a test APK you can install on
+# a phone. This PC has no Android tools, so GitHub builds it. Nothing here publishes anything: no Play Store account is involved.
+# Run it: Actions > Android app > Run workflow, then download "synapse-debug-apk" from the finished run.
+on:
+  workflow_dispatch:
+  push:
+    branches: [capacitor-android]
+    paths: ['web/android/**', 'web/capacitor.config.ts', 'web/native/**', 'web/resources/**', '.github/workflows/android.yml']
+permissions: { contents: read }
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults: { run: { working-directory: web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci
+      # copies native/www and capacitor.config.ts into the Android project and updates its plugin list
+      - run: npx cap sync android
+      - name: Build the debug APK
+        working-directory: web/android
+        run: ./gradlew --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synapse-debug-apk
+          path: web/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

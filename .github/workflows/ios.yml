@@ -1,0 +1,28 @@
+name: iOS app
+# Proves the iOS app (web/ios, a Capacitor shell around www.synapsecore.dev) compiles, on a Mac that GitHub provides, because this PC
+# cannot build iOS. It builds for the simulator WITHOUT signing, so it needs no Apple certificates and publishes nothing.
+# TestFlight / App Store builds need signing secrets and are a later step (web/APP-STORES.md).
+# Run it: Actions > iOS app > Run workflow.
+on:
+  workflow_dispatch:
+  push:
+    branches: [capacitor-android]
+    paths: ['web/ios/**', 'web/capacitor.config.ts', 'web/native/**', 'web/resources/**', '.github/workflows/ios.yml']
+permissions: { contents: read }
+jobs:
+  simulator-build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults: { run: { working-directory: web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Build for the simulator (unsigned)
+        working-directory: web/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build
