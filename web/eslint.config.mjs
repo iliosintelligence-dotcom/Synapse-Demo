@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "public/maplibre/**", // copied vendor files, not our code
+    "public/**/*.js", // the static site copied in at cutover (scripts/assemble-static.mjs): the original site's code, not the Next app's
     "next-env.d.ts",
   ]),
 ]);
