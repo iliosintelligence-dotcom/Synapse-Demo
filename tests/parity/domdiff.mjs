@@ -80,7 +80,7 @@ const keys = key ? [key] : Object.keys(PAGES);
 let bad = 0;
 for (const k of keys) {
   const spec = PAGES[k];
-  const built = join(web, "out", spec.route, "index.html");
+  const built = join(web, "out", spec.route ? `${spec.route}.html` : "index.html");
   if (!existsSync(built)) { console.log(`MISSING  ${k}: build the app first (npm run build in web/)`); bad++; continue; }
   const a = load(join(repo, spec.src));
   const b = load(built);

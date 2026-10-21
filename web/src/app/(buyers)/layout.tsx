@@ -18,11 +18,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
-        <link rel="canonical" href="https://www.synapsecore.dev/buyers.html" />
+        <link rel="canonical" href="https://www.synapsecore.dev/buyers" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Synapse" />
         <meta property="og:locale" content="en_NG" />
-        <meta property="og:url" content="https://www.synapsecore.dev/buyers.html" />
+        <meta property="og:url" content="https://www.synapsecore.dev/buyers" />
         <meta property="og:title" content="Find a home that's actually right for you" />
         <meta property="og:description" content="Tayo is an AI property advisor for Nigeria. Tell it the city, your budget and how you live, and it works through the options with you instead of handing you a page of search results." />
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-buyers.jpg" />

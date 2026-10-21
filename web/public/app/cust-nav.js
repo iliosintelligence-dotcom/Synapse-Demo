@@ -35,7 +35,9 @@
 
   function currentFile() {
     var p = window.location.pathname;
-    return p.slice(p.lastIndexOf('/') + 1).toLowerCase() || 'toju.html';
+    var f = p.slice(p.lastIndexOf('/') + 1).toLowerCase();
+    if (f && f.indexOf('.') < 0) f += '.html'; /* /app/browse is browse.html */
+    return f || 'toju.html';
   }
 
   /* icons.js paints [data-icon] elements after load. If it is missing the

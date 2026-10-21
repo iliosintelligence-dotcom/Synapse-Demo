@@ -29,12 +29,22 @@ function resolveFile(p) {
   let f = path.join(root, decodeURIComponent(p));
   if (!f.startsWith(root)) return null;
   if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, "index.html");
+  if (cfg.cleanUrls && !path.extname(f) && fs.existsSync(f + ".html")) f += ".html"; // /app/toju is app/toju.html
   return fs.existsSync(f) && fs.statSync(f).isFile() ? f : null;
 }
 
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   let p = url.pathname;
+  // cleanUrls: /app/toju.html answers with a redirect to /app/toju (and /index.html to /); trailingSlash off: /app/toju/ to /app/toju
+  if (cfg.cleanUrls && p.endsWith(".html")) {
+    res.writeHead(308, { Location: (p.endsWith("/index.html") ? p.slice(0, -"index.html".length) : p.slice(0, -5)) + url.search });
+    return res.end();
+  }
+  if (cfg.trailingSlash === false && p.length > 1 && p.endsWith("/")) {
+    res.writeHead(308, { Location: p.replace(/\/+$/, "") + url.search });
+    return res.end();
+  }
   for (const { re, names, r } of redirects) {
     const m = p.match(re);
     if (m) {

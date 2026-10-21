@@ -105,7 +105,7 @@ for (const name of names) {
   for (const vp of vps) for (const theme of themes) {
     const cell = `${name} ${vp}/${theme}`;
     try {
-      const [a, b] = await Promise.all([shoot(browser, ORIG, pair.path, vp, theme, pair), shoot(browser, NEXT, pair.path, vp, theme, pair)]);
+      const [a, b] = await Promise.all([shoot(browser, ORIG, pair.orig ?? pair.path, vp, theme, pair), shoot(browser, NEXT, pair.next ?? pair.path, vp, theme, pair)]);
       const w = Math.max(a.png.width, b.png.width), h = Math.max(a.png.height, b.png.height);
       const A = pad(a.png, w, h), B = pad(b.png, w, h), D = new PNG({ width: w, height: h });
       const bad = pixelmatch(A.data, B.data, D.data, w, h, { threshold: 0.05, includeAA: false, diffColor: [255, 0, 0], alpha: 0.25 });

@@ -18,11 +18,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="description" content={"The terms that govern using Synapse Core: what the platform is, what “verified” means and does not mean, and what Synapse Core does not promise."} />
-        <link rel="canonical" href="https://www.synapsecore.dev/terms.html" />
+        <link rel="canonical" href="https://www.synapsecore.dev/terms" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Synapse Core" />
         <meta property="og:locale" content="en_NG" />
-        <meta property="og:url" content="https://www.synapsecore.dev/terms.html" />
+        <meta property="og:url" content="https://www.synapsecore.dev/terms" />
         <meta property="og:title" content="Terms of Service" />
         <meta property="og:description" content={"The terms that govern using Synapse Core: what the platform is, what “verified” means and does not mean, and what Synapse Core does not promise."} />
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-synapse.jpg" />

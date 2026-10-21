@@ -6,7 +6,7 @@ import type { NextConfig } from "next";
  */
 const nextConfig: NextConfig = {
   output: "export",
-  trailingSlash: true,
+  trailingSlash: false, // pages are written as app/toju.html and served at /app/toju (vercel.json cleanUrls), the addresses the site has always had minus ".html"
   turbopack: { root: __dirname },
   images: { unoptimized: true },
 };

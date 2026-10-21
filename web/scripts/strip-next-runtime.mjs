@@ -34,8 +34,8 @@ const log = [];
 let pages = 0, bytesBefore = 0, bytesAfter = 0, problems = 0;
 
 for (const [key, spec] of Object.entries(PAGES)) {
-  const dir = spec.route ? join(out, spec.route) : out;
-  const file = join(dir, "index.html");
+  // trailingSlash is off: a page is out/app/toju.html (the root page is out/index.html)
+  const file = join(out, spec.route ? `${spec.route}.html` : "index.html");
   if (!existsSync(file)) { console.error(`MISSING ${file} (${key})`); problems++; continue; }
   const before = readFileSync(file, "utf8");
   let html = before;
@@ -51,7 +51,12 @@ for (const [key, spec] of Object.entries(PAGES)) {
   if (left) { problems++; console.error(`${key}: ${left} reference(s) to Next's runtime are still in the page`); }
   writeFileSync(file, html);
   // the route's flight files serve only Next's client router, which these pages never start
-  for (const name of readdirSync(dir)) if (name === "index.txt" || name.startsWith("__next.")) rmSync(join(dir, name), { force: true, recursive: true });
+  rmSync(join(out, spec.route ? `${spec.route}.txt` : "index.txt"), { force: true });
+  const dir = spec.route ? join(out, spec.route) : out;
+  if (existsSync(dir)) {
+    for (const name of readdirSync(dir)) if (name.startsWith("__next.")) rmSync(join(dir, name), { force: true, recursive: true });
+    if (spec.route && !readdirSync(dir).length) rmSync(dir, { recursive: true, force: true });
+  }
   pages++; bytesBefore += before.length; bytesAfter += html.length;
   log.push(`${key}: ${before.length} -> ${html.length} bytes, ${left} runtime refs left`);
 }
