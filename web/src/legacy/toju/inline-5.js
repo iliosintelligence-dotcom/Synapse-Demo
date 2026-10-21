@@ -522,7 +522,7 @@
       const cs = Array.isArray(sm.concerns) && sm.concerns.length ? sm.concerns.join(' \u00b7 ') : '';
       const offer = H.openingOffer ? 'Opening at \u20a6' + Number(H.openingOffer).toLocaleString('en-NG') : '';
       const el = document.createElement('div');
-      el.className = 'ho-card irid neon'; el.id = 'hoCard';
+      el.className = 'ho-card'; el.id = 'hoCard';
       const picks = (slots || []).slice(0, 6);
       el.innerHTML = '<div class="ho-k">Handover to the agent</div><div class="ho-t">' + esc((H.home && H.home.title) || REPLY_TO.title || 'This home') + '</div>'
         + '<ul class="ho-sum">'

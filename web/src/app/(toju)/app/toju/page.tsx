@@ -149,7 +149,7 @@ export default function Page() {
             <div className="composer" data-cnav-clear="">
               <div className="tj-reply" id="tjReply" hidden></div>
               <div id="tjHint" className="tj-hint" hidden></div>
-              <div className="chatbox irid neon">
+              <div className="chatbox">
                 <div className="pillrow">
                   <input id="tjInput" placeholder={"Tell Tayo what you're looking for…"} autoComplete="off" />
                   <button className="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">

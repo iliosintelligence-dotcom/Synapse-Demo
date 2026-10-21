@@ -11526,7 +11526,7 @@
       const old = document.getElementById('freeAccess'); if (old) old.remove();
       const el = document.createElement('div');
       el.id = 'freeAccess'; el.className = 'fa-scrim';
-      el.innerHTML = '<div class="fa-card irid neon" role="dialog" aria-modal="true" aria-labelledby="faT">'
+      el.innerHTML = '<div class="fa-card" role="dialog" aria-modal="true" aria-labelledby="faT">'
         + '<div class="fa-k">Nothing to pay right now</div>'
         + '<h2 id="faT" class="fa-t">You are in the <em>free pilot</em>.</h2>'
         + '<p class="fa-w">Every feature is open to your agency while we run the pilot: unlimited listings, the studio, the proximity alerts and the negotiator. There is nothing to pay and no card to enter. Billing stays here, and we will tell you well before anything changes.</p>'

@@ -295,7 +295,7 @@ export default function Page() {
           <div className="need-phone" id="needPhone" hidden></div>
           <main>
             <section className="pane on" id="pane-overview">
-              <div className="fast-card irid neon" id="fastCard" hidden>
+              <div className="fast-card" id="fastCard" hidden>
                 <div className="fc-k">
                   Fast start
                 </div>
@@ -315,7 +315,7 @@ export default function Page() {
                   </button>
                 </div>
               </div>
-              <div className="next-card irid neon" id="nextCard" hidden></div>
+              <div className="next-card" id="nextCard" hidden></div>
               <div className="ov-head">
                 <div>
                   <div className="eyebrow" data-agency-eyebrow="">
@@ -491,7 +491,7 @@ export default function Page() {
               <div className="h1">
                 Billing
               </div>
-              <div className="pilot-banner irid neon">
+              <div className="pilot-banner">
                 <b>
                   Free pilot.
                 </b>
