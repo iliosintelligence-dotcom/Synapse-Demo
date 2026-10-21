@@ -258,6 +258,11 @@
         plots: m.deal.plots, plotSize: m.deal.plotSizeSqm, minInv: m.deal.minInvestment,
       } : null,
       per: m.listingType === 'rent',
+      beds: Number(m.bedrooms) > 0 ? Number(m.bedrooms) : null,
+      baths: Number(m.bathrooms) > 0 ? Number(m.bathrooms) : null,
+      sqm: Number(m.areaSqm) > 0 ? Number(m.areaSqm) : null,
+      /* "Area, City, State" as the card prints it: each part once, in the order a person says an address. */
+      where: [m.neighbourhood && m.neighbourhood.name, m.city, m.state].filter((x, i, a) => typeof x === 'string' && x.trim() && a.findIndex((y) => typeof y === 'string' && y.trim().toLowerCase() === x.trim().toLowerCase()) === i).map((x) => x.trim()).join(', '),
       // Tayo shows every matching home and labels each one. This MUST come from
       // the row — hardcoding 'verified' here would stamp the badge on listings
       // nobody has checked, which is the single worst thing this UI could do.
@@ -313,6 +318,34 @@
     return `<span class="expiry" title="Listings come down after 21 days unless the agency re-lists them">${label}</span>`;
   }
 
+  /* The property card's own look. Injected here so the browse page, Tayo's canvas and Tayo's chat all draw the same card. */
+  (function () {
+    if (typeof document === 'undefined' || document.getElementById('syn-hc-style')) return;
+    const s = document.createElement('style'); s.id = 'syn-hc-style';
+    s.textContent = [
+      '.card.listing.hc{display:block;padding:14px;border-radius:28px}',
+      '.hc .hc-head{display:flex;align-items:center;gap:12px;min-width:0}',
+      '.hc .hc-ic{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(128,128,128,.14);color:var(--ink,#15120F)}',
+      '.hc .hc-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
+      '.hc .hc-who{min-width:0}',
+      '.hc .hc-ttl{font-size:16px;font-weight:600;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+      '.hc .hc-loc{font-size:12.5px;color:var(--ink-muted,#6b645c);margin-top:2px}',
+      '.hc .hc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 14px}',
+      '.hc .hc-chip,.hc .hc-chips .chip,.hc .hc-chips .expiry,.hc .hc-chips .cmpbox{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:rgba(128,128,128,.12);border:0;font-size:12.5px;font-weight:500;color:var(--ink,#15120F);margin:0}',
+      '.hc .img{position:relative;overflow:hidden;height:220px;margin:0;border-radius:22px}',
+      '.hc .img .contact{left:10px;right:auto;top:10px;bottom:auto}',
+      '.hc .img img{width:100%;height:100%;object-fit:cover;display:block}',
+      '.hc .hc-price{position:absolute;left:12px;bottom:12px;padding:9px 14px;border-radius:999px;background:#fff;color:#15120F;font-size:14px;font-weight:700;font-variant-numeric:lining-nums;max-width:calc(100% - 140px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.hc .hc-price small{font-size:11px;font-weight:600;color:#6b645c;margin-left:2px}',
+      '.hc .hc-details{position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;border-radius:999px;background:#FBE7A6;color:#15120F;font-size:14px;font-weight:700;text-decoration:none}',
+      '.hc .hc-go{width:28px;height:28px;border-radius:50%;background:#15120F;color:#fff;display:grid;place-items:center}',
+      '.hc .hc-go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}',
+      '.hc .hc-details:focus-visible{outline:2px solid #15120F;outline-offset:2px}',
+      'html[data-theme="dark"] .hc .hc-chip,html[data-theme="dark"] .hc .hc-ic{background:rgba(255,255,255,.08)}',
+    ].join('');
+    (document.head || document.documentElement).appendChild(s);
+  })();
+
   function listingCardHtml(l, i, opts) {
     const o = opts || {};
     const saves = o.saves || new Set();
@@ -343,39 +376,45 @@
     const score = (isVerified && l.score != null)
       ? `<div class="score" title="How much of our verification this home has passed"><span class="ring">${l.score}</span> Property Confidence</div>`
       : '';
+    /* THE PROPERTY CARD (Eden, 2026-10-21: "location, the city, the state, then the essential details, then the picture, then the
+       details button"). The whole card still opens the home, and Save, Share and Contact still sit on the photo; the Details button is
+       the visible way in. Verification stays on the card: a checked home carries the stamp on its photo, any other carries its chip. */
+    const place = l.where || l.loc || '';
+    const chips = [
+      l.deal ? `<span class="hc-chip">${esc(l.deal)}</span>` : '',
+      l.beds ? `<span class="hc-chip">${l.beds} ${l.beds === 1 ? 'Bed' : 'Beds'}</span>` : '',
+      l.baths ? `<span class="hc-chip">${l.baths} ${l.baths === 1 ? 'Bath' : 'Baths'}</span>` : '',
+      l.sqm ? `<span class="hc-chip">${Number(l.sqm).toLocaleString('en-NG')} sqm</span>` : '',
+      isVerified && window.SynStamp ? '' : verifyChip(l.vstatus),
+      l.match ? `<span class="hc-chip">${l.match}% match</span>` : '',
+      expiryChip(l),
+      cmpBox,
+    ].filter(Boolean).join('');
+    const per = l.perLabel || (l.per ? '/yr' : '');
     return `
-      <div class="card listing${picked.has(l.id) ? ' cmp' : ''}" data-id="${esc(l.id)}">
-        <div class="body">
-          <div class="tags">
-            ${isVerified && window.SynStamp ? '' : verifyChip(l.vstatus)}
-            ${matchChip}
-            ${expiryChip(l)}
-            ${cmpBox}
+      <div class="card listing hc${picked.has(l.id) ? ' cmp' : ''}" data-id="${esc(l.id)}">
+        <div class="hc-head">
+          <span class="hc-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10.5V19h12v-8.5"/><path d="M10 19v-5h4v5"/></svg></span>
+          <div class="hc-who">
+            <div class="hc-ttl"><a class="ttl-a" href="${propertyHref(l.id)}">${esc(l.ttl)}</a></div>
+            <div class="hc-loc">${esc(place)}</div>
           </div>
-          <div class="price">${money(l.priceN, l.currency)}${(l.perLabel || (l.per ? '/yr' : '')) ? '<span style="font-size:13px;color:var(--ink-muted)">' + esc(l.perLabel || '/yr') + '</span>' : ''}</div>
-          <!-- A real link, not a div. The card carried its id in data-id and
-               opened from a click handler, so the only thing a keyboard could
-               reach inside a listing was the Save button: you could save a home
-               you had no way to open. An anchor also restores middle-click and
-               open-in-new-tab, which a handler silently swallows. The card-wide
-               click handler still works for everyone else. -->
-          <div class="ttl"><a class="ttl-a" href="${propertyHref(l.id)}">${esc(l.ttl)}</a></div>
-          <div class="loc">${esc(l.loc)}</div>
-          ${dealLine(l.dealInfo, l.currency)}
-          ${l.why ? `<div class="why">${l.why}</div>` : ''}
-          ${score}
-          ${agencyRowHtml(l.agency)}
         </div>
+        <div class="hc-chips">${chips}</div>
         <div class="img">
           ${img
             ? `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`
             : ''}
           ${isVerified && window.SynStamp ? SynStamp.html() : ''}
+          ${o.bare ? '' : `
           <button type="button" class="save${saves.has(l.id) ? ' on' : ''}" data-save="${esc(l.id)}"
                   aria-pressed="${saves.has(l.id)}"
                   aria-label="${saves.has(l.id) ? 'Remove' : 'Save'} ${esc(l.ttl)}">${icon('heart', saves.has(l.id) ? '♥' : '♡')}</button>
-          <button type="button" class="share" data-share="${esc(l.id)}" data-title="${esc(l.ttl)}" data-price="${esc(money(l.priceN, l.currency))}" data-place="${esc(l.loc)}" aria-label="Share ${esc(l.ttl)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
+          <button type="button" class="share" data-share="${esc(l.id)}" data-title="${esc(l.ttl)}" data-price="${esc(money(l.priceN, l.currency))}" data-place="${esc(place)}" aria-label="Share ${esc(l.ttl)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
           <a class="contact" data-contact href="toju.html?reply=${encodeURIComponent(l.id)}" aria-label="Contact an agent about ${esc(l.ttl)}" title="Contact an agent"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></svg></a>
+          `}
+          <span class="hc-price">${money(l.priceN, l.currency)}${per ? `<small>${esc(per)}</small>` : ''}</span>
+          <a class="hc-details" href="${propertyHref(l.id)}">Details <span class="hc-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></a>
         </div>
       </div>`;
   }

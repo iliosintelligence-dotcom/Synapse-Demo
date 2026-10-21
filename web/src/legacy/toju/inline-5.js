@@ -130,7 +130,7 @@
 
     function matchesHtml(matches) {
       if (!Array.isArray(matches) || matches.length === 0) return '';
-      const cards = matches.map((m) => {
+      const cards = matches.map((m, idx) => {
         const why = m.why ? '<div class="watch reason"><b>Recommended —</b> ' + esc(m.why) + '</div>' : '';
         const room = m.room ? '<div class="watch">' +
           (m.room.totalRooms - m.room.housematesIn) + ' of ' + m.room.totalRooms + ' rooms free · ' +
@@ -140,18 +140,8 @@
         const watch = m.whatToWatch && m.whatToWatch !== 'No major synthetic flags'
           ? '<div class="watch"><b>Worth checking —</b> ' + esc(m.whatToWatch) + '</div>' : '';
         const yld = (m.yieldPct != null && m.yieldPct > 0) ? ' · ' + m.yieldPct + '% yield' : '';
-        return '<a class="pcard" href="' + SynMatches.propertyHref(m.id) + '">'
-          + (m.deal && m.deal.propertyType === 'land'
-            ? '<div class="pthumb"><b>' + (Number(m.deal.plots) > 0 ? Number(m.deal.plots) : 1) + '</b><span>PLOT</span></div>'
-            : '<div class="pthumb"><b>' + (Number(m.bedrooms) || 0) + '</b><span>BED</span></div>')
-          + '<div><div class="price">' + naira(m.price) + (({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[m.pricePeriod] ? '<span style="font-size:12px;color:var(--ink-muted)">' + ({ per_year: '/yr', per_month: '/mo', per_night: '/night' })[m.pricePeriod] + '</span>' : (m.listingType === 'rent' ? '<span style="font-size:12px;color:var(--ink-muted)">/yr</span>' : '')) + '</div>'
-          + '<div class="ttl">' + esc(m.title || '') + '</div>'
-          // Verification state sits on every card. Tayo shows checked and
-          // unchecked homes alike, so the label is what keeps that honest.
-          + '<div class="vrow">' + SynMatches.verifyChip(m.verificationStatus || (m.verified ? 'verified' : 'unverified')) + '</div>'
-          + '<div class="meta"><span class="trust" title="Property Confidence: how much of our verification this home has passed">Confidence ' + (Number(m.trustScore) || 0) + '</span> · '
-          + esc(m.city || '') + yld + '</div>'
-          + room + why + watch + '</div></a>';
+        void yld; void why; void room; void watch;
+        return SynMatches.listingCardHtml(SynMatches.shapeTojuMatch(m, idx), idx, { bare: true });
       }).join('');
       return '<div class="matches-h"><span class="mh-rule" aria-hidden="true"></span><span class="lbl">HOMES WORTH A LOOK</span>'
         + '<span class="cnt">' + matches.length + '</span>'
@@ -1388,6 +1378,8 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done('Copied'), copy); else copy();
     }
     convo.addEventListener('click', (e) => {
+      const hc = e.target.closest('.hc[data-id]');
+      if (hc && !e.target.closest('a, button')) { window.location.href = SynMatches.propertyHref(hc.dataset.id); return; }
       const qb = e.target.closest('.tj-quick [data-quick]');
       if (qb) { if (busy) return; const v = qb.dataset.quick; qb.parentElement.remove(); send(v); return; }
       const more = e.target.closest('.tj-more');
