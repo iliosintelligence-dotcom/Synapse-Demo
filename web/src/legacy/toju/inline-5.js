@@ -143,9 +143,17 @@
         void yld; void why; void room; void watch;
         return SynMatches.listingCardHtml(SynMatches.shapeTojuMatch(m, idx), idx, { bare: true });
       }).join('');
+      const n = matches.length;
+      /* A DECK, NOT A LIST (Eden, 2026-10-22: "swipe to see the next one, the card in front goes to the back"). One card is in front;
+         the others peek out behind it. Swipe it away (or use the arrows) and the next one takes its place. View all is a real button. */
+      const slots = cards.split('<div class="card listing hc').slice(1).map((c, k) => '<div class="hc-slot" data-orig="' + k + '"><div class="card listing hc' + c + '</div>').join('');
       return '<div class="matches-h"><span class="mh-rule" aria-hidden="true"></span><span class="lbl">HOMES WORTH A LOOK</span>'
-        + '<span class="cnt">' + matches.length + '</span>'
-        + '<a class="viewall" href="browse.html">View all →</a></div>' + cards;
+        + '<span class="cnt">' + n + '</span></div>'
+        + '<div class="hc-deck" data-deck data-n="' + n + '" role="group" aria-roledescription="carousel" aria-label="Homes Tayo found">' + slots + '</div>'
+        + (n > 1 ? '<div class="hc-deck-bar"><button type="button" class="hc-deck-btn" data-deck-prev aria-label="Previous home">\u2039</button>'
+          + '<span class="hc-deck-count" data-deck-count aria-live="polite">1 / ' + n + '</span>'
+          + '<button type="button" class="hc-deck-btn" data-deck-next aria-label="Next home">\u203a</button></div>' : '')
+        + '<a class="hc-viewall" href="browse.html">View all ' + n + (n === 1 ? ' home' : ' homes') + '</a>';
     }
 
     // tiny, safe markdown → HTML (escape first, then bold/italic/code/lists/paras)
@@ -1378,8 +1386,86 @@
         document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); document.body.removeChild(ta); if (ok) done('Copied'); else window.prompt('Copy this to share it:', text); } catch (e) { window.prompt('Copy this to share it:', text); } };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done('Copied'), copy); else copy();
     }
+    /* ── the deck of homes ── */
+    function deckLayout(deck) {
+      const slots = [...deck.querySelectorAll('.hc-slot')];
+      slots.forEach((s) => { s.style.setProperty('--d', s.dataset.pos); s.classList.toggle('front', s.dataset.pos === '0'); s.removeAttribute('inert'); if (s.dataset.pos !== '0') s.setAttribute('inert', ''); });
+      const front = slots.find((s) => s.dataset.pos === '0');
+      const c = deck.parentNode.querySelector('[data-deck-count]');
+      if (front && c) c.textContent = (Number(front.dataset.orig) + 1) + ' / ' + slots.length;
+    }
+    function deckInit(deck) {
+      if (deck.dataset.ready) return;
+      deck.dataset.ready = '1';
+      deck.querySelectorAll('.hc-slot').forEach((s) => { s.dataset.pos = s.dataset.orig; });
+      deckLayout(deck);
+    }
+    function deckGo(deck, dir) {
+      const slots = [...deck.querySelectorAll('.hc-slot')];
+      if (slots.length < 2 || deck.dataset.busy) return;
+      const front = slots.find((s) => s.dataset.pos === '0');
+      deck.dataset.busy = '1';
+      const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const done = () => {
+        const n = slots.length;
+        slots.forEach((s) => { s.dataset.pos = String(s === front ? n - 1 : Number(s.dataset.pos) - 1); });
+        front.classList.remove('flying'); front.style.transform = ''; front.style.opacity = '';
+        deckLayout(deck); delete deck.dataset.busy;
+      };
+      if (reduced) { done(); return; }
+      front.classList.add('flying');
+      front.style.transform = 'translateX(' + (dir * 130) + '%) rotate(' + (dir * 14) + 'deg)';
+      front.style.opacity = '0';
+      setTimeout(done, 240);
+    }
+    /* the arrow back: the card at the very back comes forward again */
+    function deckBack(deck) {
+      const slots = [...deck.querySelectorAll('.hc-slot')];
+      if (slots.length < 2 || deck.dataset.busy) return;
+      const n = slots.length;
+      slots.forEach((s) => { s.dataset.pos = String(s.dataset.pos === String(n - 1) ? 0 : Number(s.dataset.pos) + 1); });
+      deckLayout(deck);
+    }
+    let dk = null;
+    convo.addEventListener('pointerdown', (e) => {
+      const slot = e.target.closest('.hc-slot.front'); if (!slot) return;
+      const deck = slot.parentNode; if (!deck.matches('[data-deck]') || deck.dataset.busy || deck.querySelectorAll('.hc-slot').length < 2) return;
+      dk = { deck, slot, x: e.clientX, y: e.clientY, dx: 0, t: Date.now(), drag: false, id: e.pointerId };
+    });
+    convo.addEventListener('pointermove', (e) => {
+      if (!dk || e.pointerId !== dk.id) return;
+      const dx = e.clientX - dk.x, dy = e.clientY - dk.y;
+      if (!dk.drag) {
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { dk = null; return; }   // a scroll, not a swipe
+        if (Math.abs(dx) < 8) return;
+        dk.drag = true; dk.slot.classList.add('dragging');
+        try { dk.slot.setPointerCapture(e.pointerId); } catch (x) { /* the drag still follows the pointer */ }
+      }
+      dk.dx = dx;
+      dk.slot.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 22) + 'deg)';
+    });
+    function deckEnd(e) {
+      if (!dk || e.pointerId !== dk.id) return;
+      const d = dk; dk = null;
+      if (!d.drag) return;
+      d.slot.classList.remove('dragging');
+      d.deck.dataset.dragged = '1'; setTimeout(() => { delete d.deck.dataset.dragged; }, 60);   // the click that follows a drag is not a tap
+      const fast = Math.abs(d.dx) / Math.max(1, Date.now() - d.t) > 0.5;
+      if (Math.abs(d.dx) > 70 || (fast && Math.abs(d.dx) > 30)) deckGo(d.deck, d.dx > 0 ? 1 : -1);
+      else d.slot.style.transform = '';
+    }
+    convo.addEventListener('pointerup', deckEnd);
+    convo.addEventListener('pointercancel', deckEnd);
+    new MutationObserver(() => convo.querySelectorAll('[data-deck]:not([data-ready])').forEach(deckInit)).observe(convo, { childList: true, subtree: true });
+    convo.addEventListener('click', (e) => {
+      const nb = e.target.closest('[data-deck-next],[data-deck-prev]');
+      if (nb) { const deck = nb.parentNode.previousElementSibling; if (deck && deck.matches('[data-deck]')) { if (nb.hasAttribute('data-deck-next')) deckGo(deck, -1); else deckBack(deck); } return; }
+      const dd = e.target.closest('[data-deck]'); if (dd && dd.dataset.dragged) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
     convo.addEventListener('click', (e) => {
       const hc = e.target.closest('.hc[data-id]');
+      if (hc && hc.closest('.hc-slot:not(.front)')) return;
       if (hc && !e.target.closest('a, button')) { window.location.href = SynMatches.propertyHref(hc.dataset.id); return; }
       const qb = e.target.closest('.tj-quick [data-quick]');
       if (qb) { if (busy) return; const v = qb.dataset.quick; qb.parentElement.remove(); send(v); return; }

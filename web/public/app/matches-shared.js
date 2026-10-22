@@ -343,6 +343,22 @@
       '.hc .hc-go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}',
       '.hc .hc-details:focus-visible{outline:2px solid #15120F;outline-offset:2px}',
       'html[data-theme="dark"] .hc .hc-chip,html[data-theme="dark"] .hc .hc-ic{background:rgba(255,255,255,.08)}',
+      '.hc-deck{display:grid;position:relative;margin:6px 4px 0;padding:0 14px 6px;touch-action:pan-y}',
+      '.hc-slot{grid-area:1/1;min-width:0;position:relative;z-index:calc(10 - var(--d,0));transform-origin:50% 100%;transition:transform .32s var(--m-ease,cubic-bezier(.22,1,.36,1)),opacity .24s ease;user-select:none;-webkit-user-select:none}',
+      '.hc-slot[data-pos="1"]{transform:translateX(14px) rotate(2.2deg) scale(.96)}',
+      '.hc-slot[data-pos="2"]{transform:translateX(-14px) rotate(-2.2deg) scale(.92)}',
+      '.hc-slot:not(.front){pointer-events:none}',
+      '.hc-slot:not(.front) .hc{filter:saturate(.85)}',
+      '.hc-slot.front{cursor:grab}',
+      '.hc-slot.dragging{transition:none;cursor:grabbing}',
+      '.hc-slot.flying{transition:transform .24s ease-in,opacity .24s ease-in}',
+      '.hc-slot[data-pos]:not([data-pos="0"]):not([data-pos="1"]):not([data-pos="2"]){opacity:0}',
+      '.hc-deck-bar{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 2px}',
+      '.hc-deck-btn{width:40px;height:40px;border:0;border-radius:50%;font-size:22px;line-height:1;background:rgba(128,128,128,.16);color:inherit;cursor:pointer}',
+      '.hc-deck-count{font-size:13px;font-weight:600;min-width:52px;text-align:center;opacity:.75}',
+      '.hc-viewall{display:flex;align-items:center;justify-content:center;min-height:54px;margin:12px 4px 4px;border-radius:999px;background:#15120F;color:#fff;font-size:16px;font-weight:700;text-decoration:none}',
+      'html[data-theme="dark"] .hc-viewall{background:#fff;color:#000}',
+      '@media (prefers-reduced-motion:reduce){.hc-slot,.hc-slot.flying{transition:none}}',
     ].join('');
     (document.head || document.documentElement).appendChild(s);
   })();
