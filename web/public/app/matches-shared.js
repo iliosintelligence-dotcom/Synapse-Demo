@@ -323,16 +323,17 @@
     if (typeof document === 'undefined' || document.getElementById('syn-hc-style')) return;
     const s = document.createElement('style'); s.id = 'syn-hc-style';
     s.textContent = [
-      '.card.listing.hc{display:block;padding:14px;border-radius:28px}',
-      '.hc .hc-head{display:flex;align-items:center;gap:12px;min-width:0}',
+      '.card.listing.hc{display:flex;flex-direction:column;padding:14px;border-radius:28px}',
+      '.hc .hc-head{display:flex;align-items:center;gap:12px;min-width:0;min-height:48px}',
       '.hc .hc-ic{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(128,128,128,.14);color:var(--ink,#15120F)}',
       '.hc .hc-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
       '.hc .hc-who{min-width:0}',
-      '.hc .hc-ttl{font-size:16px;font-weight:600;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+      '.hc .hc-ttl{font-size:16px;font-weight:600;line-height:1.25;min-height:40px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+      '.hc .hc-loc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.hc .hc-loc{font-size:12.5px;color:var(--ink-muted,#6b645c);margin-top:2px}',
-      '.hc .hc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 14px}',
-      '.hc .hc-chip,.hc .hc-chips .chip,.hc .hc-chips .expiry,.hc .hc-chips .cmpbox{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;background:rgba(128,128,128,.12);border:0;font-size:12.5px;font-weight:500;color:var(--ink,#15120F);margin:0}',
-      '.hc .img{position:relative;overflow:hidden;height:220px;margin:0;border-radius:22px}',
+      '.hc .hc-chips{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px;margin:12px 0 14px;min-height:68px}',
+      '.hc .hc-chip,.hc .hc-chips .chip,.hc .hc-chips .expiry,.hc .hc-chips .cmpbox{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;background:rgba(128,128,128,.12);border:0;font-size:12.5px;line-height:1.25;font-weight:500;color:var(--ink,#15120F);margin:0}',
+      '.hc .img{position:relative;overflow:hidden;height:220px;margin:auto 0 0;flex:none;border-radius:22px}',
       '.hc .img .contact{left:10px;right:auto;top:10px;bottom:auto}',
       '.hc .img img{width:100%;height:100%;object-fit:cover;display:block}',
       '.hc .hc-price{position:absolute;left:12px;bottom:12px;padding:9px 14px;border-radius:999px;background:#fff;color:#15120F;font-size:14px;font-weight:700;font-variant-numeric:lining-nums;max-width:calc(100% - 140px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
