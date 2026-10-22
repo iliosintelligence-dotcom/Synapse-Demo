@@ -271,3 +271,54 @@
       .toju-cta .btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; }
     }
   
+    /* ── DEPTH (Eden, 2026-10-22: the page looked flat) ──────────────────────────────────────────────
+       Same photograph and the same frosted glass as before; what changes is how the boards sit on it. Cards read as objects
+       (a lit edge, layered shadow, a lift under the finger), their captions sit on a firmer glass so they read on any part of
+       the photo, the empty tile invites a tap, and the page arrives in order. Every animation ends visible and none runs for
+       reduced motion. */
+    .db-top { align-items: center; }
+    .db-h1 { font-size: 40px; letter-spacing: -0.02em; }
+    .board-wrap p.muted { display: block; margin-top: 14px !important; padding: 12px 16px; border-radius: 18px; line-height: 1.5;
+      box-shadow: 0 10px 28px rgba(20,26,38,0.08), inset 0 1px 0 rgba(255,255,255,0.7); }
+    .boards-grid { gap: 18px; margin-top: 22px; }
+    .bcard { background: linear-gradient(160deg, rgba(255,255,255,0.88), rgba(255,251,246,0.74));
+      border-radius: 24px; padding: 8px 8px 14px;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 4px rgba(20,26,38,0.06), 0 18px 40px rgba(20,26,38,0.14);
+      transition: transform .25s var(--m-ease, cubic-bezier(.22,1,.36,1)), box-shadow .25s ease; }
+    .bcover { border-radius: 18px; gap: 4px; box-shadow: none; }
+    @media (hover: hover) and (pointer: fine) {
+      .bcard:hover { transform: translateY(-4px); box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 4px 8px rgba(20,26,38,0.08), 0 28px 56px rgba(20,26,38,0.2); }
+      .bcard:hover .bcover { transform: none; box-shadow: none; }
+    }
+    .bcard:active { transform: scale(.98); }
+    .bcard .bname { font-size: 16px; margin-top: 12px; color: #15120F; }
+    .bcard .bmeta { color: #4a443d; }
+    .bcard.new { background: linear-gradient(160deg, rgba(255,255,255,0.7), rgba(255,251,246,0.55)); }
+    .bcard.new .bcover { border: 2px dashed rgba(54,54,54,0.28); background: rgba(255,255,255,0.35); }
+    .bcard.new .plus { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; line-height: 1;
+      color: #fff; background: #15120F; box-shadow: 0 10px 22px rgba(20,26,38,0.28); transition: transform .3s var(--m-ease-spring, cubic-bezier(.34,1.4,.44,1)); }
+    @media (hover: hover) and (pointer: fine) { .bcard.new:hover .plus { transform: rotate(90deg) scale(1.08); } }
+    :root:root[data-theme="dark"] .bcard { background: linear-gradient(160deg, rgba(30,32,36,0.9), rgba(22,24,28,0.8));
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 40px rgba(0,0,0,0.5); }
+    :root:root[data-theme="dark"] .bcard .bname { color: #fff; }
+    :root:root[data-theme="dark"] .bcard .bmeta { color: #AEB3B8; }
+    :root:root[data-theme="dark"] .bcard.new .plus { background: #fff !important; color: #000 !important; }
+    :root:root[data-theme="dark"] .bcard.new .bcover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.25); }
+    @keyframes dbRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    .db-top, .board-wrap p.muted { animation: dbRise .55s var(--m-ease, cubic-bezier(.22,1,.36,1)) both; }
+    .board-wrap p.muted { animation-delay: 90ms; }
+    .boards-grid .bcard { animation: dbRise .55s var(--m-ease, cubic-bezier(.22,1,.36,1)) both; }
+    .boards-grid .bcard:nth-child(1) { animation-delay: 150ms; }
+    .boards-grid .bcard:nth-child(2) { animation-delay: 220ms; }
+    .boards-grid .bcard:nth-child(3) { animation-delay: 290ms; }
+    .boards-grid .bcard:nth-child(n+4) { animation-delay: 350ms; }
+    @media (max-width: 720px) {
+      .db-h1 { font-size: 32px; }
+      .boards-grid { gap: 12px; }
+      .bcard { border-radius: 22px; padding: 6px 6px 12px; }
+      .bcover { height: 150px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .db-top, .board-wrap p.muted, .boards-grid .bcard { animation: none; }
+      .bcard, .bcard.new .plus { transition: none; }
+    }
