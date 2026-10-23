@@ -14,8 +14,10 @@ adb shell am start -n dev.synapsecore.app/.MainActivity
 sleep 45
 adb exec-out screencap -p > shots/01-start-tayo.png
 # The keyboard: tap Tayo's message box and see whether the page moves up with it (the box should sit right on the keyboard).
-adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
-adb shell input tap 400 2110
+# the cookie notice sits over the message box on a first visit: "No thanks" first, then the box itself
+adb shell input tap 306 2265
+sleep 3
+adb shell input tap 400 2112
 sleep 3
 adb shell input text "hello"
 sleep 2
