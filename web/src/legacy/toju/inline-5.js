@@ -1557,6 +1557,8 @@
     }
     function closeMem() { memPanel.hidden = true; }
     document.getElementById('tjMem').addEventListener('click', () => {
+      /* React owns this panel now (src/features/tayo/MemorySheet.tsx); the old one stays only for a page without React. */
+      if (window.SynReact && window.SynReact.ready) { window.dispatchEvent(new Event('syn:memory')); return; }
       if (!memPanel.hidden) { closeMem(); return; }
       histPanel.hidden = true; pinPanel.hidden = true; loadMem(); memPanel.hidden = false;
     });

@@ -1,0 +1,41 @@
+/* "What Tayo remembers". Light by default; the site's dark theme (html[data-theme="dark"]) below. */
+.wrap { position: fixed; inset: 0; z-index: 2147482000; display: flex; align-items: flex-end; justify-content: center; }
+.backdrop { position: absolute; inset: 0; background: rgba(10, 10, 12, 0.45); }
+.sheet {
+  position: relative; width: min(560px, 100%); max-height: 82vh; overflow-y: auto; box-sizing: border-box;
+  padding: 10px 18px calc(18px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
+  border-radius: 26px 26px 0 0; background: #faf8f5; color: #15120f; box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.18);
+  font-family: inherit;
+}
+.grab { width: 40px; height: 5px; border-radius: 3px; background: rgba(21, 18, 15, 0.18); margin: 0 auto 10px; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.title { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.x { width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(21, 18, 15, 0.07); color: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.note { margin: 10px 0 6px; font-size: 15px; line-height: 1.5; color: rgba(21, 18, 15, 0.68); }
+.list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: rgba(21, 18, 15, 0.05); overflow: hidden; }
+.fact { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.label { font-size: 12.5px; color: rgba(21, 18, 15, 0.6); }
+.value { font-size: 15.5px; font-weight: 500; overflow-wrap: anywhere; }
+.forget { flex: none; border: 0; border-radius: 999px; padding: 8px 14px; background: #fff; color: inherit; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); }
+.all, .danger, .ghost { border: 0; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer; }
+.all { width: 100%; margin-top: 14px; padding: 13px; background: rgba(21, 18, 15, 0.07); color: inherit; font-size: 15px; }
+.confirm { margin-top: 14px; padding: 14px; border-radius: 18px; background: rgba(192, 57, 43, 0.08); display: grid; gap: 12px; font-size: 15px; }
+.confirmBtns { display: flex; gap: 8px; justify-content: flex-end; }
+.ghost { padding: 10px 16px; background: rgba(21, 18, 15, 0.07); color: inherit; }
+.danger { padding: 10px 16px; background: #c0392b; color: #fff; }
+.forget:focus-visible, .all:focus-visible, .danger:focus-visible, .ghost:focus-visible, .x:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+@media (min-width: 721px) {
+  .wrap { align-items: center; }
+  .sheet { border-radius: 26px; padding-bottom: 20px; max-height: 76vh; }
+  .grab { display: none; }
+}
+
+:global(html[data-theme="dark"]) .sheet { background: #1b1d21; color: #fff; box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.5); }
+:global(html[data-theme="dark"]) .grab { background: rgba(255, 255, 255, 0.2); }
+:global(html[data-theme="dark"]) .x, :global(html[data-theme="dark"]) .all, :global(html[data-theme="dark"]) .ghost { background: rgba(255, 255, 255, 0.08); }
+:global(html[data-theme="dark"]) .note { color: rgba(255, 255, 255, 0.7); }
+:global(html[data-theme="dark"]) .row { background: rgba(255, 255, 255, 0.06); }
+:global(html[data-theme="dark"]) .label { color: rgba(255, 255, 255, 0.6); }
+:global(html[data-theme="dark"]) .forget { background: rgba(255, 255, 255, 0.12); box-shadow: none; }
