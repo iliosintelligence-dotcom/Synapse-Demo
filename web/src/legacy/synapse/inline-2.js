@@ -292,8 +292,10 @@
   });
 
   function renderLegacy() {
-    var l = S.overview.legacy || [];
-    $('legacyCard').hidden = !l.length;
+    /* The developer accounts were TryPost's, retired on 2026-10-24: Synapse's Facebook posts through a Page connected with
+       Add a channel. The card is not shown. */
+    var l = [];
+    $('legacyCard').hidden = true;
     $('legacyList').innerHTML = l.map(function (x) {
       return '<div class="opt">' + badge(x.platform, 'sm') + '<div class="grow"><b>' + esc(x.handle || PL[x.platform]) + '</b><small>' + esc(PL[x.platform] || x.platform) + '</small></div>'
         + sw(x.is_active, 'data-leg="' + esc(x.id) + '"', 'Developer account: ' + (x.handle || PL[x.platform])) + '</div>';
@@ -446,7 +448,8 @@
     Object.keys(S.picked).forEach(function (k) { if (!ok[k]) delete S.picked[k]; });
     $('picks').innerHTML = list.length ? list.map(function (c) {
       return '<button type="button" class="pick" data-ch="' + esc(c.id) + '" data-pl="' + esc(c.platform) + '" aria-pressed="' + (S.picked[c.id] ? 'true' : 'false') + '">' + badge(c.platform, 'sm') + esc(c.label || PL[c.platform]) + '</button>';
-    }).join('') : '<button type="button" class="btn orange" data-addchan>Add a channel first</button>';
+    }).join('') + '<button type="button" class="pick plain" data-addchan aria-label="Add a channel">+ Add channel</button>'
+      : '<button type="button" class="btn orange" data-addchan>Add a channel first</button>';
     $('picksNote').textContent = list.length ? (Object.keys(S.picked).some(function (k) { return S.picked[k]; }) ? '' : 'Tap the accounts that should get this post.') : '';
     count();
   }
