@@ -1674,6 +1674,8 @@
       let opener = null;
       const close = () => { panel.hidden = true; if (opener && opener.focus) opener.focus(); opener = null; };
       function open() {
+        /* React owns this picker now (src/features/tayo/BackgroundSheet.tsx); this one stays only for a page without React. */
+        if (window.SynReact && window.SynReact.ready) { window.dispatchEvent(new Event('syn:background')); return; }
         opener = document.activeElement;
         const cur = root.getAttribute('data-tjbg') || 'photo';
         if (!me) {

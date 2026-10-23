@@ -8,6 +8,7 @@ import { TopBar } from "./TopBar";
 import { MemorySheet } from "./MemorySheet";
 import { HistorySheet } from "./HistorySheet";
 import { PinnedSheet } from "./PinnedSheet";
+import { BackgroundSheet } from "./BackgroundSheet";
 
 export function TayoReact() {
   return (
@@ -16,6 +17,7 @@ export function TayoReact() {
       <MemorySheet />
       <HistorySheet />
       <PinnedSheet />
+      <BackgroundSheet />
       {/* below the floating top bar on a phone, clear of the status bar in the app */}
       <SiteReact toastTop="calc(76px + var(--syn-top, env(safe-area-inset-top, 0px)))" />
     </>
