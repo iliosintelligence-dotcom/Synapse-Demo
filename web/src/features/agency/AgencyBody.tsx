@@ -9,6 +9,7 @@ import { DeleteAgency } from "./DeleteAgency";
 import { BellButton, BellPanel } from "./Bell";
 import { RmButton, RmPanel } from "./ContactSynapse";
 import { BrandPage } from "./BrandPage";
+import { ProfileDrawer } from "./ProfileDrawer";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -807,6 +808,7 @@ export function AgencyBody() {
       </aside>
       <div className="scrim" id="scrim"></div>
       <aside className="drawer" id="drawer"></aside>
+      <ProfileDrawer />
       <div className="setup-pop" id="setupPop" role="dialog" aria-label="Getting set up" hidden></div>
       <div className="modal-scrim" id="cmpScrim"></div>
       <div className="modal" id="cmpModal"></div>

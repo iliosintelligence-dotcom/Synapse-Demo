@@ -1065,7 +1065,8 @@
       });
     });
 
-    function closeLead(){ LEAD_OPEN_FOR = null; scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0'; }
+    function closeLead(){ LEAD_OPEN_FOR = null; scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0';
+      window.dispatchEvent(new Event('syn:drawer-close')); }   // the profile drawer is React's and closes with this one
     scrim.addEventListener('click', closeLead);
     /* One listener on the container instead of one per render. The drawer's
        innerHTML is replaced by eleven different templates and each used to
@@ -2063,161 +2064,9 @@
       if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(el);
     }
 
-    /* ── MY PROFILE ────────────────────────────────────────────────────────
-       An agent accepted an invite and arrived as a name. There was no way to
-       add a face, a bio, the areas they cover or the languages they work in --
-       not because the form was missing but because agent_profiles had no write
-       policy, so any form would have failed. The policies exist now.
-
-       This is deliberately NOT the brand editor. An owner setting up an agency
-       is describing a company; an agent joining one is describing themselves.
-       They are different objects with different audiences -- the brand is what
-       Tayo writes in, the profile is what a buyer reads when they are deciding
-       whether to trust the person showing them a house. */
-    let MYPROF = null;
-
-    function mpInitials(n) {
-      return String(n || '').trim().split(/\s+/).slice(0, 2)
-        .map(w => w[0] || '').join('').toUpperCase() || '\u2014';
-    }
-
-    function openMyProfile(opts) {
-      const first = !!(opts && opts.welcome);
-      drawer.innerHTML = '<button class="x" aria-label="Close">\u00d7</button>'
-        + '<div style="font-size:19px;font-weight:700">'
-        + (first ? 'Welcome \u2014 set up your profile' : 'My profile') + '</div>'
-        + '<p class="muted" style="font-size:12px;margin:6px 0 16px">Loading\u2026</p>';
-      scrim.classList.add('on'); drawer.classList.add('on');
-
-      SynListings.myProfile().then((me) => {
-        MYPROF = me;
-        const arr = (a) => (a || []).join(', ');
-        drawer.innerHTML =
-          '<button class="x" aria-label="Close">\u00d7</button>'
-          + '<div style="font-size:19px;font-weight:700">'
-          +   (first ? 'Welcome \u2014 set up your profile' : 'My profile') + '</div>'
-          + (first
-              ? '<div class="mp-nudge" style="margin-top:10px"><span data-icon="user"></span>'
-                + '<span>You have joined the agency. This is the part buyers see \u2014 a face and '
-                + 'a line about how you work is the difference between a name on a card and '
-                + 'someone they will call.</span></div>'
-              : '<p class="muted" style="font-size:12px;margin:6px 0 4px">'
-                + 'Your colleagues see this on the Agents page. A version of it is what a buyer '
-                + 'reads when they are handed to you.</p>')
-          + '<div class="lf" style="margin-top:14px">'
-          +   '<div class="mp-face">'
-          +     '<div class="mp-shot" id="mpShot">'
-          +       (me.avatar ? '<img src="' + esc2(me.avatar) + '" alt="">' : esc2(mpInitials(me.name)))
-          +     '</div>'
-          +     '<div class="mp-facebtns">'
-          +       '<button type="button" class="btn" id="mpPick">'
-          +         (me.avatar ? 'Change photo' : 'Add a photo') + '</button>'
-          +       (me.avatar ? '<button type="button" class="btn" id="mpClear">Remove</button>' : '')
-          +       '<div class="mp-hint">A real photograph, under 3MB.</div>'
-          +     '</div>'
-          +     '<input type="file" id="mpFile" accept="image/*" hidden>'
-          +   '</div>'
-          +   '<div class="field"><label for="mpName">Full name *</label>'
-          +     '<input id="mpName" value="' + esc2(me.name) + '" placeholder="Adaeze Mohammed"></div>'
-          +   '<div class="row2">'
-          +     '<div class="field"><label for="mpPhone">Phone</label>'
-          +       '<input id="mpPhone" value="' + esc2(me.phone) + '" placeholder="+234\u2026"></div>'
-          +     '<div class="field"><label for="mpWa">WhatsApp</label>'
-          +       '<input id="mpWa" value="' + esc2(me.whatsapp) + '" placeholder="+234\u2026"></div>'
-          +   '</div>'
-
-          +   '<div class="mp-sec"><div class="mp-sec-k">How you work</div>'
-          +   '<div class="field"><label for="mpBio">Short bio</label>'
-          +     '<textarea id="mpBio" rows="3" placeholder="Two lines. What you handle, and how you like to work.">'
-          +     esc2(me.bio) + '</textarea></div>'
-          +   '<div class="row2">'
-          +     '<div class="field"><label for="mpYears">Years doing this</label>'
-          +       '<input id="mpYears" type="number" inputmode="numeric" min="0" max="70" value="' + esc2(me.years) + '" placeholder="5"></div>'
-          +     '<div class="field"><label for="mpLangs">Languages</label>'
-          +       '<input id="mpLangs" value="' + esc2(arr(me.languages)) + '" placeholder="English, Yoruba"></div>'
-          +   '</div>'
-          +   '<div class="field"><label for="mpAreas">Areas you cover</label>'
-          +     '<input id="mpAreas" value="' + esc2(arr(me.areas)) + '" placeholder="Bodija, Jericho, Akobo">'
-          +     '<div class="lf-hint">Comma separated. These are the areas a lead gets routed to you for.</div></div>'
-          +   '<div class="field"><label for="mpSpecs">Specialisations</label>'
-          +     '<input id="mpSpecs" value="' + esc2(arr(me.specializations)) + '" placeholder="Rentals, family homes"></div>'
-          +   '<div class="field"><label for="mpCerts">Certifications</label>'
-          +     '<input id="mpCerts" value="' + esc2(arr(me.certifications)) + '" placeholder="ESVARBON, NIESV">'
-          +     '<div class="lf-hint">Only what you actually hold \u2014 a buyer may ask to see it.</div></div>'
-          +   '</div>'
-
-          /* The record is shown but not offered. An agent typing their own
-             closed-deal count is the one thing this form must not allow, and
-             the database refuses it too (agent_profiles_guard). */
-          +   '<div class="mp-sec"><div class="mp-sec-k">Your record</div>'
-          +     '<div class="mp-record">'
-          +       '<div><div class="v">' + (me.closed == null ? '\u2014' : me.closed) + '</div><div class="l">closed</div></div>'
-          +       '<div><div class="v">' + (me.rating == null ? '\u2014' : me.rating) + '</div><div class="l">rating</div></div>'
-          +       '<div><div class="v">' + (me.responseRate == null ? '\u2014' : me.responseRate + '%') + '</div><div class="l">reply rate</div></div>'
-          +     '</div>'
-          +     '<div class="mp-note">Synapse records these from your actual deals and replies. '
-          +     'They are not editable \u2014 that is what makes them worth anything to a buyer.</div>'
-          +   '</div>'
-
-          +   '<div class="sch-note" id="mpNote"></div>'
-          +   '<button class="btn btn-primary btn-block" id="mpSave" style="margin-top:14px">'
-          +     (first ? 'Save and get started' : 'Save profile') + '</button>'
-          + '</div>';
-
-        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(drawer);
-
-        let pendingAvatar = me.avatar;
-        const shot = document.getElementById('mpShot');
-        const file = document.getElementById('mpFile');
-        document.getElementById('mpPick').addEventListener('click', () => file.click());
-        const clr = document.getElementById('mpClear');
-        if (clr) clr.addEventListener('click', () => {
-          pendingAvatar = '';
-          shot.innerHTML = esc2(mpInitials(document.getElementById('mpName').value));
-        });
-        file.addEventListener('change', () => {
-          const f = file.files && file.files[0];
-          if (!f) return;
-          const note = document.getElementById('mpNote');
-          note.textContent = 'Uploading\u2026';
-          SynListings.uploadAvatar(f)
-            .then((url) => {
-              pendingAvatar = url;
-              shot.innerHTML = '<img src="' + esc2(url) + '" alt="">';
-              note.textContent = '';
-            })
-            .catch((err) => { note.textContent = (err && err.message) || 'That photo would not upload.'; });
-        });
-
-        document.getElementById('mpSave').addEventListener('click', () => {
-          const v = (id) => (document.getElementById(id).value || '').trim();
-          const note = document.getElementById('mpNote');
-          if (!v('mpName')) { note.textContent = 'Your name cannot be blank.'; return; }
-          const btn = document.getElementById('mpSave');
-          btn.disabled = true; btn.textContent = 'Saving\u2026';
-          SynListings.saveMyProfile({
-            name: v('mpName'), phone: v('mpPhone'), whatsapp: v('mpWa'),
-            avatar: pendingAvatar, bio: v('mpBio'), years: v('mpYears'),
-            languages: v('mpLangs'), specializations: v('mpSpecs'),
-            areas: v('mpAreas'), certifications: v('mpCerts'),
-          })
-            .then(() => {
-              closeLead();
-              toast('Profile saved.');
-              if (typeof loadAgents === 'function') loadAgents();
-            })
-            .catch((err) => {
-              btn.disabled = false; btn.textContent = first ? 'Save and get started' : 'Save profile';
-              note.textContent = (err && err.message) || 'Could not save that.'; planGate(err && err.message);
-            });
-        });
-      }).catch((err) => {
-        drawer.innerHTML = '<button class="x" aria-label="Close">\u00d7</button>'
-          + '<div style="font-size:19px;font-weight:700">My profile</div>'
-          + '<p class="muted" style="font-size:12.5px;margin-top:10px">'
-          + esc2((err && err.message) || 'Could not load your profile just now.') + '</p>';
-      });
-    }
+    /* ── MY PROFILE is React (src/features/agency/ProfileDrawer.tsx), in a drawer of its own beside this one. The name stays:
+       the invite welcome and the Agents page call it. */
+    function openMyProfile(opts) { window.dispatchEvent(new CustomEvent('syn:my-profile', { detail: opts || {} })); }
     window.openMyProfile = openMyProfile;
 
     /* ── THE SCHEDULER ─────────────────────────────────────────────────────
