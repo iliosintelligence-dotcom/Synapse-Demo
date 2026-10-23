@@ -10,6 +10,8 @@
     const PINKEY = 'toju_pins_v1';   // pinned replies; defined here because saved chats render before the pin code below
     // stable anonymous visitor id -> server-side memory (continue anywhere this id exists)
     const VKEY = 'toju_visitor_v1';
+    /* The channel an agency's own link came from, read before the arrival code below tidies the address. */
+    const RAW_CH = (function () { try { return new URLSearchParams(location.search).get('ch') || ''; } catch (e) { return ''; } })();
     /* THE NEW AGENT, ONE BROWSER AT A TIME (2026-10-23). ?agent=1 switches this browser to the reasoning agent (kept until ?agent=0);
        everyone else stays on the current Tayo until the server's TOJU_AGENT switch is turned on. */
     const AGENT_ON = (function () {
@@ -354,6 +356,35 @@
       if (ap && /^[0-9a-f-]{36}$/i.test(ap)) { AGENCY_ID = ap; sessionStorage.setItem('syn_agency_ctx', ap); }
       else AGENCY_ID = sessionStorage.getItem('syn_agency_ctx');
     } catch (e) { /* storage blocked: the page still works for this visit */ }
+    /* AN AGENCY'S OWN LINK (Eden, 2026-10-23): /t/<code>?ch=whatsapp, from the agency's WhatsApp, Instagram or Facebook
+       auto-reply. The code is the agency's; the conversation is then about that agency's homes only (AGENCY_ID goes with every
+       message), the arrival is recorded so a lead that follows is credited to the agency and the channel, and Tayo says whose
+       homes it is showing. */
+    (function agencyLink() {
+      let code = null;
+      try { code = new URLSearchParams(location.search).get('t'); } catch (e) { return; }
+      if (!code || !/^[A-Za-z0-9_-]{3,40}$/.test(code)) return;
+      const H = { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY };
+      fetch(SUPABASE_URL + '/rest/v1/rpc/agency_link', { method: 'POST', headers: H, body: JSON.stringify({ p_code: code }) })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows) => {
+          const a = Array.isArray(rows) ? rows[0] : null;
+          if (!a || !a.agency_id) return;
+          AGENCY_ID = a.agency_id;
+          try { sessionStorage.setItem('syn_agency_ctx', AGENCY_ID); } catch (e) { /* this visit still knows */ }
+          const CH = { whatsapp: 'whatsapp_campaign', instagram: 'instagram', facebook: 'facebook', tiktok: 'tiktok', telegram: 'telegram' };
+          const channel = CH[String(RAW_CH).toLowerCase()] || 'referral';
+          fetch(SUPABASE_URL + '/rest/v1/rpc/record_agency_touch', {
+            method: 'POST', headers: H,
+            body: JSON.stringify({ p_agency_id: AGENCY_ID, p_channel: channel, p_session_id: VISITOR, p_kind: 'autoreply' }),
+          }).catch(() => { /* attribution is never worth breaking a conversation over */ });
+          if (!saved.some((m) => m.role === 'user')) {
+            tojuMsg('You are talking to Tayo for **' + String(a.name || 'this agency') + '** on Synapse. Tell me what you are looking for and I will show you their homes, and introduce you to them when one fits.');
+          }
+          try { const q = new URLSearchParams(location.search); q.delete('t'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); } catch (e) { /* cosmetic */ }
+        })
+        .catch(() => { /* an unknown or unreachable code leaves an ordinary chat */ });
+    })();
     /* 'discuss' = they pressed Discuss with an agent (Tayo negotiates and hands over); 'info' = they came back to a home
        from a social post or campaign (the card, and answers). Kept across a reload with the listing. */
     const MODE_KEY = 'toju_reply_mode_v1';

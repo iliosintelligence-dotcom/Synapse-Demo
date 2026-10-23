@@ -14,7 +14,6 @@ import { animateClose, MOTION, Sheet, sheetStyles as s } from "./Sheet";
 const KEY = "toju_bg_v1";
 type Mode = "tint" | "photo" | "pattern";
 const OPTIONS: Array<{ mode: Mode; label: string }> = [{ mode: "tint", label: "Colour" }, { mode: "photo", label: "Photo" }, { mode: "pattern", label: "Pattern" }];
-declare global { interface Window { SynAuth?: { ready?: () => Promise<{ id?: string } | null> } } }
 
 const current = (): Mode => (document.documentElement.getAttribute("data-tjbg") as Mode | null) ?? "photo";
 function apply(mode: Mode) {
