@@ -10603,218 +10603,7 @@
       }
     });
 
-    // ── Pricing (config-driven; edit PRICING to change plans) ──
-    // Mirrors a PricingCard / FeatureRow / AddOnCard / ROISection component
-    // set: PLANS + ADDONS + ROI feed the render functions below.
-    const PRICING = {
-      plans: [
-        { id: 'foundation', name: 'Free', headline: 'Everything you need to start winning buyers.',
-          price: 0, unit: 'forever', best: 'New or small agencies getting started.',
-          cta: 'Current plan', ctaStyle: 'ghost', current: true, features: [
-            ['Up to 20 active listings', 'Room to grow your catalogue'],
-            ['2 team members', 'Bring on a partner'],
-            ['CRM with WhatsApp handoff', 'Never lose a lead, buyers land on your phone'],
-            ['Tayo AI referrals', 'Get matched to buyers already looking for what you list'],
-            ['Standard verification', 'Your listings become trusted, at the normal queue speed'],
-            ['Basic analytics', 'See your leads and listings at a glance'],
-          ], tradeoffs: ['Slower verification queue', 'No marketing automation or social syndication', 'Limited AI'] },
-        { id: 'accelerator', name: 'Accelerate', headline: 'Grow faster with AI-powered marketing and verification.',
-          price: 25000, unit: 'per month', best: 'The plan almost every serious agency wants.',
-          cta: 'Upgrade to Accelerate', ctaStyle: 'primary', feature: true, badge: 'MOST POPULAR', features: [
-            ['Up to 100 listings · 5 agent seats', 'Scale the whole team'],
-            ['Get verified in 48 hours', 'Your listings become trusted sooner, so buyers act faster'],
-            ['Publish once, reach everywhere', 'One upload posts to every platform automatically'],
-            ['AI writes and posts for you', 'Captions and scheduling handled, no marketing hire'],
-            ['Know which channels make buyers', 'Lead analytics + buyer-engagement metrics'],
-            ['Marketing performance dashboard', 'See exactly what your spend returns'],
-          ] },
-        { id: 'market-leader', name: 'Leader', headline: 'Dominate your local market.',
-          price: 75000, unit: 'per month', best: 'Established agencies going for the top.', gold: true,
-          cta: 'Choose Leader', ctaStyle: 'ghost', features: [
-            ['Unlimited listings & seats', 'No ceiling on your growth'],
-            ['Gold Verified badge everywhere', 'The strongest trust signal a buyer can see'],
-            ['Every marketing channel + AI campaigns', 'Tayo generates whole campaigns for you'],
-            ['Proximity marketing', 'Reach buyers the moment they walk past your listing'],
-            ['Dedicated verification desk', 'Your listings clear the trust queue fastest, Tayo still ranks purely on buyer fit, never payment'],
-            ['Dedicated verification desk + priority support', 'A team on standby for your deals'],
-            ['Premium analytics', 'Attribution from first touch to closed ₦'],
-          ] },
-        /* ENTERPRISE (Eden, 2026-10-02): no list price. Terms are agreed with
-           the agency -- a monthly fee, per project, or a commission on closed
-           deals -- so the card says "Negotiated" and its button opens a real
-           conversation (the Contact Synapse panel), not a checkout. */
-        { id: 'enterprise', name: 'Enterprise', headline: 'Terms built around your business.',
-          price: null, priceLabel: 'Negotiated', unit: '', best: 'Developers and large agencies. Pricing agreed with you, even as commission on closed deals.',
-          cta: 'Talk to us', ctaStyle: 'ghost', features: [
-            ['Everything in Leader', 'Unlimited listings, seats and channels'],
-            ['Pricing agreed with you', 'Monthly, per project, or a commission on closed deals'],
-            ['A dedicated relationship manager', 'One person who knows your portfolio'],
-            ['Onboarding and integrations', 'Your existing listings and team brought across'],
-          ] },
-      ],
-      addons: [
-        { ico: 'agency', name: 'Extra Listing Pack', desc: '+25 active listings when your catalogue outgrows the plan.', price: '₦15k', unit: '/mo' },
-        { ico: 'spark', name: 'AI Marketing Credits', desc: 'More AI captions, variations and campaign generations.', price: '₦8k', unit: 'pack' },
-        { ico: 'share',  name: 'Social Reach Boost', desc: 'Extra paid reach behind one listing on social channels, never affects Tayo\'s ranking.', price: '₦10k', unit: 'each' },
-        { ico: 'shield', name: 'Verification Credits', desc: 'Fast-track extra listings through the trust desk.', price: '₦6k', unit: 'pack' },
-        { ico: 'chart',  name: 'Campaign Boost', desc: 'Extra reach behind a marketing campaign that\'s working.', price: '₦20k', unit: 'each' },
-      ],
-      roi: {
-        title: 'One sale can pay for your subscription many times over.',
-        points: ['Generate more qualified buyers', 'Reduce wasted advertising spend', 'Automate repetitive marketing',
-          'Build trust through verification', 'Understand which campaigns actually close deals'],
-        close: 'The goal isn\'t to save money. <b>The goal is to help you earn more.</b>',
-      },
-    };
-    const nairaPlan = (n) => n === 0 ? '₦0' : '₦' + (n / 1000) + 'k';
-    // Comparison table: tiers as columns, benefits as rows, read a row
-    // across to see which plans include it, instead of parsing three
-    // separate feature lists. Rows are a synthesis of each plan's own
-    // features/tradeoffs above into shared dimensions every plan has a
-    // value for (true/false/a specific figure).
-    const COMPARE_ROWS = [
-      { label: 'Active listings', vals: ['20', '100', 'Unlimited', 'Unlimited'] },
-      { label: 'Team seats', vals: ['2', '5', 'Unlimited', 'Unlimited'] },
-      { label: 'CRM with WhatsApp handoff', vals: [true, true, true, true] },
-      { label: 'Tayo AI buyer referrals', vals: [true, true, true, true] },
-      { label: 'Verification speed', vals: ['Standard queue', '48 hours', 'Dedicated desk', 'Dedicated desk'] },
-      { label: 'Verification badge', vals: ['Verified', 'Verified', 'Gold Verified', 'Gold Verified'] },
-      { label: 'Publish once, reach every channel', vals: [false, true, true, true] },
-      { label: 'AI writes captions & auto-posts', vals: [false, true, true, true] },
-      { label: 'AI-generated marketing campaigns', vals: [false, false, true, true] },
-      { label: 'Proximity marketing', vals: [false, false, true, true] },
-      { label: 'Analytics', vals: ['Basic', 'Lead + engagement', 'Premium, full attribution', 'Premium, full attribution'] },
-      { label: 'Support', vals: ['Standard', 'Standard', 'Priority', 'Dedicated manager'] },
-    ];
-    function pricingCellCls(p) { return (p.feature ? ' feature' : '') + (p.gold ? ' gold-plan' : ''); }
-    function pricingCompareHTML(plans, rows) {
-      let html = '<div class="pr-corner"></div>'
-        + plans.map((p) => `<div class="pr-head${pricingCellCls(p)}" data-col="${p.id}">${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}<div class="tname">${p.name}</div><div class="thead">${p.headline}</div></div>`).join('');
-      html += '<div class="pr-row-label">Price</div>'
-        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}"><div class="amt">${p.price == null ? (p.priceLabel || 'Let’s talk') : nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div></div>`).join('');
-      html += '<div class="pr-row-label"></div>'
-        + plans.map((p) => `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}"><button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button></div>`).join('');
-      rows.forEach((r) => {
-        html += `<div class="pr-row-label">${r.label}</div>`
-          + r.vals.map((v, i) => {
-            const p = plans[i];
-            const content = v === true ? '<span class="pr-check">✓</span>'
-              : v === false ? '<span class="pr-dash">-</span>'
-              : `<span class="pr-val">${v}</span>`;
-            return `<div class="pr-cell${pricingCellCls(p)}" data-col="${p.id}">${content}</div>`;
-          }).join('');
-      });
-      return html;
-    }
-    /* The same comparison, as cards.
-       .pr-compare is a 4-column grid with min-width:680px and no mobile rule,
-       so on a 375px phone the plans could only be read by dragging the table
-       sideways -- and a comparison you can only see one column of at a time is
-       not a comparison. The grid is row-major in the DOM (label, cell, cell,
-       cell), so CSS alone cannot transpose it into per-plan blocks; this
-       renders the same data the other way round.
-
-       Both are always in the DOM and CSS picks one, so there is no resize
-       listener to get wrong and no flash on rotate. */
-    function pricingCardsHTML(plans, rows) {
-      return plans.map((p, i) => {
-        const feats = rows.map((r) => {
-          const v = r.vals[i];
-          if (v === false) return '';                       // omit, don't clutter
-          const val = v === true ? '' : `<span class="prc-v">${v}</span>`;
-          return `<li${v === true ? ' class="yes"' : ''}><span class="prc-k">${r.label}</span>${val}</li>`;
-        }).join('');
-        return `<div class="prc-card${p.badge ? ' pop' : ''}${(p.disabled ?? p.current) ? '' : ' can'}" data-col="${p.id}">
-          ${p.badge ? `<span class="pr-pop">${p.badge}</span>` : ''}
-          <div class="prc-name">${p.name}</div>
-          <div class="prc-head">${p.headline}</div>
-          <div class="prc-amt">${p.price == null ? (p.priceLabel || 'Let’s talk') : nairaPlan(p.price)}${p.price ? `<small> /${p.unit.replace('per ', '')}</small>` : ''}</div>
-          <button class="btn btn-${p.ctaStyle === 'primary' ? 'primary' : 'ghost'}" data-plan="${p.id}" ${(p.disabled ?? p.current) ? 'disabled style="opacity:.7"' : ''}>${p.cta}</button>
-          <ul class="prc-feats">${feats}</ul>
-        </div>`;
-      }).join('');
-    }
-
-    // AddOnCard
-    function addonHTML(a) {
-      return `<div class="card addon"><div class="aico">${SynIcons.svg(a.ico)}</div>
-        <div class="aname">${a.name}</div><div class="adesc">${a.desc}</div>
-        <div class="aprice">${a.price}<small> ${a.unit}</small></div>
-        <button class="abtn">Add</button></div>`;
-    }
-    // ROISection
-    function roiHTML(r) {
-      return `<h3>${r.title}</h3>
-        <div class="rgrid">${r.points.map((p) => `<div>${p}</div>`).join('')}</div>
-        <p class="rclose">${r.close}</p>`;
-    }
-    // Re-run whenever the real plan loads (renderPricing, below), a plain
-    // dataset.wired guard on each fresh button is enough to keep re-renders
-    // safe without double-binding.
-    function wirePricingToasts() {
-      document.querySelectorAll('#pricingGrid button').forEach((b) => {
-        const msg = CTA_TOASTS[b.textContent.trim()];
-        if (msg && !b.dataset.wired) { b.dataset.wired = '1'; b.addEventListener('click', () => toast(msg)); }
-      });
-    }
-    /* ── what this agency has used ────────────────────────────────────
-       The numbers come from the database function the triggers share, so the
-       portal cannot promise headroom the insert will refuse. */
-    function renderPlanUsage() {
-      var box = document.getElementById('planUsage');
-      if (!box || !window.SynAuth || !SynAuth.client) return;
-
-      SynAuth.client().then(function (c) {
-        return SynListings.agencyId().then(function (aid) {
-          if (!aid) return null;
-          return c.rpc('agency_plan_usage', { p_agency_id: aid });
-        });
-      }).then(function (r) {
-        var u = r && r.data;
-        if (!u || !u.tier) return;             // knows nothing, says nothing
-
-        var TIER_NAME = { free: 'Free', accelerator: 'Accelerate', market_leader: 'Leader', enterprise: 'Enterprise' };
-
-        function row(label, used, max) {
-          /* null max is unlimited, which is not the same as a ceiling of
-             zero and must never render as "3 of 0". */
-          if (max == null) {
-            return '<div class="pu-item"><span class="pu-k">' + label + '</span>'
-              + '<b class="pu-v">' + used + '</b>'
-              + '<span class="pu-max">of unlimited</span></div>';
-          }
-          var pct = Math.min(100, Math.round(used / max * 100));
-          var full = used >= max;
-          return '<div class="pu-item' + (full ? ' full' : '') + '">'
-            + '<span class="pu-k">' + label + '</span>'
-            + '<b class="pu-v">' + used + '</b>'
-            + '<span class="pu-max">of ' + max + '</span>'
-            + '<span class="pu-bar"><i style="width:' + pct + '%"></i></span>'
-            + (full ? '<span class="pu-note">at your limit</span>' : '')
-            + '</div>';
-        }
-
-        box.innerHTML =
-          '<div class="pu-plan">You are on <b>' + esc(TIER_NAME[u.tier] || u.tier) + '</b></div>'
-          + row('Active listings', u.listings_used, u.listings_max)
-          + row('Team seats', u.seats_used, u.seats_max);
-        box.hidden = false;
-      }).catch(function () { /* stays hidden; a wrong number is worse */ });
-    }
-
-    function renderPricing() {
-      const grid = document.getElementById('pricingGrid');
-      const gridHTML = pricingCompareHTML(PRICING.plans, COMPARE_ROWS);
-      if (grid.dataset.v !== gridHTML) { grid.dataset.v = gridHTML; grid.innerHTML = gridHTML; }
-      const pc = document.getElementById('pricingCards');
-      const cardsHTML = pricingCardsHTML(PRICING.plans, COMPARE_ROWS);
-      if (pc && pc.dataset.v !== cardsHTML) { pc.dataset.v = cardsHTML; pc.innerHTML = cardsHTML; }
-      wirePricingToasts();
-      renderPlanUsage();
-    }
-    renderPricing();
-    document.getElementById('addonsGrid').innerHTML = PRICING.addons.map(addonHTML).join('');
-    document.getElementById('roiSection').innerHTML = roiHTML(PRICING.roi);
+    /* The Subscription pane (plans, usage, referral card) is React: src/features/agency/SubscriptionPane.tsx. */
 
     // ── real checkout: Paystack, hosted redirect ──
     // No Paystack key ever touches this page, the client only ever talks to
@@ -10838,22 +10627,7 @@
        paywall is off (platform_settings paywall_enabled): every agency already has everything, which is the highest plan.
        To bring payments back, set FREE_30_DAYS to false and the original checkout below runs again. */
     const FREE_30_DAYS = true;
-    function showFreeAccess() {
-      const old = document.getElementById('freeAccess'); if (old) old.remove();
-      const el = document.createElement('div');
-      el.id = 'freeAccess'; el.className = 'fa-scrim';
-      el.innerHTML = '<div class="fa-card" role="dialog" aria-modal="true" aria-labelledby="faT">'
-        + '<div class="fa-k">Nothing to pay right now</div>'
-        + '<h2 id="faT" class="fa-t">You are in the <em>free pilot</em>.</h2>'
-        + '<p class="fa-w">Every feature is open to your agency while we run the pilot: unlimited listings, the studio, the proximity alerts and the negotiator. There is nothing to pay and no card to enter. Billing stays here, and we will tell you well before anything changes.</p>'
-        + '<div class="fa-row"><button type="button" class="btn btn-primary" id="faOk">Great, carry on</button></div></div>';
-      document.body.appendChild(el);
-      const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
-      const onKey = (e) => { if (e.key === 'Escape') close(); };
-      document.addEventListener('keydown', onKey);
-      el.addEventListener('click', (e) => { if (e.target === el || e.target.closest('#faOk')) close(); });
-      setTimeout(() => { const b = document.getElementById('faOk'); if (b) b.focus(); }, 30);
-    }
+    function showFreeAccess() { window.dispatchEvent(new CustomEvent('syn:free-access')); }   // the prompt is React (SubscriptionPane.tsx)
     function startCheckout(what, btn) {
       if (FREE_30_DAYS) { showFreeAccess(); return; }
       const req = typeof what === 'string' ? { plan: what, period: 'monthly' } : what;
@@ -10894,34 +10668,6 @@
           .catch(() => { done(); toast('Network hiccup starting checkout. Please try again.'); });
       });
     }
-    /* EVERY PLAN ANSWERS (Eden, 2026-10-02). The phone cards had no click
-       handler at all -- only the desktop table did -- so on a phone no plan
-       could be chosen; and Leader's "Talk to sales" showed a thank-you toast
-       that told nobody. Now one handler serves both, and a click anywhere on
-       a plan's card (or its column in the table) does what its button says:
-         Accelerate, Leader  -> Billing, with that plan chosen, to pay for
-                                a month or a year (Leader became buyable
-                                2026-10-02)
-         Enterprise          -> the Contact Synapse panel, with an email
-                                already written about that plan
-         Free (when you pay) -> the same panel: there is no self-serve
-                                downgrade, so a person does it
-       The plan you are on stays inert. */
-    function onPlanPick(e) {
-      const cell = e.target.closest('[data-col]');
-      if (!cell || e.target.closest('a')) return;
-      const b = cell.closest('#pricingCards') ? cell.querySelector('button[data-plan]')
-        : document.querySelector('#pricingGrid button[data-plan="' + cell.dataset.col + '"]');
-      if (!b || b.disabled) return;
-      const plan = PRICING.plans.find((p) => p.id === b.dataset.plan);
-      if (!plan) return;
-      if (plan.id === 'accelerator' || plan.id === 'market-leader') { openBilling(plan.id); return; }
-      if (typeof toggleRm === 'function') toggleRm(true, plan.name);
-    }
-    document.getElementById('pricingGrid').addEventListener('click', onPlanPick);
-    const pricingCardsEl = document.getElementById('pricingCards');
-    if (pricingCardsEl) pricingCardsEl.addEventListener('click', onPlanPick);
-
     // Paystack redirects back here as ?reference=..., that query param is
     // an untrusted browser redirect (spoofable), used only as a lookup key.
     // The real answer always comes from asking our own edge function, which
@@ -10952,31 +10698,8 @@
       }).catch(() => {});
     })();
 
-    // The plan actually on the agency's record, not a hardcoded default -
-    // Free was previously hardcoded as `current: true` regardless of what an
-    // agency had actually paid for.
-    function refreshCurrentPlan() {
-      if (!window.SynListings) return;
-      SynListings.agency().then((a) => {
-        const tier = (a && a.subscription_tier) || 'free';
-        PRICING.plans.forEach((p) => {
-          const isCurrent = (tier === 'free' && p.id === 'foundation')
-            || (tier === 'accelerator' && p.id === 'accelerator')
-            || (tier === 'market_leader' && p.id === 'market-leader')
-            || (tier === 'enterprise' && p.id === 'enterprise');
-          p.current = isCurrent;
-          // Free has no self-serve downgrade, so for a paying agency its
-          // button asks a person (the Contact Synapse panel) to move them.
-          p.disabled = isCurrent;
-          p.cta = isCurrent ? 'Current plan' : (p.id === 'foundation' ? 'Move to Free' : p.id === 'accelerator' ? 'Upgrade to Accelerate' : p.id === 'enterprise' ? 'Talk to us' : 'Choose Leader');
-          p.ctaStyle = isCurrent ? 'ghost' : (p.id === 'accelerator' ? 'primary' : 'ghost');
-          // Paid plans renew here too: the current one's button extends it.
-          if (isCurrent && (p.id === 'accelerator' || p.id === 'market-leader')) { p.cta = 'Renew or extend'; p.disabled = false; }
-        });
-        renderPricing();
-      }).catch(() => {});
-    }
-    refreshCurrentPlan();
+    // The plan actually on the agency's record: the Subscription pane (React) reads it again.
+    function refreshCurrentPlan() { window.dispatchEvent(new CustomEvent('syn:plan-refresh')); }
 
     /* ══ BILLING ══════════════════════════════════════════════════════════
        Eden, 2026-10-02: "build a billing page with our design elements and
@@ -11018,28 +10741,7 @@
     function planGate(msg) {
       msg = String(msg || '');
       if (!PLAN_GATE_RX.test(msg)) return false;
-      const listing = /active listings/i.test(msg), seats = /team seats/i.test(msg);
-      const owner = document.body.dataset.role === 'agency_owner';
-      const old = document.getElementById('planGate'); if (old) old.remove();
-      const el = document.createElement('div');
-      el.className = 'pg-scrim'; el.id = 'planGate';
-      el.innerHTML = '<div class="pg" role="dialog" aria-modal="true" aria-labelledby="pgT">'
-        + '<h3 id="pgT">' + (listing ? 'You\u2019ve reached your listing limit' : seats ? 'Your team is full on this plan' : 'That\u2019s on Accelerate and above') + '</h3>'
-        + '<p>' + esc2(msg.replace(/\s*(Upgrade|Subscription in the portal).*$/i, '')) + '</p>'
-        + (owner
-          ? '<div class="pg-b">' + (listing ? '<button type="button" class="btn btn-ghost" data-pg="pack">Add 25 listings</button>' : '')
-            + '<button type="button" class="btn btn-primary" data-pg="plans">See plans</button></div>'
-          : '<p class="pg-n">Only your agency\u2019s owner can change the plan. Ask them to upgrade.</p>')
-        + '<button type="button" class="pg-x" data-pg="close" aria-label="Close">\u00D7</button></div>';
-      document.body.appendChild(el);
-      el.addEventListener('click', (e) => {
-        const b = e.target.closest('[data-pg]');
-        if (!b && e.target !== el) return;
-        el.remove();
-        if (!b) return;
-        if (b.dataset.pg === 'plans') goToPane('subscription');
-        if (b.dataset.pg === 'pack') { openBilling(); setTimeout(() => { const h = document.getElementById('blAddonsHead'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 350); }
-      });
+      window.dispatchEvent(new CustomEvent('syn:plan-gate', { detail: msg }));   // the prompt is React (SubscriptionPane.tsx)
       return true;
     }
     (function hookToasts() {
@@ -11066,33 +10768,7 @@
           if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
         }).catch(() => {});
     }
-    function referralLink(code) { return 'https://www.synapsecore.dev/?ref=' + encodeURIComponent(code); }
-    function paintReferral() {
-      const r = window.SYN_REFERRAL, box = document.getElementById('referralCard');
-      if (!box || !r || !r.on || !r.code) return;
-      const per = r.per_reward, into = r.into_next, left = per - into;
-      const steps = Array.from({ length: per }, (_, i) => '<i class="' + (i < into ? 'on' : '') + '"></i>').join('');
-      const month = r.months_per_reward === 1 ? 'month' : r.months_per_reward + ' months';
-      const recent = (r.recent || []).map((x) => '<li class="' + (x.counted ? 'ok' : '') + '"><span>' + esc2(x.name || 'An agency') + '</span><span>'
-        + (x.counted ? 'Counted' : 'Joined \u00b7 needs ' + r.listings_required + ' listings') + '</span></li>').join('');
-      box.hidden = false;
-      box.innerHTML = '<h3>Refer agents, get a free ' + (r.months_per_reward === 1 ? 'month' : 'stretch') + '</h3>'
-        + '<p>Every ' + per + ' agencies you bring to Synapse earn you ' + (r.months_per_reward === 1 ? 'one month' : month) + ' free. An agency counts once it has uploaded ' + r.listings_required + ' listings.</p>'
-        + '<div class="ref-steps" aria-hidden="true">' + steps + '</div>'
-        + '<div class="ref-line"><span><b>' + into + ' of ' + per + '</b> toward your next free month</span><span>' + r.counted + ' counted' + (r.pending ? ' \u00b7 ' + r.pending + ' joined' : '') + '</span></div>'
-        + (r.months_earned ? '<span class="ref-earned">' + r.months_earned + (r.months_earned === 1 ? ' month' : ' months') + ' earned</span>' : '')
-        + '<div class="ref-link"><code id="refLinkTxt">' + esc2(referralLink(r.code)) + '</code><button type="button" class="btn btn-primary" id="refCopy">Copy link</button></div>'
-        + (recent ? '<ul class="ref-list" aria-label="Agencies you referred">' + recent + '</ul>' : '');
-      box.classList.toggle('irid', r.months_earned > 0);
-      const cp = document.getElementById('refCopy');
-      if (cp) cp.addEventListener('click', () => {
-        const link = referralLink(r.code);
-        const done = () => { if (typeof toast === 'function') toast('Link copied. Send it to another agent.'); };
-        if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) { navigator.share({ title: 'Synapse for agencies', text: 'Try Synapse for your agency:', url: link }).catch(() => {}); return; }
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, () => {});
-        else { const t = document.getElementById('refLinkTxt'); if (t) { const rg = document.createRange(); rg.selectNodeContents(t); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(rg); } }
-      });
-    }
+    function paintReferral() { window.dispatchEvent(new CustomEvent('syn:referral')); }   // the card is React (SubscriptionPane.tsx)
     /* A visitor who arrived through someone's link claims it once they have an
        agency. The database decides whether it counts; this only passes the code
        on and then forgets it, unless the answer is "not yet" (no agency yet) or
@@ -11119,17 +10795,6 @@
        go on saying it is free. */
     setInterval(loadPaywallInfo, 30 * 60 * 1000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadPaywallInfo(); });
-
-    /* Subscription's own doors into Billing: the link under the usage line,
-       and the add-on cards, whose "Add" buttons did nothing until now. */
-    document.addEventListener('click', (e) => {
-      const go = e.target.closest('[data-open-billing]');
-      const add = !go && e.target.closest('#addonsGrid .abtn');
-      if (!go && !add) return;
-      e.preventDefault();
-      openBilling();
-      if (add) setTimeout(() => { const h = document.getElementById('blAddonsHead'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 350);
-    });
 
     // ── persistent Ask-Tayo panel (context-aware per pane) ──
     // The AI commentary/summaries live here, not on the main panes. What the

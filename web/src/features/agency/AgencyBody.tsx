@@ -5,7 +5,6 @@
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { AccountMenu, AuthGate, NeedPhone } from "./AgencyAccount";
-import { DeleteAgency } from "./DeleteAgency";
 import { BellButton, BellPanel } from "./Bell";
 import { RmButton, RmPanel } from "./ContactSynapse";
 import { BrandPage } from "./BrandPage";
@@ -16,6 +15,7 @@ import { AdvisorFab, AdvisorPanel } from "./AdvisorPanel";
 import { VerificationPane } from "./VerificationPane";
 import { ToursPane } from "./ToursPane";
 import { BillingPane } from "./BillingPane";
+import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -401,33 +401,7 @@ export function AgencyBody() {
               <VerificationPane />
             </section>
             <section className="pane" id="pane-subscription">
-              <div className="eyebrow">
-                Invest in growth
-              </div>
-              <div className="h1">
-                Plans that pay for themselves
-              </div>
-              <div className="plan-usage" id="planUsage" hidden></div>
-              <div className="ref-card" id="referralCard" hidden></div>
-              <a className="bl-link" href="#billing" data-open-billing="">
-                {"Billing, payments and add-ons "}
-                <span aria-hidden="true">
-                  →
-                </span>
-              </a>
-              <div className="pr-table-wrap">
-                <div className="pr-compare" id="pricingGrid"></div>
-              </div>
-              <div className="pr-cards" id="pricingCards"></div>
-              <div className="h2" style={{ "marginTop": "40px" }}>
-                Grow as you need
-              </div>
-              <p className="sub">
-                Top up a plan without upgrading, one-off or monthly.
-              </p>
-              <div className="addons-grid" id="addonsGrid"></div>
-              <div className="card roi" id="roiSection"></div>
-              <DeleteAgency />
+              <SubscriptionPane />
             </section>
             <section className="pane" id="pane-billing">
               <div className="eyebrow">
@@ -724,6 +698,8 @@ export function AgencyBody() {
       <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
       <TaskCard />
+      <PlanGate />
+      <FreeAccess />
       <SetupPop />
       <div className="modal-scrim" id="cmpScrim"></div>
       <div className="modal" id="cmpModal"></div>
