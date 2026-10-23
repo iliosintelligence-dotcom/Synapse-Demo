@@ -12221,13 +12221,9 @@
       btn.hidden = false;
       document.getElementById('setupNum').textContent = doneN + '/' + total;
       btn.setAttribute('aria-label', 'Getting set up: ' + doneN + ' of ' + total + ' done. Next: ' + next.title);
-      if (card) {
-        card.hidden = false;
-        card.innerHTML = '<div class="nc-ico">' + setupSvg(next.ico) + '</div>'
-          + '<div class="nc-tx"><div class="nc-k">Your next step \u00b7 ' + (doneN + 1) + ' of ' + total + '</div><p class="nc-t">' + esc2(next.title) + '</p><p class="nc-w">' + esc2(next.why) + '</p>'
-          + '<div class="nc-bar" aria-hidden="true">' + steps.map((x) => '<i class="' + (x.done ? 'on' : '') + '"></i>').join('') + '</div></div>'
-          + '<div class="nc-go"><button type="button" class="btn btn-primary" data-setup-go="' + next.id + '">' + esc2(next.cta) + ' \u2192</button><button type="button" class="nc-all" data-setup-all>See all steps</button></div>';
-      }
+      /* The "Your next step" card on Overview is gone (Eden, 2026-10-24: "it's been there since, just take it out"). The ring
+         in the top bar still opens the whole list. */
+      if (card) { card.hidden = true; card.innerHTML = ''; }
       if (pop) {
         pop.innerHTML = '<div class="sp-h"><h3>Getting set up</h3><span>' + doneN + ' of ' + total + '</span></div>'
           + '<div class="sp-bar" aria-hidden="true"><i style="width:' + Math.round(doneN / total * 100) + '%"></i></div>'

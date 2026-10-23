@@ -7,7 +7,7 @@
  * arrives. The engine reaches it through window.TayoComposer (read, write, placeholder, listening, the element) and it
  * reaches the engine through window.TayoEngine (send, toggleMic). The engine says when it is busy with `syn:busy`.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -58,6 +58,14 @@ function Field() {
     gsap.fromTo(el, { scale: 0.86 }, { scale: 1, duration: 0.45, ease: "back.out(3)", clearProps: "transform" });
   });
 
+  /* The swap pops in: a new button (mic or send) arrives small and turned, then settles. Not on first paint. */
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; }, []);
+  const swapIn = useCallback((el: HTMLButtonElement | null) => {
+    if (!el || !mounted.current || !window.matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
+    gsap.fromTo(el, { scale: 0.6, rotate: -45, opacity: 0 }, { scale: 1, rotate: 0, opacity: 1, duration: 0.32, ease: "back.out(2.2)", clearProps: "transform,opacity" });
+  }, []);
+
   const send = (btn?: Element | null) => {
     if (!valueRef.current.trim() || busy) return;
     press(btn ?? null);
@@ -77,31 +85,40 @@ function Field() {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(); } }}
       />
-      <button
-        type="button"
-        className={"mic" + (listening ? " listening" : "")}
-        title="Voice typing"
-        aria-label={listening ? "Stop voice typing" : "Voice typing"}
-        aria-pressed={listening}
-        onClick={(e) => { press(e.currentTarget); window.TayoEngine?.toggleMic(); }}
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="9" y="2" width="6" height="11" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><line x1="12" y1="19" x2="12" y2="22" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        className="send"
-        title="Send"
-        aria-label="Send"
-        aria-busy={busy}
-        disabled={busy}
-        onClick={(e) => send(e.currentTarget)}
-      >
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style={{ display: "block" }}>
-          <path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+      {/* ONE BUTTON (Eden, 2026-10-24, like Hark): the mic while the box is empty, the send arrow once there is something
+          to send. While listening it stays the mic, so the same button stops it. */}
+      {value.trim() && !listening ? (
+        <button
+          key="send"
+          ref={swapIn}
+          type="button"
+          className="send"
+          title="Send"
+          aria-label="Send"
+          aria-busy={busy}
+          disabled={busy}
+          onClick={(e) => send(e.currentTarget)}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style={{ display: "block" }}>
+            <path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <button
+          key="mic"
+          ref={swapIn}
+          type="button"
+          className={"mic" + (listening ? " listening" : "")}
+          title="Voice typing"
+          aria-label={listening ? "Stop voice typing" : "Voice typing"}
+          aria-pressed={listening}
+          onClick={(e) => { press(e.currentTarget); window.TayoEngine?.toggleMic(); }}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="11" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><line x1="12" y1="19" x2="12" y2="22" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
