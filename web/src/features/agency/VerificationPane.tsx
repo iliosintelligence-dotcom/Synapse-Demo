@@ -13,6 +13,7 @@
  * inline-3's loadVerification() survives as a name (goToPane calls it) and fires `syn:verification-load`.
  */
 import { useEffect, useRef, useState } from "react";
+import { usePageScripts } from "@/legacy/usePageScripts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -25,9 +26,11 @@ type Status = { rows: Row[]; outstanding: number; complete?: boolean; exempt?: b
 
 const VF_CHIP = { missing: "Not uploaded", pending: "In review", verified: "Verified", expired: "Expired" };
 
-export const Icon = ({ name }: { name: string }) => (
-  <span data-icon={name} className="has-icon" dangerouslySetInnerHTML={{ __html: W().SynIcons?.svg?.(name) || "" }}></span>
-);
+/* A SynIcons icon. Drawn once the page scripts (icons.js among them) are in, so the static page and the first client render agree. */
+export function Icon({ name }: { name: string }) {
+  const ready = usePageScripts();
+  return <span data-icon={name} className="has-icon" dangerouslySetInnerHTML={{ __html: (ready && W().SynIcons?.svg?.(name)) || "" }}></span>;
+}
 
 function FileRow({ f, reload }: { f: File; reload: () => void }) {
   const [opening, setOpening] = useState(false);

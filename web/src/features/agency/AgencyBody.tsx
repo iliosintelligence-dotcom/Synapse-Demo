@@ -16,6 +16,8 @@ import { VerificationPane } from "./VerificationPane";
 import { ToursPane } from "./ToursPane";
 import { BillingPane } from "./BillingPane";
 import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
+import { NegotiatorPane } from "./NegotiatorPane";
+import { SideDrawer } from "./SideDrawer";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -530,37 +532,7 @@ export function AgencyBody() {
               <div id="campaigns" style={{ "display": "none" }}></div>
             </section>
             <section className="pane" id="pane-negotiator">
-              <div className="eyebrow">
-                Every lead sells itself first
-              </div>
-              <div className="h1">
-                Tayo Negotiator
-              </div>
-              <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                Every lead, from any channel, is qualified, pitched and pre-negotiated by Tayo before it reaches a human. You inherit warm, ready buyers.
-              </p>
-              <div className="h2" style={{ "marginTop": "22px" }}>
-                Ready for handoff
-              </div>
-              <div className="crm-tools" data-pane-filters="">
-                <div className="crm-tools-l">
-                  <div className="seg" id="handoffFilter">
-                    <button className="seg-b on" data-hf="all">
-                      All
-                    </button>
-                    <button className="seg-b" data-hf="High intent">
-                      High intent
-                    </button>
-                    <button className="seg-b" data-hf="Worth a call">
-                      Worth a call
-                    </button>
-                    <button className="seg-b" data-hf="Early">
-                      Early
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div id="handoffs"></div>
+              <NegotiatorPane />
             </section>
             <section className="pane" id="pane-tours">
               <ToursPane />
@@ -697,6 +669,7 @@ export function AgencyBody() {
       <div className="scrim" id="scrim"></div>
       <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
+      <SideDrawer />
       <TaskCard />
       <PlanGate />
       <FreeAccess />

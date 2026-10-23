@@ -7073,89 +7073,9 @@
        buyer ran Tayo's negotiator before making contact, which is exactly the
        condition this pane describes: Tayo qualified them and worked out a
        price. No negotiation, no card. */
+    /* The pane is React (src/features/agency/NegotiatorPane.tsx). Which leads are handoffs is worked out here, beside the lead
+       list; renderHandoffs() tells the pane to read them again. */
     let HANDOFFS = [];
-    /* TAKE OVER (2026-10-21). The button used to change its own label and nothing else. It now calls take_over_lead, which hands
-       the lead to the agent who pressed it and returns the handover summary: the buyer's phone, email and social handle, what
-       Tayo agreed and how. The same summary is queued on WhatsApp to that agent, never to the buyer. A card is "taken" when the
-       lead is already this agent's, or was just taken in this session. */
-    const TAKEN = new Set();
-    let ME_ID = null, TAKING = false;
-    if (window.SynAuth && SynAuth.ready) {
-      Promise.resolve(SynAuth.ready()).then(function (u) { ME_ID = u && u.id ? u.id : null; if (ME_ID) renderHandoffs(); }).catch(function () {});
-    }
-    function isTaken(h) { return TAKEN.has(h.id) || (ME_ID !== null && h.agentId === ME_ID); }
-    function takeOver(i, btn) {
-      const h = HANDOFFS[i];
-      if (!h || !h.id || TAKING) return;
-      TAKING = true;
-      const label = btn.textContent;
-      btn.disabled = true; btn.textContent = 'Taking over…';
-      SynAuth.client()
-        .then(function (c) { return c.rpc('take_over_lead', { p_lead_id: h.id }); })
-        .then(function (r) {
-          if (r.error) throw r.error;
-          TAKEN.add(h.id);
-          renderHandoffs();
-          openHandover(r.data);
-        })
-        .catch(function (err) {
-          btn.disabled = false; btn.textContent = label;
-          toast((err && err.message) || 'Could not take over that lead');
-          console.error('take_over_lead failed', err);
-        })
-        .then(function () { TAKING = false; });
-    }
-    /* What was queued, said plainly. Nothing here claims a message left: it waits in the outbox until Send is pressed, and
-       leaves once WhatsApp is switched on and the agent has a number on file. */
-    const WA_SAYS = {
-      queued: 'The same summary is queued on WhatsApp to your number. It waits in the outbox until you press Send.',
-      already_queued: 'This summary is already queued on WhatsApp to your number.',
-      no_phone: 'You have no phone number on file, so nothing was queued on WhatsApp. Add your number in My profile, then press the button again.',
-      failed: 'The WhatsApp message could not be queued. The summary here is complete.',
-      not_queued: 'Nothing was queued on WhatsApp.',
-    };
-    function openHandover(d) {
-      d = d || {};
-      const b = d.buyer || {};
-      const row = function (k, v, href) {
-        return '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.18);font-size:13.5px">'
-          + '<span class="muted" style="min-width:74px">' + k + '</span>'
-          + (v ? (href ? '<a href="' + esc2(href) + '" style="word-break:break-all">' + esc2(v) + '</a>' : '<span style="word-break:break-all">' + esc2(v) + '</span>')
-               : '<span class="muted">Not given</span>')
-          + '</div>';
-      };
-      /* No link for the handle: it is Instagram or TikTok and the buyer does not say which, so a link would guess. */
-      const handleHref = '';
-      const plain = [
-        'Handover: ' + (b.name || 'Buyer') + ' for ' + (d.listing || 'the listing'),
-        'Phone: ' + (b.phone || 'not given'),
-        'Email: ' + (b.email || 'not given'),
-        'Social: ' + (b.handle || 'not given'),
-        d.agreed ? 'Tayo reached ' + d.agreed + (d.listed ? ' (listed ' + d.listed + ')' : '') : 'No agreed price yet' + (d.listed ? ' (listed ' + d.listed + ')' : ''),
-        d.advice ? 'Reasoning: ' + d.advice : '',
-        d.draft ? 'The buyer opened with: ' + d.draft : '',
-      ].filter(Boolean).join('\n');
-      drawer.innerHTML = '<button class="x" aria-label="Close">×</button>'
-        + '<div style="font-size:19px;font-weight:700">Taken over: ' + esc2(b.name || 'Buyer') + '</div>'
-        + '<p class="muted" style="font-size:12px;margin:6px 0 14px">' + esc2(d.listing || '') + '</p>'
-        + '<div class="sec"><div class="k">How to reach them</div>'
-        + row('Phone', b.phone, b.phone ? 'tel:' + b.phone : '')
-        + row('Email', b.email, b.email ? 'mailto:' + b.email : '')
-        + row('Social', b.handle, handleHref)
-        + '</div>'
-        + '<div class="sec" style="margin-top:14px"><div class="k">Where Tayo got to</div>'
-        + '<p style="margin-top:6px;font-size:13.5px">' + (d.agreed ? 'Reached <b>' + esc2(d.agreed) + '</b>' + (d.listed ? ', listed at ' + esc2(d.listed) : '') : 'No price agreed yet' + (d.listed ? ', listed at ' + esc2(d.listed) : '')) + '</p></div>'
-        + (d.advice ? '<div class="sec" style="margin-top:12px"><div class="k">Reasoning</div><p style="margin-top:6px;font-size:13px;line-height:1.6">' + esc2(d.advice) + '</p></div>' : '')
-        + (d.draft ? '<div class="sec" style="margin-top:12px"><div class="k">Message the buyer opened with</div><p style="margin-top:6px;font-size:13px;line-height:1.6">' + esc2(d.draft) + '</p></div>' : '')
-        + '<p class="muted" style="font-size:12px;margin:16px 0 10px">' + esc2(WA_SAYS[d.whatsapp] || WA_SAYS.not_queued) + '</p>'
-        + '<button class="btn btn-primary btn-block" id="hoCopy">Copy summary</button>';
-      const copy = document.getElementById('hoCopy');
-      if (copy) copy.addEventListener('click', function () {
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(plain).then(function () { toast('Summary copied'); }, function () { toast('Could not copy. Select the text instead.'); });
-        else toast('Copying is not available here. Select the text instead.');
-      });
-      scrim.classList.add('on'); drawer.classList.add('on');
-    }
     function buildHandoffs(rows) {
       HANDOFFS = (rows || [])
         .filter(function (l) { return l.neg && l.neg.offer != null; })
@@ -7176,18 +7096,8 @@
           };
         });
     }
-    /* Both new segments follow the pattern the other panes use: flip the .on
-       class, set the state, re-render. Neither invents data, the rating is
-       what buildHandoffs already derived, and the roster sort reads the same
-       rows the grid draws from. */
-    let HF = 'all';
-    document.addEventListener('click', (e) => {
-      const b = e.target.closest('#handoffFilter .seg-b');
-      if (!b) return;
-      [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b));
-      HF = b.dataset.hf;
-      renderHandoffs();
-    });
+    window.SynHandoffs = function () { return HANDOFFS; };
+    function renderHandoffs() { window.dispatchEvent(new CustomEvent('syn:handoffs')); }
 
     let AGENT_SORT = 'name';
     document.addEventListener('click', (e) => {
@@ -7197,86 +7107,6 @@
       AGENT_SORT = b.dataset.as;
       if (typeof renderAgents === 'function') renderAgents();
     });
-
-    function renderHandoffs(){
-      /* HANDOFFS is deliberately empty until Tayo negotiates a real lead on a
-         real listing. Without a message the pane just rendered a heading and
-         a blank grid, which reads as broken rather than as "nothing yet". */
-      if (!HANDOFFS.length) {
-        document.getElementById('handoffs').innerHTML =
-          '<div class="ov-blank">'
-          + '<span class="ov-blank-i" data-icon="negotiate"></span>'
-          + '<b>Nothing ready to close yet</b>'
-          + '<p>Tayo hands a buyer over once it has qualified them and agreed a price. '
-          + 'That happens on your live listings, once those are up and leads start '
-          + 'arriving, finished negotiations land here with the full transcript.</p>'
-          + '<button class="btn btn-ghost" type="button" data-go-listings>Go to listings</button>'
-          + '</div>';
-        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('handoffs'));
-        return;
-      }
-      const shown = HF === 'all' ? HANDOFFS : HANDOFFS.filter(h => h.rating === HF);
-      if (!shown.length) {
-        document.getElementById('handoffs').innerHTML =
-          '<div class="ov-blank"><b>Nothing at that level yet</b>'
-          + '<p>No handoff is rated ' + HF.toLowerCase() + ' right now.</p></div>';
-        return;
-      }
-      document.getElementById('handoffs').innerHTML = shown.map((h, i) => `
-        <div class="card handoff" role="group" aria-label="Tayo deal report, ${h.buyer}, ${h.prop}, agreed ${h.agreed}">
-          <!-- propImg() went with the invented handoffs and was never replaced,
-               so this line threw the moment the array had anything in it. It
-               never fired before because the array was permanently empty, the
-               pane could not fail because it could not render. The card's own
-               gradient is a dark ground built for white text, so there is
-               nothing to fall back to. -->
-          <div class="veil"></div>
-          <div class="top">
-            <span class="stamp"><span class="o">T</span> Tayo Deal Report</span>
-            <span class="intent">${h.rating}</span>
-          </div>
-          <div class="report">
-            <div class="rp-nm">${h.buyer}</div>
-            <div class="rp-sub">${h.prop} · via ${h.source}</div>
-            <div class="rp-price">
-              <div><div class="lab">Listed</div><div class="listed">${h.price}</div></div>
-              <span class="arrow">→</span>
-              <div class="agreed"><small>Agreed</small>${h.agreed}</div>
-            </div>
-            <div class="rp-sig">${h.signals.map(s => `<span class="sig">${s}</span>`).join('')}</div>
-            <div class="rp-verdict"><span class="vi">✦</span><span>${h.rec}</span></div>
-            <div class="rp-actions">
-              ${isTaken(h)
-                ? `<button class="btn btn-primary" style="padding:10px 16px;font-size:13px" data-sum="${i}">✓ Taken over · Summary</button>`
-                : `<button class="btn btn-primary" style="padding:10px 16px;font-size:13px" data-take="${i}">Take over →</button>`}
-              <button class="btn btn-ghost" style="padding:10px 16px;font-size:13px" data-tr="${i}">View full report</button>
-            </div>
-          </div>
-        </div>`).join('');
-    }
-    function openTranscript(i){
-      const h = HANDOFFS[i];
-      drawer.innerHTML = `<button class="x" aria-label="Close">×</button>
-        <div style="display:flex;align-items:center;gap:10px"><span class="o" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#121212,#121212);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">T</span><div><div style="font-size:18px;font-weight:700">${h.buyer}</div><div class="ph">${h.prop} · ${h.price}</div></div></div>
-        ${Array.isArray(h.transcript) && h.transcript.length
-          ? `<p class="muted" style="font-size:12px;margin-top:10px">Tayo&#39;s full conversation, the five stages, verbatim. Every price exchange is logged to the deal room.</p>
-             <div class="tr">${h.transcript.map(t => t.stage ? `<div class="stg">${t.stage}</div>` : `<div class="msg ${t.who}">${t.text}</div>`).join('')}</div>`
-          /* No verbatim transcript exists for a lead negotiated on the property
-             page, what Tayo produced there is the reasoning and the opening
-             message, and that is what gets shown. Inventing a conversation to
-             fill the panel would be worse than an honest, shorter one. */
-          : `<p class="muted" style="font-size:12px;margin-top:10px">What Tayo worked out with this buyer before they made contact.</p>
-             ${h.rec ? `<div class="sec" style="margin-top:10px"><div class="k">Reasoning</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.rec)}</p></div>` : ''}
-             ${h.draft ? `<div class="sec" style="margin-top:10px"><div class="k">Message the buyer opened with</div><p style="margin-top:6px;font-size:13px;line-height:1.6">${esc2(h.draft)}</p></div>` : ''}`}`;
-      scrim.classList.add('on'); drawer.classList.add('on');
-    }
-    document.getElementById('handoffs').addEventListener('click', (e) => {
-      if (e.target.closest('[data-go-listings]')) { goToPane('listings'); return; }
-      const t = e.target.closest('[data-take],[data-sum]');
-      if (t) { takeOver(+(t.dataset.take !== undefined ? t.dataset.take : t.dataset.sum), t); return; }
-      const b = e.target.closest('[data-tr]'); if (b) openTranscript(+b.dataset.tr);
-    });
-    renderHandoffs();
 
     // ── social composer: New post → AI captions (edge fn) → schedule ──
     const SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
