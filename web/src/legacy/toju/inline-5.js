@@ -10,6 +10,16 @@
     const PINKEY = 'toju_pins_v1';   // pinned replies; defined here because saved chats render before the pin code below
     // stable anonymous visitor id -> server-side memory (continue anywhere this id exists)
     const VKEY = 'toju_visitor_v1';
+    /* THE NEW AGENT, ONE BROWSER AT A TIME (2026-10-23). ?agent=1 switches this browser to the reasoning agent (kept until ?agent=0);
+       everyone else stays on the current Tayo until the server's TOJU_AGENT switch is turned on. */
+    const AGENT_ON = (function () {
+      try {
+        const a = new URLSearchParams(location.search).get('agent');
+        if (a === '1') localStorage.setItem('toju_agent', '1');
+        if (a === '0') localStorage.removeItem('toju_agent');
+        return localStorage.getItem('toju_agent') === '1';
+      } catch (e) { return false; }
+    })();
     let VISITOR = localStorage.getItem(VKEY);
     if (!VISITOR) { VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {} }
     const loadSaved = () => { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch (e) { return []; } };
@@ -854,7 +864,7 @@
         const res = await fetch(SUPABASE_URL + '/functions/v1/toju-demo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY },
-          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, context: liveContext(), listingId: (REPLY_TO && REPLY_TO.id) || undefined, agencyId: (!REPLY_TO && AGENCY_ID) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
+          body: JSON.stringify({ visitorId: VISITOR, messages: outgoing, context: liveContext(), agent: AGENT_ON || undefined, listingId: (REPLY_TO && REPLY_TO.id) || undefined, agencyId: (!REPLY_TO && AGENCY_ID) || undefined, mode: REPLY_TO ? REPLY_MODE : undefined }),
           signal: ctrl.signal,
         });
         const data = await res.json().catch(() => ({}));
