@@ -1498,7 +1498,7 @@
           + '</div><span class="pin-acts"><button type="button" data-pin-share="' + esc(x.id) + '">Share</button><button type="button" data-pin-del="' + esc(x.id) + '">Unpin</button></span></div>').join('');
     }
     function closePins() { pinPanel.hidden = true; }
-    document.getElementById('tjPins').addEventListener('click', () => { if (pinPanel.hidden) { histPanel.hidden = true; memPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
+    document.getElementById('tjPins').addEventListener('click', () => { if (window.SynReact && window.SynReact.ready) { window.dispatchEvent(new Event('syn:pins')); return; } if (pinPanel.hidden) { histPanel.hidden = true; memPanel.hidden = true; renderPins(); pinPanel.hidden = false; } else closePins(); });
     document.getElementById('tjPinClose').addEventListener('click', closePins);
     pinList.addEventListener('click', (e) => {
       const pins = loadPins();
@@ -1507,7 +1507,7 @@
       const sh = e.target.closest('[data-pin-share]');
       if (sh) { const pl = pins.find((x) => x.id === sh.dataset.pinShare); if (pl) shareOut(shareText(pl), sh); return; }
       const all = e.target.closest('[data-pin-share-all]');
-      if (all) shareOut(pins.map(shareText).join('\n\n\u2014\n\n'), all);
+      if (all) shareOut(pins.map(shareText).join('\n\n- - -\n\n'), all);
     });
 
     /* WHERE YOUR INTRODUCTION IS. A signed-in buyer who has been introduced to an agency sees, here, whether the agency has it,
@@ -1598,14 +1598,21 @@
     }
     function openHist() { renderHist(); histPanel.hidden = false; }
     function closeHist() { histPanel.hidden = true; }
-    document.getElementById('tjHist').addEventListener('click', () => histPanel.hidden ? openHist() : closeHist());
+    document.getElementById('tjHist').addEventListener('click', () => {
+      /* React owns these panels now (src/features/tayo); the old ones stay only for a page without React. */
+      if (window.SynReact && window.SynReact.ready) { window.dispatchEvent(new Event('syn:history')); return; }
+      histPanel.hidden ? openHist() : closeHist();
+    });
     document.getElementById('tjHistClose').addEventListener('click', closeHist);
     histList.addEventListener('click', (e) => {
       const del = e.target.closest('[data-del]');
       if (del) { e.stopPropagation(); saveSessions(loadSessions().filter((s) => s.id !== del.dataset.del)); renderHist(); return; }
       const row = e.target.closest('[data-open]');
       if (!row) return;
-      const s = loadSessions().find((x) => x.id === row.dataset.open);
+      openSession(row.dataset.open);
+    });
+    function openSession(id) {
+      const s = loadSessions().find((x) => x.id === id);
       if (!s) return;
       archiveCurrent();                                           // keep today's thread
       saveSessions(loadSessions().filter((x) => x.id !== s.id));  // it's live again
@@ -1614,7 +1621,25 @@
       saved = Array.isArray(s.messages) ? s.messages : [];
       if (!saved.length) saved = [{ role: 'assistant', content: GREETING }];
       persist(); render(); closeHist();
+    }
+    /* What the React panels ask the page to do (src/features/tayo/HistorySheet.tsx, PinnedSheet.tsx). The page stays the one
+       place that writes conversations and pins, so the two can never disagree. */
+    window.addEventListener('syn:open-session', (e) => openSession(e.detail && e.detail.id));
+    window.addEventListener('syn:delete-session', (e) => { const id = e.detail && e.detail.id; saveSessions(loadSessions().filter((s) => s.id !== id)); });
+    window.addEventListener('syn:unpin', (e) => {
+      const id = e.detail && e.detail.id;
+      savePins(loadPins().filter((x) => x.id !== id));
+      convo.querySelectorAll('.msg').forEach((m) => { if (m._payload && m._payload.id === id) { const b = m.querySelector('[data-act="pin"]'); if (b) b.setAttribute('aria-pressed', 'false'); } });
     });
+    /* Sharing from a panel: the phone's own share menu where there is one, otherwise copied, with a toast to say so. */
+    const shareFromPanel = (text) => {
+      if (navigator.share) { navigator.share({ text }).catch(() => {}); return; }
+      const copied = () => { if (window.SynToast) window.SynToast('Copied'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(copied, () => window.prompt('Copy this to share it:', text));
+      else window.prompt('Copy this to share it:', text);
+    };
+    window.addEventListener('syn:share-pin', (e) => { const pl = loadPins().find((x) => x.id === (e.detail && e.detail.id)); if (pl) shareFromPanel(shareText(pl)); });
+    window.addEventListener('syn:share-pins', () => { const pins = loadPins(); if (pins.length) shareFromPanel(pins.map(shareText).join('\n\n- - -\n\n')); });
 
     // new chat, archive the old thread, then a fresh visitor id so the
     // server thread starts clean too
