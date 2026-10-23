@@ -608,3 +608,21 @@
 
     /* The chat box is only the box (Eden, 2026-10-23): a place to type, the microphone and send. No suggestions under it. */
     #tjSuggest, .chatbox .suggest { display: none !important; }
+
+    /* ── THE CONVERSATION RUNS UNDER THE BARS, LIKE HARK (Eden, 2026-10-23) ─────────────────────────────────────────────
+       On a phone the top bar and the message box float OVER the conversation instead of taking their own strips of the
+       screen: messages scroll up behind the bar and the status bar, and down behind the message box. The scroller is padded
+       so the first and last message still start clear of them. The box stays anchored to the bottom of the visible area,
+       so the keyboard still pushes it up. */
+    @media (max-width: 720px) {
+      .tjm-bar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; pointer-events: none; }
+      .tjm-bar > * { pointer-events: auto; }
+      .tj-chat { position: relative; }
+      .convo-scroll {
+        padding-top: calc(72px + var(--syn-top, env(safe-area-inset-top, 0px)));
+        padding-bottom: calc(100px + var(--syn-bottom, env(safe-area-inset-bottom, 0px)));
+        scroll-padding-top: calc(72px + var(--syn-top, env(safe-area-inset-top, 0px)));
+      }
+      .composer { position: absolute !important; left: 0; right: 0; bottom: 0; background: transparent !important; }
+      .tj-hist { margin-top: calc(64px + var(--syn-top, env(safe-area-inset-top, 0px))); }
+    }
