@@ -9,7 +9,7 @@ export const viewport: Viewport = {"width":"device-width","initialScale":1,"view
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="robots" content="noindex, nofollow, noarchive" />
         <title>{"Join the Synapse team"}</title>
@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <style  dangerouslySetInnerHTML={{ __html: inline("synapse-join", "inline-1.css") }} />
         <link rel="stylesheet" href="tapfix.css" />
       </head>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

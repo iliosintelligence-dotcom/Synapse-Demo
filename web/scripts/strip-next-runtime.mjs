@@ -35,10 +35,21 @@ let pages = 0, bytesBefore = 0, bytesAfter = 0, problems = 0;
 
 /* Pages that now run React (stage 1 of the move, 2026-10-23) keep Next's runtime: their old markup sits in a protected section
    that React does not reconcile. See src/app/(toju)/app/toju/page.tsx. */
-const KEEP_RUNTIME = new Set(["toju"]);
+const KEEP_RUNTIME = new Set(Object.keys(PAGES)); // every page now (2026-10-23); kept as a set so one page can be stripped again if it must
+
+/* The route's flight files serve only Next's client-side router, which no page uses (every link is a full page load), and a
+   folder named like the page beside page.html is what a static host can trip over. They go, runtime or not. */
+function dropFlightFiles(spec) {
+  rmSync(join(out, spec.route ? `${spec.route}.txt` : "index.txt"), { force: true });
+  const dir = spec.route ? join(out, spec.route) : out;
+  if (existsSync(dir)) {
+    for (const name of readdirSync(dir)) if (name.startsWith("__next.")) rmSync(join(dir, name), { force: true, recursive: true });
+    if (spec.route && !readdirSync(dir).length) rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 for (const [key, spec] of Object.entries(PAGES)) {
-  if (KEEP_RUNTIME.has(key)) continue;
+  if (KEEP_RUNTIME.has(key)) { dropFlightFiles(spec); continue; }
   // trailingSlash is off: a page is out/app/toju.html (the root page is out/index.html)
   const file = join(out, spec.route ? `${spec.route}.html` : "index.html");
   if (!existsSync(file)) { console.error(`MISSING ${file} (${key})`); problems++; continue; }
@@ -70,4 +81,4 @@ for (const [key, spec] of Object.entries(PAGES)) {
 writeFileSync(join(out, "__strip.txt"), [`strip-next-runtime ran at ${new Date().toISOString()}`, `VERCEL=${process.env.VERCEL ? "yes" : "no"}  pages cleaned: ${pages}  problems: ${problems}`, ...log].join("\n") + "\n");
 
 console.log(`Stripped Next's runtime from ${pages} ported pages: ${(bytesBefore / 1e6).toFixed(1)} MB -> ${(bytesAfter / 1e6).toFixed(1)} MB.`);
-if (!pages || problems) { console.error("The ported pages were not all cleaned: failing the build rather than shipping pages that would break."); process.exit(1); }
+if ((!pages && KEEP_RUNTIME.size < Object.keys(PAGES).length) || problems) { console.error("The ported pages were not all cleaned: failing the build rather than shipping pages that would break."); process.exit(1); }

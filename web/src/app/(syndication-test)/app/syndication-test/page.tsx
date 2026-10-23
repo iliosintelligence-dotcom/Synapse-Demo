@@ -1,22 +1,14 @@
 /* eslint-disable */
-// @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
-// GENERATED from app/syndication-test.html by scripts/port-legacy.mjs, then edited by hand: this file is now the source of the page's markup.
-import { inline } from "@/legacy/read";
+// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/syndication-test/body.html and its scripts are the
+// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
+import { LegacyPage } from "@/legacy/LegacyPage";
+import { SiteReact } from "@/features/site/SiteReact";
 
 export default function Page() {
   return (
     <>
-      <h1>
-        Syndication engine, tests
-      </h1>
-      <div id="out"></div>
-      <div className="sum" id="sum"></div>
-      <h1 style={{ "marginTop": "26px" }}>
-        Sample payload (Instagram · verified-first)
-      </h1>
-      <pre id="sample"></pre>
-      <script src="syndication.js" />
-      <script  dangerouslySetInnerHTML={{ __html: inline("syndication-test", "inline-2.js") }} />
+      <LegacyPage page="syndication-test" files={["inline-2.js"]} />
+      <SiteReact />
     </>
   );
 }

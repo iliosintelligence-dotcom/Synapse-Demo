@@ -48,7 +48,7 @@ node domdiff.mjs                                       # the markup itself, with
 
 ## Moving to React (stage 1 started 2026-10-23)
 
-Tayo (`/app/toju`) now runs React. Its existing markup is `src/legacy/toju/body.html` and its main script is still `src/legacy/toju/inline-5.js`; both are placed in a protected section (`#syn-legacy`, `dangerouslySetInnerHTML`, never hydrated), so the old scripts keep working untouched. React's own parts live in `src/features/tayo/` (the first is the toast host, sileo, reachable from old code as `window.SynToast('Copied')`). `scripts/strip-next-runtime.mjs` keeps Next's runtime for the pages in `KEEP_RUNTIME`. Stage 2 moves sections out of `body.html` into components, one at a time; the other pages follow the same path.
+Every page now runs React (Tayo first, the other 16 on 2026-10-23; each page's markup is `src/legacy/<page>/body.html`, placed by `src/legacy/LegacyPage.tsx`, and each carries `src/features/site/SiteReact.tsx`). Tayo (`/app/toju`) was the pilot. Its existing markup is `src/legacy/toju/body.html` and its main script is still `src/legacy/toju/inline-5.js`; both are placed in a protected section (`#syn-legacy`, `dangerouslySetInnerHTML`, never hydrated), so the old scripts keep working untouched. React's own parts live in `src/features/tayo/` (the first is the toast host, sileo, reachable from old code as `window.SynToast('Copied')`). `scripts/strip-next-runtime.mjs` keeps Next's runtime for the pages in `KEEP_RUNTIME`. Stage 2 moves sections out of `body.html` into components, one at a time; the other pages follow the same path.
 
 ## The React pages (parked)
 

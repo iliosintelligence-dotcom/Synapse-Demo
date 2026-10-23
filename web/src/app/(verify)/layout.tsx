@@ -9,7 +9,7 @@ export const viewport: Viewport = {"width":"device-width","initialScale":1};
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
         <script  dangerouslySetInnerHTML={{ __html: inline("verify", "inline-1.js") }} />
@@ -30,7 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script src="theme.js" />
         <link rel="stylesheet" href="tapfix.css" />
       </head>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
