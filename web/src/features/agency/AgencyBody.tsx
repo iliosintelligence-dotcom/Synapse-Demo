@@ -15,6 +15,7 @@ import { SetupButton, SetupPop } from "./SetupRing";
 import { AdvisorFab, AdvisorPanel } from "./AdvisorPanel";
 import { VerificationPane } from "./VerificationPane";
 import { ToursPane } from "./ToursPane";
+import { BillingPane } from "./BillingPane";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -444,35 +445,7 @@ export function AgencyBody() {
               <p className="sub">
                 Your plan, what you have paid, and extras. Payments go through Paystack to ILIOS Digital, the company behind Synapse. Card details never touch Synapse.
               </p>
-              <div className="bl-grid">
-                <div className="card bl-now" id="blNow">
-                  <div className="bl-k">
-                    Your plan
-                  </div>
-                  <div className="bl-state">
-                    Loading…
-                  </div>
-                </div>
-                <div className="card bl-buy" id="blBuy"></div>
-              </div>
-              <div className="h2 bl-h2" id="blAddonsHead">
-                Add-ons
-              </div>
-              <p className="sub">
-                Top up without changing plan. A listing pack works the moment you pay. Boosts and the verification fast-track are done by our team, who contact you to set them up.
-              </p>
-              <div className="addons-grid bl-addons" id="blAddons"></div>
-              <div className="h2 bl-h2">
-                Payments
-              </div>
-              <div className="card bl-hist" id="blHist"></div>
-              <p className="bl-foot">
-                {"Paystack emails a receipt to whoever paid. A question about a payment? "}
-                <a href="#" data-bl-talk="">
-                  Talk to us
-                </a>
-                .
-              </p>
+              <BillingPane />
             </section>
             <section className="pane" id="pane-social">
               <div style={{ "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
