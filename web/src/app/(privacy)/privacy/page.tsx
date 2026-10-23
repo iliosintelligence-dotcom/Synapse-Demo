@@ -1,13 +1,12 @@
-/* eslint-disable */
-// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/privacy/body.html and its scripts are the
-// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
-import { LegacyPage } from "@/legacy/LegacyPage";
+// The privacy page is React all the way down (2026-10-24): its markup is src/features/legal/PrivacyBody.tsx, and its one behaviour
+// (the mobile bar turning solid on scroll) is SolidBarOnScroll. The old protected copy in src/legacy/privacy/ is no longer used.
+import { PrivacyBody } from "@/features/legal/PrivacyBody";
 import { SiteReact } from "@/features/site/SiteReact";
 
 export default function Page() {
   return (
     <>
-      <LegacyPage page="privacy" files={["inline-3.js"]} />
+      <PrivacyBody />
       <SiteReact />
     </>
   );

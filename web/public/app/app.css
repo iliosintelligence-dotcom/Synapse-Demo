@@ -1298,3 +1298,21 @@ html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !importa
 .listing .img .contact svg, .hf-card .img .contact svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .listing .img .contact:active, .hf-card .img .contact:active { transform: scale(.88); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 .listing .img .contact:hover, .hf-card .img .contact:hover { background: #FFF0E2; }
+
+/* ═══ NAVIGATION IN ORANGE (Eden, 2026-10-24: "a pop-out colour, one of our brand colours like orange, so users
+   know that's how they should navigate"). Navigation only, not the filters (Eden, same day: "do not make the filters orange"). Customer pages only (the agency portal's body is .portal). Last in the file and
+   doubled-up, so the older greys and the dark theme's white buttons give way to it in both themes. ═══ */
+:root { --nav-accent: #FF8A2D; --nav-accent-deep: #C25400; --nav-accent-glow: rgba(255, 138, 45, 0.34); }
+/* where you are: the desktop bar and the phone's top tabs */
+:root:root body:not(.portal) .appbar nav a.active,
+:root:root body:not(.portal) .tjm-tabs a.on {
+  background: var(--nav-accent) !important; color: #fff !important; font-weight: 600;
+  box-shadow: 0 6px 16px var(--nav-accent-glow) !important;
+}
+:root:root body:not(.portal) .appbar nav a.active :is(.nav-i, .syn-i, svg) { color: #fff !important; opacity: 1; }
+:root:root body:not(.portal) .appbar nav a:not(.active):hover { color: var(--nav-accent-deep) !important; }
+/* the phone's floating nav button */
+:root:root body:not(.portal) .cnav-btn:not(.cnav-sbtn) {
+  background: var(--nav-accent) !important; color: #fff !important; border-color: transparent !important;
+  box-shadow: 0 12px 28px var(--nav-accent-glow) !important;
+}

@@ -41,6 +41,7 @@ export function SiteReact({ toastTop = "calc(20px + var(--syn-top, env(safe-area
       return fn(o);
     };
     window.SynReact = { ready: true };
+    window.dispatchEvent(new Event("syn:react-ready"));   // e.g. brand.js upgrades the logos React drew
     window.dispatchEvent(new Event("synreact:ready"));
     return () => { delete window.SynToast; };
   }, []);

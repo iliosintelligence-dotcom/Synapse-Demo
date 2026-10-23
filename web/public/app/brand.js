@@ -254,12 +254,26 @@
     }
     return svg;
   }
+  /* A LOGO REACT DREW WAITS FOR REACT (2026-10-24). On a page whose markup is React's own (the move to React), swapping the
+     <img> for an <svg> before React has taken the page over makes React find something it did not draw (error #418). Such a
+     logo is upgraded once the page's React layer says it is ready (syn:react-ready, src/features/site/SiteReact.tsx), or after
+     four seconds if it never does. A logo inside the protected old markup (#syn-legacy), or on a page without React, is
+     upgraded at once, as before. */
+  var waiting = [];
+  function reactOwned(img) {
+    return !!document.querySelector('script[src*="/_next/static/"]') && !(img.closest && img.closest('#syn-legacy'))
+      && !(window.SynReact && window.SynReact.ready);
+  }
+  function upgradeSoon(img) { if (reactOwned(img)) { if (waiting.indexOf(img) < 0) waiting.push(img); } else upgrade(img); }
+  function flush() { waiting.splice(0).forEach(function (i) { if (i.isConnected) upgrade(i); }); }
+  window.addEventListener('syn:react-ready', flush);
+  setTimeout(flush, 4000);
   function scan(root) {
-    (root.querySelectorAll ? root.querySelectorAll('img[src*="brand/mark-"]') : []).forEach(upgrade);
+    (root.querySelectorAll ? root.querySelectorAll('img[src*="brand/mark-"]') : []).forEach(upgradeSoon);
   }
   /* Catch them as the page is parsed, before the first paint where it can be. */
   new MutationObserver(function (ms) {
-    ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { if (n.tagName === 'IMG') upgrade(n); else scan(n); } }); });
+    ms.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { if (n.tagName === 'IMG') upgradeSoon(n); else scan(n); } }); });
   }).observe(document.documentElement, { childList: true, subtree: true });
   if (document.readyState !== 'loading') scan(document); else document.addEventListener('DOMContentLoaded', function () { scan(document); });
 
