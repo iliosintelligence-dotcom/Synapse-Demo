@@ -15,7 +15,7 @@ sleep 45
 adb exec-out screencap -p > shots/01-start-tayo.png
 # The keyboard: tap Tayo's message box and see whether the page moves up with it (the box should sit right on the keyboard).
 adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
-adb shell input tap 400 2290
+adb shell input tap 400 2110
 sleep 3
 adb shell input text "hello"
 sleep 2
