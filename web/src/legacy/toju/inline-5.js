@@ -133,9 +133,24 @@
     SynMatches.onSavesChanged(function (s) { cvSaves = s; renderCanvas(); });
     const cvMapState = {}; // persistent {map, layer} for SynMatches.drawMatchMap
 
+    /* THE PANEL IS A REACT COMPONENT NOW (src/features/tayo/MatchesPanel.tsx, 2026-10-23). This page still decides which homes
+       are on it; the component draws them. Until it attaches, and if React never arrives, the old drawing below runs. */
+    const Canvas = (function () {
+      let items = [], react = false;
+      const subs = new Set();
+      return {
+        get react() { return react; },
+        attach() { react = true; },
+        items: () => items,
+        subscribe(f) { subs.add(f); return () => subs.delete(f); },
+        set(next) { items = next; subs.forEach((f) => { try { f(); } catch (e) { /* one listener must not stop the rest */ } }); },
+        sb: { url: SUPABASE_URL, anon: ANON_KEY },
+      };
+    })();
+    window.TayoCanvas = Canvas;
+
     function renderCanvas() {
       const items = canvasMatches.map(SynMatches.shapeTojuMatch);
-      cvCount.textContent = items.length;
       /* On a phone this used to be a strip under the header reading "N matches
          ready · See all →". The taskbar already lists Your matches and already
          carries a count badge, so the strip was a second copy of a row that is
@@ -143,6 +158,9 @@
          thing Tayo said. */
       if (window.CustNav) window.CustNav.setCount('browse.html', items.length);
       document.body.classList.toggle('has-canvas', items.length > 0);
+      Canvas.set(items);
+      if (Canvas.react) return;
+      cvCount.textContent = items.length;
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
       cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');
       SynMatches.drawMatchMap(cvMapState, 'cvMap', items,
@@ -152,6 +170,7 @@
       if (window.synMotion) synMotion.refresh();
     }
     cvGrid.addEventListener('click', (e) => {
+      if (Canvas.react) return;
       const sv = e.target.closest('[data-save]');
       if (sv) {
         const id = sv.getAttribute('data-save');
