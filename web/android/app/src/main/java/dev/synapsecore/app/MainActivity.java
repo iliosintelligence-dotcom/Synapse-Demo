@@ -49,9 +49,16 @@ public class MainActivity extends BridgeActivity {
         final View decor = getWindow().getDecorView();
         ViewCompat.setOnApplyWindowInsetsListener(decor, (v, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            /* THE KEYBOARD PUSHES THE PAGE UP (Eden, 2026-10-23). Drawing edge to edge means Android no longer shrinks the window for the
+               keyboard, so it slid over the bottom of the chat and the page jumped to show the middle. The web view is now made shorter by
+               the keyboard's height, so the page ends at the top of the keyboard: the message box sits on it and the conversation moves up. */
+            int ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            View holder = (View) webView.getParent();
+            if (holder != null && holder.getPaddingBottom() != ime) holder.setPadding(0, 0, 0, ime);
             float density = getResources().getDisplayMetrics().density;
             top = Math.round(bars.top / density);
-            bottom = Math.round(bars.bottom / density);
+            // with the keyboard up, the navigation bar is behind it: no extra space under the message box
+            bottom = ime > 0 ? 0 : Math.round(bars.bottom / density);
             left = Math.round(bars.left / density);
             right = Math.round(bars.right / density);
             publish(webView);

@@ -13,6 +13,16 @@ adb shell am force-stop dev.synapsecore.app
 adb shell am start -n dev.synapsecore.app/.MainActivity
 sleep 45
 adb exec-out screencap -p > shots/01-start-tayo.png
+# The keyboard: tap Tayo's message box and see whether the page moves up with it (the box should sit right on the keyboard).
+adb shell input keyevent KEYCODE_BACK 2>/dev/null || true
+adb shell input tap 400 2290
+sleep 3
+adb shell input text "hello"
+sleep 2
+adb exec-out screencap -p > shots/01b-tayo-keyboard.png
+adb shell dumpsys window | grep -iE "imeInsets|mInputMethod|ime" | head -20 > shots/ime.txt || true
+adb shell input keyevent KEYCODE_BACK
+sleep 2
 # what views are on screen, with their classes and bounds: finds the bar that covers the top of the page
 adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml shots/ui.xml || true
 adb shell dumpsys activity top | head -80 > shots/activity-top.txt || true
