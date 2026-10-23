@@ -11721,10 +11721,9 @@
     // ── persistent Ask-Tayo panel (context-aware per pane) ──
     // The AI commentary/summaries live here, not on the main panes. What the
     // panel shows depends on which pane the agency owner is looking at.
-    const tpBody = document.getElementById('tpBody');
+    /* The panel itself is React (src/features/agency/AdvisorPanel.tsx); what each pane's body says stays here, beside the numbers
+       it is built from. goToPane still asks whether the panel is open through `tpanel`. */
     const tpanel = document.getElementById('tpanel');
-    const tpScrim = document.getElementById('tpScrim');
-    const currentPane = () => (document.querySelector('#tabs a.on') || {}).dataset?.pane || 'overview';
 
     const tpSummary = (k, lines, reco) =>
       `<div class="tp-sec"><div class="tp-k">${k}</div>${lines.map(l => `<div class="tp-line"><span class="d">→</span><span>${l}</span></div>`).join('')}${reco ? `<div class="tp-reco"><b>Tayo’s fix:</b> ${reco}</div>` : ''}</div>`;
@@ -11836,36 +11835,18 @@
     };
     const snapshotHTML = (pane) => STATS[pane]
       ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
-    function openToju() {
-      const pane = currentPane();
+    window.SynAdvisorBody = function (pane) {
       const cfg = PANEL[pane] || PANEL.overview;
-      document.getElementById('tpTitle').textContent = cfg.title;
-      document.getElementById('tpSub').textContent = cfg.sub;
-      tpBody.innerHTML = snapshotHTML(pane) + cfg.html();
-      if (cfg.after) cfg.after();
-      tpScrim.classList.add('on'); tpanel.classList.add('on'); document.body.classList.add('tpanel-open');
-      advChips();
-    }
+      return { title: cfg.title, sub: cfg.sub, html: snapshotHTML(pane) + cfg.html(), after: cfg.after || null };
+    };
+    function openToju() { window.dispatchEvent(new CustomEvent('syn:advisor-open')); }
+    function closeToju() { window.dispatchEvent(new CustomEvent('syn:advisor-close')); }
     // keep the open panel's snapshot fresh when listings/marketing stats change
-    function refreshTojuPanel(pane) {
-      const p = document.getElementById('tpanel');
-      if (!p || !p.classList.contains('on')) return;
-      const a = document.querySelector('#tabs a.on');
-      if (a && a.dataset.pane === pane) openToju();
-    }
+    function refreshTojuPanel(pane) { window.dispatchEvent(new CustomEvent('syn:advisor-refresh', { detail: pane })); }
 
-    /* ═══════════ the advisor you can actually talk to ═══════════
-       The panel offered the same three questions to every agency in every
-       state -- "Why are sales down this month?" to somebody who signed up four
-       minutes ago and has no sales, no listings and nothing to focus on. The
-       suggestions now follow where the agency actually IS, and anything can be
-       asked directly. */
-
-    /* Read from what the portal already knows, so the chips are right the
-       instant the panel opens rather than after a round trip. The server
-       recomputes the same thing from the database before it answers -- this
-       copy decides what to SUGGEST, never what is true. */
-    function advisorStage() {
+    /* Which suggested questions the advisor offers follows where the agency actually IS. Read from what the portal already knows,
+       so the chips are right the instant the panel opens; the server recomputes the same thing before it answers. */
+    window.SynAdvisorStage = function () {
       const listings = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA))
         ? LISTINGS_DATA : [];
       const brand = window.BRAND || null;
@@ -11876,149 +11857,7 @@
       if (!listings.length) return brandThin ? 'new' : 'no-listings';
       if (!leadCount) return 'no-leads';
       return 'running';
-    }
-
-    /* One set per stage, plus a pane-specific question so the panel still
-       knows which screen you are on. Written as things an agency would
-       actually say, not as report titles. */
-    const STAGE_QS = {
-      new: [
-        'I just signed up, what should I do first?',
-        'How do I add my first listing?',
-        'What does Synapse do for me once a listing is up?',
-      ],
-      'no-listings': [
-        'How do I add my first listing?',
-        'What makes a listing get verified?',
-        'How do I set up my brand so posts sign off as us?',
-      ],
-      'no-leads': [
-        'How do I publish this listing to Instagram?',
-        'Why has nothing reached buyers yet?',
-        'What happens when a buyer contacts us?',
-      ],
-      running: [
-        'Where should I focus today?',
-        'Which of my listings need attention?',
-        'How is my pipeline looking?',
-      ],
     };
-    /* Two problems, and the keys were the smaller one: `team` and `plan` are
-       not panes. currentPane() returns the data-pane value -- `agents` and
-       `subscription` -- so those two never matched, and four panes offered no
-       question at all.
-
-       The bigger problem is that these asked the product to explain itself.
-       "How do I move a lead through the five stages" is a manual entry. The
-       advisor is handed a live snapshot of THIS agency -- listings live,
-       verified and stale, leads by stage, posts published versus merely
-       rehearsed, channels connected, brand gaps -- so it can answer what is
-       happening to this business. Every question below is answerable from
-       that snapshot rather than being one the advisor has to bluff. */
-    const PANE_Q = {
-      overview:     'What is getting in the way of my listings reaching buyers?',
-      listings:     'Which of my listings are going stale, and what should I do about them?',
-      marketing:    'Have my posts actually published, or are they still rehearsals?',
-      crm:          'Where in the pipeline are my leads getting stuck?',
-      social:       'Which channels am I connected to, and which am I missing?',
-      negotiator:   'Which of my leads are worth a call today?',
-      agents:       'Is my team the right size for the listings we are running?',
-      tours:        'Which viewings still need chasing?',
-      brand:        'What is still missing from my brand setup?',
-      verification: 'What do I still need to send to get verified?',
-      subscription: 'Does my plan fit how much we are actually listing?',
-    };
-
-    let ADV_HISTORY = [];      // the panel's own conversation, this session
-    let advBusy = false;
-
-    function advChips() {
-      const box = document.getElementById('tpChips');
-      if (!box) return;
-      const qs = (STAGE_QS[advisorStage()] || STAGE_QS.running).slice();
-      const pq = PANE_Q[currentPane()];
-      if (pq && qs.indexOf(pq) === -1) qs.push(pq);
-      box.innerHTML = qs.map(function (q) {
-        return '<button type="button" class="tp-chip">' + escT(q) + '</button>';
-      }).join('');
-    }
-
-    (function () { var z = document.getElementById('tpZyn'); if (z) z.addEventListener('click', function () { if (window.Zyn) Zyn.emote(z); }); })();
-    function advZyn(state) { if (window.Zyn) Zyn.set(document.getElementById('tpZyn'), state); }
-    function advSay(who, text) {
-      const th = document.getElementById('tpThread');
-      if (!th) return null;
-      const d = document.createElement('div');
-      d.className = 'tp-msg ' + who;
-      /* **bold** only. The advisor writes plain prose and the odd bold label;
-         anything else is shown as typed rather than parsed as markup. */
-      d.innerHTML = escT(text).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-      th.appendChild(d);
-      /* The thread no longer scrolls -- the panel does -- so keeping the newest
-         message in view means moving the column, not the thread. */
-      const sc = document.getElementById('tpScroll');
-      if (sc) sc.scrollTop = sc.scrollHeight;
-      return d;
-    }
-
-    function advAsk(q) {
-      if (advBusy || !q) return;
-      advBusy = true;
-      const input = document.getElementById('tpInput');
-      const send = document.getElementById('tpSend');
-      input.value = ''; send.disabled = true;
-      document.getElementById('tpChips').innerHTML = '';
-      advSay('you', q);
-      const pending = advSay('toju', 'Thinking…');
-      advZyn('thinking');
-
-      SynAuth.client()
-        .then(function (c) { return c.auth.getSession(); })
-        .then(function (r) {
-          const tok = r && r.data && r.data.session && r.data.session.access_token;
-          if (!tok) throw new Error('Sign in again to ask.');
-          return fetch(SB_URL + '/functions/v1/agency-advisor', {
-            method: 'POST',
-            headers: { apikey: SB_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: q, history: ADV_HISTORY.slice(-10) }),
-          });
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (d) {
-          if (d.error && !d.answer) throw new Error(d.error);
-          pending.textContent = '';
-          pending.innerHTML = escT(d.answer).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
-          advZyn(window.Zyn ? Zyn.forReply({ text: d.answer }) : 'helpful');
-          ADV_HISTORY.push({ role: 'user', content: q });
-          ADV_HISTORY.push({ role: 'assistant', content: d.answer });
-        })
-        .catch(function (err) {
-          advZyn('sorry');
-          pending.className = 'tp-msg bad';
-          pending.textContent = err.message || 'Could not reach the advisor just now.';
-        })
-        .then(function () {
-          advBusy = false; send.disabled = false;
-          advChips();
-          document.getElementById('tpThread').scrollTop = 1e6;
-        });
-    }
-
-    document.getElementById('tpForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      advAsk(document.getElementById('tpInput').value.trim());
-    });
-    document.getElementById('tpChips').addEventListener('click', function (e) {
-      const b = e.target.closest('.tp-chip');
-      if (b) advAsk(b.textContent.trim());
-    });
-
-    function closeToju() { tpScrim.classList.remove('on'); tpanel.classList.remove('on'); document.body.classList.remove('tpanel-open'); }
-    document.getElementById('tojuFab').addEventListener('click', openToju);
-    (function () { var f = document.getElementById('tojuFab'), z = f && f.querySelector('img'); if (!z || !window.Zyn) return;
-      f.addEventListener('mouseenter', function () { Zyn.set(z, 'waving'); }); f.addEventListener('mouseleave', function () { Zyn.set(z, 'happy'); }); })();
-    document.getElementById('tpClose').addEventListener('click', closeToju);
-    tpScrim.addEventListener('click', closeToju);
 
     /* ═══════════ Overview, command center (list · map · tabbed detail) ═══════════
        Master-detail built on the same LISTINGS_DATA the Listings pane uses, plus the

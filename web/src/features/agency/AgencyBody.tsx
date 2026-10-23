@@ -12,6 +12,7 @@ import { BrandPage } from "./BrandPage";
 import { ProfileDrawer } from "./ProfileDrawer";
 import { TaskCard } from "./TaskCard";
 import { SetupButton, SetupPop } from "./SetupRing";
+import { AdvisorFab, AdvisorPanel } from "./AdvisorPanel";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -773,37 +774,8 @@ export function AgencyBody() {
       <div className="pprev-scrim" id="pprevScrim">
         <div className="pprev" id="pprevModal" role="dialog" aria-label="Property preview"></div>
       </div>
-      <button className="toju-fab" id="tojuFab" aria-label="Ask Tayo">
-        <img className="zyn zm-bob" src="../images/zyn/zyn-happy.webp" width="92" height="92" alt="" aria-hidden="true" draggable="false" />
-      </button>
-      <div className="tpanel-scrim" id="tpScrim"></div>
-      <aside className="tpanel" id="tpanel" aria-label="Ask Tayo">
-        <div className="thd">
-          <img className="zyn zm-bob o-zyn" id="tpZyn" src="../images/zyn/zyn-waving.webp" width="58" height="58" alt="" aria-hidden="true" />
-          <div>
-            <div className="tt" id="tpTitle">
-              Ask Tayo
-            </div>
-            <div className="sb" id="tpSub"></div>
-          </div>
-          <button className="x" id="tpClose" aria-label="Close">
-            ×
-          </button>
-        </div>
-        <div className="tp-scroll" id="tpScroll">
-          <div className="tbody" id="tpBody"></div>
-          <div className="tp-thread" id="tpThread"></div>
-          <div className="tp-chips" id="tpChips"></div>
-        </div>
-        <div className="tp-ask">
-          <form className="tp-composer" id="tpForm">
-            <input id="tpInput" type="text" autoComplete="off" placeholder={"Ask about your numbers, or how to do something…"} aria-label="Ask the advisor" />
-            <button type="submit" id="tpSend" aria-label="Send">
-              ↑
-            </button>
-          </form>
-        </div>
-      </aside>
+      <AdvisorFab />
+      <AdvisorPanel />
       <div className="scrim" id="scrim"></div>
       <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
