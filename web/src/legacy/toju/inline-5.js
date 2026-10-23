@@ -477,7 +477,38 @@
       return money + suffix;
     }
 
+    /* THE STRIP IS A REACT COMPONENT NOW (src/features/tayo/ReplyStrip.tsx, 2026-10-24). This page still owns what it says
+       and what Introduce me does; it publishes the strip here. Until the component attaches, the old drawing below runs. */
+    const ReplyBox = (function () {
+      let state = null, react = false;
+      const subs = new Set();
+      return {
+        get react() { return react; },
+        attach() { react = true; },
+        state: () => state,
+        subscribe(f) { subs.add(f); return () => subs.delete(f); },
+        set(s) { state = s; subs.forEach((f) => { try { f(); } catch (e) { /* one listener must not stop the rest */ } }); },
+      };
+    })();
+    window.TayoReply = ReplyBox;
+    function publishReply() {
+      if (!REPLY_TO) { ReplyBox.set(null); return; }
+      const r = REPLY_TO;
+      const rent = String(r.listing_type || '').toLowerCase() === 'rent';
+      const turns = userTurns() >= 2;
+      ReplyBox.set({
+        title: r.title || 'this home',
+        sub: priceLine(r) + (r.city ? ' \u00b7 ' + r.city : '') + (rent ? ' \u00b7 rent is set by the agency' : ''),
+        label: HANDED ? 'Introduced' : HO_BUSY ? 'Preparing\u2026' : 'Introduce me',
+        disabled: HANDED || HO_BUSY || !turns,
+        why: HANDED ? 'Already introduced' : !turns ? 'Ask Tayo about this home first' : '',
+      });
+    }
+    function clearReply() { REPLY_TO = null; saveReply(null); renderReply(); }
+
     function renderReply() {
+      publishReply();
+      if (ReplyBox.react) return;
       const box = document.getElementById('tjReply');
       if (!box) return;
       if (!REPLY_TO) { box.hidden = true; box.innerHTML = ''; return; }
@@ -496,9 +527,7 @@
         + '<button class="tjr-x" id="tjReplyX" type="button" aria-label="Stop replying about this home">\u00d7</button>';
       box.hidden = false;
 
-      document.getElementById('tjReplyX').addEventListener('click', () => {
-        REPLY_TO = null; saveReply(null); renderReply();
-      });
+      document.getElementById('tjReplyX').addEventListener('click', clearReply);
       document.getElementById('tjHandoff').addEventListener('click', handOff);
     }
 
@@ -577,9 +606,9 @@
     async function handOff() {
       if (!REPLY_TO || HANDED || HO_BUSY) return;
       const btn = document.getElementById('tjHandoff');
-      HO_BUSY = true;
+      HO_BUSY = true; publishReply();
       if (btn) { btn.disabled = true; btn.textContent = 'Preparing\u2026'; }
-      const reset = () => { HO_BUSY = false; if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; } };
+      const reset = () => { HO_BUSY = false; publishReply(); if (btn) { btn.disabled = false; btn.textContent = 'Introduce me'; } };
       try {
         if (!window.SynAuth) throw new Error('Sign-in is unavailable right now.');
         const who = await SynAuth.ready();
@@ -664,7 +693,7 @@
     }
 
     function handoverCancel(it) {
-      View.remove(it); HO_BUSY = false;
+      View.remove(it); HO_BUSY = false; publishReply();
       const bt = document.getElementById('tjHandoff'); if (bt) { bt.disabled = false; bt.textContent = 'Introduce me'; }
     }
     /* contact: the two optional fields; ui: how the card shows sending and sent (the old card or the React one). Resolves true
@@ -1777,7 +1806,7 @@
     window.addEventListener('syn:share-pin', (e) => { const pl = loadPins().find((x) => x.id === (e.detail && e.detail.id)); if (pl) shareFromPanel(shareText(pl)); });
     window.addEventListener('syn:share-pins', () => { const pins = loadPins(); if (pins.length) shareFromPanel(pins.map(shareText).join('\n\n- - -\n\n')); });
     Object.assign(window.TayoEngine, {
-      scrollDown, retry, shareText, togglePin, rateValue, handoverCancel,
+      scrollDown, retry, shareText, togglePin, rateValue, handoverCancel, clearReply, handOff: () => handOff(),
       isPinned, ratingOf: (id) => loadFb()[id] || null,
       handoverSend: (H, slot, contact, ui) => sendHandover(H, slot, contact, ui),
       propertyHref: (id) => SynMatches.propertyHref(id),
