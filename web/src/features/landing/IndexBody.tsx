@@ -1,17 +1,14 @@
 /* eslint-disable */
 // @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
 // The index page's markup as React (converted from src/legacy/index/body.html by scripts/legacy-to-jsx.mjs, then edited by hand).
-// Its scripts run once React has taken the page over (AfterHydration), in their original order.
+// What it does is React (HomesFeed, LandingChrome); share.js, shared with other pages, still runs after hydration.
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
+import { HomesFeed } from "./HomesFeed";
+import { ModeButton, LandingEffects, Goodbye } from "./LandingChrome";
 
 const SCRIPTS: PageScript[] = [
-  { src: "home.js" },
-  { src: "app/stamp.js" },
   { src: "app/share.js" },
-  { src: "home-feed.js" },
-  { src: "app/foil.js" },
-  { code: inline("index", "inline-5.js") },
 ];
 
 export function IndexBody() {
@@ -49,16 +46,7 @@ export function IndexBody() {
               For customers
             </a>
           </div>
-          <button type="button" className="mode" id="modeBtn" aria-label="Switch to dark mode">
-            <svg className="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z" />
-            </svg>
-            {" "}
-            <svg className="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="4.2" />
-              <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
-            </svg>
-          </button>
+          <ModeButton />
           <a className="nav-signin" href={"app/signin.html?role=agency&reason=agency&next=agency.html"}>
             Sign in
           </a>
@@ -754,8 +742,19 @@ export function IndexBody() {
             </div>
           </div>
         </section>
-        <section className="feed" id="homesFeed" aria-labelledby="feedTitle">
-          <div className="wrap">
+        <HomesFeed
+          end={
+            <>
+              <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html%3Fadd%3D1"}>
+                + Add your listing
+              </a>
+              {" "}
+              <a className="btn btn-ghost" href="buyers.html">
+                See it as a customer
+              </a>
+            </>
+          }
+        >
             <h2 className="h2" id="feedTitle">
               {"Live on Synapse "}
               <em>
@@ -765,18 +764,7 @@ export function IndexBody() {
             <p className="lede">
               Real listings from agencies on Synapse, verified ones first. This is where yours would sit, in front of buyers who are already looking.
             </p>
-            <div id="hfRows"></div>
-            <div className="hf-end" id="hfEnd" hidden>
-              <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html%3Fadd%3D1"}>
-                + Add your listing
-              </a>
-              {" "}
-              <a className="btn btn-ghost" href="buyers.html">
-                See it as a customer
-              </a>
-            </div>
-          </div>
-        </section>
+        </HomesFeed>
         <section className="end">
           <div className="wrap">
             <div className="frame p-tayo">
@@ -865,6 +853,8 @@ export function IndexBody() {
       </a>
       <style  dangerouslySetInnerHTML={{ __html: inline("index", "inline-4.css") }} />
       <AfterHydration scripts={SCRIPTS} />
+      <LandingEffects />
+      <Goodbye />
     </>
   );
 }
