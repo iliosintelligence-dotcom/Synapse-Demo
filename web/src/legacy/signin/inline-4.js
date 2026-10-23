@@ -117,8 +117,8 @@
                        + set[i].src + ' 1800w';
             img.src = set[i].src;
             window.SYN_ART_LINE = set[i].line;
-            var q = document.getElementById('artQuote');
-            if (q) q.textContent = set[i].line;
+            /* The line beside it is React's (SigninArtText): it is told, not written to. */
+            try { window.dispatchEvent(new Event('syn:art-line')); } catch (e) { /* old browsers keep the first line */ }
           }
 
           /* Walk on to the next one if a file is missing, and stop after a
