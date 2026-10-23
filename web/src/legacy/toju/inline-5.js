@@ -91,6 +91,27 @@
       }
     };
 
+    /* THE CONVERSATION IS A REACT COMPONENT NOW (src/features/tayo/Conversation.tsx, 2026-10-23). Everything this page adds to
+       the conversation (a reply, a message, the typing dots, an error, the handover card, the introduction ticket) is recorded
+       here, and the component draws the list. Until it attaches, and if React never arrives, the old drawing below still runs,
+       so the chat works either way. Each item keeps its old element (`el`) so removing it removes that too. */
+    const View = (function () {
+      let items = [], seq = 0, react = false;
+      const subs = new Set();
+      const emit = () => subs.forEach((f) => { try { f(); } catch (e) { /* one listener must not stop the rest */ } });
+      return {
+        get react() { return react; },
+        attach() { react = true; while (convo.firstChild) convo.removeChild(convo.firstChild); },
+        items: () => items,
+        subscribe(f) { subs.add(f); return () => subs.delete(f); },
+        add(it) { it.key = ++seq; items = items.concat([it]); emit(); return it; },
+        remove(it) { if (!it) return; if (it.el) it.el.remove(); items = items.filter((x) => x !== it); emit(); },
+        clear() { items = []; emit(); },
+        bump() { items = items.slice(); emit(); },
+      };
+    })();
+    window.TayoView = View;
+
     /* ── right-side MATCHES CANVAS, a live preview of the Your-matches page.
        Cards, map and layout mirror browse.html EXACTLY (keep in sync with that
        page). No toolbar: whatever the user wants changed, they tell Tayo. The
@@ -281,10 +302,15 @@
     function zynFor(r) { return window.Zyn ? Zyn.img(Zyn.forReply(r), 58) : 'T'; }
     function tojuMsg(text, matches, priceHistory, extra) {
       extra = extra || {};
+      const payload = { text: String(text || ''), more: extra.more || null, matches: (Array.isArray(matches) ? matches : []).slice(0, 6).map(slimMatch), at: Date.now() };
+      payload.id = pinId(payload);
+      const it = View.add({ kind: 'toju', text: String(text || ''), matches: Array.isArray(matches) ? matches : [], priceHistory: priceHistory || null,
+        more: extra.more || null, searched: extra.searched || null, payload,
+        zyn: zynFor({ text: text, matches: matches, searched: extra.searched, priceHistory: priceHistory }) });
+      if (View.react) return;
       const el = document.createElement('div');
       el.className = 'msg toju m-enter';
-      el._payload = { text: String(text || ''), more: extra.more || null, matches: (Array.isArray(matches) ? matches : []).slice(0, 6).map(slimMatch), at: Date.now() };
-      el._payload.id = pinId(el._payload);
+      el._payload = payload; it.el = el;
       el.innerHTML = '<div class="av av-toju">' + zynFor({ text: text, matches: matches, searched: extra.searched, priceHistory: priceHistory }) + '</div><div class="col"><div class="sender">Tayo</div><div class="bubble">' + md(text) + moreHtml(extra.more) + '</div>' + quickHtml(text, extra)
         + priceHistoryHtml(priceHistory) + checkedHtml(extra.searched) + matchesHtml(matches)
         + '<div class="tj-acts" role="group" aria-label="Reply actions">'
@@ -296,7 +322,9 @@
       convo.appendChild(el); scrollDown();
     }
     function userMsg(text) {
-      const el = document.createElement('div');
+      const it = View.add({ kind: 'user', text: String(text || '') });
+      if (View.react) return;
+      const el = document.createElement('div'); it.el = el;
       el.className = 'msg user m-enter';
       el.innerHTML = '<div class="col"><div class="bubble">' + esc(text) + '</div></div><div class="av av-user">A</div>';
       convo.appendChild(el); scrollDown();
@@ -316,7 +344,10 @@
     ];
 
     function typing() {
-      const el = document.createElement('div');
+      const it = View.add({ kind: 'typing', zyn: window.Zyn ? Zyn.img('typing', 58) : 'T' });
+      const handle = { remove: () => View.remove(it) };
+      if (View.react) return handle;
+      const el = document.createElement('div'); it.el = el;
       el.className = 'msg toju typing m-enter';
       el.innerHTML = '<div class="av av-toju">' + (window.Zyn ? Zyn.img('typing', 58) : 'T') + '</div><div class="col"><div class="sender">Tayo</div>'
         + '<div class="bubble"><span class="sl sl-dots" role="status" aria-label="Tayo is typing"><i></i><i></i><i></i></span>'
@@ -337,7 +368,7 @@
       const nativeRemove = el.remove.bind(el);
       el.remove = () => { timers.forEach(clearTimeout); nativeRemove(); };
 
-      scrollDown(); return el;
+      scrollDown(); return handle;
     }
 
     // ── Dream Home board → Tayo's knowledge ──
@@ -486,7 +517,9 @@
       const sent = d.delivery_status === 'delivered';
       let img = ''; try { img = coverOf(p.property_media) || ''; } catch (e) { img = ''; }
       const where = [priceLine(p), p.city].filter(Boolean).join(' \u00b7 ');
-      const el = document.createElement('div');
+      const it = View.add({ kind: 'ticket', title: p.title || 'This home', where, when, ref, sent, img });
+      if (View.react) return;
+      const el = document.createElement('div'); it.el = el;
       el.className = 'tkt-wrap';
       el.innerHTML = '<div class="tkt" data-tkt role="group" aria-label="Introduction ticket"><div class="tkt-body">'
         + '<div class="tkt-main">'
@@ -572,9 +605,11 @@
       const qs = Array.isArray(sm.questions) && sm.questions.length ? sm.questions.join(' \u00b7 ') : '';
       const cs = Array.isArray(sm.concerns) && sm.concerns.length ? sm.concerns.join(' \u00b7 ') : '';
       const offer = H.openingOffer ? 'Opening at \u20a6' + Number(H.openingOffer).toLocaleString('en-NG') : '';
-      const el = document.createElement('div');
-      el.className = 'ho-card'; el.id = 'hoCard';
       const picks = (slots || []).slice(0, 6);
+      const it = View.add({ kind: 'handover', H, slots: picks, title: (H.home && H.home.title) || REPLY_TO.title || 'This home' });
+      if (View.react) return;
+      const el = document.createElement('div'); it.el = el;
+      el.className = 'ho-card'; el.id = 'hoCard';
       el.innerHTML = '<div class="ho-k">Handover to the agent</div><div class="ho-t">' + esc((H.home && H.home.title) || REPLY_TO.title || 'This home') + '</div>'
         + '<ul class="ho-sum">'
         + row('Wants', sm.wants) + row('Budget', sm.budget) + row('Paying', sm.financing) + row('Timeline', sm.timeline) + row('Household', sm.household)
@@ -598,13 +633,25 @@
       el.addEventListener('click', (e) => {
         const b = e.target.closest('.ho-slot');
         if (b) { chosen = (chosen === b.dataset.slot) ? null : b.dataset.slot; el.querySelectorAll('.ho-slot').forEach((x) => x.classList.toggle('on', x.dataset.slot === chosen)); return; }
-        if (e.target.closest('#hoCancel')) { el.remove(); HO_BUSY = false; const bt = document.getElementById('tjHandoff'); if (bt) { bt.disabled = false; bt.textContent = 'Introduce me'; } return; }
-        if (e.target.closest('#hoSend')) sendHandover(H, chosen, el);
+        if (e.target.closest('#hoCancel')) { handoverCancel(it); return; }
+        if (e.target.closest('#hoSend')) {
+          const sendB = el.querySelector('#hoSend'), ph = el.querySelector('#hoPhone'), hd = el.querySelector('#hoHandle');
+          sendHandover(H, chosen, { phone: ph ? ph.value : '', handle: hd ? hd.value : '' }, {
+            sending(on) { if (sendB) { sendB.disabled = on; sendB.textContent = on ? 'Sending\u2026' : 'Send to the agent'; } },
+            sent() { el.querySelectorAll('button').forEach((b) => { b.disabled = true; }); },
+          });
+        }
       });
     }
 
-    async function sendHandover(H, slot, card) {
-      const send = card.querySelector('#hoSend'); if (send) { send.disabled = true; send.textContent = 'Sending\u2026'; }
+    function handoverCancel(it) {
+      View.remove(it); HO_BUSY = false;
+      const bt = document.getElementById('tjHandoff'); if (bt) { bt.disabled = false; bt.textContent = 'Introduce me'; }
+    }
+    /* contact: the two optional fields; ui: how the card shows sending and sent (the old card or the React one). Resolves true
+       once the introduction is made. */
+    async function sendHandover(H, slot, contact, ui) {
+      ui.sending(true);
       try {
         const c = await SynAuth.client();
         const sess = await c.auth.getSession();
@@ -613,8 +660,7 @@
         /* The two optional contact fields are saved BEFORE the lead is written: create-lead copies the profile's phone onto the
            lead, and the agent reads the handle from the profile. One that does not look right stops the introduction here with a
            clear line, rather than being dropped without a word. */
-        const phoneIn = card.querySelector('#hoPhone'), handleIn = card.querySelector('#hoHandle');
-        const ph = phoneIn ? phoneIn.value.trim() : '', hd = handleIn ? handleIn.value.trim() : '';
+        const ph = String((contact && contact.phone) || '').trim(), hd = String((contact && contact.handle) || '').trim();
         if (ph) {
           const r1 = await c.rpc('set_my_phone', { p_phone: ph });
           if (r1.error) throw new Error('That phone number does not look complete. Check it, or leave it blank.');
@@ -639,7 +685,7 @@
         try { if (VISITOR) c.rpc('attribute_lead', { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {}); } catch (e) { /* the lead stands */ }
         HANDED = true; HO_BUSY = false; renderReply();
         setTimeout(refreshHandoff, 1500);
-        card.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        ui.sent();
         /* Say exactly what happened, and no more. */
         const by = d.delivery_status === 'delivered' ? (d.email === 'sent' ? 'on WhatsApp and by email' : 'on WhatsApp')
           : d.email === 'sent' ? 'by email' : null;
@@ -648,9 +694,11 @@
         tojuMsg('Done. I have introduced you to the agent for ' + (REPLY_TO.title || 'this home') + (by ? ' and sent them the summary ' + by + '.' : '. The summary is saved on their side and they will see it in their portal.') + viewing
           + ' You will not be starting again.');
         try { introTicket(REPLY_TO, d); } catch (e) { /* a keepsake; the introduction stands without it */ }
+        return true;
       } catch (e) {
-        if (send) { send.disabled = false; send.textContent = 'Send to the agent'; }
+        ui.sending(false);
         tojuMsg((e && e.message) || 'I could not make that introduction just now.');
+        return false;
       }
     }
 
@@ -970,21 +1018,24 @@
                   msg: 'Check your connection and try again, your question is saved.' },
     };
     let errEl = null;
-    function clearError() { if (errEl) { errEl.remove(); errEl = null; } }
+    function clearError() { if (errEl) { View.remove(errEl); errEl = null; } }
     function showError(kind) {
       const e = ERRORS[kind] || ERRORS.network;
       const ic = (window.SynIcons && SynIcons.has(e.icon)) ? SynIcons.svg(e.icon) : '!';
-      errEl = document.createElement('div');
-      errEl.className = 'tj-error m-enter';
-      errEl.setAttribute('role', 'alert');
-      errEl.innerHTML = '<div class="ei">' + ic + '</div><div class="et">'
+      const item = View.add({ kind: 'error', err: e, icon: ic });
+      errEl = item;
+      if (View.react) return;
+      const errElDom = document.createElement('div'); item.el = errElDom;
+      errElDom.className = 'tj-error m-enter';
+      errElDom.setAttribute('role', 'alert');
+      errElDom.innerHTML = '<div class="ei">' + ic + '</div><div class="et">'
         + '<div class="eh">' + esc(e.ttl) + '</div><div class="em">' + esc(e.msg) + '</div>'
         + (e.auto ? '<div class="ew">Waiting for your connection…</div>'
                   : '<button class="er" type="button">Try again</button>')
         + '</div>';
-      const btn = errEl.querySelector('.er');
+      const btn = errElDom.querySelector('.er');
       if (btn) btn.addEventListener('click', retry);
-      convo.appendChild(errEl); scrollDown();
+      convo.appendChild(errElDom); scrollDown();
     }
     function retry() {
       if (busy) return;
@@ -1220,7 +1271,7 @@
     })();
 
     function render() {
-      convo.innerHTML = '';
+      View.clear(); if (!View.react) convo.innerHTML = '';
       saved.forEach((m) => { if (isDreamCtx(m)) return; (m.role === 'user' ? userMsg(m.content) : tojuMsg(m.content, Array.isArray(m.matches) ? m.matches : [], m.priceHistory || null, { more: m.more || null, searched: m.searched || null })); });
       rebuildCanvas();
     }
@@ -1408,15 +1459,18 @@
        this device for the pressed state, and sent to the team so ratings
        teach something. The visitor's own words are never sent. */
     function rate(b, pl) {
-      const want = b.dataset.act;
+      const now = rateValue(pl, b.dataset.act);
+      const row = b.closest('.tj-acts');
+      row.querySelectorAll('[data-act="up"],[data-act="down"]').forEach((x) => x.setAttribute('aria-pressed', String(now === x.dataset.act)));
+      flashTip(b, now ? 'Thanks' : 'Removed');
+    }
+    /* The rating after a tap (null = taken back); a new rating is sent to the team. */
+    function rateValue(pl, want) {
       const map = loadFb();
       const clearing = map[pl.id] === want;
       if (clearing) delete map[pl.id]; else map[pl.id] = want;
       saveFb(map);
-      const row = b.closest('.tj-acts');
-      row.querySelectorAll('[data-act="up"],[data-act="down"]').forEach((x) => x.setAttribute('aria-pressed', String(map[pl.id] === x.dataset.act)));
-      flashTip(b, clearing ? 'Removed' : 'Thanks');
-      if (clearing) return;
+      if (clearing) return null;
       try {
         fetch(SUPABASE_URL + '/rest/v1/rpc/record_toju_feedback', {
           method: 'POST',
@@ -1425,6 +1479,14 @@
           keepalive: true,
         }).catch(() => {});
       } catch (e) {}
+      return want;
+    }
+    function togglePin(pl) {
+      let pins = loadPins();
+      const on = !pins.some((x) => x.id === pl.id);
+      pins = on ? [pl].concat(pins) : pins.filter((x) => x.id !== pl.id);
+      savePins(pins);
+      return on;
     }
     function shareOut(text, btn) {
       const was = btn.textContent;
@@ -1483,6 +1545,7 @@
     }
     let dk = null;
     convo.addEventListener('pointerdown', (e) => {
+      if (View.react) return;
       const slot = e.target.closest('.hc-slot.front'); if (!slot) return;
       const deck = slot.parentNode; if (!deck.matches('[data-deck]') || deck.dataset.busy || deck.querySelectorAll('.hc-slot').length < 2) return;
       dk = { deck, slot, x: e.clientX, y: e.clientY, dx: 0, t: Date.now(), drag: false, id: e.pointerId };
@@ -1511,14 +1574,16 @@
     }
     convo.addEventListener('pointerup', deckEnd);
     convo.addEventListener('pointercancel', deckEnd);
-    new MutationObserver(() => convo.querySelectorAll('[data-deck]:not([data-ready])').forEach(deckInit)).observe(convo, { childList: true, subtree: true });
+    new MutationObserver(() => { if (!View.react) convo.querySelectorAll('[data-deck]:not([data-ready])').forEach(deckInit); }).observe(convo, { childList: true, subtree: true });
     convo.addEventListener('click', (e) => {
+      if (View.react) return;
       const nb = e.target.closest('[data-deck-next],[data-deck-prev]');
       if (nb) { const deck = nb.parentNode.previousElementSibling; if (deck && deck.matches('[data-deck]')) { if (nb.hasAttribute('data-deck-next')) deckGo(deck, -1); else deckBack(deck); } return; }
       const dd = e.target.closest('[data-deck]'); if (dd && dd.dataset.dragged) { e.preventDefault(); e.stopPropagation(); }
     }, true);
 
     convo.addEventListener('click', (e) => {
+      if (View.react) return;
       const hc = e.target.closest('.hc[data-id]');
       if (hc && hc.closest('.hc-slot:not(.front)')) return;
       if (hc && !e.target.closest('a, button')) { window.location.href = SynMatches.propertyHref(hc.dataset.id); return; }
@@ -1535,10 +1600,7 @@
       const msg = b.closest('.msg'); const pl = msg && msg._payload; if (!pl) return;
       if (b.dataset.act === 'share') { shareOut(shareText(pl), b); return; }
       if (b.dataset.act === 'up' || b.dataset.act === 'down') { rate(b, pl); return; }
-      let pins = loadPins();
-      if (pins.some((x) => x.id === pl.id)) { pins = pins.filter((x) => x.id !== pl.id); setPin(b, false); }
-      else { pins.unshift(pl); setPin(b, true); }
-      savePins(pins);
+      setPin(b, togglePin(pl));
     });
     const pinPanel = document.getElementById('tjPinPanel');
     const pinList = document.getElementById('tjPinList');
@@ -1684,6 +1746,7 @@
       const id = e.detail && e.detail.id;
       savePins(loadPins().filter((x) => x.id !== id));
       convo.querySelectorAll('.msg').forEach((m) => { if (m._payload && m._payload.id === id) { const b = m.querySelector('[data-act="pin"]'); if (b) b.setAttribute('aria-pressed', 'false'); } });
+      View.bump();
     });
     /* Sharing from a panel: the phone's own share menu where there is one, otherwise copied, with a toast to say so. */
     const shareFromPanel = (text) => {
@@ -1694,6 +1757,12 @@
     };
     window.addEventListener('syn:share-pin', (e) => { const pl = loadPins().find((x) => x.id === (e.detail && e.detail.id)); if (pl) shareFromPanel(shareText(pl)); });
     window.addEventListener('syn:share-pins', () => { const pins = loadPins(); if (pins.length) shareFromPanel(pins.map(shareText).join('\n\n- - -\n\n')); });
+    Object.assign(window.TayoEngine, {
+      scrollDown, retry, shareText, togglePin, rateValue, handoverCancel,
+      isPinned, ratingOf: (id) => loadFb()[id] || null,
+      handoverSend: (H, slot, contact, ui) => sendHandover(H, slot, contact, ui),
+      propertyHref: (id) => SynMatches.propertyHref(id),
+    });
 
     // new chat, archive the old thread, then a fresh visitor id so the
     // server thread starts clean too
@@ -1701,7 +1770,7 @@
       archiveCurrent();
       localStorage.removeItem(STORE);
       VISITOR = crypto.randomUUID(); try { localStorage.setItem(VKEY, VISITOR); } catch (e) {}
-      saved = [{ role: 'assistant', content: GREETING }]; persist(); convo.innerHTML = ''; tojuMsg(GREETING);
+      saved = [{ role: 'assistant', content: GREETING }]; persist(); View.clear(); if (!View.react) convo.innerHTML = ''; tojuMsg(GREETING);
       rebuildCanvas();
       renderSuggest(null);
     }
