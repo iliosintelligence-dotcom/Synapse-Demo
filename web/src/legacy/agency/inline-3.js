@@ -13073,6 +13073,13 @@
         openTasks().forEach(t => out.push({ type: 'setup', tag: 'Only you', icon: 'pending', pane: '',
           task: t.id, title: esc2(t.title), sub: esc2(t.where || 'Tap to see what to do'), group: 'To do' }));
       }
+      /* AUTO-REPLY LINKS (Eden, 2026-10-23: a notification and a pop-up, not a big card). Known once the portal's React part has
+         read the agency's code (src/features/agency/AutoReplyLinks.tsx); opening it opens the pop-up. */
+      if (window.SYN_AUTOREPLY && window.SYN_AUTOREPLY.code) {
+        out.push({ type: 'social', tag: 'Auto-replies', icon: 'share', pane: '', action: 'autoreply',
+          title: 'Your auto-reply links are ready',
+          sub: 'Add one to your WhatsApp, Instagram or Facebook auto-reply', group: 'To do' });
+      }
       /* The sixty free days (Eden, 2026-10-03: "notify them about this").
          Shown from the day the paywall switches on until the day it applies. */
       const pw = window.SYN_PAYWALL;
@@ -13117,7 +13124,7 @@
         list.innerHTML = groups.map(g =>
           (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
           g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
-            data-noti-pane="${n.pane || ''}" data-noti-key="${esc2(notiKey(n))}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}>
+            data-noti-pane="${n.pane || ''}" data-noti-key="${esc2(notiKey(n))}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}${n.action ? ` data-noti-action="${esc2(n.action)}"` : ''}>
             <span class="ico">${SynIcons.svg(n.icon)}</span>
             <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
           </div>`).join('')
@@ -13132,6 +13139,13 @@
     function openNoti(el) {
       /* Going there is dealing with it: take it out of the bell first. */
       notiHandle([el.getAttribute('data-noti-key')]);
+      const action = el.getAttribute('data-noti-action');
+      if (action) {
+        toggleNoti(false);
+        window.dispatchEvent(new Event('syn:' + action));
+        renderNoti();
+        return;
+      }
       const task = el.getAttribute('data-noti-task');
       if (task) {
         const t = typeof findTask === 'function' ? findTask(task) : null;
@@ -13155,6 +13169,7 @@
       e.preventDefault(); openNoti(row);
     });
     document.addEventListener('syn:listings', () => renderNoti());
+    document.addEventListener('syn:noti-refresh', () => renderNoti());
     function toggleNoti(open) {
       const p = document.getElementById('noti'), s = document.getElementById('notiScrim'), b = document.getElementById('bellBtn');
       const on = open === undefined ? !p.classList.contains('on') : open;
