@@ -7771,7 +7771,7 @@
        `var`, not `let`: sources call in from IIFEs above and below, and a
        call that arrived before this line ran must find an object, not a
        temporal-dead-zone error. */
-    var TASKS = { bySource: {}, queue: [], idx: 0, el: null, popped: {} };
+    var TASKS = { bySource: {}, shown: {}, popped: {} };
     var TASK_DONE_KEY = 'syn_tasks_done_v1', TASK_LATER_KEY = 'syn_tasks_later_v1';
 
     function taskMarks(kind) {
@@ -7799,7 +7799,7 @@
     function findTask(id) {
       var all = [];
       Object.keys(TASKS.bySource).forEach(function (k) { all = all.concat(TASKS.bySource[k] || []); });
-      return all.find(function (t) { return t.id === id; }) || TASKS.queue.find(function (t) { return t.id === id; }) || null;
+      return all.find(function (t) { return t.id === id; }) || TASKS.shown[id] || null;
     }
 
     function setTasks(source, list) {
@@ -7812,107 +7812,13 @@
       if (fresh.length) showTasks(fresh);
     }
 
+    /* The card is React (src/features/agency/TaskCard.tsx): it joins an open card rather than replacing it, and marks a task
+       done or later through taskMark() above, so the bell and the card agree. */
     function showTasks(list) {
       if (!list || !list.length) return;
-      list.forEach(function (t) { TASKS.popped[t.id] = true; });
-      /* Joins a card already open rather than replacing what somebody is
-         in the middle of reading. */
-      var open = TASKS.el && TASKS.el.classList.contains('on');
-      if (open) {
-        list.forEach(function (t) { if (!TASKS.queue.some(function (q) { return q.id === t.id; })) TASKS.queue.push(t); });
-      } else {
-        TASKS.queue = list.slice(); TASKS.idx = 0;
-      }
-      paintTask();
+      list.forEach(function (t) { TASKS.popped[t.id] = true; TASKS.shown[t.id] = t; });
+      window.dispatchEvent(new CustomEvent('syn:tasks-show', { detail: list }));
     }
-
-    function paintTask() {
-      if (!TASKS.el) {
-        TASKS.el = document.createElement('div');
-        TASKS.el.className = 'ytask';
-        TASKS.el.setAttribute('role', 'dialog');
-        TASKS.el.setAttribute('aria-labelledby', 'ytaskTitle');
-        document.body.appendChild(TASKS.el);
-        TASKS.el.addEventListener('click', onTaskClick);
-      }
-      var t = TASKS.queue[TASKS.idx];
-      if (!t) { TASKS.el.classList.remove('on'); return; }
-      var n = TASKS.queue.length;
-      TASKS.el.innerHTML =
-        '<div class="ytask-top"><span class="ytask-eye">' + esc2(t.eye || 'Only you can do this') + '</span>'
-        + (n > 1 ? '<span class="ytask-n">' + (TASKS.idx + 1) + ' of ' + n + '</span>' : '')
-        + '<button type="button" class="ytask-x" data-ytask-later aria-label="Close for now">×</button></div>'
-        + '<div class="ytask-title" id="ytaskTitle">' + esc2(t.title) + '</div>'
-        + (t.body ? '<div class="ytask-body">' + t.body + '</div>' : '')
-        + (t.copies || []).map(function (c, i) {
-            return '<div class="ytask-copy">'
-              + (c.label ? '<span class="ytask-copy-l">' + esc2(c.label) + '</span>' : '')
-              + '<code class="ytask-copy-v">' + esc2(c.text) + '</code>'
-              + '<button type="button" class="ytask-copy-b" data-ytask-copy="' + i + '">Copy</button></div>';
-          }).join('')
-        + (t.where ? '<div class="ytask-where">' + esc2(t.where) + '</div>' : '')
-        + '<div class="ytask-acts">'
-        +   (t.once ? '' : '<button type="button" class="ytask-btn" data-ytask-later>Later</button>')
-        /* A task that can be started from here offers that instead of Done:
-           "Done" is for things finished elsewhere, and this one finishes
-           itself when it stops being true. */
-        +   (t.action
-              ? '<button type="button" class="ytask-btn primary" data-ytask-act>' + esc2(t.action.label) + '</button>'
-              : '<button type="button" class="ytask-btn primary" data-ytask-done>' + (t.once ? 'Got it' : 'Done') + '</button>')
-        + '</div>'
-        + '<span class="sr-only" role="status" id="ytaskSay"></span>';
-      TASKS.el.classList.add('on');
-    }
-
-    function nextTask() {
-      TASKS.queue.splice(TASKS.idx, 1);
-      if (TASKS.idx >= TASKS.queue.length) TASKS.idx = 0;
-      paintTask();
-      if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) {} }
-    }
-
-    function onTaskClick(e) {
-      var t = TASKS.queue[TASKS.idx];
-      if (!t) return;
-      if (e.target.closest('[data-ytask-done]')) { if (!t.once) taskMark('done', t.id); nextTask(); return; }
-      /* Started, not done: put away for this visit, and still in the bell. */
-      if (e.target.closest('[data-ytask-act]')) {
-        taskMark('later', t.id); nextTask();
-        if (t.action && typeof t.action.run === 'function') t.action.run();
-        return;
-      }
-      if (e.target.closest('[data-ytask-later]')) { if (!t.once) taskMark('later', t.id); nextTask(); return; }
-      var cb = e.target.closest('[data-ytask-copy]');
-      if (!cb) return;
-      var c = (t.copies || [])[+cb.getAttribute('data-ytask-copy')];
-      if (!c) return;
-      var say = document.getElementById('ytaskSay');
-      var said = function (word, spoken) {
-        cb.textContent = word; if (say) say.textContent = spoken;
-        setTimeout(function () { cb.textContent = 'Copy'; }, 2200);
-      };
-      /* clipboard.writeText is missing on insecure origins and refused in
-         some in-app browsers; the fallback selects the text so a long-press
-         or Ctrl+C still works. */
-      var selectIt = function () {
-        try {
-          var v = cb.parentNode.querySelector('.ytask-copy-v');
-          var r = document.createRange(); r.selectNodeContents(v);
-          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
-          said('Selected', 'The text is selected. Copy it by hand.');
-        } catch (err) { said('Select it', 'Select the text and copy it by hand.'); }
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(c.text).then(function () { said('Copied', 'Copied.'); }, selectIt);
-      } else selectIt();
-    }
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key !== 'Escape' || !TASKS.el || !TASKS.el.classList.contains('on')) return;
-      var t = TASKS.queue[TASKS.idx];
-      if (t && !t.once) taskMark('later', t.id);
-      nextTask();
-    });
 
     /* ── Campaign generator ────────────────────────────────────────────────
        Pulls real verified listings from the database, fans each into every
