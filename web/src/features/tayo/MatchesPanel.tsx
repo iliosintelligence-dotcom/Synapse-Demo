@@ -3,8 +3,8 @@
  * "Your matches", the panel beside Tayo's chat (2026-10-23): a live preview of the Your matches page, the homes Tayo has found
  * in this conversation on a map and as cards. No toolbar: whatever the person wants changed, they tell Tayo.
  *
- * The chat engine (src/legacy/toju/inline-5.js) still decides which homes are on it and publishes them in window.TayoCanvas;
- * this draws them into .tj-canvas, taking over from the engine's old drawing. The cards and the map are the shared ones from
+ * The chat engine (engine.ts) decides which homes are on it and publishes them in window.TayoCanvas; this draws them into
+ * .tj-canvas. The cards and the map are the shared ones from
  * matches-shared.js, so they are identical to the Your matches page; saving a home writes the same saved list that page reads.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -68,7 +68,7 @@ function Panel({ store }: { store: CanvasStore }) {
   );
 }
 
-/** Takes .tj-canvas over from the engine's old drawing once both are there. */
+/** Draws into .tj-canvas once the engine is there. */
 export function MatchesPanel() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const ready = useEngineReady();

@@ -1,6 +1,6 @@
 "use client";
 /**
- * True once Tayo's chat engine (src/legacy/toju/inline-5.js) has finished starting. The engine now runs after React has taken
+ * True once Tayo's chat engine (engine.ts) has finished starting. The engine now runs after React has taken
  * the page over, so the parts that talk to it wait for its signal (`syn:tayo-engine`, with window.TayoEngineReady for late
  * listeners) before they attach.
  */

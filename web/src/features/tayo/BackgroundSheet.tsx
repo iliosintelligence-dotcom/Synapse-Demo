@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { animateClose, MOTION, Sheet, sheetStyles as s } from "./Sheet";
+import { usePageScripts } from "@/legacy/usePageScripts";
 
 const KEY = "toju_bg_v1";
 type Mode = "tint" | "photo" | "pattern";
@@ -27,6 +28,19 @@ export function BackgroundSheet() {
   const [mode, setMode] = useState<Mode>("photo");
   const opts = useRef<HTMLDivElement>(null);
   const ID = "synBgTitle";
+
+  /* A saved choice belongs to whoever made it (the head script applied it early when the stored session was theirs). Once
+     sign-in can be asked, signed out or somebody else gets the photograph. */
+  const scripts = usePageScripts();
+  useEffect(() => {
+    if (!scripts) return;
+    Promise.resolve(window.SynAuth?.ready ? window.SynAuth.ready() : null).then((u) => {
+      const who = u && u.id ? u.id : null;
+      let saved: { uid?: string; mode?: Mode } | null = null;
+      try { saved = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { saved = null; }
+      apply(who && saved && saved.uid === who && saved.mode ? saved.mode : "photo");
+    }).catch(() => apply("photo"));
+  }, [scripts]);
 
   useEffect(() => {
     const show = () => {

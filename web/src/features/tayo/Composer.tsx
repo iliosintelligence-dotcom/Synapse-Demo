@@ -2,9 +2,8 @@
 /**
  * Tayo's composer: the typing field, the mic and send (2026-10-23).
  *
- * The chat engine (src/legacy/toju/inline-5.js) still decides what a message does; this owns the field. It mounts into
- * #react-composer inside the page's .chatbox and hides the old field beside it, so the page keeps working if React never
- * arrives. The engine reaches it through window.TayoComposer (read, write, placeholder, listening, the element) and it
+ * The chat engine (engine.ts) decides what a message does; this owns the field. It mounts into #react-composer inside the
+ * page's .chatbox. The engine reaches it through window.TayoComposer (read, write, placeholder, listening, the element) and it
  * reaches the engine through window.TayoEngine (send, toggleMic). The engine says when it is busy with `syn:busy`.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -124,21 +123,14 @@ function Field() {
   );
 }
 
-/** Takes the old field's place once the engine is there to talk to. */
+/** Appears once the engine is there to talk to. */
 export function Composer() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const ready = useEngineReady();
   useEffect(() => {
     if (!ready) return;
     const h = document.getElementById("react-composer");
-    if (!h || !window.TayoEngine) return;
-    const old = h.parentElement?.querySelector<HTMLElement>(".pillrow:not([data-react-composer])");
-    const had = (old?.querySelector("input") as HTMLInputElement | null)?.value ?? "";
-    if (old) old.style.display = "none";
-    setHost(h);
-    /* Anything typed before React arrived carries over. */
-    if (had) requestAnimationFrame(() => window.TayoComposer?.set(had));
-    return () => { if (old) old.style.display = ""; };
+    if (h && window.TayoEngine) setHost(h);
   }, [ready]);
   return host ? createPortal(<Field />, host) : null;
 }

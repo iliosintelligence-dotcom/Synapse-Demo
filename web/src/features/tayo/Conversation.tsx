@@ -3,9 +3,8 @@
  * Tayo's conversation (2026-10-23): the replies, your messages, the typing dots, errors, the homes deck, the handover card and
  * the introduction ticket.
  *
- * The chat engine (src/legacy/toju/inline-5.js) still decides what is said and keeps the thread; it records each thing it adds
- * in window.TayoView, and this draws that list into #convo. On attaching it takes #convo over from the engine's old drawing,
- * which keeps running until then (and for good if React never arrives). Pins and ratings are still written by the engine
+ * The chat engine (engine.ts) decides what is said and keeps the thread; it records each thing it adds in window.TayoView, and
+ * this draws that list into #convo. Pins and ratings are written by the engine
  * (window.TayoEngine), so the Pinned sheet and the page can never disagree. The class names are the old ones, so the look is
  * unchanged.
  */
@@ -255,8 +254,10 @@ function Actions({ pl }: { pl: Payload }) {
   );
 }
 
+/* Tap Zyn and he zooms in and does something. */
 function Avatar({ html }: { html: string }) {
-  return <div className="av av-toju" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className="av av-toju" dangerouslySetInnerHTML={{ __html: html }}
+    onClick={(e) => { const z = (window as unknown as { Zyn?: { emote: (img: Element | null) => void } }).Zyn; z?.emote(e.currentTarget.querySelector("img")); }} />;
 }
 
 function Reply({ it }: { it: Extract<Item, { kind: "toju" }> }) {
@@ -314,11 +315,26 @@ function ErrorNote({ it }: { it: Extract<Item, { kind: "error" }> }) {
   );
 }
 
-/* The introduction as something you can hold. The tilt that follows the pointer is the page's (data-tkt). */
+/* Depth that follows the pointer (or a finger dragged across the ticket), and settles when it leaves. */
+function tilt(e: React.PointerEvent<HTMLDivElement>) {
+  if (reduced()) return;
+  const t = e.currentTarget, r = t.getBoundingClientRect(); if (!r.width) return;
+  const x = Math.max(-1, Math.min(1, (e.clientX - r.left) / r.width * 2 - 1)), y = Math.max(-1, Math.min(1, (e.clientY - r.top) / r.height * 2 - 1));
+  t.style.setProperty("--ry", (x * 7).toFixed(2) + "deg"); t.style.setProperty("--rx", (-y * 6).toFixed(2) + "deg");
+  t.style.setProperty("--px", x.toFixed(3)); t.style.setProperty("--py", y.toFixed(3));
+  t.style.setProperty("--gx", ((x + 1) * 50).toFixed(1) + "%"); t.style.setProperty("--gy", ((y + 1) * 50).toFixed(1) + "%");
+}
+function untilt(e: React.PointerEvent<HTMLDivElement>) {
+  const t = e.currentTarget; if (t.contains(e.relatedTarget as Node | null)) return;
+  ["--rx", "--ry"].forEach((k) => t.style.setProperty(k, "0deg")); ["--px", "--py"].forEach((k) => t.style.setProperty(k, "0"));
+  t.style.setProperty("--gx", "50%"); t.style.setProperty("--gy", "30%");
+}
+
+/* The introduction as something you can hold. */
 function Ticket({ it }: { it: Extract<Item, { kind: "ticket" }> }) {
   return (
     <div className="tkt-wrap">
-      <div className="tkt" data-tkt="" role="group" aria-label="Introduction ticket">
+      <div className="tkt" data-tkt="" role="group" aria-label="Introduction ticket" onPointerMove={tilt} onPointerOut={untilt}>
         <div className="tkt-body">
           <div className="tkt-main">
             <div className="tkt-kicker"><span>INTRODUCTION</span><span>{it.when}</span></div>
@@ -403,7 +419,7 @@ function UserMsg({ text }: { text: string }) {
 const noItems: Item[] = [];
 function List({ view }: { view: NonNullable<Window["TayoView"]> }) {
   const items = useSyncExternalStore(view.subscribe, view.items, () => noItems);
-  /* Down to the newest, as the old drawing did after each addition. */
+  /* Down to the newest after each addition. */
   const count = useRef(0);
   useLayoutEffect(() => {
     if (items.length !== count.current) { count.current = items.length; engine()?.scrollDown(); }
@@ -425,7 +441,7 @@ function List({ view }: { view: NonNullable<Window["TayoView"]> }) {
   );
 }
 
-/** Takes #convo over from the engine's old drawing once both are there. */
+/** Draws into #convo once the engine is there. */
 export function Conversation() {
   const [host, setHost] = useState<HTMLElement | null>(null);
   const ready = useEngineReady();

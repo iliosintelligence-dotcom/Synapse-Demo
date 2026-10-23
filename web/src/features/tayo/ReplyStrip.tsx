@@ -2,7 +2,7 @@
 /**
  * "Replying about", the strip above Tayo's typing box (2026-10-24): the home this conversation is about, Introduce me, and ×
  * to stop. Introduce me opens once there has been a conversation (two of your messages); it is the same introduction the old
- * strip made, run by the chat engine (src/legacy/toju/inline-5.js), which publishes the strip in window.TayoReply.
+ * strip made, run by the chat engine (engine.ts), which publishes the strip in window.TayoReply.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -41,7 +41,7 @@ function Strip({ store, box }: { store: ReplyStore; box: HTMLElement }) {
   );
 }
 
-/** Takes #tjReply over from the engine's old drawing once both are there. */
+/** Draws into #tjReply once the engine is there. */
 export function ReplyStrip() {
   const [box, setBox] = useState<HTMLElement | null>(null);
   const ready = useEngineReady();
@@ -50,7 +50,6 @@ export function ReplyStrip() {
     const b = document.getElementById("tjReply");
     const store = window.TayoReply;
     if (!b || !store || !window.TayoEngine) return;
-    while (b.firstChild) b.removeChild(b.firstChild);   // the old drawing
     store.attach();
     setBox(b);
   }, [ready]);

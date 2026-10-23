@@ -1,9 +1,10 @@
 /* eslint-disable */
 // @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
 // The toju page's markup as React (converted from src/legacy/toju/body.html by scripts/legacy-to-jsx.mjs, then edited by hand).
-// Its scripts run once React has taken the page over (AfterHydration), in their original order.
-import { inline } from "@/legacy/read";
+// Its shared scripts run once React has taken the page over (AfterHydration), in their original order; then the chat engine
+// (engine.ts, was inline-5.js) starts.
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
+import { ChatsMenu, EngineStart, HandoffStatus, MemoryNote, VoiceHint } from "./EngineParts";
 
 const SCRIPTS: PageScript[] = [
   { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
@@ -21,7 +22,6 @@ const SCRIPTS: PageScript[] = [
   { src: "auth.js" },
   { src: "notify.js" },
   { src: "motion.js" },
-  { code: inline("toju", "inline-5.js") },
 ];
 
 export function TojuBody() {
@@ -32,14 +32,6 @@ export function TojuBody() {
       </div>
       <div className="tj-bg"></div>
       <div className="tj-wash"></div>
-      <div className="tj-bgp" id="tjBgPanel" hidden>
-        <div className="tj-bgp-card" role="dialog" aria-modal="true" aria-labelledby="tjBgT">
-          <div className="tj-bgp-t" id="tjBgT">
-            Change background
-          </div>
-          <div id="tjBgBody"></div>
-        </div>
-      </div>
       <div className="tj-app">
         <div className="appbar">
           <a className="brand" href="../buyers.html">
@@ -61,36 +53,7 @@ export function TojuBody() {
             </a>
           </nav>
           <span className="spacer"></span>
-          <div className="cnav-desk cnav-mwrap" data-bar-menu="">
-            <button type="button" className="cnav-dbtn" aria-expanded="false" aria-haspopup="menu" aria-controls="tjChatMenu">
-              <span data-icon="chat" aria-hidden="true"></span>
-              <span>
-                Chats
-              </span>
-            </button>
-            <div className="cnav-dpop cnav-menu" id="tjChatMenu" role="menu" aria-label="Chats">
-              <button id="tjNew" type="button" className="cnav-mi" role="menuitem">
-                <span data-icon="plus" aria-hidden="true"></span>
-                New chat
-              </button>
-              <button id="tjHist" type="button" className="cnav-mi" role="menuitem">
-                <span data-icon="history" aria-hidden="true"></span>
-                History
-              </button>
-              <button id="tjPins" type="button" className="cnav-mi" role="menuitem">
-                <span data-icon="heart" aria-hidden="true"></span>
-                Pinned
-              </button>
-              <button id="tjMem" type="button" className="cnav-mi" role="menuitem">
-                <span data-icon="user" aria-hidden="true"></span>
-                What Tayo remembers
-              </button>
-              <button id="tjBg" type="button" className="cnav-mi" role="menuitem">
-                <span data-icon="boards" aria-hidden="true"></span>
-                Change background
-              </button>
-            </div>
-          </div>
+          <ChatsMenu />
           <span data-auth-slot=""></span>
           {" "}
           <a className="home" href="../buyers.html">
@@ -114,77 +77,16 @@ export function TojuBody() {
                 </a>
               </div>
             </div>
-            <div className="tj-hist" id="tjHistPanel" hidden>
-              <div className="tj-hist-head">
-                <span>
-                  <span data-icon="history"></span>
-                  {" Past conversations"}
-                </span>
-                <button id="tjHistClose" aria-label="Close history">
-                  ×
-                </button>
-              </div>
-              <div className="tj-hist-list" id="tjHistList"></div>
-            </div>
-            <div className="tj-hist" id="tjPinPanel" hidden>
-              <div className="tj-hist-head">
-                <span>
-                  <span data-icon="heart"></span>
-                  {" Pinned"}
-                </span>
-                <button id="tjPinClose" aria-label="Close pinned">
-                  ×
-                </button>
-              </div>
-              <div className="tj-hist-list" id="tjPinList"></div>
-            </div>
-            <div className="tj-handoff" id="tjHandoffStatus" role="status" hidden></div>
-            <div className="tj-hist" id="tjMemPanel" hidden>
-              <div className="tj-hist-head">
-                <span>
-                  <span data-icon="user"></span>
-                  {" What Tayo remembers"}
-                </span>
-                <button id="tjMemClose" aria-label="Close what Tayo remembers">
-                  ×
-                </button>
-              </div>
-              <div className="tj-hist-list" id="tjMemList"></div>
-            </div>
+            <HandoffStatus />
             <div className="convo-scroll" aria-live="polite">
+              <MemoryNote />
               <div className="convo" id="convo"></div>
             </div>
             <div className="composer" data-cnav-clear="">
               <div className="tj-reply" id="tjReply" hidden></div>
-              <div id="tjHint" className="tj-hint" hidden></div>
+              <VoiceHint />
               <div className="chatbox">
                 <div id="react-composer" style={{ "display": "contents" }}></div>
-                <div className="pillrow">
-                  <input id="tjInput" placeholder={"Tell Tayo what you're looking for…"} autoComplete="off" />
-                  <button className="mic" id="tjMic" title="Voice typing" aria-label="Voice typing">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="2" width="6" height="11" rx="3" />
-                      <path d="M5 10a7 7 0 0 0 14 0" />
-                      <line x1="12" y1="19" x2="12" y2="22" />
-                    </svg>
-                  </button>
-                  <button className="send" id="tjSend" title="Send" aria-label="Send">
-                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style={{ "display": "block" }}>
-                      <path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="suggest" id="tjSuggest">
-                  <button data-send="What is available right now?">
-                    What is available right now?
-                  </button>
-                  <button data-send={"What can I afford on ₦250,000 a month?"}>
-                    What can I afford monthly?
-                  </button>
-                  <button data-send="What should I check before paying?">
-                    What should I check before paying?
-                  </button>
-                </div>
               </div>
             </div>
           </section>
@@ -193,6 +95,7 @@ export function TojuBody() {
         </div>
       </div>
       <AfterHydration scripts={SCRIPTS} />
+      <EngineStart />
     </>
   );
 }
