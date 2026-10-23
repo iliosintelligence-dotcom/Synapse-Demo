@@ -5,7 +5,18 @@
     const convo = document.getElementById('convo');
     const input = document.getElementById('tjInput');
     const sendBtn = document.getElementById('tjSend');
+    /* THE FIELD IS A REACT COMPONENT NOW (src/features/tayo/Composer.tsx). C reaches it when it is there and the old field
+       when it is not; writes go to both so nothing is lost while React arrives. */
+    const C = {
+      r: () => window.TayoComposer,
+      value() { const r = C.r(); return r ? r.value() : input.value; },
+      set(v) { const r = C.r(); if (r) r.set(v); input.value = v; },
+      placeholder(p) { const r = C.r(); if (r) r.placeholder(p); input.placeholder = p; },
+      listening(on) { const r = C.r(); if (r) r.listening(on); },
+      el() { const r = C.r(); return (r && r.el()) || input; },
+    };
     let busy = false;
+    const setBusy = (b) => { busy = b; try { window.dispatchEvent(new CustomEvent('syn:busy', { detail: b })); } catch (e) { /* old browsers */ } };
     const STORE = 'toju_chat_v1';
     const PINKEY = 'toju_pins_v1';   // pinned replies; defined here because saved chats render before the pin code below
     // stable anonymous visitor id -> server-side memory (continue anywhere this id exists)
@@ -938,7 +949,7 @@
           : !navigator.onLine ? 'offline' : 'network';
         showError(kind);
       }
-      busy = false; scrollDown();
+      setBusy(false); scrollDown();
     }
 
     /* ── error states ──────────────────────────────────────────────────────
@@ -978,7 +989,7 @@
     function retry() {
       if (busy) return;
       clearError();
-      busy = true;
+      setBusy(true);
       ask();   // the user's message is already in `saved`, just re-ask
     }
     // came back online with a question still unanswered → answer it, no tap needed
@@ -990,9 +1001,9 @@
     window.addEventListener('offline', () => { if (!busy) { clearError(); showError('offline'); } });
 
     function send(text) {
-      const v = (text != null ? text : input.value).trim();
+      const v = (text != null ? text : C.value()).trim();
       if (!v || busy) return;
-      busy = true; input.value = '';
+      setBusy(true); C.set('');
       saved.push({ role: 'user', content: v });
       persist();
       userMsg(v);
@@ -1042,18 +1053,18 @@
       hintEl.textContent = msg; hintEl.hidden = false;
       clearTimeout(hintTimer); hintTimer = setTimeout(() => { hintEl.hidden = true; }, 5000);
     }
-    function stopMicUI() { listening = false; micBtn.classList.remove('listening'); input.placeholder = "Tell Tayo what you're looking for…"; }
+    function stopMicUI() { listening = false; micBtn.classList.remove('listening'); C.listening(false); C.placeholder("Tell Tayo what you're looking for…"); }
     function startMic() {
       recog = new SR();
       // en-NG is rejected by many Chrome builds ("language-not-supported"); en-US
       // is universally supported and handles Nigerian-accented English fine.
       try { recog.lang = (navigator.language && /^en/i.test(navigator.language)) ? navigator.language : 'en-US'; } catch (e) { recog.lang = 'en-US'; }
       recog.interimResults = true; recog.continuous = true;
-      const base = input.value.trim() ? input.value.trim() + ' ' : '';
+      const base = C.value().trim() ? C.value().trim() + ' ' : '';
       recog.onresult = (e) => {
         let txt = '';
         for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
-        input.value = base + txt;
+        C.set(base + txt);
       };
       // exhaustive: no error path is silent (the old code dropped every case but 3)
       recog.onerror = (e) => {
@@ -1068,13 +1079,13 @@
           case 'network': hint('Voice needs a connection, check your network and try again.'); break;
           case 'aborted': break; // user stopped it, no message needed
           case 'language-not-supported':
-            if (recog.lang !== 'en-US') { recog.lang = 'en-US'; try { recog.start(); listening = true; micBtn.classList.add('listening'); return; } catch (e2) {} }
+            if (recog.lang !== 'en-US') { recog.lang = 'en-US'; try { recog.start(); listening = true; micBtn.classList.add('listening'); C.listening(true); return; } catch (e2) {} }
             hint('Voice isn’t available in your browser here, try Chrome or Edge.'); break;
           default: hint('Voice hit a snag, tap the mic to try again.');
         }
       };
       recog.onend = () => stopMicUI();
-      try { recog.start(); listening = true; micBtn.classList.add('listening'); input.placeholder = 'Listening… speak now'; input.focus(); }
+      try { recog.start(); listening = true; micBtn.classList.add('listening'); C.listening(true); C.placeholder('Listening… speak now'); C.el().focus(); }
       catch (err) { stopMicUI(); hint('Couldn’t start voice, tap the mic to try again.'); }
     }
     async function toggleMic() {
@@ -1105,6 +1116,8 @@
       startMic();
     }
     micBtn.addEventListener('click', toggleMic);
+    /* What the React composer calls. */
+    window.TayoEngine = { send: (text) => send(text), toggleMic: () => toggleMic() };
 
     // restore the saved conversation so people continue where they left off:
     // local copy renders instantly, then the server copy (visitor id) wins.
@@ -1334,9 +1347,9 @@
     const askParam = new URLSearchParams(location.search).get('ask');
     if (askParam) {
       const q = askParam.slice(0, 300).trim();
-      input.value = q;
+      C.set(q);
       try { history.replaceState(null, '', location.pathname); } catch (e) {}
-      if (q) { setTimeout(() => send(), 60); } else { SynMatches.focusUnlessTouch(input); scrollDown(); }
+      if (q) { setTimeout(() => send(), 60); } else { SynMatches.focusUnlessTouch(C.el()); scrollDown(); }
     }
 
 
