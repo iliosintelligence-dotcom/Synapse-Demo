@@ -4,6 +4,8 @@
 // Its scripts run once React has taken the page over (AfterHydration), in their original order.
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
+import { AccountMenu, AuthGate, NeedPhone } from "./AgencyAccount";
+import { DeleteAgency } from "./DeleteAgency";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -14,10 +16,7 @@ const SCRIPTS: PageScript[] = [
   { src: "agency-listings.js" },
   { code: inline("agency", "inline-3.js") },
   { src: "notify.js" },
-  { code: inline("agency", "inline-4.js") },
-  { code: inline("agency", "inline-6.js") },
   { src: "motion.js" },
-  { code: inline("agency", "inline-7.js") },
 ];
 
 export function AgencyBody() {
@@ -65,48 +64,7 @@ export function AgencyBody() {
         {" "}
         <span data-auth-slot="" style={{ "display": "none" }}></span>
         {" "}
-        <span className="acct-wrap" style={{ "marginRight": "16px" }}>
-          <button className="bell" id="acctBtn" type="button" aria-label="Account" aria-haspopup="menu" aria-expanded="false" aria-controls="acctMenu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.6" />
-              <path d="M4.5 20.5c0-4 3.3-6.4 7.5-6.4s7.5 2.4 7.5 6.4" />
-            </svg>
-          </button>
-          <div className="acct-menu" id="acctMenu" role="menu" aria-label="Account" hidden>
-            <div className="acct-who">
-              <span className="acct-av">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="8" r="3.6" />
-                  <path d="M4.5 20.5c0-4 3.3-6.4 7.5-6.4s7.5 2.4 7.5 6.4" />
-                </svg>
-              </span>
-              <div>
-                <b id="acctName">
-                  Your account
-                </b>
-                <small id="acctMail"></small>
-              </div>
-            </div>
-            <button className="acct-item" type="button" role="menuitem" data-acct="billing">
-              <span data-icon="card"></span>
-              {"Plan & billing"}
-            </button>
-            <a className="acct-item" role="menuitem" href="your-data.html">
-              <span data-icon="shield"></span>
-              {"Data & privacy"}
-            </a>
-            {" "}
-            <a className="acct-item" role="menuitem" href="../index.html">
-              <span data-icon="home"></span>
-              Back to the landing page
-            </a>
-            <div className="acct-sep"></div>
-            <button className="acct-item acct-out" type="button" role="menuitem" data-acct="out">
-              <span data-icon="user"></span>
-              Sign out
-            </button>
-          </div>
-        </span>
+        <AccountMenu />
       </div>
       <div className="rm-scrim" id="rmScrim"></div>
       <div className="rm" id="rmPanel" role="dialog" aria-label="Contact Synapse">
@@ -306,7 +264,7 @@ export function AgencyBody() {
           </span>
         </button>
         <div className="content">
-          <div className="need-phone" id="needPhone" hidden></div>
+          <NeedPhone />
           <main>
             <section className="pane on" id="pane-overview">
               <div className="fast-card" id="fastCard" hidden>
@@ -490,12 +448,7 @@ export function AgencyBody() {
               </p>
               <div className="addons-grid" id="addonsGrid"></div>
               <div className="card roi" id="roiSection"></div>
-              <div className="da" id="daSection" hidden>
-                <div className="h2">
-                  Delete agency
-                </div>
-                <div className="da-card" id="daCard"></div>
-              </div>
+              <DeleteAgency />
             </section>
             <section className="pane" id="pane-billing">
               <div className="eyebrow">
@@ -1133,6 +1086,7 @@ export function AgencyBody() {
       <div className="modal" id="cmpModal"></div>
       <style  dangerouslySetInnerHTML={{ __html: inline("agency", "inline-5.css") }} />
       <AfterHydration scripts={SCRIPTS} />
+      <AuthGate />
     </>
   );
 }

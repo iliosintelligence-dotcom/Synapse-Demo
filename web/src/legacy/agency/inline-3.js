@@ -13449,7 +13449,7 @@
         try { if (typeof toggleSetup === 'function') toggleSetup(false); } catch (e) { /* not on this page */ }
         try { if (typeof toggleNoti === 'function') toggleNoti(false); } catch (e) { /* not ready */ }
         try { if (typeof toggleRm === 'function') toggleRm(false); } catch (e) { /* not ready */ }
-        const am = document.getElementById('acctMenu'); if (am) am.hidden = true;
+        window.dispatchEvent(new Event('syn:acct-close'));   // the account menu is React's (AgencyAccount.tsx)
       };
       window.addEventListener('pageshow', () => window.closeAgencyPopups());
 
