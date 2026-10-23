@@ -9,7 +9,7 @@ export const viewport: Viewport = {"width":"device-width","initialScale":1,"view
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
         <script  dangerouslySetInnerHTML={{ __html: inline("toju", "inline-1.js") }} />
@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="foil.css" />
         <script src="foil.js" defer />
       </head>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

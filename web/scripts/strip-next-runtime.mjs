@@ -33,7 +33,12 @@ const STRIP = [
 const log = [];
 let pages = 0, bytesBefore = 0, bytesAfter = 0, problems = 0;
 
+/* Pages that now run React (stage 1 of the move, 2026-10-23) keep Next's runtime: their old markup sits in a protected section
+   that React does not reconcile. See src/app/(toju)/app/toju/page.tsx. */
+const KEEP_RUNTIME = new Set(["toju"]);
+
 for (const [key, spec] of Object.entries(PAGES)) {
+  if (KEEP_RUNTIME.has(key)) continue;
   // trailingSlash is off: a page is out/app/toju.html (the root page is out/index.html)
   const file = join(out, spec.route ? `${spec.route}.html` : "index.html");
   if (!existsSync(file)) { console.error(`MISSING ${file} (${key})`); problems++; continue; }
