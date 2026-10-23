@@ -7,7 +7,6 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var PL = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', linkedin: 'LinkedIn', x: 'X', telegram: 'Telegram', youtube: 'YouTube' };
   var GLYPH = { instagram: '◎', facebook: 'f', tiktok: '♪', linkedin: 'in', x: 'X', telegram: '➤', youtube: '▶' };
-  var STUDIO_PLATFORMS = ['instagram', 'facebook', 'tiktok', 'linkedin', 'x', 'youtube'];
   /* Where to make the account, and the one thing people get wrong. */
   var MAKE = {
     instagram: { url: 'https://www.instagram.com/accounts/emailsignup/', tip: 'Switch it to a Professional (Business) account in Settings, and link it to a Facebook Page. Instagram will not take scheduled posts otherwise.', what: 'photo and video posts' },
@@ -17,15 +16,10 @@
     x: { url: 'https://x.com/i/flow/signup', tip: 'Use an email Synapse owns. X keeps posts to about 280 characters.', what: 'short posts' },
     youtube: { url: 'https://www.youtube.com/create_channel', tip: 'Create a channel under a Google account Synapse owns. YouTube here takes vertical videos up to 3 minutes (MP4 or MOV), posted from Create. It cannot post homes by itself or share agencies\u2019 posts.', what: 'videos (Shorts)' }
   };
-  /* What to click inside TryPost, per network. Written from TryPost's own guides: the names of the buttons are theirs. */
-  var STEPS = {
-    instagram: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>Instagram</b> card press <b>Connect</b>.', 'Choose <b>Instagram (Facebook Business)</b> if it is a Business or Creator account linked to a Facebook Page (the usual case). Choose plain <b>Instagram</b> only for a personal account.', 'Approve it on Facebook, and pick the Facebook Page if it asks.'],
-    facebook: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>Facebook</b> card press <b>Connect</b>.', 'Approve it on Facebook, then <b>pick the Page</b> (not your personal profile) when it asks.'],
-    tiktok: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>TikTok</b> card press <b>Connect</b>.', 'Log in to the TikTok account and approve.'],
-    linkedin: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>LinkedIn</b> card press <b>Connect</b> and approve.', 'On the next screen <b>choose the company page</b>, not your personal profile.'],
-    x: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>X</b> card press <b>Connect</b>.', 'Approve it on X, signed in as the account you want.'],
-    youtube: ['Open <b>Accounts</b> in TryPost\u2019s left menu.', 'On the <b>YouTube</b> card press <b>Connect</b>.', 'Choose the <b>Google account that owns the channel</b>: the channel is decided by which account you pick. Then approve.']
-  };
+  /* What Synapse can connect to itself today (2026-10-23, TryPost disconnected): a Facebook Page through our own Facebook
+     login, and a Telegram channel through our bot. Other networks are added here when Synapse connects to them directly. */
+  var CONNECTABLE = ['facebook', 'telegram'];
+  var SB_FN = SB_URL + '/functions/v1/social-connect';
   var VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
   var S = { role: null, overview: null, picked: {}, media: [], when: 'now', loaded: {}, tab: 'home', posts: null, activity: null, name: '', link: '' };
   var toastT;
@@ -76,7 +70,7 @@
         S.role = d.role;
         $('gate').hidden = true; $('app').hidden = false;
         if (d.can_manage || d.role === 'platform_admin') $('teamTab').hidden = false;
-        return loadOverview().then(function () { loadPosts(); loadActivity(); loadHomes(); });
+        return loadOverview().then(function () { loadPosts(); loadActivity(); loadHomes(); facebookReturn(); });
       }).catch(function () {
         /* Signed in, but not on the team. Say which sign-in this is, so the right address can be added. */
         $('gate').innerHTML = 'You are signed in as <b>' + esc(u.email || 'this account') + '</b>, which is not on the Synapse team. '
@@ -312,125 +306,138 @@
   });
 
   /* ── the add-a-channel guide ─────────────────────────────────────────
-     Making the account is on the network; connecting it is in TryPost, which
-     holds the permission to post; naming what it is for is here. Three steps,
-     and the page says which one you are on. */
-  var W = { step: 1, platform: null, accounts: null, chosen: null, purpose: { own: true, auto: false, mirror: false } };
-  function openWizard() { W = { step: 1, platform: null, accounts: null, chosen: null, purpose: { own: true, auto: false, mirror: false } }; $('veil').hidden = false; document.body.style.overflow = 'hidden'; drawWizard(); }
-  var watchT = null;
-  function stopWatch() { if (watchT) { clearInterval(watchT); watchT = null; } }
-  function closeWizard() { stopWatch(); $('veil').hidden = true; document.body.style.overflow = ''; }
-  /* Step 2: ask TryPost every few seconds. The first answer also fills in what the workspace already holds, so the
-     person can tell whether they are in the right one; the first new account of this network moves things on. */
-  function seenLine() {
-    var el = $('wzSeen'); if (!el) return;
-    var a = W.accounts || [];
-    el.innerHTML = a.length
-      ? 'The workspace Synapse reads already holds: <b>' + a.slice(0, 6).map(function (x) { return esc(x.name || x.username || PL[x.platform]) + ' (' + esc(PL[x.platform] || x.platform) + ')'; }).join(', ') + (a.length > 6 ? ' and ' + (a.length - 6) + ' more' : '') + '</b>. If TryPost shows different accounts, you are in another workspace: switch.'
-      : 'The workspace Synapse reads has no accounts yet. Whatever you connect first will appear here.';
-  }
-  function startWatch() {
-    stopWatch(); var n = 0;
-    var tick = function () {
-      if ($('veil').hidden || W.step !== 2) { stopWatch(); return; }
-      if (++n > 150) { stopWatch(); var w = $('wzWait'); if (w) w.textContent = 'Still nothing. Press \u201cI\u2019ve connected it, check now\u201d when you are done.'; return; }
-      api('trypost_accounts').then(function (d) {
-        if (W.step !== 2) return;
-        W.accounts = d.accounts || []; seenLine();
-        var fresh = W.accounts.filter(function (a) { return a.platform === W.platform && !a.added && a.supported && (!a.status || a.status === 'connected'); });
-        if (fresh.length) { stopWatch(); toast('Found your ' + PL[W.platform] + ' account.'); W.step = 3; drawWizard(); }
-      }).catch(function () { /* the next tick tries again */ });
-    };
-    tick(); watchT = setInterval(tick, 5000);
-  }
+     Synapse connects these itself. Facebook: our own Facebook login, then tick which Pages are Synapse's (Facebook sends the
+     person back here with ?connected=choose). Telegram: the channel's @name, then make our bot a posting admin of it; the
+     channel switches itself on when Telegram tells us. */
+  var W = { step: 1, platform: null, pick: null, pages: null, chosen: {}, bot: null, tgId: null };
+  function openWizard() { W = { step: 1, platform: null, pick: null, pages: null, chosen: {}, bot: null, tgId: null }; $('veil').hidden = false; document.body.style.overflow = 'hidden'; drawWizard(); }
+  function closeWizard() { $('veil').hidden = true; document.body.style.overflow = ''; }
   $('veil').addEventListener('click', function (e) { if (e.target === $('veil')) closeWizard(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('veil').hidden) closeWizard(); });
+  /* The connect function, signed in as this staff member. */
+  function connectApi(query, opts) {
+    return token().then(function (tok) {
+      if (!tok) throw new Error('Please sign in again.');
+      opts = opts || {};
+      return fetch(SB_FN + query, {
+        method: opts.body ? 'POST' : 'GET',
+        headers: Object.assign({ apikey: SB_KEY, Authorization: 'Bearer ' + tok }, opts.body ? { 'Content-Type': 'application/json' } : {}),
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d && d.error ? d.error : 'Something went wrong. Try again.');
+        return d;
+      });
+    });
+  }
   function drawWizard() {
     var bars = $('wzProg').children; for (var i = 0; i < bars.length; i++) bars[i].className = i < W.step ? 'on' : '';
-    stopWatch();
     var h = '';
     if (W.step === 1) {
-      h = '<h2 class="h" id="wzTitle" style="font-size:25px">Which network?</h2><p class="lede">Pick the one you want to add. Already have the account? You will connect it in step 2.</p>'
-        + '<div class="tiles" style="margin-top:18px">' + STUDIO_PLATFORMS.map(function (p) {
-          return '<button type="button" class="tile" data-plat="' + p + '">' + badge(p, 'lg') + '<span>' + PL[p] + '</span><small>' + esc(MAKE[p].what) + '</small></button>';
+      h = '<h2 class="h" id="wzTitle" style="font-size:25px">Which network?</h2><p class="lede">Synapse connects these directly. Other networks will appear here as Synapse connects to them.</p>'
+        + '<div class="tiles" style="margin-top:18px">' + CONNECTABLE.map(function (p) {
+          return '<button type="button" class="tile" data-plat="' + p + '">' + badge(p, 'lg') + '<span>' + PL[p] + '</span><small>' + (p === 'telegram' ? 'channel posts' : esc(MAKE[p].what)) + '</small></button>';
         }).join('') + '</div>'
         + '<div class="row" style="margin-top:20px"><span class="spacer"></span><button class="btn" type="button" data-wzclose>Cancel</button></div>';
-    } else if (W.step === 2) {
-      var m = MAKE[W.platform];
-      h = '<div class="row" style="gap:14px">' + badge(W.platform, 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Connect ' + esc(PL[W.platform]) + '</h2><p class="muted small">You connect it inside TryPost. Keep this window open: it notices by itself when you are done.</p></div></div>'
+    } else if (W.platform === 'facebook' && W.step === 2) {
+      h = '<div class="row" style="gap:14px">' + badge('facebook', 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Connect a Facebook Page</h2><p class="muted small">Facebook asks you to sign in and choose Pages, then brings you back here to pick which ones are Synapse\u2019s.</p></div></div>'
         + '<div class="stack" style="margin-top:18px">'
-        + '<div class="gstep"><span class="dot">1</span><div class="grow"><b>Open TryPost</b>'
-        + '<p class="muted small" style="margin:4px 0 8px">It opens in a new tab. Sign in if it asks. <b>Check the workspace first:</b> accounts live inside a workspace, and Synapse reads the one shown below. Click the workspace name at the top of TryPost\u2019s left menu and make sure it is the one that holds these accounts.</p>'
-        + '<div class="callout" id="wzSeen" style="margin-bottom:10px">Looking at what is already there\u2026</div>'
-        + '<a class="btn sm primary" href="https://app.trypost.it" target="_blank" rel="noopener">Open TryPost \u2197</a></div></div>'
-        + '<div class="gstep"><span class="dot">2</span><div class="grow"><b>Connect your ' + esc(PL[W.platform]) + ' account</b>'
-        + '<ol class="steps-l" style="margin:8px 0 0">' + (STEPS[W.platform] || []).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>'
-        + '<p class="muted small" style="margin-top:8px">Connected the wrong one? Sign out of ' + esc(PL[W.platform]) + ' in your browser first, then connect again.</p></div></div>'
-        + '<div class="gstep"><span class="dot">3</span><div class="grow"><b>Wait here</b><p class="muted small" style="margin:4px 0 0" id="wzWait"><span class="wz-dot"></span> Waiting for your ' + esc(PL[W.platform]) + ' account to appear\u2026 this page checks every few seconds.</p></div></div>'
-        + '<details class="pace"><summary>You do not have a ' + esc(PL[W.platform]) + ' account yet?</summary><div class="callout" style="margin:8px 0 10px">' + esc(m.tip) + '</div>'
-        + '<a class="btn sm" href="' + esc(m.url) + '" target="_blank" rel="noopener">Create a ' + esc(PL[W.platform]) + ' account \u2197</a></details>'
+        + '<div class="gstep"><span class="dot">1</span><div class="grow"><b>Sign in to Facebook as a Page admin</b><p class="muted small" style="margin:4px 0 0">Use the Facebook account that manages Synapse\u2019s Page. When Facebook lists Pages, tick Synapse\u2019s and leave every permission on.</p></div></div>'
+        + '<div class="gstep"><span class="dot">2</span><div class="grow"><b>Pick the Page here</b><p class="muted small" style="margin:4px 0 0">Only the Pages you tick become channels. They start quiet: nothing posts until you switch it on.</p></div></div>'
+        + '<details class="pace"><summary>No Page yet?</summary><div class="callout" style="margin:8px 0 10px">' + esc(MAKE.facebook.tip) + '</div>'
+        + '<a class="btn sm" href="' + esc(MAKE.facebook.url) + '" target="_blank" rel="noopener">Create a Facebook Page \u2197</a></details>'
         + '</div>'
-        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><span class="spacer"></span><button class="btn orange big" type="button" id="wzFind">I\u2019ve connected it, check now</button></div>';
+        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><span class="spacer"></span><button class="btn orange big" type="button" id="wzFb">Continue with Facebook</button></div>';
+    } else if (W.platform === 'facebook') {
+      var pages = W.pages || [];
+      var any = Object.keys(W.chosen).some(function (k) { return W.chosen[k]; });
+      h = '<h2 class="h" id="wzTitle" style="font-size:25px">Which Pages are Synapse\u2019s?</h2><p class="lede">Tick the Pages Synapse should post to.</p>'
+        + '<div style="margin-top:12px">' + (pages.length ? pages.map(function (p) {
+          var on = !!W.chosen[p.id];
+          return '<div class="acct">' + badge('facebook') + '<div class="grow"><b>' + esc(p.name || p.id) + '</b><div class="muted small">' + (p.connected ? 'Already a channel: ticking it refreshes the connection' : 'Facebook Page') + '</div></div>'
+            + '<button class="btn sm ' + (on ? 'orange' : '') + '" type="button" data-page="' + esc(p.id) + '">' + (on ? 'Chosen \u2713' : 'Choose') + '</button></div>';
+        }).join('') : '<div class="callout">Facebook shared no Page. Connect again and tick Synapse\u2019s Page when Facebook asks.</div>') + '</div>'
+        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzclose>Cancel</button><span class="spacer"></span>'
+        + '<button class="btn orange big" type="button" id="wzPages"' + (any ? '' : ' disabled') + '>Add as channels</button></div>';
+    } else if (W.platform === 'telegram' && W.step === 2) {
+      h = '<div class="row" style="gap:14px">' + badge('telegram', 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Add a Telegram channel</h2><p class="muted small">A public channel Synapse owns. Our bot posts to it.</p></div></div>'
+        + '<div class="stack" style="margin-top:18px">'
+        + '<div><label class="f" for="wzTg">The channel\u2019s public name</label><input type="text" id="wzTg" maxlength="60" placeholder="@SynapseLagos"></div>'
+        + '<div><label class="f" for="wzCity">City <span class="muted">(blank = every city)</span></label><input type="text" id="wzCity" maxlength="60" placeholder="e.g. Lagos"></div>'
+        + '</div>'
+        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><span class="spacer"></span><button class="btn orange big" type="button" id="wzTgAdd">Next</button></div>';
     } else {
-      var list = (W.accounts || []).filter(function (a) { return a.platform === W.platform; });
-      h = '<h2 class="h" id="wzTitle" style="font-size:25px">Choose the account</h2>'
-        + '<div style="margin-top:12px">' + (list.length ? list.map(function (x) {
-          var can = x.supported && !x.added && (!x.status || x.status === 'connected');
-          var on = W.chosen === x.id;
-          return '<div class="acct">' + badge(x.platform, '', x.avatar)
-            + '<div class="grow"><b>' + esc(x.name || x.username || x.id) + '</b><div class="muted small">' + (x.username ? '@' + esc(String(x.username).replace(/^@/, '')) : esc(PL[x.platform])) + '</div></div>'
-            + (x.added ? '<span class="pill ok">Already added</span>' : x.status && x.status !== 'connected' ? '<span class="pill bad">Reconnect in TryPost</span>'
-              : can ? '<button class="btn sm ' + (on ? 'orange' : '') + '" type="button" data-pick="' + esc(x.id) + '" data-name="' + esc(x.name || x.username) + '">' + (on ? 'Chosen ✓' : 'Choose') + '</button>' : '<span class="pill">Not supported yet</span>') + '</div>';
-        }).join('') : '<div class="callout"><b>TryPost does not show a ' + esc(PL[W.platform]) + ' account yet.</b> The usual reasons, most likely first:<ol class="steps-l" style="margin:8px 0 0"><li>It was connected in a <b>different TryPost workspace</b>. Click the workspace name at the top of TryPost\u2019s left menu and switch to the one that holds Synapse\u2019s other accounts, then connect it there.</li><li>The connection was not finished. Go back to TryPost and approve it all the way to the end.</li>' + (W.platform === 'instagram' ? '<li>For a Business or Creator account, use <b>Instagram (Facebook Business)</b>, not plain Instagram.</li>' : '') + '</ol><p style="margin-top:8px">Then press <b>Look again</b>.</p></div>') + '</div>'
-        + (W.chosen ? '<div class="stack" style="margin-top:18px"><b>What is it for?</b>'
-          + '<div class="opt"><div class="grow"><b>Our own posts</b><small>Announcements and campaigns you write in Create.</small></div>' + sw(W.purpose.own, 'data-pur="own"', 'Our own posts') + '</div>'
-          + (W.platform === 'youtube' ? '' : '<div class="opt"><div class="grow"><b>Post homes by itself</b><small>Autopilot: the newest live listings, on a schedule.</small></div>' + sw(W.purpose.auto, 'data-pur="auto"', 'Autopilot') + '</div>'
-          + '<div class="opt"><div class="grow"><b>Share agencies’ posts</b><small>Also posts what agencies publish, credited to them.</small></div>' + sw(W.purpose.mirror, 'data-pur="mirror"', 'Share agencies posts') + '</div>')
-          + '<div><label class="f" for="wzCity">City <span class="muted">(blank = every city)</span></label><input type="text" id="wzCity" maxlength="60" placeholder="e.g. Ibadan"></div></div>' : '')
-        + '<div class="row" style="margin-top:22px"><button class="btn" type="button" data-wzback>Back</button><button class="btn" type="button" id="wzFind">Look again</button><span class="spacer"></span>'
-        + '<button class="btn orange big" type="button" id="wzAdd"' + (W.chosen ? '' : ' disabled') + '>Add this channel</button></div>';
+      var bot = W.bot || 'the Synapse bot';
+      h = '<div class="row" style="gap:14px">' + badge('telegram', 'lg') + '<div class="grow"><h2 class="h" id="wzTitle" style="font-size:25px">Make our bot an admin</h2></div></div>'
+        + '<ol class="steps-l" style="margin:14px 0 0"><li>Open the channel in Telegram, then <b>Administrators</b>, <b>Add Admin</b>.</li>'
+        + '<li>Search for <b>' + esc(bot) + '</b> and add it.</li><li>Leave <b>Post messages</b> on and save.</li></ol>'
+        + '<div class="callout" style="margin-top:14px">The channel switches itself on as soon as Telegram tells Synapse. You can close this.</div>'
+        + '<div class="row" style="margin-top:22px"><span class="spacer"></span><button class="btn orange big" type="button" data-wzdone>Done</button></div>';
     }
     $('wz').innerHTML = h;
-    var f = $('wz').querySelector('button, a'); if (f && W.step === 1) f.focus();
-    if (W.step === 2) { seenLine(); startWatch(); }
+    var f = $('wz').querySelector('input, button, a'); if (f && (W.step === 1 || f.tagName === 'INPUT')) f.focus();
   }
   $('wz').addEventListener('click', function (e) {
     var t = e.target;
     if (t.closest('[data-wzclose]')) { closeWizard(); return; }
-    if (t.closest('[data-wzback]')) { W.step = Math.max(1, W.step - 1); if (W.step < 3) W.chosen = null; drawWizard(); return; }
+    if (t.closest('[data-wzdone]')) { closeWizard(); loadOverview().then(function () { show('channels'); }); return; }
+    if (t.closest('[data-wzback]')) { W.step = Math.max(1, W.step - 1); drawWizard(); return; }
     var pl = t.closest('[data-plat]'); if (pl) { W.platform = pl.dataset.plat; W.step = 2; drawWizard(); return; }
-    if (t.closest('#wzFind')) { findAccounts(t.closest('#wzFind')); return; }
-    var pk = t.closest('[data-pick]'); if (pk) { W.chosen = pk.dataset.pick; W.name = pk.dataset.name; drawWizard(); return; }
-    var pu = t.closest('[data-pur]'); if (pu) { var k = pu.dataset.pur; W.purpose[k] = !W.purpose[k]; var c = $('wzCity') ? $('wzCity').value : ''; drawWizard(); if ($('wzCity')) $('wzCity').value = c; return; }
-    if (t.closest('#wzAdd')) { addChannel(t.closest('#wzAdd')); }
+    var pg = t.closest('[data-page]'); if (pg) { W.chosen[pg.dataset.page] = !W.chosen[pg.dataset.page]; drawWizard(); return; }
+    if (t.closest('#wzFb')) { startFacebook(t.closest('#wzFb')); return; }
+    if (t.closest('#wzPages')) { addPages(t.closest('#wzPages')); return; }
+    if (t.closest('#wzTgAdd')) { addTelegram(t.closest('#wzTgAdd')); }
   });
-  function findAccounts(b) {
-    var label = b.textContent; b.disabled = true; b.textContent = 'Asking TryPost…';
-    api('trypost_accounts').then(function (d) {
-      W.accounts = d.accounts || []; W.step = 3; drawWizard();
-    }).catch(function (er) { toast(er.message); b.disabled = false; b.textContent = label; });
+  function startFacebook(b) {
+    b.disabled = true; b.textContent = 'Opening Facebook\u2026';
+    connectApi('?action=start&platform=facebook&for=studio')
+      .then(function (d) { if (!d.url) throw new Error('Facebook could not be opened. Try again.'); location.href = d.url; })
+      .catch(function (er) { b.disabled = false; b.textContent = 'Continue with Facebook'; toast(er.message); });
   }
-  function addChannel(b) {
-    var x = (W.accounts || []).filter(function (a) { return a.id === W.chosen; })[0]; if (!x) return;
-    var city = $('wzCity') ? $('wzCity').value.trim() : '';
-    b.disabled = true; b.textContent = 'Adding…';
-    api('channel_add', { trypost_account_id: x.id, platform: x.platform, label: x.name || x.username, handle: x.username, city: city })
+  function addPages(b) {
+    var ids = Object.keys(W.chosen).filter(function (k) { return W.chosen[k]; });
+    b.disabled = true; b.textContent = 'Adding\u2026';
+    connectApi('?action=studio-pick', { body: { pick: W.pick, page_ids: ids } })
       .then(function (d) {
-        var patch = { id: d.id };
-        if (W.purpose.auto) patch.autopilot = true;
-        if (W.purpose.mirror) patch.mirror = true;
-        return (patch.autopilot || patch.mirror ? api('channel_update', patch) : Promise.resolve()).then(function () { return d; });
-      })
-      .then(function () {
-        closeWizard(); toast('Added. ' + (W.purpose.mirror && !(S.overview && S.overview.twins_enabled) ? 'Sharing agencies’ posts is still switched off in Automation.' : 'It is ready.'));
+        closeWizard();
+        toast('Added ' + (d.connected || []).join(', ') + '. Switch on what it should do in Channels.' + ((d.problems || []).length ? ' Not added: ' + d.problems.join('; ') : ''));
         return loadOverview().then(function () { show('channels'); });
       })
-      .catch(function (er) { b.disabled = false; b.textContent = 'Add this channel'; toast(er.message); });
+      .catch(function (er) { b.disabled = false; b.textContent = 'Add as channels'; toast(er.message); });
+  }
+  function addTelegram(b) {
+    var handle = ($('wzTg').value || '').trim(), city = ($('wzCity').value || '').trim();
+    if (!handle) { toast('Write the channel\u2019s public name.'); return; }
+    b.disabled = true; b.textContent = 'Adding\u2026';
+    api('channel_add_telegram', { handle: handle, city: city })
+      .then(function (d) {
+        W.tgId = d.id;
+        return fetch(SB_FN + '?action=status').then(function (r) { return r.json(); }).catch(function () { return {}; });
+      })
+      .then(function (s) { W.bot = s && s.platforms && s.platforms.telegram && s.platforms.telegram.bot; W.step = 3; drawWizard(); })
+      .catch(function (er) { b.disabled = false; b.textContent = 'Next'; toast(er.message); });
+  }
+  /* Back from Facebook: ?connected=choose&detail=<pick> opens the Page choice; anything else says what happened. */
+  function facebookReturn() {
+    var q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
+    var status = q.get('connected'); if (!status) return;
+    var detail = q.get('detail') || '';
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* cosmetic */ }
+    if (status !== 'choose') { toast(status === 'cancelled' ? 'Facebook was cancelled. Nothing was connected.' : (detail || 'Facebook did not connect.')); return; }
+    connectApi('?action=studio-pick&pick=' + encodeURIComponent(detail))
+      .then(function (d) {
+        W = { step: 3, platform: 'facebook', pick: detail, pages: d.pages || [], chosen: {}, bot: null, tgId: null };
+        if (W.pages.length === 1) W.chosen[W.pages[0].id] = true;
+        $('veil').hidden = false; document.body.style.overflow = 'hidden'; drawWizard();
+      })
+      .catch(function (er) { toast(er.message); });
   }
 
   /* ── create ───────────────────────────────────────────────────────── */
   function postable() {
-    return ((S.overview || EMPTY).channels || []).filter(function (c) { return c.is_active && c.trypost_account_id && STUDIO_PLATFORMS.indexOf(c.platform) > -1; });
+    /* What Synapse posts to itself: a connected Facebook Page or a Telegram channel our bot administers. */
+    return ((S.overview || EMPTY).channels || []).filter(function (c) { return c.is_active && c.direct && PL[c.platform]; });
   }
   function renderPicks() {
     var list = postable();
