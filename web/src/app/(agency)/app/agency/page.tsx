@@ -1,14 +1,13 @@
-/* eslint-disable */
-// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/agency/body.html and its scripts are the
-// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
-import { LegacyPage } from "@/legacy/LegacyPage";
+// The agency portal's markup is React (2026-10-24): src/features/agency/AgencyBody.tsx. Its scripts run right after React takes
+// the page over, in their original order (src/legacy/AfterHydration.tsx); AutoReplyLinks waits for them (it needs sign-in).
+import { AgencyBody } from "@/features/agency/AgencyBody";
 import { SiteReact } from "@/features/site/SiteReact";
 import { AutoReplyLinks } from "@/features/agency/AutoReplyLinks";
 
 export default function Page() {
   return (
     <>
-      <LegacyPage page="agency" files={["inline-3.js", "inline-4.js", "inline-5.css", "inline-6.js", "inline-7.js"]} />
+      <AgencyBody />
       <SiteReact />
       <AutoReplyLinks />
     </>

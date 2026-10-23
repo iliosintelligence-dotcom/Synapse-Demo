@@ -109,8 +109,14 @@ export function AutoReplyLinks() {
   useEffect(() => {
     setHost(document.getElementById("react-autoreply"));
     let gone = false;
+    /* Sign-in (auth.js) is one of the page's scripts, which now run after React takes the page over: wait for them. */
+    const scriptsReady = () => new Promise<void>((done) => {
+      if (window.SynAuth?.client || window.SynPageScriptsReady) { done(); return; }
+      window.addEventListener("syn:page-scripts", () => done(), { once: true });
+    });
     (async () => {
       try {
+        await scriptsReady();
         if (!window.SynAuth?.client) return;
         await window.SynAuth.ready?.();
         const c = await window.SynAuth.client();

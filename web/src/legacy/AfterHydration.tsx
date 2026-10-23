@@ -10,6 +10,10 @@ import { useEffect } from "react";
 
 export type PageScript = { src: string; module?: boolean } | { code: string };
 
+declare global {
+  interface Window { SynPageScriptsReady?: boolean }
+}
+
 let ran = false;   // once per page load, even if React mounts this twice
 
 function load(s: PageScript): Promise<void> {
@@ -38,6 +42,9 @@ export function AfterHydration({ scripts }: { scripts: PageScript[] }) {
       const isModule = (s: PageScript) => "src" in s && !!s.module;
       for (const s of scripts.filter((x) => !isModule(x))) await load(s);
       for (const s of scripts.filter(isModule)) await load(s);
+      /* Everything has run: React parts that need the page's scripts (sign-in, for one) can go now. */
+      window.SynPageScriptsReady = true;
+      window.dispatchEvent(new Event("syn:page-scripts"));
       /* Some of them re-measure on window load, which has usually happened by now; a resize re-runs that measuring. */
       const settle = () => window.dispatchEvent(new Event("resize"));
       if (document.readyState === "complete") setTimeout(settle, 50);
