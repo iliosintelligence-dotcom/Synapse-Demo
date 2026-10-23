@@ -3415,7 +3415,7 @@
       const left = l.expires_at
         ? Math.ceil((new Date(l.expires_at).getTime() - Date.now()) / 864e5)
         : 14 - l.days;
-      /* `left` is returned as well as the flags because buildNoti asked for
+      /* `left` is returned as well as the flags because notiItems asked for
          it and it was never there -- see the note on the expiring reminder. */
       if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', left: left, expired: true, warn: false };
       if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), left: left, expired: false, warn: true };
@@ -12994,26 +12994,12 @@
        the bell always showed four unread items about nothing. Each item now
        carries a `pane` (and optionally a listing id) so clicking it takes you to
        the thing it is about, which is the only reason to show it at all. */
-    let NOTI = [];
-    let notiCleared = false;
-    /* A notification you have opened (or cleared) is dealt with: it leaves the bell.
-       Items are derived from state, so what identifies one is its text, and that
-       carries the count ("3 new leads"). It comes back only when the facts change
-       (a fourth lead), never just because the page re-rendered. Kept per browser. */
-    const NOTI_SEEN_KEY = 'syn-noti-handled';
-    let notiHandled = {};
-    try { notiHandled = JSON.parse(localStorage.getItem(NOTI_SEEN_KEY) || '{}') || {}; } catch (e) { notiHandled = {}; }
+    /* The bell itself is React (src/features/agency/Bell.tsx): it keeps the list of items already dealt with, draws the panel
+       and goes where an item points. What the items are is derived here, beside the state it reads, and handed over through
+       window.SynNoti.items(). `key` identifies an item in the handled list, so it keeps the form it always had. */
     function notiKey(n) { return [n.type, n.pane || '', n.task || '', n.title, n.sub].join('|'); }
-    function notiHandle(keys) {
-      keys.forEach(k => { if (k) notiHandled[k] = Date.now(); });
-      /* Capped, so it cannot grow for ever: the oldest 200 go first. */
-      const ks = Object.keys(notiHandled).sort((a, b) => notiHandled[b] - notiHandled[a]).slice(0, 200);
-      const live = {}; ks.forEach(k => { live[k] = notiHandled[k]; }); notiHandled = live;
-      try { localStorage.setItem(NOTI_SEEN_KEY, JSON.stringify(notiHandled)); } catch (e) { /* private mode: handled for this visit only */ }
-    }
 
-    function buildNoti() {
-      if (notiCleared) { NOTI = []; return; }
+    function notiItems() {
       const out = [];
       const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
 
@@ -13063,11 +13049,13 @@
             sub: 'In the social studio', group: 'Today' });
         }
       }
-      /* Things only the agency can do, until marked done. Escaped here: a
-         Telegram channel title is whatever its owner typed. */
+      /* Things only the agency can do, until marked done. A Telegram channel title is whatever its owner typed: the bell draws
+         text, not markup. The key is built from the escaped text, as it was when the bell drew markup. */
       if (typeof openTasks === 'function') {
-        openTasks().forEach(t => out.push({ type: 'setup', tag: 'Only you', icon: 'pending', pane: '',
-          task: t.id, title: esc2(t.title), sub: esc2(t.where || 'Tap to see what to do'), group: 'To do' }));
+        openTasks().forEach(t => {
+          const n = { type: 'setup', tag: 'Only you', icon: 'pending', pane: '', task: t.id, title: t.title, sub: t.where || 'Tap to see what to do', group: 'To do' };
+          out.push(Object.assign(n, { key: notiKey(Object.assign({}, n, { title: esc2(n.title), sub: esc2(n.sub) })) }));
+        });
       }
       /* AUTO-REPLY LINKS (Eden, 2026-10-23: a notification and a pop-up, not a big card). Known once the portal's React part has
          read the agency's code (src/features/agency/AutoReplyLinks.tsx); opening it opens the pop-up. */
@@ -13106,80 +13094,13 @@
             sub: 'About three minutes: photos, price and a pin on the map. Tayo starts matching it to buyers once it is live.', group: 'Getting started' });
         }
       } catch (e) { /* the bell is never worth an error */ }
-      NOTI = out.filter(n => !notiHandled[notiKey(n)]);
+      out.forEach(n => { if (!n.key) n.key = notiKey(n); });
+      return out;
     }
-
-    function renderNoti() {
-      buildNoti();
-      const list = document.getElementById('notiList');
-      if (!NOTI.length) {
-        list.innerHTML = '<div class="noti-empty">You’re all caught up ✦</div>';
-      } else {
-        const groups = [];
-        NOTI.forEach(n => { let g = groups.find(x => x.g === (n.group || '')); if (!g) { g = { g: n.group || '', items: [] }; groups.push(g); } g.items.push(n); });
-        list.innerHTML = groups.map(g =>
-          (g.g ? `<div class="noti-group">${g.g}</div>` : '') +
-          g.items.map((n, i) => `<div class="attn ${n.type}" role="button" tabindex="0" style="cursor:pointer"
-            data-noti-pane="${n.pane || ''}" data-noti-key="${esc2(notiKey(n))}"${n.listingId ? ` data-noti-listing="${n.listingId}"` : ''}${n.task ? ` data-noti-task="${esc2(n.task)}"` : ''}${n.action ? ` data-noti-action="${esc2(n.action)}"` : ''}>
-            <span class="ico">${SynIcons.svg(n.icon)}</span>
-            <span class="body"><span class="ttl">${n.title}</span><span class="sub">${n.sub}</span><span class="tag">${n.tag}</span></span>
-          </div>`).join('')
-        ).join('');
-      }
-      const badge = document.getElementById('bellBadge');
-      badge.textContent = NOTI.length; badge.classList.toggle('hide', !NOTI.length);
-    }
-
-    /* Clicking a notification goes where it points. Keyboard too: the rows are
-       real buttons, so Enter and Space work and focus is visible. */
-    function openNoti(el) {
-      /* Going there is dealing with it: take it out of the bell first. */
-      notiHandle([el.getAttribute('data-noti-key')]);
-      const action = el.getAttribute('data-noti-action');
-      if (action) {
-        toggleNoti(false);
-        window.dispatchEvent(new Event('syn:' + action));
-        renderNoti();
-        return;
-      }
-      const task = el.getAttribute('data-noti-task');
-      if (task) {
-        const t = typeof findTask === 'function' ? findTask(task) : null;
-        toggleNoti(false);
-        if (t) showTasks([t]);
-        renderNoti();
-        return;
-      }
-      const pane = el.getAttribute('data-noti-pane');
-      if (!pane) return;
-      goToPane(pane);
-      toggleNoti(false);
-      renderNoti();
-    }
-    document.getElementById('notiList').addEventListener('click', (e) => {
-      const row = e.target.closest('[data-noti-pane]'); if (row) openNoti(row);
-    });
-    document.getElementById('notiList').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      const row = e.target.closest('[data-noti-pane]'); if (!row) return;
-      e.preventDefault(); openNoti(row);
-    });
-    document.addEventListener('syn:listings', () => renderNoti());
-    document.addEventListener('syn:noti-refresh', () => renderNoti());
-    function toggleNoti(open) {
-      const p = document.getElementById('noti'), s = document.getElementById('notiScrim'), b = document.getElementById('bellBtn');
-      const on = open === undefined ? !p.classList.contains('on') : open;
-      p.classList.toggle('on', on); s.classList.toggle('on', on); b.setAttribute('aria-expanded', String(on));
-    }
-    /* Both ways round. toggleRm already closed this one; without the mirror
-       both panels sat open over two stacked scrims. */
-    document.getElementById('bellBtn').addEventListener('click', () => { toggleRm(false); toggleNoti(); });
-    document.getElementById('notiScrim').addEventListener('click', () => toggleNoti(false));
-    // Clearing is a dismissal, not a fix: the underlying state is unchanged, so
-    // the flag stops derived items from immediately reappearing.
-    document.getElementById('notiClear').addEventListener('click', () => {
-      notiHandle(NOTI.map(notiKey)); renderNoti(); toggleNoti(false); toast('Notifications cleared');
-    });
+    window.SynNoti = { items: notiItems };
+    /* Both names are called around the page (and toggleNoti by the account menu); the bell answers them. */
+    function renderNoti() { document.dispatchEvent(new Event('syn:noti-refresh')); }
+    function toggleNoti(open) { window.dispatchEvent(new CustomEvent('syn:noti-toggle', { detail: open })); }
 
     renderNoti();
     renderOverview();

@@ -6,6 +6,7 @@ import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { AccountMenu, AuthGate, NeedPhone } from "./AgencyAccount";
 import { DeleteAgency } from "./DeleteAgency";
+import { BellButton, BellPanel } from "./Bell";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -51,16 +52,7 @@ export function AgencyBody() {
             <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
           </svg>
         </button>
-        <button className="bell" id="bellBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-          </svg>
-          {" "}
-          <span className="bell-badge" id="bellBadge">
-            4
-          </span>
-        </button>
+        <BellButton />
         {" "}
         <span data-auth-slot="" style={{ "display": "none" }}></span>
         {" "}
@@ -70,18 +62,7 @@ export function AgencyBody() {
       <div className="rm" id="rmPanel" role="dialog" aria-label="Contact Synapse">
         <div className="rm-card" id="rmCard" aria-live="polite"></div>
       </div>
-      <div className="noti-scrim" id="notiScrim"></div>
-      <div className="noti" id="noti" role="dialog" aria-label="Notifications">
-        <div className="noti-h">
-          <span className="t">
-            {"Notifications & reminders"}
-          </span>
-          <button className="clr" id="notiClear">
-            Mark all read
-          </button>
-        </div>
-        <div id="notiList"></div>
-      </div>
+      <BellPanel />
       <div className="shell">
         <div className="side-dock">
           <aside className="side" id="tabs">
