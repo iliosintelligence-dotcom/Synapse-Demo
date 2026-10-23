@@ -4,13 +4,13 @@
 // Its scripts run once React has taken the page over (AfterHydration), in their original order.
 import { inline } from "@/legacy/read";
 import { BackLink } from "./BackLink";
+import { AgencyProfile } from "./AgencyProfile";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
   { src: "cust-nav.js" },
   { src: "auth.js" },
-  { code: inline("agency-profile", "inline-3.js") },
 ];
 
 export function AgencyProfileBody() {
@@ -43,43 +43,7 @@ export function AgencyProfileBody() {
           ← Back
         </BackLink>
       </div>
-      <main className="ap" id="ap">
-        <section className="ap-hero" id="apHero">
-          <div className="ap-logo" id="apLogo">
-            -
-          </div>
-          <div className="ap-id">
-            <h1 className="ap-name" id="apName">
-              Loading…
-            </h1>
-            <p className="ap-tag" id="apTag" hidden></p>
-            <div className="ap-chips" id="apChips"></div>
-          </div>
-        </section>
-        <div className="ap-grid">
-          <div className="ap-card" id="apAboutCard" hidden>
-            <div className="ap-k">
-              About
-            </div>
-            <p className="ap-about" id="apAbout"></p>
-          </div>
-          <div className="ap-card">
-            <div className="ap-k">
-              The agency
-            </div>
-            <dl className="ap-facts" id="apFacts"></dl>
-            <a className="ap-ask" id="apAsk" href="toju.html?new=site">
-              Ask Tayo about their homes
-            </a>
-          </div>
-        </div>
-        <h2 className="ap-h2" id="apListHead">
-          Their listings
-        </h2>
-        <p className="ap-sub" id="apListSub"></p>
-        <div className="ap-filters" id="apFilters" role="group" aria-label="Show"></div>
-        <div className="ap-list" id="apList"></div>
-      </main>
+      <AgencyProfile />
       <AfterHydration scripts={SCRIPTS} />
     </>
   );
