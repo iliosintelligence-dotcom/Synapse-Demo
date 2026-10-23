@@ -6024,238 +6024,9 @@
         });
     });
     // creative insights now live in the Ask-Tayo panel (marketing context).
-    /* Call your relationship manager.
-
-       Three states, and none of them invents a number:
-         unassigned              -> say so, and say who to email instead
-         assigned, no number     -> name them, say we have no number on file
-         assigned, with number   -> a tel: link
-
-       tel: rather than anything platform-mediated. Twilio is not configured,
-       so Synapse cannot place or route a call today -- and a dialler link
-       needs no provider at all, on any phone.
-
-       That was the design; what shipped was a fab, a sheet and a scrim driven
-       by #agdCall / #agdCallFab / #agdCallSheet, none of which survived in the
-       markup, so the block guarded on them and returned immediately. It had
-       done nothing for a long time. This is the rebuild.
-
-       The data was never the missing piece. my_relationship_manager() exists,
-       is SECURITY DEFINER (the manager is Synapse staff, so no RLS policy can
-       or should show them to a member), scopes itself with is_agency_member(),
-       and LEFT JOINs so an unassigned agency still gets a row of nulls rather
-       than nothing. It is granted to authenticated. Only the front end was
-       missing.
-
-       Worth saying plainly: no agency has a manager assigned today, so every
-       account currently sees the unassigned state. That is the honest answer
-       and it still routes somewhere real. Assigning one is a single UPDATE on
-       agencies.relationship_manager_id and this panel changes with no code. */
-
-    const RM_EMAIL = 'ilios.intelligence@gmail.com';   // already public in terms.html and privacy.html
-    /* The general Synapse line. Every agency can reach a human by phone
-       whether or not one has been assigned to them by name -- an unassigned
-       agency used to be told to email and nothing else, which made the
-       quietest channel the only channel for the accounts least likely to
-       wait. A named manager replaces this number when there is one; it never
-       replaces the ability to call. */
-    const SYN_PHONE = '+2348155136506';
-    /* Writing in is the top tier's channel. free and accelerator get the
-       phone, which is faster and needs nothing typed; market_leader also gets
-       a written route with a structured template, because a dedicated desk is
-       what that tier is sold on (see the pricing table's "Dedicated desk"
-       row). Enum lives in the database as subscription_tier. */
-    const TOP_TIER = 'market_leader';
-    let rmCache = null;
-    /* Set when a pricing card opened the panel (onPlanPick): the plan's name.
-       The panel then leads with an email about that plan, for every tier --
-       a sales conversation is not the top tier's support desk. */
-    let rmPlanAsk = null;
-
-    /* A button that puts the value on the clipboard, with the value shown in
-       full beside it. Sits under every mailto:/tel: so the panel always has an
-       affordance that cannot fail quietly. */
-    function rmCopyRow(value) {
-      return '<button type="button" class="rm-copy" data-copy="' + esc2(value) + '">'
-        + '<span class="rm-copy-v">' + esc2(value) + '</span>'
-        + '<span class="rm-copy-a">Copy</span></button>';
-    }
-
-    /* tel: wants the number without punctuation; the copy row keeps it. */
-    function rmTel(number, label) {
-      return '<a class="rm-call" href="tel:' + esc2(String(number).replace(/[^\d+]/g, '')) + '">'
-        + esc2(label) + '</a>' + rmCopyRow(number);
-    }
-
-    /* The written route, for the tier that has it. Prefilled, because "email
-       us" with an empty body gets back a sentence with none of what anyone
-       needs to act on it -- so the body asks for the number to call back, the
-       listing in question and what is actually wrong. Blank lines, not
-       example values: a template someone has to delete is worse than one they
-       fill in. */
-    function rmMail(agencyName) {
-      const subject = 'Synapse support' + (agencyName ? ' \u2014 ' + agencyName : '');
-      const body = [
-        agencyName ? 'Agency: ' + agencyName : 'Agency:',
-        '',
-        'Best number to call you back:',
-        'Listing (name, or its SYN- reference):',
-        'What you need:',
-        '',
-        '',
-        '\u2014 sent from the Synapse agency portal',
-      ].join('\n');
-      return '<a class="rm-mail" href="mailto:' + RM_EMAIL
-        + '?subject=' + encodeURIComponent(subject)
-        + '&body=' + encodeURIComponent(body) + '">Email Synapse instead</a>'
-        + rmCopyRow(RM_EMAIL);
-    }
-
-    function rmPlanMail(plan, agencyName) {
-      const subject = plan + ' plan' + (agencyName ? ' \u2014 ' + agencyName : '');
-      const body = [
-        agencyName ? 'Agency: ' + agencyName : 'Agency:',
-        'Plan: ' + plan,
-        '',
-        'Roughly how many listings:',
-        'How many agents:',
-        plan === 'Enterprise' ? 'How you would like to pay (monthly, per project, or commission on closed deals):' : 'Best number to call you back:',
-        '',
-        '',
-        '\u2014 sent from the Synapse agency portal',
-      ].join('\n');
-      return '<div class="rm-role">' + esc2(plan) + ' plan</div>'
-        + '<div class="rm-none">' + (plan === 'Enterprise'
-          ? 'Enterprise terms are agreed with you: a monthly fee, per project, or a commission on closed deals.'
-          : plan === 'Free' ? 'Tell us and we will move you to Free at the end of your paid period.'
-          : 'Tell us about your agency and we will set it up with you.') + '</div>'
-        + '<a class="rm-mail" href="mailto:' + RM_EMAIL
-        + '?subject=' + encodeURIComponent(subject)
-        + '&body=' + encodeURIComponent(body) + '">Email us about ' + esc2(plan) + '</a>'
-        + '<div style="height:18px"></div>';
-    }
-
-    function rmRender(rm, agencyName, tier) {
-      rmRenderContact(rm, agencyName, tier);
-      if (rmPlanAsk) {
-        document.getElementById('rmCard').insertAdjacentHTML('afterbegin', rmPlanMail(rmPlanAsk, agencyName));
-      }
-    }
-
-    function rmRenderContact(rm, agencyName, tier) {
-      const card = document.getElementById('rmCard');
-      const canEmail = tier === TOP_TIER;
-
-      /* Assigned, with a number of their own: the best case, and the only one
-         where the panel names a person. */
-      if (rm.assigned && rm.phone) {
-        card.innerHTML = '<div class="rm-role">Your relationship manager</div>'
-          /* Neither the name nor the hours are ours to trust into innerHTML. */
-          + '<div class="rm-name">' + esc2(rm.name) + '</div>'
-          + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '')
-          + rmTel(rm.phone, 'Call ' + rm.name)
-          + (canEmail ? rmMail(agencyName) : '');
-        return;
-      }
-
-      /* Assigned but with no number on file: say who they are, then fall
-         through to the line that does work rather than stopping at an
-         apology. */
-      if (rm.assigned) {
-        card.innerHTML = '<div class="rm-role">Your relationship manager</div>'
-          + '<div class="rm-name">' + esc2(rm.name) + '</div>'
-          + (rm.hours ? '<div class="rm-hours">' + esc2(rm.hours) + '</div>' : '')
-          + '<div class="rm-none">We have no direct number for them yet \u2014 '
-          + 'the main line will reach them.</div>'
-          + rmTel(SYN_PHONE, 'Call Synapse')
-          + (canEmail ? rmMail(agencyName) : '');
-        return;
-      }
-
-      /* Nobody assigned. Still a phone call, not a dead end. */
-      card.innerHTML = '<div class="rm-role">Synapse support</div>'
-        + '<div class="rm-name">Talk to us</div>'
-        + '<div class="rm-none">You do not have a named manager yet. '
-        + 'This line reaches the Synapse team.</div>'
-        + rmTel(SYN_PHONE, 'Call Synapse')
-        + (canEmail ? rmMail(agencyName) : '');
-    }
-
-    /* Delegated, because the card is rewritten on every render. */
-    document.getElementById('rmCard').addEventListener('click', (e) => {
-      const btn = e.target.closest('.rm-copy'); if (!btn) return;
-      const value = btn.dataset.copy || '';
-      const tag = btn.querySelector('.rm-copy-a');
-      const said = (word) => { tag.textContent = word; setTimeout(() => { tag.textContent = 'Copy'; }, 2400); };
-      /* Last resort: put the address under the caret ourselves and name the
-         keystroke, rather than telling someone to "copy it manually" and
-         leaving them to do the selecting. */
-      const selectIt = () => {
-        try {
-          const span = btn.querySelector('.rm-copy-v');
-          const range = document.createRange(); range.selectNodeContents(span);
-          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-          said(/Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘C' : 'Ctrl+C');
-        } catch (err) { said('Select it'); }
-      };
-      /* execCommand is the fallback rather than the primary: the async
-         clipboard API needs a secure context, which localhost and the live
-         site both are, but a webview may still refuse it. If both fail the
-         user is told to copy it by hand rather than left thinking it worked --
-         the exact silent failure this row exists to prevent. */
-      const legacy = () => {
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = value; ta.setAttribute('readonly', '');
-          ta.style.cssText = 'position:fixed;top:0;left:-9999px';
-          document.body.appendChild(ta); ta.select();
-          const ok = document.execCommand('copy');
-          document.body.removeChild(ta);
-          if (ok) said('Copied'); else selectIt();
-        } catch (err) { selectIt(); }
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(value).then(() => said('Copied')).catch(legacy);
-      } else { legacy(); }
-    });
-
-    function rmLoad() {
-      if (rmCache) { rmRender(rmCache.rm, rmCache.name, rmCache.tier); return; }
-      const card = document.getElementById('rmCard');
-      card.innerHTML = '<div class="rm-role">Synapse support</div>'
-        + '<div class="rm-none">Looking up your contact\u2026</div>';
-      if (!window.SynListings || !SynListings.relationshipManager) {
-        /* Signed out, or the data layer never loaded. Still give them the
-           address rather than a spinner that never resolves. */
-        rmRender({ assigned: false }, null, null);
-        return;
-      }
-      Promise.all([
-        SynListings.relationshipManager(),
-        SynListings.agency ? SynListings.agency().catch(() => null) : Promise.resolve(null),
-      ]).then(([rm, a]) => {
-        rmCache = { rm: rm, name: a && a.name, tier: a && a.subscription_tier };
-        rmRender(rm, rmCache.name, rmCache.tier);
-      }).catch((err) => {
-        console.error('relationshipManager failed', err);
-        /* A failed lookup is not a reason to strand someone who is trying to
-           reach a human. Fall through to the address. */
-        rmRender({ assigned: false }, null, null);
-      });
-    }
-
-    function toggleRm(open) {
-      const p = document.getElementById('rmPanel'), sc = document.getElementById('rmScrim'),
-            b = document.getElementById('rmBtn');
-      const on = open === undefined ? !p.classList.contains('on') : open;
-      p.classList.toggle('on', on); sc.classList.toggle('on', on);
-      b.setAttribute('aria-expanded', String(on));
-      if (on) { toggleNoti(false); rmLoad(); }
-      else rmPlanAsk = null;
-    }
-    document.getElementById('rmBtn').addEventListener('click', () => { rmPlanAsk = null; toggleRm(); });
-    document.getElementById('rmScrim').addEventListener('click', () => toggleRm(false));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleRm(false); });
+    /* Contact Synapse is React (src/features/agency/ContactSynapse.tsx). The name stays: the bell, the pricing cards and
+       closeAgencyPopups call it. A pricing card passes the plan's name, and the panel then leads with an email about it. */
+    function toggleRm(open, plan) { window.dispatchEvent(new CustomEvent('syn:rm-toggle', { detail: { open: open, plan: plan || null } })); }
 
     document.getElementById('newCampBtn').addEventListener('click', campaignForm);
     renderCampaigns();
@@ -11688,7 +11459,7 @@
       const plan = PRICING.plans.find((p) => p.id === b.dataset.plan);
       if (!plan) return;
       if (plan.id === 'accelerator' || plan.id === 'market-leader') { openBilling(plan.id); return; }
-      if (typeof toggleRm === 'function') { rmPlanAsk = plan.name; toggleRm(true); }
+      if (typeof toggleRm === 'function') toggleRm(true, plan.name);
     }
     document.getElementById('pricingGrid').addEventListener('click', onPlanPick);
     const pricingCardsEl = document.getElementById('pricingCards');
@@ -12064,7 +11835,7 @@
         const talk = t.closest('[data-bl-talk], [data-bl-enterprise]');
         if (talk) {
           e.preventDefault();
-          if (typeof toggleRm === 'function') { rmPlanAsk = 'Enterprise'; toggleRm(true); }
+          if (typeof toggleRm === 'function') toggleRm(true, 'Enterprise');
         }
       });
     })();
