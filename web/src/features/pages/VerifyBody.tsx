@@ -4,12 +4,12 @@
 // Its scripts run once React has taken the page over (AfterHydration), in their original order.
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
+import { VerifyDesk } from "./VerifyDesk";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
   { src: "auth.js" },
   { src: "motion.js" },
-  { code: inline("verify", "inline-3.js") },
 ];
 
 export function VerifyBody() {
@@ -51,20 +51,8 @@ export function VerifyBody() {
             {", which buyers see plainly on the card.\n      "}
           </p>
         </div>
-        <div className="vd-seg" id="vdSeg">
-          <button data-f="queue" className="on">
-            Queue
-          </button>
-          <button data-f="verified">
-            Verified
-          </button>
-          <button data-f="all">
-            All
-          </button>
-        </div>
-        <div id="vdList"></div>
+        <VerifyDesk />
       </div>
-      <div id="synToast"></div>
       <AfterHydration scripts={SCRIPTS} />
     </>
   );
