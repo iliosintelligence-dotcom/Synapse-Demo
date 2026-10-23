@@ -147,51 +147,63 @@ export function BrowsePage() {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify({ sort, deal, verifiedOnly, view })); } catch { /* storage blocked */ }
   }, [sort, deal, verifiedOnly, view]);
 
-  /* The listings and the Tayo session, once the shared scripts (cards, map) are on the page. */
+  /* The listings and the Tayo session are asked for at once; they do not need the shared scripts. Only drawing the cards and
+     shaping a Tayo match do, and those wait for them. */
+  const sessionView = useRef(false);
   useEffect(() => {
-    if (!scripts) return;
-    const sm = SM(); if (!sm) return;
-    setSaves(sm.readSaves());
-    sm.onSavesChanged((s) => setSaves(new Set(s)));   // another tab hearted something
-    setViews(sm.readViews());
-    const onShow = (e: PageTransitionEvent) => { if (e.persisted) setViews(sm.readViews()); };
-    window.addEventListener("pageshow", onShow);
-    let sessionView = false;
     /* A balanced set so every quick filter has homes; freshest first so the feed spans many neighbourhoods. */
     Promise.all(["&property_type=neq.shared&verification_status=eq.verified&order=listed_at.desc&limit=800",
       "&property_type=neq.shared&verification_status=neq.verified&order=listed_at.desc&limit=300",
       "&property_type=eq.shared&order=listed_at.desc&limit=200"].map((qs) =>
       fetch(BROWSE_BASE + qs, { headers: HDR }).then((r) => r.json().catch(() => null).then((d) => {
-        if (!r.ok || !Array.isArray(d)) throw new Error("listings " + r.status);
+        if (!r.ok || !Array.isArray(d)) throw new Error("listings " + r.status);   // a failure, not an empty shop
         return d;
-      })))).then(([v, u, s]) => {
-      const rows = [...v, ...u, ...s];
+      })))).then(([v, u, s2]) => {
+      const rows = [...v, ...u, ...s2];
       setLoad("ready");
-      if (sessionView || !rows.length) return;
+      if (sessionView.current || !rows.length) return;
       setItems(rows.map(shapeRow));
-      setCount("<b>" + rows.length + "</b> live · <b>" + rows.filter((p: any) => p.verification_status === "verified").length + "</b> verified");
-    }).catch(() => { if (!sessionView) { setLoad("failed"); setItems([]); } });
-    const visitor = localStorage.getItem("toju_visitor_v1");
-    if (visitor) {
-      fetch(SUPABASE_URL + "/functions/v1/toju-demo", {
-        method: "POST", headers: { "Content-Type": "application/json", ...HDR }, body: JSON.stringify({ action: "matches", visitorId: visitor }),
-      }).then((r) => r.json()).then((d) => {
-        /* A real session with nothing matched shows the honest empty state, never other homes. */
-        if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
-          sessionView = true; setSession(true); setItems([]); setPicked(new Set()); setTitle("Your matches");
-          setCount("Nothing fits your brief yet"); setHideMap(true);
-          return;
-        }
-        if (!Array.isArray(d.matches) || !d.matches.length) return;
-        sessionView = true; setSession(true); setTitle("Your matches");
-        setItems(d.matches.map(sm.shapeTojuMatch)); setPicked(new Set());
-        setCount("<b>" + d.matches.length + "</b> match your brief");
-      }).catch(() => {});
-    }
+      setCount("<b>" + rows.length + "</b> live · <b>" + rows.filter((r: any) => r.verification_status === "verified").length + "</b> verified");
+    }).catch(() => { if (!sessionView.current) { setLoad("failed"); setItems([]); } });
     const online = () => { setLoad((l) => { if (l === "failed") location.reload(); return l; }); };
     window.addEventListener("online", online);
-    return () => { window.removeEventListener("pageshow", onShow); window.removeEventListener("online", online); };
+    return () => window.removeEventListener("online", online);
+  }, []);
+  const [sessionRaw, setSessionRaw] = useState<any>(null);
+  useEffect(() => {
+    const visitor = localStorage.getItem("toju_visitor_v1");
+    if (!visitor) return;
+    fetch(SUPABASE_URL + "/functions/v1/toju-demo", {
+      method: "POST", headers: { "Content-Type": "application/json", ...HDR }, body: JSON.stringify({ action: "matches", visitorId: visitor }),
+    }).then((r) => r.json()).then((d) => {
+      /* A real session with nothing matched shows the honest empty state, never other homes. */
+      if (d.criteria && (!Array.isArray(d.matches) || d.matches.length === 0)) {
+        sessionView.current = true; setSession(true); setItems([]); setPicked(new Set()); setTitle("Your matches");
+        setCount("Nothing fits your brief yet"); setHideMap(true);
+        return;
+      }
+      if (!Array.isArray(d.matches) || !d.matches.length) return;
+      sessionView.current = true; setSession(true); setTitle("Your matches");
+      setSessionRaw(d.matches);
+      setCount("<b>" + d.matches.length + "</b> match your brief");
+    }).catch(() => {});
+  }, []);
+  /* What needs the shared scripts: the saves, the recent rail, and shaping Tayo's matches exactly as its panel does. */
+  useEffect(() => {
+    if (!scripts) return;
+    const sm = SM(); if (!sm) return;
+    setSaves(sm.readSaves());
+    sm.onSavesChanged((st) => setSaves(new Set(st)));   // another tab hearted something
+    setViews(sm.readViews());
+    const onShow = (e: PageTransitionEvent) => { if (e.persisted) setViews(sm.readViews()); };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
   }, [scripts]);
+  useEffect(() => {
+    const sm = SM();
+    if (!scripts || !sm || !sessionRaw) return;
+    setItems(sessionRaw.map(sm.shapeTojuMatch)); setPicked(new Set());
+  }, [scripts, sessionRaw]);
 
   const sm = typeof window !== "undefined" ? SM() : undefined;
   const naira = sm ? sm.naira : (n: number) => String(n);
@@ -201,7 +213,7 @@ export function BrowsePage() {
   const sorted = items.slice().sort((a, b) => (sort === "price" ? a.priceN - b.priceN : sort === "trust" ? (b.score || 0) - (a.score || 0) : scored ? (b.match || 0) - (a.match || 0) : newest(a, b)));
   const shown = sorted.filter((l) => matchesSearch(l, q, naira) && (deal === "all" || (l.cats || [l.kind || "sale"]).includes(deal))
     && (!verifiedOnly || l.vstatus === "verified") && (!areaIds || areaIds.has(l.id)));
-  const loadingView = load === "loading" && !session && items.length === 0;
+  const loadingView = (load === "loading" && !session && items.length === 0) || (!sm && load === "ready" && items.length > 0);
   const pickedNow = compareOn ? picked : new Set<string>();
   const fresh = lastVisit.current ? shown.filter((l) => { const t = l.listedAt ? Date.parse(l.listedAt) : NaN; return Number.isFinite(t) && t > (lastVisit.current as number); }) : [];
   const cards = (list: Item[]) => (sm ? list.map((l, i) => sm.listingCardHtml(l, i, { saves, picked: pickedNow, compare: compareOn })).join("") : "");
