@@ -2,7 +2,7 @@
 /**
  * The React layer every page carries (the move to React, 2026-10-23).
  *
- * Each page's existing markup and scripts run in a protected section (src/legacy/LegacyPage.tsx); this sits beside it. It hosts
+ * Every page renders this beside its markup (the ...Body.tsx components under src/features). It hosts
  * the toast notifications (sileo) and a bridge so the existing page code can raise one:
  *   window.SynToast('Copied')   or   window.SynToast({ title, description, type: 'error' })
  * Page-specific React parts (Tayo's top bar, and more as sections move across) are added next to it by each page.

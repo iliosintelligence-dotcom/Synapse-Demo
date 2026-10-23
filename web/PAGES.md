@@ -46,9 +46,13 @@ node compare.mjs all --tol 0.005 --dom                 # pixels (desktop + mobil
 node domdiff.mjs                                       # the markup itself, without a browser
 ```
 
-## Moving to React (stage 1 started 2026-10-23)
+## Moving to React (2026-10-23 to 2026-10-24)
 
-Every page now runs React (Tayo first, the other 16 on 2026-10-23; each page's markup is `src/legacy/<page>/body.html`, placed by `src/legacy/LegacyPage.tsx`, and each carries `src/features/site/SiteReact.tsx`). Tayo (`/app/toju`) was the pilot. Its existing markup is `src/legacy/toju/body.html` and its main script is still `src/legacy/toju/inline-5.js`; both are placed in a protected section (`#syn-legacy`, `dangerouslySetInnerHTML`, never hydrated), so the old scripts keep working untouched. React's own parts live in `src/features/tayo/` (the first is the toast host, sileo, reachable from old code as `window.SynToast('Copied')`). `scripts/strip-next-runtime.mjs` keeps Next's runtime for the pages in `KEEP_RUNTIME`. Stage 2 moves sections out of `body.html` into components, one at a time; the other pages follow the same path.
+Every page's markup is React now. **Edit a page in its component, not in HTML:** `src/features/legal` (privacy, terms), `src/features/landing` (buyers, the main landing), `src/features/pages` (verify, go, synapse-join, agency-profile, your-data, dream, signin, browse, property, the studio, syndication-test), `src/features/tayo/TojuBody.tsx` and `src/features/agency/AgencyBody.tsx`. They were converted from the old markup by `scripts/legacy-to-jsx.mjs`; the old `body.html` copies are gone.
+
+Each page's old scripts (`src/legacy/<page>/inline-N.js` and the shared files in `public/app/`) run right after React has taken the page over, in their original order, through `src/legacy/AfterHydration.tsx` (it then fires `syn:page-scripts`). Anything that changes a page before React has taken it over makes React find a page it did not draw (error #418): `brand.js` and `theme.js` wait for `syn:react-ready` (fired by `SiteReact`) for that reason, and Tayo's React parts wait for the engine's `syn:tayo-engine`.
+
+React's own parts: `src/features/site/SiteReact.tsx` on every page (toasts, `window.SynToast`), Tayo's top bar, sheets, conversation, matches panel, Replying about and typing box (`src/features/tayo/`), and the agency auto-reply links (`src/features/agency/AutoReplyLinks.tsx`). Next step for each page: move its scripts into React hooks, one at a time.
 
 ## The React pages (parked)
 
