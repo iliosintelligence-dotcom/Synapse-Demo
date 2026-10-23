@@ -1,13 +1,12 @@
-/* eslint-disable */
-// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/browse/body.html and its scripts are the
-// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
-import { LegacyPage } from "@/legacy/LegacyPage";
+// The browse page's markup is React (2026-10-24): src/features/pages/BrowseBody.tsx. Its scripts run right after React takes the
+// page over, in their original order (src/legacy/AfterHydration.tsx).
+import { BrowseBody } from "@/features/pages/BrowseBody";
 import { SiteReact } from "@/features/site/SiteReact";
 
 export default function Page() {
   return (
     <>
-      <LegacyPage page="browse" files={["inline-3.js"]} />
+      <BrowseBody />
       <SiteReact />
     </>
   );

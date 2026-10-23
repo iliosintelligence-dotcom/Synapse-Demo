@@ -8,7 +8,7 @@
  */
 import { useEffect } from "react";
 
-export type PageScript = { src: string } | { code: string };
+export type PageScript = { src: string; module?: boolean } | { code: string };
 
 let ran = false;   // once per page load, even if React mounts this twice
 
@@ -17,6 +17,7 @@ function load(s: PageScript): Promise<void> {
     const el = document.createElement("script");
     if ("src" in s) {
       el.src = s.src;
+      if (s.module) el.type = "module";
       el.async = false;
       el.onload = () => done();
       el.onerror = () => done();   // one missing file must not stop the rest
@@ -33,7 +34,10 @@ export function AfterHydration({ scripts }: { scripts: PageScript[] }) {
     if (ran) return;
     ran = true;
     (async () => {
-      for (const s of scripts) await load(s);
+      /* Module scripts were deferred originally, so they ran after the rest: same here. */
+      const isModule = (s: PageScript) => "src" in s && !!s.module;
+      for (const s of scripts.filter((x) => !isModule(x))) await load(s);
+      for (const s of scripts.filter(isModule)) await load(s);
       /* Some of them re-measure on window load, which has usually happened by now; a resize re-runs that measuring. */
       const settle = () => window.dispatchEvent(new Event("resize"));
       if (document.readyState === "complete") setTimeout(settle, 50);

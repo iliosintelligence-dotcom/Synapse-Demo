@@ -175,10 +175,11 @@ jsx = jsx.split(NL).filter((line) => {
   if (!t.startsWith("<script ")) return true;
   const src = t.match(/ src=(?:"([^"]*)"|\{"([^"]*)"\})/);
   const file = t.match(/inline\([^,]+, "([^"]+)"\)/);
-  pageScripts.push(src ? `{ src: ${JSON.stringify(src[1] ?? src[2])} }` : `{ code: inline(${JSON.stringify(key)}, ${JSON.stringify(file ? file[1] : "?")}) }`);
+  const mod = / type="module"/.test(t);
+  pageScripts.push(src ? `{ src: ${JSON.stringify(src[1] ?? src[2])}${mod ? ", module: true" : ""} }` : `{ code: inline(${JSON.stringify(key)}, ${JSON.stringify(file ? file[1] : "?")}) }`);
   return false;
 }).join(NL);
-if (jsUrls.length) { console.error("javascript: URLs found; handle them by hand:", jsUrls); process.exit(1); }
+if (jsUrls.length) console.error("javascript: URLs left as #syn-js-url-N placeholders; replace them by hand:", jsUrls);
 const file = `/* eslint-disable */
 // @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
 // The ${key} page's markup as React (converted from src/legacy/${key}/body.html by scripts/legacy-to-jsx.mjs, then edited by hand).

@@ -1,13 +1,12 @@
-/* eslint-disable */
-// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/synapse/body.html and its scripts are the
-// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
-import { LegacyPage } from "@/legacy/LegacyPage";
+// The synapse page's markup is React (2026-10-24): src/features/pages/SynapseBody.tsx. Its scripts run right after React takes the
+// page over, in their original order (src/legacy/AfterHydration.tsx).
+import { SynapseBody } from "@/features/pages/SynapseBody";
 import { SiteReact } from "@/features/site/SiteReact";
 
 export default function Page() {
   return (
     <>
-      <LegacyPage page="synapse" files={["inline-2.js"]} />
+      <SynapseBody />
       <SiteReact />
     </>
   );

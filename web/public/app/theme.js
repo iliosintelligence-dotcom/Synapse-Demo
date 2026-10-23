@@ -98,8 +98,21 @@
   setInterval(apply, 60000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) apply(); });
   window.addEventListener('storage', function (e) { if (e.key === KEY) apply(); });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
-  else mount();
+  /* A BAR REACT DREW WAITS FOR REACT (2026-10-24). On a page whose markup is React's own, adding the button before React has
+     taken the page over makes React find something it did not draw (error #418). Then the button goes in once the page's React
+     layer says it is ready (syn:react-ready), or after four seconds if it never does. Inside the protected old markup
+     (#syn-legacy), or on a page without React, it goes in as before. */
+  function reactOwned(bar) {
+    return !!document.querySelector('script[src*="/_next/static/"]') && !(bar.closest && bar.closest('#syn-legacy'))
+      && !(window.SynReact && window.SynReact.ready);
+  }
+  function mountSoon() {
+    var bar = document.querySelector('.appbar');
+    if (bar && reactOwned(bar)) { window.addEventListener('syn:react-ready', mount, { once: true }); setTimeout(mount, 4000); return; }
+    mount();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountSoon);
+  else mountSoon();
 
   window.SynTheme = { get: current, set: set, byClock: byClock };
 })();
