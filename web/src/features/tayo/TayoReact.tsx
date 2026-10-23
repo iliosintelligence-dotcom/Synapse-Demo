@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { Toaster, sileo, type SileoOptions } from "sileo";
 import "sileo/styles.css";
+import { TopBar } from "./TopBar";
 
 type ToastInput = string | (SileoOptions & { type?: SileoOptions["type"] });
 declare global {
@@ -44,5 +45,10 @@ export function TayoReact() {
     return () => { delete window.SynToast; };
   }, []);
   /* below the floating top bar on a phone, clear of the status bar in the app */
-  return <Toaster position="top-center" theme={theme} offset={{ top: "calc(76px + var(--syn-top, env(safe-area-inset-top, 0px)))" }} />;
+  return (
+    <>
+      <TopBar />
+      <Toaster position="top-center" theme={theme} offset={{ top: "calc(76px + var(--syn-top, env(safe-area-inset-top, 0px)))" }} />
+    </>
+  );
 }
