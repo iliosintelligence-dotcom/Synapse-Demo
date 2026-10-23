@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { useEngineReady } from "./useEngineReady";
 
 type Shaped = { id: string } & Record<string, unknown>;
 type CanvasStore = {
@@ -70,14 +71,17 @@ function Panel({ store }: { store: CanvasStore }) {
 /** Takes .tj-canvas over from the engine's old drawing once both are there. */
 export function MatchesPanel() {
   const [host, setHost] = useState<HTMLElement | null>(null);
+  const ready = useEngineReady();
   useEffect(() => {
+    if (!ready) return;
     const h = document.querySelector<HTMLElement>(".tj-canvas");
     const store = window.TayoCanvas;
     if (!h || !store || !shared()) return;
-    while (h.firstChild) h.removeChild(h.firstChild);   // the old header, map and grid
+    /* The page's markup leaves .tj-canvas empty for this panel; anything in it was drawn by the engine before it attached. */
+    while (h.firstChild) h.removeChild(h.firstChild);
     store.attach();
     setHost(h);
-  }, []);
+  }, [ready]);
   const store = typeof window !== "undefined" ? window.TayoCanvas : undefined;
   return host && store ? createPortal(<Panel store={store} />, host) : null;
 }

@@ -1,20 +1,13 @@
-/* eslint-disable */
-import { inline } from "@/legacy/read";
+// Tayo's page is React markup (2026-10-24): src/features/tayo/TojuBody.tsx, with the React parts in <TayoReact /> (top bar, sheets,
+// conversation, matches panel, Replying about, typing box). The chat engine and the shared scripts run right after React takes the
+// page over (src/legacy/AfterHydration.tsx); the React parts wait for the engine's signal before they attach.
+import { TojuBody } from "@/features/tayo/TojuBody";
 import { TayoReact } from "@/features/tayo/TayoReact";
-
-/* STAGE 1 OF THE MOVE TO REACT (2026-10-23).
-   This page now runs React. Its existing markup and scripts (src/legacy/toju/body.html, with the main script in inline-5.js) are
-   placed in a protected section that React never reconciles: dangerouslySetInnerHTML is not hydrated, so the page's own scripts can
-   change it freely, as they always have. React's own parts sit beside it in <TayoReact />. In stage 2, sections move out of
-   body.html into React components one at a time.
-   Edit the markup in body.html and the behaviour in inline-5.js, exactly as before. */
-const legacyBody = (): string =>
-  inline("toju", "body.html").replace("/*@inline-5.js*/", () => inline("toju", "inline-5.js"));
 
 export default function Page() {
   return (
     <>
-      <div id="syn-legacy" style={{ display: "contents" }} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: legacyBody() }} />
+      <TojuBody />
       <TayoReact />
     </>
   );

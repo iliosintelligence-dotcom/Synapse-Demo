@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { useEngineReady } from "./useEngineReady";
 import gsap from "gsap";
 
 type ReplyState = { title: string; sub: string; label: string; disabled: boolean; why: string } | null;
@@ -43,14 +44,16 @@ function Strip({ store, box }: { store: ReplyStore; box: HTMLElement }) {
 /** Takes #tjReply over from the engine's old drawing once both are there. */
 export function ReplyStrip() {
   const [box, setBox] = useState<HTMLElement | null>(null);
+  const ready = useEngineReady();
   useEffect(() => {
+    if (!ready) return;
     const b = document.getElementById("tjReply");
     const store = window.TayoReply;
     if (!b || !store || !window.TayoEngine) return;
     while (b.firstChild) b.removeChild(b.firstChild);   // the old drawing
     store.attach();
     setBox(b);
-  }, []);
+  }, [ready]);
   const store = typeof window !== "undefined" ? window.TayoReply : undefined;
   return box && store ? createPortal(<Strip store={store} box={box} />, box) : null;
 }

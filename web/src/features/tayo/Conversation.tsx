@@ -11,6 +11,7 @@
  */
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useEngineReady } from "./useEngineReady";
 import { flushSync } from "react-dom";
 
 /* ── what the engine records ── */
@@ -427,13 +428,15 @@ function List({ view }: { view: NonNullable<Window["TayoView"]> }) {
 /** Takes #convo over from the engine's old drawing once both are there. */
 export function Conversation() {
   const [host, setHost] = useState<HTMLElement | null>(null);
+  const ready = useEngineReady();
   useEffect(() => {
+    if (!ready) return;
     const h = document.getElementById("convo");
     const view = window.TayoView;
     if (!h || !view || !window.TayoEngine || !window.SynMatches) return;
     view.attach();
     setHost(h);
-  }, []);
+  }, [ready]);
   const view = typeof window !== "undefined" ? window.TayoView : undefined;
   return host && view ? createPortal(<List view={view} />, host) : null;
 }

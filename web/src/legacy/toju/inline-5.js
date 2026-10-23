@@ -159,7 +159,8 @@
       if (window.CustNav) window.CustNav.setCount('browse.html', items.length);
       document.body.classList.toggle('has-canvas', items.length > 0);
       Canvas.set(items);
-      if (Canvas.react) return;
+      /* The React panel draws it; the old markup may not even be on the page (React's markup leaves .tj-canvas empty). */
+      if (Canvas.react || !cvGrid || !cvCount) return;
       cvCount.textContent = items.length;
       if (items.length === 0) { cvGrid.innerHTML = ''; return; }
       cvGrid.innerHTML = items.map((l, i) => SynMatches.listingCardHtml(l, i, { saves: cvSaves })).join('');
@@ -169,7 +170,7 @@
         { sb: { url: SUPABASE_URL, anon: ANON_KEY } });
       if (window.synMotion) synMotion.refresh();
     }
-    cvGrid.addEventListener('click', (e) => {
+    if (cvGrid) cvGrid.addEventListener('click', (e) => {
       if (Canvas.react) return;
       const sv = e.target.closest('[data-save]');
       if (sv) {
@@ -1912,3 +1913,7 @@
       });
     })();
   
+    /* THE ENGINE IS READY (2026-10-24). Once the page markup is React, this script runs after hydration, so the React parts that
+       talk to it (Composer, Conversation, MatchesPanel, ReplyStrip) wait for this signal before they attach. */
+    window.TayoEngineReady = true;
+    try { window.dispatchEvent(new Event('syn:tayo-engine')); } catch (e) { /* old browsers: nothing listens there */ }

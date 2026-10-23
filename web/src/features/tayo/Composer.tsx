@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useEngineReady } from "./useEngineReady";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -126,7 +127,9 @@ function Field() {
 /** Takes the old field's place once the engine is there to talk to. */
 export function Composer() {
   const [host, setHost] = useState<HTMLElement | null>(null);
+  const ready = useEngineReady();
   useEffect(() => {
+    if (!ready) return;
     const h = document.getElementById("react-composer");
     if (!h || !window.TayoEngine) return;
     const old = h.parentElement?.querySelector<HTMLElement>(".pillrow:not([data-react-composer])");
@@ -136,6 +139,6 @@ export function Composer() {
     /* Anything typed before React arrived carries over. */
     if (had) requestAnimationFrame(() => window.TayoComposer?.set(had));
     return () => { if (old) old.style.display = ""; };
-  }, []);
+  }, [ready]);
   return host ? createPortal(<Field />, host) : null;
 }
