@@ -43,7 +43,7 @@
     var inApp = document.documentElement.classList.contains('syn-app');
     var phone = window.matchMedia('(max-width: 1024px)').matches;
     if (!(inApp || (phone && SEEN_BEFORE))) return;
-    var links = document.querySelectorAll('a[href$="buyers.html"], a[href$="buyers"], a.home[href="../"], a.brand[href="../"]');
+    var links = document.querySelectorAll('a[href$="buyers.html"]:not([data-keep-landing]), a[href$="buyers"]:not([data-keep-landing]), a.home[href="../"], a.brand[href="../"]');
     for (var i = 0; i < links.length; i++) links[i].setAttribute('href', '/app/toju');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pointLandingLinksToTayo);

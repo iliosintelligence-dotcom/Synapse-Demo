@@ -248,6 +248,7 @@
       return [];
     }
     function quickHtml(text, extra) {
+      return ''; // no suggestion buttons under the replies (Eden, 2026-10-23); kept as a function so callers are unchanged
       if (!extra || !extra.live) return '';
       const opts = quickAnswers(text, extra.suggestions).slice(0, 6);
       if (!opts.length) return '';
@@ -1696,5 +1697,18 @@
         histPanel.hidden ? openHist() : closeHist();
       });
       if (mn) mn.addEventListener('click', newChat);
+      /* the corner menu: past conversations, pinned, what Tayo remembers, background */
+      var more = document.getElementById('tjmMore'), menu = document.getElementById('tjmMenu');
+      if (more && menu) {
+        var shut = function () { menu.hidden = true; more.setAttribute('aria-expanded', 'false'); };
+        more.addEventListener('click', function (e) { e.stopPropagation(); var open = menu.hidden; menu.hidden = !open; more.setAttribute('aria-expanded', String(open)); });
+        menu.addEventListener('click', function (e) { if (e.target.closest('button')) shut(); });
+        document.addEventListener('click', function (e) { if (!menu.hidden && !e.target.closest('#tjmMenu')) shut(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
+      }
+      [['tjmPins', 'tjPins'], ['tjmMem', 'tjMem']].forEach(function (pair) {
+        var m = document.getElementById(pair[0]), d = document.getElementById(pair[1]);
+        if (m && d) m.addEventListener('click', function () { d.click(); });
+      });
     })();
   

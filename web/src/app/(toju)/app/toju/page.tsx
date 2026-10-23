@@ -21,33 +21,44 @@ export default function Page() {
       </div>
       <div className="tj-app">
         <header className="tjm-bar">
-          {" "}
-          <a className="tjm-back" href="../buyers.html" data-cnav-back="" aria-label="Back">
-            ←
-          </a>
-          <div className="tjm-id">
-            <span className="tjm-name" role="heading" aria-level="1">
-              Tayo
-            </span>
-            {" "}
-            {" "}
-            <span className="tjm-status">
-              <i></i>
-              {" AI advisor · "}
-              <a href="/privacy">
-                how your chat is used
-              </a>
-            </span>
-          </div>
-          <button className="tjm-act" id="tjmBg" type="button" aria-label="Change background">
-            <span data-icon="boards"></span>
-          </button>
-          <button className="tjm-act" id="tjmHist" type="button" aria-label="Past conversations">
+          <button className="tjm-act" id="tjmMore" type="button" aria-label="More" aria-haspopup="menu" aria-expanded="false" aria-controls="tjmMenu">
             <span data-icon="history"></span>
           </button>
+          <nav className="tjm-tabs" aria-label="Synapse">
+            <a href="../buyers.html" data-keep-landing="">
+              Home
+            </a>
+            <a href="toju.html" className="on" aria-current="page">
+              Chat
+            </a>
+            <a href="browse.html">
+              Matches
+            </a>
+            <a href="dream.html">
+              Boards
+            </a>
+          </nav>
           <button className="tjm-act" id="tjmNew" type="button" aria-label="New chat">
             ↺
           </button>
+          <div className="tjm-menu" id="tjmMenu" role="menu" aria-label="Chats" hidden>
+            <button id="tjmHist" type="button" role="menuitem">
+              <span data-icon="history" aria-hidden="true"></span>
+              Past conversations
+            </button>
+            <button id="tjmPins" type="button" role="menuitem">
+              <span data-icon="heart" aria-hidden="true"></span>
+              Pinned
+            </button>
+            <button id="tjmMem" type="button" role="menuitem">
+              <span data-icon="user" aria-hidden="true"></span>
+              What Tayo remembers
+            </button>
+            <button id="tjmBg" type="button" role="menuitem">
+              <span data-icon="boards" aria-hidden="true"></span>
+              Change background
+            </button>
+          </div>
         </header>
         <div className="appbar">
           <a className="brand" href="../buyers.html">
