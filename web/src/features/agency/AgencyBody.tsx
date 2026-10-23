@@ -11,6 +11,7 @@ import { RmButton, RmPanel } from "./ContactSynapse";
 import { BrandPage } from "./BrandPage";
 import { ProfileDrawer } from "./ProfileDrawer";
 import { TaskCard } from "./TaskCard";
+import { SetupButton, SetupPop } from "./SetupRing";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -46,11 +47,7 @@ export function AgencyBody() {
           {" "}
           <input id="ovSearch" placeholder={"Search listings…"} aria-label="Search listings" autoComplete="off" />
         </div>
-        <button className="bell setup-ring" id="setupBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="setupPop" aria-label="Getting set up" hidden>
-          <span className="sr-n" id="setupNum">
-            0
-          </span>
-        </button>
+        <SetupButton />
         <RmButton />
         <BellButton />
         {" "}
@@ -811,7 +808,7 @@ export function AgencyBody() {
       <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
       <TaskCard />
-      <div className="setup-pop" id="setupPop" role="dialog" aria-label="Getting set up" hidden></div>
+      <SetupPop />
       <div className="modal-scrim" id="cmpScrim"></div>
       <div className="modal" id="cmpModal"></div>
       <style  dangerouslySetInnerHTML={{ __html: inline("agency", "inline-5.css") }} />

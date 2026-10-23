@@ -11697,102 +11697,10 @@
     }
     setTimeout(claimPendingReferral, 4000);
 
-    /* ══ THE SETUP ANCHOR (Eden, 2026-10-11) ══════════════════════════════════════
-       "People come to use the app and usually end up texting me later to ask what
-       they should do next." So the portal now always knows, and always says. One
-       read-only call (agency_setup_progress) reports what the agency has really done;
-       the steps below are ordered, and the first one not done is THE NEXT STEP,
-       shown as a card at the top of Overview and as a ring in the top bar that opens
-       the whole list. Steps an agent cannot do (logo, papers, inviting people)
-       are not shown to an agent. When everything is done the anchor disappears. ═ */
-    const SETUP = { p: null, steps: [], pop: false };
-    const SETUP_ICO = {
-      logo: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
-      cac: '<path d="M12 3 4.5 6v5.5c0 4.4 3 8 7.5 9.5 4.5-1.5 7.5-5.1 7.5-9.5V6z"/><path d="m8.6 12 2.4 2.4 4.4-4.8"/>',
-      listing: '<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
-      channel: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/>',
-      post: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
-      team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M17 11a3 3 0 1 0 0-6M18.5 14.7c2 .6 3.4 2.2 3.8 5.3"/>',
-      lead: '<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/>',
-      refer: '<path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>'
-    };
-    function setupSteps(p) {
-      const boss = p.role === 'agency_owner' || p.role === 'agency_admin';
-      const all = [
-        { id: 'logo', boss: true, ico: 'logo', title: 'Add your logo', why: 'Buyers trust a listing more when they can see whose it is. It also goes on every post Synapse makes for you.', cta: 'Add your logo', done: !!p.logo, go: () => goToPane('brand') },
-        { id: 'cac', boss: true, ico: 'cac', title: 'Upload your CAC certificate', why: 'You cannot publish a listing until it is on file. It takes a minute, and the verification team reviews it after.', cta: 'Upload it', done: !!p.cac, go: () => goToPane('verification') },
-        { id: 'listing', ico: 'listing', title: 'Add your first listing', why: 'Buyers cannot find you until a listing is live. About three minutes: photos, price and a pin on the map.', cta: 'Add a listing', done: p.listings > 0, go: () => { goToPane('listings'); setTimeout(() => { const b = document.getElementById('newListingBtn'); if (b) b.click(); }, 350); } },
-        { id: 'channel', boss: true, ico: 'channel', title: 'Connect a social account', why: 'Connect Instagram, Facebook, TikTok or Telegram once, and Synapse can post your listings for you.', cta: 'Connect one', done: p.channels > 0, go: () => { goToPane('social'); setTimeout(() => { try { openAddChannel('instagram'); } catch (e) {} }, 500); } },
-        { id: 'post', ico: 'post', title: 'Post a listing', why: 'Pick a listing, tick where it goes, and let Synapse write the captions. This is how enquiries start.', cta: 'Make a post', done: p.posts > 0, go: () => { goToPane('social'); setTimeout(() => { const b = document.getElementById('newPostBtn'); if (b) b.click(); }, 350); } },
-        { id: 'team', boss: true, ico: 'team', title: 'Invite a teammate', why: 'Add the agents who will answer buyers. Leads can be assigned to them, and the work stops sitting on one person.', cta: 'Invite someone', done: p.team > 1, go: () => { try { openInvite(); } catch (e) { goToPane('agents'); } } },
-        { id: 'lead', ico: 'lead', title: 'Reply to your first lead', why: p.leads > 0 ? 'A buyer has asked about a home. Fast replies win; open it and call or message them.' : 'Your first enquiry lands here the moment a buyer taps Contact agent. Share a listing to get one sooner.', cta: p.leads > 0 ? 'Open your leads' : 'Share a listing', done: false, doneLead: true, go: () => goToPane(p.leads > 0 ? 'crm' : 'listings') },
-        { id: 'refer', boss: true, ico: 'refer', title: 'Refer another agency', why: 'Every 5 agencies you bring earn you a free month. Your link is on the Plans page.', cta: 'Get my link', done: p.referrals > 0, go: () => goToPane('subscription') }
-      ];
-      return all.filter((st) => !st.boss || boss).map((st) => { if (st.doneLead) st.done = p.leads > 0 && false; return st; });
-    }
-    function setupSvg(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (SETUP_ICO[k] || SETUP_ICO.listing) + '</svg>'; }
-    const SETUP_TICK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
-    function paintSetup() {
-      const p = SETUP.p; if (!p) return;
-      const steps = setupSteps(p); SETUP.steps = steps;
-      /* "Reply to your first lead" is done once any lead has been moved past New:
-         the portal knows that from its own lead list, not from this call. */
-      const lead = steps.find((x) => x.id === 'lead');
-      if (lead && typeof leads !== 'undefined' && leads.some((l) => l.stage && l.stage !== 'New')) lead.done = true;
-      const doneN = steps.filter((x) => x.done).length, total = steps.length;
-      const next = steps.find((x) => !x.done);
-      const btn = document.getElementById('setupBtn'), card = document.getElementById('nextCard'), pop = document.getElementById('setupPop');
-      if (!btn) return;
-      if (!next) { btn.hidden = true; if (card) card.hidden = true; if (pop) pop.hidden = true; return; }
-      btn.hidden = false;
-      document.getElementById('setupNum').textContent = doneN + '/' + total;
-      btn.setAttribute('aria-label', 'Getting set up: ' + doneN + ' of ' + total + ' done. Next: ' + next.title);
-      /* The "Your next step" card on Overview is gone (Eden, 2026-10-24: "it's been there since, just take it out"). The ring
-         in the top bar still opens the whole list. */
-      if (card) { card.hidden = true; card.innerHTML = ''; }
-      if (pop) {
-        pop.innerHTML = '<div class="sp-h"><h3>Getting set up</h3><span>' + doneN + ' of ' + total + '</span></div>'
-          + '<div class="sp-bar" aria-hidden="true"><i style="width:' + Math.round(doneN / total * 100) + '%"></i></div>'
-          + '<ul class="sp-list">' + steps.map((x) => {
-            const isNext = x === next;
-            return '<li class="' + (x.done ? 'done' : isNext ? 'next' : '') + '"><span class="sp-dot">' + SETUP_TICK + '</span><div><div class="sp-t">' + esc2(x.title) + '</div>'
-              + (isNext ? '<div class="sp-w">' + esc2(x.why) + '</div><button type="button" class="btn btn-primary" data-setup-go="' + x.id + '">' + esc2(x.cta) + ' \u2192</button>' : '') + '</div></li>';
-          }).join('') + '</ul>';
-      }
-      if (typeof paintFast === 'function') paintFast();
-      /* Say so when a step gets done, and what is next. */
-      try {
-        const key = 'syn_setup_done'; const before = parseInt(localStorage.getItem(key) || '-1', 10);
-        if (before >= 0 && doneN > before && doneN < total) { if (typeof toast === 'function') toast('Done: ' + steps.filter((x) => x.done).slice(-1)[0].title + '. Next: ' + next.title); }
-        localStorage.setItem(key, String(doneN));
-        if (before < 0 || doneN > before) btn.classList.add('nudge');
-      } catch (e) {}
-    }
-    function loadSetup() {
-      if (!window.SynAuth || !window.SynListings || !SynListings.agencyId) return;
-      SynAuth.client().then((c) => SynListings.agencyId().then((aid) => aid ? c.rpc('agency_setup_progress', { p_agency: aid }) : null))
-        .then((r) => { if (!r || r.error || !r.data) return; SETUP.p = r.data; paintSetup(); })
-        .catch(() => {});
-    }
-    function toggleSetup(open) {
-      const pop = document.getElementById('setupPop'), btn = document.getElementById('setupBtn'); if (!pop || !btn) return;
-      const want = typeof open === 'boolean' ? open : pop.hidden;
-      pop.hidden = !want; btn.setAttribute('aria-expanded', String(want));
-      if (want) { btn.classList.remove('nudge'); const f = pop.querySelector('[data-setup-go]'); if (f) f.focus(); }
-    }
-    document.addEventListener('click', (e) => {
-      const go = e.target.closest('[data-setup-go]');
-      if (go) { const st = SETUP.steps.find((x) => x.id === go.dataset.setupGo); toggleSetup(false); if (st) st.go(); return; }
-      if (e.target.closest('[data-setup-all]')) { toggleSetup(true); return; }
-      if (e.target.closest('#setupBtn')) { toggleSetup(); return; }
-      const pop = document.getElementById('setupPop');
-      if (pop && !pop.hidden && !e.target.closest('#setupPop')) toggleSetup(false);
-    });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const pop = document.getElementById('setupPop'); if (pop && !pop.hidden) { toggleSetup(false); const b = document.getElementById('setupBtn'); if (b) b.focus(); } } });
-    setTimeout(loadSetup, 2200);
-    setInterval(loadSetup, 90 * 1000);
-    document.addEventListener('syn:listings', () => setTimeout(loadSetup, 800));
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadSetup(); });
+    /* ══ THE SETUP ANCHOR: the ring and its list are React (src/features/agency/SetupRing.tsx). What it needs from here: whether any lead has been
+       moved past New (the portal's own lead list knows), and the name toggleSetup, which closeAgencyPopups calls. */
+    window.SynLeadsAnswered = function () { return typeof leads !== 'undefined' && Array.isArray(leads) && leads.some((l) => l.stage && l.stage !== 'New'); };
+    function toggleSetup(open) { window.dispatchEvent(new CustomEvent('syn:setup-toggle', { detail: open })); }
     setTimeout(loadPaywallInfo, 2500);
     /* Kept fresh (Greptile): a portal left open past the free date must not
        go on saying it is free. */
