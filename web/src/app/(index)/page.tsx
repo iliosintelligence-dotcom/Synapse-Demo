@@ -1,13 +1,12 @@
-/* eslint-disable */
-// The move to React (2026-10-23): this page runs React. Its existing markup is src/legacy/index/body.html and its scripts are the
-// files listed below, in a protected section React never reconciles (src/legacy/LegacyPage.tsx). React parts sit beside it.
-import { LegacyPage } from "@/legacy/LegacyPage";
+// The index page's markup is React (2026-10-24): src/features/landing/IndexBody.tsx. Its scripts (the theme switch and clock, the listing
+// feed, sharing) run right after React takes the page over, in their original order (src/legacy/AfterHydration.tsx).
+import { IndexBody } from "@/features/landing/IndexBody";
 import { SiteReact } from "@/features/site/SiteReact";
 
 export default function Page() {
   return (
     <>
-      <LegacyPage page="index" files={["inline-4.css", "inline-5.js"]} />
+      <IndexBody />
       <SiteReact />
     </>
   );

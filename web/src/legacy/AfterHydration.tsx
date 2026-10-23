@@ -1,0 +1,44 @@
+"use client";
+/**
+ * A page's own scripts, run once React has taken the page over (2026-10-24, the move to React, stage 2).
+ *
+ * When a page's markup becomes JSX, its old scripts can no longer run while the HTML is still arriving: they change text and
+ * add elements, and React then finds a page it did not draw (error #418). They run here instead, right after hydration, one at a
+ * time and in their original order, so the page behaves exactly as before. Each one is a step on the way to a React hook.
+ */
+import { useEffect } from "react";
+
+export type PageScript = { src: string } | { code: string };
+
+let ran = false;   // once per page load, even if React mounts this twice
+
+function load(s: PageScript): Promise<void> {
+  return new Promise((done) => {
+    const el = document.createElement("script");
+    if ("src" in s) {
+      el.src = s.src;
+      el.async = false;
+      el.onload = () => done();
+      el.onerror = () => done();   // one missing file must not stop the rest
+    } else {
+      el.text = s.code;
+    }
+    document.body.appendChild(el);
+    if (!("src" in s)) done();
+  });
+}
+
+export function AfterHydration({ scripts }: { scripts: PageScript[] }) {
+  useEffect(() => {
+    if (ran) return;
+    ran = true;
+    (async () => {
+      for (const s of scripts) await load(s);
+      /* Some of them re-measure on window load, which has usually happened by now; a resize re-runs that measuring. */
+      const settle = () => window.dispatchEvent(new Event("resize"));
+      if (document.readyState === "complete") setTimeout(settle, 50);
+      else window.addEventListener("load", settle, { once: true });
+    })();
+  }, [scripts]);
+  return null;
+}

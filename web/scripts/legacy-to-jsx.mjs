@@ -166,17 +166,35 @@ const html = readFileSync(new URL(`../src/legacy/${key}/body.html`, import.meta.
 const scripts = [];
 const frag = parseFragment(html);
 const inliner = (ext, text) => { const m = text.match(/\/\*@(inline-\d+\.\w+)\*\//); scripts.push(m ? m[1] : "(inline " + ext + ")"); return m ? m[1] : "inline-x." + ext; };
-const jsx = bodyToJsx(key, frag, inliner);
+let jsx = bodyToJsx(key, frag, inliner);
+/* The page's scripts leave the markup: they run after hydration, in order (src/legacy/AfterHydration.tsx). */
+const pageScripts = [];
+const NL = String.fromCharCode(10);
+jsx = jsx.split(NL).filter((line) => {
+  const t = line.trim();
+  if (!t.startsWith("<script ")) return true;
+  const src = t.match(/ src=(?:"([^"]*)"|\{"([^"]*)"\})/);
+  const file = t.match(/inline\([^,]+, "([^"]+)"\)/);
+  pageScripts.push(src ? `{ src: ${JSON.stringify(src[1] ?? src[2])} }` : `{ code: inline(${JSON.stringify(key)}, ${JSON.stringify(file ? file[1] : "?")}) }`);
+  return false;
+}).join(NL);
 if (jsUrls.length) { console.error("javascript: URLs found; handle them by hand:", jsUrls); process.exit(1); }
 const file = `/* eslint-disable */
 // @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
 // The ${key} page's markup as React (converted from src/legacy/${key}/body.html by scripts/legacy-to-jsx.mjs, then edited by hand).
+// Its scripts run once React has taken the page over (AfterHydration), in their original order.
 import { inline } from "@/legacy/read";
+import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
+
+const SCRIPTS: PageScript[] = [
+${pageScripts.map((x) => "  " + x + ",").join(NL)}
+];
 
 export function ${name}() {
   return (
     <>
 ${jsx}
+      <AfterHydration scripts={SCRIPTS} />
     </>
   );
 }
