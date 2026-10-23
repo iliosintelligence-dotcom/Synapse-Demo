@@ -13,6 +13,8 @@ import { ProfileDrawer } from "./ProfileDrawer";
 import { TaskCard } from "./TaskCard";
 import { SetupButton, SetupPop } from "./SetupRing";
 import { AdvisorFab, AdvisorPanel } from "./AdvisorPanel";
+import { VerificationPane } from "./VerificationPane";
+import { ToursPane } from "./ToursPane";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -395,7 +397,7 @@ export function AgencyBody() {
               <p className="sub">
                 {"Buyers see a verified badge on every listing you publish.\n             Your documents are private, kept in a closed store, opened only by\n             you and the Synapse verification desk, never shown on your public page."}
               </p>
-              <div id="vfBody"></div>
+              <VerificationPane />
             </section>
             <section className="pane" id="pane-subscription">
               <div className="eyebrow">
@@ -614,38 +616,7 @@ export function AgencyBody() {
               <div id="handoffs"></div>
             </section>
             <section className="pane" id="pane-tours">
-              <div className="eyebrow" data-agency-eyebrow="">
-                Your team
-              </div>
-              <div className="h1">
-                Tours
-              </div>
-              <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                One trip, several buyers. Tayo only ever offers times your agents have already cleared.
-              </p>
-              <div className="crm-tools" data-pane-filters="" style={{ "marginTop": "18px" }}>
-                <div className="crm-tools-l">
-                  <div className="seg" id="tourFilter">
-                    <button className="seg-b on" data-tf="all">
-                      All
-                    </button>
-                    <button className="seg-b" data-tf="open">
-                      Needs confirming
-                    </button>
-                    <button className="seg-b" data-tf="confirmed">
-                      Confirmed
-                    </button>
-                    <button className="seg-b" data-tf="cancelled">
-                      Cancelled
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div id="toursList">
-                <p className="muted" style={{ "fontSize": "13px" }}>
-                  Loading…
-                </p>
-              </div>
+              <ToursPane />
             </section>
             <section className="pane" id="pane-listings">
               <div className="eyebrow">
