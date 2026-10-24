@@ -23,6 +23,7 @@ import { PipelineBoard, PipelineCalendar, PipelineSelect } from "./PipelinePane"
 import { PropPreview } from "./PropPreview";
 import { SchedulerHost } from "./Scheduler";
 import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./MarketingPane";
+import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
 
 const SCRIPTS: PageScript[] = [
@@ -309,19 +310,7 @@ export function AgencyBody() {
                   Expiring soon
                 </button>
               </div>
-              <div className="ov-grid">
-                <div className="ov-list" id="ovList"></div>
-                <div className="ov-detail" aria-label="Listing detail">
-                  <div className="ov-sheet-hd">
-                    <button className="ov-sheet-back" id="ovBack" type="button" aria-label="Back to listings">
-                      ←
-                    </button>
-                    <div className="ov-sheet-tt" id="ovSheetTitle"></div>
-                  </div>
-                  <div className="ov-map" id="ovMap"></div>
-                  <div className="card ov-card" id="ovCard"></div>
-                </div>
-              </div>
+              <OverviewGrid />
             </section>
             <section className="pane" id="pane-crm">
               <CrmPane />
