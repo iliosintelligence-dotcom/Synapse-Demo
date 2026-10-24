@@ -24,6 +24,7 @@ import { PropPreview } from "./PropPreview";
 import { SchedulerHost } from "./Scheduler";
 import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./MarketingPane";
 import { ListSeg, ListSort, RelistAll, ListingGate, ListingsGrid } from "./ListingsPane";
+import { ShareKitHost } from "./ShareKit";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
 
@@ -526,7 +527,7 @@ export function AgencyBody() {
       </div>
       <div className="toast" id="toast"></div>
       <PropPreview />
-      <SchedulerHost />
+      <SchedulerHost /><ShareKitHost />
       <AdvisorFab />
       <AdvisorPanel />
       <div className="scrim" id="scrim"></div>
