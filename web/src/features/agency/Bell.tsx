@@ -1,8 +1,8 @@
 "use client";
 /**
  * The notification bell, as React (was the bell block of src/legacy/agency/inline-3.js): the button and its count, the panel,
- * the list of things already dealt with, and where each item goes. What the items ARE is still derived in inline-3, beside the
- * state it reads (listings, leads, posts, tasks); this asks for them through `window.SynNoti.items()`.
+ * the list of things already dealt with, what the items are and where each one goes. The state they are derived from (listings,
+ * leads, posts, tasks) stays in inline-3 and is read through its window API.
  *
  * Talking to the rest of the page: inline-3's renderNoti() fires `syn:noti-refresh` and toggleNoti(open) fires `syn:noti-toggle`
  * (both kept as names, since the page and the account menu call them); `syn:listings` refreshes too.
@@ -44,10 +44,86 @@ function handle(keys: string[]) {
 function refresh() {
   readHandled();
   let all: Item[] = [];
-  try { all = W().SynNoti?.items?.() ?? []; } catch (e) { console.error("bell", e); }   // the bell is never worth an error
+  try { all = deriveItems(); } catch (e) { console.error("bell", e); }   // the bell is never worth an error
   set({ items: all.filter((n) => !handled[n.key]) });
 }
 const setOpen = (open: boolean) => set({ open });
+
+/* ── WHAT THE ITEMS ARE ──
+   Notifications are DERIVED from real state, never authored. The previous list named a buyer, a lead SLA and three properties
+   that do not exist, so the bell always showed four unread items about nothing. Each item carries a `pane` (or a task, or an
+   action) so clicking it takes you to the thing it is about, which is the only reason to show it at all. The state is read
+   through inline-3's window API (SynListingsData, SynFreshness, SynLeads, SynPosts, openTasks, SynDbBacked). `key` identifies an
+   item in the handled list, so it keeps the form it always had. */
+const esc2 = (s: unknown) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+const notiKey = (n: Omit<Item, "key">) => [n.type, n.pane || "", n.task || "", n.title, n.sub].join("|");
+const plural = (n: number, w: string) => n + " " + w + (n === 1 ? "" : "s");
+const call = (name: string, ...a: any[]) => (typeof W()[name] === "function" ? W()[name](...a) : undefined);
+
+function deriveItems(): Item[] {
+  const out: (Omit<Item, "key"> & { key?: string })[] = [];
+  const L: any[] = call("SynListingsData") || [];
+  const fresh = (l: any) => { try { return W().SynFreshness(l) || {}; } catch { return {}; } };
+
+  const pending = L.filter((l) => l.verification_status !== "verified");
+  if (pending.length) out.push({ type: "verification", tag: "Verification", icon: "shield", pane: "listings",
+    title: plural(pending.length, "listing") + " awaiting verification",
+    sub: pending.length === 1 ? (pending[0].title || pending[0].t) : "Not yet checked by Synapse", group: "Today" });
+
+  /* Warned BEFORE a listing goes dark (`warn`), and again once it has. */
+  const expiring = L.filter((l) => fresh(l).warn);
+  if (expiring.length) out.push({ type: "reminder", tag: "Reminder", icon: "pending", pane: "listings",
+    title: plural(expiring.length, "listing") + " expiring soon",
+    sub: "Re-list to keep " + (expiring.length === 1 ? "it" : "them") + " visible to buyers", group: "Today" });
+  const expired = L.filter((l) => fresh(l).expired);
+  if (expired.length) out.push({ type: "reminder", tag: "Reminder", icon: "pending", pane: "listings",
+    title: plural(expired.length, "listing") + " expired", sub: "Hidden from buyers until re-listed", group: "Today" });
+
+  const leads: any[] = call("SynLeads") || [];
+  const newLeads = leads.filter((x) => x.stage === "New");
+  if (newLeads.length) out.push({ type: "lead", tag: "Lead", icon: "user", pane: "crm",
+    title: plural(newLeads.length, "new lead"), sub: "Waiting on a first response", group: "Today" });
+
+  const posts: any[] = call("SynPosts") || [];
+  const appr = posts.filter((p) => p.stage === "approval");
+  if (appr.length) out.push({ type: "social", tag: "Social", icon: "share", pane: "social",
+    title: plural(appr.length, "post") + " awaiting approval", sub: "In the social studio", group: "Today" });
+
+  /* Things only the agency can do, until marked done. A Telegram channel title is whatever its owner typed: the bell draws text,
+     not markup. The key is built from the escaped text, as it was when the bell drew markup. */
+  ((call("openTasks") || []) as any[]).forEach((t) => {
+    const n = { type: "setup", tag: "Only you", icon: "pending", pane: "", task: t.id, title: t.title, sub: t.where || "Tap to see what to do", group: "To do" };
+    out.push({ ...n, key: notiKey({ ...n, title: esc2(n.title), sub: esc2(n.sub) }) });
+  });
+  /* AUTO-REPLY LINKS (Eden, 2026-10-23: a notification and a pop-up, not a big card). Known once AutoReplyLinks.tsx has read the
+     agency's code; opening it opens the pop-up. */
+  if (W().SYN_AUTOREPLY && W().SYN_AUTOREPLY.code) out.push({ type: "social", tag: "Auto-replies", icon: "share", pane: "", action: "autoreply",
+    title: "Your auto-reply links are ready", sub: "Add one to your WhatsApp, Instagram or Facebook auto-reply", group: "To do" });
+
+  /* The free days (Eden, 2026-10-03: "notify them about this"), from the day the paywall switches on until the day it applies. */
+  const pw = W().SYN_PAYWALL;
+  if (pw && pw.paywall_on && !pw.enforced && pw.free_until && new Date(pw.free_until) > new Date()) {
+    const until = new Date(pw.free_until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    out.unshift({ type: "billing", tag: "Plans", icon: "card", pane: "billing", title: "Synapse is free for you until " + until,
+      sub: "After that, your plan’s limits apply. See what each plan includes.", group: "Today" });
+  }
+  /* REFERRALS: how far you are toward the next free month. */
+  const rf = W().SYN_REFERRAL;
+  if (rf && rf.on) out.unshift({ type: "billing", tag: "Referrals", icon: "users", pane: "subscription",
+    title: rf.into_next ? "You are " + rf.into_next + " of " + rf.per_reward + " toward a free month" : "Refer " + rf.per_reward + " agents, get a month free",
+    sub: "Share your link from Plans. An agency counts once it has uploaded " + rf.listings_required + " listings.", group: "Today" });
+
+  /* GETTING STARTED (Eden, 2026-10-07): only for the first month, only once the listings have answered (so it never claims "none"
+     before it knows), and gone the moment there is a listing. */
+  try {
+    const me = W().SynAuth && W().SynAuth.user && W().SynAuth.user();
+    const young = me && me.created_at && (Date.now() - new Date(me.created_at).getTime()) < 30 * 864e5;
+    if (young && call("SynDbBacked") && !L.length) out.unshift({ type: "setup", tag: "Getting started", icon: "plus", pane: "listings",
+      title: "Add your first listing",
+      sub: "About three minutes: photos, price and a pin on the map. Tayo starts matching it to buyers once it is live.", group: "Getting started" });
+  } catch { /* the bell is never worth an error */ }
+  return out.map((n) => ({ ...n, key: n.key || notiKey(n) }));
+}
 
 /** The bell in the top bar. One floating panel at a time: opening it closes Contact Synapse. */
 export function BellButton() {
