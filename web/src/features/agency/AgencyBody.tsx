@@ -19,6 +19,7 @@ import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
 import { NegotiatorPane } from "./NegotiatorPane";
 import { SideDrawer } from "./SideDrawer";
 import { AgentsPane } from "./AgentsPane";
+import { CrmPane } from "./CrmPane";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -319,77 +320,7 @@ export function AgencyBody() {
               </div>
             </section>
             <section className="pane" id="pane-crm">
-              <div className="eyebrow" data-agency-eyebrow="">
-                Your agency
-              </div>
-              <div className="h1">
-                CRM
-              </div>
-              <div className="crm-tools" data-pane-filters="">
-                <div className="crm-tools-l">
-                  <div className="seg">
-                    <button className="seg-b on" id="crmTableBtn">
-                      <span data-icon="card"></span>
-                      {" Table"}
-                    </button>
-                    <button className="seg-b" id="crmTodayBtn">
-                      <span data-icon="check"></span>
-                      {" Today"}
-                    </button>
-                    <button className="seg-b" id="crmBoardBtn">
-                      <span data-icon="boards"></span>
-                      {" Board"}
-                    </button>
-                  </div>
-                  <button className="tbtn" id="crmFilterBtn">
-                    <span data-icon="filter"></span>
-                    {" Filter"}
-                  </button>
-                  <button className="tbtn" id="crmSortBtn">
-                    <span data-icon="sort"></span>
-                    {" Sort"}
-                  </button>
-                </div>
-                <div className="crm-tools-r">
-                  <button className="tbtn" id="crmExport">
-                    <span data-icon="export"></span>
-                    {" Export"}
-                  </button>
-                  <button className="tbtn primary" id="crmAdd">
-                    + Add lead
-                  </button>
-                </div>
-              </div>
-              <div className="ob-waiting" id="obWaiting" hidden></div>
-              <div className="crm-funnel" id="crmFunnel" data-pane-filters=""></div>
-              <div className="card crm-tablecard">
-                <table className="crm-table" id="crmTable">
-                  <caption className="sr-only">
-                    Leads pipeline
-                  </caption>
-                  <thead id="crmHead"></thead>
-                  <tbody id="leads"></tbody>
-                </table>
-                <div className="crm-pg" id="crmPager"></div>
-              </div>
-              <div className="card" id="crmToday" hidden style={{ "padding": "18px 20px" }}></div>
-              <div className="crm-bulk" id="crmBulk" role="toolbar" aria-label="Bulk actions">
-                <span className="bk-n" id="crmBulkN">
-                  0 selected
-                </span>
-                <button data-bulk="assign">
-                  Assign
-                </button>
-                <button data-bulk="message">
-                  Message
-                </button>
-                <button data-bulk="delete" className="dgr">
-                  Delete
-                </button>
-                <button className="bk-x" data-bulk="clear" aria-label="Clear selection">
-                  ×
-                </button>
-              </div>
+              <CrmPane />
             </section>
             <section className="pane" id="pane-verification">
               <div className="eyebrow">
