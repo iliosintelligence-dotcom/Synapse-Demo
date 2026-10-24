@@ -66,7 +66,7 @@ export function BuyersBody() {
               </em>
             </h1>
             <p className="lede">
-              Tayo learns how you actually live, finds the homes that fit, and tells you why each one made the list.
+              Tell Tayo how you live and he finds homes that fit you.
             </p>
             <form className="ask irid neon" action="app/toju.html" method="get">
               <input type="hidden" name="new" defaultValue="site" />
@@ -125,7 +125,7 @@ export function BuyersBody() {
                         Tayo is awake when you are
                       </h3>
                       <p>
-                        Ask at two in the morning and get an answer at two in the morning. No form to fill in, no callback to wait for, no office hours to work around.
+                        Ask at 2am and get an answer at 2am.
                       </p>
                     </div>
                   </article>
@@ -142,7 +142,7 @@ export function BuyersBody() {
                         Or the listing disappears
                       </h3>
                       <p>
-                        Every home is re-confirmed by its agency, a short-let every week, a rental every three weeks, a sale every three months, or it comes off the site. So you never make the call that starts “actually, that one has gone.”
+                        Agencies must keep confirming each home is still free, or it comes off the site.
                       </p>
                     </div>
                   </article>
@@ -159,7 +159,7 @@ export function BuyersBody() {
                         For buyers and renters
                       </h3>
                       <p>
-                        No fee, no commission, no subscription, and no card to enter. Agencies pay for Synapse because it brings them buyers. You are the reason it works, not the one being charged.
+                        You never pay anything, because agencies pay for Synapse.
                       </p>
                     </div>
                   </article>
@@ -194,10 +194,7 @@ export function BuyersBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Where you work, how you get there, what you will not compromise on. It finds the homes that fit, and says why.
-                </p>
-                <p className="lede">
-                  Every home it suggests carries its verification status, so you can see which have been through Synapse’s checks and which have not.
+                  Say where you work and what you need, and Tayo tells you which homes fit and why.
                 </p>
               </div>
               <div className="frame p-crm">
@@ -215,7 +212,7 @@ export function BuyersBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  What Tayo finds is kept for you, on a list or a map: each home with its price, where it is, and whether it has been verified yet.
+                  The homes Tayo finds are saved for you on a list and a map.
                 </p>
               </div>
               <div className="frame p-reach">
@@ -233,7 +230,7 @@ export function BuyersBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Make a board for every idea: a whole home, a kitchen, a corridor you love. Pin what you like. Tayo reads each board and finds real verified homes that feel like it.
+                  Pin pictures you love and Tayo finds real homes that look like them.
                 </p>
               </div>
               <div className="frame p-team">
@@ -251,7 +248,7 @@ export function BuyersBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Each home shows what is around it, hospitals, schools, markets, transport, on a map beside its photographs.
+                  Each home shows the schools, hospitals, markets and buses near it.
                 </p>
               </div>
               <div className="frame p-nearby">
@@ -272,7 +269,7 @@ export function BuyersBody() {
                 </em>
               </h2>
               <p className="lede">
-                Free for buyers and renters. No fee, no commission, and no sign-up to start.
+                It is free, and you do not need to sign up to start.
               </p>
               <div className="hero-cta">
                 <a className="btn btn-solid" href="app/toju.html?new=site">
@@ -306,7 +303,7 @@ export function BuyersBody() {
               </em>
             </h2>
             <p className="lede">
-              Live listings, verified ones first. Save one, share it, or tap the chat icon and Tayo introduces you.
+              Save a home, share it, or tap chat and Tayo puts you in touch.
             </p>
         </HomesFeed>
       </main>

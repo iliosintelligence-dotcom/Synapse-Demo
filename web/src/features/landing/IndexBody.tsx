@@ -66,7 +66,7 @@ export function IndexBody() {
               </em>
             </h1>
             <p className="lede">
-              Marketing, buyers, contacts, negotiation and inspection: every step of selling a property, run in one place. You step in to close.
+              Synapse posts your listings, talks to buyers and books viewings, so you only step in to close.
             </p>
             <div className="hero-cta">
               <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
@@ -217,13 +217,7 @@ export function IndexBody() {
                     </em>
                   </h2>
                   <p className="lede">
-                    That leaves two expensive ways to grow: do the marketing, chasing and negotiating yourself, or hand the property to other agencies and pay for the reach out of your fee.
-                  </p>
-                  <p className="either">
-                    <b>
-                      Either way:
-                    </b>
-                    {" the customer pays more, or you earn less on the same work. Often both."}
+                    So you either do all the work yourself or share your fee with other agencies.
                   </p>
                   <p className="rl-hint" aria-hidden="true">
                     Keep scrolling →
@@ -348,7 +342,7 @@ export function IndexBody() {
                         Are you working 97 dead ends to reach 3 live ones?
                       </h3>
                       <p>
-                        Every “is it still available?” answered by hand. Every viewing arranged for someone who was never going to show. Every evening spent working out which is which.
+                        You answer every message by hand, even from people who will never buy.
                       </p>
                     </div>
                   </article>
@@ -413,7 +407,7 @@ export function IndexBody() {
                         Are your evenings going on captions?
                       </h3>
                       <p>
-                        Instagram, Facebook groups, WhatsApp broadcasts, TikTok, the estate group chats nobody admits to being in. Marketing one listing properly is a second full-time job.
+                        Posting one listing on every app takes your whole evening.
                       </p>
                     </div>
                   </article>
@@ -447,7 +441,7 @@ export function IndexBody() {
                         Are you splitting the fee to get reach?
                       </h3>
                       <p>
-                        Reaching more buyers usually means handing the property to three other agencies. Either the customer pays everyone’s cut, or you take a fraction of what the work was worth.
+                        To reach more buyers, you share your fee with other agencies.
                       </p>
                     </div>
                   </article>
@@ -498,7 +492,7 @@ export function IndexBody() {
                         Is your best negotiator one person?
                       </h3>
                       <p>
-                        Your strongest closer cannot hold two conversations at once, and when they take leave the pipeline slows behind them. Everyone else is learning on a live deal.
+                        Your best closer can only talk to one buyer at a time.
                       </p>
                     </div>
                   </article>
@@ -528,9 +522,9 @@ export function IndexBody() {
               Synapse
             </h2>
             <p className="statement">
-              {"The work you have been doing by hand, the posting, the chasing, the checking, "}
+              {"The posting, chasing and checking you do by hand, "}
               <em>
-                done once, properly, and on its own.
+                done for you.
               </em>
             </p>
           </div>
@@ -546,10 +540,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Paste the text you already send buyers and Synapse fills in the listing: the price, the rooms, the units, the payment terms. You check it.
-                </p>
-                <p className="lede">
-                  Pin it on the map, add the photos, and the seven verification checks start on their own. A listing you leave halfway is kept as a draft, on any device.
+                  Paste the text you send buyers on WhatsApp and Synapse fills in the listing for you.
                 </p>
               </div>
               <div className="frame p-team">
@@ -574,13 +565,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Upload once. Synapse writes the copy in your agency’s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.
-                </p>
-                <p className="lede">
-                  Each version is checked against that platform’s real limits, caption length, aspect ratio, video duration, and it never claims “verified” on a listing that is not.
-                </p>
-                <p className="lede">
-                  No agency retainer. No social media manager. No waiting on a designer.
+                  Upload a listing once and Synapse writes the posts and puts them on every app.
                 </p>
               </div>
               <div className="frame p-reach">
@@ -598,10 +583,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.
-                </p>
-                <p className="lede">
-                  Local intent, caught live, and delivered straight into your pipeline as a qualified lead.
+                  When a buyer walks past your property, Synapse shows it on their phone.
                 </p>
               </div>
               <div className="frame p-nearby">
@@ -641,13 +623,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Every lead arrives with the city, the budget and the brief already attached, and Tayo’s opening position with it.
-                </p>
-                <p className="lede">
-                  Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.
-                </p>
-                <p className="lede">
-                  The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.
+                  Every buyer reaches you with their budget and what they want already written down.
                 </p>
               </div>
               <div className="frame p-crm">
@@ -669,10 +645,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Tayo negotiates on your behalf. He opens at your asking price and never goes below the floor you set.
-                </p>
-                <p className="lede">
-                  When the buyer agrees, the deal is handed to your agent with the price, the buyer’s details and a viewing time. Take over whenever you want.
+                  Tayo bargains for you, never goes below your lowest price, and hands the buyer to your agent.
                 </p>
               </div>
               <div className="frame p-tayo">
@@ -696,10 +669,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Buyers book a viewing straight from the listing, at the times your agent has open.
-                </p>
-                <p className="lede">
-                  You get the notification, see the day’s schedule, and remind anyone who has not confirmed.
+                  Buyers book a viewing at a time your agent is free.
                 </p>
               </div>
               <div className="frame p-crm">
@@ -731,10 +701,7 @@ export function IndexBody() {
                   </em>
                 </h2>
                 <p className="lede">
-                  Your agent closes the deal and marks it done in the CRM.
-                </p>
-                <p className="lede">
-                  Every closed deal is traced back to the post that started it, so next month you spend on what actually sells.
+                  Each sale shows you which post brought the buyer in.
                 </p>
               </div>
               <div className="frame p-reach">
@@ -766,7 +733,7 @@ export function IndexBody() {
                     </em>
                   </h2>
                   <p className="lede">
-                    Every listing, lead and verification in a single view, with the next action already decided for each one.
+                    Every listing and buyer on one screen, with the next step for each.
                   </p>
                   <div className="vc-reel" id="vcReel" role="group" aria-roledescription="carousel" aria-label="Three things Synapse keeps in view">
                     <div className="vc-track" id="vcTrack">
@@ -775,7 +742,7 @@ export function IndexBody() {
                           Nothing gets dropped
                         </h3>
                         <p>
-                          Every lead ranked hot to cold, with the next best action written for whoever picks it up.
+                          Each buyer is ranked, with the next step written down.
                         </p>
                       </article>
                       <article className="vc-item" data-i="1" tabIndex="0" role="button" aria-roledescription="slide" aria-label="2 of 3">
@@ -783,7 +750,7 @@ export function IndexBody() {
                           Verification, tracked
                         </h3>
                         <p>
-                          See where each property stands in verification, and what is still outstanding.
+                          See which checks each property has passed.
                         </p>
                       </article>
                       <article className="vc-item" data-i="2" tabIndex="0" role="button" aria-roledescription="slide" aria-label="3 of 3">
@@ -791,7 +758,7 @@ export function IndexBody() {
                           Know what worked
                         </h3>
                         <p>
-                          Every closed deal traced back to the post that started it, so you spend on what actually sells.
+                          See which posts bring in the money.
                         </p>
                       </article>
                     </div>
@@ -835,7 +802,7 @@ export function IndexBody() {
                 </em>
               </h2>
               <p className="lede">
-                Synapse is in a free pilot for Nigerian estate agencies. Every feature is open to you: listings, the social studio, Tayo, the CRM and the verification desk. There is nothing to pay, no card to enter, and no commission on your deals. We will tell you well before anything changes.
+                Synapse is free while we test it, with no card and no cut of your deals.
               </p>
             </div>
             <div className="pilot irid neon">
@@ -882,7 +849,7 @@ export function IndexBody() {
               </em>
             </h2>
             <p className="lede">
-              Real listings from agencies on Synapse, verified ones first. This is where yours would sit, in front of buyers who are already looking.
+              Real listings from agencies on Synapse, and yours could be here too.
             </p>
         </HomesFeed>
         <section className="end">
@@ -895,7 +862,7 @@ export function IndexBody() {
                 </em>
               </h2>
               <p className="lede">
-                Free during the pilot. No card, no lock-in, no commission on your deals.
+                It is free to try today.
               </p>
               <div className="hero-cta">
                 <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
@@ -923,10 +890,10 @@ export function IndexBody() {
               {" "}
             </a>
             <p className="foot-tag">
-              Synapse, by ILIOS Digital. AI that finds buyers homes, and finds agencies buyers.
+              Synapse by ILIOS Digital helps buyers find homes and agencies find buyers.
             </p>
             <p className="foot-tag">
-              Screens on this page are the Synapse portal and Tayo with real listings; the leads, posts and chat in them are samples.
+              The screens on this page show real listings with sample buyers and chats.
             </p>
           </div>
           <div className="foot-links">
