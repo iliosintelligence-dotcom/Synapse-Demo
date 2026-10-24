@@ -34,3 +34,12 @@ export function dynSet(btn: HTMLElement | null, html: string) {
   btn.innerHTML = '<span class="dyn-l">' + html + "</span>";
   glide(btn, w0);
 }
+
+/* Put a label back without animating (a dialog that reopens). */
+export function dynReset(btn: HTMLElement | null, html: string) {
+  if (!btn) return;
+  btn.dataset.dynHtml = html;
+  btn.innerHTML = '<span class="dyn-l still">' + html + "</span>";
+}
+export const DYN_SPIN = '<span class="dyn-spin" aria-hidden="true"></span>';
+export const DYN_TICK = '<svg class="dyn-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';

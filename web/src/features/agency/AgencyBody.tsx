@@ -25,6 +25,7 @@ import { SchedulerHost } from "./Scheduler";
 import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./MarketingPane";
 import { ListSeg, ListSort, RelistAll, ListingGate, ListingsGrid } from "./ListingsPane";
 import { ShareKitHost } from "./ShareKit";
+import { ComposerHost } from "./PostComposer";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
 
@@ -538,8 +539,7 @@ export function AgencyBody() {
       <PlanGate />
       <FreeAccess />
       <SetupPop />
-      <div className="modal-scrim" id="cmpScrim"></div>
-      <div className="modal" id="cmpModal"></div>
+      <ComposerHost />
       <style  dangerouslySetInnerHTML={{ __html: inline("agency", "inline-5.css") }} />
       <AfterHydration scripts={SCRIPTS} />
       <AuthGate />
