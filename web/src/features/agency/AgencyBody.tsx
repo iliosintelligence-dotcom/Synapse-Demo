@@ -20,6 +20,8 @@ import { NegotiatorPane } from "./NegotiatorPane";
 import { SideDrawer } from "./SideDrawer";
 import { AgentsPane } from "./AgentsPane";
 import { PipelineBoard, PipelineCalendar, PipelineSelect } from "./PipelinePane";
+import { PropPreview } from "./PropPreview";
+import { SchedulerHost } from "./Scheduler";
 import { CrmPane } from "./CrmPane";
 
 const SCRIPTS: PageScript[] = [
@@ -567,9 +569,8 @@ export function AgencyBody() {
         </div>
       </div>
       <div className="toast" id="toast"></div>
-      <div className="pprev-scrim" id="pprevScrim">
-        <div className="pprev" id="pprevModal" role="dialog" aria-label="Property preview"></div>
-      </div>
+      <PropPreview />
+      <SchedulerHost />
       <AdvisorFab />
       <AdvisorPanel />
       <div className="scrim" id="scrim"></div>
