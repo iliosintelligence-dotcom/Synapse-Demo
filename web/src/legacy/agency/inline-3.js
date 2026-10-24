@@ -358,7 +358,7 @@
         buildHandoffs(leads); renderHandoffs();
         /* Whichever of the two requests lands second completes the picture:
            the roster supplies the people, the leads supply their workload. */
-        if (AG.loaded && AGENTS.length) { tallyAgentLeads(); renderAgents(); }
+        renderAgents();
         bootDone('leads');
       }).catch(err => {
         CRM.loaded = true;
@@ -2956,9 +2956,16 @@
       else if (pipeDeskQ.addListener) pipeDeskQ.addListener(redraw);
     })();
 
-    // ── listings, editable, with the 21-day freshness rule ──
-    // Every listing must be re-listed every 21 days or it stops showing to
+    // ── listings, editable, with the freshness rule ──
+    // Every listing must be re-listed before it expires or it stops showing to
     // buyers (matches Tayo's freshness filter). `days` = days since (re)listed.
+    /* How long a listing stays up depends on the deal (Eden, 2026-10-24): rentals 21 days, short-lets a week, sales --
+       houses, land, investments -- three months. The database decides it (listing_fresh_days, used by reconfirm_listing
+       and on insert); this copy is only for the labels and for rows that have no expires_at yet. */
+    const LISTING_LIFE = { rent: 21, shortlet: 7, sale: 90 };
+    const LIFE_LABEL = { 7: 'a week', 21: '21 days', 90: '3 months' };
+    function freshDays(l) { return LISTING_LIFE[l && l.listing_type] || 21; }
+    function lifeLabel(l) { const d = freshDays(l); return LIFE_LABEL[d] || d + ' days'; }
     /* The database is the ONLY source of listings. There is no seed set and no
        fabricated inventory: an agency sees exactly the properties it has
        uploaded through this page, and nothing else. The key is bumped to v5 so
@@ -3263,7 +3270,7 @@
          buyers can no longer be shown. */
       const left = l.expires_at
         ? Math.ceil((new Date(l.expires_at).getTime() - Date.now()) / 864e5)
-        : 14 - l.days;
+        : freshDays(l) - l.days;
       /* `left` is returned as well as the flags because notiItems asked for
          it and it was never there -- see the note on the expiring reminder. */
       if (left <= 0) return { cls: 'dead', label: 'Expired · hidden from buyers', left: left, expired: true, warn: false };
@@ -3309,7 +3316,7 @@
         const was = btn.innerHTML;
         btn.disabled = true; btn.textContent = 'Re-listing\u2026';
         Promise.all(due.map((l) =>
-          SynListings.relist(l.id).then((row) => {
+          SynListings.relist(l.id, freshDays(l)).then((row) => {
             /* Take the new date from the server rather than assuming it, so
                the grid repaints as what actually happened. */
             if (row && row.expires_at) l.expires_at = row.expires_at;
@@ -3327,7 +3334,7 @@
           renderListings();
           if (ok === 0) { toast('Could not re-list those. Try one on its own.'); return; }
           toast(ok === res.length
-            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + ' for another 21 days'
+            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + (ok === 1 ? ' for another ' + lifeLabel(due[0]) : ', each for its full window again')
             : 'Re-listed ' + ok + ' of ' + res.length + ' \u2014 the rest failed');
         });
       });
@@ -3342,7 +3349,7 @@
       else if (LIST.f === 'pending') a = a.filter(x => x.l.st === 'pending');
       else if (LIST.f === 'expiring') a = a.filter(x => freshness(x.l).warn);
       else if (LIST.f === 'expired') a = a.filter(x => freshness(x.l).expired);
-      if (LIST.sort === 'fresh') a.sort((p, q) => (21 - p.l.days) - (21 - q.l.days)); // fewest days left first (action queue)
+      if (LIST.sort === 'fresh') a.sort((p, q) => freshness(p.l).left - freshness(q.l).left); // fewest days left first (action queue)
       else if (LIST.sort === 'price') a.sort((p, q) => q.l.pr - p.l.pr);
       else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
       return a;
@@ -3494,7 +3501,7 @@
                 <div class="lc-menu" role="menu" hidden>
                   <button role="menuitem" data-edit="${oi}">Edit listing</button>
                   ${due ? `<button role="menuitem" data-post="${id}">Post about it</button>`
-                        : `<button role="menuitem" data-relist="${oi}">Re-list for 21 days</button>`}
+                        : `<button role="menuitem" data-relist="${oi}">Re-list for ${lifeLabel(l)}</button>`}
                 </div>
               </div>
             </div>
@@ -5376,11 +5383,15 @@
         l.days = 0;
         saveListings(); renderListings();
         if (dbBacked && l.id) {
-          SynListings.relist(l.id)
-            .then(() => toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days'))
+          SynListings.relist(l.id, freshDays(l))
+            .then((row) => {
+              /* The new date comes from the server, so the card shows what actually happened. */
+              if (row && row.expires_at) { l.expires_at = row.expires_at; saveListings(); renderListings(); }
+              toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next ' + lifeLabel(l));
+            })
             .catch((e) => toast('Not re-listed on the server: ' + ((e && e.message) || e)));
         } else {
-          toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next 21 days');
+          toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next ' + lifeLabel(l));
         }
       }
     });
@@ -6257,124 +6268,30 @@
       `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0, { label: (leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0) + '%' })}</div></div>` +
       statTile(fmtB(salesValue()), 'Sales', null);
 
-    /* ── agents, the real roster ─────────────────────────────────────────
-       This was `const AGENTS = []` with a comment saying it would fill once
-       you invited someone. It never could: nothing ever wrote to it. Meanwhile
-       agency_members, profiles and agent_profiles already held the team, so an
-       agency with staff on the platform was shown "Just you so far".
-
-       It reads SynListings.roster() now. Numbers the database actually keeps
-       (career closed deals, rating, response rate, years, areas, languages)
-       are shown; numbers it does not keep are shown as "-" rather than
-       computed from nothing. Win rate and average first reply are the two that
-       went: agent_daily_snapshots is empty, so every value they had was
-       invented. Active leads is real, it is counted off the leads this portal
-       has already loaded, by assigned_agent_id. */
-    let AGENTS = [];
-    let PENDING = [];   // live invites, shown beside the people who have joined
+    /* ── agents ── The roster, its cards and drawers are React (src/features/agency/AgentsPane.tsx). It counts each agent's open
+       leads off the rows loaded here (window.SynLeads) and names lead holders from ROSTER_BY_ID (window.SynRosterName).
+       loadAgents(), renderAgents() and openInvite() survive as names; ProfileDrawer, the setup ring and the lead load call them. */
+    window.SynLeads = function () { return leads; };
+    window.SynRosterName = function (id) { return ROSTER_BY_ID[id]; };
+    function loadAgents() { window.dispatchEvent(new CustomEvent('syn:agents-load')); }
+    function renderAgents() { window.dispatchEvent(new CustomEvent('syn:agents-render')); }
+    function openInvite() { window.dispatchEvent(new CustomEvent('syn:invite')); }
     const first = n => String(n || '').split(' ')[0];
-    const AG = { loaded: false, error: null };
 
-    /* "-" for absent, the number for present. `|| '-'` would turn a real 0
-       closed deals into a dash, which is a different statement. */
-    const agNum = (v, suffix) => v == null ? '-' : (v + (suffix || ''));
-
-    /* Your own profile id, so the roster can tell you apart from your team.
-       Resolved once, best-effort: a card that cannot tell is a card that shows
-       the ordinary actions, which is the safe way to be wrong. */
+    /* Your own profile id, which drafts are owned by (draftOwner). Resolved once, best-effort. */
     let ME = null;
     if (window.SynAuth && SynAuth.client) {
       SynAuth.client().then((c) => c.auth.getSession()).then((r) => {
         ME = (r && r.data && r.data.session && r.data.session.user && r.data.session.user.id) || null;
-        if (AG.loaded && AGENTS.length) renderAgents();
       }).catch(() => {});
     }
 
-    function loadAgents(){
-      if (!window.SynListings || !SynListings.roster) {
-        AG.loaded = true; AG.error = 'the data layer did not load'; renderAgents(); return;
-      }
-      SynListings.roster().then((people) => {
-        /* Owners and admins are on agency_members, but this pane is "who's on
-           the floor". Rendering them put the signed-in account on its own
-           roster as a teammate, and a seeded profile named after the agency
-           beside it. Filtered at the source so nothing downstream, sort,
-           summary, top-performer, has to know about them. */
-        /* Pending invites ride on the roster as their own cards, so an agency
-           can see who has been asked and has not joined yet, otherwise an
-           invite disappears the moment the drawer closes. */
-        if (window.SynListings && SynListings.invites) {
-          SynListings.invites()
-            .then((rows) => {
-              PENDING = rows.map((r) => ({
-                inviteId: r.id, token: r.token, nm: r.email, pending: true,
-                rl: r.role === 'agency_admin' ? 'Admin' : 'Agent',
-              }));
-              renderAgents();
-            })
-            .catch(() => {});
-        }
-        AGENTS = people.filter((m) => m.role === 'agent').map((m) => ({
-          id: m.id,
-          nm: m.name,
-          rl: AG_ROLE[m.role] || m.role || 'Agent',
-          isOwner: m.role === 'agency_owner' || m.role === 'agency_admin',
-          phone: m.phone,
-          avatar: m.avatar,
-          bio: m.bio,
-          years: m.years,
-          areas: m.areas,
-          specializations: m.specializations,
-          languages: m.languages,
-          certifications: m.certifications,
-          responseRate: m.responseRate,
-          closed: m.closed,
-          rating: m.rating,
-          followers: m.followers,
-          likes: m.likes,
-          active: 0,          // filled by tallyAgentLeads once leads are in
-          pending: false,
-        }));
-        AG.loaded = true; AG.error = null;
-        tallyAgentLeads();
-        renderAgents();
-      }).catch((err) => {
-        AG.loaded = true;
-        AG.error = (err && err.message) || 'please refresh';
-        AGENTS = [];
-        renderAgents();
-        console.error('roster load failed', err);
-      });
-    }
-
-    const AG_ROLE = {
-      agent: 'Agent', agency_admin: 'Admin', agency_owner: 'Owner',
-      platform_admin: 'Platform admin', consumer: 'Consumer',
-    };
-
-    /* Open leads per agent, off the rows the CRM already fetched. Runs after
-       either load finishes, because the two are independent requests and
-       whichever lands second is the one that can complete the picture. */
-    function tallyAgentLeads(){
-      if (!AGENTS.length) return;
-      const open = {};
-      (leads || []).forEach((l) => {
-        if (!l.agentId || l.stage === 'Won') return;
-        open[l.agentId] = (open[l.agentId] || 0) + 1;
-      });
-      AGENTS.forEach((a) => { a.active = open[a.id] || 0; });
-    }
-
     STATS.agents = '';   // rebuilt from real numbers by renderAgentSummary
-    /* The KPI strip and the two performance charts now live in the Ask-Tayo
-       side panel, so the Agents pane is just the roster. These render into the
-       panel's markup, which only exists while that panel is open, hence the
-       null checks rather than assuming the elements are on the page. */
+    /* The KPI strip and the two performance charts live in the Ask-Tayo side panel, drawn from the same roster the Agents
+       pane shows. They render into the panel's markup, which only exists while that panel is open, hence the null checks. */
     function renderAgentSummary() {
-      /* Owners and admins are on the roster but are not carrying leads, so
-         they would drag every average down. The read here is about the people
-         actually working the floor. */
-      const real = AGENTS.filter(a => !a.pending);
+      /* The read here is about the people actually working the floor: the roster is agents only. */
+      const real = (window.SynRoster && window.SynRoster()) || [];
       const rated = real.filter(a => a.rating != null);
       const withRate = real.filter(a => a.responseRate != null);
       const kpis = document.getElementById('agKpis');
@@ -6398,8 +6315,7 @@
         closed.innerHTML = !real.length ? blank
           : have.length ? hbarsHTML(have.map(a => [first(a.nm), a.closed])) : none;
       }
-      /* Was average first reply in minutes, which nothing records. Response
-         rate is a real column on agent_profiles, so the panel shows that. */
+      /* Response rate is a real column on agent_profiles; average first reply in minutes is recorded nowhere. */
       const reply = document.getElementById('agReply');
       if (reply) {
         reply.innerHTML = !real.length ? blank
@@ -6408,102 +6324,6 @@
       const lbl = document.getElementById('agReplyLbl');
       if (lbl) lbl.textContent = 'Response rate';
     }
-
-    function renderAgents(){
-      /* Sorted in place before anything reads it, so the "top performer" mark
-         below and the cards agree on the same order. Open leads descending,
-         because the reason to sort by workload is to find who is carrying it. */
-      AGENTS.sort((a, b) => AGENT_SORT === 'leads'
-        ? (b.active || 0) - (a.active || 0)
-        : String(a.nm || '').localeCompare(String(b.nm || '')));
-      const real = AGENTS.filter(a => !a.pending);
-      /* Ranked on closed deals alone now. The tie-breaker used to be win rate,
-         which nothing records. Only agents with a recorded count can top the
-         list, an agent with no number is unranked, not last. */
-      const ranked = real.filter(a => a.closed != null);
-      const top = ranked.length ? ranked.reduce((b, a) => a.closed > b.closed ? a : b, ranked[0]) : null;
-      const topIdx = top ? AGENTS.indexOf(top) : -1;
-      renderAgentSummary();
-      const g = document.getElementById('agrid');
-      if (!AG.loaded) { g.innerHTML = '<p class="muted" style="font-size:13px">Loading your team…</p>'; return; }
-      if (AG.error) {
-        g.innerHTML = '<div class="ov-blank"><b>Could not load your team</b>'
-          + '<p>' + esc2(AG.error) + '</p></div>';
-        return;
-      }
-      /* An agency with no teammates yet rendered an empty grid under the
-         invite button. Say what this becomes instead. */
-      /* PENDING counts as team here. This read `!AGENTS.length`, so an agency
-         that had invited people but had nobody accept yet -- the normal state
-         for a first invite -- got "Just you so far" and returned, and the
-         invite cards further down never rendered. The invite was in the
-         database the whole time; this screen simply stopped before it could
-         say so, which looked exactly like the invite had failed. */
-      if (!AGENTS.length && !PENDING.length) {
-        g.innerHTML =
-          '<div class="ov-blank">'
-          + '<span class="ov-blank-i" data-icon="user"></span>'
-          + '<b>Just you so far</b>'
-          + '<p>Invite your agents and Synapse routes leads to them, tracks who '
-          + 'closes what, and builds the performance read on this page from their '
-          + 'real numbers.</p>'
-          + '<button class="btn btn-primary" type="button" data-ag-invite>+ Invite an agent</button>'
-          + '</div>';
-        if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(g);
-        return;
-      }
-      document.getElementById('agrid').innerHTML = AGENTS.concat(PENDING).map((a, i) => {
-        const face = (x) => x.avatar
-          ? `<img src="${esc2(x.avatar)}" alt="" loading="lazy">`
-          : initials(x.nm);
-        if (a.pending) return `<div class="card acard pending enter" style="animation-delay:${i * 45}ms">
-          <div class="ac-cover"><span class="ac-dot me">Invited</span></div>
-          <div class="ac-body">
-            <div class="ac-face">${initials(a.nm)}</div>
-            <div class="ac-nm" style="word-break:break-all">${esc2(a.nm)}</div>
-            <div class="ac-rl">${esc2(a.rl)} · hasn't joined yet</div>
-            <div class="ac-acts">
-              <button class="ac-btn solid" data-inv-copy="${esc2(a.token)}"><span data-icon="share"></span> Copy link</button>
-              <button class="ac-btn ghost" data-inv-revoke="${esc2(a.inviteId)}">Revoke</button>
-            </div>
-          </div></div>`;
-        const busy = a.active >= 10;
-        const me = a.id === ME;
-        /* Only figures the database actually holds. Followers and likes are
-           counted rows; no stars anywhere. Absent stays "-". */
-        const figs = [
-          [a.active, 'active'],
-          [agNum(a.closed), 'closed'],
-          [agNum(a.followers), 'followers'],
-          [agNum(a.likes), 'likes'],
-        ];
-        return `<div class="card acard enter" role="button" tabindex="0" data-agent="${i}" aria-label="Open ${esc2(a.nm)}'s profile, ${esc2(a.rl)}" style="animation-delay:${i * 45}ms">
-          <div class="ac-cover">
-            ${a.avatar ? `<img src="${esc2(a.avatar)}" alt="" loading="lazy">` : ''}
-            <span class="ac-dot ${me ? 'me' : busy ? 'busy' : 'free'}">${me ? 'You' : busy ? 'At capacity' : 'Available'}</span>
-          </div>
-          <div class="ac-body">
-            <div class="ac-face">${face(a)}</div>
-            <div class="ac-nm">${esc2(a.nm)}${i === topIdx ? '<span class="ac-vf" title="Most deals closed on this team">✓</span>' : ''}</div>
-            <div class="ac-rl">${esc2(a.rl)}${a.years != null ? ` · ${a.years} yr${a.years === 1 ? '' : 's'}` : ''}${(a.areas && a.areas.length) ? ' · ' + esc2(a.areas.join(', ')) : ''}</div>
-            ${me ? `<div class="ac-acts">
-              <button class="ac-btn solid" data-myprofile><span data-icon="user"></span> ${a.bio ? 'Edit my profile' : 'Complete your profile'}</button>
-            </div>` : `<div class="ac-acts">
-              <button class="ac-btn solid" data-msg="${i}"><span data-icon="chat"></span> Message</button>
-              <button class="ac-btn ghost" data-assign="${i}"><span data-icon="spark"></span> Assign lead</button>
-            </div>`}
-            <div class="ac-figs">
-              ${figs.map(([v, l]) => `<div class="ac-fig"><span class="ac-v">${v}</span><span class="ac-l">${l}</span></div>`).join('')}
-            </div>
-          </div>
-        </div>`;
-      }).join('');
-      /* The empty state hydrated its icon and this branch never did, harmless
-         until the cards themselves carried icons, which they now do. */
-      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(document.getElementById('agrid'));
-    }
-    renderAgents();
-    loadAgents();
 
     /* Straight after the join reload: open the profile once, as a welcome
        rather than a chore. Cleared first, so a refresh later never reopens it. */
@@ -6548,145 +6368,6 @@
         })
         .catch(() => toast('That invite could not be checked just now.'));
     })();
-
-    /* The agent's profile. Every chart in here used to be drawn from an array
-       that no longer exists: an 8-week sparkline of leads handled, a win-rate
-       ring, an 8-week reply-time trend, pipeline by stage, recent deals. Those
-       came from the five invented colleagues. agent_daily_snapshots is the
-       table that would feed them and it is empty, so drawing them at all would
-       be inventing a performance record for a named, real person.
-
-       What is left is what agent_profiles actually stores. This is also the
-       view a buyer will eventually see a version of, so it is written as a
-       profile rather than a dashboard. */
-    function openAgent(i) {
-      const a = AGENTS[i];
-      const chips = (list) => (list && list.length)
-        ? `<div class="ag-chips">${list.map(x => `<span class="ag-chip">${esc2(x)}</span>`).join('')}</div>`
-        : '<p class="muted" style="font-size:12.5px;margin:0">Not set yet.</p>';
-      const sec = (k, body) => `<div class="ap-sec"><div class="k">${k}</div>${body}</div>`;
-
-      drawer.innerHTML = `
-        <button class="x" aria-label="Close">×</button>
-        <div class="dhead">
-          <span class="av" style="width:52px;height:52px;font-size:16px;flex:none">${initials(a.nm)}</span>
-          <div class="who"><div class="dnm">${esc2(a.nm)}</div>
-            <div class="rl">${esc2(a.rl)}${a.years != null ? ` · ${a.years} year${a.years === 1 ? '' : 's'} experience` : ''}</div></div>
-        </div>
-
-        <!-- The two things you open an agent to do, before anything you only
-             want to read. This drawer used to bury them under six sections. -->
-        ${a.id === ME ? '' : `<div class="ap-do">
-          <button class="ac-btn solid" data-msg="${i}"><span data-icon="chat"></span> Message</button>
-          <button class="ac-btn ghost" data-assign="${i}"><span data-icon="spark"></span> Assign lead</button>
-        </div>`}
-
-        <div class="ap-hero">
-          <div><div class="v">${a.active}</div><div class="l">Active leads</div></div>
-          <div><div class="v">${agNum(a.closed)}</div><div class="l">Closed · career</div></div>
-          <div><div class="v">${agNum(a.followers)}</div><div class="l">Followers</div></div>
-        </div>
-
-        <!-- Availability sits high because it is the other thing an owner comes
-             here to change, and it is what makes this agent bookable at all. -->
-        <div class="ap-sec"><div class="k">When ${esc2(first(a.nm))} can show</div>
-          <p class="muted" style="font-size:11.5px;margin:0 0 10px;line-height:1.5">
-            Tayo only offers buyers a time from this list, and only buyers it has
-            already qualified. Several can share one visit.</p>
-          <div id="avList"><p class="muted" style="font-size:12.5px">Loading…</p></div>
-          <div class="av-add">
-            <select id="avDay" aria-label="Day">
-              <option value="1">Monday</option><option value="2">Tuesday</option>
-              <option value="3">Wednesday</option><option value="4">Thursday</option>
-              <option value="5">Friday</option><option value="6" selected>Saturday</option>
-              <option value="0">Sunday</option>
-            </select>
-            <select id="avCap" aria-label="Buyers per visit">
-              <option value="2">2 buyers</option><option value="3">3 buyers</option>
-              <option value="4" selected>4 buyers</option><option value="6">6 buyers</option>
-            </select>
-            <input id="avFrom" type="time" value="10:00" aria-label="From">
-            <input id="avTo" type="time" value="13:00" aria-label="To">
-            <button class="btn btn-primary wide" id="avAdd" type="button">Add this window</button>
-          </div>
-        </div>
-
-        <!-- Everything below is the read, not the do. -->
-        ${a.bio ? sec('About', `<p style="font-size:13px;line-height:1.55;margin:0">${esc2(a.bio)}</p>`) : ''}
-        ${sec('Areas covered', chips(a.areas))}
-        ${sec('Specialises in', chips(a.specializations))}
-        ${sec('Speaks', chips(a.languages))}
-        ${a.responseRate != null
-          ? sec('Response rate', `<div class="ringwrap">${ringSVG(a.responseRate, { size: 84, sw: 9, fs: 16 })}</div>`
-              + '<p class="muted" style="font-size:11px;text-align:center;margin-top:8px">of buyer enquiries answered</p>')
-          : ''}
-        ${(a.certifications && a.certifications.length) ? sec('Certifications', chips(a.certifications)) : ''}`;
-      scrim.classList.add('on'); drawer.classList.add('on');
-      wireAvailability(a);
-    }
-
-    /* ── when an agent can show ───────────────────────────────────────────
-       The pool Tayo draws from. Nothing here proposes a time; it records the
-       windows the agency has pre-cleared, and open_inspection_slots expands
-       them into the concrete times a buyer sees. */
-    const AV_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const avTime = (t) => String(t || '').slice(0, 5);
-
-    function wireAvailability(a) {
-      const list = document.getElementById('avList');
-      if (!list || !a || !a.id || !window.SynListings || !SynListings.availability) return;
-
-      const paint = (rows) => {
-        if (!rows.length) {
-          list.innerHTML = '<p class="muted" style="font-size:12.5px;margin:0 0 4px">'
-            + 'No times set yet, so nothing can be booked with ' + esc2(first(a.nm)) + '.</p>';
-          return;
-        }
-        list.innerHTML = rows.map((r) => {
-          const when = r.specific_date
-            ? new Date(r.specific_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-            : AV_DAYS[r.weekday] + 's';
-          const perVisit = Math.max(1, Math.floor(
-            ((new Date('1970-01-01T' + r.end_time) - new Date('1970-01-01T' + r.start_time)) / 60000) / (r.slot_minutes || 60)));
-          return '<div class="av-row"><div>'
-            + '<div class="av-when">' + esc2(when) + ' \u00b7 ' + esc2(avTime(r.start_time)) + '\u2013' + esc2(avTime(r.end_time)) + '</div>'
-            + '<div class="av-meta">' + perVisit + ' visit' + (perVisit === 1 ? '' : 's')
-            + ' \u00b7 up to ' + r.capacity + ' buyers each</div>'
-            + '</div><button class="av-del" type="button" data-av-del="' + r.id + '" aria-label="Remove this window">\u00d7</button></div>';
-        }).join('');
-      };
-
-      const load = () => SynListings.availability(a.id).then(paint).catch(() => {
-        list.innerHTML = '<p class="muted" style="font-size:12.5px">Could not load these times.</p>';
-      });
-      load();
-
-      list.addEventListener('click', (ev) => {
-        const del = ev.target.closest('[data-av-del]');
-        if (!del) return;
-        del.disabled = true;
-        SynListings.removeAvailability(del.dataset.avDel)
-          .then(() => { toast('Window removed.'); load(); })
-          .catch(() => { del.disabled = false; toast('Could not remove that.'); });
-      });
-
-      const add = document.getElementById('avAdd');
-      add.addEventListener('click', () => {
-        const from = document.getElementById('avFrom').value;
-        const to = document.getElementById('avTo').value;
-        if (!from || !to || to <= from) { toast('The end time has to be after the start.'); return; }
-        add.disabled = true;
-        SynListings.addAvailability({
-          agentId: a.id,
-          weekday: +document.getElementById('avDay').value,
-          start: from, end: to,
-          capacity: +document.getElementById('avCap').value,
-        })
-          .then(() => { toast(first(a.nm) + ' can now show at that time.'); load(); })
-          .catch((err) => toast((err && err.message) || 'Could not save that window.'))
-          .then(() => { add.disabled = false; });
-      });
-    }
 
     /* ══ WHO YOU ARE IN THIS AGENCY ═══════════════════════════════════════
        Three roles, and until now the portal knew about none of them. myRole()
@@ -6802,38 +6483,6 @@
       if (nav) nav.addEventListener('click', (e) => { e.preventDefault(); openMyProfile(); });
     })();
 
-    document.getElementById('agrid').addEventListener('click', (e) => {
-      /* Both of these used to be toasts describing work you then had to go and
-         do somewhere else, one sent you to WhatsApp, the other told you to
-         find the lead in the CRM yourself. They open the drawer and do it. */
-      const mine = e.target.closest('[data-myprofile]');
-      if (mine) { e.stopPropagation(); openMyProfile(); return; }
-      const cp = e.target.closest('[data-inv-copy]');
-      if (cp) {
-        e.stopPropagation();
-        const url = location.origin + location.pathname + '?invite=' + cp.dataset.invCopy;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(() => toast('Invite link copied.'))
-            .catch(() => toast(url));
-        } else toast(url);
-        return;
-      }
-      const rv = e.target.closest('[data-inv-revoke]');
-      if (rv) {
-        e.stopPropagation(); rv.disabled = true;
-        SynListings.revokeInvite(rv.dataset.invRevoke)
-          .then(() => { toast('Invite revoked, that link no longer works.'); loadAgents(); })
-          .catch(() => { rv.disabled = false; toast('Could not revoke that.'); });
-        return;
-      }
-      const m = e.target.closest('[data-msg]'); if (m) { e.stopPropagation(); openAgentChat(+m.dataset.msg); return; }
-      const s = e.target.closest('[data-assign]'); if (s) { e.stopPropagation(); openAssign(+s.dataset.assign); return; }
-      const c = e.target.closest('[data-agent]'); if (c) openAgent(+c.dataset.agent);
-    });
-    document.getElementById('agrid').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      const c = e.target.closest('[data-agent]'); if (c) { e.preventDefault(); openAgent(+c.dataset.agent); }
-    });
     /* ── tours ────────────────────────────────────────────────────────────
        Upcoming group inspections. The agency confirms a slot it has already
        pre-cleared, accept or adjust, not open-ended scheduling, and can see
@@ -6846,198 +6495,6 @@
     /* The page is React (src/features/agency/ToursPane.tsx); goToPane still calls loadTours by name. */
     function loadTours() { window.dispatchEvent(new CustomEvent('syn:tours-load')); }
 
-    /* ── message an agent, in the app ─────────────────────────────────────
-       The old button toasted "opening the WhatsApp thread" and opened nothing.
-       There is no reason for an agency to leave the product to talk to its own
-       staff, so the thread lives here: the same right-hand drawer the profile
-       uses, history above, composer pinned below. */
-    function openAgentChat(i) {
-      const a = AGENTS[i]; if (!a || !a.id) return;
-      drawer.innerHTML = `
-        <button class="x" aria-label="Close">×</button>
-        <div class="dhead">
-          <span class="av" style="width:44px;height:44px;font-size:14px;flex:none">${initials(a.nm)}</span>
-          <div class="who"><div class="dnm">${esc2(a.nm)}</div>
-            <div class="rl">${esc2(a.rl)}</div></div>
-        </div>
-        <div class="tm-wrap">
-        <div class="tm-thread" id="tmThread"><p class="muted" style="font-size:12.5px">Loading…</p></div>
-        <form class="tm-compose" id="tmForm" autocomplete="off">
-          <input id="tmInput" placeholder="Message ${esc2(first(a.nm))}…" aria-label="Message ${esc2(a.nm)}" maxlength="4000">
-          <button class="tm-send" id="tmSend" type="submit" aria-label="Send"><span data-icon="arrow-right"></span></button>
-        </form>
-        </div>`;
-      scrim.classList.add('on'); drawer.classList.add('on');
-      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(drawer);
-
-      const box = document.getElementById('tmThread');
-      const paint = (msgs) => {
-        if (!msgs.length) {
-          box.innerHTML = '<div class="tm-empty">No messages yet. What you send lands in '
-            + esc2(first(a.nm)) + '&rsquo;s Synapse inbox, not a personal WhatsApp.</div>';
-          return;
-        }
-        box.innerHTML = msgs.map((m) => `<div class="tm-msg ${m.mine ? 'mine' : 'theirs'}">`
-          + `<span>${esc2(m.body)}</span><i>${agoLabel(m.at)}</i></div>`).join('');
-        box.scrollTop = box.scrollHeight;
-      };
-
-      let msgs = [];
-      if (!window.SynListings || !SynListings.thread) {
-        box.innerHTML = '<div class="tm-empty">Messaging is unavailable right now.</div>';
-      } else {
-        SynListings.thread(a.id)
-          .then((t) => { msgs = t.messages; paint(msgs); })
-          .catch((err) => { box.innerHTML = '<div class="tm-empty">Could not load this thread, '
-            + esc2((err && err.message) || 'please try again') + '</div>'; });
-      }
-
-      document.getElementById('tmForm').addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        const input = document.getElementById('tmInput');
-        const text = input.value.trim();
-        if (!text) return;
-        const send = document.getElementById('tmSend');
-        send.disabled = true; input.disabled = true;
-        SynListings.sendTeamMessage(a.id, text)
-          .then((m) => { msgs.push(m); paint(msgs); input.value = ''; })
-          .catch((err) => toast('Not sent, ' + ((err && err.message) || 'please try again')))
-          .then(() => { send.disabled = false; input.disabled = false; input.focus(); });
-      });
-      setTimeout(() => { SynMatches.focusUnlessTouch(document.getElementById('tmInput')); }, 60);
-    }
-
-    /* ── assign a lead ────────────────────────────────────────────────────
-       Was a toast telling you to go to the CRM and do it there. It lists the
-       agency's open leads with who currently holds each, and assigns on tap.
-       The rows come from the same `leads` this portal already loaded, so there
-       is no second source to disagree with the CRM. */
-    function openAssign(i) {
-      const a = AGENTS[i]; if (!a || !a.id) return;
-      const open = (leads || []).filter((l) => l.stage !== 'Won');
-      drawer.innerHTML = `
-        <button class="x" aria-label="Close">×</button>
-        <div style="font-size:19px;font-weight:700">Assign a lead</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 16px">To ${esc2(a.nm)}. Tap a lead to move it, whoever holds it now is shown under each one.</p>
-        <div id="asgList">${
-          open.length
-            ? open.map((l) => {
-                const holder = l.agentId ? (ROSTER_BY_ID[l.agentId] || 'Someone else') : 'Unassigned';
-                const mine = l.agentId === a.id;
-                return `<button class="asg" type="button" data-lead="${l.id}" ${mine ? 'disabled' : ''}>
-                  <span class="asg-l"><b>${esc2(l.nm)}</b><i>${esc2(l.pr)}</i></span>
-                  <span class="asg-r ${mine ? 'on' : ''}">${mine ? 'Already theirs' : esc2(holder)}</span>
-                </button>`;
-              }).join('')
-            : '<div class="tm-empty">No open leads to assign yet.</div>'
-        }</div>`;
-      scrim.classList.add('on'); drawer.classList.add('on');
-
-      document.getElementById('asgList').addEventListener('click', (ev) => {
-        const row = ev.target.closest('[data-lead]'); if (!row || row.disabled) return;
-        const id = row.dataset.lead;
-        row.disabled = true;
-        const right = row.querySelector('.asg-r');
-        right.textContent = 'Assigning…';
-        SynListings.assignLeads([id], a.id)
-          .then(() => {
-            const lead = (leads || []).find((l) => l.id === id);
-            if (lead) lead.agentId = a.id;
-            right.textContent = 'Already theirs'; right.classList.add('on');
-            /* The roster's Active leads figure is derived from these rows, so
-               it has to be recomputed or the card contradicts the drawer. */
-            tallyAgentLeads(); renderAgents(); renderCrm();
-            toast(first(a.nm) + ' now has this lead.');
-          })
-          .catch((err) => {
-            row.disabled = false;
-            right.textContent = 'Could not assign';
-            toast((err && err.message) || 'Could not assign that lead.');
-          });
-      });
-    }
-
-    // ── Invite a teammate: a real form in the side pane ──
-    function openInvite(){
-      drawer.innerHTML = `
-        <button class="x" aria-label="Close">×</button>
-        <div style="font-size:19px;font-weight:700">Invite a teammate</div>
-        <p class="muted" style="font-size:12px;margin:6px 0 18px">You&#39;ll get a link to send them yourself &mdash; we can&#39;t email it out yet. Only the address you invite can use it, and it lasts 14 days.</p>
-        <div class="inv">
-          <div class="field"><label for="invEmail">Work email</label><input type="email" id="invEmail" placeholder="name@agency.com" autocomplete="off"><span class="err" id="invErr" role="alert">⚠ Enter a valid email address</span></div>
-          <div class="field"><label for="invRole">Role</label><select id="invRole"><option value="agent">Agent &mdash; works leads and shows homes</option><option value="agency_admin">Admin &mdash; can also invite and manage</option></select></div>
-          <button class="send" id="invSend" disabled aria-disabled="true">Send invite</button>
-        </div>`;
-      scrim.classList.add('on'); drawer.classList.add('on');
-      const email = document.getElementById('invEmail'), err = document.getElementById('invErr'), send = document.getElementById('invSend');
-      const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      email.addEventListener('input', () => {
-        const v = email.value.trim(), ok = valid(v);
-        /* Shown only once something has been typed: an empty field is not yet
-           wrong. role="alert" on the span announces the sentence when it
-           appears; these two say which field it is about, so tabbing back
-           reads the reason rather than just "invalid". */
-        const showing = !!(v && !ok);
-        err.style.display = showing ? 'block' : 'none';
-        if (showing) { email.setAttribute('aria-invalid', 'true'); email.setAttribute('aria-describedby', 'invErr'); }
-        else { email.removeAttribute('aria-invalid'); email.removeAttribute('aria-describedby'); }
-        send.disabled = !ok; send.setAttribute('aria-disabled', String(!ok));
-      });
-      email.focus();
-      /* This pushed a fake row onto AGENTS and toasted "Invite sent, they get
-         a link to join this workspace". Nothing was sent: no row was written,
-         no email left the browser, and the fake teammate disappeared on the
-         next refresh. Now that the roster is read from agency_members, a
-         fabricated row would also be sitting in a list of real people.
-
-         It cannot be finished from here. Adding someone means inserting into
-         agency_members with their profile_id, and an email address cannot be
-         resolved to a profile client-side, `profiles` has no email column and
-         auth.users is not readable from the browser. That needs an
-         agency_invites table and a function that emails the link. Until then
-         this says so instead of pretending. */
-      send.addEventListener('click', () => {
-        const v = email.value.trim(); if (!valid(v)) return;
-        send.disabled = true; send.textContent = 'Creating…';
-        SynListings.createInvite(v, document.getElementById('invRole').value)
-          .then((inv) => {
-            /* The link is the deliverable, since we cannot post it ourselves.
-               Shown, selectable, and copied for them where the browser allows. */
-            const url = location.origin + location.pathname + '?invite=' + inv.token;
-            drawer.innerHTML =
-              '<button class="x" aria-label="Close">×</button>'
-              + '<div style="font-size:19px;font-weight:700">Invite ready</div>'
-              + '<p class="muted" style="font-size:12.5px;margin:8px 0 14px;line-height:1.55">'
-              + 'Send this to <b>' + esc2(inv.email) + '</b>. Only that address can use it, '
-              + 'and it expires in 14 days.</p>'
-              + '<div class="inv-link" id="invLink">' + esc2(url) + '</div>'
-              + '<button class="btn btn-primary btn-block" id="invCopy" style="margin-top:12px">Copy link</button>';
-            document.getElementById('invCopy').addEventListener('click', () => {
-              const done = () => toast('Link copied, send it to ' + inv.email + '.');
-              if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(url).then(done).catch(() => selectLink());
-              } else selectLink();
-              function selectLink() {
-                /* Clipboard access can be refused; selecting the text means the
-                   agency can still copy it by hand rather than being stuck. */
-                const el = document.getElementById('invLink');
-                const rng = document.createRange(); rng.selectNodeContents(el);
-                const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(rng);
-                toast('Select and copy the link above.');
-              }
-            });
-            loadAgents();
-          })
-          .catch((err) => {
-            send.disabled = false; send.textContent = 'Send invite';
-            toast((err && err.message) || 'Could not create that invite.');
-          });
-      });
-    }
-    document.getElementById('inviteAgentBtn').addEventListener('click', openInvite);
-    document.getElementById('agrid').addEventListener('click', (e) => {
-      if (e.target.closest('[data-ag-invite]')) openInvite();
-    });
 
     // ── verification queue (7-node progress) ──
     // Verification lives on the listing cards (verified/pending badge + freshness),
@@ -7099,14 +6556,6 @@
     window.SynHandoffs = function () { return HANDOFFS; };
     function renderHandoffs() { window.dispatchEvent(new CustomEvent('syn:handoffs')); }
 
-    let AGENT_SORT = 'name';
-    document.addEventListener('click', (e) => {
-      const b = e.target.closest('#agentSort .seg-b');
-      if (!b) return;
-      [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b));
-      AGENT_SORT = b.dataset.as;
-      if (typeof renderAgents === 'function') renderAgents();
-    });
 
     // ── social composer: New post → AI captions (edge fn) → schedule ──
     const SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
@@ -10697,7 +10146,7 @@
         ], 'Ask below what you still need to send.') },
       listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
         html: () => tpSummary('Keep your listings live', [
-          'Every listing expires 21 days after it was last confirmed.',
+          'A listing expires after it was last confirmed: rentals in 21 days, short-lets in a week, sales in 3 months.',
           'Tayo flags what has expired and what is about to, per listing.',
         ], 'The notification bell carries the same warnings, and takes you straight to the listing.') },
       social: { title: 'Content coach', sub: 'What to post next',
@@ -10838,7 +10287,7 @@
       if (OV.q) { const q = OV.q.toLowerCase(); a = a.filter(l => l.t.toLowerCase().includes(q)); }
       if (OV.f === 'verified') a = a.filter(l => l.st === 'verified');
       else if (OV.f === 'pending') a = a.filter(l => l.st === 'pending');
-      else if (OV.f === 'expiring') a = a.filter(l => { const left = 14 - l.days; return left > 0 && left <= 3; });
+      else if (OV.f === 'expiring') a = a.filter(l => freshness(l).warn);
       return a;
     }
     function renderOvDetail(l) {

@@ -18,6 +18,7 @@ import { BillingPane } from "./BillingPane";
 import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
 import { NegotiatorPane } from "./NegotiatorPane";
 import { SideDrawer } from "./SideDrawer";
+import { AgentsPane } from "./AgentsPane";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -601,35 +602,7 @@ export function AgencyBody() {
               <div className="lgrid" id="lgrid"></div>
             </section>
             <section className="pane" id="pane-agents">
-              <div style={{ "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
-                <div>
-                  <div className="eyebrow" data-agency-eyebrow="">
-                    Your team
-                  </div>
-                  <div className="h1">
-                    Agents
-                  </div>
-                  <p className="muted" style={{ "fontSize": "14px", "marginTop": "4px" }}>
-                    Who's on the floor, and how they're performing.
-                  </p>
-                </div>
-                <button className="btn btn-primary" id="inviteAgentBtn">
-                  + Invite agent
-                </button>
-              </div>
-              <div className="crm-tools" data-pane-filters="">
-                <div className="crm-tools-l">
-                  <div className="seg" id="agentSort">
-                    <button className="seg-b on" data-as="name">
-                      Name
-                    </button>
-                    <button className="seg-b" data-as="leads">
-                      Open leads
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="agrid" id="agrid"></div>
+              <AgentsPane />
             </section>
             <section className="pane" id="pane-brand">
               <BrandPage />

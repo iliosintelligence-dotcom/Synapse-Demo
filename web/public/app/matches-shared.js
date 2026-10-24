@@ -315,7 +315,7 @@
     const days = Math.ceil(ms / 864e5);
     if (days > 3) return '';
     const label = days === 1 ? 'Expires tomorrow' : 'Expires in ' + days + ' days';
-    return `<span class="expiry" title="Listings come down after 21 days unless the agency re-lists them">${label}</span>`;
+    return `<span class="expiry" title="Listings come down unless the agency re-lists them: short-lets after a week, rentals after 21 days, sales after 3 months">${label}</span>`;
   }
 
   /* The property card's own look. Injected here so the browse page, Tayo's canvas and Tayo's chat all draw the same card. */

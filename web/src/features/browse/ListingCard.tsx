@@ -70,7 +70,7 @@ export function ListingCard({ l, saved, compareOn, picked, onSave, onPick, onOpe
         <div className={s.tags}>
           <span className={`${s.chip} ${s[v.cls]}`}>{v.text}</span>
           <span className={s.dealTag}>{l.deal}</span>
-          {exp && <span className={s.expiry} title="Listings come down after 21 days unless the agency re-lists them">{exp}</span>}
+          {exp && <span className={s.expiry} title="Listings come down unless the agency re-lists them: short-lets after a week, rentals after 21 days, sales after 3 months">{exp}</span>}
           {compareOn && (
             <label className={s.cmpbox}>
               <input type="checkbox" checked={picked} onChange={onPick} /> compare

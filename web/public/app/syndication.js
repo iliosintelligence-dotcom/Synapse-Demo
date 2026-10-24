@@ -78,7 +78,7 @@
       requiresVerified: true,   // its entire premise is that the checks passed
       hook: function (p) { return 'Somebody stood in this ' + p.kind + ' and checked it.'; },
       body: function (p) {
-        return 'Title, structure, flood risk, legal status, ownership, seven checks, all passed, re-confirmed within the last 21 days.\n\n'
+        return 'Title, structure, flood risk, legal status, ownership, seven checks, all passed, and re-confirmed by the agency or it comes down.\n\n'
           + p.bedrooms + '-bed ' + p.kind + ' in ' + p.area + '. ' + p.priceLine + '.';
       },
       cta: 'See exactly what we checked →',
@@ -122,10 +122,10 @@
     },
     {
       id: 'scarcity', name: 'Freshness',
-      why: 'Uses the 21-day rule as honest urgency, the listing really does expire.',
+      why: 'Uses the freshness rule as honest urgency, the listing really does expire.',
       hook: function (p) {
         return p.daysLeft == null
-          ? 'This one disappears in 21 days if it is not re-confirmed.'
+          ? 'This one disappears if it is not re-confirmed.'
           : 'This one disappears in ' + p.daysLeft + ' day' + (p.daysLeft === 1 ? '' : 's') + ' if it is not re-confirmed.';
       },
       body: function (p) {

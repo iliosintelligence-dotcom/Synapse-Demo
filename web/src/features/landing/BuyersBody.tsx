@@ -133,7 +133,7 @@ export function BuyersBody() {
                     <div className="rl-art p-nearby" aria-hidden="true">
                       <div className="art-fig">
                         <b>
-                          21 days
+                          Re-confirmed
                         </b>
                       </div>
                     </div>
@@ -142,7 +142,7 @@ export function BuyersBody() {
                         Or the listing disappears
                       </h3>
                       <p>
-                        Every home is re-confirmed by its agency every three weeks, or it comes off the site. So you never make the call that starts “actually, that one has gone.”
+                        Every home is re-confirmed by its agency, a short-let every week, a rental every three weeks, a sale every three months, or it comes off the site. So you never make the call that starts “actually, that one has gone.”
                       </p>
                     </div>
                   </article>

@@ -169,16 +169,16 @@
     return row;
   }
 
-  /* The 21-day freshness rule (was 14), written into the row rather than left implied.
-     Until now "14 days" existed only as copy and as a `listed_at` filter in the
-     matcher; `expires_at` was never set, so nothing actually expired. Listing
-     and re-listing both restart the clock, which is what re-confirmation means. */
-  var FRESH_DAYS = 21;
-  function freshWindow() {
+  /* The freshness rule, written into the row rather than left implied. Listing and re-listing both restart the clock,
+     which is what re-confirmation means. How long depends on the deal (2026-10-24): rentals 21 days, short-lets a week,
+     sales -- houses, land, investments -- three months. The database decides it (listing_fresh_days, on insert and in
+     reconfirm_listing); this is the same rule so the row reads right before the server answers. */
+  var FRESH_DAYS = { rent: 21, shortlet: 7, sale: 90 };
+  function freshWindow(listingType) {
     var now = new Date();
     return {
       listed_at: now.toISOString(),
-      expires_at: new Date(now.getTime() + FRESH_DAYS * 864e5).toISOString(),
+      expires_at: new Date(now.getTime() + (FRESH_DAYS[listingType] || 21) * 864e5).toISOString(),
     };
   }
 
@@ -1294,7 +1294,7 @@
       var build = function () {
         var row = withStatus(scrub(data));
         row.agency_id = aid;
-        Object.assign(row, freshWindow());   // starts the 21-day clock
+        Object.assign(row, freshWindow(row.listing_type));   // starts the clock
         // verification_* and trust_score are deliberately never set here.
         return row;
       };
@@ -1344,16 +1344,18 @@
     });
   }
 
-  /* Re-listing is what the 21-day freshness rule measures against. */
+  /* Re-listing is what the freshness rule measures against. */
   /* Renewing a listing is the agency asserting the home is still available,
      so it goes through reconfirm_listing(): one statement that stamps
      availability_confirmed_at and moves expires_at together, with the
      membership check server-side. The old version wrote expires_at directly
      and recorded no confirmation, so the freshness promise had a date but
      nothing behind it. */
+  /* The window is the listing's own. Once listing_fresh_days is in the database it decides and p_days is ignored; the
+     caller still sends the same rule so a database without it does not fall back to its old default. */
   function relist(id, days) {
     return client().then(function (c) {
-      return c.rpc('reconfirm_listing', { p_property_id: id, p_days: days || FRESH_DAYS });
+      return c.rpc('reconfirm_listing', { p_property_id: id, p_days: days || 21 });
     }).then(function (r) {
       if (r.error) throw r.error;
       var row = Array.isArray(r.data) ? r.data[0] : r.data;
