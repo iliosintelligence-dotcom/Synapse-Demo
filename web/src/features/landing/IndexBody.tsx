@@ -60,9 +60,9 @@ export function IndexBody() {
         <section className="hero">
           <div className="wrap">
             <h1 className="h1">
-              {"Your whole sales funnel. "}
+              {"Grow your agency. "}
               <em>
-                One app.
+                Not your workload.
               </em>
             </h1>
             <p className="lede">
@@ -202,254 +202,6 @@ export function IndexBody() {
                   Synapse
                 </li>
               </ul>
-            </div>
-          </div>
-        </section>
-        <section className="sec vcar funnel" id="vcar" aria-labelledby="vcTitle">
-          <div className="vc-pin" id="vcPin">
-            <div className="vc-stage" id="vcStage">
-              <div className="wrap vc-grid">
-                <div className="vc-left">
-                  <h2 className="h2" id="vcTitle">
-                    {"How a property sells "}
-                    <em>
-                      on Synapse.
-                    </em>
-                  </h2>
-                  <p className="lede">
-                    One funnel, from the first post to the signed offer. Synapse runs each stage, and you step in where it counts.
-                  </p>
-                  <div className="vc-reel" id="vcReel" role="group" aria-roledescription="carousel" aria-label="The 8 stages of a sale">
-                    <div className="vc-track" id="vcTrack">
-                      <article className="vc-item on" data-i="0" tabIndex="0" role="button" aria-roledescription="slide" aria-label="1 of 8">
-                        <span className="vc-n">01</span>
-                        <h3 className="h3">
-                          List it
-                        </h3>
-                        <p>
-                          Upload once. Paste the text you already send buyers and Synapse fills in the listing; the seven verification checks start on their own.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="1" tabIndex="0" role="button" aria-roledescription="slide" aria-label="2 of 8">
-                        <span className="vc-n">02</span>
-                        <h3 className="h3">
-                          Market it
-                        </h3>
-                        <p>
-                          Synapse writes the posts in your agency’s voice and schedules them across the channels you connect. Every post carries its own link, so you know which one brought the buyer.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="2" tabIndex="0" role="button" aria-roledescription="slide" aria-label="3 of 8">
-                        <span className="vc-n">03</span>
-                        <h3 className="h3">
-                          Get found
-                        </h3>
-                        <p>
-                          Buyers find it on the Synapse marketplace, and Tayo puts it in front of the ones whose brief it fits.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="3" tabIndex="0" role="button" aria-roledescription="slide" aria-label="4 of 8">
-                        <span className="vc-n">04</span>
-                        <h3 className="h3">
-                          Qualify
-                        </h3>
-                        <p>
-                          Tayo answers every enquiry, day or night, and learns the budget, the area and the move-in date. Only buyers who are serious move on.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="4" tabIndex="0" role="button" aria-roledescription="slide" aria-label="5 of 8">
-                        <span className="vc-n">05</span>
-                        <h3 className="h3">
-                          Your contacts
-                        </h3>
-                        <p>
-                          Every lead lands in your CRM with where it came from, the budget and the brief. Hand it to an agent; nothing is sent until somebody presses send.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="5" tabIndex="0" role="button" aria-roledescription="slide" aria-label="6 of 8">
-                        <span className="vc-n">06</span>
-                        <h3 className="h3">
-                          Negotiate
-                        </h3>
-                        <p>
-                          Tayo opens at your asking price and never goes below the floor you set. Take over the conversation the moment you want to.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="6" tabIndex="0" role="button" aria-roledescription="slide" aria-label="7 of 8">
-                        <span className="vc-n">07</span>
-                        <h3 className="h3">
-                          Inspection
-                        </h3>
-                        <p>
-                          Buyers book a viewing straight from the listing. You see who is coming, and remind anyone who has not confirmed.
-                        </p>
-                      </article>
-                      <article className="vc-item" data-i="7" tabIndex="0" role="button" aria-roledescription="slide" aria-label="8 of 8">
-                        <span className="vc-n">08</span>
-                        <h3 className="h3">
-                          Close, and learn
-                        </h3>
-                        <p>
-                          Every closed deal is traced back to the post that started it, so next month you spend on what actually sells.
-                        </p>
-                      </article>
-                    </div>
-                  </div>
-                  <div className="vc-ticks" id="vcTicks" aria-hidden="true">
-                    <i className="on"></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                  </div>
-                </div>
-                <div className="vc-right">
-                  <div className="frame p-team vc-frame">
-                    <div className="vc-shot on" data-i="0">
-                      <img className="shot lt" src="images/home/shot-listings-light.webp" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status and leads." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-listings-dark.webp" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status and leads." />
-                    </div>
-                    <div className="vc-shot" data-i="1">
-                      <img className="shot lt" src="images/home/shot-social-light.webp" loading="lazy" alt="The content pipeline in Synapse: posts moving from drafted to scheduled to published, each with its channel and the people who tapped through." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-social-dark.webp" loading="lazy" alt="The content pipeline in Synapse: posts moving from drafted to scheduled to published, each with its channel and the people who tapped through." />
-                    </div>
-                    <div className="vc-shot" data-i="2">
-                      <img className="shot lt" src="images/home/shot-matches-light.webp" loading="lazy" alt="Tayo's matches for a buyer: homes that fit the brief, each with its price and area." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-matches-dark.webp" loading="lazy" alt="Tayo's matches for a buyer: homes that fit the brief, each with its price and area." />
-                    </div>
-                    <div className="vc-shot" data-i="3">
-                      <img className="shot lt" src="images/home/shot-tayo-desk-light.webp" loading="lazy" alt="Tayo in conversation with a buyer, asking about budget and area." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-tayo-desk-dark.webp" loading="lazy" alt="Tayo in conversation with a buyer, asking about budget and area." />
-                    </div>
-                    <div className="vc-shot" data-i="4">
-                      <img className="shot lt" src="images/home/shot-crm-light.webp" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget and the next thing to do." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-crm-dark.webp" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget and the next thing to do." />
-                    </div>
-                    <div className="vc-shot" data-i="5">
-                      <img className="shot lt" src="images/home/shot-tayo-light.webp" loading="lazy" alt="Tayo on a phone, talking a buyer through a home's price." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-tayo-dark.webp" loading="lazy" alt="Tayo on a phone, talking a buyer through a home's price." />
-                    </div>
-                    <div className="vc-shot" data-i="6">
-                      <img className="shot lt" src="images/home/shot-nearby-light.webp" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-nearby-dark.webp" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
-                    </div>
-                    <div className="vc-shot" data-i="7">
-                      <img className="shot lt" src="images/home/shot-overview-light.webp" loading="lazy" alt="The agency overview: every listing, its leads and how it is doing." />
-                      {" "}
-                      <img className="shot dk" src="images/home/shot-overview-dark.webp" loading="lazy" alt="The agency overview: every listing, its leads and how it is doing." />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section className="sec" id="product">
-          <div className="wrap">
-            <div className="row">
-              <div className="row-text">
-                <h2 className="h2">
-                  {"One listing. "}
-                  <em>
-                    Every channel.
-                  </em>
-                </h2>
-                <p className="lede">
-                  Upload once. Synapse writes the copy in your agency’s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.
-                </p>
-                <p className="lede">
-                  Each version is checked against that platform’s real limits, caption length, aspect ratio, video duration, and it never claims “verified” on a listing that is not.
-                </p>
-                <p className="lede">
-                  No agency retainer. No social media manager. No waiting on a designer.
-                </p>
-              </div>
-              <div className="frame p-reach">
-                <img className="shot bleed lt" src="images/home/shot-social-light.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
-                {" "}
-                <img className="shot bleed dk" src="images/home/shot-social-dark.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
-              </div>
-            </div>
-            <div className="row flip">
-              <div className="row-text">
-                <h2 className="h2">
-                  {"Every enquiry arrives "}
-                  <em>
-                    already worked.
-                  </em>
-                </h2>
-                <p className="lede">
-                  Every lead arrives with the city, the budget and the brief already attached, and Tayo’s opening position with it.
-                </p>
-                <p className="lede">
-                  Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.
-                </p>
-                <p className="lede">
-                  The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.
-                </p>
-              </div>
-              <div className="frame p-crm">
-                <img className="shot under lt" src="images/home/shot-crm-light.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
-                {" "}
-                <img className="shot under dk" src="images/home/shot-crm-dark.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
-                {" "}
-                <img className="phone lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
-                {" "}
-                <img className="phone dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
-              </div>
-            </div>
-            <div className="row">
-              <div className="row-text">
-                <h2 className="h2">
-                  {"Reach the buyer "}
-                  <em>
-                    standing outside.
-                  </em>
-                </h2>
-                <p className="lede">
-                  Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.
-                </p>
-                <p className="lede">
-                  Local intent, caught live, and delivered straight into your pipeline as a qualified lead.
-                </p>
-              </div>
-              <div className="frame p-nearby">
-                <img className="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
-                {" "}
-                <img className="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
-                <div className="ping" aria-hidden="true">
-                  <span className="ping-icon">
-                    <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
-                  </span>
-                  {" "}
-                  <span className="ping-top">
-                    <span>
-                      Synapse · Nearby
-                    </span>
-                    <span>
-                      now
-                    </span>
-                  </span>
-                  {" "}
-                  <span className="ping-t">
-                    {"A 4-bed duplex is 200\u00a0m from you"}
-                  </span>
-                  {" "}
-                  <span className="ping-s">
-                    ₦120M · New Bodija. Tap to see it.
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -781,6 +533,296 @@ export function IndexBody() {
                 done once, properly, and on its own.
               </em>
             </p>
+          </div>
+        </section>
+        <section className="sec" id="product">
+          <div className="wrap">
+            <div className="row">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"List it. "}
+                  <em>
+                    Once, properly.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Paste the text you already send buyers and Synapse fills in the listing: the price, the rooms, the units, the payment terms. You check it.
+                </p>
+                <p className="lede">
+                  Pin it on the map, add the photos, and the seven verification checks start on their own. A listing you leave halfway is kept as a draft, on any device.
+                </p>
+              </div>
+              <div className="frame p-team">
+                <img className="shot bleed lt" src="images/home/shot-listings-light.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status and leads." />
+                {" "}
+                <img className="shot bleed dk" src="images/home/shot-listings-dark.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status and leads." />
+                <div className="ov ov-fill" aria-hidden="true">
+                  <span className="ov-k">Filled from your description</span>
+                  <span className="ov-line"><b>Price</b>{"₦4,500,000 a year"}</span>
+                  <span className="ov-line"><b>Rooms</b>3 bedrooms, 3 bathrooms</span>
+                  <span className="ov-line"><b>Area</b>Old Bodija, Ibadan</span>
+                  <span className="ov-tag">Seven verification checks started</span>
+                </div>
+              </div>
+            </div>
+            <div className="row flip">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Market it. "}
+                  <em>
+                    One listing, every channel.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Upload once. Synapse writes the copy in your agency’s voice, sizes the creative for each platform, and publishes to Instagram, Facebook, WhatsApp, TikTok, YouTube and the Synapse marketplace.
+                </p>
+                <p className="lede">
+                  Each version is checked against that platform’s real limits, caption length, aspect ratio, video duration, and it never claims “verified” on a listing that is not.
+                </p>
+                <p className="lede">
+                  No agency retainer. No social media manager. No waiting on a designer.
+                </p>
+              </div>
+              <div className="frame p-reach">
+                <img className="shot bleed lt" src="images/home/shot-social-light.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+                {" "}
+                <img className="shot bleed dk" src="images/home/shot-social-dark.webp" width="1600" height="907" loading="lazy" alt="The content pipeline in Synapse: listings moving from uploaded to scheduled to published, each post with its channel, its time, and the people who tapped through." />
+              </div>
+            </div>
+            <div className="row">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Get found. "}
+                  <em>
+                    By the buyer standing outside.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Someone walking your street is already interested in it. Synapse puts your verified listing on their phone while they are still there.
+                </p>
+                <p className="lede">
+                  Local intent, caught live, and delivered straight into your pipeline as a qualified lead.
+                </p>
+              </div>
+              <div className="frame p-nearby">
+                <img className="shot bleed lt" src="images/home/shot-nearby-light.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+                {" "}
+                <img className="shot bleed dk" src="images/home/shot-nearby-dark.webp" width="1600" height="1232" loading="lazy" alt="A listing on Synapse: the house, its price, and a map of what is around it." />
+                <div className="ping" aria-hidden="true">
+                  <span className="ping-icon">
+                    <img src="images/brand/mark-black-on-white-tight.jpg" alt="" />
+                  </span>
+                  {" "}
+                  <span className="ping-top">
+                    <span>
+                      Synapse · Nearby
+                    </span>
+                    <span>
+                      now
+                    </span>
+                  </span>
+                  {" "}
+                  <span className="ping-t">
+                    {"A 4-bed duplex is 200\u00a0m from you"}
+                  </span>
+                  {" "}
+                  <span className="ping-s">
+                    ₦120M · New Bodija. Tap to see it.
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="row flip">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Your contacts. "}
+                  <em>
+                    Every enquiry, already worked.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Every lead arrives with the city, the budget and the brief already attached, and Tayo’s opening position with it.
+                </p>
+                <p className="lede">
+                  Five stages, assignment across your agents, and an outbox that sends only when somebody presses send.
+                </p>
+                <p className="lede">
+                  The other 97% stay with Tayo. You meet a buyer when they are ready to pay, and not before.
+                </p>
+              </div>
+              <div className="frame p-crm">
+                <img className="shot under lt" src="images/home/shot-crm-light.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+                {" "}
+                <img className="shot under dk" src="images/home/shot-crm-dark.webp" width="1600" height="1192" loading="lazy" alt="The CRM: leads by stage, each with the channel it came from, the budget, and the next thing to do." />
+                {" "}
+                <img className="phone lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+                {" "}
+                <img className="phone dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, answering a family looking for a two-bedroom in Ibadan and suggesting two homes." />
+              </div>
+            </div>
+            <div className="row">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Negotiate. "}
+                  <em>
+                    Then hand it over.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Tayo negotiates on your behalf. He opens at your asking price and never goes below the floor you set.
+                </p>
+                <p className="lede">
+                  When the buyer agrees, the deal is handed to your agent with the price, the buyer’s details and a viewing time. Take over whenever you want.
+                </p>
+              </div>
+              <div className="frame p-tayo">
+                <img className="phone neg lt" src="images/home/shot-tayo-light.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, talking a buyer through a home and its price." />
+                {" "}
+                <img className="phone neg dk" src="images/home/shot-tayo-dark.webp" width="780" height="1688" loading="lazy" alt="Tayo on a phone, talking a buyer through a home and its price." />
+                <div className="ov ov-hand" aria-hidden="true">
+                  <span className="ov-top"><span className="ov-icon"><img src="images/brand/mark-black-on-white-tight.jpg" alt="" /></span><span>Synapse · Handover</span><span>now</span></span>
+                  <span className="ov-t">{"Ada agreed ₦4,200,000 a year"}</span>
+                  <span className="ov-s">{"Tayo opened at ₦4.5M and held above your floor. Her number and a viewing time are yours now."}</span>
+                  <span className="ov-btns"><span className="ov-btn solid">Take over</span><span className="ov-btn">Open the chat</span></span>
+                </div>
+              </div>
+            </div>
+            <div className="row flip">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Inspection. "}
+                  <em>
+                    Booked, not chased.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Buyers book a viewing straight from the listing, at the times your agent has open.
+                </p>
+                <p className="lede">
+                  You get the notification, see the day’s schedule, and remind anyone who has not confirmed.
+                </p>
+              </div>
+              <div className="frame p-crm">
+                <div className="ov ov-cal" aria-hidden="true">
+                  <span className="ov-k">Saturday 25 October</span>
+                  <span className="ov-slot"><b>10:00</b><span>3-bed flat, Old Bodija<i>Ada O.</i></span><em className="ok">Confirmed</em></span>
+                  <span className="ov-slot"><b>11:30</b><span>4-bed duplex, Jericho<i>Tunde A.</i></span><em>Waiting</em></span>
+                  <span className="ov-slot"><b>14:00</b><span>Mini flat, Akobo<i>Kemi B.</i></span><em className="ok">Confirmed</em></span>
+                  <span className="ov-slot"><b>16:00</b><span>Plot, Ring Road<i>Sola I.</i></span><em className="ok">Confirmed</em></span>
+                  <span className="ov-remind">Remind the one who hasn’t confirmed</span>
+                </div>
+                <div className="ping ov-book" aria-hidden="true">
+                  <span className="ping-icon"><img src="images/brand/mark-black-on-white-tight.jpg" alt="" /></span>
+                  {" "}
+                  <span className="ping-top"><span>Synapse · Inspection</span><span>now</span></span>
+                  {" "}
+                  <span className="ping-t">New inspection booked</span>
+                  {" "}
+                  <span className="ping-s">Ada O. · Saturday 10:00 · Old Bodija</span>
+                </div>
+              </div>
+            </div>
+            <div className="row">
+              <div className="row-text">
+                <h2 className="h2">
+                  {"Close, and learn. "}
+                  <em>
+                    See what sold it.
+                  </em>
+                </h2>
+                <p className="lede">
+                  Your agent closes the deal and marks it done in the CRM.
+                </p>
+                <p className="lede">
+                  Every closed deal is traced back to the post that started it, so next month you spend on what actually sells.
+                </p>
+              </div>
+              <div className="frame p-reach">
+                <div className="ov ov-deal" aria-hidden="true">
+                  <span className="ov-stamp">Closed</span>
+                  <span className="ov-t">3-bed flat, Old Bodija</span>
+                  <span className="ov-s">{"₦4,200,000 a year · closed by Bola Ade"}</span>
+                  <span className="ov-trail">
+                    <span><b>12 Oct</b>Instagram post</span>
+                    <span><b>14 Oct</b>Tayo qualified Ada</span>
+                    <span><b>18 Oct</b>Inspection</span>
+                    <span><b>21 Oct</b>Deal closed</span>
+                  </span>
+                  <span className="ov-tag">This post has closed 3 deals this month</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="sec vcar" id="vcar" aria-labelledby="vcTitle">
+          <div className="vc-pin" id="vcPin">
+            <div className="vc-stage" id="vcStage">
+              <div className="wrap vc-grid">
+                <div className="vc-left">
+                  <h2 className="h2" id="vcTitle">
+                    {"Built to make small teams "}
+                    <em>
+                      do big work.
+                    </em>
+                  </h2>
+                  <p className="lede">
+                    Every listing, lead and verification in a single view, with the next action already decided for each one.
+                  </p>
+                  <div className="vc-reel" id="vcReel" role="group" aria-roledescription="carousel" aria-label="Three things Synapse keeps in view">
+                    <div className="vc-track" id="vcTrack">
+                      <article className="vc-item on" data-i="0" tabIndex="0" role="button" aria-roledescription="slide" aria-label="1 of 3">
+                        <h3 className="h3">
+                          Nothing gets dropped
+                        </h3>
+                        <p>
+                          Every lead ranked hot to cold, with the next best action written for whoever picks it up.
+                        </p>
+                      </article>
+                      <article className="vc-item" data-i="1" tabIndex="0" role="button" aria-roledescription="slide" aria-label="2 of 3">
+                        <h3 className="h3">
+                          Verification, tracked
+                        </h3>
+                        <p>
+                          See where each property stands in verification, and what is still outstanding.
+                        </p>
+                      </article>
+                      <article className="vc-item" data-i="2" tabIndex="0" role="button" aria-roledescription="slide" aria-label="3 of 3">
+                        <h3 className="h3">
+                          Know what worked
+                        </h3>
+                        <p>
+                          Every closed deal traced back to the post that started it, so you spend on what actually sells.
+                        </p>
+                      </article>
+                    </div>
+                  </div>
+                  <div className="vc-ticks" id="vcTicks" aria-hidden="true">
+                    <i className="on"></i>
+                    <i></i>
+                    <i></i>
+                  </div>
+                </div>
+                <div className="vc-right">
+                  <div className="frame p-team vc-frame">
+                    <div className="vc-shot on" data-i="0">
+                      <img className="shot lt" src="images/home/shot-crm-light.webp" width="1800" height="823" loading="lazy" alt="The leads board in the portal: every lead ranked, with the next action beside it." />
+                      {" "}
+                      <img className="shot dk" src="images/home/shot-crm-dark.webp" width="1800" height="823" loading="lazy" alt="The leads board in the portal: every lead ranked, with the next action beside it." />
+                    </div>
+                    <div className="vc-shot" data-i="1">
+                      <img className="shot lt" src="images/home/shot-listings-light.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons." />
+                      {" "}
+                      <img className="shot dk" src="images/home/shot-listings-dark.webp" width="1800" height="823" loading="lazy" alt="Listings in the portal: each home with its price, days left, review status, leads, and buttons." />
+                    </div>
+                    <div className="vc-shot" data-i="2">
+                      <img className="shot lt" src="images/home/shot-social-light.webp" width="1800" height="823" loading="lazy" alt="Posts in the portal, each traced to the deals it produced." />
+                      {" "}
+                      <img className="shot dk" src="images/home/shot-social-dark.webp" width="1800" height="823" loading="lazy" alt="Posts in the portal, each traced to the deals it produced." />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
         <section className="sec" id="pricing">

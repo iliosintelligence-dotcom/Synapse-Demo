@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script  dangerouslySetInnerHTML={{ __html: inline("index", "inline-1.js") }} />
         <script src="/consent.js" defer />
         <script src="/app/native.js" defer />
-        <title>{"Synapse for agencies · Your whole sales funnel, one app"}</title>
+        <title>{"Synapse for agencies · Grow your agency, not your workload"}</title>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="description" content="Synapse runs the whole sale of a property for Nigerian estate agencies: the marketing, the buyers it brings in, your contacts, the negotiation and the inspection, in one app. Free to start." />
@@ -24,14 +24,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta property="og:site_name" content="Synapse" />
         <meta property="og:locale" content="en_NG" />
         <meta property="og:url" content="https://www.synapsecore.dev/" />
-        <meta property="og:title" content="Your whole sales funnel. One app." />
+        <meta property="og:title" content="Grow your agency. Not your workload." />
         <meta property="og:description" content="Synapse runs the whole sale of a property for Nigerian estate agencies: the marketing, the buyers it brings in, your contacts, the negotiation and the inspection, in one app. Free to start." />
         <meta property="og:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content={"Synapse, Grow your agency. Not your workload."} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Your whole sales funnel. One app." />
+        <meta name="twitter:title" content="Grow your agency. Not your workload." />
         <meta name="twitter:description" content="Synapse runs the whole sale of a property for Nigerian estate agencies: the marketing, the buyers it brings in, your contacts, the negotiation and the inspection, in one app. Free to start." />
         <meta name="twitter:image" content="https://www.synapsecore.dev/images/og-agencies.jpg" />
         <meta name="theme-color" content="#FAF6F0" />
