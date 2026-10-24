@@ -606,6 +606,8 @@ export function startEngine() {
       saved.push({ role: "assistant", content: data.reply, matches, priceHistory, more: extra.more, searched: extra.searched });
       persist();
       tojuMsg(data.reply, matches, priceHistory, extra);
+      /* A voice call (VoiceCall.tsx) reads the reply aloud. */
+      window.dispatchEvent(new CustomEvent("syn:tayo-reply", { detail: { text: data.reply, matches: matches.length } }));
       collect(matches); renderCanvas();
       renderReply();   // the introduction unlocks once there is a conversation
       /* A price was agreed: open the viewing card straight away (the agent's open times, then the introduction), so the buyer is
@@ -620,6 +622,7 @@ export function startEngine() {
       clearTimeout(timer); t.remove();
       const kind = e && e.kind ? e.kind : (e && e.name === "AbortError") ? "timeout" : !navigator.onLine ? "offline" : "network";
       showError(kind);
+      window.dispatchEvent(new CustomEvent("syn:tayo-failed", { detail: { kind } }));
     }
     setBusy(false); scrollDown();
   }

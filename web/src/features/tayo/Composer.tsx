@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useEngineReady } from "./useEngineReady";
+import { VoiceCall, callSupported } from "./VoiceCall";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -36,6 +37,9 @@ function Field() {
   const [placeholder, setPlaceholder] = useState(PLACEHOLDER);
   const [listening, setListening] = useState(false);
   const [busy, setBusy] = useState(false);
+  /* The call needs speech in both directions; a browser without it never shows the button. Known only on the client. */
+  const [callOk, setCallOk] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setCallOk(callSupported()), 0); return () => clearTimeout(t); }, []);
   const valueRef = useRef("");
   valueRef.current = value;
 
@@ -104,6 +108,21 @@ function Field() {
           </svg>
         </button>
       ) : (
+        <>
+        {callOk && !listening ? (
+          <button
+            key="call"
+            type="button"
+            className="mic call"
+            title="Call Tayo"
+            aria-label="Call Tayo"
+            onClick={(e) => { press(e.currentTarget); window.dispatchEvent(new Event("syn:call-start")); }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
+            </svg>
+          </button>
+        ) : null}
         <button
           key="mic"
           ref={swapIn}
@@ -118,6 +137,7 @@ function Field() {
             <rect x="9" y="2" width="6" height="11" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><line x1="12" y1="19" x2="12" y2="22" />
           </svg>
         </button>
+        </>
       )}
     </div>
   );
@@ -132,5 +152,5 @@ export function Composer() {
     const h = document.getElementById("react-composer");
     if (h && window.TayoEngine) setHost(h);
   }, [ready]);
-  return host ? createPortal(<Field />, host) : null;
+  return host ? <>{createPortal(<Field />, host)}<VoiceCall /></> : null;
 }
