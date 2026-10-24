@@ -22,6 +22,7 @@ import { AgentsPane } from "./AgentsPane";
 import { PipelineBoard, PipelineCalendar, PipelineSelect } from "./PipelinePane";
 import { PropPreview } from "./PropPreview";
 import { SchedulerHost } from "./Scheduler";
+import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./MarketingPane";
 import { CrmPane } from "./CrmPane";
 
 const SCRIPTS: PageScript[] = [
@@ -457,15 +458,13 @@ export function AgencyBody() {
                       {" Campaigns"}
                     </button>
                   </div>
-                  <button className="tbtn" id="mkSort">
-                    <span data-icon="sliders"></span>
-                    {" Sort: Enquiries"}
-                  </button>
+                  <MkSort />
                 </div>
               </div>
-              <div id="mkDigest"></div>
-              <div id="mkBoard"></div>
-              <div id="campaigns" style={{ "display": "none" }}></div>
+              <MkDigest />
+              <MkBoard />
+              <MkCampaigns />
+              <MarketingHost />
             </section>
             <section className="pane" id="pane-negotiator">
               <NegotiatorPane />
