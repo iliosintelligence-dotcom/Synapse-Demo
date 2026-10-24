@@ -23,6 +23,7 @@ import { PipelineBoard, PipelineCalendar, PipelineSelect } from "./PipelinePane"
 import { PropPreview } from "./PropPreview";
 import { SchedulerHost } from "./Scheduler";
 import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./MarketingPane";
+import { ListSeg, ListSort, RelistAll, ListingGate, ListingsGrid } from "./ListingsPane";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
 
@@ -478,51 +479,18 @@ export function AgencyBody() {
               </div>
               <div className="crm-tools" data-pane-filters="" style={{ "marginTop": "18px" }}>
                 <div className="crm-tools-l">
-                  <div className="seg" id="listSeg">
-                    <button className="seg-b on" data-lf="all">
-                      All
-                    </button>
-                    <button className="seg-b" data-lf="verified">
-                      Verified
-                    </button>
-                    <button className="seg-b" data-lf="pending">
-                      Pending
-                    </button>
-                    <button className="seg-b" data-lf="expiring">
-                      Expiring
-                    </button>
-                    <button className="seg-b" data-lf="expired">
-                      Expired
-                    </button>
-                  </div>
-                  <button className="tbtn" id="listSort">
-                    <span data-icon="sort"></span>
-                    {" Sort: Freshness"}
-                  </button>
+                  <ListSeg />
+                  <ListSort />
                 </div>
                 <div className="crm-tools-r">
-                  <button className="tbtn" id="relistAllBtn" hidden></button>
+                  <RelistAll />
                   <button className="tbtn primary" id="newListingBtn">
                     + New listing
                   </button>
                 </div>
               </div>
-              <div className="lg-gate" id="lgGate" hidden>
-                <div className="lg-gate-t">
-                  Add your CAC certificate to start listing
-                </div>
-                <p>
-                  One document is enough to begin. Upload it now and add listings straight away; the verification desk reviews it afterwards.
-                </p>
-                <input id="lgCac" placeholder="CAC registration number, e.g. RC 1234567" autoComplete="off" aria-label="CAC registration number" style={{ "display": "block", "width": "100%", "maxWidth": "340px", "minHeight": "44px", "margin": "0 0 10px", "padding": "0 14px", "borderRadius": "12px", "border": "1px solid var(--border)", "background": "var(--surface)", "color": "var(--ink)", "font": "500 14px var(--f-sans)" }} />
-                <button type="button" className="btn btn-primary" id="lgGateBtn">
-                  Upload CAC certificate
-                </button>
-                <span className="lg-gate-agent" id="lgGateAgent" hidden>
-                  Ask your agency owner to upload it.
-                </span>
-              </div>
-              <div className="lgrid" id="lgrid"></div>
+              <ListingGate />
+              <ListingsGrid />
             </section>
             <section className="pane" id="pane-agents">
               <AgentsPane />

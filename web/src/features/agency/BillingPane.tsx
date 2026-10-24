@@ -13,6 +13,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { dynSet } from "./dyn";
+import { useRevealed } from "./useRevealed";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -187,6 +188,7 @@ export function BillingPane() {
   const [period, setPeriod] = useState<Period | null>(null);
   const [relabel, setRelabel] = useState(0);
   const [irid, setIrid] = useState(false);   // kept through an error, as the old page left the class alone
+  const nowRef = useRevealed("card bl-now" + (irid ? " irid" : ""));   // gaining .irid must not cost it motion.js's .in
   const gens = useRef(0);
   const planRef = useRef<PlanCode | null>(null);
   const setPlan = (p: PlanCode) => { planRef.current = p; setPlanState(p); };
@@ -271,7 +273,7 @@ export function BillingPane() {
   return (
     <>
       <div className="bl-grid">
-        <div className={"card bl-now" + (irid ? " irid" : "")} id="blNow">{now}</div>
+        <div ref={nowRef} className={"card bl-now" + (irid ? " irid" : "")} id="blNow">{now}</div>
         <div className="card bl-buy" id="blBuy">
           {d && tier === "enterprise" ? (
             <>

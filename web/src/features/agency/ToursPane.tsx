@@ -11,6 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import { Icon } from "./VerificationPane";
+import { useRevealed } from "./useRevealed";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -48,6 +49,7 @@ function Act({ cls, label, busyLabel, run, ...data }: { cls: string; label: stri
 function TourCard({ t, reload }: { t: Tour; reload: () => void }) {
   const soon = tourDueSoon(t.at);
   const dead = t.status === "cancelled";
+  const el = useRevealed("card tour" + (dead ? " is-cancelled" : ""));   // cancelling must not cost it motion.js's .in
   const L = () => W().SynListings;
   /* Each returns a promise that resolves true when the button should stay spent, false when it should come back. */
   const confirm = () => L().setSlotStatus(t.id, "confirmed")
@@ -82,7 +84,7 @@ function TourCard({ t, reload }: { t: Tour; reload: () => void }) {
   };
 
   return (
-    <div className={"card tour" + (dead ? " is-cancelled" : "")}>
+    <div ref={el} className={"card tour" + (dead ? " is-cancelled" : "")}>
       <div className="tour-top"><div>
         <div className="tour-when">{tourWhen(t.at)}</div>
         <div className="tour-what">{t.property}{t.city ? " · " + t.city : ""} · {t.agent}</div>

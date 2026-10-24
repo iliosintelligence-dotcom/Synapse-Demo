@@ -1119,83 +1119,6 @@
       if (left <= 3) return { cls: 'warn', label: 'Expires in ' + left + (left === 1 ? ' day' : ' days'), left: left, expired: false, warn: true };
       return { cls: 'ok', label: left + ' days left', left: left, expired: false, warn: false };
     }
-    /* ── renewing in bulk ──────────────────────────────────────────────
-       Every listing carries a Re-list button already, and reconfirm_listing()
-       behind it is sound: membership checked server-side, days clamped to
-       1-90, and it moves expires_at and availability_confirmed_at together
-       without touching listed_at -- so renewing keeps a home visible without
-       pretending it was listed today. Freshness stays honest.
-
-       What was missing is that expiry arrives in cohorts. Every live listing
-       on this account expires within a day of every other, because they were
-       uploaded together. Seven cards is a chore; fifty is a thing nobody
-       does, and then the whole shelf goes dark at once.
-
-       This renews everything expiring or already expired, in one press. It is
-       the same per-listing call underneath -- no bulk endpoint, no new
-       privilege -- so a partial failure leaves the rest renewed rather than
-       rolling anything back, and the count reported is what actually
-       succeeded. */
-    function expiringSet() {
-      const L = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA)) ? LISTINGS_DATA : [];
-      return L.filter((l) => { try { const f = freshness(l); return f.warn || f.expired; } catch (e) { return false; } });
-    }
-
-    function syncRelistAll() {
-      const btn = document.getElementById('relistAllBtn');
-      if (!btn) return;
-      const n = expiringSet().length;
-      btn.hidden = n === 0;
-      if (n) btn.innerHTML = '\u21bb Re-list ' + n + ' expiring';
-    }
-
-    (function wireRelistAll() {
-      const btn = document.getElementById('relistAllBtn');
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        const due = expiringSet();
-        if (!due.length) return;
-        const was = btn.innerHTML;
-        btn.disabled = true; btn.textContent = 'Re-listing\u2026';
-        Promise.all(due.map((l) =>
-          SynListings.relist(l.id, freshDays(l)).then((row) => {
-            /* Take the new date from the server rather than assuming it, so
-               the grid repaints as what actually happened. */
-            if (row && row.expires_at) l.expires_at = row.expires_at;
-            if (row && row.availability_confirmed_at) l.availability_confirmed_at = row.availability_confirmed_at;
-            l.days = 0;
-            return true;
-          }).catch((err) => {
-            console.error('relist failed', l.id, err);
-            return false;
-          })
-        )).then((res) => {
-          const ok = res.filter(Boolean).length;
-          btn.disabled = false; btn.innerHTML = was;
-          if (typeof saveListings === 'function') saveListings();
-          renderListings();
-          if (ok === 0) { toast('Could not re-list those. Try one on its own.'); return; }
-          toast(ok === res.length
-            ? 'Re-listed ' + ok + ' ' + (ok === 1 ? 'listing' : 'listings') + (ok === 1 ? ' for another ' + lifeLabel(due[0]) : ', each for its full window again')
-            : 'Re-listed ' + ok + ' of ' + res.length + ' \u2014 the rest failed');
-        });
-      });
-    })();
-
-    // listings toolbar state (filter / search / sort), operates on LISTINGS_DATA
-    const LIST = { f: 'all', q: '', sort: 'fresh' };
-    function listFiltered() {
-      let a = LISTINGS_DATA.map((l, i) => ({ l, oi: i }));
-      if (LIST.q) { const q = LIST.q.toLowerCase(); a = a.filter(x => x.l.t.toLowerCase().includes(q)); }
-      if (LIST.f === 'verified') a = a.filter(x => x.l.st === 'verified');
-      else if (LIST.f === 'pending') a = a.filter(x => x.l.st === 'pending');
-      else if (LIST.f === 'expiring') a = a.filter(x => freshness(x.l).warn);
-      else if (LIST.f === 'expired') a = a.filter(x => freshness(x.l).expired);
-      if (LIST.sort === 'fresh') a.sort((p, q) => freshness(p.l).left - freshness(q.l).left); // fewest days left first (action queue)
-      else if (LIST.sort === 'price') a.sort((p, q) => q.l.pr - p.l.pr);
-      else if (LIST.sort === 'leads') a.sort((p, q) => q.l.leads - p.l.leads);
-      return a;
-    }
     /* A listing's cover is its first PHOTO, never a video's URL in an <img>
        (Eden, 2026-10-02); a video-only listing gets a still of its video. */
     function listingCover(media) {
@@ -1210,52 +1133,7 @@
         : null;
     }
 
-    function draftCardHtml(dr) {
-      const x = dr.data || {};
-      const cover = listingCover(x.media) || '';
-      const price = Number(x.price) > 0
-        ? '\u20a6' + Number(x.price).toLocaleString('en-NG') : 'No price yet';
-      return `
-        <div class="card lcard ldraft">
-          <div class="media">
-            <span class="fresh draft">Not saved yet</span>
-            ${photoHtml(cover)}
-          </div>
-          <div class="bd">
-            <div class="pr">${esc2(price)}</div>
-            <div class="tt">${esc2(x.title || 'Untitled listing')}</div>
-            <div class="ft"><span class="st-chip draft">Draft</span><span class="ld">Edited ${esc2(draftAgo(dr.at))}</span></div>
-            <div class="acts">
-              <button class="edit" data-draft-open>Continue</button>
-              <button class="relist" data-draft-discard>Discard</button>
-            </div>
-          </div>
-        </div>`;
-    }
-
     const WZ_TOTAL = 6;
-    function sdCardHtml(d) {
-      const x = d.data || {};
-      const cover = listingCover(x.media) || '';
-      const price = Number(x.price) > 0 ? '\u20a6' + Number(x.price).toLocaleString('en-NG') : 'No price yet';
-      return `
-        <div class="card lcard ldraft" data-sd="${esc2(d.id)}">
-          <div class="media">
-            <span class="fresh draft">Draft \u00b7 step ${Math.min(d.step || 1, WZ_TOTAL)} of ${WZ_TOTAL}</span>
-            ${photoHtml(cover)}
-          </div>
-          <div class="bd">
-            <div class="pr">${esc2(price)}</div>
-            <div class="tt">${esc2(d.title || x.title || 'Untitled listing')}</div>
-            <div class="ft"><span class="st-chip draft">Draft</span><span class="ld">Saved ${esc2(draftAgo(Date.parse(d.updated_at)))}</span></div>
-            <div class="acts">
-              <button class="edit" data-sd-open="${esc2(d.id)}">Continue</button>
-              <button class="relist" data-sd-discard="${esc2(d.id)}">Discard</button>
-            </div>
-          </div>
-        </div>`;
-    }
-
     /* The fast lane (Eden, 2026-10-11): an agency with nothing yet is offered one box, not a form. */
     document.addEventListener('click', (e) => {
       if (e.target.closest('#fastGo')) {
@@ -1276,9 +1154,10 @@
       if (!c.hidden && n) n.hidden = true;
       } catch (e) { /* page still starting */ }
     }
+    /* THE GRID IS React (src/features/agency/ListingsPane.tsx): the cards, the drafts, the menus, Re-list and Re-list all, the
+       CAC gate and the toolbar. The name stays: every listing change calls it. */
     function renderListings() {
       paintFast();
-      syncRelistAll();          // the bulk button appears, and counts, with the grid
       const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
       STATS.listings = [
         [LISTINGS_DATA.length, 'Total'],
@@ -1287,71 +1166,7 @@
         [exp, 'Expired, re-list'],
       ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
-      const rows = listFiltered(), grid = document.getElementById('lgrid');
-      /* The unsaved listing, first, on the unfiltered view. It is not a
-         listing yet, so the Verified / Pending / Expiring views -- which are
-         questions about listings -- do not show it. */
-      /* Server drafts first (any device), then the browser's own copy only when no server draft
-         already covers it. */
-      let draftCard = '';
-      if (LIST.f === 'all' && !LIST.q) {
-        const local = readListingDraft();
-        const covered = local && SD.list.some((d) => d.id === SD.cur || Math.abs(Date.parse(d.updated_at) - Number(local.at)) < 20000);
-        if (local && !covered) draftCard += draftCardHtml(local);
-        draftCard += SD.list.map(sdCardHtml).join('');
-      }
-      if (!rows.length) {
-        grid.innerHTML = draftCard || '<div class="noti-empty" style="grid-column:1/-1">No listings match this view.</div>';
-        return;
-      }
-      grid.innerHTML = draftCard + rows.map(({ l, oi }) => {
-        const f = freshness(l);
-        /* A CALMER CARD (Eden, 2026-10-03: "the card looks a little bit too
-           busy"). Status once, as one chip on the photo; expiry only when it
-           matters (near the end, or past it); one main action -- Post, or
-           Re-list when the listing is running out -- with Share beside it,
-           and Edit / Re-list in the menu. The whole card opens Edit. */
-        const id = esc2(l.id);
-        const st = l.st === 'verified' ? vStamp('ok')
-          : l.st === 'pending' ? '<span class="lc-st rev">In review</span>'
-          : l.st === 'inactive' ? '<span class="lc-st off">Not live</span>' : '';
-        const exp = f.expired ? '<span class="lc-exp dead">Hidden from buyers</span>'
-          : f.warn ? '<span class="lc-exp warn">' + f.left + (f.left === 1 ? ' day' : ' days') + ' left</span>' : '';
-        const leads = Number(l.leads) || 0;
-        const meta = f.expired
-          ? (f.left === 0 ? 'Expired today' : 'Expired ' + (-f.left) + (f.left === -1 ? ' day' : ' days') + ' ago')
-          : [TYPE_LABEL[l.property_type] || '', leads + (leads === 1 ? ' lead' : ' leads')].filter(Boolean).join(' \u00B7 ');
-        const due = f.expired || f.warn;
-        const main = due
-          ? `<button class="lc-main" data-relist="${oi}">\u21BB Re-list</button>`
-          : `<button class="lc-main" data-post="${id}"><span data-icon="spark"></span> Post</button>`;
-        return `
-        <div class="card lcard lc2 ${f.expired ? 'expired' : ''}" data-card-edit="${oi}" tabindex="0" aria-label="${esc2(l.t)}: open to edit">
-          <div class="media">
-            ${photoHtml(l.img)}
-            ${st}${exp}
-          </div>
-          <div class="bd">
-            <div class="pr">${priceLabel(l)}</div>
-            <div class="tt">${l.t}</div>
-            <div class="lc-meta">${meta}</div>
-            <div class="lc-row">
-              ${main}
-              ${f.expired ? '' : `<button class="lc-ic" data-share="${id}" aria-label="Share" title="Share"><span data-icon="share"></span></button>`}
-              <div class="lc-more">
-                <button class="lc-ic" data-more aria-label="More actions" aria-expanded="false" title="More">\u22EF</button>
-                <div class="lc-menu" role="menu" hidden>
-                  <button role="menuitem" data-edit="${oi}">Edit listing</button>
-                  ${due ? `<button role="menuitem" data-post="${id}">Post about it</button>`
-                        : `<button role="menuitem" data-relist="${oi}">Re-list for ${lifeLabel(l)}</button>`}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>`;
-      }).join('');
-      // The spark and share glyphs are [data-icon] spans: fill them in.
-      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(grid);
+      window.dispatchEvent(new CustomEvent('syn:lgrid'));
     }
 
     // edit / create in the shared drawer
@@ -3105,7 +2920,7 @@
             html += '<div class="wz-miss" role="alert"><b>Still needed before you can create it</b>' + missing.map((m) => '<button type="button" data-wz-go="' + m.i + '"><span>' + esc2(m.st) + '</span> ' + esc2(m.msg) + '</button>').join('') + '</div>';
           }
           /* No CAC certificate yet: the draft is kept and creating waits for the paper. */
-          const blocked = typeof LG !== 'undefined' && LG.known && !LG.ok;
+          const G = window.SynLG ? window.SynLG() : null, blocked = !!(G && G.known && !G.ok);
           if (blocked) html += '<div class="wz-miss wz-cac"><b>One more thing: your CAC certificate</b><p>It is not on file yet, so this listing stays a draft. Upload the certificate and come back to publish it.</p>'
             + '<button type="button" data-wz-cac>Upload the certificate</button></div>';
           g('wzReview').innerHTML = html;
@@ -3161,148 +2976,14 @@
       listingForm({ ...LISTINGS_DATA[i] }, i);
     }
 
-    function closeLcMenus() {
-      document.querySelectorAll('#lgrid .lc-menu').forEach((m) => { m.hidden = true; });
-      document.querySelectorAll('#lgrid [data-more]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
-    }
-    document.addEventListener('click', (e) => { if (!e.target.closest('#lgrid .lc-more')) closeLcMenus(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLcMenus(); });
-    document.getElementById('lgrid').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' || e.target.getAttribute('data-card-edit') == null) return;
-      const i = +e.target.dataset.cardEdit; listingForm({ ...LISTINGS_DATA[i] }, i);
-    });
-    document.getElementById('lgrid').addEventListener('click', (e) => {
-      /* Straight into the composer for THIS listing, on the pane that owns
-         it. goToPane first because the composer's modal is anchored there;
-         opening it from Listings would otherwise put a dialog over a pane that
-         has nothing to do with it, and closing it would leave you somewhere
-         you never navigated to. */
-      const mo = e.target.closest('[data-more]');
-      if (mo) {
-        const menu = mo.nextElementSibling, open = menu.hidden;
-        closeLcMenus();
-        menu.hidden = !open; mo.setAttribute('aria-expanded', String(open));
-        return;
-      }
-      const sh = e.target.closest('[data-share]');
-      if (sh) { closeLcMenus(); openShareKit(sh.dataset.share); return; }
-      const po = e.target.closest('[data-post]');
-      if (po) {
-        const id = po.dataset.post;
-        if (typeof goToPane === 'function') goToPane('social');
-        setTimeout(function () {
-          if (typeof openComposer === 'function') openComposer(id);
-          else toast('The composer did not load');
-        }, 260);
-        return;
-      }
-      const sdo = e.target.closest('[data-sd-open]');
-      if (sdo) { const d = SD.list.find((x) => x.id === sdo.dataset.sdOpen); if (d) listingForm({ st: 'pending' }, -1, d); return; }
-      const sdx = e.target.closest('[data-sd-discard]');
-      if (sdx) {
-        if (!window.confirm('Discard this draft? It cannot be brought back.')) return;
-        const id = sdx.dataset.sdDiscard;
-        const mine = SD.cur === id; sdDelete(id); if (mine) clearListingDraft();
-        toast('Draft discarded'); return;
-      }
-      if (e.target.closest('[data-draft-open]')) { SD.cur = null; listingForm({ st: 'pending' }, -1); return; }
-      if (e.target.closest('[data-draft-discard]')) {
-        if (!window.confirm('Discard this unsaved listing? It cannot be brought back.')) return;
-        clearListingDraft(); renderListings(); toast('Draft discarded');
-        return;
-      }
-      const ed = e.target.closest('[data-edit]');
-      if (ed) { closeLcMenus(); const i = +ed.dataset.edit; listingForm({ ...LISTINGS_DATA[i] }, i); return; }
-      const rl = e.target.closest('[data-relist]');
-      /* The card itself opens Edit; its buttons and menu keep their own jobs. */
-      const cardEl = !rl && e.target.closest('[data-card-edit]');
-      if (cardEl && !e.target.closest('button, a, .lc-menu')) {
-        closeLcMenus();
-        const i = +cardEl.dataset.cardEdit; listingForm({ ...LISTINGS_DATA[i] }, i); return;
-      }
-      if (rl) {
-        const l = LISTINGS_DATA[+rl.dataset.relist];
-        l.days = 0;
-        saveListings(); renderListings();
-        if (dbBacked && l.id) {
-          SynListings.relist(l.id, freshDays(l))
-            .then((row) => {
-              /* The new date comes from the server, so the card shows what actually happened. */
-              if (row && row.expires_at) { l.expires_at = row.expires_at; saveListings(); renderListings(); }
-              toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next ' + lifeLabel(l));
-            })
-            .catch((e) => toast('Not re-listed on the server: ' + ((e && e.message) || e)));
-        } else {
-          toast('Re-listed, “' + l.t.split(',')[0] + '” is visible to buyers for the next ' + lifeLabel(l));
-        }
-      }
-    });
-    /* THE GATE: an agency that has not yet shown a CAC certificate is asked for
-       it before the form opens. The database refuses the insert either way. */
-    const LG = { ok: true, canFix: false, known: false };
-    function renderListingGate() {
-      const box = document.getElementById('lgGate');
-      if (!box) return;
-      box.hidden = LG.ok;
-      document.getElementById('lgGateBtn').hidden = !LG.canFix;
-      document.getElementById('lgGateAgent').hidden = LG.canFix;
-    }
-    function loadListingGate() {
-      if (!window.SynListings || !SynListings.listingGate) return Promise.resolve();
-      return SynListings.listingGate()
-        .then((g) => { LG.ok = g.ok !== false; LG.canFix = !!g.can_fix; LG.known = true; renderListingGate(); })
-        .catch(() => { /* cannot tell: stay open, the database still decides */ });
-    }
-    (function wireListingGate() {
-      const btn = document.getElementById('lgGateBtn');
-      if (!btn) return;
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*';
-      input.style.display = 'none';
-      document.body.appendChild(input);
-      btn.addEventListener('click', () => { input.value = ''; input.click(); });
-      input.addEventListener('change', () => {
-        const file = input.files && input.files[0];
-        if (!file) return;
-        const was = btn.textContent;
-        btn.disabled = true; btn.textContent = 'Uploading\u2026';
-        const cacNo = (document.getElementById('lgCac') || {}).value || '';
-        SynListings.uploadDocument(file, { type: 'cac_certificate' })
-          .then(() => { if (cacNo.trim() && SynListings.saveBrand) return SynListings.saveBrand({ cac_number: cacNo.trim().slice(0, 40) }).catch(() => {}); })
-          .then(() => { toast('Uploaded. You can add listings now.'); return loadListingGate(); })
-          .catch((err) => toast((err && err.message) || 'Could not upload that. Try again.'))
-          .then(() => { btn.disabled = false; btn.textContent = was; });
-      });
-      loadListingGate();
-    })();
-    document.getElementById('newListingBtn').addEventListener('click', () => {
-      /* Asked fresh each time: the certificate may have been added or removed
-         in the Verification pane since the page loaded. */
-      loadListingGate().then(() => {
-        if (LG.known && !LG.ok) {
-          const box = document.getElementById('lgGate');
-          if (box) box.scrollIntoView({ block: 'center', behavior: sReduce() ? 'auto' : 'smooth' });
-          toast(LG.canFix ? 'Add your CAC certificate first' : 'Your agency owner needs to add the CAC certificate first');
-          return;
-        }
-        listingForm({ st: 'pending' }, -1);
-      });
-    });
-    // listings toolbar
-    document.getElementById('listSeg').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-lf]'); if (!b) return;
-      LIST.f = b.dataset.lf;
-      document.querySelectorAll('#listSeg .seg-b').forEach(x => x.classList.toggle('on', x === b));
-      renderListings();
-    });
-    document.getElementById('listSearch').addEventListener('input', (e) => { LIST.q = e.target.value; renderListings(); });
-    document.getElementById('listSort').addEventListener('click', () => {
-      const order = ['fresh', 'price', 'leads'], lbl = { fresh: 'Freshness', price: 'Price', leads: 'Leads' };
-      LIST.sort = order[(order.indexOf(LIST.sort) + 1) % order.length];
-      document.getElementById('listSort').innerHTML = SynIcons.svg('sort') + ' Sort: ' + lbl[LIST.sort];
-      renderListings();
-    });
+    /* What the React grid reads. */
+    window.SynFreshness = freshness;
+    window.SynFreshDays = freshDays;
+    window.SynLifeLabel = lifeLabel;
+    window.SynListingCover = listingCover;
+    window.SynSaveListings = () => saveListings();
+    window.SynDbBacked = () => dbBacked;
+    window.SynDrafts = { local: readListingDraft, sd: () => SD, clear: clearListingDraft, del: sdDelete, ago: draftAgo, total: WZ_TOTAL };
     renderListings();
 
     /* ── database hydration ───────────────────────────────────────────────
