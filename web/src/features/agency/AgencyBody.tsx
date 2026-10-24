@@ -19,6 +19,7 @@ import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
 import { NegotiatorPane } from "./NegotiatorPane";
 import { SideDrawer } from "./SideDrawer";
 import { AgentsPane } from "./AgentsPane";
+import { PipelineBoard, PipelineCalendar, PipelineSelect } from "./PipelinePane";
 import { CrmPane } from "./CrmPane";
 
 const SCRIPTS: PageScript[] = [
@@ -420,9 +421,10 @@ export function AgencyBody() {
                     {" Calendar"}
                   </button>
                 </div>
+                <PipelineSelect />
               </div>
-              <div className="pipeline" id="pipeline"></div>
-              <div className="s-cal" id="calendar" style={{ "display": "none" }}></div>
+              <PipelineBoard />
+              <PipelineCalendar />
             </section>
             <section className="pane" id="pane-marketing">
               <div style={{ "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
