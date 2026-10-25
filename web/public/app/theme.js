@@ -100,7 +100,8 @@
   window.addEventListener('storage', function (e) { if (e.key === KEY) apply(); });
   /* A BAR REACT DREW WAITS FOR REACT (2026-10-24). On a page whose markup is React's own, adding the button before React has
      taken the page over makes React find something it did not draw (error #418). Then the button goes in once the page's React
-     layer says it is ready (syn:react-ready), or after four seconds if it never does. Inside the protected old markup
+     layer says it is ready (syn:react-ready), or 15 seconds after the page has loaded if it never does (four seconds was
+     shorter than React takes on a slow phone, and #418 came back: brand.js says more). Inside the protected old markup
      (#syn-legacy), or on a page without React, it goes in as before. */
   function reactOwned(bar) {
     return !!document.querySelector('script[src*="/_next/static/"]') && !(bar.closest && bar.closest('#syn-legacy'))
@@ -108,7 +109,12 @@
   }
   function mountSoon() {
     var bar = document.querySelector('.appbar');
-    if (bar && reactOwned(bar)) { window.addEventListener('syn:react-ready', mount, { once: true }); setTimeout(mount, 4000); return; }
+    if (bar && reactOwned(bar)) {
+      window.addEventListener('syn:react-ready', mount, { once: true });
+      var late = function () { setTimeout(mount, 15000); };
+      if (document.readyState === 'complete') late(); else window.addEventListener('load', late, { once: true });
+      return;
+    }
     mount();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountSoon);
