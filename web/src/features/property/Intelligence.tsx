@@ -10,7 +10,7 @@ import s from "./Property.module.css";
 type Tone = "ok" | "mid" | "bad" | "na";
 
 /** 1 (lowest) to 10. Inside the 10-year zone is the worst; inside the 100-year zone scales with depth; outside it, how close the nearest modelled flood water is. */
-export function floodScore(r: FloodRow | null): number | null {
+function floodScore(r: FloodRow | null): number | null {
   if (!r || r.covered === false) return null;
   if (r.in_zone_10) return 9;
   if (r.in_zone_100) {

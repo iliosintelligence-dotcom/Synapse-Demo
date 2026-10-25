@@ -1,6 +1,6 @@
 import type { Agency, PropertyMedia } from "@/lib/types";
 
-export interface VerificationNode {
+interface VerificationNode {
   type?: string;
   name?: string;
   label?: string;

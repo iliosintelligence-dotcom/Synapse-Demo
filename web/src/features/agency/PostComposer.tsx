@@ -42,7 +42,7 @@ function ChnBadge({ c }: { c: string }) {
    Checked against the listing in front of it, which a generic linter cannot do. WARNINGS, NEVER A BLOCK: an agent posting
    without a price may know something the check does not. And it only speaks when it knows: the price check runs only where the
    listing has a price, the area check only where it has a neighbourhood. */
-export function capWarnings(ch: string, text: string, listing: any): string[] {
+function capWarnings(ch: string, text: string, listing: any): string[] {
   const t = String(text || "");
   if (!t.trim()) return [];
   const full = listing || {};

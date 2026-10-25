@@ -20,7 +20,7 @@ export type ChatError = "offline" | "timeout" | "busy" | "server" | "network";
 
 const GREETING_TEMPLATE = "I'm Tayo. I'll find you a home from {{LISTING_COUNT}}homes agencies have listed with us.\n\nWhat's prompting the move?";
 /** Never hardcode a number: a stale count is a trust bug. The token carries its own article so the sentence still stands with no count. */
-export const greetingWith = (n: number | null) => GREETING_TEMPLATE.replace("{{LISTING_COUNT}}", Number.isFinite(n) && (n as number) > 0 ? `the ${(n as number).toLocaleString()} ` : "the ");
+const greetingWith = (n: number | null) => GREETING_TEMPLATE.replace("{{LISTING_COUNT}}", Number.isFinite(n) && (n as number) > 0 ? `the ${(n as number).toLocaleString()} ` : "the ");
 const GREETING = greetingWith(null);
 
 const SOCIAL_NAMES: Record<string, string> = { telegram: "Telegram", instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", x: "X", whatsapp: "WhatsApp", whatsapp_campaign: "WhatsApp" };

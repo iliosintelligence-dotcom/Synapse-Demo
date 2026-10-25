@@ -17,8 +17,8 @@ export interface Board {
 }
 export interface State { boards: Board[]; activeId: string | null }
 
-export const BOARDS_KEY = "synapse_dream_boards_v1"; // all boards
-export const MIRROR_KEY = "synapse_moodboard_v1"; // the active board: what Tayo reads
+const BOARDS_KEY = "synapse_dream_boards_v1"; // all boards
+const MIRROR_KEY = "synapse_moodboard_v1"; // the active board: what Tayo reads
 
 export const CATS: Array<{ id: CatId; label: string; dot: string }> = [
   { id: "housing", label: "Housing", dot: "#121212" },
@@ -83,7 +83,7 @@ const STARTER_PINS: Pin[] = [
   { u: U("1502672260266-1c1ef2d93688"), c: "Bright and airy", cat: "palette" },
 ];
 
-export const newId = () => `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const newId = () => `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 export const starterBoard = (): Board => ({ id: newId(), name: "Lagos kitchens we love", starter: true, vibe: [], images: STARTER_PINS.map((p) => ({ ...p })) });
 
 /** Only plain http(s) images are ever pinned. */

@@ -16,7 +16,7 @@ import s from "./Chat.module.css";
 const now = () => Date.now();
 
 /** A pin is identified by what it says and the homes under it, so the same reply is the same pin on every device. */
-export function pinId(text: string, matches: Array<{ id?: string }>): string {
+function pinId(text: string, matches: Array<{ id?: string }>): string {
   const src = `${text}|${matches.map((m) => m.id).join(",")}`;
   let h = 5381;
   for (let i = 0; i < src.length; i++) h = ((h << 5) + h + src.charCodeAt(i)) | 0;

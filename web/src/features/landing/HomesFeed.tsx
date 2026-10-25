@@ -55,7 +55,7 @@ async function fetchRow(r: Row): Promise<Listing[]> {
 }
 
 /** The perforated "Verified by Synapse" stamp (was public/app/stamp.js), drawn only for a listing that is exactly 'verified'. */
-export function VerifiedStamp({ land }: { land?: boolean }) {
+function VerifiedStamp({ land }: { land?: boolean }) {
   return (
     <span className={"vst" + (land ? " land" : "")} title="Verified by Synapse">
       <span className="vst-in">

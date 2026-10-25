@@ -10,7 +10,7 @@ const ALLOWED = new Set(["instagram", "facebook", "tiktok", "x", "whatsapp_campa
 const ALIAS: Record<string, string> = { whatsapp: "whatsapp_campaign", tg: "telegram", ig: "instagram", fb: "facebook" };
 
 /** Referrer hosts we can read a channel from. Instagram sends people through l.instagram.com, Facebook through l.facebook.com, X rewrites everything to t.co. */
-export function channelFromReferrer(ref: string): string {
+function channelFromReferrer(ref: string): string {
   let host = "";
   try { host = new URL(ref).hostname.toLowerCase(); } catch { return ""; }
   if (/(^|\.)instagram\.com$/.test(host)) return "instagram";

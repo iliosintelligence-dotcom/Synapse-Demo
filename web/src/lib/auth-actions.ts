@@ -1,4 +1,4 @@
-import type { Session, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { AUTH_RETURN_PATH, CANONICAL_ORIGIN } from "./auth-config";
 import { supabase } from "./supabase";
 
@@ -211,4 +211,4 @@ export async function recordConsent(version: string): Promise<void> {
   }
 }
 
-export type { Session, User };
+export type { User };

@@ -3,7 +3,7 @@ import type { Prefs } from "./local";
 import type { BrowseItem } from "./types";
 
 /** Keyword search across title, place, deal and price. "under 150m" / "below 90" caps the price; every other word must appear. */
-export function matchesSearch(l: BrowseItem, query: string): boolean {
+function matchesSearch(l: BrowseItem, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
   const hay = `${l.title} ${l.loc} ${l.deal} ${naira(l.priceN)}`.toLowerCase();

@@ -9,7 +9,7 @@ const VISIT_KEY = "synapse_last_visit";
 const VIEWS_KEY = "synapse_recent_views";
 const VIEWS_CAP = 8;
 
-export type Sort = "match" | "price" | "trust";
+type Sort = "match" | "price" | "trust";
 export interface Prefs { sort: Sort; deal: DealCat | "all"; verifiedOnly: boolean }
 export const DEFAULT_PREFS: Prefs = { sort: "match", deal: "all", verifiedOnly: false };
 

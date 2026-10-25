@@ -21,7 +21,7 @@ const SR = () => (typeof window === "undefined" ? null : W().SpeechRecognition |
 export const callSupported = () => !!SR() && typeof window !== "undefined" && "speechSynthesis" in window;
 
 /* What Tayo writes is for reading; this is for hearing. Prices are said the way people say them, and no markup is read out. */
-export function speakable(t: string) {
+function speakable(t: string) {
   return String(t || "")
     .replace(/https?:\/\/\S+/g, "")
     .replace(/[*_`#>|]+/g, "")

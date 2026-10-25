@@ -15,7 +15,7 @@ export interface DealInfo {
   minInv: number | null;
 }
 
-export interface CardAgency {
+interface CardAgency {
   name: string;
   logo: string | null;
   color: string | null;

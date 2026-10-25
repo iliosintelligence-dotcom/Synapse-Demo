@@ -324,7 +324,7 @@ function Invite() {
     </>
   );
 }
-export const openInvite = () => showDrawer(<Invite />);
+const openInvite = () => showDrawer(<Invite />);
 
 function inviteLink(token: string) {
   const url = location.origin + location.pathname + "?invite=" + token;

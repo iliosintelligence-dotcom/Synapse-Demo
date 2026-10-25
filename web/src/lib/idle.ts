@@ -3,7 +3,7 @@
  * were on. "Away" is measured from the last time they did anything in ANY tab of this browser (a timestamp in localStorage, shared between tabs, and with the original
  * static site, which uses the same key), so a second tab left open does not keep a first one alive and a busy tab is never cut off.
  */
-export const IDLE_KEY = "synapse_last_active_v1";
+const IDLE_KEY = "synapse_last_active_v1";
 export const IDLE_MS = 2 * 60 * 60 * 1000;
 
 export const idleExpired = (stamp: number, now = Date.now()): boolean => stamp > 0 && now - stamp > IDLE_MS;

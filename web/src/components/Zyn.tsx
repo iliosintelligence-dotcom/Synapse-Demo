@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { MatchLike } from "./zynState";
 import s from "./Zyn.module.css";
 
 /**
@@ -9,7 +8,7 @@ import s from "./Zyn.module.css";
  * true transparency, so he sits on any background). Each state moves its own way when idle; all motion stops for anyone who has asked their
  * device for less motion. Zyn has no mouth: he says it with his eyes and the way he stands. Tap him and he shows one of his moods.
  */
-export const ZYN_STATES = ("happy curious thinking excited helpful winking surprised sleepy confused sorry proud delighted searching listening typing " +
+const ZYN_STATES = ("happy curious thinking excited helpful winking surprised sleepy confused sorry proud delighted searching listening typing " +
   "calculating comparing navigating waving loading scheduling calling celebrating saving home price verified nearby documents offer keys headsup nothing alert intro shared").split(" ");
 
 const MOTION: Record<string, string> = {};
@@ -19,10 +18,9 @@ const MOTION: Record<string, string> = {};
 MOTION.loading = s.pulse;
 
 const known = (state: string) => (ZYN_STATES.includes(state) ? state : "happy");
-export const zynUrl = (state: string) => `/images/zyn/zyn-${known(state)}.webp`;
+const zynUrl = (state: string) => `/images/zyn/zyn-${known(state)}.webp`;
 const EMOTES = ["celebrating", "excited", "waving", "delighted", "winking"];
 
-export type { MatchLike };
 
 export function Zyn({ state, size = 58 }: { state: string; size?: number }) {
   const [emote, setEmote] = useState<string | null>(null);

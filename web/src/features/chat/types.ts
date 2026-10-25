@@ -1,7 +1,7 @@
 import type { TojuMatch } from "@/features/browse/types";
 
 /** One row of a Tayo market-history card. */
-export interface PriceHistory {
+interface PriceHistory {
   area: string;
   unit?: string;
   summary?: string;
@@ -10,7 +10,7 @@ export interface PriceHistory {
 }
 
 /** What the server read to answer: said above the homes, in plain words. */
-export interface SearchedInfo { where?: string | null; live?: number; found?: number; kinds?: string }
+interface SearchedInfo { where?: string | null; live?: number; found?: number; kinds?: string }
 
 /** A message in the saved thread. User messages carry only text; Tayo's carry everything that rendered with them, so a restored thread looks the same. */
 export interface ChatMessage {

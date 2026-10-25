@@ -95,7 +95,7 @@ function remember(pane: string) {
 
 /* One way to change pane, used by the rail and by anything else that sends you somewhere. A name with no pane, or one this
    role may not open, is ignored rather than blanking the screen. */
-export function goToPane(name: string, step?: number) {
+function goToPane(name: string, step?: number) {
   const pane = ALIAS[name] || name;
   if (!pane || PANES.indexOf(pane) < 0 || !allowed(pane)) return;
   if (pane === "tours") W().loadTours?.();

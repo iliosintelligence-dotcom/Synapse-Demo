@@ -13,7 +13,7 @@ const DEAL_WORD: Record<string, string> = {
 };
 
 /** One line saying what kind of deal this is. A plain completed sale or rental adds nothing, so it returns "". */
-export function dealLine(d: DealInfo | null, currency: string | null): string {
+function dealLine(d: DealInfo | null, currency: string | null): string {
   if (!d) return "";
   const month = (v: string) => { const t = new Date(v); return isNaN(t.getTime()) ? "" : t.toLocaleDateString("en-GB", { month: "short", year: "numeric" }); };
   const parts: string[] = [];

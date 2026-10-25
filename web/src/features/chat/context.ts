@@ -30,7 +30,7 @@ export function replyContext(r: ReplyTo | null): string | null {
   return `${t} Never claim the home is verified unless told it is.]`;
 }
 
-export const DREAM_CTX_PREFIX = "[Background from my Dream Home";
+const DREAM_CTX_PREFIX = "[Background from my Dream Home";
 
 /** The dream-home note is sent to the model but must never surface in the UI (the server persists it, so restored threads carry it). */
 export const isHiddenNote = (m: { role: string; content: string } | null | undefined): boolean =>

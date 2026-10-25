@@ -9,7 +9,7 @@ const month = (v: string) => {
 };
 
 /** The deal terms (built or not, how it is paid for, investment terms), from the listing's own fields. Empty when it has none. */
-export function dealRows(p: Property): Array<[string, string]> {
+function dealRows(p: Property): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
   if (p.deal_structure && p.deal_structure !== "outright" && p.deal_structure !== "rent" && DEAL_LABEL[p.deal_structure]) rows.push(["Deal", DEAL_LABEL[p.deal_structure]]);
   if (p.property_type !== "land" && p.build_stage && p.build_stage !== "completed") {

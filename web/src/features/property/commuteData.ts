@@ -29,11 +29,8 @@ export interface Dest {
   coord?: [number, number];
 }
 
-const WALK_KMH = 4.8;
 const DRIVE_KMH_FAST = 26;
 const DRIVE_KMH_SLOW = 16;
-
-export const walkMins = (m: number) => Math.max(1, Math.round(m / 1000 / WALK_KMH * 60));
 
 /** A range, not a point: the low end is a clear hour, the high end a bad one. A single number would invite someone to plan a viewing around a figure nobody measured. */
 export function driveText(m: number): string {

@@ -24,7 +24,7 @@ export function pwProblems(pw: string, email = "", name = ""): PwProblem[] {
   return out;
 }
 
-export const PW_RULE_TEXT: Record<PwProblem, string> = {
+const PW_RULE_TEXT: Record<PwProblem, string> = {
   len: "at least 10 characters",
   up: "an uppercase letter",
   lo: "a lowercase letter",

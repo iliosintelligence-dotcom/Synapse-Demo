@@ -8,7 +8,7 @@
  * (window.TayoEngine), so the Pinned sheet and the page can never disagree. The class names are the old ones, so the look is
  * unchanged.
  */
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useEngineReady } from "./useEngineReady";
 import { hasYourMessage, initials, type ListingAgent } from "@/lib/listingAgent";
@@ -132,10 +132,10 @@ function Deck({ matches }: { matches: Match[] }) {
   const busy = useRef(false);
   const drag = useRef<{ slot: HTMLElement; x: number; y: number; dx: number; t: number; on: boolean; id: number } | null>(null);
   const dragged = useRef(false);
-  const cards = useRef<string[]>([]);
-  if (cards.current.length !== n && window.SynMatches) {
-    cards.current = matches.map((m, i) => window.SynMatches!.listingCardHtml(window.SynMatches!.shapeTojuMatch(m, i), i, { bare: true }));
-  }
+  /* The shared card's markup, built once per set of matches. */
+  const cards = useMemo(() => window.SynMatches
+    ? matches.map((m, i) => window.SynMatches!.listingCardHtml(window.SynMatches!.shapeTojuMatch(m, i), i, { bare: true }))
+    : [], [matches]);
   const posOf = (i: number) => order.indexOf(i);
   const frontEl = () => deck.current?.querySelector<HTMLElement>(".hc-slot.front") ?? null;
   const go = (dir: number) => {
@@ -200,7 +200,7 @@ function Deck({ matches }: { matches: Match[] }) {
           const pos = posOf(i);
           return (
             <div key={i} className={"hc-slot" + (pos === 0 ? " front" : "")} data-orig={i} data-pos={pos}
-              style={{ ["--d" as string]: String(pos) }} inert={pos !== 0} dangerouslySetInnerHTML={{ __html: cards.current[i] || "" }} />
+              style={{ ["--d" as string]: String(pos) }} inert={pos !== 0} dangerouslySetInnerHTML={{ __html: cards[i] || "" }} />
           );
         })}
       </div>
@@ -223,6 +223,14 @@ const ICO = {
   down: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></svg>,
 };
 
+/* One of the buttons under a reply; the flashed word sits on it while `tip` names it. */
+function ActBtn({ act, label, tip, pressed, onClick }: { act: "share" | "pin" | "up" | "down"; label: string; tip: { act: string; word: string } | null; pressed?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className={"tj-ib" + (tip?.act === act ? " tip" : "")} data-act={act} data-tip={tip?.act === act ? tip.word : undefined}
+      aria-label={label} title={label} aria-pressed={pressed} onClick={onClick}>{ICO[act]}</button>
+  );
+}
+
 /* Share, pin, and the two thumbs under a reply. A word flashes over the button to say what happened. */
 function Actions({ pl }: { pl: Payload }) {
   const [pinned, setPinned] = useState(() => !!engine()?.isPinned(pl.id));
@@ -240,17 +248,13 @@ function Actions({ pl }: { pl: Payload }) {
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => flash("share", "Copied"), () => window.prompt("Copy this to share it:", text));
     else window.prompt("Copy this to share it:", text);
   };
-  const btn = (act: "share" | "pin" | "up" | "down", label: string, onClick: () => void, pressed?: boolean) => (
-    <button type="button" className={"tj-ib" + (tip?.act === act ? " tip" : "")} data-act={act} data-tip={tip?.act === act ? tip.word : undefined}
-      aria-label={label} title={label} aria-pressed={pressed} onClick={onClick}>{ICO[act]}</button>
-  );
   const rate = (want: "up" | "down") => { const now = engine()?.rateValue(pl, want) ?? null; setRating(now); flash(want, now ? "Thanks" : "Removed"); };
   return (
     <div className="tj-acts" role="group" aria-label="Reply actions">
-      {btn("share", "Share", share)}
-      {btn("pin", pinned ? "Unpin" : "Pin", () => { const on = !!engine()?.togglePin(pl); setPinned(on); flash("pin", on ? "Pinned" : "Unpinned"); }, pinned)}
-      {btn("up", "Good reply", () => rate("up"), rating === "up")}
-      {btn("down", "Poor reply", () => rate("down"), rating === "down")}
+      <ActBtn act="share" label="Share" tip={tip} onClick={share} />
+      <ActBtn act="pin" label={pinned ? "Unpin" : "Pin"} tip={tip} pressed={pinned} onClick={() => { const on = !!engine()?.togglePin(pl); setPinned(on); flash("pin", on ? "Pinned" : "Unpinned"); }} />
+      <ActBtn act="up" label="Good reply" tip={tip} pressed={rating === "up"} onClick={() => rate("up")} />
+      <ActBtn act="down" label="Poor reply" tip={tip} pressed={rating === "down"} onClick={() => rate("down")} />
     </div>
   );
 }
@@ -461,7 +465,8 @@ export function Conversation() {
     const view = window.TayoView;
     if (!h || !view || !window.TayoEngine || !window.SynMatches) return;
     view.attach();
-    setHost(h);
+    // Deliberate: #convo can only be drawn into after the engine has attached the view, which happens here, once.
+    setHost(h); // eslint-disable-line react-hooks/set-state-in-effect
   }, [ready]);
   const view = typeof window !== "undefined" ? window.TayoView : undefined;
   return host && view ? createPortal(<List view={view} />, host) : null;

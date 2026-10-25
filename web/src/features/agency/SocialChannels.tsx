@@ -114,7 +114,7 @@ function publishConnected(accounts: Acct[]) {
   W().SYN_EXPIRED = accounts.filter((a) => a && a.platform && expired(a)).map((a) => a.platform);
 }
 
-export function loadChannels(): Promise<void> {
+function loadChannels(): Promise<void> {
   /* The status first, so the strip is drawn once and correctly. Drawing it twice -- buttons, then buttons removed a moment
      later -- is worse than drawing it late. */
   const none = () => { W().SOCIAL_ACCOUNTS = []; publishConnected([]); set({ accounts: [], known: false, drawn: true }); };
@@ -364,7 +364,7 @@ function closeAdd() {
 }
 
 /* Somewhere else on the page (the setup ring, the channel task) can send somebody straight here: Social studio, the add panel open. */
-export function openAddChannel(pl?: string) {
+function openAddChannel(pl?: string) {
   if (typeof W().goToPane === "function") W().goToPane("social");
   set({ add: { open: true, pick: pl && CONNECTABLE[pl] ? pl : state.add.pick } });
   if (state.add.pick === "telegram") tgOpen();

@@ -87,7 +87,6 @@ export const loadBackground = (): { uid: string; mode: string } | null => read(K
 export const saveBackground = (uid: string, mode: string) => write(K.background, { uid, mode });
 
 export const loadMoodBoard = () => read<Record<string, unknown> | null>(K.moodboard, null);
-export const loadLastHome = (): { id: string; ch: string; ts: number } | null => read(K.lastHome, null);
 
 /** Which agency the buyer is asking about ("Ask Tayo about this agency"). Kept for the tab, so a reload does not drop the subject. */
 const AGENCY = "syn_agency_ctx";
