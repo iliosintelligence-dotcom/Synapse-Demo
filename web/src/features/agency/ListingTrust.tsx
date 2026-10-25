@@ -8,6 +8,7 @@
  * Verifying is never done from here. The agency supplies; Synapse checks (see VerifyDesk).
  */
 import { useEffect, useRef, useState } from "react";
+import { initials } from "@/lib/listingAgent";
 import { showDrawer } from "./SideDrawer";
 import "./ListingTrust.css";
 
@@ -77,7 +78,7 @@ function ListingTrust({ l }: { l: any }) {
       <div className="sec">
         <div className="k">Listing agent</div>
         <div className="lt-agent">
-          <span className="lt-face" style={me && me.avatar ? { backgroundImage: `url("${me.avatar}")` } : undefined}>{me && !me.avatar ? me.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase() : null}</span>
+          <span className="lt-face" style={me && me.avatar ? { backgroundImage: `url("${me.avatar}")` } : undefined}>{me && !me.avatar ? initials(me.name) : null}</span>
           <select className="lt-sel" aria-label="Listing agent" value={agent} disabled={!people} onChange={(e) => pickAgent(e.target.value)}>
             <option value="">The agency only</option>
             {(people || []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

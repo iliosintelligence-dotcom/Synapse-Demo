@@ -8,7 +8,8 @@ export type ListingAgent = { name: string; first: string; avatar: string | null 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-async function rest(path: string): Promise<any[]> { // eslint-disable-line @typescript-eslint/no-explicit-any
+type Row = Record<string, string | null | undefined>;
+async function rest(path: string): Promise<Row[]> {
   const r = await fetch(URL_ + "/rest/v1/" + path, { headers: { apikey: KEY!, Authorization: "Bearer " + KEY } });
   const rows = await r.json().catch(() => []);
   return Array.isArray(rows) ? rows : [];
@@ -22,8 +23,17 @@ export async function listingAgentFor(propertyId: string): Promise<ListingAgent 
     const [a] = await rest("listing_agent_cards?agent_id=eq." + encodeURIComponent(p.listed_by_agent_id) + "&select=full_name,avatar_url&limit=1");
     const name = String((a && a.full_name) || "").trim();
     if (!name) return null;
-    return { name, first: name.split(/\s+/)[0], avatar: a.avatar_url || null };
+    return { name, first: name.split(/\s+/)[0], avatar: a?.avatar_url || null };
   } catch { return null; }
 }
 
 export const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+
+/** What the buyer reads under the introduction ticket, on both Tayo screens: who has the message, then what happened to it. */
+export function hasYourMessage(agent: ListingAgent | null, sent: boolean): { who: string; rest: string } {
+  return {
+    who: agent ? agent.first + " has your message." : "The agency has your message.",
+    rest: (sent ? "They were sent what we talked about." : "It is waiting in their inbox with what we talked about.")
+      + " Quote this reference if you call them.",
+  };
+}

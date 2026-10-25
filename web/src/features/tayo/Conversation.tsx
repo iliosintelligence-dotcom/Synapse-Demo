@@ -11,7 +11,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useEngineReady } from "./useEngineReady";
-import { initials, type ListingAgent } from "@/lib/listingAgent";
+import { hasYourMessage, initials, type ListingAgent } from "@/lib/listingAgent";
 import { flushSync } from "react-dom";
 
 /* ── what the engine records ── */
@@ -333,12 +333,11 @@ function untilt(e: React.PointerEvent<HTMLDivElement>) {
 
 /* The buyer's side of a fast reply: who has their message, right now, said plainly. */
 function HasYourMessage({ agent, sent }: { agent: ListingAgent | null; sent: boolean }) {
+  const m = hasYourMessage(agent, sent);
   return (
     <div className="tkt-has">
       {agent && <span className="tkt-face" style={agent.avatar ? { backgroundImage: `url("${agent.avatar}")` } : undefined}>{agent.avatar ? null : initials(agent.name)}</span>}
-      <p className="tkt-note"><b>{agent ? agent.first + " has your message." : "The agency has your message."}</b> {sent
-        ? "They were sent what we talked about. Quote this reference if you call them."
-        : "It is waiting in their inbox with what we talked about. Quote this reference if you call them."}</p>
+      <p className="tkt-note"><b>{m.who}</b> {m.rest}</p>
     </div>
   );
 }

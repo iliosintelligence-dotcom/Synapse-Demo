@@ -9,7 +9,7 @@ import { priceLine } from "./context";
 import type { ChatError } from "./useChat";
 import type { ReplyTo } from "./types";
 import type { TourSlot } from "@/features/property/queries";
-import { initials, type ListingAgent } from "@/lib/listingAgent";
+import { hasYourMessage, initials, type ListingAgent } from "@/lib/listingAgent";
 import s from "./Chat.module.css";
 
 export function UserMessage({ text }: { text: string }) {
@@ -105,6 +105,7 @@ export function IntroTicket({ listing, lead, agent }: { listing: ReplyTo; lead: 
   const sent = lead.delivery_status === "delivered";
   const img = coverUrl(listing.property_media);
   const where = [priceLine(listing), listing.city].filter(Boolean).join(" · ");
+  const m = hasYourMessage(agent, sent);
   return (
     <div className={s.tktWrap}>
       <div className={s.tkt} role="group" aria-label="Introduction ticket">
@@ -121,7 +122,7 @@ export function IntroTicket({ listing, lead, agent }: { listing: ReplyTo; lead: 
       {/* the buyer's side of a fast reply: who has their message, right now */}
       <div className={s.tktHas}>
         {agent && <span className={s.tktFace} style={agent.avatar ? { backgroundImage: `url("${agent.avatar}")` } : undefined}>{agent.avatar ? null : initials(agent.name)}</span>}
-        <p className={s.tktNote}><b>{agent ? agent.first + " has your message." : "The agency has your message."}</b> {sent ? "They were sent what we talked about. Quote this reference if you call them." : "It is waiting in their inbox with what we talked about. Quote this reference if you call them."}</p>
+        <p className={s.tktNote}><b>{m.who}</b> {m.rest}</p>
       </div>
     </div>
   );

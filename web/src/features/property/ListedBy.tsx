@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AgencyLogo } from "@/components/AgencyLogo";
 import { brandHex } from "@/lib/brand";
 import { cacLabel } from "@/lib/format";
+import { initials } from "@/lib/listingAgent";
 import { fetchAgentCard } from "./queries";
 import type { AgentCard, Property, PropertyAgency } from "./types";
 import s from "./Property.module.css";
@@ -43,7 +44,7 @@ export function ListedBy({ p }: { p: Property }) {
       <div className={s.apc}>
         {agent ? (
           <div className={s.apcPhoto} style={agent.avatar_url ? { backgroundImage: `url("${agent.avatar_url}")` } : undefined}>
-            {!agent.avatar_url && agent.full_name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+            {!agent.avatar_url && initials(agent.full_name)}
           </div>
         ) : (
           <AgencyLogo name={name} logoUrl={agency?.logo_url ?? null} className={s.apcAgencyBlock} />

@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /** The stages the table shows, in order. Lost sits outside the line: a lead can fall out of any stage. */
-export const FUNNEL = ["New", "Contacted", "Viewing", "Negotiation", "Won"] as const;
+const FUNNEL = ["New", "Contacted", "Viewing", "Negotiation", "Won"] as const;
 const RANK: Record<string, number> = {
   new: 0, contacted: 1, qualified: 1, viewing_scheduled: 2, viewing_completed: 2, negotiating: 3, commitment: 3, closed: 4,
 };
@@ -30,7 +30,7 @@ export function checkBackAt(now = Date.now()): string {
 }
 
 /** A first reply inside five minutes is the line the CRM holds new leads to. */
-export const REPLY_MINUTES = 5;
+const REPLY_MINUTES = 5;
 
 const plural = (n: number, w: string) => n + " " + w + (n === 1 ? "" : "s");
 export function spanWords(mins: number): string {
