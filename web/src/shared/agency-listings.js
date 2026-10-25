@@ -34,6 +34,10 @@ export function run() {
      than one that was never sent. */
   var WRITABLE = [
     'title', 'description', 'property_type', 'listing_type',
+    /* Who answers for the listing: its portrait on the listing page, and the
+       agent a new lead on it is routed to (0064). The database refuses anyone
+       who is not a member of this agency. */
+    'listed_by_agent_id',
     'price', 'price_period', 'move_in_cost', 'service_charge',
     /* The agency fee and the legal fee. Writable by the agency like every
        other charge, and deliberately absent from the social caption payload
@@ -1349,8 +1353,13 @@ export function run() {
   }
 
   function create(data) {
-    var c1;
-    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+    var c1, me = null;
+    return client().then(function (c) {
+      c1 = c;
+      /* Whoever posts a listing answers for it unless they hand it on, so a
+         new listing carries a face from the start instead of the agency alone. */
+      return c.auth.getUser().then(function (u) { me = u && u.data && u.data.user ? u.data.user.id : null; }, function () {});
+    }).then(function () { return agencyId(); }).then(function (aid) {
       if (!aid) throw new Error('no-agency: this account is not a member of any agency');
       /* Rebuilt on the retry rather than reused: scrub() is what drops a
          column now known to be absent, so the second attempt has to go back
@@ -1358,6 +1367,7 @@ export function run() {
       var build = function () {
         var row = withStatus(scrub(data));
         row.agency_id = aid;
+        if (!row.listed_by_agent_id && me && !absent.listed_by_agent_id) row.listed_by_agent_id = me;
         Object.assign(row, freshWindow(row.listing_type));   // starts the clock
         // verification_* and trust_score are deliberately never set here.
         return row;
@@ -2670,6 +2680,100 @@ export function run() {
     }).then(function () { return true; });
   }
 
+  /* ── a listing's agent and its papers ──────────────────────────────────
+
+     The agent: one teammate answers for a listing. null hands it back to the
+     agency alone. */
+  function setListingAgent(propertyId, agentId) {
+    return client().then(function (c) {
+      return c.from('properties').update({ listed_by_agent_id: agentId || null })
+        .eq('id', propertyId).select('id, listed_by_agent_id').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('That listing could not be updated');
+      return r.data;
+    });
+  }
+
+  /* The papers that let Synapse verify a listing: who owns it and what the
+     land is. They live in their own private bucket, one folder per listing,
+     because any agent may post a home and the agency-documents bucket is the
+     owner's (director's ID, bank statements). The verification desk can read
+     them; buyers never can. */
+  var PROPERTY_DOC_BUCKET = 'property-documents';
+  var PROPERTY_PAPERS = [
+    { key: 'certificate_of_occupancy', label: 'Certificate of Occupancy (C of O)' },
+    { key: 'governors_consent', label: "Governor's Consent" },
+    { key: 'deed_of_assignment', label: 'Deed of Assignment' },
+    { key: 'survey_plan', label: 'Survey plan' },
+    { key: 'allocation_letter', label: 'Allocation letter' },
+    { key: 'building_approval', label: 'Building approval' },
+    { key: 'excision_document', label: 'Excision document' },
+    { key: 'other', label: 'Other proof of ownership or authority to let' },
+  ];
+
+  function propertyDocuments(propertyId) {
+    if (!propertyId) return Promise.resolve([]);
+    return client().then(function (c) {
+      return c.from('documents')
+        .select('id, document_type, display_name, storage_url, is_verified, file_size_bytes, created_at')
+        .eq('entity_type', 'property').eq('entity_id', propertyId)
+        .is('deleted_at', null).eq('is_current', true)
+        .order('created_at', { ascending: false });
+    }).then(function (r) { if (r.error) throw r.error; return r.data || []; });
+  }
+
+  function propertyDocumentLink(path) {
+    return client().then(function (c) {
+      return c.storage.from(PROPERTY_DOC_BUCKET).createSignedUrl(path, 120);
+    }).then(function (r) { if (r.error) throw r.error; return r.data.signedUrl; });
+  }
+
+  /* File first, then the row; a failed row takes its file back out. Several
+     papers of one type may sit side by side (a survey plan and its
+     recertification), so nothing is superseded here. */
+  function uploadPropertyDocument(propertyId, file, type) {
+    if (!propertyId) return Promise.reject(new Error('Save the listing first'));
+    if (!file) return Promise.reject(new Error('No file selected'));
+    if (DOC_TYPES.indexOf(file.type) === -1) return Promise.reject(new Error('Use a PDF, JPG, PNG or WEBP'));
+    if (file.size > DOC_MAX_BYTES) return Promise.reject(new Error('That file is ' + Math.ceil(file.size / 1024 / 1024) + 'MB \u2014 keep it under 15MB'));
+    var spec = PROPERTY_PAPERS.filter(function (x) { return x.key === type; })[0];
+    if (!spec) return Promise.reject(new Error('Choose what the paper is'));
+    var c1, path = propertyId + '/' + type + '-' + Date.now() + '.' + docExtFor(file);
+    return client().then(function (c) {
+      c1 = c;
+      return c.storage.from(PROPERTY_DOC_BUCKET).upload(path, file, { cacheControl: '0', upsert: false, contentType: file.type });
+    }).then(function (r) {
+      if (r.error) {
+        /* Before the bucket exists the store answers "Bucket not found"; say what that means here. */
+        if (/bucket not found/i.test(r.error.message || '')) throw new Error('Listing papers cannot be stored yet. Synapse is switching this on.');
+        throw r.error;
+      }
+      return c1.auth.getUser();
+    }).then(function (u) {
+      return c1.from('documents').insert({
+        entity_type: 'property', entity_id: propertyId, document_type: type,
+        display_name: (file.name || spec.label).slice(0, 120), storage_url: path,
+        file_size_bytes: file.size, mime_type: file.type,
+        uploaded_by: u && u.data && u.data.user && u.data.user.id,
+        is_current: true,
+      }).select('id').single();
+    }).then(function (r) {
+      if (r.error) { c1.storage.from(PROPERTY_DOC_BUCKET).remove([path]).catch(function () {}); throw r.error; }
+      return r.data;
+    });
+  }
+
+  function deletePropertyDocument(id, path) {
+    var c1;
+    return client().then(function (c) { c1 = c; return c.from('documents').delete().eq('id', id); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        if (path) return c1.storage.from(PROPERTY_DOC_BUCKET).remove([path]).catch(function () { return null; });
+        return null;
+      }).then(function () { return true; });
+  }
+
   /* The checklist: catalogue + what is on file + what the platform has
      confirmed, folded together. Everything derived, nothing stored, so it
      cannot drift from the documents table.
@@ -2867,7 +2971,12 @@ export function run() {
            making them save twice to get one would be a bug they cannot see. */
         return c1.from('agent_profiles').upsert(work, { onConflict: 'profile_id' });
       })
-      .then(function (r) { if (r && r.error) throw r.error; return true; });
+      .then(function (r) {
+        if (r && r.error) throw r.error;
+        /* The bell's "Add your photo" reads this; it goes the moment a face is saved. */
+        if (p.avatar != null) { window.SYN_MY_FACE = !!String(p.avatar).trim(); document.dispatchEvent(new Event('syn:noti-refresh')); }
+        return true;
+      });
   }
 
   /** A face, in the person's own folder. Returns the public URL; the caller
@@ -2963,6 +3072,12 @@ export function run() {
     leads: leads,
     setLeadStage: setLeadStage,
     setNextStep: setNextStep,
+    setListingAgent: setListingAgent,
+    PROPERTY_PAPERS: PROPERTY_PAPERS,
+    propertyDocuments: propertyDocuments,
+    propertyDocumentLink: propertyDocumentLink,
+    uploadPropertyDocument: uploadPropertyDocument,
+    deletePropertyDocument: deletePropertyDocument,
     loseLead: loseLead,
     funnelData: funnelData,
     leadTasks: leadTasks,

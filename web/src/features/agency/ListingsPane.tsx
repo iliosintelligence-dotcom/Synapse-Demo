@@ -12,6 +12,7 @@ import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent, type Mouse
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { useRevealed } from "./useRevealed";
 import { leadsOn } from "./OverviewPane";
+import { openListingTrust } from "./ListingTrust";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -214,7 +215,7 @@ function Card({ l, oi, menu }: { l: any; oi: number; menu: boolean }) {
   const label = W().SynTypeLabel?.[l.property_type] || "";
   const meta = f.expired
     ? (f.left === 0 ? "Expired today" : "Expired " + (-f.left) + (f.left === -1 ? " day" : " days") + " ago")
-    : [label, leads + (leads === 1 ? " lead" : " leads")].filter(Boolean).join(" · ");
+    : [label, leads + (leads === 1 ? " lead" : " leads"), l.listed_by_agent_id ? W().SynRosterName?.(l.listed_by_agent_id) || "" : ""].filter(Boolean).join(" · ");
   const due = f.expired || f.warn;
   const cls = "card lcard lc2 " + (f.expired ? "expired" : "");
   const el = useRevealed(cls);   // a re-listed card loses "expired", which must not cost it motion.js's .in
@@ -238,6 +239,7 @@ function Card({ l, oi, menu }: { l: any; oi: number; menu: boolean }) {
             <button className="lc-ic" data-more="" aria-label="More actions" aria-expanded={menu} title="More">⋯</button>
             <div className="lc-menu" role="menu" hidden={!menu}>
               <button role="menuitem" data-edit={oi}>Edit listing</button>
+              <button role="menuitem" data-trust={oi}>{l.st === "verified" ? "Agent and papers" : "Agent and verification"}</button>
               {due ? <button role="menuitem" data-post={l.id}>Post about it</button> : <button role="menuitem" data-relist={oi}>{"Re-list for " + lifeLabel(l)}</button>}
             </div>
           </div>
@@ -298,6 +300,8 @@ export function ListingsGrid() {
       if (!window.confirm("Discard this unsaved listing? It cannot be brought back.")) return;
       D.clear(); W().renderListings(); toast("Draft discarded"); return;
     }
+    const tr = at("[data-trust]");
+    if (tr) { set({ menu: null }); openListingTrust(L[+tr.dataset.trust!]); return; }
     const ed = at("[data-edit]");
     if (ed) { set({ menu: null }); const i = +ed.dataset.edit!; openForm({ ...L[i] }, i); return; }
     const rl = at("[data-relist]");

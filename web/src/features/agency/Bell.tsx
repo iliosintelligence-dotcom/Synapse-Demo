@@ -106,6 +106,10 @@ function deriveItems(): Item[] {
     const n = { type: "setup", tag: "Only you", icon: "pending", pane: "", task: t.id, title: t.title, sub: t.where || "Tap to see what to do", group: "To do" };
     out.push({ ...n, key: notiKey({ ...n, title: esc2(n.title), sub: esc2(n.sub) }) });
   });
+  /* A FACE ON EVERY LISTING (2026-10-25): the listing page shows the photo of the agent who answers for it. Known once the
+     signed-in member's profile has loaded; opening it opens their profile. */
+  if (W().SYN_MY_FACE === false) out.push({ type: "setup", tag: "Your profile", icon: "user", pane: "", action: "my-profile",
+    title: "Add your photo", sub: "Buyers see your face and name on the listings you post", group: "To do" });
   /* AUTO-REPLY LINKS (Eden, 2026-10-23: a notification and a pop-up, not a big card). Known once AutoReplyLinks.tsx has read the
      agency's code; opening it opens the pop-up. */
   if (W().SYN_AUTOREPLY && W().SYN_AUTOREPLY.code) out.push({ type: "social", tag: "Auto-replies", icon: "share", pane: "", action: "autoreply",
@@ -169,7 +173,12 @@ export function BellPanel() {
       window.removeEventListener("syn:noti-toggle", toggle);
     };
   }, []);
-  useEffect(() => { if (scripts) refresh(); }, [scripts]);
+  useEffect(() => {
+    if (!scripts) return;
+    refresh();
+    const L = W().SynListings;
+    if (L && L.myProfile) L.myProfile().then((me: any) => { W().SYN_MY_FACE = !!(me && me.avatar); refresh(); }).catch(() => { /* no nudge without an answer */ });
+  }, [scripts]);
 
   /* Going there is dealing with it: take it out of the bell first. */
   const go = (n: Item) => {
