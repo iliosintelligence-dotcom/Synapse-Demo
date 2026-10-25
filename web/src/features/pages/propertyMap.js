@@ -1,3 +1,19 @@
+/* eslint-disable */
+// @ts-nocheck
+/* The property page's map engine: the map beside the listing (MapLibre, through SynMapRender), what is nearby (the stored survey,
+   else OpenStreetMap), routes and commutes, the cost slip and the neighbourhood read. Was the page's inline script
+   (legacy/property/inline-4.js, with the names it read in engine-globals.js); moved as it was, and run at the same point (last in
+   PropertyBody's list). It gets the listing from React's `syn:property` event. */
+export function run() {
+  /* What the engine reads from the page: the listing's id, the public Supabase values, escaping and title-type labels. */
+  const PROP_ID = new URLSearchParams(window.location.search).get('id') || '';
+  const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  const esc = (t) => String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const TITLE_LABEL = { c_of_o: 'Certificate of Occupancy', governors_consent: 'Governor’s Consent',
+    registered_deed: 'Registered Deed', excision: 'Excision', gazette: 'Gazette', allocation: 'Allocation' };
+
 
   /* Reactive map canvas, mirrors the swipe deck. Each card maps to a view:
      what's nearby (schools/gyms/restaurants/churches/mosques), commute/traffic by
@@ -2133,4 +2149,4 @@
       }
     })();
   })();
-  
+}

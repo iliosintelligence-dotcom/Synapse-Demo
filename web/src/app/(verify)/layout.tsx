@@ -4,6 +4,7 @@
 // The page's <body> is page.tsx beside the route; its inline scripts and styles are in src/legacy/verify/.
 import type { Viewport } from "next";
 import { inline } from "@/legacy/read";
+import { AnalyticsHead } from "@/features/site/Analytics";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1};
 
@@ -11,9 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
-        <script  dangerouslySetInnerHTML={{ __html: inline("verify", "inline-1.js") }} />
-        <script src="/consent.js" defer />
+        <AnalyticsHead />
         <script src="/app/native.js" defer />
         <title>{"Verification desk · Synapse"}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />

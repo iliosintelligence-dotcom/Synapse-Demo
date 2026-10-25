@@ -5,6 +5,7 @@
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { SigninForm, SigninArtText } from "./SigninForm";
+import { SigninPhoto } from "./SigninArt";
 
 const SCRIPTS: PageScript[] = [
   { shared: "loader" },
@@ -16,9 +17,7 @@ export function SigninBody() {
     <>
       <div className="au">
         <div className="au-art">
-          <img id="artPhoto" alt="" aria-hidden="true" />
-          {/* Runs where it sits, so the photograph starts downloading before the rest of the page is parsed (inline-4.js). */}
-          <script dangerouslySetInnerHTML={{ __html: inline("signin", "inline-4.js") }} />
+          <SigninPhoto />
           <a className="au-brand" href="../index.html">
             {" "}
             <img className="au-mark" src="../images/brand/mark-white-transparent.png" alt="" aria-hidden="true" />

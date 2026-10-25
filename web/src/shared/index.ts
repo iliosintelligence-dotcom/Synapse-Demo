@@ -4,6 +4,8 @@
 export const SHARED = {
   "agency-listings": () => import("./agency-listings"),
   /* the agency portal's leads, pipeline and listings: agency-only, so it sits beside its panes */
+  /* the property page's map engine (nearby, routes, commutes, costs) */
+  "property-map": () => import("@/features/pages/propertyMap"),
   "agency-data": () => import("@/features/agency/portalData"),
   /* what the portal needs between its panes: the role, the toast, the task registry, checkout, the names the panes call */
   "agency-shell": () => import("@/features/agency/portalShell"),

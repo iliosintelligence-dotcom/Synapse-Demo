@@ -4,6 +4,7 @@
 // The page's <body> is page.tsx beside the route; its inline scripts and styles are in src/legacy/privacy/.
 import type { Viewport } from "next";
 import { inline } from "@/legacy/read";
+import { AnalyticsHead } from "@/features/site/Analytics";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1,"viewportFit":"cover"};
 
@@ -11,9 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-R7VX06N3ZY" />
-        <script  dangerouslySetInnerHTML={{ __html: inline("privacy", "inline-1.js") }} />
-        <script src="/consent.js" defer />
+        <AnalyticsHead />
         <script src="/app/native.js" defer />
         <title>{"Privacy Policy · Synapse Core"}</title>
         <link rel="icon" href="/favicon.ico" sizes="any" />

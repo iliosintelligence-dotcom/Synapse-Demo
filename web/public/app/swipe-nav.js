@@ -15,7 +15,7 @@
  * on the swipe area in CSS, so the browser itself leaves horizontal drags to us and still scrolls vertically and zooms. Nothing is
  * ever cancelled near the screen edge, which stays with iOS back-swipe and Android gesture-back.
  *
- * Analytics go only through the page's existing gtag (consent is denied by default and granted by consent.js, so denied consent
+ * Analytics go only through the page's existing gtag (consent is denied by default and granted by the cookie banner (ConsentBanner.tsx), so denied consent
  * means no events). Without gtag every call here is a no-op.
  */
 (function () {

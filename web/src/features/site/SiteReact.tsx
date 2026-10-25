@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { Toaster, sileo, type SileoOptions } from "sileo";
 import "sileo/styles.css";
+import { ConsentBanner } from "./ConsentBanner";
 
 type ToastInput = string | SileoOptions;
 declare global {
@@ -45,5 +46,5 @@ export function SiteReact({ toastTop = "calc(20px + var(--syn-top, env(safe-area
     window.dispatchEvent(new Event("synreact:ready"));
     return () => { delete window.SynToast; };
   }, []);
-  return <Toaster position="top-center" theme={theme} offset={{ top: toastTop }} />;
+  return <><Toaster position="top-center" theme={theme} offset={{ top: toastTop }} /><ConsentBanner /></>;
 }

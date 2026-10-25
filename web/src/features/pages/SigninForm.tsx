@@ -15,6 +15,7 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { useArtLine } from "./SigninArt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const auth = () => (window as any).SynAuth;
@@ -562,16 +563,12 @@ function ResendButton({ email, role, onDone }: { email: string; role: string; on
   );
 }
 
-/** The panel's line and, for an agency, its sub-line: the photograph's own line as the cycler chose it. */
+/** The panel's line and, for an agency, its sub-line: the photograph's own line as the cycler (SigninArt.tsx) chose it. */
 export function SigninArtText() {
-  const [line, setLine] = useState<string | null>(null);
+  const line = useArtLine();
   const [agency, setAgency] = useState(false);
   useEffect(() => {
-    setAgency(new URLSearchParams(location.search).get("role") === "agency");
-    const read = () => { const l = (window as any).SYN_ART_LINE; if (l) setLine(l); };
-    read();
-    window.addEventListener("syn:art-line", read);   // the cycler walked on to another photograph
-    return () => window.removeEventListener("syn:art-line", read);
+    setAgency(new URLSearchParams(location.search).get("role") === "agency");   // eslint-disable-line react-hooks/set-state-in-effect -- the URL exists only in the browser
   }, []);
   return (
     <>
