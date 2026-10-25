@@ -29,6 +29,7 @@ import { ComposerHost } from "./PostComposer";
 import { ListingFormHost } from "./ListingForm";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
+import { CampaignGenerator } from "./CampaignGenerator";
 import { Dock, HistButtons, Pane, PortalNavHost, Rail, SideToggle } from "./PortalNav";
 
 const SCRIPTS: PageScript[] = [
@@ -46,6 +47,7 @@ const SCRIPTS: PageScript[] = [
   { shared: "auth" },
   { shared: "ng-places" },
   { shared: "agency-listings" },
+  { shared: "agency-data" },
   { code: inline("agency", "inline-3.js") },
   { shared: "notify" },
   { shared: "motion" },
@@ -219,36 +221,7 @@ export function AgencyBody() {
                 </button>
               </div>
               <div id="react-autoreply"></div>
-              <div className="card cmp-gen" id="cmpGenPanel">
-                <div className="cmp-head">
-                  <div>
-                    <div className="h2" title="Each version is checked against that platform's limits before it can be queued.">
-                      Generate a campaign
-                    </div>
-                  </div>
-                  <button type="button" className="cmp-min" id="cmpMin" aria-controls="cmpGenPanel">
-                    <span className="lbl">
-                      Minimise
-                    </span>
-                    {" "}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M6 15l6-6 6 6" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="cmp-controls">
-                  <select id="cmpProp" aria-label="Listing">
-                  </select>
-                  <button className="btn btn-primary" id="cmpGo" style={{ "padding": "11px 18px", "fontSize": "13.5px" }}>
-                    <span data-icon="spark"></span>
-                    {" Generate"}
-                  </button>
-                </div>
-                <div className="cmp-pick" id="cmpPick" role="group" aria-label="Channels to write for and post to"></div>
-                <div className="cmp-channels" id="cmpChannels" aria-live="polite"></div>
-                <div className="cmp-out" id="cmpOut" hidden></div>
-                <div className="cmp-past" id="cmpPast"></div>
-              </div>
+              <CampaignGenerator />
               <div className="s-work-hd">
                 <div>
                   <div className="h2">

@@ -3,6 +3,8 @@
    the order where its file used to load. */
 export const SHARED = {
   "agency-listings": () => import("./agency-listings"),
+  /* the agency portal's leads, pipeline and listings: agency-only, so it sits beside its panes */
+  "agency-data": () => import("@/features/agency/portalData"),
   auth: () => import("./auth"),
   "cust-nav": () => import("./cust-nav"),
   "icon-morph": () => import("./icon-morph"),
