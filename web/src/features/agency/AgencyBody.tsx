@@ -26,6 +26,7 @@ import { MkDigest, MkBoard, MkCampaigns, MkSort, MarketingHost } from "./Marketi
 import { ListSeg, ListSort, RelistAll, ListingGate, ListingsGrid } from "./ListingsPane";
 import { ShareKitHost } from "./ShareKit";
 import { ComposerHost } from "./PostComposer";
+import { ListingFormHost } from "./ListingForm";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
 
@@ -534,6 +535,7 @@ export function AgencyBody() {
       <div className="scrim" id="scrim"></div>
       <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
+      <ListingFormHost />
       <SideDrawer />
       <TaskCard />
       <PlanGate />
