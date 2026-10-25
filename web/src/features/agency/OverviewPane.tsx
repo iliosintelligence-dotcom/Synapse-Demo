@@ -50,11 +50,30 @@ const ovBeds = (t: string) => { const m = String(t || "").match(/(\d+)\s*-?\s*be
 /* The listing's real verification_nodes: a passed check is one that happened. */
 const ovChecks = (l: any) => (Array.isArray(l.verification_nodes) ? l.verification_nodes : []).filter((n: any) => n && n.status === "passed").length;
 /* Real leads attached to this listing, matched by its short name. */
-function ovLeads(l: any) {
+/* The leads on one listing: by its id when the lead carries one, by its title otherwise (the sample leads have no ids). */
+function leadsOn(l: any): any[] {
   const all: any[] = (W().SynLeads && W().SynLeads()) || [];
   const name = String(l.title || l.t || "").split(",")[0].toLowerCase();
-  if (!name) return [];
-  return all.filter((x) => String(x.pr || "").toLowerCase().includes(name)).slice(0, 4).map((x) => ({ nm: x.nm, src: x.src }));
+  return all.filter((x) => (x.propertyId ? x.propertyId === l.id : !!name && String(x.pr || "").toLowerCase().includes(name)));
+}
+function ovLeads(l: any) {
+  return leadsOn(l).slice(0, 4).map((x) => ({ nm: x.nm, src: x.src }));
+}
+/* How far this listing's leads have got. Each row counts the leads that reached that stage or went past it, so the
+   bars only ever shrink. Lost leads are not loaded, so they are not counted. */
+const FUNNEL: [string, string[]][] = [
+  ["Leads", ["New", "Contacted", "Viewing", "Negotiation", "Won"]],
+  ["Contacted", ["Contacted", "Viewing", "Negotiation", "Won"]],
+  ["Viewings", ["Viewing", "Negotiation", "Won"]],
+  ["Offers", ["Negotiation", "Won"]],
+  ["Won", ["Won"]],
+];
+function ovFunnel(l: any) {
+  const lds = leadsOn(l);
+  return FUNNEL.map(([lb, stages]) => {
+    const n = lds.filter((x) => stages.indexOf(x.stage) > -1).length;
+    return { lb, n, w: lds.length ? Math.round((n / lds.length) * 100) : 0 };
+  });
 }
 function filtered(s: St) {
   let a = listings().slice();
@@ -89,7 +108,7 @@ function Thumb({ url }: { url: string }) {
 
 function Detail({ l }: { l: any }) {
   const { dtab } = useOv();
-  const f = W().freshness(l), checks = ovChecks(l), beds = ovBeds(l.t);
+  const f = W().freshness(l), checks = ovChecks(l), beds = ovBeds(l.t), nLeads = leadsOn(l).length;
   const tabs = [["details", "Details"], ["verification", "Verification"], ["leads", "Leads"], ["performance", "Performance"]];
   /* "Open in Listings" carries the id across and opens that property; the pane renders on click, so it waits a frame. */
   const go = (pane: string, lid?: string) => {
@@ -106,7 +125,7 @@ function Detail({ l }: { l: any }) {
           <span className="ovd-chip">{beds + " bed" + (Number(beds) === 1 ? "" : "s")}</span>
           <span className="ovd-chip">{"◍ " + ovLoc(l)}</span>
           <span className={"ovd-chip " + (f.cls === "ok" ? "" : f.cls)}>{f.label}</span>
-          <span className="ovd-chip">{l.leads + " active " + (l.leads === 1 ? "lead" : "leads")}</span>
+          <span className="ovd-chip">{nLeads + " active " + (nLeads === 1 ? "lead" : "leads")}</span>
         </div>
         <div className="ovd-actions">
           <button className="ovd-btn primary" data-goto="listings" data-goto-listing={l.id || ""} onClick={() => go("listings", l.id)}>Open in Listings</button>
@@ -137,13 +156,13 @@ function Detail({ l }: { l: any }) {
   } else {
     body = (
       <>
-        <div className="h2" style={{ margin: "0 0 14px", fontSize: "15px" }}>Pipeline this quarter</div>
+        <div className="h2" style={{ margin: "0 0 14px", fontSize: "15px" }}>Where this listing&apos;s leads are</div>
         <div className="funnel">
-          {[["Leads", 100, 128], ["Contacted", 66, 84], ["Viewings", 27, 34], ["Offers", 12, 15], ["Won", 7, 9]].map(([lb, w, n]) => (
+          {ovFunnel(l).map(({ lb, w, n }) => (
             <div className="row" key={lb}><span className="lb">{lb}</span><span className="track"><i style={{ width: w + "%" }}></i></span><span className="n">{n}</span></div>
           ))}
         </div>
-        <p className="muted" style={{ fontSize: "12.5px", marginTop: "16px" }}>{l.leads + " " + (l.leads === 1 ? "lead is" : "leads are") + " attributed to this listing · " + (checks === 7 ? "live to buyers now" : "hidden until verification completes") + "."}</p>
+        <p className="muted" style={{ fontSize: "12.5px", marginTop: "16px" }}>{nLeads + " " + (nLeads === 1 ? "lead is" : "leads are") + " attributed to this listing · " + (checks === 7 ? "live to buyers now" : "hidden until verification completes") + "."}</p>
       </>
     );
   }

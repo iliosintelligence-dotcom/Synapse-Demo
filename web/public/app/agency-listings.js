@@ -322,7 +322,7 @@
                 'risk_level, next_action_recommendation, budget_min, budget_max, ' +
                 'preferences, ' +
                 'delivery_status, delivery_error, last_activity_at, created_at, ' +
-                'assigned_agent_id, properties(title, price, city), ' +
+                'assigned_agent_id, property_id, properties(title, price, city), ' +
                 'lead_attribution(channel, is_first_touch, is_last_touch, occurred_at, campaign_id)')
         .eq('agency_id', aid)
         .is('deleted_at', null)

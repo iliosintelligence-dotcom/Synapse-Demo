@@ -195,6 +195,8 @@
         // what the home is listed at, distinct from `price` above, which is the
         // buyer's budget whenever one is known
         listPrice: prop.price != null ? prop.price : null,
+        // which listing the lead is about, for the per-listing funnel
+        propertyId: r.property_id || null,
       };
     }
     /* The agency's own people, fetched once. Both the Assign menu and the lead
