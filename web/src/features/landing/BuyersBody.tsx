@@ -111,7 +111,7 @@ export function BuyersBody() {
                     Keep scrolling →
                   </p>
                 </div>
-                <div className="rl-track" id="rlTrack" role="group" aria-roledescription="carousel" aria-label="What you get">
+                <div className="rl-track" id="rlTrack" tabIndex={0} role="group" aria-roledescription="carousel" aria-label="What you get">
                   <article className="rl-card" aria-roledescription="slide" aria-label="1 of 3">
                     <div className="rl-art p-tayo" aria-hidden="true">
                       <div className="art-fig">

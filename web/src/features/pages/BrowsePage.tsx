@@ -374,7 +374,7 @@ export function BrowsePage() {
               <button key={d} data-deal={d} className={deal === d ? "on" : undefined} onClick={() => setDeal(deal === d ? "all" : d)}>{l}</button>
             ))}
           </div>
-          <select id="sortSel" value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select id="sortSel" aria-label="Sort homes" value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="match">Sort: Best match</option>
             <option value="price">Sort: Price (low → high)</option>
             <option value="trust">Sort: Property confidence</option>

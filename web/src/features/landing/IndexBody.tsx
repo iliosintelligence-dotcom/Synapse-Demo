@@ -223,7 +223,7 @@ export function IndexBody() {
                     Keep scrolling →
                   </p>
                 </div>
-                <div className="rl-track" id="rlTrack" role="group" aria-roledescription="carousel" aria-label="Four problems">
+                <div className="rl-track" id="rlTrack" tabIndex={0} role="group" aria-roledescription="carousel" aria-label="Four problems">
                   <article className="rl-card" aria-roledescription="slide" aria-label="1 of 4">
                     <div className="rl-art p-crm" aria-hidden="true">
                       <div className="art-dots">

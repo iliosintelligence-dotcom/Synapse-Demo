@@ -263,6 +263,8 @@
     .chatbox { width: 100%; max-width: 480px; border-radius: 24px; padding: 6px 6px 8px;
       backdrop-filter: blur(36px) saturate(1.6); -webkit-backdrop-filter: blur(36px) saturate(1.6); }
     .pillrow { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 15px; }
+    /* The field is borderless inside the box, so the box shows where typing goes (Fluent 2: a visible focus stroke, 3:1). */
+    .chatbox:focus-within { outline: 1.5px solid var(--ink-muted); outline-offset: -1.5px; }
     /* The field fills the pill. It was a 16px strip inside a 50px row: the
        obvious place to tap to start typing was not the field. */
     .pillrow input { flex: 1; align-self: stretch; min-height: 44px; border: none; outline: none; font-family: var(--f-sans); font-size: 14.5px; background: transparent; color: var(--ink); }

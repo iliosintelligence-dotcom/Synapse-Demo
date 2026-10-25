@@ -814,7 +814,7 @@ export function PropertyPage({ canvas }: { canvas: ReactNode }) {
               </div>
             </div>
             <div className="glance" id="pvGlance" hidden={!(P && P.description)}>{P && P.description ? P.description : ""}</div>
-            <div className="amen" id="pvAmen" hidden={!amen.length} aria-label="Amenities" role="list">
+            <div className="amen" id="pvAmen" hidden={!amen.length} aria-label="Amenities" role="list" tabIndex={0}>
               {amen.map((a: string, i: number) => <span role="listitem" key={i}>{a.charAt(0).toUpperCase() + a.slice(1)}</span>)}
             </div>
           </div>

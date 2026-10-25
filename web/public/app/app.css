@@ -534,7 +534,8 @@ input:not([type]):focus-visible,
 textarea:focus-visible {
   box-shadow: none !important;
   outline: none !important;
-  border-color: rgba(20, 20, 20, 0.34);
+  /* Strong enough to see (Fluent 2 asks 3:1 for a focus indicator; the old 34% black was about 2:1), in either theme. */
+  border-color: var(--ink-muted);
 }
 
 
@@ -1129,8 +1130,19 @@ html[data-theme="dark"] .cnav-menu .auth-up:hover { background: #FFFFFF !importa
 [data-cnav-actions].cnav-lent,
 [data-cnav-search].cnav-lent { display: none; }
 
+/* A closed menu or sheet is out of the Tab order, not only faded out: keyboard users were stepping through up to fifteen
+   invisible links before reaching the page (Fluent 2 focus order). Visibility switches off after the fade, on at once. */
+.cnav-sheet, .cnav-dpop {
+  visibility: hidden;
+  transition-property: opacity, transform, visibility;
+  transition-duration: var(--m-standard), var(--m-standard), 0s;
+  transition-delay: 0s, 0s, var(--m-standard);
+}
+.cnav.open > #cnavSheet, .cnav.fopen > #cnavFSheet,
+.cnav-desk.open .cnav-dpop, .cnav-mwrap.open .cnav-dpop { visibility: visible; transition-delay: 0s; }
+
 @media (prefers-reduced-motion: reduce) {
-  .cnav-sheet, .cnav-btn, .cnav-fbtn, .cnav-back { transition: none; }
+  .cnav-sheet, .cnav-dpop, .cnav-btn, .cnav-fbtn, .cnav-back { transition: none; }
 }
 
 /* ── TOUCH TARGETS ────────────────────────────────────────────────────────

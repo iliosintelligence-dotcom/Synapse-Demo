@@ -403,7 +403,7 @@ export function run() {
     var wrap = document.createElement('div');
     wrap.className = 'cnav';
     wrap.innerHTML =
-      '<div class="cnav-sheet" id="cnavSheet" role="menu" aria-label="Go to"></div>'
+      '<div class="cnav-sheet" id="cnavSheet" role="group" aria-label="Go to"></div>'
       + '<div class="cnav-sheet cnav-fsheet" id="cnavFSheet" role="group" aria-label="Filter and sort"></div>'
       + '<div class="cnav-triggers">'
       + '<button class="cnav-btn" id="cnavBtn" type="button" aria-expanded="false"'
@@ -428,7 +428,7 @@ export function run() {
     var sheet = wrap.querySelector('#cnavSheet');
     sheet.innerHTML = PAGES.map(function (p) {
       var isHere = p.file === here;
-      return '<a class="cnav-item" role="menuitem" href="' + p.file + '"'
+      return '<a class="cnav-item" href="' + p.file + '"'
         + (isHere ? ' aria-current="page"' : '')
         + '>' + iconSpan(p.icon)
         + '<span class="cn-txt"><span class="cn-label">' + p.label + '</span>'
@@ -458,11 +458,11 @@ export function run() {
          rather than explains something, and it is the route by which a
          right actually gets exercised. A rights page nobody can find is
          the same problem as a policy nobody can reach. */
-      '<a href="/your-data" role="menuitem">Your data</a>'
+      '<a href="/your-data">Your data</a>'
       + '<span aria-hidden="true">·</span>'
-      + '<a href="/privacy" role="menuitem">Privacy</a>'
+      + '<a href="/privacy">Privacy</a>'
       + '<span aria-hidden="true">·</span>'
-      + '<a href="/terms" role="menuitem">Terms</a>';
+      + '<a href="/terms">Terms</a>';
     sheet.appendChild(legal);
 
     adoptPageActions(sheet);
@@ -640,7 +640,7 @@ export function run() {
     wrap.innerHTML =
       '<button class="cnav-dbtn" type="button" aria-expanded="false" aria-haspopup="menu">'
       + iconSpan('user') + '<span>Account</span></button>'
-      + '<div class="cnav-dpop cnav-menu" role="menu" aria-label="Account"></div>';
+      + '<div class="cnav-dpop cnav-menu" role="group" aria-label="Account"></div>';
     bar.insertBefore(wrap, slot);
     // Moved, not copied: auth.js repaints the slot in place when the session
     // changes, and finds it wherever it lives.

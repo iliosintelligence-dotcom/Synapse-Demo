@@ -35,7 +35,7 @@ export function TojuBody() {
       <div className="tj-bg"></div>
       <div className="tj-wash"></div>
       <div className="tj-app">
-        <div className="appbar">
+        <div className="appbar" role="banner">
           <a className="brand" href="../buyers.html">
             {" "}
             <img className="syn-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true" />

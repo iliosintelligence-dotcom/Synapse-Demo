@@ -15,7 +15,7 @@ const SCRIPTS: PageScript[] = [
 export function VerifyBody() {
   return (
     <>
-      <div className="appbar">
+      <div className="appbar" role="banner">
         <a className="brand" href="../index.html">
           <span data-icon="logo"></span>
           {" SYNAPSE"}

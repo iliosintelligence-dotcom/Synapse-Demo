@@ -27,7 +27,7 @@ export function PropertyBody() {
       <div id="syn-load" aria-hidden="true">
         <img className="syn-load-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" />
       </div>
-      <div className="appbar">
+      <div className="appbar" role="banner">
         <a className="brand" href="../buyers.html">
           {" "}
           <img className="syn-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true" />

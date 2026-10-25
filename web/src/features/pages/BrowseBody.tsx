@@ -33,7 +33,7 @@ export function BrowseBody() {
       </div>
       <div className="bg-scene"></div>
       <div className="bg-wash"></div>
-      <div className="appbar">
+      <div className="appbar" role="banner">
         <a className="brand" href="../buyers.html">
           {" "}
           <img className="syn-mark" src="../images/brand/mark-black-on-white-tight.jpg" alt="" aria-hidden="true" />
