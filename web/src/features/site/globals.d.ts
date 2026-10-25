@@ -3,7 +3,7 @@ export {};
 declare global {
   interface SynAuthClient { rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }
   interface Window {
-    /* public/app/auth.js */
+    /* src/shared/auth.js */
     SynAuth?: { client?: () => Promise<SynAuthClient>; ready?: () => Promise<{ id?: string } | null> };
   }
 }

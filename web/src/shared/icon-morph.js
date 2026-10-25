@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse, icon morphing
 
@@ -93,4 +95,5 @@ export function bindToggle(host, restName, openName, opts) {
   return apply;
 }
 
-window.SynMorph = { morphTo, bindToggle };
+/* Was the module's last line; now AfterHydration calls it where the module used to load. */
+export function run() { window.SynMorph = { morphTo, bindToggle }; }

@@ -6,9 +6,9 @@ import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { HomesFeed } from "./HomesFeed";
 import { ModeButton, LandingEffects } from "./LandingChrome";
+import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
-  { src: "app/share.js" },
 ];
 
 export function BuyersBody() {
@@ -337,6 +337,7 @@ export function BuyersBody() {
       <a className="float-cta" href="app/toju.html?new=site">
         Talk to Tayo, free
       </a>
+      <ShareHost />
       <AfterHydration scripts={SCRIPTS} />
       <LandingEffects />
     </>

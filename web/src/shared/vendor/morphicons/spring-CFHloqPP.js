@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { n as iconToCubics } from "./normalize-CYnN3Npw.js";
 //#region src/core/interpolate.ts
 /** Preallocated output buffers for a plan (zero allocation per frame). */

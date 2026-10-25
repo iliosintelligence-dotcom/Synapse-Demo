@@ -1,3 +1,8 @@
+/* eslint-disable */
+// @ts-nocheck
+/* Was public/app/motion.js, a script of its own fetched by every page that used it. It is part of the app's code now:
+   AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+export function run() {
 /* ─────────────────────────────────────────────────────────────────────────
    Synapse motion system (web runtime).
    - Mounts Lottie animations on [data-lottie="name"] via lottie-web (CDN).
@@ -8,7 +13,7 @@
    ───────────────────────────────────────────────────────────────────────── */
 (function () {
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const BASE = (document.currentScript && document.currentScript.getAttribute('data-motion-base')) || 'motion/';
+  const BASE = '/app/motion/';
 
   /* ── lottie-web loader (lazy, one script) ── */
   let lottieReady = null;
@@ -153,3 +158,4 @@
   if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', watch);
   else watch();
 })();
+}

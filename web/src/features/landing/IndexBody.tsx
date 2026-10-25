@@ -6,9 +6,9 @@ import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { HomesFeed } from "./HomesFeed";
 import { ModeButton, LandingEffects, Goodbye } from "./LandingChrome";
+import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
-  { src: "app/share.js" },
 ];
 
 export function IndexBody() {
@@ -939,6 +939,7 @@ export function IndexBody() {
         {" "}
       </a>
       <style  dangerouslySetInnerHTML={{ __html: inline("index", "inline-4.css") }} />
+      <ShareHost />
       <AfterHydration scripts={SCRIPTS} />
       <LandingEffects />
       <Goodbye />

@@ -1,3 +1,8 @@
+/* eslint-disable */
+// @ts-nocheck
+/* Was public/app/icons.js, a script of its own fetched by every page that used it. It is part of the app's code now:
+   AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+export function run() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse, unified icon set
    One stroke-based line-icon language across every page, so an icon reads its
@@ -166,3 +171,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+}

@@ -1,3 +1,8 @@
+/* eslint-disable */
+// @ts-nocheck
+/* Was public/app/ng-places.js, a script of its own fetched by every page that used it. It is part of the app's code now:
+   AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+export function run() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse, Nigerian places, for filling a listing without typing.
 
@@ -176,3 +181,4 @@
     stateOf: function (city) { return STATE_OF[city] || ''; },
   };
 })();
+}

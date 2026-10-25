@@ -32,15 +32,15 @@ import { CrmPane } from "./CrmPane";
 import { Dock, HistButtons, Pane, PortalNavHost, Rail, SideToggle } from "./PortalNav";
 
 const SCRIPTS: PageScript[] = [
-  { src: "icons.js" },
-  { src: "icon-morph.js", module: true },
-  { src: "zyn.js" },
-  { src: "auth.js" },
-  { src: "ng-places.js" },
-  { src: "agency-listings.js" },
+  { shared: "icons" },
+  { shared: "icon-morph", module: true },
+  { shared: "zyn" },
+  { shared: "auth" },
+  { shared: "ng-places" },
+  { shared: "agency-listings" },
   { code: inline("agency", "inline-3.js") },
-  { src: "notify.js" },
-  { src: "motion.js" },
+  { shared: "notify" },
+  { shared: "motion" },
 ];
 
 export function AgencyBody() {

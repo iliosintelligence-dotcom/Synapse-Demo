@@ -5,23 +5,23 @@
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { BrowsePage, NavSaved } from "./BrowsePage";
+import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
   { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
-  { src: "map-tiles.js" },
-  { src: "map/style-synapse.js" },
-  { src: "map/render.js" },
-  { src: "map/card.js" },
-  { src: "map/query.js" },
-  { src: "stamp.js" },
-  { src: "share.js" },
-  { src: "matches-shared.js" },
-  { src: "icons.js" },
-  { src: "icon-morph.js", module: true },
-  { src: "cust-nav.js" },
-  { src: "auth.js" },
-  { src: "notify.js" },
-  { src: "motion.js" },
+  { shared: "map-tiles" },
+  { shared: "map/style-synapse" },
+  { shared: "map/render" },
+  { shared: "map/card" },
+  { shared: "map/query" },
+  { shared: "stamp" },
+  { shared: "matches-shared" },
+  { shared: "icons" },
+  { shared: "icon-morph", module: true },
+  { shared: "cust-nav" },
+  { shared: "auth" },
+  { shared: "notify" },
+  { shared: "motion" },
 ];
 
 export function BrowseBody() {
@@ -63,6 +63,7 @@ export function BrowseBody() {
         </a>
       </div>
       <BrowsePage />
+      <ShareHost />
       <AfterHydration scripts={SCRIPTS} />
     </>
   );

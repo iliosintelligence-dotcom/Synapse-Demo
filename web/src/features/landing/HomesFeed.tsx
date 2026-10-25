@@ -4,7 +4,7 @@
  *
  * Real properties sorted into rows the way people shop: Invest, Rent, Buy, Short let. Each row slides sideways; empty rows are
  * not drawn, and the whole section goes if there is nothing live. Live listings only, verified ones first; prices are formatted
- * here and nothing is invented. Share buttons are picked up by the shared share sheet (public/app/share.js, data-share).
+ * here and nothing is invented. Share buttons are picked up by the shared share sheet (src/features/shared/ShareSheet.tsx, data-share).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 

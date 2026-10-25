@@ -6,7 +6,7 @@ import { Studio } from "./Studio";
 import { StudioGuide } from "./StudioGuide";
 
 const SCRIPTS: PageScript[] = [
-  { src: "auth.js" },
+  { shared: "auth" },
 ];
 
 export function SynapseBody() {

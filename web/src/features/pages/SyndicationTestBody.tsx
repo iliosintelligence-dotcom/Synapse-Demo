@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
-const SCRIPTS: PageScript[] = [{ src: "syndication.js" }];
+const SCRIPTS: PageScript[] = [{ shared: "syndication" }];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Result = { ok: boolean; name: string; err: string };

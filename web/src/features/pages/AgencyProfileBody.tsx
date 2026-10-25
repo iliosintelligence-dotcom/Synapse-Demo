@@ -8,9 +8,9 @@ import { AgencyProfile } from "./AgencyProfile";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 
 const SCRIPTS: PageScript[] = [
-  { src: "icons.js" },
-  { src: "cust-nav.js" },
-  { src: "auth.js" },
+  { shared: "icons" },
+  { shared: "cust-nav" },
+  { shared: "auth" },
 ];
 
 export function AgencyProfileBody() {

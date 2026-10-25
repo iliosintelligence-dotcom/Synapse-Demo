@@ -1,3 +1,8 @@
+/* eslint-disable */
+// @ts-nocheck
+/* Was public/app/stamp.js, a script of its own fetched by every page that used it. It is part of the app's code now:
+   AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+export function run() {
 /* THE VERIFIED STAMP, for buyers. A perforated postage stamp on a listing's
    photo, drawn only when the listing's own verification_status is exactly
    'verified' (callers pass that test; this file draws, it does not decide).
@@ -13,3 +18,4 @@
   }
   window.SynStamp = { html: html };
 })();
+}

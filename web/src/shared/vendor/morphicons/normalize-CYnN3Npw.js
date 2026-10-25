@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 //#region src/core/parse.ts
 const COMMANDS = "MmLlHhVvCcSsQqTtAaZz";
 function parsePath(d) {

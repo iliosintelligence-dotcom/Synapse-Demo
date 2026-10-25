@@ -7,12 +7,12 @@ import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { DreamBoards } from "./DreamBoards";
 
 const SCRIPTS: PageScript[] = [
-  { src: "icons.js" },
-  { src: "icon-morph.js", module: true },
-  { src: "cust-nav.js" },
-  { src: "auth.js" },
-  { src: "notify.js" },
-  { src: "motion.js" },
+  { shared: "icons" },
+  { shared: "icon-morph", module: true },
+  { shared: "cust-nav" },
+  { shared: "auth" },
+  { shared: "notify" },
+  { shared: "motion" },
 ];
 
 export function DreamBody() {

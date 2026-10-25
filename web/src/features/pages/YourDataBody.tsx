@@ -9,9 +9,9 @@ import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
 const SCRIPTS: PageScript[] = [
-  { src: "auth.js" },
-  { src: "cust-nav.js" },
-  { src: "loader.js" },
+  { shared: "auth" },
+  { shared: "cust-nav" },
+  { shared: "loader" },
 ];
 
 /* Every local key this app writes about a person. Enumerated rather than matched on a prefix, because a prefix would sweep up

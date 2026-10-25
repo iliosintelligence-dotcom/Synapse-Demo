@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { a as buildPlan, c as interpPolar, n as Spring, o as allocOutputs, r as resampleIcon, t as SPRING_PRESETS } from "./spring-CFHloqPP.js";
 import { i as serialize, n as iconToCubics, r as cubicsToPathD } from "./normalize-CYnN3Npw.js";
 //#region src/dom/index.ts

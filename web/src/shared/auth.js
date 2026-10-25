@@ -1,3 +1,8 @@
+/* eslint-disable */
+// @ts-nocheck
+/* Was public/app/auth.js, a script of its own fetched by every page that used it. It is part of the app's code now:
+   AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+export function run() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse, authentication
    A thin wrapper over Supabase Auth (GoTrue) so every page speaks to sessions
@@ -681,3 +686,4 @@
     document.addEventListener('DOMContentLoaded', function () { ready().then(paintAll); ready().then(startIdleGuard); });
   } else { ready().then(paintAll); ready().then(startIdleGuard); }
 })();
+}

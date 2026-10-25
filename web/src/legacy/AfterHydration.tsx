@@ -7,8 +7,11 @@
  * time and in their original order, so the page behaves exactly as before. Each one is a step on the way to a React hook.
  */
 import { useEffect } from "react";
+import { SHARED, type SharedName } from "@/shared";
 
-export type PageScript = { src: string; module?: boolean } | { code: string };
+/* `shared` names a shared script that is part of the app's code now (src/shared): loaded and run at the point in the order where
+   its file used to load. `module` keeps a module's place at the end, where a deferred module script ran. */
+export type PageScript = { src: string; module?: boolean } | { code: string } | { shared: SharedName; module?: boolean };
 
 declare global {
   interface Window { SynPageScriptsReady?: boolean }
@@ -17,6 +20,10 @@ declare global {
 let ran = false;   // once per page load, even if React mounts this twice
 
 function load(s: PageScript): Promise<void> {
+  if ("shared" in s) {
+    /* one failing script must not stop the rest, as with a file */
+    return SHARED[s.shared]().then((m) => { try { m.run(); } catch (e) { console.error(e); } }, (e) => console.error(e));
+  }
   return new Promise((done) => {
     const el = document.createElement("script");
     if ("src" in s) {
@@ -39,7 +46,7 @@ export function AfterHydration({ scripts }: { scripts: PageScript[] }) {
     ran = true;
     (async () => {
       /* Module scripts were deferred originally, so they ran after the rest: same here. */
-      const isModule = (s: PageScript) => "src" in s && !!s.module;
+      const isModule = (s: PageScript) => !("code" in s) && !!s.module;
       for (const s of scripts.filter((x) => !isModule(x))) await load(s);
       for (const s of scripts.filter(isModule)) await load(s);
       /* Everything has run: React parts that need the page's scripts (sign-in, for one) can go now. */

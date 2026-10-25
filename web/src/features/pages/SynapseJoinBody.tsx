@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
-const SCRIPTS: PageScript[] = [{ src: "auth.js" }];
+const SCRIPTS: PageScript[] = [{ shared: "auth" }];
 
 type View = "working" | "form" | "bad" | "done";
 type Client = {

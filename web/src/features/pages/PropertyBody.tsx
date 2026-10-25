@@ -5,19 +5,19 @@
 import { inline } from "@/legacy/read";
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { PropertyPage } from "./PropertyPage";
+import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
-  { src: "map/style-synapse.js" },
-  { src: "map/render.js" },
-  { src: "stamp.js" },
-  { src: "share.js" },
-  { src: "scramble.js" },
-  { src: "icons.js" },
-  { src: "icon-morph.js", module: true },
-  { src: "cust-nav.js" },
-  { src: "auth.js" },
-  { src: "notify.js" },
-  { src: "motion.js" },
+  { shared: "map/style-synapse" },
+  { shared: "map/render" },
+  { shared: "stamp" },
+  { shared: "scramble" },
+  { shared: "icons" },
+  { shared: "icon-morph", module: true },
+  { shared: "cust-nav" },
+  { shared: "auth" },
+  { shared: "notify" },
+  { shared: "motion" },
   { code: inline("property", "engine-globals.js") },
   { code: inline("property", "inline-4.js") },
 ];
@@ -87,6 +87,7 @@ export function PropertyBody() {
         </button>
       </div>
       } />
+      <ShareHost />
       <AfterHydration scripts={SCRIPTS} />
     </>
   );

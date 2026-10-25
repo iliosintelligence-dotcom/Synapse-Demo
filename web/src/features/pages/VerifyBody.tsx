@@ -7,9 +7,9 @@ import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { VerifyDesk } from "./VerifyDesk";
 
 const SCRIPTS: PageScript[] = [
-  { src: "icons.js" },
-  { src: "auth.js" },
-  { src: "motion.js" },
+  { shared: "icons" },
+  { shared: "auth" },
+  { shared: "motion" },
 ];
 
 export function VerifyBody() {
