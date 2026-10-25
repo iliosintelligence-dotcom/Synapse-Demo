@@ -5,7 +5,7 @@
  * the DOM and CSS picks one), add-ons and the ROI note. Also the two prompts the paywall shows: the plan-limit prompt
  * (planGate) and "nothing to pay right now" (showFreeAccess).
  *
- * inline-3 keeps what is not drawing: loadPaywallInfo (the bell reads SYN_PAYWALL too, and it sets SYN_REFERRAL), the referral
+ * portalShell keeps what is not drawing: loadPaywallInfo (the bell reads SYN_PAYWALL too, and it sets SYN_REFERRAL), the referral
  * claim, the checkout and its return. Its refreshCurrentPlan(), paintReferral() and showFreeAccess() survive as names and fire
  * `syn:plan-refresh`, `syn:referral` and `syn:free-access`; planGate(msg) still answers whether the message was a plan limit
  * (the toast hook needs that at once) and fires `syn:plan-gate`.
@@ -100,7 +100,7 @@ function UsageRow({ label, used, max }: { label: string; used: number; max: numb
 type Referral = { on: boolean; code: string; per_reward: number; into_next: number; months_per_reward: number; listings_required: number; counted: number; pending: number;
   months_earned: number; recent?: { name?: string; counted?: boolean }[] };
 const referralLink = (code: string) => "https://www.synapsecore.dev/?ref=" + encodeURIComponent(code);
-/* Referrals: every 5 agencies you refer = a month free. SYN_REFERRAL is set by inline-3's loadPaywallInfo. */
+/* Referrals: every 5 agencies you refer = a month free. SYN_REFERRAL is set by portalShell's loadPaywallInfo. */
 function ReferralCard() {
   const [r, setR] = useState<Referral | null>(null);
   const code = useRef<HTMLElement>(null);
@@ -280,7 +280,7 @@ export function PlanGate() {
 }
 
 /* FOR NOW, NOBODY PAYS (Eden, 2026-10-16): pressing Pay on any plan or add-on shows this instead of opening Paystack. It is true
-   because the paywall is off: every agency already has everything. inline-3's FREE_30_DAYS decides whether it shows. */
+   because the paywall is off: every agency already has everything. portalShell's FREE_30_DAYS decides whether it shows. */
 export function FreeAccess() {
   const [open, setOpen] = useState(false);
   const [turn, setTurn] = useState(0);

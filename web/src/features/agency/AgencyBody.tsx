@@ -48,7 +48,7 @@ const SCRIPTS: PageScript[] = [
   { shared: "ng-places" },
   { shared: "agency-listings" },
   { shared: "agency-data" },
-  { code: inline("agency", "inline-3.js") },
+  { shared: "agency-shell" },
   { shared: "notify" },
   { shared: "motion" },
 ];
@@ -333,7 +333,6 @@ export function AgencyBody() {
       <AdvisorFab />
       <AdvisorPanel />
       <div className="scrim" id="scrim"></div>
-      <aside className="drawer" id="drawer"></aside>
       <ProfileDrawer />
       <ListingFormHost />
       <SideDrawer />

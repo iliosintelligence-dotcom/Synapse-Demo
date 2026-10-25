@@ -4,7 +4,7 @@
  *
  * Real handoffs only. A lead carries preferences.negotiation when the buyer ran Tayo's negotiator before making contact, which is
  * exactly what this pane describes: Tayo qualified them and worked out a price. No negotiation, no card. Which leads those are is
- * still worked out in inline-3 beside the lead list (buildHandoffs, `window.SynHandoffs()`); renderHandoffs() survives as a name
+ * still worked out in portalData beside the lead list (buildHandoffs, `window.SynHandoffs()`); renderHandoffs() survives as a name
  * and fires `syn:handoffs`.
  *
  * TAKE OVER (2026-10-21) calls take_over_lead, which hands the lead to the agent who pressed it and returns the handover summary:

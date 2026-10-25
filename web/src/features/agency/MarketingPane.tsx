@@ -7,7 +7,7 @@
  * social_post_stats() for taps, listing visits and enquiries per post, campaign_performance for the campaigns. Nothing is
  * estimated, and a number that is not counted yet says so rather than reading zero.
  *
- * The campaigns are read by the scheduler (its Campaign picker) and by inline-3's mkStats (the Ask-Tayo tiles), so this sets
+ * The campaigns are read by the scheduler (its Campaign picker) and by portalData's mkStats (the Ask-Tayo tiles), so this sets
  * `window.SynCampaigns()` and calls mkStats() whenever they change. The pane's header and filter row stay static in AgencyBody
  * (the phone dock lends the filters to its sheet); the view switch, the sort and the New campaign button are listened for here.
  */

@@ -2,9 +2,9 @@
 /**
  * The notification bell, as React (was the bell block of src/legacy/agency/inline-3.js): the button and its count, the panel,
  * the list of things already dealt with, what the items are and where each one goes. The state they are derived from (listings,
- * leads, posts, tasks) stays in inline-3 and is read through its window API.
+ * leads, posts, tasks) stays in portalData and is read through its window API.
  *
- * Talking to the rest of the page: inline-3's renderNoti() fires `syn:noti-refresh` and toggleNoti(open) fires `syn:noti-toggle`
+ * Talking to the rest of the page: portalShell's renderNoti() fires `syn:noti-refresh` and toggleNoti(open) fires `syn:noti-toggle`
  * (both kept as names, since the page and the account menu call them); `syn:listings` refreshes too.
  */
 import { Fragment, useEffect, useSyncExternalStore } from "react";
@@ -53,7 +53,7 @@ const setOpen = (open: boolean) => set({ open });
    Notifications are DERIVED from real state, never authored. The previous list named a buyer, a lead SLA and three properties
    that do not exist, so the bell always showed four unread items about nothing. Each item carries a `pane` (or a task, or an
    action) so clicking it takes you to the thing it is about, which is the only reason to show it at all. The state is read
-   through inline-3's window API (SynListingsData, SynFreshness, SynLeads, SynPosts, openTasks, SynDbBacked). `key` identifies an
+   through portalData's window API (SynListingsData, SynFreshness, SynLeads, SynPosts, openTasks, SynDbBacked). `key` identifies an
    item in the handled list, so it keeps the form it always had. */
 const esc2 = (s: unknown) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 const notiKey = (n: Omit<Item, "key">) => [n.type, n.pane || "", n.task || "", n.title, n.sub].join("|");

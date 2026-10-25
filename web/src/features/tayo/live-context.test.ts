@@ -1,14 +1,12 @@
 // @vitest-environment jsdom
-// Tayo's page sends what the device knows (live context). The code lives in the page's inline script, so this lifts that block out and
-// runs it: only ids and closed words leave, never anything typed, and a visitor with nothing saved sends little.
-import { beforeEach, describe, expect, it } from "vitest";
+// Tayo's page sends what the device knows (live context, engine.ts). Only ids and closed words leave, never anything typed, and a
+// visitor with nothing saved sends little.
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { liveContext } from "./engine";
 
-const src = readFileSync(join(process.cwd(), "src/legacy/toju/inline-5.js"), "utf8");
-const from = src.indexOf("function liveContext() {");
-const to = src.indexOf("async function ask() {");
-const block = src.slice(from, to);
+const src = readFileSync(join(process.cwd(), "src/features/tayo/engine.ts"), "utf8");
 
 const A = "11111111-1111-4111-8111-111111111111";
 const B = "22222222-2222-4222-8222-222222222222";
@@ -18,8 +16,8 @@ function run(opts: { saves?: unknown[]; views?: unknown[]; lastHome?: unknown; a
   document.documentElement.className = opts.app ? "syn-app" : "";
   if (opts.lastHome !== undefined) localStorage.setItem("syn_last_home", JSON.stringify(opts.lastHome));
   const SynMatches = { readSaves: () => new Set(opts.saves ?? []), readViews: () => opts.views ?? [] };
-  const make = new Function("window", "SynMatches", "document", "localStorage", "navigator", `${block}\nreturn liveContext;`);
-  return make({ SynMatches }, SynMatches, document, localStorage, { language: "en-NG" })() as Record<string, unknown>;
+  vi.spyOn(navigator, "language", "get").mockReturnValue("en-NG");
+  return liveContext(SynMatches) as Record<string, unknown>;
 }
 
 beforeEach(() => { localStorage.clear(); });

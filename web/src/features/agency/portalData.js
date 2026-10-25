@@ -7,8 +7,7 @@
    script). The panes are React and read it through window (SynLeads, SynPosts, SynPipe, SynListingsData and the rest). */
 export function run() {
     const w = window;
-    /* The rest of the portal (inline-3.js) and the panes still call these by name, as when they sat in that file. */
-    w.renderBrk = renderBrk;
+    /* The rest of the portal (portalShell.js) and the panes still call these by name, as when they sat in that file. */
     w.renderCrm = renderCrm;
     w.buildAttr = buildAttr;
     w.agoLabel = agoLabel;
@@ -24,7 +23,6 @@ export function run() {
     w.countUp = countUp;
     w.renderPipeline = renderPipeline;
     w.renderCalendar = renderCalendar;
-    w.renderBento = renderBento;
     w.openMyProfile = openMyProfile;
     w.openScheduler = openScheduler;
     w.openPropPreview = openPropPreview;
@@ -32,7 +30,6 @@ export function run() {
     w.openBoardCaption = openBoardCaption;
     w.pipeSoon = pipeSoon;
     w.pipeDrop = pipeDrop;
-    w.jumpToApproval = jumpToApproval;
     w.freshDays = freshDays;
     w.lifeLabel = lifeLabel;
     w.draftOwner = draftOwner;
@@ -61,8 +58,6 @@ export function run() {
     w.fromDbRow = fromDbRow;
     w.hydrateListings = hydrateListings;
     w.mkStats = mkStats;
-    w.renderInsights = renderInsights;
-    w.loadInsights = loadInsights;
     Object.defineProperty(w, 'CH', { get: () => CH, configurable: true });
     Object.defineProperty(w, 'ATTR_CHANNEL', { get: () => ATTR_CHANNEL, configurable: true });
     Object.defineProperty(w, 'uiChannel', { get: () => uiChannel, configurable: true });
@@ -107,7 +102,6 @@ export function run() {
     Object.defineProperty(w, 'ST_LABEL', { get: () => ST_LABEL, configurable: true });
     Object.defineProperty(w, 'nairaFull', { get: () => nairaFull, configurable: true });
     Object.defineProperty(w, 'priceLabel', { get: () => priceLabel, configurable: true });
-    Object.defineProperty(w, 'STATS', { get: () => STATS, configurable: true });
     Object.defineProperty(w, 'WZ_TOTAL', { get: () => WZ_TOTAL, configurable: true });
     Object.defineProperty(w, 'leads', { get: () => leads, set: (v) => { leads = v; }, configurable: true });
     Object.defineProperty(w, 'ROSTER', { get: () => ROSTER, set: (v) => { ROSTER = v; }, configurable: true });
@@ -118,7 +112,6 @@ export function run() {
     Object.defineProperty(w, 'LISTING_DRAFT_FLUSH', { get: () => LISTING_DRAFT_FLUSH, set: (v) => { LISTING_DRAFT_FLUSH = v; }, configurable: true });
     Object.defineProperty(w, 'LISTINGS_DATA', { get: () => LISTINGS_DATA, set: (v) => { LISTINGS_DATA = v; }, configurable: true });
     Object.defineProperty(w, 'dbBacked', { get: () => dbBacked, set: (v) => { dbBacked = v; }, configurable: true });
-    Object.defineProperty(w, 'INSIGHTS', { get: () => INSIGHTS, set: (v) => { INSIGHTS = v; }, configurable: true });
 
 
     // Channel attribution (Phase B), every lead carries a source→tap→Tayo→lead chain.
@@ -181,21 +174,8 @@ export function run() {
     window.SynCH = CH;
     window.SynChMark = chMark;
     window.SynNaira = function (n) { return nairaShort(n); };
-    // ── attribution breakdown bar, moved into the Ask-Tayo side panel
-    // (PANEL.crm below); only rendered while that panel is open, hence the
-    // null check rather than assuming the element is on the page. ──
-    function renderBrk(){
-      const el = document.getElementById('brk'); if (!el) return;
-      const counts = {};
-      leads.forEach(l => { const c = l.attr.channel; counts[c] = (counts[c]||0)+1; });
-      const order = Object.keys(CH).filter(c => counts[c]).sort((a,b)=>counts[b]-counts[a]);
-      el.innerHTML = leads.length
-        ? `<div class="hd"><span class="l">Where your leads come from</span><span class="l" style="letter-spacing:0">${leads.length} leads attributed</span></div>
-         <div class="chips">${order.map(c => `<span class="c2">${chnBadge(c)} ${CH[c].label} <b>${counts[c]}</b></span>`).join('')}</div>
-         <div class="barline">${order.map(c => `<span style="background:${CH[c].color};width:${counts[c]/leads.length*100}%" title="${CH[c].label}: ${counts[c]}"></span>`).join('')}</div>`
-        : '<p class="muted" style="font-size:13px;margin:0">No leads yet, attribution fills in once one arrives.</p>';
-    }
-    function renderCrm(){ renderBrk(); window.dispatchEvent(new CustomEvent('syn:crm')); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
+    /* Where the leads come from is drawn in the Ask-Tayo panel (AdvisorBodies.tsx, LeadSources). */
+    function renderCrm(){ window.dispatchEvent(new CustomEvent('syn:crm')); if (typeof refreshTojuPanel === 'function') refreshTojuPanel('crm'); }
     renderCrm();
 
     /* ============ real leads ============
@@ -743,7 +723,6 @@ export function run() {
 
     function repaintSocial() {
       if (typeof renderPipeline === 'function') renderPipeline();
-      if (typeof renderBento === 'function') renderBento();
       if (typeof renderCalendar === 'function') renderCalendar();
     }
 
@@ -826,34 +805,7 @@ export function run() {
        drag between stages and hold-to-confirm. The names stay because repaintSocial and the composer call them. */
     function renderPipeline() { window.dispatchEvent(new CustomEvent('syn:pipeline')); }
     function renderCalendar() { window.dispatchEvent(new CustomEvent('syn:pipeline')); }
-    // ── bento overview strip ──
-    function renderBento(){
-      const el = document.getElementById('socialBento'); if (!el) return;
-      const reach = posts.filter(p => p.stage === 'published').reduce((s, p) => s + (p.reach || 0), 0);
-      const approvals = posts.filter(p => p.stage === 'approval').length;
-      const chOrder = ['instagram','tiktok','youtube','facebook','whatsapp'];
-      const togs = [...document.querySelectorAll('.channels .tog')];
-      const chState = chOrder.map((c, i) => ({ c, on: togs[i] ? !togs[i].classList.contains('off') : true }));
-      const conn = chState.filter(s => s.on).length;
-      const ti = (new Date().getDay() + 6) % 7, days = ['M','T','W','T','F','S','S'];
-      const perDay = [0,0,0,0,0,0,0];
-      const bDay = [];
-      for (let i = 0; i < 7; i++) { const dt = new Date(); dt.setDate(dt.getDate() - ti + i); bDay.push(dt.toDateString()); }
-      posts.forEach(p => {
-        const iso = p.publishedAt || p.scheduledAt;
-        if (!iso) return;
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return;
-        const di = bDay.indexOf(d.toDateString());
-        if (di > -1) perDay[di]++;
-      });
-      el.innerHTML =
-        `<button class="s-tile" aria-label="Reach this week ${fmt(reach)} across connected channels"><div class="k">Reach this week</div><div class="v" data-count="${reach}">0</div><div class="cap">across connected channels</div><div class="cbar"><i style="width:${Math.min(100, reach / 80000 * 100)}%"></i></div></button>
-         <div class="s-tile"><div class="k">Connected channels</div><div class="v">${conn}<span style="font-size:18px;color:var(--ink-dim)">/${chOrder.length}</span></div><div class="chdots">${chState.map(s => `<span class="cd ${s.on ? '' : 'off'}" style="background:${CH[s.c].color}">${chMark(s.c, 10)}</span>`).join('')}</div></div>
-         <div class="s-tile"><div class="k">This week</div><div class="s-mini">${days.map((d, i) => `<div class="d ${i === ti ? 'today' : ''}"><div class="lbl">${d}</div><div class="cell">${'<span class="pd"></span>'.repeat(Math.min(3, perDay[i]))}</div></div>`).join('')}</div></div>
-         <button class="s-tile" data-sv-jump="approval" aria-label="${approvals} drafts to review"><div class="k">Drafts</div><div class="v">${approvals}</div>${approvals ? '<span class="rvw">Review now</span>' : '<div class="cap">all caught up ✦</div>'}</button>`;
-      const rc = el.querySelector('[data-count]'); if (rc) countUp(rc, +rc.dataset.count);
-    }
+    /* The "This week" bento is drawn in the Ask-Tayo panel (AdvisorBodies.tsx, Bento). */
     /* ── MY PROFILE is React (src/features/agency/ProfileDrawer.tsx), in a drawer of its own beside this one. The name stays:
        the invite welcome and the Agents page call it. */
     function openMyProfile(opts) { window.dispatchEvent(new CustomEvent('syn:my-profile', { detail: opts || {} })); }
@@ -899,15 +851,6 @@ export function run() {
       repaintSocial();
     }
 
-    // bento "needs approval" jumps to the approval column, bento now lives
-    // in the Ask-Tayo panel (PANEL.social.after, below), so it only exists
-    // in the DOM while that panel is open; this is wired there instead.
-    function jumpToApproval(e) {
-      const b = e.target.closest('[data-sv-jump]'); if (!b) return;
-      document.querySelector('#socialView [data-sv="pipeline"]').click();
-      document.getElementById('pipeline').scrollIntoView({ behavior: sReduce() ? 'auto' : 'smooth', block: 'nearest' });
-    }
-    renderBento();
 
     // ── listings, editable, with the freshness rule ──
     // Every listing must be re-listed before it expires or it stops showing to
@@ -1209,8 +1152,7 @@ export function run() {
     const nairaFull = v => '₦' + (Number(v) || 0).toLocaleString('en-NG');
     const priceLabel = l => nairaShort(l.price) + (PERIOD_SUFFIX[l.price_period] || '');
 
-    // Per-pane snapshot stats now live in the Ask-Tayo panel, not on the pages.
-    const STATS = {};
+    /* Per-pane snapshot stats are counted by the Ask-Tayo panel itself (AdvisorBodies.tsx, Snapshot). */
 
     function freshness(l) {
       /* Derive from expires_at when the row has one. This used to assume
@@ -1266,13 +1208,6 @@ export function run() {
        CAC gate and the toolbar. The name stays: every listing change calls it. */
     function renderListings() {
       paintFast();
-      const exp = LISTINGS_DATA.filter(l => freshness(l).expired).length;
-      STATS.listings = [
-        [LISTINGS_DATA.length, 'Total'],
-        [LISTINGS_DATA.filter(l => l.st === 'verified').length, 'Verified'],
-        [LISTINGS_DATA.filter(l => l.st === 'pending').length, 'Pending'],
-        [exp, 'Expired, re-list'],
-      ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('listings');
       window.dispatchEvent(new CustomEvent('syn:lgrid'));
     }
@@ -1358,24 +1293,9 @@ export function run() {
 
     /* ── MARKETING is React (src/features/agency/MarketingPane.tsx): the findings, the leaderboard, the campaigns and the New
        campaign drawer. It hands the campaigns back through window.SynCampaigns() and calls mkStats() when they change. */
+    /* The marketing snapshot (active campaigns, listings you can market) is counted by the Ask-Tayo panel; this only asks it to
+       count again, for the pane on screen. */
     function mkStats() {
-      /* THREE OF THESE FOUR TILES REPORTED THINGS NOTHING MEASURES.
-         Ad spend, cost per lead and best-creative CTR were read from
-         CAMPAIGNS[].spend and .ctr -- columns no code path ever writes. They
-         rendered as "₦0k", "-" and "0.0%", which does not read as "not
-         built"; it reads as "measured, and the answer is zero". An agency
-         would reasonably conclude its campaigns were reaching nobody.
-
-         What is left is counted from rows that exist. Ad spend and CTR come
-         back the day something actually records them. */
-      const live = (window.SynCampaigns ? window.SynCampaigns() : []).filter(c => c.live).length;
-      const listings = (typeof LISTINGS_DATA !== 'undefined' && Array.isArray(LISTINGS_DATA))
-        ? LISTINGS_DATA : [];
-      const marketable = listings.filter(l => l.is_active !== false && l.status === 'live').length;
-      STATS.marketing = [
-        [live, 'Active campaigns'],
-        [marketable, marketable === 1 ? 'Listing you can market' : 'Listings you can market'],
-      ].map(s => `<div class="card stat"><div class="v">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('');
       if (typeof refreshTojuPanel === 'function') refreshTojuPanel('marketing');
     }
     /* mkStats runs once at init, before the listings fetch has landed, so the
@@ -1402,54 +1322,5 @@ export function run() {
     /* Nothing called this. The pipeline is read once on load and again after
        anything writes to it. */
     if (typeof loadPipeline === 'function') loadPipeline();
-    /* ── channel insight, from attribution ──────────────────────────────────
-       WAS three hardcoded claims dressed as measurements: "+41% creatives with
-       the Verified badge earn 41% higher CTR", "3.1x video outperforms photo on
-       TikTok", "+27% headlines with a monthly figure". No CTR exists anywhere
-       in this product -- every social post so far is a dry run -- so those
-       numbers were not stale or approximate, they were invented, and they sat
-       on the panel an agency would use to decide where to spend.
-
-       What IS real is attribution: lead_attribution records which channel a
-       lead came from. This counts leads by last-touch channel and says nothing
-       at all until there are some. */
-    var INSIGHTS = [];
-
-    function renderInsights() {
-      var host = document.getElementById('insights');
-      if (!host) return;
-      if (!INSIGHTS.length) {
-        host.innerHTML = '<div class="insight insight-empty"><span class="tx">'
-          + 'Once leads arrive we will show which channel actually produced them. '
-          + 'Nothing here is estimated, so it stays empty until there is something to count.'
-          + '</span></div>';
-        return;
-      }
-      host.innerHTML = INSIGHTS.map(function (i, k) {
-        return '<div class="insight"><span class="pct">' + esc2(i.pct) + '</span>'
-          + '<span class="tx">' + i.tx + '</span></div>';
-      }).join('');
-    }
-
-    /* Counts real attributed leads per channel. RLS scopes lead_channel_mix()
-       to the caller's own agency. */
-    function loadInsights() {
-      if (!window.SynAuth || !SynAuth.client) { renderInsights(); return; }
-      SynAuth.client()
-        .then(function (c) { return c.rpc('lead_channel_mix'); })
-        .then(function (r) {
-          var rows = (r && r.data) || [];
-          var total = rows.reduce(function (n, x) { return n + Number(x.leads || 0); }, 0);
-          INSIGHTS = !total ? [] : rows.slice(0, 3).map(function (x) {
-            var n = Number(x.leads || 0);
-            return {
-              pct: Math.round((n / total) * 100) + '%',
-              tx: '<b>' + esc2(String(x.channel).replace(/_/g, ' ')) + '</b> brought '
-                  + n + ' of your ' + total + ' attributed lead' + (total === 1 ? '' : 's') + '.',
-            };
-          });
-          renderInsights();
-        })
-        .catch(function () { INSIGHTS = []; renderInsights(); });
-    }
+    /* Which channel produced the leads (lead_channel_mix) is the Ask-Tayo panel's Creative insights (AdvisorBodies.tsx). */
 }

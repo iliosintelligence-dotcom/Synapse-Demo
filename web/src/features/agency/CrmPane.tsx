@@ -3,9 +3,9 @@
  * The CRM, as React (was renderCrmFunnel/renderCrmTable/renderBulk, the CRM interactions block, the outbox and openLead in
  * src/legacy/agency/inline-3.js).
  *
- * It reads the `leads` table through inline-3, which still loads and maps the rows (loadLeads/mapLead) because the negotiator,
+ * It reads the `leads` table through portalData, which still loads and maps the rows (loadLeads/mapLead) because the negotiator,
  * the roster and the overview read the same array: `window.SynLeads()` for the rows, `window.SynCrmState()` for loaded/error,
- * `window.SynCH` for the channel names and colours, `window.SynChMark` for their logos. inline-3's renderCrm() survives as a
+ * `window.SynCH` for the channel names and colours, `window.SynChMark` for their logos. portalData's renderCrm() survives as a
  * name and fires `syn:crm`; paintOutboxWaiting() fires `syn:outbox-waiting`.
  *
  * The table answers what an agent opens it with (Eden, 2026-10-11): WHO is this, WHAT do they want, WHERE are they in the

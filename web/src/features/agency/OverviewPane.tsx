@@ -5,7 +5,7 @@
  * is a full-screen sheet pushed in over the list.
  *
  * It reads the same LISTINGS_DATA as the Listings pane (`window.SynListingsData()`), the leads through `window.SynLeads()`, and
- * freshness/openListingById from inline-3. renderOverview() survives as a name and fires `syn:overview`. The map is drawn by the
+ * freshness/openListingById from portalData. renderOverview() survives as a name and fires `syn:overview`. The map is drawn by the
  * shared SynMatches helper into #ovMap, which React renders empty and never touches again.
  *
  * The tabs, Sort and Filter sit in the pane's filter rows (lent to the phone dock's sheet) and the search box is in the top bar,

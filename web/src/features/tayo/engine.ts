@@ -42,6 +42,30 @@ let newChatFn: () => void = () => {};
 /** New chat: the old thread is filed in history and the server thread starts clean. */
 export function newChat() { newChatFn(); }
 
+/** What the device knows, sent with each question: only ids and closed words, never anything typed. */
+export function liveContext(SynMatches: any = W().SynMatches) {
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const c: any = {
+    v: 1, where: "tayo",
+    surface: document.documentElement.classList.contains("syn-app") ? "app" : "web",
+    tzOffsetMin: -new Date().getTimezoneOffset(),
+    language: String(navigator.language || "").slice(0, 12),
+  };
+  try {
+    const sv = Array.from(SynMatches.readSaves() as Set<string>).filter((x) => typeof x === "string" && UUID.test(x)).slice(-8);
+    const recent = SynMatches.readViews().map((v: any) => v && v.id).filter((x: any) => typeof x === "string" && UUID.test(x)).slice(0, 8);
+    if (sv.length) c.saved = sv;
+    if (recent.length) c.recent = recent;
+  } catch { /* no saves is fine */ }
+  try {
+    const lh = JSON.parse(localStorage.getItem("syn_last_home") || "null");
+    if (lh && typeof lh.id === "string" && UUID.test(lh.id)) {
+      c.lastHome = { id: lh.id, ch: String(lh.ch || "").slice(0, 20), ageMin: lh.ts ? Math.max(0, Math.round((Date.now() - Number(lh.ts)) / 60000)) : null };
+    }
+  } catch { /* none */ }
+  return c;
+}
+
 export function startEngine() {
   if (started) return;
   started = true;
@@ -551,29 +575,6 @@ export function startEngine() {
   /* LIVE CONTEXT. What this device knows about what the buyer is doing, sent with every message so Tayo does not start from
      nothing: the app or the website, the home they last opened and the post it came from, the homes they looked at lately and
      saved, and the hour on their clock. Only ids and a few closed words leave the phone (toju-demo/live-context.ts). */
-  function liveContext() {
-    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const c: any = {
-      v: 1, where: "tayo",
-      surface: document.documentElement.classList.contains("syn-app") ? "app" : "web",
-      tzOffsetMin: -new Date().getTimezoneOffset(),
-      language: String(navigator.language || "").slice(0, 12),
-    };
-    try {
-      const sv = Array.from(SynMatches.readSaves() as Set<string>).filter((x) => typeof x === "string" && UUID.test(x)).slice(-8);
-      const recent = SynMatches.readViews().map((v: any) => v && v.id).filter((x: any) => typeof x === "string" && UUID.test(x)).slice(0, 8);
-      if (sv.length) c.saved = sv;
-      if (recent.length) c.recent = recent;
-    } catch { /* no saves is fine */ }
-    try {
-      const lh = JSON.parse(localStorage.getItem("syn_last_home") || "null");
-      if (lh && typeof lh.id === "string" && UUID.test(lh.id)) {
-        c.lastHome = { id: lh.id, ch: String(lh.ch || "").slice(0, 20), ageMin: lh.ts ? Math.max(0, Math.round((Date.now() - Number(lh.ts)) / 60000)) : null };
-      }
-    } catch { /* none */ }
-    return c;
-  }
-
   async function ask() {
     clearError();
     const t = typing();

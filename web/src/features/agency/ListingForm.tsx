@@ -3,10 +3,10 @@
  * The listing form and the new-listing wizard, as React (was listingForm() in src/legacy/agency/inline-3.js, about 1,800 lines
  * that wrote the form into the shared #drawer and then rearranged it into steps).
  *
- * It has its own drawer (#lfDrawer) beside #drawer, shares #scrim, and closes whenever inline-3's closeLead() runs
+ * It has its own drawer (#lfDrawer) beside the other drawers, shares #scrim, and closes whenever portalShell's closeLead() runs
  * (`syn:drawer-close`). listingForm(l, idx, sd) survives there as a name and fires `syn:listing-form`: the grid, the overview,
  * the fast lane and ?add=1 all call it. The listings, the drafts (this browser's copy and the listing_drafts rows) and the save
- * helpers stay in inline-3, read through `window.SynLF`.
+ * helpers stay in portalData, read through `window.SynLF`.
  *
  * NEW LISTING = THE WIZARD (Eden, 2026-10-11): six steps, 3 to 5 questions at a time, saved as a draft after every change and
  * when you leave, and the step you were on is remembered. Each step is checked when you press Next; Review lists anything still
@@ -518,7 +518,7 @@ function ListingForm({ init, open }: { init: Init; open: boolean }) {
   };
   const uploadRef = useRef(upload);
   useEffect(() => { uploadRef.current = upload; });
-  /* THE MAGNETIC DROP ZONE: the page-wide half (magneticDrop in inline-3) hands dropped files to `__take`; they go through the
+  /* THE MAGNETIC DROP ZONE: the page-wide half (magneticDrop in portalShell) hands dropped files to `__take`; they go through the
      same upload as the picker, so there is one route and one set of checks. */
   useEffect(() => {
     const z = dz.current as any; if (!z) return;

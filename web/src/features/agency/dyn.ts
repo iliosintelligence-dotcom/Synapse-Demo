@@ -1,5 +1,5 @@
 /**
- * THE DYNAMIC BUTTON (idea: dqnamo's "Dynamic Button" in The Kitchen), for the React parts of the portal; inline-3's `Dyn` is the
+ * THE DYNAMIC BUTTON (idea: dqnamo's "Dynamic Button" in The Kitchen), for the React parts of the portal; portalShell's `Dyn` is the
  * same thing for the code still there. A button that says "Save", then "Saving...", then "Saved" used to swap its text in one
  * frame and jump in width. This changes the label with a short crossfade and glides the button from its old width to its new
  * one. Reduced motion: the text changes, nothing animates.

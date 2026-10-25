@@ -5,9 +5,9 @@
  * The real roster: SynListings.roster() (agency_members + profiles + agent_profiles), agents only -- owners and admins are not
  * "on the floor" -- plus live invites as their own cards, so an invite does not vanish the moment its drawer closes. Numbers the
  * database keeps are shown; numbers it does not keep are "-", never computed from nothing. Active leads is counted off the leads
- * the portal already loaded (inline-3's `leads`, read through `window.SynLeads()`).
+ * the portal already loaded (portalData's `leads`, read through `window.SynLeads()`).
  *
- * inline-3 keeps the lead list, the team summary in the Ask-Tayo panel (renderAgentSummary, which reads `window.SynRoster()`),
+ * portalData keeps the lead list; the team summary in the Ask-Tayo panel (AdvisorBodies.tsx) reads `window.SynRoster()`,
  * the welcome after joining and accepting an invite link. Its renderAgents(), loadAgents() and openInvite() survive as names and
  * fire `syn:agents-render`, `syn:agents-load` and `syn:invite`.
  */
@@ -15,6 +15,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { Icon } from "./VerificationPane";
 import { showDrawer } from "./SideDrawer";
+import { Ring } from "./AdvisorBodies";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -169,7 +170,7 @@ function Profile({ a, me }: { a: Agent; me: string | null }) {
       <Sec k="Speaks"><Chips list={a.languages} /></Sec>
       {a.responseRate != null ? (
         <Sec k="Response rate">
-          <div className="ringwrap" dangerouslySetInnerHTML={{ __html: W().ringSVG ? W().ringSVG(a.responseRate, { size: 84, sw: 9, fs: 16 }) : "" }}></div>
+          <div className="ringwrap"><Ring pct={a.responseRate} size={84} sw={9} fs={16} /></div>
           <p className="muted" style={{ fontSize: "11px", textAlign: "center", marginTop: "8px" }}>of buyer enquiries answered</p>
         </Sec>
       ) : null}
@@ -408,7 +409,7 @@ export function AgentsPane() {
       .then((r: any) => setMe((r && r.data && r.data.session && r.data.session.user && r.data.session.user.id) || null)).catch(() => {});
   }, [scripts]);
   /* The team summary in the Ask-Tayo panel is drawn from the same roster, so it follows every change here. */
-  useEffect(() => { try { W().renderAgentSummary?.(); } catch { /* the panel is not open */ } });
+  useEffect(() => { window.dispatchEvent(new Event("syn:roster-changed")); });   // the Ask-Tayo team read redraws
 
   /* Ranked on closed deals alone. Only agents with a recorded count can top the list: no number is unranked, not last. */
   const ranked = list.filter((a) => a.closed != null);

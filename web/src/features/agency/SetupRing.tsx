@@ -7,7 +7,7 @@
  * inviting people) are not shown to an agent. When everything is done the ring disappears. (The "Your next step" card on
  * Overview is gone: Eden, 2026-10-24.)
  *
- * inline-3's toggleSetup(open) survives as a name (closeAgencyPopups calls it) and fires `syn:setup-toggle`.
+ * portalShell's toggleSetup(open) survives as a name (closeAgencyPopups calls it) and fires `syn:setup-toggle`.
  */
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
@@ -32,7 +32,7 @@ function stepsFor(p: Progress): Step[] {
     { id: "channel", boss: true, ico: "channel", title: "Connect a social account", why: "Connect Instagram, Facebook, TikTok or Telegram once, and Synapse can post your listings for you.", cta: "Connect one", done: p.channels > 0, go: () => { go("social"); setTimeout(() => { try { W().openAddChannel("instagram"); } catch { /* not ready */ } }, 500); } },
     { id: "post", ico: "post", title: "Post a listing", why: "Pick a listing, tick where it goes, and let Synapse write the captions. This is how enquiries start.", cta: "Make a post", done: p.posts > 0, go: () => { go("social"); press("newPostBtn", 350); } },
     { id: "team", boss: true, ico: "team", title: "Invite a teammate", why: "Add the agents who will answer buyers. Leads can be assigned to them, and the work stops sitting on one person.", cta: "Invite someone", done: p.team > 1, go: () => { try { W().openInvite(); } catch { go("agents"); } } },
-    /* Done once any lead has been moved past New: the portal knows that from its own lead list (inline-3's
+    /* Done once any lead has been moved past New: the portal knows that from its own lead list (portalData's
        SynLeadsAnswered), not from this call. */
     { id: "lead", ico: "lead", title: "Reply to your first lead", why: p.leads > 0 ? "A buyer has asked about a home. Fast replies win; open it and call or message them." : "Your first enquiry lands here the moment a buyer taps Contact agent. Share a listing to get one sooner.", cta: p.leads > 0 ? "Open your leads" : "Share a listing", done: !!(W().SynLeadsAnswered && W().SynLeadsAnswered()), go: () => go(p.leads > 0 ? "crm" : "listings") },
     { id: "refer", boss: true, ico: "refer", title: "Refer another agency", why: "Every 5 agencies you bring earn you a free month. Your link is on the Plans page.", cta: "Get my link", done: p.referrals > 0, go: () => go("subscription") },

@@ -5,7 +5,7 @@
  * Back and Forward), whether the side rail is expanded and which taskbar sheet is up. The rail, the panes, the history buttons
  * and the phone taskbar all draw from it, so a tab cannot be highlighted without its pane showing, or the other way round.
  *
- * inline-3's goToPane(pane) survives as a name (the bell, the setup ring, the billing and social code call it) and fires
+ * portalShell's goToPane(pane) survives as a name (the bell, the setup ring, the billing and social code call it) and fires
  * `syn:goto`; applyRole still stamps body[data-role] and fires `syn:role`, and this hides what that role may not open. Panes
  * a role may not see are not rendered at all, not hidden: a stale hash or a goToPane call cannot reach them.
  */

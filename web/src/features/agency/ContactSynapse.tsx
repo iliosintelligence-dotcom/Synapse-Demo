@@ -1,7 +1,7 @@
 "use client";
 /**
  * Contact Synapse, as React (was the relationship-manager block of src/legacy/agency/inline-3.js): the phone button in the top
- * bar and its panel. inline-3's toggleRm(open, plan) survives as a name (the bell, the pricing cards and closeAgencyPopups call
+ * bar and its panel. portalShell's toggleRm(open, plan) survives as a name (the bell, the pricing cards and closeAgencyPopups call
  * it) and fires `syn:rm-toggle`; a pricing card passes the plan's name, and the panel then leads with an email about that plan.
  *
  * Call your relationship manager. Three states, and none of them invents a number:

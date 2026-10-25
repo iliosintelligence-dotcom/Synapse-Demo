@@ -3,7 +3,7 @@
  * The Listings pane's grid and toolbar, as React (was renderListings, listFiltered, draftCardHtml/sdCardHtml, the card menus,
  * Re-list and Re-list all, the CAC gate and the toolbar wiring in src/legacy/agency/inline-3.js).
  *
- * The listings themselves, their drafts, the freshness rule and the wizard stay in inline-3: this reads them through
+ * The listings themselves, their drafts, the freshness rule and the wizard stay in portalData: this reads them through
  * window.SynListingsData(), SynFreshness, SynDrafts and listingForm(). renderListings() keeps its name there and asks this to
  * redraw (syn:lgrid). The filter row is lent to the phone dock's sheet, so its wrapper stays static in AgencyBody and only the
  * segment, the sort and the Re-list all button inside it are components; the search box and New listing are listened for.

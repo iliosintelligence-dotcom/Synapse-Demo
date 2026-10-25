@@ -1,83 +1,83 @@
-    /* The data above this point (leads, pipeline, listings) is src/features/agency/portalData.js, which runs just before this. */
+/* eslint-disable */
+// @ts-nocheck
+/* What the agency portal needs between its panes: who you are in the agency (the role, an invite link, the welcome after
+   joining), the toast and the paywall prompt it can turn into, the to-do registry behind the task card and the bell, Paystack
+   checkout and its return, the paywall and referral reads, the dynamic button, the magnetic drop zone and the verified stamp,
+   and the names the panes call each other by (goToPane, openComposer, renderNoti and the rest, which fire events React
+   answers). Was the last of the portal's page script (legacy/agency/inline-3.js); moved as it was, and run at the same point
+   in the page, straight after portalData.js. */
+export function run() {
+    const w = window;
+    /* portalData, the panes and the shared scripts call these by name, as when they sat in the page's own script. */
+    w.closeLead = closeLead;
+    w.toggleRm = toggleRm;
+    w.loadAgents = loadAgents;
+    w.renderAgents = renderAgents;
+    w.openInvite = openInvite;
+    w.applyRole = applyRole;
+    w.loadVerification = loadVerification;
+    w.loadTours = loadTours;
+    w.buildHandoffs = buildHandoffs;
+    w.renderHandoffs = renderHandoffs;
+    w.fullListing = fullListing;
+    w.vStamp = vStamp;
+    w.rebuildPostListings = rebuildPostListings;
+    w.taskMarks = taskMarks;
+    w.taskMark = taskMark;
+    w.openTasks = openTasks;
+    w.findTask = findTask;
+    w.setTasks = setTasks;
+    w.showTasks = showTasks;
+    w.openComposer = openComposer;
+    w.closeComposer = closeComposer;
+    w.openCaptionEditor = openCaptionEditor;
+    Object.defineProperty(w, 'toast', { get: () => toast, set: (v) => { toast = v; }, configurable: true });
+    w.authToken = authToken;
+    w.showFreeAccess = showFreeAccess;
+    w.startCheckout = startCheckout;
+    w.refreshCurrentPlan = refreshCurrentPlan;
+    w.openBilling = openBilling;
+    w.loadBilling = loadBilling;
+    w.blRender = blRender;
+    w.planGate = planGate;
+    w.loadPaywallInfo = loadPaywallInfo;
+    w.paintReferral = paintReferral;
+    w.claimPendingReferral = claimPendingReferral;
+    w.toggleSetup = toggleSetup;
+    w.openToju = openToju;
+    w.closeToju = closeToju;
+    w.refreshTojuPanel = refreshTojuPanel;
+    w.renderOverview = renderOverview;
+    w.renderNoti = renderNoti;
+    w.toggleNoti = toggleNoti;
+    w.goToPane = goToPane;
+    Object.defineProperty(w, 'scrim', { get: () => scrim, configurable: true });
+    Object.defineProperty(w, 'first', { get: () => first, configurable: true });
+    Object.defineProperty(w, 'SB_URL', { get: () => SB_URL, configurable: true });
+    Object.defineProperty(w, 'SB_KEY', { get: () => SB_KEY, configurable: true });
+    Object.defineProperty(w, 'Dyn', { get: () => Dyn, configurable: true });
+    Object.defineProperty(w, 'CTA_TOASTS', { get: () => CTA_TOASTS, configurable: true });
+    Object.defineProperty(w, 'FREE_30_DAYS', { get: () => FREE_30_DAYS, configurable: true });
+    Object.defineProperty(w, 'BL_TIER_NAME', { get: () => BL_TIER_NAME, configurable: true });
+    Object.defineProperty(w, 'BL_ADDON_INFO', { get: () => BL_ADDON_INFO, configurable: true });
+    Object.defineProperty(w, 'PLAN_GATE_RX', { get: () => PLAN_GATE_RX, configurable: true });
+    Object.defineProperty(w, 'ME', { get: () => ME, set: (v) => { ME = v; }, configurable: true });
+    Object.defineProperty(w, 'HANDOFFS', { get: () => HANDOFFS, set: (v) => { HANDOFFS = v; }, configurable: true });
+    Object.defineProperty(w, 'POST_LISTINGS', { get: () => POST_LISTINGS, set: (v) => { POST_LISTINGS = v; }, configurable: true });
+    Object.defineProperty(w, 'TASKS', { get: () => TASKS, set: (v) => { TASKS = v; }, configurable: true });
+    Object.defineProperty(w, 'TASK_DONE_KEY', { get: () => TASK_DONE_KEY, set: (v) => { TASK_DONE_KEY = v; }, configurable: true });
 
-    // ── the shared drawer ──
-    const scrim = document.getElementById('scrim'), drawer = document.getElementById('drawer');
-    function closeLead(){ scrim.classList.remove('on'); drawer.classList.remove('on'); const t = document.querySelector('.ctip'); if (t) t.style.opacity = '0';
-      window.dispatchEvent(new Event('syn:drawer-close')); }   // the profile drawer is React's and closes with this one
+
+    // ── the scrim, shared by the drawers (the profile, the listing form, the React side drawer) ──
+    const scrim = document.getElementById('scrim');
+    function closeLead(){ scrim.classList.remove('on'); window.dispatchEvent(new Event('syn:drawer-close')); }   // each drawer closes on this
     scrim.addEventListener('click', closeLead);
-    /* One listener on the container instead of one per render. The drawer's
-       innerHTML is replaced by eleven different templates and each used to
-       re-query the close button by id and bind again, eleven copies of the
-       same line, and eleven elements sharing one id. The container outlives
-       every template, so delegation is the honest shape for this. */
-    drawer.addEventListener('click', (e) => { if (e.target.closest('.x')) closeLead(); });
 
-    // creative insights now live in the Ask-Tayo panel (marketing context).
     /* Contact Synapse is React (src/features/agency/ContactSynapse.tsx). The name stays: the bell, the pricing cards and
        closeAgencyPopups call it. A pricing card passes the plan's name, and the panel then leads with an email about it. */
     function toggleRm(open, plan) { window.dispatchEvent(new CustomEvent('syn:rm-toggle', { detail: { open: open, plan: plan || null } })); }
 
-    // ── chart primitives, one brand hue on a muted track; labels wear ink ──
-    const C_BRAND = '#121212', C_TRACK = 'rgba(0,0,0,0.06)';
-    function sparkSVG(pts, o) {
-      o = o || {};
-      const w = o.w || 116, h = o.h || 32, pad = 4;
-      const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
-      const nx = i => pad + (i / (pts.length - 1)) * (w - pad * 2);
-      const ny = v => max === min ? h / 2 : (h - pad) - ((v - min) / (max - min)) * (h - pad * 2);
-      const line = pts.map((v, i) => (i ? 'L' : 'M') + nx(i).toFixed(1) + ' ' + ny(v).toFixed(1)).join(' ');
-      const area = o.area ? `<path d="${line} L${nx(pts.length - 1).toFixed(1)} ${h - 1} L${nx(0).toFixed(1)} ${h - 1} Z" fill="${C_BRAND}" opacity="0.09"/>` : '';
-      const dot = `<circle cx="${nx(pts.length - 1).toFixed(1)}" cy="${ny(pts.length - 1 >= 0 ? pts[pts.length - 1] : 0).toFixed(1)}" r="3" fill="${C_BRAND}"/>`;
-      return `<svg class="statspark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" data-pts="${pts.join(',')}" data-pad="${pad}" aria-hidden="true">${area}<path d="${line}" fill="none" stroke="${C_BRAND}" stroke-width="2" stroke-linecap="round"/>${dot}</svg>`;
-    }
-    function ringSVG(pct, o) {
-      o = o || {};
-      const s = o.size || 54, sw = o.sw || 6, r = (s - sw) / 2, c = 2 * Math.PI * r;
-      const val = o.label != null ? o.label : Math.round(pct) + '%';
-      return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true">
-        <circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${C_TRACK}" stroke-width="${sw}"/>
-        <circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${C_BRAND}" stroke-width="${sw}" stroke-linecap="round"
-          stroke-dasharray="${(c * pct / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${s / 2} ${s / 2})"/>
-        <text x="50%" y="50%" dy="0.36em" text-anchor="middle" font-family="Lato,system-ui,sans-serif" font-size="${o.fs || 12.5}" font-weight="700" fill="#15171a">${val}</text>
-      </svg>`;
-    }
-    function hbarsHTML(rows, unit) {
-      const max = Math.max.apply(null, rows.map(r => r[1]));
-      return rows.map(r =>
-        `<div class="hrow" title="${r[0]}: ${r[1]}${unit || ''}"><span class="hlb">${r[0]}</span><span class="htrack"><i style="width:${max ? (r[1] / max * 100) : 0}%"></i></span><span class="hn">${r[1]}${unit || ''}</span></div>`
-      ).join('');
-    }
-    function statTile(v, l, pts) {
-      return `<div class="card stat"><div class="v">${v}</div><div class="l">${l}</div>${pts ? sparkSVG(pts) : ''}</div>`;
-    }
-
-    // shared chart tooltip (hover layer for the profile spark)
-    const ctip = document.createElement('div'); ctip.className = 'ctip'; document.body.appendChild(ctip);
-    /* wireSparkHover lived here: a hover readout for the 8-week sparklines,
-       drawing a marker on the line and following the cursor with .ctip. It
-       was declared and never called from anywhere in the repo. Removed; the
-       sparklines render their trend without it. */
-    const WKS = ['7 wks ago', '6 wks ago', '5 wks ago', '4 wks ago', '3 wks ago', '2 wks ago', 'Last week', 'This week'];
-
-    // ── overview + CRM stat tiles (hero number + 8-week trend) ──
-    /* Counted from real records. These were fixed numbers with invented 8-week
-       sparklines, "₦2.4B sales value" and "128 leads" on an account that has
-       neither. Sparklines are omitted entirely: a trend line needs history, and
-       inventing the shape of a trend is worse than showing none. */
-    const wonLeads = () => leads.filter(l => l.stage === 'Won');
-    const salesValue = () => wonLeads().reduce((s, l) => s + (Number(String(l.price || '').replace(/[^\d.]/g, '')) || 0), 0);
-    const fmtB = (n) => n >= 1e9 ? '₦' + (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? '₦' + Math.round(n / 1e6) + 'M' : '₦' + n.toLocaleString();
-
-    STATS.overview =
-      statTile(leads.filter(l => l.stage !== 'Won').length, 'Active leads', null) +
-      statTile(leads.filter(l => l.stage === 'Viewing').length, 'Viewings booked', null) +
-      statTile(wonLeads().length, 'Won this quarter', null) +
-      statTile(fmtB(salesValue()), 'Sales value', null);
-    STATS.crm =
-      statTile(leads.length, 'Leads', null) +
-      statTile(leads.filter(l => l.stage === 'Viewing').length, 'Viewings', null) +
-      `<div class="card stat"><div class="l" style="margin-bottom:6px">Conversion</div><div class="ringwrap">${ringSVG(leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0, { label: (leads.length ? Math.round((wonLeads().length / leads.length) * 100) : 0) + '%' })}</div></div>` +
-      statTile(fmtB(salesValue()), 'Sales', null);
+    /* The Ask-Tayo panel's snapshot tiles and charts are React: src/features/agency/AdvisorBodies.tsx. */
 
     /* ── agents ── The roster, its cards and drawers are React (src/features/agency/AgentsPane.tsx). It counts each agent's open
        leads off the rows loaded here (window.SynLeads) and names lead holders from ROSTER_BY_ID (window.SynRosterName).
@@ -96,44 +96,7 @@
       }).catch(() => {});
     }
 
-    STATS.agents = '';   // rebuilt from real numbers by renderAgentSummary
-    /* The KPI strip and the two performance charts live in the Ask-Tayo side panel, drawn from the same roster the Agents
-       pane shows. They render into the panel's markup, which only exists while that panel is open, hence the null checks. */
-    function renderAgentSummary() {
-      /* The read here is about the people actually working the floor: the roster is agents only. */
-      const real = (window.SynRoster && window.SynRoster()) || [];
-      const rated = real.filter(a => a.rating != null);
-      const withRate = real.filter(a => a.responseRate != null);
-      const kpis = document.getElementById('agKpis');
-      if (kpis) kpis.innerHTML = [
-        ['Agents', real.length],
-        ['Active leads', real.reduce((s, a) => s + (a.active || 0), 0)],
-        /* Career totals, not "this quarter": closed_deals is a lifetime count
-           on the profile. Labelling it by a period we do not measure would be
-           a claim the data cannot support. */
-        ['Closed · career', real.reduce((s, a) => s + (a.closed || 0), 0) || '-'],
-        ['Avg rating', rated.length
-          ? (rated.reduce((s, a) => s + a.rating, 0) / rated.length).toFixed(1)
-          : '-'],
-      ].map(k => `<div class="ag-kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('');
-
-      const blank = '<p class="muted" style="font-size:13px;margin:0">No agents yet.</p>';
-      const none  = '<p class="muted" style="font-size:13px;margin:0">Not recorded for anyone on this team yet.</p>';
-      const closed = document.getElementById('agClosed');
-      if (closed) {
-        const have = real.filter(a => a.closed != null);
-        closed.innerHTML = !real.length ? blank
-          : have.length ? hbarsHTML(have.map(a => [first(a.nm), a.closed])) : none;
-      }
-      /* Response rate is a real column on agent_profiles; average first reply in minutes is recorded nowhere. */
-      const reply = document.getElementById('agReply');
-      if (reply) {
-        reply.innerHTML = !real.length ? blank
-          : withRate.length ? hbarsHTML(withRate.map(a => [first(a.nm), a.responseRate]), '%') : none;
-      }
-      const lbl = document.getElementById('agReplyLbl');
-      if (lbl) lbl.textContent = 'Response rate';
-    }
+    /* The team read in the Ask-Tayo panel (the floor, closed deals, response rate) is AdvisorBodies.tsx. */
 
     /* Straight after the join reload: open the profile once, as a welcome
        rather than a chore. Cleared first, so a refresh later never reopens it. */
@@ -511,7 +474,6 @@
     rebuildPostListings();
     document.addEventListener('syn:listings', rebuildPostListings);
     window.SynPostListings = function () { return POST_LISTINGS; };
-    const CH_LABEL = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', whatsapp: 'WhatsApp', x: 'X', telegram: 'Telegram' };
 
     /* ═══ Things only a person can do, as pop-ups, not fixtures ═══════════
        Eden: "things that need you to copy and paste, don't have them fixed on
@@ -805,126 +767,8 @@
     setInterval(loadPaywallInfo, 30 * 60 * 1000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadPaywallInfo(); });
 
-    // ── persistent Ask-Tayo panel (context-aware per pane) ──
-    // The AI commentary/summaries live here, not on the main panes. What the
-    // panel shows depends on which pane the agency owner is looking at.
-    /* The panel itself is React (src/features/agency/AdvisorPanel.tsx); what each pane's body says stays here, beside the numbers
-       it is built from. */
-
-    const tpSummary = (k, lines, reco) =>
-      `<div class="tp-sec"><div class="tp-k">${k}</div>${lines.map(l => `<div class="tp-line"><span class="d">→</span><span>${l}</span></div>`).join('')}${reco ? `<div class="tp-reco"><b>Tayo’s fix:</b> ${reco}</div>` : ''}</div>`;
-
-    const PANEL = {
-      /* No canned body. The snapshot above is real, and everything else worth
-         saying here is now a live answer to a question the agency actually
-         asked, in the composer below. */
-      overview: { title: 'Business advisor', sub: 'Your numbers, and what to do next',
-        html: () => '' },
-      negotiator: { title: 'How Tayo negotiates', sub: 'The funnel, the rules, the 5 stages',
-        html: () => `
-          <div class="tp-sec"><div class="tp-k">The rule</div>
-            <div class="rule" style="margin:0"><span class="ic">⚖️</span><div class="t"><b>Tayo advises within the range you authorise, it never makes a binding commitment.</b> It can discuss flexibility inside your pre-set floor, but only you close. Every agreement stays legally yours.</div></div>
-          </div>
-          <div class="tp-sec"><div class="tp-k">Where a lead comes from, and what happens to it</div>
-            <ol class="fnl">
-              <li><span class="fnl-k">They start anywhere</span>
-                <span class="fnl-v">Instagram, WhatsApp, TikTok, Facebook, YouTube, the Synapse app, or walking past the building.</span></li>
-              <li class="is-tayo"><span class="fnl-k">Tayo picks it up</span>
-                <span class="fnl-v">Qualifies the budget, presents the fit, handles the objections, and negotiates only inside the range you set.</span></li>
-              <li class="is-out"><span class="fnl-k">You get a warm one</span>
-                <span class="fnl-v">The conversation arrives with it, what they want, what they can pay, what they already asked.</span></li>
-            </ol>
-          </div>
-          <div class="tp-sec"><div class="tp-k">The five stages</div>
-            <div class="stepper" style="margin:0"><span class="step5"><b>1</b> Qualify</span><span class="step5"><b>2</b> Present</span><span class="step5"><b>3</b> Handle objections</span><span class="step5"><b>4</b> Negotiate · your range</span><span class="step5"><b>5</b> Handoff</span></div>
-          </div>` },
-      marketing: { title: 'Creative insights', sub: 'What the AI learned from your ads',
-        html: () => `<div class="tp-sec"><div class="tp-k">✦ What’s working</div><div id="insights"></div></div>`,
-        /* loadInsights() replaces renderInsights() here: the panel now counts
-           real attributed leads rather than rendering a fixed array, so it has
-           to fetch before it can draw. The old click handler queued an
-           "apply this across your creatives" action against advice that was
-           invented; there is no action to offer on a count of your own leads. */
-        after: () => { loadInsights(); } },
-      crm: { title: 'Pipeline read', sub: 'Tayo’s take on your leads',
-        html: () => tpSummary('Where your attention pays off', [
-          'Tayo ranks your leads by intent, deal value and how close the SLA is.',
-          'No leads yet, this fills in the moment a buyer reaches you.',
-        ], 'Connect a channel or share a listing, and the first real lead lands here.')
-        + `<div class="tp-sec"><div class="tp-k">Where your leads come from</div><div class="card brk" id="brk"></div></div>`,
-        after: () => renderBrk() },
-      /* brand, tours and verification had no entry, and
-         PANEL[pane] || PANEL.overview meant each of them silently showed the
-         OVERVIEW panel -- you opened the advisor on the Brand pane and read a
-         summary of your listings instead. agents and subscription already
-         have their own further down. */
-      brand: { title: 'Your brand', sub: 'What signs off every post and page',
-        html: () => tpSummary('What this pane decides', [
-          'The name, logo, colour and voice Synapse writes and publishes as.',
-          'Anything blank here shows up as a gap on your public page and in every generated post.',
-        ], 'Ask below what is still missing from your setup.') },
-      tours: { title: 'Viewings', sub: 'Who is coming, and when',
-        html: () => tpSummary('What this pane decides', [
-          'The availability you publish, the slots buyers book, and who has confirmed.',
-          'A booking nobody has reconfirmed is not a body at the door yet.',
-        ], 'Ask below which viewings still need chasing.') },
-      verification: { title: 'Verification', sub: 'What is on file, and what is outstanding',
-        html: () => tpSummary('What this pane decides', [
-          'The documents Nigeria requires of an agency: CAC, SCUML, a state licence, a director\u2019s ID.',
-          'Verified means specific checks passed on a date. It is never something an agency sets for itself.',
-        ], 'Ask below what you still need to send.') },
-      listings: { title: 'Inventory read', sub: 'Freshness & what to re-list',
-        html: () => tpSummary('Keep your listings live', [
-          'A listing expires after it was last confirmed: rentals in 21 days, short-lets in a week, sales in 3 months.',
-          'Tayo flags what has expired and what is about to, per listing.',
-        ], 'The notification bell carries the same warnings, and takes you straight to the listing.') },
-      social: { title: 'Content coach', sub: 'What to post next',
-        html: () => tpSummary('Move the needle', [
-          'Tayo compares reach, DMs and leads per format and channel.',
-          'Nothing has been published yet, so there is no performance to read.',
-        ], 'Generate a campaign from one of your listings and publish it, the first numbers land here.')
-        + `<div class="tp-sec"><div class="tp-k">Where it posts</div><div class="channels" id="socialChannels">
-            <div class="card chan"><div class="ic" style="background:linear-gradient(135deg,#F58529,#DD2A7B)">IG</div><div><div class="nm">Instagram</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-            <div class="card chan"><div class="ic" style="background:#000">TT</div><div><div class="nm">TikTok</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-            <div class="card chan"><div class="ic" style="background:#FF0000">YT</div><div><div class="nm">YouTube</div><div class="st">Not connected</div></div><div class="tog"></div></div>
-            <div class="card chan"><div class="ic" style="background:#1877F2">f</div><div><div class="nm">Facebook</div><div class="st">Not connected</div></div><div class="tog off"></div></div>
-            <div class="card chan"><div class="ic" style="background:#25D366">WA</div><div><div class="nm">WhatsApp Status</div><div class="st">+234 803 ··· 42</div></div><div class="tog"></div></div>
-           </div></div>`
-        + `<div class="tp-sec"><div class="tp-k">This week</div><div class="s-bento" id="socialBento"></div></div>`,
-        after: () => {
-          document.querySelectorAll('#socialChannels .tog').forEach((t) => t.addEventListener('click', () => { t.classList.toggle('off'); if (typeof renderBento === 'function') renderBento(); }));
-          if (typeof renderBento === 'function') renderBento();
-          const bento = document.getElementById('socialBento');
-          if (bento && typeof jumpToApproval === 'function') bento.addEventListener('click', jumpToApproval);
-        } },
-      agents: { title: 'Team read', sub: 'Coaching for your agents',
-        html: () => tpSummary('Coach the floor', [
-          'Tayo reads first-reply times, win rates and stalled leads per agent.',
-          'Coaching notes appear once your team has real activity to read.',
-        ], 'Invite your agents and route some leads, the read below is built from their actual numbers.')
-        // The roster's summary lives here now, beside the cards rather than
-        // stacked above them.
-        + `<div class="tp-sec"><div class="tp-k">The floor</div><div class="ag-kpis" id="agKpis"></div></div>`
-        + `<div class="tp-sec"><div class="tp-k">Closed deals · career</div><div class="hbars" id="agClosed"></div></div>`
-        + `<div class="tp-sec"><div class="tp-k" id="agReplyLbl">Response rate</div><div class="hbars" id="agReply"></div></div>`,
-        after: () => renderAgentSummary() },
-      subscription: { title: 'Plan advisor', sub: 'Is your plan earning its keep?',
-        /* "One extra closed sale a month more than covers Accelerate" was a
-           claim about this agency's economics that nothing here can know --
-           we hold no sale values and no fee. What a plan includes is a fact;
-           what it would earn them is not. */
-        html: () => tpSummary('What each plan includes', [
-          'Free: list, generate campaigns, and rehearse them.',
-          'Accelerate: publish for real to your connected channels.',
-          'Leader: unlimited listings and syndication.',
-        ], 'Ask below what your own numbers would look like on another plan, the answer uses your listings and leads, not an example.') },
-    };
-    const snapshotHTML = (pane) => STATS[pane]
-      ? `<div class="tp-sec"><div class="tp-k">Snapshot</div><div class="tp-stats">${STATS[pane]}</div></div>` : '';
-    window.SynAdvisorBody = function (pane) {
-      const cfg = PANEL[pane] || PANEL.overview;
-      return { title: cfg.title, sub: cfg.sub, html: snapshotHTML(pane) + cfg.html(), after: cfg.after || null };
-    };
+    /* The persistent Ask-Tayo panel is React (src/features/agency/AdvisorPanel.tsx), and what it says on each pane is
+       AdvisorBodies.tsx, counted from what the portal has loaded. */
     function openToju() { window.dispatchEvent(new CustomEvent('syn:advisor-open')); }
     function closeToju() { window.dispatchEvent(new CustomEvent('syn:advisor-close')); }
     // keep the open panel's snapshot fresh when listings/marketing stats change
@@ -966,4 +810,4 @@
     /* ═══ Brand page ═══ is React: src/features/agency/BrandPage.tsx. */
 
     // simple toggles in social studio
-  
+}

@@ -3,7 +3,7 @@
  * The "New post" composer, its hashtag chips and the full-size caption editor, as React (was renderComposer/openComposer,
  * generateCaptions, capWarnHtml, the tag groups, scheduleFromComposer and openCaptionEditor in src/legacy/agency/inline-3.js).
  *
- * The listings stay in inline-3 (`window.SynPostListings()`, the active ones; `fullListing(id)` for the whole row) and so does
+ * The listings stay in portalData (`window.SynPostListings()`, the active ones; `fullListing(id)` for the whole row) and so does
  * the board. openComposer(which), closeComposer() and openCaptionEditor(o) survive there as names and fire `syn:composer`,
  * `syn:composer-close` and `syn:caption-editor`: the listings grid, the marketing digest, the pipeline cards and the board's own
  * caption edit all call them.

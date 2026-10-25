@@ -8,9 +8,9 @@
  * themselves -- the brand is what Tayo writes in, the profile is what a buyer reads when deciding whether to trust the person
  * showing them a house.
  *
- * Its own drawer beside the shared one: inline-3 fills #drawer from eleven templates with innerHTML, which React cannot share.
- * It uses the same .drawer styles and the same scrim, and closes whenever inline-3's closeLead() runs (`syn:drawer-close`).
- * inline-3's openMyProfile(opts) survives as a name and fires `syn:my-profile`.
+ * Its own drawer (the old shared #drawer was filled from eleven innerHTML templates, which React could not share; it is gone).
+ * It uses the same .drawer styles and the same scrim, and closes whenever portalShell's closeLead() runs (`syn:drawer-close`).
+ * portalData's openMyProfile(opts) survives as a name and fires `syn:my-profile`.
  */
 import { useEffect, useRef, useState } from "react";
 

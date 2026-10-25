@@ -4,8 +4,8 @@
  * need you to copy and paste, don't have them fixed on the page. Let them come as a pop-up."
  *
  * A task arrives when it becomes true, says exactly what to paste where, and leaves when it is done. Which tasks exist is still
- * inline-3's (setTasks/openTasks/findTask, beside the sources that know); showTasks(list) hands them here with `syn:tasks-show`,
- * and this marks them through inline-3's taskMark(kind, id) so the bell and the card agree on what is done.
+ * portalShell's (setTasks/openTasks/findTask, beside the sources that know); showTasks(list) hands them here with `syn:tasks-show`,
+ * and this marks them through portalShell's taskMark(kind, id) so the bell and the card agree on what is done.
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";

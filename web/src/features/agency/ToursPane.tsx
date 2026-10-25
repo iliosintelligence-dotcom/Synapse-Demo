@@ -6,7 +6,7 @@
  * Headcount is deliberately split into "booked" and "confirmed": someone who has not answered the reconfirmation is not a body
  * at the door, and the whole point of reconfirming is that the agent learns that in advance rather than standing outside a house.
  *
- * inline-3's loadTours() survives as a name (goToPane calls it) and fires `syn:tours-load`. The filter row keeps its
+ * portalShell's loadTours() survives as a name (goToPane calls it) and fires `syn:tours-load`. The filter row keeps its
  * data-pane-filters, so the phone dock can still lend it to its sheet; React only changes its classes.
  */
 import { useEffect, useState } from "react";

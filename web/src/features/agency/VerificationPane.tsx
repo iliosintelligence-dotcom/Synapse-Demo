@@ -10,7 +10,7 @@
  * is_verified is never settable from this page. Supplying the papers is the agency's half and checking them is ours; an agency
  * that could mark its own CAC certificate verified would make the badge worthless.
  *
- * inline-3's loadVerification() survives as a name (goToPane calls it) and fires `syn:verification-load`.
+ * portalShell's loadVerification() survives as a name (goToPane calls it) and fires `syn:verification-load`.
  */
 import { useEffect, useRef, useState } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";

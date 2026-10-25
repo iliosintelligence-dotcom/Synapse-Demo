@@ -3,7 +3,7 @@
  * The content pipeline board and its calendar, as React (was pcard/renderPipeline/renderCalendar, the board's click, drag and
  * select-several handlers and holdToConfirm in src/legacy/agency/inline-3.js).
  *
- * The posts are still built in inline-3 (buildPosts, from the drafts, the social_posts rows, their stats and comments) because
+ * The posts are still built in portalData (buildPosts, from the drafts, the social_posts rows, their stats and comments) because
  * the bell, the composer and the scheduler read the same array: `window.SynPosts()` for the cards, `window.SynPStages` for the
  * columns. renderPipeline() and renderCalendar() survive as names and fire `syn:pipeline`. What a card's buttons open stays
  * there too for now: openScheduler, openPropPreview, openBoardCaption, openComposer, and pipeDrop/pipeSoon for taking cards off.
@@ -431,7 +431,8 @@ export function PipelineBoard() {
       toast(stage === "published" ? "A post lands here when a platform accepts it — use Send now." : "This fills itself when a post fails or goes unclicked.");
     } else if (p && stage && p.stage !== stage) {
       p.stage = stage;
-      set({ tick: state.tick + 1 }); call("renderBento");
+      set({ tick: state.tick + 1 });
+      window.dispatchEvent(new Event("syn:posts-moved"));   // the Ask-Tayo bento counts drafts
     }
     setDrop(null);
   };

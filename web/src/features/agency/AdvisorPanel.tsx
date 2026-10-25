@@ -3,15 +3,14 @@
  * The persistent Ask-Tayo panel, as React (was openToju/advChips/advAsk in src/legacy/agency/inline-3.js). The AI commentary
  * lives here, not on the main panes, and what the panel shows depends on which pane the agency is looking at.
  *
- * What a pane's body says is still inline-3's: it is built from STATS, LISTINGS_DATA and the pane renderers (renderBrk,
- * loadInsights, renderAgentSummary, renderBento), so `window.SynAdvisorBody(pane)` hands over the title, the sub, the HTML and
- * the hook to run once it is in the page. Everything else -- the fab, opening and closing, the suggested questions, the
- * conversation with the agency-advisor function -- is here.
+ * What a pane's body says is AdvisorBodies.tsx, counted from what the portal has loaded. Here: the fab, opening and closing,
+ * the suggested questions and the conversation with the agency-advisor function.
  *
- * inline-3's openToju(), refreshTojuPanel(pane) and closeToju() survive as names (goToPane and three renderers call them) and
+ * openToju(), refreshTojuPanel(pane) and closeToju() survive as names (goToPane and three renderers call them) and
  * fire `syn:advisor-open`, `syn:advisor-refresh` and `syn:advisor-close`.
  */
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { AdvisorBody, advisorHead } from "./AdvisorBodies";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -19,7 +18,7 @@ const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SB_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 /* One set per stage, plus a pane-specific question so the panel still knows which screen you are on. Written as things an
-   agency would actually say, not as report titles. The stage is read from what the portal already knows (inline-3's
+   agency would actually say, not as report titles. The stage is read from what the portal already knows (portalShell's
    SynAdvisorStage), so the chips are right the instant the panel opens; the server recomputes it from the database before it
    answers -- this decides what to SUGGEST, never what is true. */
 const STAGE_QS: Record<string, string[]> = {
@@ -75,7 +74,7 @@ const zyn = (img: Element | null, s: string) => { if (img && W().Zyn) W().Zyn.se
 const Said = ({ text }: { text: string }) => <>{text.split(/\*\*([^*]+)\*\*/g).map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part))}</>;
 
 type Msg = { id: number; who: "you" | "toju" | "bad"; text: string };
-type Body = { seq: number; title: string; sub: string; html: string; after: (() => void) | null };
+type Body = { seq: number; pane: string };
 type Turn = { role: "user" | "assistant"; content: string };
 
 let open = false;
@@ -95,7 +94,7 @@ export function AdvisorFab() {
 
 export function AdvisorPanel() {
   const on = useOpen();
-  const [body, setBody] = useState<Body>({ seq: 0, title: "Ask Tayo", sub: "", html: "", after: null });
+  const [body, setBody] = useState<Body>({ seq: 0, pane: "" });
   const [chips, setChips] = useState<string[]>([]);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
@@ -109,8 +108,7 @@ export function AdvisorPanel() {
   useEffect(() => {
     const show = () => {
       const pane = currentPane();
-      const b = W().SynAdvisorBody?.(pane) || { title: "Business advisor", sub: "", html: "", after: null };
-      setBody((s) => ({ seq: s.seq + 1, title: b.title, sub: b.sub, html: b.html, after: b.after || null }));
+      setBody((s) => ({ seq: s.seq + 1, pane }));
       setOpen(true);
       if (!busyRef.current) setChips(chipsFor(pane));
     };
@@ -126,8 +124,6 @@ export function AdvisorPanel() {
       window.removeEventListener("syn:advisor-close", close);
     };
   }, []);
-  /* The body is rebuilt on every opening (keyed by seq), and its hook runs once it is in the page. */
-  useLayoutEffect(() => { if (body.seq && body.after) body.after(); }, [body]);
   useEffect(() => { document.body.classList.toggle("tpanel-open", on); }, [on]);
   /* The thread does not scroll -- the panel does -- so keeping the newest message in view means moving the column. */
   useEffect(() => { if (scroll.current) scroll.current.scrollTop = scroll.current.scrollHeight; }, [msgs]);
@@ -170,6 +166,7 @@ export function AdvisorPanel() {
       });
   };
   const close = () => setOpen(false);
+  const head = body.pane ? advisorHead(body.pane) : { title: "Ask Tayo", sub: "" };
 
   return (
     <>
@@ -179,14 +176,14 @@ export function AdvisorPanel() {
           <img ref={face} className="zyn zm-bob o-zyn" id="tpZyn" src="../images/zyn/zyn-waving.webp" width="58" height="58" alt="" aria-hidden="true"
             onClick={() => { if (W().Zyn) W().Zyn.emote(face.current); }} />
           <div>
-            <div className="tt" id="tpTitle">{body.title}</div>
-            <div className="sb" id="tpSub">{body.sub}</div>
+            <div className="tt" id="tpTitle">{head.title}</div>
+            <div className="sb" id="tpSub">{head.sub}</div>
           </div>
           <button className="x" id="tpClose" aria-label="Close" onClick={close}>{"×"}</button>
         </div>
         <div className="tp-scroll" id="tpScroll" ref={scroll}>
-          {/* Built by inline-3 from the portal's own numbers, with its own escaping. */}
-          <div className="tbody" id="tpBody" key={body.seq} dangerouslySetInnerHTML={{ __html: body.html }}></div>
+          {/* Rebuilt on every opening and refresh (keyed by seq). */}
+          <div className="tbody" id="tpBody" key={body.seq}>{body.pane ? <AdvisorBody pane={body.pane} /> : null}</div>
           <div className="tp-thread" id="tpThread">
             {msgs.map((m) => <div key={m.id} className={"tp-msg " + m.who}>{m.who === "bad" ? m.text : <Said text={m.text} />}</div>)}
           </div>
