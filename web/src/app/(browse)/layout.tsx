@@ -25,7 +25,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="loader.css" />
         <link rel="stylesheet" href="seam.css" />
         <script src="seam.js" />
-        <script src="loader.js" defer />
         <script src="kbd.js" />
         <script src="arrival.js" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

@@ -28,7 +28,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="loader.css" />
         <link rel="stylesheet" href="seam.css" />
         <script src="seam.js" />
-        <script src="loader.js" defer />
         <script  dangerouslySetInnerHTML={{ __html: inline("signin", "inline-2.js") }} />
         <style  dangerouslySetInnerHTML={{ __html: inline("signin", "inline-3.css") }} />
         <script src="brand.js" />

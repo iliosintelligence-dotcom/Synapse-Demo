@@ -8,6 +8,7 @@ import { PropertyPage } from "./PropertyPage";
 import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
+  { shared: "loader" },
   { shared: "map/style-synapse" },
   { shared: "map/render" },
   { shared: "stamp" },

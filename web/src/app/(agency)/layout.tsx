@@ -27,13 +27,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script src="seam.js" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" />
-        <script src="map-tiles.js" />
-        <script src="map/style-synapse.js" />
-        <script src="map/render.js" />
-        <script src="map/card.js" />
-        <script src="map/query.js" />
-        <script src="matches-shared.js" />
-        <script src="syndication.js" />
         <script src="syndication-audit.js" />
         <style  dangerouslySetInnerHTML={{ __html: inline("agency", "inline-2.css") }} />
         <link rel="stylesheet" href="theme.css" />
@@ -43,7 +36,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script src="brand.js" />
         <link rel="stylesheet" href="foil.css" />
         <script src="foil.js" defer />
-        <script src="scramble.js" />
         <link rel="stylesheet" href="tapfix.css" />
         <link rel="stylesheet" href="loaders.css" />
         <script src="loaders.js" defer />

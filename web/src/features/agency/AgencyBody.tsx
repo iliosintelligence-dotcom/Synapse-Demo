@@ -32,6 +32,14 @@ import { CrmPane } from "./CrmPane";
 import { Dock, HistButtons, Pane, PortalNavHost, Rail, SideToggle } from "./PortalNav";
 
 const SCRIPTS: PageScript[] = [
+  { shared: "map-tiles" },
+  { shared: "map/style-synapse" },
+  { shared: "map/render" },
+  { shared: "map/card" },
+  { shared: "map/query" },
+  { shared: "matches-shared" },
+  { shared: "syndication" },
+  { shared: "scramble" },
   { shared: "icons" },
   { shared: "icon-morph", module: true },
   { shared: "zyn" },

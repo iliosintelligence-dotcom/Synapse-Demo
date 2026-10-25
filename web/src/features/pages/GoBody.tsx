@@ -27,15 +27,19 @@ async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
   return r.json();
 }
 
-/* The app's own formatter when it is on the page; otherwise an exact figure, which is longer than the house style but never a blank. */
+/* The app's price style (the same as money() in src/shared/matches-shared.js): the currency's own symbol (narrowSymbol turns NGN
+   into ₦), whole units, and millions or billions once the plain figure gets unwieldy. */
 function price(n?: number, cur?: string) {
-  const sm = (window as unknown as { SynMatches?: { money?: (n: unknown, c?: string) => string } }).SynMatches;
-  if (sm && sm.money) return sm.money(n, cur);
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency", currency: /^[A-Za-z]{3}$/.test(cur || "") ? cur! : "NGN", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0,
-    }).format(Number(n) || 0);
-  } catch { return "₦" + (Number(n) || 0).toLocaleString(); }
+  const v = Number(n) || 0;
+  const code = /^[A-Za-z]{3}$/.test(cur || "") ? String(cur).toUpperCase() : "NGN";
+  const fmt = (value: number, opts?: Intl.NumberFormatOptions) => {
+    const base: Intl.NumberFormatOptions = { style: "currency", currency: code, maximumFractionDigits: 0, ...opts };
+    try { return new Intl.NumberFormat(undefined, { currencyDisplay: "narrowSymbol", ...base }).format(value); } catch { /* the plain form */ }
+    try { return new Intl.NumberFormat(undefined, base).format(value); } catch { return code + " " + Math.round(value).toLocaleString(); }
+  };
+  if (Math.abs(v) >= 1e9) return fmt(v / 1e9, { maximumFractionDigits: 1 }) + "B";
+  if (Math.abs(v) >= 1e6) return fmt(v / 1e6, { maximumFractionDigits: v % 1e6 === 0 ? 0 : 1 }) + "M";
+  return fmt(v);
 }
 const hrefFor = (r: Home) => (r.token ? "/s/" + encodeURIComponent(r.token)
   : "/app/property.html?id=" + encodeURIComponent(r.property_id) + "&ch=" + encodeURIComponent(r.platform || "organic"));

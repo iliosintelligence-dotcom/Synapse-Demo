@@ -7,6 +7,7 @@ import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { SigninForm, SigninArtText } from "./SigninForm";
 
 const SCRIPTS: PageScript[] = [
+  { shared: "loader" },
   { shared: "auth" },
 ];
 

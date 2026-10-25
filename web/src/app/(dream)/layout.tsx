@@ -25,7 +25,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="loader.css" />
         <link rel="stylesheet" href="seam.css" />
         <script src="seam.js" />
-        <script src="loader.js" defer />
         <script src="kbd.js" />
         <script src="arrival.js" />
         <link rel="manifest" href="manifest.webmanifest" />

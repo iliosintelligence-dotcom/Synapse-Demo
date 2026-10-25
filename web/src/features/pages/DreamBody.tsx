@@ -7,6 +7,7 @@ import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { DreamBoards } from "./DreamBoards";
 
 const SCRIPTS: PageScript[] = [
+  { shared: "loader" },
   { shared: "icons" },
   { shared: "icon-morph", module: true },
   { shared: "cust-nav" },

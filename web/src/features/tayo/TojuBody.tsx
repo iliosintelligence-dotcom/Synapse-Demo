@@ -8,6 +8,8 @@ import { ChatsMenu, EngineStart, HandoffStatus, MemoryNote, VoiceHint } from "./
 import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
+  { shared: "zyn" },
+  { shared: "loader" },
   { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
   { shared: "map-tiles" },
   { shared: "map/style-synapse" },
