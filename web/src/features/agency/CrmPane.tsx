@@ -17,6 +17,7 @@ import { createPortal } from "react-dom";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { Icon } from "./VerificationPane";
 import { showDrawer } from "./SideDrawer";
+import { closeDock } from "./PortalNav";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -516,7 +517,7 @@ export function CrmPane() {
   const pickStage = (st: string, el: Element) => {
     set({ fStage: s.fStage === st ? null : st, page: 1 });
     /* picked from inside the taskbar sheet: get out of the way of the result */
-    if (el.closest(".agd-sheet")) { document.getElementById("agdNav")?.classList.remove("open"); document.getElementById("agdScrim")?.classList.remove("on"); }
+    if (el.closest(".agd-sheet")) closeDock();
   };
   const sortBy = (k: string) => set(s.sortK === k ? { sortDir: s.sortDir * -1, page: 1 } : { sortK: k, sortDir: firstDir(k), page: 1 });
 

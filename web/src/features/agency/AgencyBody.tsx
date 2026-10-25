@@ -29,6 +29,7 @@ import { ComposerHost } from "./PostComposer";
 import { ListingFormHost } from "./ListingForm";
 import { OverviewGrid } from "./OverviewPane";
 import { CrmPane } from "./CrmPane";
+import { Dock, HistButtons, Pane, PortalNavHost, Rail, SideToggle } from "./PortalNav";
 
 const SCRIPTS: PageScript[] = [
   { src: "icons.js" },
@@ -76,143 +77,12 @@ export function AgencyBody() {
       <BellPanel />
       <div className="shell">
         <div className="side-dock">
-          <aside className="side" id="tabs">
-            <div className="grp-sec open" data-sec="main">
-              <button className="grp" aria-expanded="true" aria-controls="grp-main">
-                <span>
-                  Main
-                </span>
-                <span className="grp-chv" aria-hidden="true">
-                  ›
-                </span>
-              </button>
-              <div className="grp-items" id="grp-main">
-                <a className="on" data-pane="overview" title="Overview">
-                  <span data-icon="grid"></span>
-                  <span className="lbl-x">
-                    Overview
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="crm" title={"CRM · Leads"}>
-                  <span data-icon="users"></span>
-                  <span className="lbl-x">
-                    CRM · Leads
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="negotiator" title="Tayo Negotiator">
-                  <span data-icon="negotiate"></span>
-                  <span className="lbl-x">
-                    Tayo Negotiator
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="listings" title="Listings">
-                  <span data-icon="agency"></span>
-                  <span className="lbl-x">
-                    Listings
-                  </span>
-                </a>
-              </div>
-            </div>
-            <div className="grp-sec open" data-sec="growth">
-              <button className="grp" aria-expanded="true" aria-controls="grp-growth">
-                <span>
-                  Growth
-                </span>
-                <span className="grp-chv" aria-hidden="true">
-                  ›
-                </span>
-              </button>
-              <div className="grp-items" id="grp-growth">
-                <a data-pane="social" title="Social studio">
-                  <span data-icon="share"></span>
-                  <span className="lbl-x">
-                    Social studio
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="marketing" title="Marketing">
-                  <span data-icon="chart"></span>
-                  <span className="lbl-x">
-                    Marketing
-                  </span>
-                </a>
-              </div>
-            </div>
-            <div className="grp-sec open" data-sec="team">
-              <button className="grp" aria-expanded="true" aria-controls="grp-team">
-                <span>
-                  Team
-                </span>
-                <span className="grp-chv" aria-hidden="true">
-                  ›
-                </span>
-              </button>
-              <div className="grp-items" id="grp-team">
-                <a data-pane="agents" title="Agents">
-                  <span data-icon="user"></span>
-                  <span className="lbl-x">
-                    Agents
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="tours" title="Tours">
-                  <span data-icon="calendar"></span>
-                  <span className="lbl-x">
-                    Tours
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="brand" title="Brand">
-                  <span data-icon="spark"></span>
-                  <span className="lbl-x">
-                    Brand
-                  </span>
-                </a>
-                {" "}
-                {" "}
-                <a href="#" id="navMyProfile" title="My profile">
+          <Rail profileLink={<>{" "}{" "}<a href="#" id="navMyProfile" title="My profile">
                   <span data-icon="user"></span>
                   <span className="lbl-x">
                     My profile
                   </span>
-                </a>
-              </div>
-            </div>
-            <div className="grp-sec open" data-sec="account">
-              <button className="grp" aria-expanded="true" aria-controls="grp-account">
-                <span>
-                  Account
-                </span>
-                <span className="grp-chv" aria-hidden="true">
-                  ›
-                </span>
-              </button>
-              <div className="grp-items" id="grp-account">
-                <a data-pane="verification" title="Verification">
-                  <span data-icon="legal"></span>
-                  <span className="lbl-x">
-                    Verification
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="subscription" title="Subscription">
-                  <span data-icon="card"></span>
-                  <span className="lbl-x">
-                    Subscription
-                  </span>
-                </a>
-                {" "}
-                <a data-pane="billing" title="Billing">
-                  <span data-icon="costs"></span>
-                  <span className="lbl-x">
-                    Billing
-                  </span>
-                </a>
-              </div>
-            </div>
+                </a></>}>
             <div className="me">
               <div className="who">
                 <div className="nm2" data-agency-name="">
@@ -221,44 +91,14 @@ export function AgencyBody() {
                 <div className="sub2" data-agency-tier=""></div>
               </div>
             </div>
-          </aside>
-          <div className="side-hist" role="group" aria-label="Pages you visited">
-            <button type="button" id="navBack" aria-label="Back to the previous page" title="Back" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M9 14 4 9l5-5" />
-                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-              </svg>
-              {" "}
-              <span className="lbl-x">
-                Back
-              </span>
-            </button>
-            <button type="button" id="navFwd" aria-label="Forward to the next page" title="Forward" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="m15 14 5-5-5-5" />
-                <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
-              </svg>
-              {" "}
-              <span className="lbl-x">
-                Forward
-              </span>
-            </button>
-          </div>
+          </Rail>
+          <HistButtons />
         </div>
-        <button type="button" className="side-toggle" id="sideToggle" aria-controls="tabs" aria-expanded="false" title="Expand the menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="16" rx="2.5" />
-            <path d="M9 4v16" />
-          </svg>
-          {" "}
-          <span className="lbl-x">
-            Collapse
-          </span>
-        </button>
+        <SideToggle />
         <div className="content">
           <NeedPhone />
           <main>
-            <section className="pane on" id="pane-overview">
+            <Pane id="overview">
               <div className="fast-card" id="fastCard" hidden>
                 <div className="fc-k">
                   Fast start
@@ -315,11 +155,11 @@ export function AgencyBody() {
                 </button>
               </div>
               <OverviewGrid />
-            </section>
-            <section className="pane" id="pane-crm">
+            </Pane>
+            <Pane id="crm">
               <CrmPane />
-            </section>
-            <section className="pane" id="pane-verification">
+            </Pane>
+            <Pane id="verification">
               <div className="eyebrow">
                 Compliance
               </div>
@@ -330,11 +170,11 @@ export function AgencyBody() {
                 {"Buyers see a verified badge on every listing you publish.\n             Your documents are private, kept in a closed store, opened only by\n             you and the Synapse verification desk, never shown on your public page."}
               </p>
               <VerificationPane />
-            </section>
-            <section className="pane" id="pane-subscription">
+            </Pane>
+            <Pane id="subscription">
               <SubscriptionPane />
-            </section>
-            <section className="pane" id="pane-billing">
+            </Pane>
+            <Pane id="billing">
               <div className="eyebrow">
                 Account
               </div>
@@ -351,8 +191,8 @@ export function AgencyBody() {
                 Your plan, what you have paid, and extras. Payments go through Paystack to ILIOS Digital, the company behind Synapse. Card details never touch Synapse.
               </p>
               <BillingPane />
-            </section>
-            <section className="pane" id="pane-social">
+            </Pane>
+            <Pane id="social">
               <div style={{ "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
                 <div>
                   <div className="eyebrow">
@@ -421,8 +261,8 @@ export function AgencyBody() {
               </div>
               <PipelineBoard />
               <PipelineCalendar />
-            </section>
-            <section className="pane" id="pane-marketing">
+            </Pane>
+            <Pane id="marketing">
               <div style={{ "display": "flex", "alignItems": "flex-end", "justifyContent": "space-between", "gap": "12px", "flexWrap": "wrap" }}>
                 <div>
                   <div className="eyebrow">
@@ -458,14 +298,14 @@ export function AgencyBody() {
               <MkBoard />
               <MkCampaigns />
               <MarketingHost />
-            </section>
-            <section className="pane" id="pane-negotiator">
+            </Pane>
+            <Pane id="negotiator">
               <NegotiatorPane />
-            </section>
-            <section className="pane" id="pane-tours">
+            </Pane>
+            <Pane id="tours">
               <ToursPane />
-            </section>
-            <section className="pane" id="pane-listings">
+            </Pane>
+            <Pane id="listings">
               <div className="eyebrow">
                 Inventory
               </div>
@@ -494,39 +334,18 @@ export function AgencyBody() {
               </div>
               <ListingGate />
               <ListingsGrid />
-            </section>
-            <section className="pane" id="pane-agents">
+            </Pane>
+            <Pane id="agents">
               <AgentsPane />
-            </section>
-            <section className="pane" id="pane-brand">
+            </Pane>
+            <Pane id="brand">
               <BrandPage />
-            </section>
+            </Pane>
           </main>
         </div>
       </div>
-      <div className="agd-scrim" id="agdScrim"></div>
-      <div className="agd-bar" id="agdBar">
-        <div className="agd agd-nav" id="agdNav">
-          <div className="agd-sheet" id="agdNavSheet" role="menu" aria-label="Portal navigation"></div>
-          <button className="agd-btn" id="agdNavFab" type="button" aria-expanded="false" aria-label="Open navigation">
-            <span data-icon="grid"></span>
-          </button>
-        </div>
-        <span className="agd-div" aria-hidden="true"></span>
-        <div className="agd agd-filter" id="agdFilter" hidden>
-          <div className="agd-sheet" id="agdFilterSheet" role="menu" aria-label="Filter and sort"></div>
-          <button className="agd-btn" id="agdFilterFab" type="button" aria-expanded="false" aria-label="Filter and sort">
-            <span data-icon="filter"></span>
-          </button>
-        </div>
-        <span className="agd-div" aria-hidden="true"></span>
-        <div className="agd agd-add" id="agdAdd">
-          <div className="agd-sheet" id="agdAddSheet" role="menu" aria-label="Create"></div>
-          <button className="agd-btn agd-btn-primary" id="agdAddFab" type="button" aria-expanded="false" aria-label="Create">
-            <span data-icon="plus"></span>
-          </button>
-        </div>
-      </div>
+      <Dock />
+      <PortalNavHost />
       <div className="toast" id="toast"></div>
       <PropPreview />
       <SchedulerHost /><ShareKitHost />
