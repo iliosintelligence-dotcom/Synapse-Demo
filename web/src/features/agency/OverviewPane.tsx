@@ -51,7 +51,7 @@ const ovBeds = (t: string) => { const m = String(t || "").match(/(\d+)\s*-?\s*be
 const ovChecks = (l: any) => (Array.isArray(l.verification_nodes) ? l.verification_nodes : []).filter((n: any) => n && n.status === "passed").length;
 /* Real leads attached to this listing, matched by its short name. */
 /* The leads on one listing: by its id when the lead carries one, by its title otherwise (the sample leads have no ids). */
-function leadsOn(l: any): any[] {
+export function leadsOn(l: any): any[] {
   const all: any[] = (W().SynLeads && W().SynLeads()) || [];
   const name = String(l.title || l.t || "").split(",")[0].toLowerCase();
   return all.filter((x) => (x.propertyId ? x.propertyId === l.id : !!name && String(x.pr || "").toLowerCase().includes(name)));
@@ -195,6 +195,7 @@ export function OverviewGrid() {
     if (!ready) return;
     const repaint = () => set({ tick: state.tick + 1 });
     window.addEventListener("syn:overview", repaint);
+    window.addEventListener("syn:crm", repaint); /* the lead counts and the funnel */
     const click = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
       const tab = t.closest?.("#ovTabs [data-f]") as HTMLElement | null;
@@ -214,7 +215,7 @@ export function OverviewGrid() {
     document.addEventListener("input", input);
     document.addEventListener("keydown", esc);
     repaint();
-    return () => { window.removeEventListener("syn:overview", repaint); document.removeEventListener("click", click); document.removeEventListener("input", input); document.removeEventListener("keydown", esc); };
+    return () => { window.removeEventListener("syn:overview", repaint); window.removeEventListener("syn:crm", repaint); document.removeEventListener("click", click); document.removeEventListener("input", input); document.removeEventListener("keydown", esc); };
   }, [ready]);
 
   /* The map draws the filtered list whenever it changes. Its pins link to #listing-<id>; that hash is never followed, the click is

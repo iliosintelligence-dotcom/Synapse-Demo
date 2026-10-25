@@ -11,6 +11,7 @@
 import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent, type MouseEvent } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { useRevealed } from "./useRevealed";
+import { leadsOn } from "./OverviewPane";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -44,7 +45,7 @@ function filtered() {
   else if (state.f === "expired") a = a.filter((x) => fresh(x.l).expired);
   if (state.sort === "fresh") a.sort((p, q) => fresh(p.l).left - fresh(q.l).left); // fewest days left first (action queue)
   else if (state.sort === "price") a.sort((p, q) => q.l.pr - p.l.pr);
-  else if (state.sort === "leads") a.sort((p, q) => q.l.leads - p.l.leads);
+  else if (state.sort === "leads") a.sort((p, q) => leadsOn(q.l).length - leadsOn(p.l).length);
   return a;
 }
 const expiring = () => listings().filter((l) => { try { const f = fresh(l); return f.warn || f.expired; } catch { return false; } });
@@ -209,7 +210,7 @@ function DraftCard({ cover, price, title, chip, when, sd }: { cover: string; pri
 
 function Card({ l, oi, menu }: { l: any; oi: number; menu: boolean }) {
   const f = fresh(l);
-  const leads = Number(l.leads) || 0;
+  const leads = leadsOn(l).length;
   const label = W().SynTypeLabel?.[l.property_type] || "";
   const meta = f.expired
     ? (f.left === 0 ? "Expired today" : "Expired " + (-f.left) + (f.left === -1 ? " day" : " days") + " ago")
@@ -260,10 +261,11 @@ export function ListingsGrid() {
     const onInput = (e: Event) => { const t = e.target as HTMLInputElement; if (t && t.id === "listSearch") set({ q: t.value }); };
     const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape" && state.menu != null) set({ menu: null }); };
     window.addEventListener("syn:lgrid", redraw);
+    window.addEventListener("syn:crm", redraw); /* the lead counts on the cards */
     document.addEventListener("click", onClick);
     document.addEventListener("input", onInput);
     document.addEventListener("keydown", onKey);
-    return () => { window.removeEventListener("syn:lgrid", redraw); document.removeEventListener("click", onClick); document.removeEventListener("input", onInput); document.removeEventListener("keydown", onKey); };
+    return () => { window.removeEventListener("syn:lgrid", redraw); window.removeEventListener("syn:crm", redraw); document.removeEventListener("click", onClick); document.removeEventListener("input", onInput); document.removeEventListener("keydown", onKey); };
   }, []);
   useEffect(() => {
     if (!ready) return;
