@@ -324,7 +324,7 @@ export function run() {
            creation, not a chain. The CRM used to derive the channel from
            `source` and never read this table at all. */
         .select('id, consumer_name, consumer_phone, source, current_stage, lead_score, ' +
-                'risk_level, next_action_recommendation, budget_min, budget_max, ' +
+                'risk_level, next_action_recommendation, next_action_at, budget_min, budget_max, ' +
                 'preferences, ' +
                 'delivery_status, delivery_error, last_activity_at, created_at, ' +
                 'assigned_agent_id, property_id, properties(title, price, city), ' +
@@ -453,6 +453,65 @@ export function run() {
       // success and letting the UI drift from the database.
       if (!r.data) throw new Error('That lead could not be updated');
       return r.data;
+    });
+  }
+
+  /* The one next step on a lead: a date, and optionally what it is. Both are
+     columns the leads update policy (0043) already lets an agency member write,
+     so this needs no new table. null clears it. */
+  function setNextStep(id, at, text) {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) throw new Error('No agency on this account');
+      var patch = { next_action_at: at || null };
+      if (text !== undefined) patch.next_action_recommendation = text ? String(text).slice(0, 200) : null;
+      return c1.from('leads').update(patch)
+        .eq('id', id).eq('agency_id', aid).is('deleted_at', null)
+        .select('id, next_action_at, next_action_recommendation').maybeSingle();
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      if (!r.data) throw new Error('That lead could not be updated');
+      return r.data;
+    });
+  }
+
+  /* A lost lead, with why. move_lead_stage is the one write that carries a
+     reason into lead_stage_history; the 0111 trigger then records the same move
+     a second time without one, which funnelReport folds back into a single
+     move. If the function is refused the lead is still moved, and the caller
+     is told the reason did not stick rather than shown a success it was not. */
+  function loseLead(id, reason) {
+    return client().then(function (c) {
+      return c.rpc('move_lead_stage', { p_lead_id: id, p_to_stage: 'lost', p_reason: reason || null });
+    }).then(function (r) {
+      if (!r.error) return { reasonSaved: true };
+      console.error('move_lead_stage', r.error);
+      return setLeadStage(id, 'lost').then(function () { return { reasonSaved: false }; });
+    });
+  }
+
+  /* What the funnel report is counted from: every recorded stage move on the
+     agency's leads, and the lost leads themselves (the CRM's own list leaves
+     them out). Read-only; RLS (can_access_lead) decides what comes back. */
+  function funnelData() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return [{ data: [] }, { data: [] }];
+      return Promise.all([
+        c1.from('lead_stage_history')
+          .select('lead_id, from_stage, to_stage, moved_at, reason, time_in_previous_stage_seconds, leads!inner(agency_id)')
+          .eq('leads.agency_id', aid)
+          .order('moved_at', { ascending: true })
+          .limit(5000),
+        c1.from('leads')
+          .select('id, source, created_at, lead_attribution(channel, is_last_touch, occurred_at)')
+          .eq('agency_id', aid).is('deleted_at', null).eq('current_stage', 'lost')
+          .limit(1000),
+      ]);
+    }).then(function (rs) {
+      if (rs[0].error) throw rs[0].error;
+      if (rs[1].error) throw rs[1].error;
+      return { moves: rs[0].data || [], lost: rs[1].data || [] };
     });
   }
 
@@ -2903,6 +2962,9 @@ export function run() {
     list: list,
     leads: leads,
     setLeadStage: setLeadStage,
+    setNextStep: setNextStep,
+    loseLead: loseLead,
+    funnelData: funnelData,
     leadTasks: leadTasks,
     leadActivity: leadActivity,
     completeTask: completeTask,

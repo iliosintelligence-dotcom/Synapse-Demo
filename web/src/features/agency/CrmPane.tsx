@@ -18,6 +18,8 @@ import { usePageScripts } from "@/legacy/usePageScripts";
 import { Icon } from "./VerificationPane";
 import { showDrawer } from "./SideDrawer";
 import { closeDock } from "./PortalNav";
+import { LOST_REASONS, due, report, spanWords, waiting, type Report } from "./funnel";
+import "./Funnel.css";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -43,7 +45,7 @@ const UI_TO_DB: Record<string, string> = { New: "new", Contacted: "contacted", V
 const tmin = (t: string) => { const m = /(\d+)\s*([mhd])/.exec(t || ""); if (!m) return 1e9; const n = +m[1]; return m[2] === "m" ? n : m[2] === "h" ? n * 60 : n * 1440; };
 const budgetN = (l: any) => { const m = /₦?(\d+(?:\.\d+)?)\s*([MB])/.exec(l.price || ""); return m ? +m[1] * (m[2] === "B" ? 1000 : 1) : 0; };
 
-type State = { page: number; per: number; sortK: string; sortDir: number; fStage: string | null; fSrc: string | null; sel: Set<string>; view: "table" | "today"; tick: number };
+type State = { page: number; per: number; sortK: string; sortDir: number; fStage: string | null; fSrc: string | null; sel: Set<string>; view: "table" | "today" | "report"; tick: number };
 let state: State = { page: 1, per: 10, sortK: "recent", sortDir: -1, fStage: null, fSrc: null, sel: new Set(), view: "table", tick: 0 };
 const subs = new Set<() => void>();
 const set = (v: Partial<State>) => { state = { ...state, ...v }; subs.forEach((f) => f()); };
@@ -219,6 +221,7 @@ function LeadView({ l }: { l: any }) {
           {l.neg.draft ? <p style={{ marginTop: "10px", fontSize: "13px", lineHeight: 1.6, padding: "10px 12px", borderLeft: "2px solid var(--border)", background: "rgba(0,0,0,0.02)" }}>{l.neg.draft}</p> : null}
         </Sec>
       ) : null}
+      {l.id ? <Sec k="Next step"><NextStep l={l} /></Sec> : null}
       <Sec k="Assigned to"><p style={{ marginTop: "6px", fontSize: "13.5px", fontWeight: 600 }}>{holder}</p></Sec>
       {l.summary ? <Sec k="AI summary"><p style={{ marginTop: "6px", fontSize: "13px", lineHeight: 1.6 }}>{l.summary}</p></Sec> : null}
       <Sec k="Interested in"><p style={{ marginTop: "6px", fontSize: "13.5px", fontWeight: 600 }}>{parts[0]}</p><p className="muted" style={{ fontSize: "12px" }}>{parts.slice(1).join(" · ")}</p></Sec>
@@ -240,6 +243,121 @@ function LeadView({ l }: { l: any }) {
   );
 }
 const openLead = (l: any) => showDrawer(<LeadView l={l} />);
+
+/* The one next step on a lead: what, and by when. Saved on the lead itself (next_action_recommendation, next_action_at), so
+   the table's Next step column and the bell both read it back. A date-only pick means nine in the morning that day. */
+const isoDay = (iso: string | null) => { if (!iso) return ""; const d = new Date(iso); if (isNaN(d.getTime())) return ""; const p = (n: number) => String(n).padStart(2, "0"); return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); };
+function NextStep({ l }: { l: any }) {
+  const [what, setWhat] = useState<string>(l.nbaOwn ? l.nba.do : "");
+  const [day, setDay] = useState<string>(isoDay(l.nextAt));
+  const [busy, setBusy] = useState(false);
+  const [, bump] = useState(0);
+  const d = due(l.nextAt);
+  const save = (clear: boolean) => {
+    const L = W().SynListings;
+    if (!L || !L.setNextStep) { toast("Cannot save that right now."); return; }
+    const at = clear || !day ? null : new Date(day + "T09:00:00").toISOString();
+    setBusy(true);
+    L.setNextStep(l.id, at, clear ? null : what.trim())
+      .then((r: any) => {
+        l.nextAt = r.next_action_at; l.nbaOwn = !!r.next_action_recommendation;
+        if (r.next_action_recommendation) l.nba.do = r.next_action_recommendation;
+        if (clear) { setWhat(""); setDay(""); }
+        toast(clear ? "Next step cleared" : at ? "Next step saved, due " + (due(at)?.text || "").toLowerCase() : "Next step saved");
+        bump((n) => n + 1);
+        W().renderCrm?.();
+        document.dispatchEvent(new Event("syn:noti-refresh"));
+      })
+      .catch((err: any) => { toast("Could not save the next step - " + ((err && err.message) || "please try again")); console.error("next step", err); })
+      .then(() => setBusy(false));
+  };
+  return (
+    <div className="nx">
+      {d ? <p className={"nx-due" + (d.late ? " late" : "")}>{d.text}</p> : null}
+      <input className="nx-what" type="text" maxLength={200} placeholder={l.nba.do} aria-label="What is the next step" value={what} onChange={(e) => setWhat(e.target.value)} />
+      <div className="nx-row">
+        <input className="nx-day" type="date" aria-label="When" value={day} onChange={(e) => setDay(e.target.value)} />
+        <button className="btn btn-primary" type="button" disabled={busy || (!day && !what.trim())} onClick={() => save(false)}>{busy ? "Saving…" : "Save"}</button>
+        {l.nextAt || l.nbaOwn ? <button className="btn" type="button" disabled={busy} onClick={() => save(true)}>Clear</button> : null}
+      </div>
+    </div>
+  );
+}
+
+/* ── the funnel report ── Agency-wide, counted from the recorded stage moves: how many leads get from each stage to the next,
+   how long they sit, how fast the first reply is, which channels win, and why deals are lost. */
+const pctTxt = (n: number, of: number) => (of ? Math.round((n / of) * 100) + "%" : "-");
+const SOCIAL: Record<string, string> = { social_instagram: "instagram", social_tiktok: "tiktok", social_facebook: "facebook" };
+function FunnelReport({ on }: { on: boolean }) {
+  const [rep, setRep] = useState<Report | null>(null);
+  const [failed, setFailed] = useState(false);
+  const s = useCrm();
+  useEffect(() => {
+    const L = W().SynListings;
+    if (!on || !L || !L.funnelData) return;
+    let live = true;
+    L.funnelData().then((d: any) => {
+      if (!live) return;
+      /* A lost lead's channel, by the same rule as the table: the last recorded touch, else its source. */
+      const lost = d.lost.map((r: any) => {
+        const t = (r.lead_attribution || []).slice().sort((a: any, b: any) => new Date(a.occurred_at || 0).getTime() - new Date(b.occurred_at || 0).getTime()).pop();
+        return { id: r.id, created_at: r.created_at, channel: t ? (W().uiChannel ? W().uiChannel(t.channel) : t.channel) : SOCIAL[r.source] || "direct" };
+      });
+      setRep(report(leadsNow(), lost, d.moves));
+      setFailed(false);
+    }).catch((e: any) => { console.error("funnel report", e); if (live) setFailed(true); });
+    return () => { live = false; };
+  }, [on, s.tick]);
+  if (!on) return <div className="card fr" id="crmReport" hidden></div>;
+  let body: React.ReactNode;
+  if (failed) body = <div className="td-none">Could not load the report.</div>;
+  else if (!rep) body = <div className="td-none">Counting…</div>;
+  else if (!rep.leads) body = <div className="td-none">The report fills in with your first lead.</div>;
+  else {
+    const r = rep.reply;
+    body = <>
+      <div className="fr-sec">
+        <div className="td-h">First reply</div>
+        <p className="fr-big">{r.mins == null ? "No replies recorded yet" : spanWords(r.mins)}{r.mins == null ? null : <span> typical wait before a new lead is moved on</span>}</p>
+        {r.n ? <p className="fr-note">{r.within} of {r.n} answered within 5 minutes ({pctTxt(r.within, r.n)}).</p> : null}
+        {r.waitingNow ? <p className={"fr-note" + (r.urgentNow ? " late" : "")}>{r.waitingNow} new lead{r.waitingNow === 1 ? " is" : "s are"} waiting now{r.urgentNow ? ", " + r.urgentNow + " past 5 minutes" : ""}.</p> : null}
+      </div>
+      <div className="fr-sec">
+        <div className="td-h">Stage to stage</div>
+        {rep.steps.map((st) => (
+          <div key={st.from} className="fr-step">
+            <span className="fr-l">{st.from} → {st.to}</span>
+            <span className="fr-bar"><i style={{ width: (st.pct || 0) + "%" }}></i></span>
+            <span className="fr-n">{st.pct == null ? "-" : st.pct + "%"}<small> {st.moved} of {st.reached}</small></span>
+          </div>
+        ))}
+      </div>
+      <div className="fr-sec">
+        <div className="td-h">Time in each stage</div>
+        <div className="fr-grid">{rep.daysIn.map((d) => (
+          <div key={d.stage} className="fr-cell"><span className="fr-l">{d.stage}</span><b>{d.mins == null ? "-" : spanWords(d.mins)}</b><small>{d.n ? "typical, from " + d.n + " move" + (d.n === 1 ? "" : "s") : "no moves yet"}</small></div>
+        ))}</div>
+      </div>
+      <div className="fr-sec">
+        <div className="td-h">Wins by channel</div>
+        {rep.channels.map((c) => (
+          <div key={c.channel} className="fr-ch">
+            <span className="fr-dot" style={{ background: ch(c.channel).color }}></span>
+            <span className="fr-l">{ch(c.channel).label}</span>
+            <span className="fr-n">{c.won} won<small> of {c.leads} lead{c.leads === 1 ? "" : "s"}{c.lost ? " · " + c.lost + " lost" : ""}</small></span>
+          </div>
+        ))}
+      </div>
+      <div className="fr-sec">
+        <div className="td-h">Why deals were lost</div>
+        {!rep.lostTotal ? <p className="fr-note">No lost leads yet. Mark one Lost from its stage menu and say why.</p> : rep.lost.map((x) => (
+          <div key={x.reason} className="fr-ch"><span className="fr-l">{x.reason}</span><span className="fr-n">{x.n}</span></div>
+        ))}
+      </div>
+    </>;
+  }
+  return <div className="card fr" id="crmReport">{body}</div>;
+}
 
 /* ── the outbox ── Messages are written first and delivered separately, so a failing provider costs the attempt, never the
    message. Nothing leaves on its own: sending is a button, because these are real messages. */
@@ -406,7 +524,9 @@ function Handoff({ picked }: { picked: any[] }) {
 function Today({ on }: { on: boolean }) {
   const [data, setData] = useState<{ rows: any[]; at: number } | null>(null);
   const [failed, setFailed] = useState(false);
-  const rows = data && data.rows;
+  /* Each lead's own next step joins the follow-ups, under the same due-date buckets. */
+  const rows = data && data.rows.concat(leadsNow().filter((l) => l.nextAt).map((l) => ({ lead_id: l.id, title: l.nba.do, due_at: l.nextAt })))
+    .sort((a, b) => (a.due_at ? new Date(a.due_at).getTime() : Infinity) - (b.due_at ? new Date(b.due_at).getTime() : Infinity));
   useEffect(() => {
     const L = W().SynListings;
     if (!on || !L || !L.openTasks) return;
@@ -445,8 +565,19 @@ function Row({ l, sel }: { l: any; sel: boolean }) {
   const why = l.failed ? String(l.failReason || "Could not notify the agency automatically").replace(/[.\s]+$/, "") : "";
   const id = "crmsel-" + l.id;
   const toggle = (on: boolean) => { const s = new Set(state.sel); if (on) s.add(l.id); else s.delete(l.id); set({ sel: s }); };
-  const stageMenu = (anchor: HTMLButtonElement) => openMenu(anchor, STAGE_ORDER.map((st) => ({ k: st, label: st, on: l.stage === st })), (st) => {
+  const lose = (anchor: HTMLButtonElement) => openMenu(anchor, LOST_REASONS.map((r) => ({ k: r, label: "Lost: " + r })), (reason) => {
+    const L = W().SynListings;
+    if (!L || !L.loseLead) { toast("Cannot save that right now."); return; }
+    l.saving = true;
+    repaint();
+    /* A lost lead leaves the table (the CRM lists live leads); the report keeps it, with its reason. */
+    L.loseLead(l.id, reason)
+      .then((r: any) => { toast(l.nm + " marked lost" + (r.reasonSaved ? " · " + reason.toLowerCase() : ", but the reason could not be saved")); reload(); })
+      .catch((err: any) => { l.saving = false; repaint(); toast("Could not mark that lead lost - " + ((err && err.message) || "please try again")); console.error("lose lead", err); });
+  });
+  const stageMenu = (anchor: HTMLButtonElement) => openMenu(anchor, [...STAGE_ORDER.map((st) => ({ k: st, label: st, on: l.stage === st })), { k: "Lost", label: "Lost…" }], (st) => {
     if (st === l.stage) return;
+    if (st === "Lost") { setTimeout(() => lose(anchor), 0); return; }
     const L = W().SynListings;
     if (!L || !L.setLeadStage) { toast("Cannot save that right now."); return; }
     /* Optimistic, but reverted on failure: the table must never show a stage the database did not accept. */
@@ -459,6 +590,7 @@ function Row({ l, sel }: { l: any; sel: boolean }) {
       .then(() => { l.saving = false; W().renderCrm?.(); });
   });
   const holder = l.agentId ? (W().SynRosterName && W().SynRosterName(l.agentId)) || "Assigned" : (l.ph || "No phone yet");
+  const wt = waiting(l), nd = due(l.nextAt);
   return (
     <tr className={"crm-row " + (sel ? "sel" : "")} data-i={l.id} onClick={(e) => { if ((e.target as Element).closest(".crm-chk, [data-stop], [data-stage-i]")) return; openLead(l); }}>
       <td className="c-chk"><input type="checkbox" className="crm-chk" id={id} data-sel={l.id} checked={sel} aria-label={"Select " + l.nm} onChange={(e) => toggle(e.target.checked)} /></td>
@@ -467,9 +599,9 @@ function Row({ l, sel }: { l: any; sel: boolean }) {
       <td className="c-int"><span className="int-t">{want[0] || "Listing unavailable"}</span><span className="int-b"><b>{l.price}</b>{want[1] ? <span className="int-c"> · {want[1]}</span> : null}</span></td>
       <td className="c-stage"><button className={"stpill stpill-btn " + STAGE_CLS[l.stage]} data-stage-i={l.id} disabled={!!l.saving} aria-label={"Change stage for " + l.nm + " - currently " + l.stage}
         onClick={(e) => stageMenu(e.currentTarget)}>{l.stage}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button></td>
-      <td className="c-next"><span className="nbax">→ {l.nba.do}</span></td>
+      <td className="c-next"><span className="nbax">→ {l.nba.do}</span>{nd ? <span className={"nxd" + (nd.late ? " late" : nd.today ? " today" : "")}>{nd.text}</span> : null}</td>
       <td className="c-status"><span className={"heat " + l.temp}>{TEMP_LABEL[l.temp]}</span>{l.score != null ? <span className="scr" title="Lead score">{l.score}</span> : null}{l.failed ? <span className="failx" title={why}>⚠ Not notified</span> : null}</td>
-      <td className="c-time">{l.t}</td>
+      <td className="c-time">{wt ? <span className={"wait" + (wt.urgent ? " hot" : "")} title="Time since this lead arrived, with no reply yet">{wt.text}</span> : l.t}</td>
       <td className="c-act">
         {l.ph ? <>
           <a className="crm-call" href={telOf(l.ph)} data-stop="" aria-label={"Call " + l.nm} title="Call" dangerouslySetInnerHTML={{ __html: svg("phone") }}></a>
@@ -590,7 +722,7 @@ export function CrmPane() {
           <div className="seg">
             <button className={"seg-b" + (s.view === "table" ? " on" : "")} id="crmTableBtn" onClick={() => set({ view: "table" })}><Icon name="card" />{" Table"}</button>
             <button className={"seg-b" + (s.view === "today" ? " on" : "")} id="crmTodayBtn" onClick={() => set({ view: "today" })}><Icon name="check" />{" Today"}</button>
-            <button className="seg-b" id="crmBoardBtn" onClick={() => toast("Board view is coming next")}><Icon name="boards" />{" Board"}</button>
+            <button className={"seg-b" + (s.view === "report" ? " on" : "")} id="crmReportBtn" onClick={() => set({ view: "report" })}><Icon name="boards" />{" Report"}</button>
           </div>
           <button className="tbtn" id="crmFilterBtn" onClick={(e) => {
             const srcs = Object.keys(CHS()).filter((c) => all.some((l) => l.attr.channel === c));
@@ -615,7 +747,7 @@ export function CrmPane() {
           </span>
         ))}
       </div>
-      <div className="card crm-tablecard" hidden={s.view === "today"}>
+      <div className="card crm-tablecard" hidden={s.view !== "table"}>
         <table className="crm-table" id="crmTable">
           <caption className="sr-only">Leads pipeline</caption>
           <thead id="crmHead" hidden={bare}><tr>{COLS.map(([label, k], i) => {
@@ -635,6 +767,7 @@ export function CrmPane() {
         </> : null}</div>
       </div>
       <Today on={s.view === "today"} />
+      <FunnelReport on={s.view === "report"} />
       <div className={"crm-bulk" + (s.sel.size > 0 ? " on" : "")} id="crmBulk" role="toolbar" aria-label="Bulk actions">
         <span className="bk-n" id="crmBulkN">{s.sel.size} selected</span>
         <button data-bulk="assign" onClick={(e) => bulk("assign", e.currentTarget)}>Assign</button>

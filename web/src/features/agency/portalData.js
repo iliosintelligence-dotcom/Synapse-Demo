@@ -191,7 +191,7 @@ export function run() {
       contacted: 'Contacted', qualified: 'Contacted',
       viewing_scheduled: 'Viewing', viewing_completed: 'Viewing',
       negotiating: 'Negotiation', commitment: 'Negotiation',
-      closed: 'Won',
+      closed: 'Won', lost: 'Lost',
     };
     // lead_source -> attribution channel. Anything not from a social surface is
     // the app itself; CH has no key for search/referral, and inventing one
@@ -289,6 +289,12 @@ export function run() {
         failReason: r.delivery_error || null,
         agentId: r.assigned_agent_id || null,
         nba: { do: r.next_action_recommendation || DEFAULT_NBA[stage] },
+        /* The agent's own next step: when (next_action_at), and whether the
+           words above are theirs or the stage default. createdAt is what the
+           first-reply clock runs from while a lead is still New. */
+        nextAt: r.next_action_at || null,
+        nbaOwn: !!r.next_action_recommendation,
+        createdAt: r.created_at || null,
         attr: buildAttr(r),
         /* What Tayo settled with the buyer before they made contact, when they
            ran the negotiator. Absent on leads that did not. */

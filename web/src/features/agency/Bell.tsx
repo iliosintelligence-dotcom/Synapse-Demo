@@ -9,6 +9,7 @@
  */
 import { Fragment, useEffect, useSyncExternalStore } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { due, spanWords, waiting } from "./funnel";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -81,8 +82,18 @@ function deriveItems(): Item[] {
 
   const leads: any[] = call("SynLeads") || [];
   const newLeads = leads.filter((x) => x.stage === "New");
-  if (newLeads.length) out.push({ type: "lead", tag: "Lead", icon: "user", pane: "crm",
-    title: plural(newLeads.length, "new lead"), sub: "Waiting on a first response", group: "Today" });
+  /* Past five minutes a new lead is going cold, so the bell says how long the oldest has waited. */
+  const waits = newLeads.map((x) => waiting(x)).filter(Boolean) as { mins: number; urgent: boolean }[];
+  const oldest = waits.reduce((m, w) => Math.max(m, w.mins), 0);
+  if (newLeads.length) out.push({ type: "lead", tag: waits.some((w) => w.urgent) ? "Reply now" : "Lead", icon: "user", pane: "crm",
+    title: plural(newLeads.length, "new lead"), sub: waits.length ? "Oldest waiting " + spanWords(oldest) + " for a first reply" : "Waiting on a first response", group: "Today",
+    /* Keyed without the age, which changes every minute: a dismissed item comes back with a new lead, not with the clock. */
+    key: notiKey({ type: "lead", tag: "", icon: "", pane: "crm", title: plural(newLeads.length, "new lead"), sub: "Waiting on a first response" }) });
+  /* Next steps the agents set on their leads, once due. */
+  const owed = leads.filter((x) => { const d = due(x.nextAt); return d && (d.late || d.today); });
+  if (owed.length) out.push({ type: "reminder", tag: "Next step", icon: "pending", pane: "crm",
+    title: owed.length === 1 ? owed[0].nm + ": " + owed[0].nba.do : plural(owed.length, "next step") + " due",
+    sub: owed.some((x) => due(x.nextAt)!.late) ? (owed.length === 1 ? "Overdue" : "Some are overdue") : "Due today", group: "Today" });
 
   const posts: any[] = call("SynPosts") || [];
   const appr = posts.filter((p) => p.stage === "approval");
