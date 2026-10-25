@@ -256,9 +256,12 @@
   }
   /* A LOGO REACT DREW WAITS FOR REACT (2026-10-24). On a page whose markup is React's own (the move to React), swapping the
      <img> for an <svg> before React has taken the page over makes React find something it did not draw (error #418). Such a
-     logo is upgraded once the page's React layer says it is ready (syn:react-ready, src/features/site/SiteReact.tsx), or after
-     four seconds if it never does. A logo inside the protected old markup (#syn-legacy), or on a page without React, is
-     upgraded at once, as before. */
+     logo is upgraded once the page's React layer says it is ready (syn:react-ready, src/features/site/SiteReact.tsx), or 15
+     seconds after the page has loaded if it never does. A logo inside the protected old markup (#syn-legacy), or on a page
+     without React, is upgraded at once, as before.
+     The fallback used to be four seconds from here, and on a slow phone React takes longer than that to take the page over: the
+     logos were swapped first and React threw #418 (2026-10-25). Every page that loads this file says when React is ready, so
+     the fallback is only for a page where React failed, and it can wait. */
   var waiting = [];
   function reactOwned(img) {
     return !!document.querySelector('script[src*="/_next/static/"]') && !(img.closest && img.closest('#syn-legacy'))
@@ -267,7 +270,8 @@
   function upgradeSoon(img) { if (reactOwned(img)) { if (waiting.indexOf(img) < 0) waiting.push(img); } else upgrade(img); }
   function flush() { waiting.splice(0).forEach(function (i) { if (i.isConnected) upgrade(i); }); }
   window.addEventListener('syn:react-ready', flush);
-  setTimeout(flush, 4000);
+  if (document.readyState === 'complete') setTimeout(flush, 15000);
+  else window.addEventListener('load', function () { setTimeout(flush, 15000); }, { once: true });
   function scan(root) {
     (root.querySelectorAll ? root.querySelectorAll('img[src*="brand/mark-"]') : []).forEach(upgradeSoon);
   }
