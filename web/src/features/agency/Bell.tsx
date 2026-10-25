@@ -95,6 +95,12 @@ function deriveItems(): Item[] {
     title: owed.length === 1 ? owed[0].nm + ": " + owed[0].nba.do : plural(owed.length, "next step") + " due",
     sub: owed.some((x) => due(x.nextAt)!.late) ? (owed.length === 1 ? "Overdue" : "Some are overdue") : "Due today", group: "Today" });
 
+  /* Lost leads someone asked to check back on (lost for timing), once the day comes. Loaded when the scripts are ready. */
+  const backDue = ((W().SYN_LOST_BACK || []) as any[]).filter((x) => { const d = due(x.next_action_at); return d && (d.late || d.today); });
+  if (backDue.length) out.push({ type: "reminder", tag: "Check back", icon: "pending", pane: "", action: "crm-today",
+    title: backDue.length === 1 ? "Check back in with " + (backDue[0].consumer_name || "a buyer") : "Check back in with " + plural(backDue.length, "buyer"),
+    sub: "Lost for timing. They said not now", group: "Today" });
+
   const posts: any[] = call("SynPosts") || [];
   const appr = posts.filter((p) => p.stage === "approval");
   if (appr.length) out.push({ type: "social", tag: "Social", icon: "share", pane: "social",
@@ -178,6 +184,7 @@ export function BellPanel() {
     refresh();
     const L = W().SynListings;
     if (L && L.myProfile) L.myProfile().then((me: any) => { W().SYN_MY_FACE = !!(me && me.avatar); refresh(); }).catch(() => { /* no nudge without an answer */ });
+    if (L && L.lostReminders) L.lostReminders().then((r: any[]) => { W().SYN_LOST_BACK = r || []; refresh(); }).catch(() => { /* no reminder without an answer */ });
   }, [scripts]);
 
   /* Going there is dealing with it: take it out of the bell first. */

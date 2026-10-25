@@ -12,6 +12,8 @@
  * raises `syn:tayo-engine` for the parts that wait for it.
  */
 
+import { listingAgentFor, type ListingAgent } from "@/lib/listingAgent";
+
 const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
 const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
 const ANON_HEADERS = { "Content-Type": "application/json", apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY };
@@ -335,14 +337,14 @@ export function startEngine() {
   /* THE INTRODUCTION TICKET (idea: dqnamo's Ticket). The sentence "Done, I have introduced you" is easy to scroll past and hard to
      point at later. This is the same fact as something you can hold. It states what create-lead actually returned and nothing
      more: delivery_status 'delivered' says sent; anything else says saved, because that is all we know then. */
-  function introTicket(p: any, d: any) {
+  function introTicket(p: any, d: any, agent: ListingAgent | null) {
     if (!p || !d || !d.lead_id) return;
     const ref = String(d.lead_id).replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase();
     const when = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     const sent = d.delivery_status === "delivered";
     let img = ""; try { img = coverOf(p.property_media) || ""; } catch { img = ""; }
     const where = [priceLine(p), p.city].filter(Boolean).join(" · ");
-    View.add({ kind: "ticket", title: p.title || "This home", where, when, ref, sent, img });
+    View.add({ kind: "ticket", title: p.title || "This home", where, when, ref, sent, img, agent });
   }
 
   /* The introduction. The lead is written before any WhatsApp is attempted, so a messaging outage costs the message and never
@@ -419,6 +421,8 @@ export function startEngine() {
       // 207: the lead is saved and the WhatsApp did not go out. Still an introduction, and the agency sees it flagged.
       if (!(res.ok || res.status === 207) || !d.lead_id) throw new Error((d && d.error) || "That introduction did not go through.");
       try { if (VISITOR) c.rpc("attribute_lead", { p_lead_id: d.lead_id, p_session_id: VISITOR }).catch(() => {}); } catch { /* the lead stands */ }
+      /* Who has the message: the lead went to the listing's agent, so the buyer is told their name, not "the agent". */
+      const agent = await listingAgentFor(REPLY_TO.id);
       HANDED = true; HO_BUSY = false; renderReply();
       setTimeout(refreshHandoff, 1500);
       ui.sent();
@@ -427,9 +431,9 @@ export function startEngine() {
         : d.email === "sent" ? "by email" : null;
       const v = d.viewing;
       const viewing = v ? (v.ok ? " Your viewing is requested for " + slotLabel(v.startsAt) + "; the agent confirms it." : " I could not book that viewing slot, so the agent will propose a time.") : "";
-      tojuMsg("Done. I have introduced you to the agent for " + (REPLY_TO.title || "this home") + (by ? " and sent them the summary " + by + "." : ". The summary is saved on their side and they will see it in their portal.") + viewing
+      tojuMsg("Done. I have introduced you to " + (agent ? agent.name + ", the agent for " : "the agent for ") + (REPLY_TO.title || "this home") + (by ? " and sent them the summary " + by + "." : ". The summary is saved on their side and they will see it in their portal.") + viewing
         + " You will not be starting again.");
-      try { introTicket(REPLY_TO, d); } catch { /* a keepsake; the introduction stands without it */ }
+      try { introTicket(REPLY_TO, d, agent); } catch { /* a keepsake; the introduction stands without it */ }
       return true;
     } catch (e: any) {
       ui.sending(false);

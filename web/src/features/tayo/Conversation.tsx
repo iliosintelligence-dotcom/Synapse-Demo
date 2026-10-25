@@ -11,6 +11,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useEngineReady } from "./useEngineReady";
+import { initials, type ListingAgent } from "@/lib/listingAgent";
 import { flushSync } from "react-dom";
 
 /* ── what the engine records ── */
@@ -24,7 +25,7 @@ type Item =
   | { key: number; kind: "toju"; text: string; matches: Match[]; priceHistory: PriceHistory | null; more: string | null; searched: Searched | null; payload: Payload; zyn: string }
   | { key: number; kind: "typing"; zyn: string }
   | { key: number; kind: "error"; err: { ttl: string; msg: string; auto?: boolean }; icon: string }
-  | { key: number; kind: "ticket"; title: string; where: string; when: string; ref: string; sent: boolean; img: string }
+  | { key: number; kind: "ticket"; title: string; where: string; when: string; ref: string; sent: boolean; img: string; agent: ListingAgent | null }
   | { key: number; kind: "handover"; H: { message: string; openingOffer?: number; summary?: HandoverSummary }; slots: Array<{ starts_at: string }>; title: string };
 
 type HandoverUi = { sending: (on: boolean) => void; sent: () => void };
@@ -330,6 +331,18 @@ function untilt(e: React.PointerEvent<HTMLDivElement>) {
   t.style.setProperty("--gx", "50%"); t.style.setProperty("--gy", "30%");
 }
 
+/* The buyer's side of a fast reply: who has their message, right now, said plainly. */
+function HasYourMessage({ agent, sent }: { agent: ListingAgent | null; sent: boolean }) {
+  return (
+    <div className="tkt-has">
+      {agent && <span className="tkt-face" style={agent.avatar ? { backgroundImage: `url("${agent.avatar}")` } : undefined}>{agent.avatar ? null : initials(agent.name)}</span>}
+      <p className="tkt-note"><b>{agent ? agent.first + " has your message." : "The agency has your message."}</b> {sent
+        ? "They were sent what we talked about. Quote this reference if you call them."
+        : "It is waiting in their inbox with what we talked about. Quote this reference if you call them."}</p>
+    </div>
+  );
+}
+
 /* The introduction as something you can hold. */
 function Ticket({ it }: { it: Extract<Item, { kind: "ticket" }> }) {
   return (
@@ -342,14 +355,12 @@ function Ticket({ it }: { it: Extract<Item, { kind: "ticket" }> }) {
               {it.img ? <span className="tkt-ph"><img src={it.img} alt="" /></span> : null}
               <div className="tkt-t">{it.title}<small>{it.where}</small></div>
             </div>
-            <div className="tkt-grid"><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>The agent</b></div><div><i>Status</i><b>{it.sent ? "Sent" : "Saved"}</b></div></div>
+            <div className="tkt-grid"><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>{it.agent ? it.agent.name : "The agency"}</b></div><div><i>Status</i><b>{it.sent ? "Sent" : "Saved"}</b></div></div>
           </div>
           <div className="tkt-stub"><div className="tkt-ref"><i>Reference</i><b>{it.ref}</b></div><div className="tkt-bar" aria-hidden="true" /></div>
         </div>
       </div>
-      <p className="tkt-note">{it.sent
-        ? "The agent has been messaged with what we talked about. Quote this reference if you call them."
-        : "The agency has your brief and will see it on their side. Quote this reference if you call them."}</p>
+      <HasYourMessage agent={it.agent} sent={it.sent} />
     </div>
   );
 }

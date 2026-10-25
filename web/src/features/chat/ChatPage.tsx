@@ -116,7 +116,7 @@ function ChatInner() {
               {(chat.handover.phase === "card" || chat.handover.phase === "sending") && chat.handover.data && chat.replyTo && (
                 <HandoverCard h={chat.handover.data} title={chat.replyTo.title || "This home"} slots={chat.handover.slots} sending={chat.handover.phase === "sending"} onSend={chat.sendHandover} onCancel={chat.cancelHandover} />
               )}
-              {chat.handover.ticket && <IntroTicket listing={chat.handover.ticket.listing} lead={chat.handover.ticket.lead} />}
+              {chat.handover.ticket && <IntroTicket listing={chat.handover.ticket.listing} lead={chat.handover.ticket.lead} agent={chat.handover.ticket.agent} />}
               <div ref={bottom} />
             </div>
           </div>

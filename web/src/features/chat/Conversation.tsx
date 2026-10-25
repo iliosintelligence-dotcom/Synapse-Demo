@@ -9,6 +9,7 @@ import { priceLine } from "./context";
 import type { ChatError } from "./useChat";
 import type { ReplyTo } from "./types";
 import type { TourSlot } from "@/features/property/queries";
+import { initials, type ListingAgent } from "@/lib/listingAgent";
 import s from "./Chat.module.css";
 
 export function UserMessage({ text }: { text: string }) {
@@ -98,7 +99,7 @@ export function HandoverCard({ h, title, slots, sending, onSend, onCancel }: { h
 }
 
 /** The introduction as something you can hold: the home, the date, a reference taken from the lead's own id, and whether the agent was messaged or the enquiry only saved. States what create-lead returned and nothing more. */
-export function IntroTicket({ listing, lead }: { listing: ReplyTo; lead: LeadResult }) {
+export function IntroTicket({ listing, lead, agent }: { listing: ReplyTo; lead: LeadResult; agent: ListingAgent | null }) {
   const ref = String(lead.lead_id ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase();
   const when = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   const sent = lead.delivery_status === "delivered";
@@ -113,11 +114,15 @@ export function IntroTicket({ listing, lead }: { listing: ReplyTo; lead: LeadRes
             {img &&   <img className={s.tktPh} src={img} alt="" />}
             <div className={s.tktT}>{listing.title || "This home"}<small>{where}</small></div>
           </div>
-          <div className={s.tktGrid}><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>The agent</b></div><div><i>Status</i><b>{sent ? "Sent" : "Saved"}</b></div></div>
+          <div className={s.tktGrid}><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>{agent ? agent.name : "The agency"}</b></div><div><i>Status</i><b>{sent ? "Sent" : "Saved"}</b></div></div>
         </div>
         <div className={s.tktStub}><div><i>Reference</i><b>{ref}</b></div></div>
       </div>
-      <p className={s.tktNote}>{sent ? "The agent has been messaged with what we talked about. Quote this reference if you call them." : "The agency has your brief and will see it on their side. Quote this reference if you call them."}</p>
+      {/* the buyer's side of a fast reply: who has their message, right now */}
+      <div className={s.tktHas}>
+        {agent && <span className={s.tktFace} style={agent.avatar ? { backgroundImage: `url("${agent.avatar}")` } : undefined}>{agent.avatar ? null : initials(agent.name)}</span>}
+        <p className={s.tktNote}><b>{agent ? agent.first + " has your message." : "The agency has your message."}</b> {sent ? "They were sent what we talked about. Quote this reference if you call them." : "It is waiting in their inbox with what we talked about. Quote this reference if you call them."}</p>
+      </div>
     </div>
   );
 }

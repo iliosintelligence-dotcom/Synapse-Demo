@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signInHref } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { listingAgentFor, type ListingAgent } from "@/lib/listingAgent";
 import { fetchOpenSlots, type TourSlot } from "@/features/property/queries";
 import { ASK_TIMEOUT_MS, askTayo, createLead, fetchReplyListing, prepareHandover, restoreThread, type Handover, type LeadResult } from "./api";
 import { dreamContext, isHiddenNote, isPersonTurn, replyContext } from "./context";
@@ -70,7 +71,7 @@ export interface HandoverState {
   phase: "idle" | "preparing" | "card" | "sending";
   data: Handover | null;
   slots: TourSlot[];
-  ticket: { listing: ReplyTo; lead: LeadResult } | null;
+  ticket: { listing: ReplyTo; lead: LeadResult; agent: ListingAgent | null } | null;
 }
 
 /** Whether the introduction is available yet: not immediately (an untouched enquiry is worth nothing to an agent), but after two real turns. */
@@ -255,13 +256,15 @@ export function useChat(init: InitialChat) {
     setHandover((s) => ({ ...s, phase: "sending" }));
     try {
       const lead = await createLead(h, r.id, v, slot);
+      // the lead went to the listing's agent, so the buyer is told who has it
+      const agent = await listingAgentFor(r.id);
       setHanded(true);
       // say exactly what happened, and no more
       const by = lead.delivery_status === "delivered" ? (lead.email === "sent" ? "on WhatsApp and by email" : "on WhatsApp") : lead.email === "sent" ? "by email" : null;
       const vw = lead.viewing;
       const viewing = vw ? (vw.ok ? ` Your viewing is requested for ${new Date(vw.startsAt).toLocaleString("en-GB", { timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}; the agent confirms it.` : " I could not book that viewing slot, so the agent will propose a time.") : "";
-      append({ role: "assistant", content: `Done. I have introduced you to the agent for ${r.title || "this home"}${by ? ` and sent them the summary ${by}.` : ". The summary is saved on their side and they will see it in their portal."}${viewing} You will not be starting again.` });
-      setHandover({ phase: "idle", data: null, slots: [], ticket: { listing: r, lead } });
+      append({ role: "assistant", content: `Done. I have introduced you to ${agent ? `${agent.name}, the agent for` : "the agent for"} ${r.title || "this home"}${by ? ` and sent them the summary ${by}.` : ". The summary is saved on their side and they will see it in their portal."}${viewing} You will not be starting again.` });
+      setHandover({ phase: "idle", data: null, slots: [], ticket: { listing: r, lead, agent } });
     } catch (e) {
       setHandover((s) => ({ ...s, phase: "card" }));
       append({ role: "assistant", content: (e as Error).message || "I could not make that introduction just now." });

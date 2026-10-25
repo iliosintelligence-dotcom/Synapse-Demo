@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { due, foldMoves, report, waiting } from "./funnel";
+import { checkBackAt, due, foldMoves, report, waiting } from "./funnel";
 
 const NOW = new Date("2026-10-25T12:00:00Z").getTime();
 const ago = (mins: number) => new Date(NOW - mins * 60000).toISOString();
@@ -76,5 +76,13 @@ describe("report", () => {
   });
   it("times each stage between recorded moves", () => {
     expect(r.daysIn.find((d) => d.stage === "Viewing")!.mins).toBe(2000);
+  });
+});
+
+describe("checkBackAt", () => {
+  it("is thirty days on, at nine in the morning", () => {
+    const now = new Date(2026, 9, 25, 15, 30).getTime();
+    const d = new Date(checkBackAt(now));
+    expect([d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()]).toEqual([2026, 10, 24, 9, 0]);
   });
 });

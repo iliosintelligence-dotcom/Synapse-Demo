@@ -18,7 +18,7 @@ import { usePageScripts } from "@/legacy/usePageScripts";
 import { Icon } from "./VerificationPane";
 import { showDrawer } from "./SideDrawer";
 import { closeDock } from "./PortalNav";
-import { LOST_REASONS, due, report, spanWords, waiting, type Report } from "./funnel";
+import { CHECK_BACK_DAYS, CHECK_BACK_NOTE, CHECK_BACK_REASON, LOST_REASONS, checkBackAt, due, report, spanWords, waiting, type Report } from "./funnel";
 import "./Funnel.css";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -524,8 +524,11 @@ function Handoff({ picked }: { picked: any[] }) {
 function Today({ on }: { on: boolean }) {
   const [data, setData] = useState<{ rows: any[]; at: number } | null>(null);
   const [failed, setFailed] = useState(false);
-  /* Each lead's own next step joins the follow-ups, under the same due-date buckets. */
+  const [back, setBack] = useState<any[]>([]);
+  /* Each lead's own next step joins the follow-ups, under the same due-date buckets, and so do lost leads someone asked to
+     check back on (the table leaves lost leads out, so this is where they return). */
   const rows = data && data.rows.concat(leadsNow().filter((l) => l.nextAt).map((l) => ({ lead_id: l.id, title: l.nba.do, due_at: l.nextAt })))
+    .concat(back.map((b) => ({ lead_id: b.id, title: b.next_action_recommendation || CHECK_BACK_NOTE, due_at: b.next_action_at, lostName: b.consumer_name || "A buyer", home: b.properties && b.properties.title })))
     .sort((a, b) => (a.due_at ? new Date(a.due_at).getTime() : Infinity) - (b.due_at ? new Date(b.due_at).getTime() : Infinity));
   useEffect(() => {
     const L = W().SynListings;
@@ -533,8 +536,24 @@ function Today({ on }: { on: boolean }) {
     let live = true;
     Promise.resolve().then(() => { if (live) { setData(null); setFailed(false); } });
     L.openTasks().then((r: any[]) => { if (live) setData({ rows: r || [], at: Date.now() }); }).catch((e: any) => { console.error("openTasks", e); if (live) setFailed(true); });
+    if (L.lostReminders) L.lostReminders().then((r: any[]) => { if (live) setBack(r || []); }).catch((e: any) => console.error("lostReminders", e));
     return () => { live = false; };
   }, [on]);
+  /* A lost lead's row asks before it brings the lead back: reopening moves it to Contacted and clears the reminder. */
+  const reopen = (t: any) => {
+    const L = W().SynListings;
+    if (!L || !L.reopenLead) { toast("Cannot do that right now."); return; }
+    if (!window.confirm("Bring " + t.lostName + " back into the funnel at Contacted?")) return;
+    L.reopenLead(t.lead_id)
+      .then(() => {
+        setBack((b) => b.filter((x) => x.id !== t.lead_id));
+        W().SYN_LOST_BACK = (W().SYN_LOST_BACK || []).filter((x: any) => x.id !== t.lead_id);
+        toast(t.lostName + " is back at Contacted");
+        reload();
+        document.dispatchEvent(new Event("syn:noti-refresh"));
+      })
+      .catch((e: any) => toast("Could not reopen that lead - " + ((e && e.message) || "please try again")));
+  };
   let body;
   if (failed) body = <div className="td-none">Could not load your follow-ups.</div>;
   else if (!rows) body = <div className="td-none">Loading…</div>;
@@ -545,12 +564,13 @@ function Today({ on }: { on: boolean }) {
     rows.forEach((t) => { const due = t.due_at ? new Date(t.due_at).getTime() : null; (due && due < now ? b.late : !due || due <= endOfDay.getTime() ? b.today : b.later).push(t); });
     /* The lead's name, not its uuid: a task that says "call 4f3a-..." is a task nobody does. */
     const nameOf = (id: string) => { const l = leadsNow().find((x) => x.id === id); return l ? l.nm : ""; };
+    const tap = (t: any) => (t.lostName ? reopen(t) : t.lead_id && open(t.lead_id));
     const open = (id: string) => { const l = leadsNow().find((x) => x.id === id); if (l) openLead(l); else toast("That lead is not on this page of the table"); };
     const group = (k: string, title: string, late: boolean) => b[k].length ? [
       <div key={k} className={"td-h" + (late ? " late" : "")}>{title} · {b[k].length}</div>,
-      ...b[k].map((t, i) => { const who = nameOf(t.lead_id); return (
-        <div key={k + i} className="td-r" data-lead={t.lead_id || ""} onClick={() => t.lead_id && open(t.lead_id)}>
-          {who ? <span className="who">{who}</span> : null}<span className="what">{t.title || "Follow up"}</span><span className={"when" + (late ? " late" : "")}>{dueWords(t.due_at).text}</span>
+      ...b[k].map((t, i) => { const who = t.lostName || nameOf(t.lead_id); return (
+        <div key={k + i} className={"td-r" + (t.lostName ? " lost" : "")} data-lead={t.lead_id || ""} onClick={() => tap(t)}>
+          {who ? <span className="who">{who}</span> : null}<span className="what">{t.title || "Follow up"}{t.lostName ? <small>{" · Lost for timing" + (t.home ? " · " + t.home : "") + " · tap to reopen"}</small> : null}</span><span className={"when" + (late ? " late" : "")}>{dueWords(t.due_at).text}</span>
         </div>); }),
     ] : [];
     body = [...group("late", "Overdue", true), ...group("today", "Today", false), ...group("later", "Later", false)];
@@ -565,14 +585,24 @@ function Row({ l, sel }: { l: any; sel: boolean }) {
   const why = l.failed ? String(l.failReason || "Could not notify the agency automatically").replace(/[.\s]+$/, "") : "";
   const id = "crmsel-" + l.id;
   const toggle = (on: boolean) => { const s = new Set(state.sel); if (on) s.add(l.id); else s.delete(l.id); set({ sel: s }); };
-  const lose = (anchor: HTMLButtonElement) => openMenu(anchor, LOST_REASONS.map((r) => ({ k: r, label: "Lost: " + r })), (reason) => {
+  const lose = (anchor: HTMLButtonElement) => openMenu(anchor, LOST_REASONS.map((r) => ({ k: r, label: "Lost: " + r + (r === CHECK_BACK_REASON ? " · remind me in " + CHECK_BACK_DAYS + " days" : "") })), (reason) => {
     const L = W().SynListings;
     if (!L || !L.loseLead) { toast("Cannot save that right now."); return; }
     l.saving = true;
     repaint();
     /* A lost lead leaves the table (the CRM lists live leads); the report keeps it, with its reason. */
+    /* Lost for timing sets a date to check back, so the lead returns to Today and the bell instead of disappearing. */
+    const later = reason === CHECK_BACK_REASON;
     L.loseLead(l.id, reason)
-      .then((r: any) => { toast(l.nm + " marked lost" + (r.reasonSaved ? " · " + reason.toLowerCase() : ", but the reason could not be saved")); reload(); })
+      .then((r: any) => later && L.setNextStep
+        ? L.setNextStep(l.id, checkBackAt(), CHECK_BACK_NOTE).then(() => ({ ...r, back: true }), () => ({ ...r, back: false }))
+        : r)
+      .then((r: any) => {
+        const why = r.reasonSaved ? " · " + reason.toLowerCase() : ", but the reason could not be saved";
+        const back = !later ? "" : r.back ? ". Back in Today on " + new Date(checkBackAt()).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ". The reminder could not be set";
+        toast(l.nm + " marked lost" + why + back);
+        reload();
+      })
       .catch((err: any) => { l.saving = false; repaint(); toast("Could not mark that lead lost - " + ((err && err.message) || "please try again")); console.error("lose lead", err); });
   });
   const stageMenu = (anchor: HTMLButtonElement) => openMenu(anchor, [...STAGE_ORDER.map((st) => ({ k: st, label: st, on: l.stage === st })), { k: "Lost", label: "Lost…" }], (st) => {
@@ -624,8 +654,11 @@ export function CrmPane() {
   const all = scripts ? leadsNow() : [];
 
   useEffect(() => {
+    /* The bell's "Check back" opens the Today list. */
+    const today = () => { set({ view: "today" }); W().goToPane?.("crm"); };
     window.addEventListener("syn:crm", repaint);
-    return () => window.removeEventListener("syn:crm", repaint);
+    window.addEventListener("syn:crm-today", today);
+    return () => { window.removeEventListener("syn:crm", repaint); window.removeEventListener("syn:crm-today", today); };
   }, []);
   /* Selection is by id; ids that left with a reload leave the selection too. */
   useLayoutEffect(() => {

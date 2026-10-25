@@ -18,6 +18,17 @@ const FOLD: Record<string, string> = {
 /** Why a deal was lost: a short fixed list, so the report can count them. */
 export const LOST_REASONS = ["Price", "Timing", "Not a fit", "No reply", "Bought elsewhere"];
 
+/** "Not now" is not "no": a lead lost for timing comes back after this many days, at nine in the morning. */
+export const CHECK_BACK_REASON = "Timing";
+export const CHECK_BACK_DAYS = 30;
+export const CHECK_BACK_NOTE = "Check back in: they said not now";
+export function checkBackAt(now = Date.now()): string {
+  const d = new Date(now);
+  d.setDate(d.getDate() + CHECK_BACK_DAYS);
+  d.setHours(9, 0, 0, 0);
+  return d.toISOString();
+}
+
 /** A first reply inside five minutes is the line the CRM holds new leads to. */
 export const REPLY_MINUTES = 5;
 

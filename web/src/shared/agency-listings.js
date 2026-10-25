@@ -494,6 +494,33 @@ export function run() {
     });
   }
 
+  /* "Not now" is not the end. A lead lost for timing carries a date to check
+     back (next_action_at), and these bring it back: the CRM's own list leaves
+     lost leads out, so this is the only way they reappear. */
+  function lostReminders() {
+    var c1;
+    return client().then(function (c) { c1 = c; return agencyId(); }).then(function (aid) {
+      if (!aid) return { data: [] };
+      return c1.from('leads')
+        .select('id, consumer_name, next_action_at, next_action_recommendation, properties(title)')
+        .eq('agency_id', aid).is('deleted_at', null).eq('current_stage', 'lost')
+        .not('next_action_at', 'is', null)
+        .order('next_action_at', { ascending: true })
+        .limit(200);
+    }).then(function (r) { if (r.error) throw r.error; return r.data || []; });
+  }
+
+  /* Back into the funnel at Contacted, with why, and the reminder cleared. */
+  function reopenLead(id) {
+    return client().then(function (c) {
+      return c.rpc('move_lead_stage', { p_lead_id: id, p_to_stage: 'contacted', p_reason: 'Back after a pause' });
+    }).then(function (r) {
+      if (!r.error) return null;
+      console.error('move_lead_stage', r.error);
+      return setLeadStage(id, 'contacted');
+    }).then(function () { return setNextStep(id, null, null); });
+  }
+
   /* What the funnel report is counted from: every recorded stage move on the
      agency's leads, and the lost leads themselves (the CRM's own list leaves
      them out). Read-only; RLS (can_access_lead) decides what comes back. */
@@ -3079,6 +3106,8 @@ export function run() {
     uploadPropertyDocument: uploadPropertyDocument,
     deletePropertyDocument: deletePropertyDocument,
     loseLead: loseLead,
+    lostReminders: lostReminders,
+    reopenLead: reopenLead,
     funnelData: funnelData,
     leadTasks: leadTasks,
     leadActivity: leadActivity,
