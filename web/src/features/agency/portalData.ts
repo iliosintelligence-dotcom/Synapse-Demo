@@ -7,7 +7,7 @@
    script). The panes are React and read it through window (SynLeads, SynPosts, SynPipe, SynListingsData and the rest). */
 export function run() {
     const w = window;
-    /* The rest of the portal (portalShell.js) and the panes still call these by name, as when they sat in that file. */
+    /* The rest of the portal (portalShell.ts) and the panes still call these by name, as when they sat in that file. */
     w.renderCrm = renderCrm;
     w.buildAttr = buildAttr;
     w.agoLabel = agoLabel;

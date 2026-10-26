@@ -1,7 +1,7 @@
 "use client";
 /**
  * What the Ask-Tayo panel says on each pane, as React (was PANEL, STATS and the chart strings in src/legacy/agency/inline-3.js,
- * and renderBrk, renderBento and renderInsights in portalData.js). Every number is counted from what the portal has loaded:
+ * and renderBrk, renderBento and renderInsights in portalData.ts). Every number is counted from what the portal has loaded:
  * the leads (window.SynLeads), the listings (SynListingsData, freshness), the campaigns (SynCampaigns), the posts (SynPosts),
  * the roster (SynRoster) and the social accounts (SocialChannels' store).
  *

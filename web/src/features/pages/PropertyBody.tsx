@@ -1,7 +1,7 @@
 /* eslint-disable */
 // @ts-nocheck (attribute values are the original page's strings, e.g. aria-level="2")
 // The property page's markup as React (converted from src/legacy/property/body.html by scripts/legacy-to-jsx.mjs, then edited by hand).
-// The listing itself is React (PropertyPage, was inline-3.js); the map engine (propertyMap.js) and the shared scripts run after hydration.
+// The listing itself is React (PropertyPage, was inline-3.js); the map engine (propertyMap.ts) and the shared scripts run after hydration.
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
 import { PropertyPage } from "./PropertyPage";
 import { ShareHost } from "@/features/shared/ShareSheet";

@@ -5,7 +5,7 @@
    checkout and its return, the paywall and referral reads, the dynamic button, the magnetic drop zone and the verified stamp,
    and the names the panes call each other by (goToPane, openComposer, renderNoti and the rest, which fire events React
    answers). Was the last of the portal's page script (legacy/agency/inline-3.js); moved as it was, and run at the same point
-   in the page, straight after portalData.js. */
+   in the page, straight after portalData.ts. */
 export function run() {
     const w = window;
     /* portalData, the panes and the shared scripts call these by name, as when they sat in the page's own script. */
