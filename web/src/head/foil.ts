@@ -5,16 +5,16 @@
    foil is drawn and stays still. */
 (function () {
   'use strict';
-  var calm = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
-  var ticking = false;
+  const calm = function () { return (window.matchMedia as typeof matchMedia | undefined) && matchMedia('(prefers-reduced-motion: reduce)').matches; };
+  let ticking = false;
   function onScroll() {
     if (calm()) return;
-    var h = window.innerHeight || 1, els = document.querySelectorAll('.irid');
-    for (var i = 0; i < els.length; i++) {
-      var r = els[i].getBoundingClientRect();
+    const h = window.innerHeight || 1, els = document.querySelectorAll('.irid');
+    for (let i = 0; i < els.length; i++) {
+      const r = (els[i] as HTMLElement).getBoundingClientRect();
       if (r.bottom < -80 || r.top > h + 80) continue;
-      var p = Math.max(0, Math.min(1, (r.top + r.height / 2) / h));
-      els[i].style.setProperty('--fy', p.toFixed(3));
+      const p = Math.max(0, Math.min(1, (r.top + r.height / 2) / h));
+      (els[i] as HTMLElement).style.setProperty('--fy', p.toFixed(3));
     }
   }
   function queue() { if (ticking) return; ticking = true; requestAnimationFrame(function () { ticking = false; onScroll(); }); }
@@ -22,14 +22,14 @@
   window.addEventListener('resize', queue);
   document.addEventListener('pointermove', function (e) {
     if (calm()) return;
-    var el = e.target.closest && e.target.closest('.irid'); if (!el) return;
-    var r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
-    var x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    const el = ((e.target as HTMLElement).closest && (e.target as HTMLElement).closest('.irid')) as HTMLElement | null; if (!el) return;
+    const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
     el.style.setProperty('--gx', (x * 100).toFixed(1) + '%'); el.style.setProperty('--gy', (y * 100).toFixed(1) + '%');
     el.style.setProperty('--fx', x.toFixed(3)); el.classList.add('lit');
   });
   document.addEventListener('pointerout', function (e) {
-    var el = e.target.closest && e.target.closest('.irid'); if (!el || el.contains(e.relatedTarget)) return;
+    const el = (e.target as HTMLElement).closest && (e.target as HTMLElement).closest('.irid'); if (!el || el.contains(e.relatedTarget as Node | null)) return;
     el.classList.remove('lit');
   });
   /* Cards that appear later (the portal draws billing on demand) get their first

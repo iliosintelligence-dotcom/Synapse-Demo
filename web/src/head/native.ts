@@ -9,9 +9,9 @@
  *    left alone.
  */
 (function () {
-  var C = window.Capacitor;
+  const C = window.Capacitor;
   if (!(C && C.isNativePlatform && C.isNativePlatform())) return;
-  var root = document.documentElement;
+  const root = document.documentElement;
 
   /* ── 1 · Under the camera ──────────────────────────────────────────────────
      The app draws edge to edge: the page's background runs behind the status bar and the camera cut-out, which is what it should.
@@ -20,7 +20,7 @@
      here: Tayo, Your matches, Dream boards, sign-in, the legal pages). */
   root.classList.add('syn-app');
   // MainActivity has normally set --syn-native-* already (before the page painted); ask again in case its start script could not run.
-  var NI = window.SynInsets;
+  const NI = window.SynInsets;
   if (NI) {
     try {
       root.style.setProperty('--syn-native-top', NI.top() + 'px');
@@ -29,7 +29,7 @@
       root.style.setProperty('--syn-native-right', NI.right() + 'px');
     } catch (x) { /* the page falls back to env() below */ }
   }
-  var st = document.createElement('style');
+  const st = document.createElement('style');
   st.textContent = ':root.syn-app{--syn-top:var(--syn-native-top,env(safe-area-inset-top,0px));--syn-bottom:var(--syn-native-bottom,env(safe-area-inset-bottom,0px))}'
     + '.syn-app .nav{padding-top:var(--syn-top)}'                                 // landing page, customers page
     + '.syn-app .appbar{padding-top:calc(14px + var(--syn-top))}'                 // the shared bar: portal, verification desk
@@ -40,13 +40,13 @@
 
   /* The clock, battery and signal icons are drawn over the page: light on a dark page, dark on a light one. The site's own
      light and dark (set by the visitor's clock or their choice, not the phone's setting) decides, and is followed when it changes. */
-  var SB = C.Plugins && C.Plugins.SystemBars;
+  const SB = C.Plugins && C.Plugins.SystemBars;
   function isDark() {
-    var t = root.getAttribute('data-theme');
+    const t = root.getAttribute('data-theme');
     if (t === 'dark') return true;
     if (t === 'light') return false;
-    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(getComputedStyle(document.body || root).backgroundColor || '');
-    if (m && (m[4] === undefined || +m[4] > 0.5)) return (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) < 128;
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(getComputedStyle(document.body || root).backgroundColor || '');
+    if (m && (m[4] === undefined || +m[4] > 0.5)) return (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) < 128;
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   }
   function paintBars() { if (SB && SB.setStyle) SB.setStyle({ style: isDark() ? 'DARK' : 'LIGHT' }).catch(function () {}); }
@@ -54,40 +54,40 @@
   if (window.MutationObserver) new MutationObserver(paintBars).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   /* A link to the site (a /s/<token> short link from a post, an emailed link) opens in the app on the page it names. */
-  var AppPlugin = C.Plugins && C.Plugins.App;
+  const AppPlugin = C.Plugins && C.Plugins.App;
   if (AppPlugin && AppPlugin.addListener) {
     AppPlugin.addListener('appUrlOpen', function (e) {
       try {
-        var u = new URL(e.url);
+        const u = new URL(e.url);
         if (u.hostname === 'www.synapsecore.dev' || u.hostname === 'synapsecore.dev') window.location.href = u.pathname + u.search + u.hash;
       } catch (x) { /* not a link we understand */ }
     });
   }
 
   /* ── 2 · A camera for photo fields ────────────────────────────────────────── */
-  var Camera = C.Plugins && C.Plugins.Camera;
+  const Camera = C.Plugins && C.Plugins.Camera;
   if (!Camera) return;
 
-  var bypass = false, open = null;
+  let bypass = false, open: HTMLElement | null = null;
 
-  function wantsPhoto(el) {
-    if (!el || el.tagName !== 'INPUT' || el.type !== 'file') return false;
-    var a = String(el.getAttribute('accept') || '').toLowerCase();
+  function wantsPhoto(el: EventTarget | null): el is HTMLInputElement {
+    if (!el || (el as Element).tagName !== 'INPUT' || (el as HTMLInputElement).type !== 'file') return false;
+    const a = String((el as Element).getAttribute('accept') || '').toLowerCase();
     return /image\//.test(a) && !/video\//.test(a);
   }
 
-  function toFile(base64, format) {
-    var bin = atob(base64), n = bin.length, bytes = new Uint8Array(n);
-    for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
-    var type = 'image/' + (format === 'jpg' ? 'jpeg' : (format || 'jpeg'));
+  function toFile(base64: string, format: string | undefined) {
+    const bin = atob(base64), n = bin.length, bytes = new Uint8Array(n);
+    for (let i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
+    const type = 'image/' + (format === 'jpg' ? 'jpeg' : (format || 'jpeg'));
     return new File([bytes], 'photo-' + Date.now() + '.' + (format === 'jpeg' || !format ? 'jpg' : format), { type: type });
   }
 
-  function takePhoto(input) {
-    return Camera.getPhoto({ source: 'CAMERA', resultType: 'base64', quality: 82, width: 2400, correctOrientation: true, saveToGallery: false })
+  function takePhoto(input: HTMLInputElement) {
+    return Camera!.getPhoto({ source: 'CAMERA', resultType: 'base64', quality: 82, width: 2400, correctOrientation: true, saveToGallery: false })
       .then(function (p) {
         if (!p || !p.base64String) return;
-        var dt = new DataTransfer();
+        const dt = new DataTransfer();
         dt.items.add(toFile(p.base64String, p.format));
         input.files = dt.files;
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -98,9 +98,9 @@
 
   function close() { if (open) { open.remove(); open = null; } }
 
-  function ask(input) {
+  function ask(input: HTMLInputElement) {
     close();
-    var box = document.createElement('div');
+    const box = document.createElement('div');
     box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Add a photo');
     box.className = 'syn-pick';
     box.innerHTML = '<style>'
@@ -117,22 +117,22 @@
       + '<button type="button" data-do="cancel" class="alt">Cancel</button>'
       + '</div>';
     box.addEventListener('click', function (e) {
-      var b = e.target.closest && e.target.closest('button[data-do]');
+      const b = (e.target as Element).closest && (e.target as Element).closest('button[data-do]');
       if (!b) { if (e.target === box) close(); return; }
-      var what = b.getAttribute('data-do');
+      const what = b.getAttribute('data-do');
       close();
       if (what === 'camera') takePhoto(input);
       else if (what === 'library') { bypass = true; input.click(); bypass = false; }
     });
     document.body.appendChild(box);
     open = box;
-    var first = box.querySelector('button'); if (first && first.focus) first.focus();
+    const first = box.querySelector('button'); if (first && first.focus) first.focus();
   }
 
   // Capture phase: runs before the browser opens its own picker, including for a field the page clicks from its own script.
   document.addEventListener('click', function (e) {
     if (bypass) return;
-    var el = e.target;
+    const el = e.target;
     if (!wantsPhoto(el)) return;
     e.preventDefault(); e.stopPropagation();
     // a field that asks for the camera outright (capture) skips the question

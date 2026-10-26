@@ -25,13 +25,13 @@
 (function () {
   'use strict';
 
-  var KEY = 'syn_arrival_v1';
+  const KEY = 'syn_arrival_v1';
 
   /* Only the values attribution_channel actually accepts. Anything else is
      dropped rather than stored, because a channel the enum rejects fails at
      the INSERT -- long after this page is gone and with nothing left to say
      which page wrote it. */
-  var ALLOWED = {
+  const ALLOWED: Record<string, number> = {
     instagram: 1, facebook: 1, tiktok: 1, x: 1,
     whatsapp_campaign: 1, organic: 1, referral: 1,
     /* Added to the enum with the Telegram channel (20260925230000) and
@@ -39,15 +39,15 @@
     telegram: 1,
   };
   /* What a person would put in a link, mapped to what the enum calls it. */
-  var ALIAS = { whatsapp: 'whatsapp_campaign', tg: 'telegram', ig: 'instagram', fb: 'facebook' };
+  const ALIAS: Record<string, string> = { whatsapp: 'whatsapp_campaign', tg: 'telegram', ig: 'instagram', fb: 'facebook' };
 
   /* Referrer hosts we can read a channel from. Instagram sends people through
      l.instagram.com, Facebook through l.facebook.com and lm.facebook.com, and
      X rewrites everything to t.co -- so matching on the obvious domain alone
      misses most real traffic. */
-  function fromReferrer(ref) {
+  function fromReferrer(ref: string) {
     if (!ref) return '';
-    var host = '';
+    let host = '';
     try { host = new URL(ref).hostname.toLowerCase(); } catch (e) { return ''; }
     if (/(^|\.)instagram\.com$/.test(host)) return 'instagram';
     if (/(^|\.)facebook\.com$/.test(host) || host === 'fb.me') return 'facebook';
@@ -58,24 +58,24 @@
     return '';
   }
 
-  function read() {
+  function read(): SynArrivalRecord | null {
     try {
-      var raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }     // blocked or corrupt: behave as if new
   }
 
-  function write(rec) {
+  function write(rec: SynArrivalRecord) {
     try { localStorage.setItem(KEY, JSON.stringify(rec)); } catch (e) { /* private mode */ }
   }
 
   function capture() {
-    var q;
+    let q;
     try { q = new URLSearchParams(location.search); } catch (e) { return; }
 
-    var explicit = String(q.get('ch') || '').toLowerCase();
+    let explicit = String(q.get('ch') || '').toLowerCase();
     explicit = ALIAS[explicit] || explicit;
-    var post = q.get('post') || null;
+    const post = q.get('post') || null;
 
     /* THE IN-APP BROWSER PROBLEM. Instagram opens links in its own webview and
        frequently sends no referrer at all, so a bio click can arrive looking
@@ -85,12 +85,12 @@
        better to go on is a stated assumption, not a guess -- and a real
        referrer still beats it, so the day the same link goes on another
        platform it attributes correctly on its own. */
-    var channel = ALLOWED[explicit] ? explicit : '';
+    let channel = ALLOWED[explicit] ? explicit : '';
     if (!channel) channel = fromReferrer(document.referrer);
     if (!channel && q.get('via') === 'bio') channel = 'instagram';
     if (!channel) return;            // an ordinary visit; nothing to remember
 
-    var prev = read();
+    const prev = read();
     /* An explicit tracked link always writes. Anything inferred only fills a
        gap, so the first channel to introduce this visitor keeps the credit. */
     if (prev && prev.channel && !ALLOWED[explicit]) return;
@@ -106,9 +106,9 @@
 
   window.SynArrival = {
     /** The remembered channel, or '' when this visitor arrived plainly. */
-    channel: function () { var r = read(); return (r && r.channel) || ''; },
+    channel: function () { const r = read(); return (r && r.channel) || ''; },
     /** The short-link token that brought them, when there was one. */
-    post: function () { var r = read(); return (r && r.post) || null; },
+    post: function () { const r = read(); return (r && r.post) || null; },
     all: read,
   };
 })();

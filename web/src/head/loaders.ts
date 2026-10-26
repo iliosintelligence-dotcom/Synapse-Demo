@@ -7,23 +7,23 @@
    Every loader carries role="status" and an accessible name, so a screen reader hears that something is happening. */
 (function () {
   'use strict';
-  var KIDS = {
+  const KIDS: Record<string, string> = {
     ring: '', arc: '', pulse: '', ball: '', download: '', mail: '', search: '', hourglass: '',
     dots: '<i></i><i></i><i></i>', clock: '<i></i><i></i>', signal: '<i></i><i></i><i></i><i></i>'
   };
-  function html(kind, size, label) {
+  function html(kind: string, size?: string, label?: string) {
     if (!(kind in KIDS)) kind = 'ring';
     return '<span class="sl sl-' + kind + (size ? ' sl-' + size : '') + '" role="status" aria-label="' + (label || 'Loading') + '">' + KIDS[kind] + '</span>';
   }
-  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
-  function line(kind, text) { return '<span class="sl-line">' + html(kind, '', text) + '<span>' + esc(text) + '</span></span>'; }
-  function busy(btn, kind, text) {
+  function esc(t: unknown) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c]; }); }
+  function line(kind: string, text: string) { return '<span class="sl-line">' + html(kind, '', text) + '<span>' + esc(text) + '</span></span>'; }
+  function busy(btn: HTMLButtonElement | null, kind?: string, text?: string) {
     if (!btn) return function () {};
-    var was = { html: btn.innerHTML, disabled: btn.disabled };
+    const was = { html: btn.innerHTML, disabled: btn.disabled };
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
     btn.innerHTML = line(kind || 'ring', text || 'Working');
-    return function () { btn.innerHTML = was.html; btn.disabled = was.disabled; btn.removeAttribute('aria-busy'); };
+    return function () { btn!.innerHTML = was.html; btn.disabled = was.disabled; btn.removeAttribute('aria-busy'); };
   }
   window.SynLoad = { html: html, line: line, busy: busy };
 
@@ -31,35 +31,35 @@
      ("Uploading…", "Sending…", "Reading your description…") in dozens of places. When a button is disabled and its words
      end in an ellipsis, it gets the loader that matches the verb: uploads drop into a tray, sends post a letter, reading
      and thinking use the arc, lookups use the signal bars, loading uses dots, everything else the ring. */
-  var VERB = [[/upload|import|download/i, 'download'], [/send|submit|invit|deliver/i, 'mail'], [/read|think|generat|writ|rewrit|draft/i, 'arc'],
+  const VERB: [RegExp, string][] = [[/upload|import|download/i, 'download'], [/send|submit|invit|deliver/i, 'mail'], [/read|think|generat|writ|rewrit|draft/i, 'arc'],
     [/look|check|search|find|locat/i, 'signal'], [/load|fetch|open/i, 'dots'], [/pay|wait|confirm|verif/i, 'clock']];
-  function decorate(b) {
-    if (!b || b.nodeType !== 1 || b.tagName !== 'BUTTON' || !b.disabled || b.querySelector('.sl')) return;
-    var t = (b.textContent || '').trim();
+  function decorate(b: Node | null) {
+    if (!b || b.nodeType !== 1 || (b as Element).tagName !== 'BUTTON' || !(b as HTMLButtonElement).disabled || (b as Element).querySelector('.sl')) return;
+    const t = (b.textContent || '').trim();
     if (!t || t.length > 60 || !/(\u2026|\.\.\.)$/.test(t)) return;
-    var kind = 'ring';
-    for (var i = 0; i < VERB.length; i++) if (VERB[i][0].test(t)) { kind = VERB[i][1]; break; }
-    var span = document.createElement('span');
+    let kind = 'ring';
+    for (let i = 0; i < VERB.length; i++) if (VERB[i][0].test(t)) { kind = VERB[i][1]; break; }
+    const span = document.createElement('span');
     span.innerHTML = html(kind, 'sm', t.replace(/\u2026|\.\.\./, ''));
-    var sl = span.firstChild; sl.style.marginRight = '.55em';
+    const sl = span.firstChild as HTMLElement; sl.style.marginRight = '.55em';
     b.insertBefore(sl, b.firstChild);
   }
-  function scan(root) {
+  function scan(root: Node | null) {
     if (!root || root.nodeType !== 1) return;
-    if (root.tagName === 'BUTTON') decorate(root);
-    var bs = root.querySelectorAll ? root.querySelectorAll('button:disabled') : [];
-    for (var i = 0; i < bs.length; i++) decorate(bs[i]);
+    if ((root as Element).tagName === 'BUTTON') decorate(root);
+    const bs = (root as Element).querySelectorAll ? (root as Element).querySelectorAll('button:disabled') : [];
+    for (let i = 0; i < bs.length; i++) decorate(bs[i]);
   }
   /* buttons that are already busy when the page is built */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { scan(document.body); });
   else scan(document.body);
   if (typeof MutationObserver !== 'undefined') {
     new MutationObserver(function (list) {
-      for (var i = 0; i < list.length; i++) {
-        var m = list[i], t = m.target;
+      for (let i = 0; i < list.length; i++) {
+        const m = list[i], t = m.target as Element;
         if (m.type === 'attributes') decorate(t);
         else if (m.type === 'characterData') decorate(t.parentElement && t.parentElement.closest('button'));
-        else { decorate(t.closest && t.closest('button')); for (var j = 0; j < m.addedNodes.length; j++) scan(m.addedNodes[j]); }
+        else { decorate(t.closest && t.closest('button')); for (let j = 0; j < m.addedNodes.length; j++) scan(m.addedNodes[j]); }
       }
     }).observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['disabled'] });
   }

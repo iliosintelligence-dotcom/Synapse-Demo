@@ -17,20 +17,25 @@
    changes when that lands.
    ───────────────────────────────────────────────────────────────────────── */
 
-var VERSION = 'syn-sw-v1';
+export {};
+declare const self: ServiceWorkerGlobalScope;
+/* What the server puts in a push (supabase notify functions). */
+interface PushData { title?: string; body?: string; tag?: string; kind?: string; propertyId?: string; route?: string }
+
+const VERSION = 'syn-sw-v1';
 
 self.addEventListener('install', function () { self.skipWaiting(); });
-self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim()); });
+self.addEventListener('activate', function (e: ExtendableEvent) { e.waitUntil(self.clients.claim()); });
 
 /* ── incoming push ─────────────────────────────────────────────────────────
    The payload is written by the server so the worker stays dumb: it renders
    what it is given and never decides who should have been notified. */
 self.addEventListener('push', function (event) {
-  var data = {};
+  let data: PushData = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
 
-  var title = data.title || 'Synapse';
-  var opts = {
+  const title = data.title || 'Synapse';
+  const opts: NotificationOptions & { renotify: boolean; requireInteraction: boolean; actions: { action: string; title: string }[] } = {
     body: data.body || '',
     tag: data.tag || (data.kind || 'syn') + ':' + (data.propertyId || Date.now()),
     renotify: false,                       // a re-send must not buzz twice
@@ -50,7 +55,7 @@ self.addEventListener('push', function (event) {
    Every notification carries its own route (set server-side), so this stays a
    single generic handler instead of a pile of per-type conditionals. */
 self.addEventListener('notificationclick', function (event) {
-  var n = event.notification;
+  const n = event.notification;
   n.close();
   if (event.action === 'mute') {
     /* An open tab switches the watch off. With none open, nobody was
@@ -62,16 +67,16 @@ self.addEventListener('notificationclick', function (event) {
     }));
     return;
   }
-  var route = (n.data && n.data.route) || '/app/toju.html';
+  const route = (n.data && n.data.route) || '/app/toju.html';
   event.waitUntil(openRoute(route, n.data || {}));
 });
 
-function openRoute(route, data) {
+function openRoute(route: string, data: unknown) {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     .then(function (list) {
       // Prefer focusing a tab that is already open, do not pile up windows.
-      for (var i = 0; i < list.length; i++) {
-        var c = list[i];
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
         if ('focus' in c) {
           c.postMessage({ type: 'syn:navigate', route: route, data: data });
           return c.focus();
@@ -81,7 +86,7 @@ function openRoute(route, data) {
     });
 }
 
-function broadcast(msg) {
+function broadcast(msg: unknown) {
   return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
     .then(function (list) { list.forEach(function (c) { c.postMessage(msg); }); });
 }

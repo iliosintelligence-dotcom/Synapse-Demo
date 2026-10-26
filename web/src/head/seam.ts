@@ -18,13 +18,13 @@
 (function () {
   'use strict';
 
-  var NAME = 'syn-photo';
-  var tagged = null;
+  const NAME = 'syn-photo';
+  let tagged: HTMLElement | null = null;
   /* Kept apart from `tagged` on purpose. clear() runs on pagehide and so does
      remember(), and listeners fire in registration order -- clear() is first,
      so anything reading `tagged` at that point finds null. This is a plain
      memory of the last listing opened and nothing clears it. */
-  var openedId = null;
+  let openedId: string | null = null;
 
   /* Off again as soon as the page is shown, which covers both routes back:
      a fresh load (nothing is tagged anyway) and the back-forward cache, where
@@ -37,7 +37,7 @@
   window.addEventListener('pageshow', clear);
   window.addEventListener('pagehide', clear);
 
-  function tag(el) {
+  function tag(el: HTMLElement | null) {
     if (!el) return;
     clear();
     el.style.viewTransitionName = NAME;
@@ -52,8 +52,8 @@
      it. A card with no photo (an honest empty state, since we refuse to show
      stock images for homes that have none) simply has nothing to morph, and
      falls back to the page cross-fade. */
-  function photoFor(a) {
-    var card = a.closest('.card.listing, .syn-mcard, [data-id]');
+  function photoFor(a: Element): HTMLElement | null {
+    const card = a.closest('.card.listing, .syn-mcard, [data-id]');
     if (!card) return null;
     return card.querySelector('.img img, .syn-mcard-img, img');
   }
@@ -64,20 +64,20 @@
      already under way. */
   document.addEventListener('click', function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    var a = e.target.closest && e.target.closest('a[href]');
+    const a = ((e.target as Element).closest && (e.target as Element).closest('a[href]')) as HTMLAnchorElement | null;
     if (!a) return;
 
     /* Same document only. An external link or a new tab is not a seam --
        there is no incoming page here to morph into. */
     if (a.target && a.target !== '_self') return;
-    var href = a.getAttribute('href') || '';
+    const href = a.getAttribute('href') || '';
     if (!/property\.html/.test(href)) return;
 
     /* Recorded whether or not there is a photo to morph. Which home you
        opened is what "where I was" means on the way back, and most listings
        have no photo at all -- tying the two together would have meant the
        majority of journeys falling back to a pixel offset. */
-    var card = a.closest('[data-id]');
+    const card = a.closest('[data-id]');
     openedId = card ? (card.getAttribute('data-id') || null) : null;
 
     tag(photoFor(a));
@@ -103,8 +103,8 @@
 
      sessionStorage, not local: this is per-tab and it should not outlive the
      visit. */
-  var SCROLL_KEY = 'syn_seam_scroll';
-  var here = function () { return location.pathname + location.search; };
+  const SCROLL_KEY = 'syn_seam_scroll';
+  const here = function () { return location.pathname + location.search; };
 
   function readMap() {
     try { return JSON.parse(sessionStorage.getItem(SCROLL_KEY) || '{}') || {}; }
@@ -118,8 +118,8 @@
   function remember() {
     if (isLanding()) return;
     try {
-      var m = readMap();
-      var keys = Object.keys(m);
+      const m = readMap();
+      const keys = Object.keys(m);
       /* A visit does not need more than the last handful of screens, and an
          unbounded map in sessionStorage is a slow leak nobody goes looking
          for. */
@@ -135,7 +135,7 @@
 
   function restore() {
     if (isLanding()) return;
-    var saved = readMap()[here()];
+    const saved = readMap()[here()];
     if (!saved || (!saved.y && !saved.id)) return;
     /* Only take over when the browser has not already got it right -- but
        "not at the top" is not the same as "right". Chrome restores scroll
@@ -145,11 +145,11 @@
        those pages back to a guess. The test is distance from the target. */
     if (saved.y && Math.abs((window.scrollY || 0) - saved.y) < 60) return;
 
-    var deadline = Date.now() + 2000;
-    var tries = 0;
+    const deadline = Date.now() + 2000;
+    let tries = 0;
     (function attempt() {
       tries++;
-      var card = saved.id && document.querySelector('[data-id="' + CSS.escape(saved.id) + '"]');
+      const card = saved.id && document.querySelector('[data-id="' + CSS.escape(saved.id) + '"]');
       if (card) {
         card.scrollIntoView({ block: 'center', behavior: 'auto' });
         return;
@@ -179,7 +179,7 @@
      through it, and the rejection is caught rather than thrown -- a skipped
      transition is a legitimate outcome (a duplicate name, a slow snapshot, a
      user who navigated again), not an error anyone can act on. */
-  var afterTransition = null;
+  let afterTransition: Promise<void> | null = null;
   window.addEventListener('pagereveal', function (e) {
     if (e && e.viewTransition) {
       afterTransition = e.viewTransition.finished.catch(function () {});

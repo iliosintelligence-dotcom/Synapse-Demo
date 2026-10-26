@@ -25,18 +25,18 @@
 (function () {
   'use strict';
 
-  var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-  var ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
 
   /* Every platform syndication.js knows about. Deliberately not filtered to
      the ones we can currently post to: the point is to know the whole surface
      is sound before any single provider is connected. */
   function allPlatforms() {
-    return Object.keys(window.SynSyndicate.PLATFORMS);
+    return Object.keys(window.SynSyndicate!.PLATFORMS);
   }
 
   function fetchListings() {
-    var q = SUPABASE_URL + '/rest/v1/properties'
+    const q = SUPABASE_URL + '/rest/v1/properties'
       + '?select=id,title,price,city,bedrooms,listing_type,property_type,'
       + 'verification_status,trust_score,property_media(url,display_order)'
       + '&status=eq.live&is_active=is.true&deleted_at=is.null&limit=100';
@@ -51,14 +51,14 @@
    * The audit itself. For each listing, generate the full variant set across
    * every platform and collect the issues the validator reports.
    */
-  function run(opts) {
+  function run(opts?: { platforms?: string[] }): Promise<SynSyndicateAuditReport> {
     opts = opts || {};
     if (!window.SynSyndicate) {
       return Promise.reject(new Error('syndication.js is not loaded on this page'));
     }
-    return fetchListings().then(function (rows) {
-      var platforms = opts.platforms || allPlatforms();
-      var report = {
+    return fetchListings().then(function (rows: unknown[]) {
+      const platforms = opts.platforms || allPlatforms();
+      const report: SynSyndicateAuditReport = {
         ranAt: new Date().toISOString(),
         listings: rows.length,
         platforms: platforms,
@@ -74,11 +74,11 @@
       platforms.forEach(function (p) { report.byPlatform[p] = { variants: 0, issues: 0 }; });
 
       rows.forEach(function (row) {
-        var shaped = window.SynSyndicate.shape(row);
+        const shaped = window.SynSyndicate!.shape(row);
         /* generate() shapes its own input; handing it a shaped listing shaped
            it twice and lost the verification status and listing type
            (Greptile), so verified homes were audited as unverified. */
-        var out = window.SynSyndicate.generate(row, { platforms: platforms });
+        const out = window.SynSyndicate!.generate(row, { platforms: platforms });
 
         (out.skipped || []).forEach(function (s) {
           report.skippedAngles.push({ listing: shaped.title, angle: s.name, reason: s.reason });
@@ -86,13 +86,13 @@
 
         (out.variants || []).forEach(function (v) {
           report.totalVariants++;
-          var pl = report.byPlatform[v.platform];
+          const pl = report.byPlatform[v.platform];
           if (pl) pl.variants++;
 
           if (v.issues && v.issues.length) {
             report.withIssues++;
             if (pl) pl.issues++;
-            v.issues.forEach(function (issue) {
+            v.issues.forEach(function (issue: string) {
               report.byIssue[issue] = (report.byIssue[issue] || 0) + 1;
             });
             report.failures.push({
@@ -114,8 +114,8 @@
 
   /** Human-readable summary. Kept separate from run() so the report can also
    *  be asserted against in a test without parsing prose. */
-  function print(r) {
-    var lines = [];
+  function print(r: SynSyndicateAuditReport) {
+    const lines: string[] = [];
     lines.push('SYNDICATION AUDIT, ' + r.ranAt);
     lines.push(r.listings + ' listings x ' + r.platforms.length + ' platforms = '
       + r.totalVariants + ' variants');
@@ -124,11 +124,11 @@
 
     lines.push('BY PLATFORM');
     Object.keys(r.byPlatform).forEach(function (p) {
-      var b = r.byPlatform[p];
+      const b = r.byPlatform[p];
       lines.push('  ' + p.padEnd(12) + b.variants + ' variants, ' + b.issues + ' with issues');
     });
 
-    var issues = Object.keys(r.byIssue);
+    const issues = Object.keys(r.byIssue);
     if (issues.length) {
       lines.push('');
       lines.push('ISSUES, MOST COMMON FIRST');
@@ -139,9 +139,9 @@
     if (r.skippedAngles.length) {
       lines.push('');
       lines.push('ANGLES SKIPPED (not failures, the generator declining to overclaim)');
-      var seen = {};
+      const seen: Record<string, number> = {};
       r.skippedAngles.forEach(function (s) {
-        var k = s.angle + ', ' + s.reason;
+        const k = s.angle + ', ' + s.reason;
         if (seen[k]) return;
         seen[k] = 1;
         lines.push('  ' + k);
@@ -157,7 +157,7 @@
       });
     }
 
-    var out = lines.join('\n');
+    const out = lines.join('\n');
     if (typeof console !== 'undefined') console.log(out);
     return out;
   }

@@ -7,9 +7,10 @@
     "build": "next build && node scripts/strip-next-runtime.mjs",
     "start": "next start",
     "lint": "eslint",
-    "predev": "node scripts/copy-maplibre-worker.mjs",
-    "prebuild": "node scripts/copy-maplibre-worker.mjs",
-    "test": "vitest run"
+    "predev": "node scripts/copy-maplibre-worker.mjs && node scripts/build-head.mjs",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs && node scripts/build-head.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.sw.json"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

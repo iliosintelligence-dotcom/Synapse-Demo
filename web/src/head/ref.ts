@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   try {
-    var m = /[?&]ref=([A-Za-z0-9]{6,10})(?:&|#|$)/.exec(location.search);
+    const m = /[?&]ref=([A-Za-z0-9]{6,10})(?:&|#|$)/.exec(location.search);
     if (m) localStorage.setItem('syn_ref', JSON.stringify({ c: m[1].toUpperCase(), t: Date.now() }));
   } catch (e) { /* private mode: the link still works, the credit just cannot be remembered */ }
 })();

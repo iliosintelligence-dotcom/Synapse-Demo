@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
-// public/app/native.js: inside the app, a photo field offers the camera; everywhere else it does nothing.
+// src/head/native.ts: inside the app, a photo field offers the camera; everywhere else it does nothing.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 
-const src = readFileSync(join(process.cwd(), "public/app/native.js"), "utf8");
+// The page gets it compiled by scripts/build-head.mjs; the same type-stripping here.
+const src = ts.transpileModule(readFileSync(join(process.cwd(), "src/head/native.ts"), "utf8"), {
+  compilerOptions: { target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.ESNext },
+}).outputText;
 
 // The script adds listeners to document each time it is run; the page runs it once, the tests run it many times, so take them off again.
 const added: Array<[string, EventListenerOrEventListenerObject, boolean | AddEventListenerOptions | undefined]> = [];

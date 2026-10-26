@@ -34,22 +34,22 @@
 (function () {
   'use strict';
 
-  var vv = window.visualViewport;
+  const vv = window.visualViewport as VisualViewport;
   if (!vv) return;
 
-  var root = document.documentElement;
-  var raf = 0;
-  var wasOpen = false;
+  const root = document.documentElement;
+  let raf = 0;
+  let wasOpen = false;
 
   function apply() {
     raf = 0;
 
-    var h = Math.round(vv.height);
+    const h = Math.round(vv.height);
 
     /* window.innerHeight is the LAYOUT viewport, which iOS does not shrink for
        the keyboard. offsetTop is how far the visual viewport has been pushed
        down inside it. What is left over is the keyboard. */
-    var inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    const inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
 
     root.style.setProperty('--vvh', h + 'px');
     root.style.setProperty('--kb', inset + 'px');
@@ -62,7 +62,7 @@
        a 44px strip of browser chrome is not a keyboard -- treating it as one
        would flip the class on every scroll. No keyboard is shorter than this
        on any phone. */
-    var open = inset > 80;
+    const open = inset > 80;
     if (open !== wasOpen) {
       wasOpen = open;
       root.classList.toggle('kb-open', open);
@@ -96,10 +96,10 @@
      reproduced where it can be inspected. Rather than keep guessing which of
      the two viewports an embedded webview misreports, the page can be asked.
      Query-gated: it never exists for anybody who has not typed it. */
-  var debug = /[?&]kbdebug=1/.test(location.search);
-  var dbg = null;
+  const debug = /[?&]kbdebug=1/.test(location.search);
+  let dbg: HTMLDivElement | null = null;
 
-  function paintDebug(h, inset) {
+  function paintDebug(h: number, inset: number) {
     if (!dbg) {
       dbg = document.createElement('div');
       dbg.setAttribute('style', 'position:fixed;top:0;left:0;z-index:99999;'
@@ -127,7 +127,7 @@
      on focus is reliably the measurement from before the keyboard existed, so
      it is taken again as things settle. */
   document.addEventListener('focusin', function (e) {
-    var t = e.target;
+    const t = e.target as Element | null;
     if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '')) return;
     sync();
     setTimeout(sync, 120);
