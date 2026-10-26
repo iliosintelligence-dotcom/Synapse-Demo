@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* ─────────────────────────────────────────────────────────────────────────────
    Synapse, icon morphing
 
@@ -26,17 +24,18 @@
    ─────────────────────────────────────────────────────────────────────────── */
 import { createMorph, canonicalD } from './vendor/morphicons/dom.js';
 
-const NODES = Object.create(null);
+type IconNode = [string, Record<string, string>][];
+const NODES: Record<string, IconNode | null> = Object.create(null);
 
 /* icons.js markup -> IconNode. SynIcons.svg() is the public accessor; PATHS
    itself is private, and going through svg() means this stays correct if the
    icon set changes shape. */
-function iconNode(name) {
+function iconNode(name: string): IconNode | null {
   if (NODES[name]) return NODES[name];
-  if (!window.SynIcons || !SynIcons.has || !SynIcons.has(name)) return null;
-  const doc = new DOMParser().parseFromString(SynIcons.svg(name), 'image/svg+xml');
+  if (!window.SynIcons || !window.SynIcons.has || !window.SynIcons.has(name)) return null;
+  const doc = new DOMParser().parseFromString(window.SynIcons.svg(name), 'image/svg+xml');
   if (doc.querySelector('parsererror')) return null;
-  const node = Array.from(doc.documentElement.children).map((el) => [
+  const node = Array.from(doc.documentElement.children).map((el): [string, Record<string, string>] => [
     el.tagName.toLowerCase(),
     Object.fromEntries(Array.from(el.attributes).map((a) => [a.name, a.value])),
   ]);
@@ -47,7 +46,7 @@ function iconNode(name) {
    icon to a single path is what makes it drivable; the svg's own attributes
    (stroke, width, linecap) are untouched, so it keeps inheriting currentColor
    and its 1em sizing exactly as before. */
-function drivable(host, name) {
+function drivable(host: SynMorphHost, name: string) {
   if (host.__morph) return host.__morph;
   const svg = host.querySelector('svg');
   const node = iconNode(name);
@@ -63,7 +62,7 @@ function drivable(host, name) {
 
 /* Morph `host` to `name`. Returns false when it could not (and the caller's
    fallback should swap the icon the old way). */
-export function morphTo(host, name, spring) {
+export function morphTo(host: SynMorphHost | null, name: string, spring?: string) {
   if (!host) return false;
   const from = host.__morphName || host.getAttribute('data-icon');
   if (!from) return false;
@@ -80,15 +79,15 @@ export function morphTo(host, name, spring) {
 /* Bind a button whose icon reflects an open/closed state. `isOpen` is read on
    demand rather than tracked here, so the icon follows the real state even when
    something else closes the sheet, a scrim tap, Escape, a route change. */
-export function bindToggle(host, restName, openName, opts) {
+export function bindToggle(host: SynMorphHost | null, restName: string, openName: string, opts?: { spring?: string }) {
   if (!host) return null;
   const o = opts || {};
-  const apply = (open) => {
+  const apply = (open: boolean) => {
     if (!morphTo(host, open ? openName : restName, o.spring)) {
       // no morph available: swap the icon outright, which is what used to happen
       host.__icond = false;
       host.setAttribute('data-icon', open ? openName : restName);
-      if (window.SynIcons && SynIcons.hydrate) SynIcons.hydrate(host.parentNode || document);
+      if (window.SynIcons && window.SynIcons.hydrate) window.SynIcons.hydrate(host.parentNode || document);
     }
   };
   apply(false);

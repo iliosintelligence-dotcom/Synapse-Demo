@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/map-tiles.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -40,16 +38,16 @@ export function run() {
 (function () {
   'use strict';
 
-  var OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  var OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
   /* All three credits are a licence condition rather than a courtesy: the
      tiles are Stadia's, the schema is OpenMapTiles', the data is OSM's. */
-  var SM_ATTR = '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener">Stadia Maps</a>, '
+  const SM_ATTR = '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener">Stadia Maps</a>, '
               + '&copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> '
               + '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
 
-  var SynTiles = {
+  const SynTiles = {
     /** Normally empty: Stadia authenticates this site by domain. Only wanted
      *  for non-browser access. */
     KEY: '',
@@ -71,34 +69,33 @@ export function run() {
 
     /** Attach the right tile layer to a Leaflet map. Returns the layer.
      *  Pass { detail: true } for a map that should carry labels and POIs. */
-    add: function (map, opts) {
-      var L = window.L;
+    add: function (map: SynLeafletMap, opts?: { detail?: boolean }) {
+      const L = window.L;
       if (!L || !map) return null;
 
-      var style = (opts && opts.detail) ? this.STYLE_DETAIL : this.STYLE;
-      var key = String(this.KEY || '').trim();
+      const style = (opts && opts.detail) ? this.STYLE_DETAIL : this.STYLE;
+      const key = String(this.KEY || '').trim();
       /* {r} is Stadia's retina placeholder; detectRetina is what fills it with
          "@2x" on a dense screen and leaves it empty otherwise. */
-      var url = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
+      const url = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
         + '/{z}/{x}/{y}{r}.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
 
-      var layer = L.tileLayer(url, {
+      const layer = L.tileLayer(url, {
         maxZoom: 20,
         detectRetina: true,
         crossOrigin: true,
         attribution: SM_ATTR,
       });
 
-      var self = this, swapped = false;
-      function fallBack(why) {
+      let swapped = false;
+      const fallBack = (why: string) => {
         if (swapped) return;
         swapped = true;
         try { map.removeLayer(layer); } catch (e) {}
-        // eslint-disable-next-line no-console
         console.warn('Stadia tiles unavailable (' + why + '), using OpenStreetMap. '
           + 'Register this domain under Manage Properties → Authentication Configuration.');
-        self._osm(map);
-      }
+        this._osm(map);
+      };
 
       /* A refused request does NOT look like a failure to the browser. Stadia
          answers 401 with content-type image/png -- a picture saying it was
@@ -109,7 +106,7 @@ export function run() {
          with fetch rather than trusting the <img>. One extra request per map,
          and it is the difference between a working map and a wall of
          "unauthorised" that looks deliberate. */
-      var probe = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
+      const probe = 'https://tiles.stadiamaps.com/tiles/' + encodeURIComponent(style)
         + '/3/4/3.png' + (key ? '?api_key=' + encodeURIComponent(key) : '');
       try {
         fetch(probe, { method: 'GET', cache: 'force-cache' })
@@ -119,7 +116,7 @@ export function run() {
 
       /* For what the probe cannot see -- the host unreachable, nothing loading
          at all, which is when tileerror does fire. */
-      var fails = 0;
+      let fails = 0;
       layer.on('tileerror', function () {
         fails += 1;
         if (fails >= 4) fallBack(fails + ' tile errors');
@@ -154,8 +151,8 @@ export function run() {
 
        Desktop is untouched -- a mouse has one pointer and click-drag is the
        only thing it can mean. */
-    _gestures: function (map) {
-      var el = map.getContainer();
+    _gestures: function (map: SynLeafletMap) {
+      const el = map.getContainer();
       if (!el || el._synGestures) return;
       el._synGestures = true;
       if (!('ontouchstart' in window)) return;   // mouse: leave it alone
@@ -164,18 +161,18 @@ export function run() {
       map.dragging.disable();
       if (map.touchZoom) map.touchZoom.enable();
 
-      var hint = document.createElement('div');
+      const hint = document.createElement('div');
       hint.className = 'syn-gesture-hint';
       hint.textContent = 'Use two fingers to move the map';
       el.appendChild(hint);
-      var hideTimer = null;
+      let hideTimer: ReturnType<typeof setTimeout> | undefined;
       function flash() {
         hint.classList.add('on');
         clearTimeout(hideTimer);
         hideTimer = setTimeout(function () { hint.classList.remove('on'); }, 1400);
       }
 
-      el.addEventListener('touchstart', function (e) {
+      el.addEventListener('touchstart', function (e: TouchEvent) {
         if (e.touches.length >= 2) {
           map.dragging.enable();
           hint.classList.remove('on');
@@ -184,13 +181,13 @@ export function run() {
         }
       }, { passive: true, capture: true });
 
-      el.addEventListener('touchmove', function (e) {
+      el.addEventListener('touchmove', function (e: TouchEvent) {
         // A one-finger drag is the page scrolling past. Say why the map
         // stayed put, once, rather than letting it feel broken.
         if (e.touches.length < 2) flash();
       }, { passive: true });
 
-      el.addEventListener('touchend', function (e) {
+      el.addEventListener('touchend', function (e: TouchEvent) {
         if (e.touches.length < 2) map.dragging.disable();
       }, { passive: true, capture: true });
 
@@ -199,7 +196,7 @@ export function run() {
 
     _gestureCss: function () {
       if (document.getElementById('syn-gesture-css')) return;
-      var st = document.createElement('style');
+      const st = document.createElement('style');
       st.id = 'syn-gesture-css';
       st.textContent = [
         /* Beats leaflet.css, which sets touch-action:none on this element. */
@@ -232,24 +229,24 @@ export function run() {
        The attribution is still present, still readable, still one gesture
        away -- which is what the licences ask for -- and it stops eating a
        strip of a map on a phone. */
-    _credit: function (map) {
-      var ac = map.attributionControl;
+    _credit: function (map: SynLeafletMap) {
+      const ac = map.attributionControl;
       if (!ac || ac._synCredit) return;
       ac._synCredit = true;
       ac.setPrefix('');                       // "Leaflet" is not a licence term
 
-      var el = ac.getContainer();
+      const el = ac.getContainer();
       if (!el) return;
       el.classList.add('syn-attr');
       el.setAttribute('title', 'Map credits');
       el.addEventListener('click', function (e) {
         // Let a real credit link through; a tap anywhere else toggles.
-        if (e.target && e.target.tagName === 'A') return;
-        el.classList.toggle('is-open');
+        if (e.target && (e.target as Element).tagName === 'A') return;
+        el!.classList.toggle('is-open');
       });
 
       if (document.getElementById('syn-attr-css')) return;
-      var st = document.createElement('style');
+      const st = document.createElement('style');
       st.id = 'syn-attr-css';
       st.textContent = [
         '.leaflet-control-attribution.syn-attr{',
@@ -273,8 +270,8 @@ export function run() {
       document.head.appendChild(st);
     },
 
-    _osm: function (map) {
-      return window.L.tileLayer(OSM_URL, { attribution: OSM_ATTR, maxZoom: 19 }).addTo(map);
+    _osm: function (map: SynLeafletMap) {
+      return window.L!.tileLayer(OSM_URL, { attribution: OSM_ATTR, maxZoom: 19 }).addTo(map);
     },
   };
 

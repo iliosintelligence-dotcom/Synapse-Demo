@@ -1,7 +1,11 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/map/style-synapse.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
+import type { Map as MapLibreMap } from 'maplibre-gl';
+
+/* A style layer as Stadia's style JSON has it: only what recolour() and load() read and write. */
+type StyleLayer = { id?: string; type?: string; 'source-layer'?: string; paint?: Record<string, unknown> };
+type MarkedMap = MapLibreMap & { __synMarksWired?: boolean };
+
 export function run() {
 /* ─────────────────────────────────────────────────────────────────────────────
    SYNAPSE MAP STYLE, white matter.
@@ -52,7 +56,7 @@ export function run() {
        vessel     water, a touch darker than paper so coastline is legible
        tissue     parks, landcover: barely there
        ink        labels and our own marks */
-  var C = {
+  const C = {
     paper:      '#FCFCFB',
     tissue:     '#F4F4F2',
     building:   '#EFEFEC',
@@ -86,11 +90,11 @@ export function run() {
      OpenMapTiles schema -- stable, documented, and the same across every
      vendor built on it. That is what makes this transform survive a restyle
      upstream, and what would let it work against a different vector host. */
-  function recolour(layer) {
-    var src = layer['source-layer'] || '';
-    var id = layer.id || '';
-    var t = layer.type;
-    var paint = Object.assign({}, layer.paint || {});
+  function recolour(layer: StyleLayer) {
+    const src = layer['source-layer'] || '';
+    const id = layer.id || '';
+    const t = layer.type;
+    const paint: Record<string, unknown> = Object.assign({}, layer.paint || {});
 
     if (t === 'background') paint['background-color'] = C.paper;
 
@@ -153,7 +157,7 @@ export function run() {
      grey blob; a cross and a circle are not. Shape does the work that detail
      cannot at this size, which is the whole reason the default POI icons were
      not worth turning on as they came. */
-  var MARKS = {
+  const MARKS: Record<string, string> = {
     hospital:    'cross',
     pharmacy:    'crossOutline',
     school:      'triangle',
@@ -178,7 +182,7 @@ export function run() {
      load order. Places of worship are not drawn from the tiles: they cannot tell a church from a
      mosque, and a wrong symbol on a mosque is worse than none; the surveyed places on a home's own
      map do tell them apart. */
-  var GLYPH = {
+  const GLYPH: Record<string, string> = {
     school:   '<path d="M12 3l10 5-10 5L2 8z"/><path d="M6 10.3V15c0 1.4 2.9 2.7 6 2.7s6-1.3 6-2.7v-4.7"/><path d="M22 8v6.5"/>',
     hospital: '<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 8v8M8 12h8"/>',
     pharmacy: '<rect x="4.5" y="9" width="15" height="6.5" rx="3.25" transform="rotate(-40 12 12.25)"/><path d="m9.6 7.9 4.8 7.2"/>',
@@ -191,7 +195,7 @@ export function run() {
     fuel:     '<path d="M5 20.5V4.5a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 14 4.5v16"/><path d="M3.5 20.5h12"/><path d="M5 9h9"/><path d="M14 8h2.2a1.8 1.8 0 0 1 1.8 1.8v6a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/>',
     police:   '<path d="M12 2.8 4.5 5.5v6c0 4.6 3 7.9 7.5 9.7 4.5-1.8 7.5-5.1 7.5-9.7v-6z"/><path d="m12 8.2 1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z"/>'
   };
-  var MARK_STYLE = {
+  const MARK_STYLE: Record<string, { g: string; c: string }> = {
     hospital: { g: 'hospital', c: '#C94040' }, pharmacy: { g: 'pharmacy', c: '#B3506B' },
     school: { g: 'school', c: '#2F6DBD' }, university: { g: 'school', c: '#2F6DBD' },
     supermarket: { g: 'cart', c: '#A8742B' }, market: { g: 'cart', c: '#A8742B' },
@@ -199,13 +203,13 @@ export function run() {
     park: { g: 'tree', c: '#3F9C6D' }, restaurant: { g: 'food', c: '#C98B3A' },
     cafe: { g: 'cup', c: '#C98B3A' }, fuel: { g: 'fuel', c: '#7A6A3F' }, police: { g: 'police', c: '#4A5B8C' }
   };
-  var GLYPH_IMG = {}, MARK_MAPS = [];
+  const GLYPH_IMG: Record<string, HTMLImageElement> = {}, MARK_MAPS: MarkedMap[] = [];
   function preloadGlyphs() {
     if (typeof Image === 'undefined') return;
     Object.keys(MARK_STYLE).forEach(function (kind) {
-      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" fill="none" stroke="#fff" '
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96" fill="none" stroke="#fff" '
         + 'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">' + GLYPH[MARK_STYLE[kind].g] + '</svg>';
-      var img = new Image();
+      const img = new Image();
       img.onload = function () {
         GLYPH_IMG[kind] = img;
         /* A map that registered a plain disc before the drawing was ready gets the finished badge. */
@@ -218,12 +222,12 @@ export function run() {
   }
   preloadGlyphs();
 
-  function drawMark(kind, px) {
-    var s = px || 40;
-    var cv = document.createElement('canvas');
+  function drawMark(kind: string, px?: number) {
+    const s = px || 40;
+    const cv = document.createElement('canvas');
     cv.width = s; cv.height = s;
-    var x = cv.getContext('2d');
-    var st = MARK_STYLE[kind] || { c: '#6B6B70' }, m = s / 2;
+    const x = cv.getContext('2d')!;
+    const st = MARK_STYLE[kind] || { c: '#6B6B70' }, m = s / 2;
     /* a soft shadow, a white ring so the badge survives a dark trunk road, then the colour */
     x.shadowColor = 'rgba(20,20,18,0.28)'; x.shadowBlur = s * 0.08; x.shadowOffsetY = s * 0.03;
     x.fillStyle = '#FFFFFF';
@@ -231,8 +235,8 @@ export function run() {
     x.shadowColor = 'transparent';
     x.fillStyle = st.c;
     x.beginPath(); x.arc(m, m, s * 0.39, 0, Math.PI * 2); x.fill();
-    var g = GLYPH_IMG[kind];
-    if (g) { var gs = s * 0.58; x.drawImage(g, m - gs / 2, m - gs / 2, gs, gs); }
+    const g = GLYPH_IMG[kind];
+    if (g) { const gs = s * 0.58; x.drawImage(g, m - gs / 2, m - gs / 2, gs, gs); }
     return x.getImageData(0, 0, s, s);
   }
 
@@ -243,7 +247,7 @@ export function run() {
      labels. Zoom gating is deliberate -- everything at once is noise, so the
      things you navigate by (hospitals, transit, schools) appear first and the
      everyday ones arrive as you close in. */
-  var POI_MIN_ZOOM = {
+  const POI_MIN_ZOOM: Record<string, number> = {
     hospital: 12, transit: 12, university: 12, school: 13,
     supermarket: 14, market: 14, bank: 15, pharmacy: 15,
     park: 13, restaurant: 15.5, cafe: 15.5, fuel: 15,
@@ -254,7 +258,7 @@ export function run() {
      for somewhere to live. Kept explicit: the schema has hundreds of subclass
      values and guessing which ones matter is how a map ends up showing
      nightclubs and no pharmacies. */
-  var SUBCLASS = {
+  const SUBCLASS: Record<string, string[]> = {
     hospital: ['hospital', 'clinic', 'doctors'],
     pharmacy: ['pharmacy'],
     school: ['school', 'kindergarten'],
@@ -279,7 +283,7 @@ export function run() {
         source: 'openmaptiles',
         'source-layer': 'poi',
         minzoom: POI_MIN_ZOOM[kind] || 14,
-        filter: ['all', ['==', '$type', 'Point'], ['in', 'subclass'].concat(SUBCLASS[kind] || [kind])],
+        filter: ['all', ['==', '$type', 'Point'], (['in', 'subclass'] as string[]).concat(SUBCLASS[kind] || [kind])],
         layout: {
           'icon-image': 'syn-' + kind,
           'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.8, 16, 1.1, 18, 1.3],
@@ -316,7 +320,7 @@ export function run() {
      giving up. Two attempts, not a ladder -- if the second fails the caller
      shows its own honest failure rather than leaving the reader watching a
      blank box get no better. */
-  function fetchStyle(url, tries) {
+  function fetchStyle(url: string, tries: number): Promise<{ layers?: StyleLayer[] }> {
     return fetch(url).then(function (r) {
       if (!r.ok) throw new Error('style ' + r.status);
       return r.json();
@@ -327,15 +331,15 @@ export function run() {
     });
   }
 
-  function load(styleName) {
-    var name = styleName || 'alidade_smooth';
+  function load(styleName?: string) {
+    const name = styleName || 'alidade_smooth';
     return fetchStyle('https://tiles.stadiamaps.com/styles/' + encodeURIComponent(name) + '.json', 2)
       .then(function (style) {
         style.layers = (style.layers || [])
           /* Their POI and park-label layers are replaced wholesale by ours
              below; leaving them in means two competing sets of labels for the
              same places. */
-          .filter(function (l) { return !/^poi_/.test(l.id || ''); })
+          .filter(function (l: StyleLayer) { return !/^poi_/.test(l.id || ''); })
           .map(recolour)
           .concat(poiLayers());
         return style;
@@ -344,9 +348,9 @@ export function run() {
 
   /** Register the marks. Must run after the style loads and again after any
    *  setStyle, because images do not survive a style swap. */
-  function addMarks(map) {
+  function addMarks(map: MarkedMap) {
     Object.keys(MARKS).forEach(function (kind) {
-      var id = 'syn-' + kind;
+      const id = 'syn-' + kind;
       if (map.hasImage && map.hasImage(id)) return;
       try { map.addImage(id, drawMark(kind, 40), { pixelRatio: 2 }); } catch (e) { /* already there */ }
     });
@@ -369,7 +373,7 @@ export function run() {
    *  remembering to call addMarks again.
    *
    *  Once per map, and only ever for ids we own. */
-  function wireMissingMarks(map) {
+  function wireMissingMarks(map: MarkedMap | null) {
     if (!map || map.__synMarksWired) return;
     map.__synMarksWired = true;
     MARK_MAPS.push(map);
@@ -385,14 +389,14 @@ export function run() {
        CAN be registered rather than at one moment we hoped they could. It is
        idempotent -- addMarks skips what is already present -- so firing
        several times costs a hasImage check each. */
-    map.on('styledata', function () { addMarks(map); });
+    map.on('styledata', function () { addMarks(map!); });
 
-    map.on('styleimagemissing', function (e) {
-      var id = e && e.id;
+    map.on('styleimagemissing', function (e: { id?: string }) {
+      const id = e && e.id;
       if (!id || id.indexOf('syn-') !== 0) return;
-      var kind = id.slice(4);
-      if (!MARKS[kind] || (map.hasImage && map.hasImage(id))) return;
-      try { map.addImage(id, drawMark(kind, 40), { pixelRatio: 2 }); } catch (err) { /* raced us to it */ }
+      const kind = id.slice(4);
+      if (!MARKS[kind] || (map!.hasImage && map!.hasImage(id))) return;
+      try { map!.addImage(id, drawMark(kind, 40), { pixelRatio: 2 }); } catch (err) { /* raced us to it */ }
     });
   }
 

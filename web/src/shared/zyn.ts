@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/zyn.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -21,48 +19,48 @@ export function run() {
    Zyn has no mouth and no fins: he says it with his eyes and the way he stands. */
 (function () {
   'use strict';
-  var BASE = '/images/zyn/';
+  const BASE = '/images/zyn/';
 
-  var IDS = ('happy curious thinking excited helpful winking surprised sleepy confused sorry proud delighted ' +
+  const IDS = ('happy curious thinking excited helpful winking surprised sleepy confused sorry proud delighted ' +
     'searching listening typing calculating comparing navigating waving loading scheduling calling celebrating saving ' +
     'home price verified nearby documents offer keys headsup nothing alert intro shared').split(' ');
-  var MOTION = {};
+  const MOTION: Record<string, string> = {};
   'excited celebrating delighted surprised keys waving'.split(' ').forEach(function (s) { MOTION[s] = 'zm-bounce'; });
   'curious confused thinking listening searching comparing navigating winking'.split(' ').forEach(function (s) { MOTION[s] = 'zm-sway'; });
   'sleepy sorry nothing'.split(' ').forEach(function (s) { MOTION[s] = 'zm-slow'; });
   MOTION.loading = 'zm-pulse';
 
-  function known(state) { return IDS.indexOf(state) > -1 ? state : 'happy'; }
-  function url(state) { return BASE + 'zyn-' + known(state) + '.webp'; }
-  function cls(state, still) { return 'zyn ' + (still ? 'zm-still' : (MOTION[known(state)] || 'zm-bob')) + ' zd' + Math.floor(Math.random() * 6); }
+  function known(state: string) { return IDS.indexOf(state) > -1 ? state : 'happy'; }
+  function url(state: string) { return BASE + 'zyn-' + known(state) + '.webp'; }
+  function cls(state: string, still?: boolean) { return 'zyn ' + (still ? 'zm-still' : (MOTION[known(state)] || 'zm-bob')) + ' zd' + Math.floor(Math.random() * 6); }
 
-  function img(state, px, o) {
+  function img(state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string }) {
     o = o || {};
-    var alt = o.alt ? ' alt="' + String(o.alt).replace(/"/g, '&quot;') + '"' : ' alt="" aria-hidden="true"';
+    const alt = o.alt ? ' alt="' + String(o.alt).replace(/"/g, '&quot;') + '"' : ' alt="" aria-hidden="true"';
     return '<img class="' + cls(state, o.still) + (o.cls ? ' ' + o.cls : '') + '" src="' + url(state) + '" width="' + px + '" height="' + px + '"' + alt + ' decoding="async" draggable="false">';
   }
-  function set(el, state, still) {
+  function set(el: SynZynImg | null, state: string, still?: boolean) {
     if (!el) return;
-    var s = known(state);
+    const s = known(state);
     if (el.getAttribute('data-zyn') === s) return;
     el.setAttribute('data-zyn', s);
     el.src = url(s);
     el.className = el.className.replace(/\bzm-\w+\b/g, '').trim() + ' ' + (still ? 'zm-still' : (MOTION[s] || 'zm-bob'));
   }
-  function preload(list) {
-    (list || ['happy', 'typing', 'searching', 'home', 'nothing', 'waving', 'thinking', 'curious']).forEach(function (s) { var i = new Image(); i.src = url(s); });
+  function preload(list?: string[]) {
+    (list || ['happy', 'typing', 'searching', 'home', 'nothing', 'waving', 'thinking', 'curious']).forEach(function (s) { const i = new Image(); i.src = url(s); });
   }
 
   /* Which state fits a reply? Reads what the reply actually carries, never what it hopes to seem:
      the shield (verified) only when a home shown is verified, the empty box only when the search
      really found nothing. r: { text, matches, searched, priceHistory, greeting, failed } */
-  function forReply(r) {
+  function forReply(r?: SynZynReply | null) {
     r = r || {};
-    var text = String(r.text || '');
-    var matches = Array.isArray(r.matches) ? r.matches : [];
+    const text = String(r.text || '');
+    const matches = Array.isArray(r.matches) ? r.matches : [];
     if (r.greeting) return 'waving';
     if (r.failed || /\b(sorry|could not|couldn[’']t|unable to|did not work)\b/i.test(text)) return 'sorry';
-    var s = r.searched;
+    const s = r.searched;
     if (s && Number(s.live) === 0 && !matches.length) return 'nothing';
     if (r.priceHistory && r.priceHistory.rows && r.priceHistory.rows.length) return 'price';
     if (matches.length) {
@@ -76,7 +74,8 @@ export function run() {
   /* Tap Zyn and he does something: he zooms in, shows one of his moods or actions, and settles back.
      Taps while he is mid-emote are ignored, so he never stacks. Reduced motion keeps the change of
      face but drops the zoom and the hops. */
-  var EMOTES = [
+  type Frame = { transform: string; offset?: number };
+  const EMOTES: { s: string; big: number; kf: (b: number) => Frame[] }[] = [
     { s: 'celebrating', big: 2.6, kf: function (b) { return [
       { transform: 'translateY(0) scale(1) rotate(0)' }, { transform: 'translateY(-6%) scale(' + b + ') rotate(-6deg)', offset: .18 },
       { transform: 'translateY(-16%) scale(' + b * 1.08 + ') rotate(6deg)', offset: .34 }, { transform: 'translateY(0) scale(' + b + ') rotate(-4deg)', offset: .5 },
@@ -97,41 +96,41 @@ export function run() {
       { transform: 'scale(1) rotate(0)' }, { transform: 'scale(' + b + ') rotate(8deg)', offset: .2 }, { transform: 'scale(' + b * 1.05 + ') rotate(10deg)', offset: .5 },
       { transform: 'scale(' + b + ') rotate(8deg)', offset: .78 }, { transform: 'scale(1) rotate(0)' }]; } }
   ];
-  var lastEmote = -1;
-  function emote(el) {
+  let lastEmote = -1;
+  function emote(el: SynZynImg | null) {
     if (!el || el.__emoting) return;
-    var i; do { i = Math.floor(Math.random() * EMOTES.length); } while (i === lastEmote && EMOTES.length > 1);
+    let i: number; do { i = Math.floor(Math.random() * EMOTES.length); } while (i === lastEmote && EMOTES.length > 1);
     lastEmote = i;
-    var e = EMOTES[i];
-    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const e = EMOTES[i];
+    const calm = (window.matchMedia as typeof matchMedia | undefined) && matchMedia('(prefers-reduced-motion: reduce)').matches;
     el.__emoting = true;
-    var was = ((el.getAttribute('src') || '').match(/zyn-([a-z]+)\.webp/) || [0, 'happy'])[1];
+    const was = ((el.getAttribute('src') || '').match(/zyn-([a-z]+)\.webp/) || [0, 'happy'])[1];
     /* Reduced motion: the face changes where he stands, nothing flies. */
     if (calm || !el.animate || !document.body) {
-      Zyn.set(el, e.s, true);
-      setTimeout(function () { Zyn.set(el, was); el.__emoting = false; }, 1600);
+      window.Zyn!.set(el, e.s, true);
+      setTimeout(function () { window.Zyn!.set(el, was); el!.__emoting = false; }, 1600);
       return;
     }
     /* HE LEAVES THE CHAT TO DO IT. Zooming him in place was clipped by whatever he sat inside (a message row, a
        scrolling column, a header), so the bigger he got the more of him was cut off. A copy of him flies out above
        everything, does his thing at the middle of the screen, and flies back; the one in the chat waits invisible. */
-    var r = el.getBoundingClientRect(), vw = window.innerWidth || document.documentElement.clientWidth || 800, vh = window.innerHeight || document.documentElement.clientHeight || 600;
-    var S = Math.max(Math.min(300, vw * 0.72, vh * 0.5), r.width * 1.6), k = S / Math.max(r.width, 1);
-    var tx = vw / 2 - (r.left + r.width / 2), ty = vh * 0.44 - (r.top + r.height / 2);
-    var ghost = document.createElement('img');
+    const r = el.getBoundingClientRect(), vw = window.innerWidth || document.documentElement.clientWidth || 800, vh = window.innerHeight || document.documentElement.clientHeight || 600;
+    const S = Math.max(Math.min(300, vw * 0.72, vh * 0.5), r.width * 1.6), k = S / Math.max(r.width, 1);
+    const tx = vw / 2 - (r.left + r.width / 2), ty = vh * 0.44 - (r.top + r.height / 2);
+    const ghost = document.createElement('img');
     ghost.src = url(e.s); ghost.alt = ''; ghost.setAttribute('aria-hidden', 'true'); ghost.draggable = false;
     ghost.className = 'zyn zm-still';
     ghost.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height +
       'px;margin:0;z-index:2147483000;pointer-events:none;transform-origin:50% 50%;filter:drop-shadow(0 18px 24px rgba(40,40,60,.35)) saturate(1.2)';
     document.body.appendChild(ghost);
     el.style.visibility = 'hidden';
-    var there = 'translate(' + tx + 'px,' + ty + 'px)';
-    var mid = e.kf(k).slice(1, -1);
-    var frames = [{ transform: 'translate(0px,0px) scale(1)', offset: 0 }, { transform: there + ' scale(' + k + ')', offset: 0.2 }];
+    const there = 'translate(' + tx + 'px,' + ty + 'px)';
+    const mid = e.kf(k).slice(1, -1);
+    const frames: Frame[] = [{ transform: 'translate(0px,0px) scale(1)', offset: 0 }, { transform: there + ' scale(' + k + ')', offset: 0.2 }];
     mid.forEach(function (f, n) { frames.push({ transform: there + ' ' + f.transform, offset: 0.2 + 0.6 * ((n + 1) / (mid.length + 1)) }); });
     frames.push({ transform: there + ' scale(' + k + ')', offset: 0.8 }, { transform: 'translate(0px,0px) scale(1)', offset: 1 });
-    var done = function () { if (ghost.parentNode) ghost.remove(); el.style.visibility = ''; el.__emoting = false; };
-    var an = ghost.animate(frames, { duration: 3400, easing: 'cubic-bezier(.34,1.35,.64,1)' });
+    const done = function () { if (ghost.parentNode) ghost.remove(); el!.style.visibility = ''; el!.__emoting = false; };
+    const an = ghost.animate(frames, { duration: 3400, easing: 'cubic-bezier(.34,1.35,.64,1)' });
     an.onfinish = done; an.oncancel = done;
   }
 

@@ -21,7 +21,7 @@ declare global {
     };
   }
 
-  /* syndication-audit.ts: the part of src/shared/syndication.js it drives, and the report it builds */
+  /* syndication-audit.ts: the part of src/shared/syndication.ts it drives, and the report it builds */
   interface SynSyndicateVariant { platform: string; angle?: string; angleName?: string; caption?: string; issues?: string[] }
   interface SynSyndicate {
     PLATFORMS: Record<string, unknown>;
@@ -59,6 +59,8 @@ declare global {
   }
 
   interface Window {
+    /* inline/landing-theme.ts: the first paint's theme on the landing pages */
+    SynHome?: { byClock: () => SynMode; chosen: () => SynMode | null; choose: (t: SynMode | null) => void };
     /* Google Analytics, only once the cookie banner has been answered */
     gtag?: (...args: unknown[]) => void;
     SynSwipe?: SynSwipe;

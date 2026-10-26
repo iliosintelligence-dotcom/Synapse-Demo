@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/map/query.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -32,11 +30,11 @@ export function run() {
   /* Keyed by a rounded box, so nudging the map a few metres and asking again
      is free. Five decimal places is about a metre, far finer than anyone
      pans deliberately, and coarse enough to actually hit. */
-  var cache = new Map();
-  var CACHE_MAX = 40;
+  const cache = new Map<string, SynMapPin[]>();
+  const CACHE_MAX = 40;
 
-  function key(b, f) {
-    var r = function (n) { return Number(n).toFixed(5); };
+  function key(b: SynMapBounds, f: SynMapFilters) {
+    const r = function (n: number) { return Number(n).toFixed(5); };
     return [r(b.west), r(b.south), r(b.east), r(b.north),
       f.listingType || '', f.minPrice || '', f.maxPrice || '',
       f.minBeds || '', f.verifiedOnly ? 1 : 0].join('|');
@@ -51,12 +49,12 @@ export function run() {
 
      Callers hand it over explicitly now. The globals stay as a fallback for
      any page that does define them, but nothing depends on that. */
-  var CFG = null;
-  function setConfig(c) { if (c && c.url && c.anon) CFG = { url: c.url, anon: c.anon }; }
+  let CFG: { url: string; anon: string } | null = null;
+  function setConfig(c: { url?: string; anon?: string } | null) { if (c && c.url && c.anon) CFG = { url: c.url, anon: c.anon }; }
   function config() {
     if (CFG) return CFG;
-    var url = window.SUPABASE_URL || window.SB_URL;
-    var anon = window.ANON_KEY || window.SB_KEY;
+    const url = window.SUPABASE_URL || window.SB_URL;
+    const anon = window.ANON_KEY || window.SB_KEY;
     return (url && anon) ? { url: url, anon: anon } : null;
   }
 
@@ -65,13 +63,13 @@ export function run() {
    * @param filters {listingType,minPrice,maxPrice,minBeds,verifiedOnly,limit}
    * @returns Promise<Array> shaped for SynMapRender.setProperties
    */
-  function inView(bounds, filters) {
-    var f = filters || {};
-    var c = config();
+  function inView(bounds: SynMapBounds, filters?: SynMapFilters): Promise<SynMapPin[]> {
+    const f = filters || {};
+    const c = config();
     if (!c) return Promise.reject(new Error('Supabase config not found on this page'));
 
-    var k = key(bounds, f);
-    if (cache.has(k)) return Promise.resolve(cache.get(k));
+    const k = key(bounds, f);
+    if (cache.has(k)) return Promise.resolve(cache.get(k)!);
 
     return fetch(c.url + '/rest/v1/rpc/properties_in_view', {
       method: 'POST',
@@ -93,18 +91,18 @@ export function run() {
     }).then(function (res) {
       if (!res.ok) return res.text().then(function (t) { throw new Error(t.slice(0, 200)); });
       return res.json();
-    }).then(function (rows) {
-      var out = (rows || []).map(shape);
+    }).then(function (rows: Record<string, unknown>[] | null) {
+      const out = (rows || []).map(shape);
       cache.set(k, out);
       /* A Map keeps insertion order, so the oldest key is the first one. */
-      if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
+      if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!);
       return out;
     });
   }
 
-  function money(n, period) {
+  function money(n: number, period: unknown) {
     n = Number(n) || 0;
-    var s = n >= 1e9 ? '₦' + trim(n / 1e9) + 'b'
+    const s = n >= 1e9 ? '₦' + trim(n / 1e9) + 'b'
       : n >= 1e6 ? '₦' + trim(n / 1e6) + 'm'
         : n >= 1e3 ? '₦' + Math.round(n / 1e3) + 'k'
           : '₦' + n;
@@ -112,18 +110,18 @@ export function run() {
       : period === 'per_month' ? '/mo'
         : period === 'per_night' ? '/night' : '');
   }
-  function trim(x) { return String(Math.round(x * 10) / 10).replace(/\.0$/, ''); }
+  function trim(x: number) { return String(Math.round(x * 10) / 10).replace(/\.0$/, ''); }
 
-  function shape(p) {
+  function shape(p: Record<string, unknown>): SynMapPin {
     return {
-      id: p.id,
-      lat: p.latitude, lng: p.longitude,
-      price: money(p.price, p.price_period),
-      beds: p.bedrooms > 0 ? p.bedrooms + ' bed' : '',
+      id: p.id as string,
+      lat: p.latitude as number, lng: p.longitude as number,
+      price: money(p.price as number, p.price_period),
+      beds: (p.bedrooms as number) > 0 ? p.bedrooms + ' bed' : '',
       verified: p.verification_status === 'verified',
-      title: p.title || '',
-      loc: p.address || p.city || '',
-      img: p.img || '',
+      title: (p.title as string) || '',
+      loc: (p.address as string) || (p.city as string) || '',
+      img: (p.img as string) || '',
     };
   }
 
@@ -135,9 +133,9 @@ export function run() {
      or a zoom step, counts.
 
      Searching is a decision, not a side effect of looking around. */
-  function attachSearchArea(renderer, onResults, filters) {
-    var host = renderer.map.getContainer();
-    var btn = document.createElement('button');
+  function attachSearchArea(renderer: SynMapRenderer, onResults: (rows: SynMapPin[], vp: SynMapViewport) => void, filters?: SynMapFilters) {
+    const host = renderer.map.getContainer();
+    const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'syn-map-search-area';
     btn.textContent = 'Search this area';
@@ -149,31 +147,31 @@ export function run() {
        user had touched anything -- offering to search the area they were
        already looking at, which is both useless and the exact nagging this
        threshold exists to prevent. */
-    var lastSearched = renderer.viewport(), busy = false;
+    let lastSearched = renderer.viewport(), busy = false;
 
-    function moved(vp) {
+    function moved(vp: SynMapViewport) {
       if (!lastSearched) return true;
-      var l = lastSearched;
+      const l = lastSearched;
       if (Math.abs(vp.zoom - l.zoom) > 0.8) return true;
-      var w = Math.abs(l.east - l.west), h = Math.abs(l.north - l.south);
-      var dx = Math.abs(((vp.east + vp.west) / 2) - ((l.east + l.west) / 2));
-      var dy = Math.abs(((vp.north + vp.south) / 2) - ((l.north + l.south) / 2));
+      const w = Math.abs(l.east - l.west), h = Math.abs(l.north - l.south);
+      const dx = Math.abs(((vp.east + vp.west) / 2) - ((l.east + l.west) / 2));
+      const dy = Math.abs(((vp.north + vp.south) / 2) - ((l.north + l.south) / 2));
       return dx > w * 0.34 || dy > h * 0.34;
     }
 
-    renderer.onViewport(function (vp) {
+    renderer.onViewport(function (vp: SynMapViewport) {
       btn.classList.toggle('on', !busy && moved(vp));
     });
 
     btn.addEventListener('click', function () {
-      var vp = renderer.viewport();
+      const vp = renderer.viewport();
       if (!vp) return;
       busy = true;
       btn.classList.remove('on');
       btn.classList.add('busy');
       btn.textContent = 'Searching…';
       inView(vp, filters || {})
-        .then(function (rows) { onResults(rows, vp); })
+        .then(function (rows) { onResults(rows, vp!); })
         .catch(function (e) {
           /* Say so on the control the person just pressed. A silent failure
              here is indistinguishable from "there is nothing here", which is
@@ -203,7 +201,7 @@ export function run() {
 
   function injectCss() {
     if (document.getElementById('syn-map-area-css')) return;
-    var st = document.createElement('style');
+    const st = document.createElement('style');
     st.id = 'syn-map-area-css';
     st.textContent = [
       '.syn-map-search-area{position:absolute;z-index:5;top:12px;left:50%;',

@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/loader.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -25,16 +23,16 @@ export function run() {
 (function () {
   'use strict';
 
-  var SHOW_AFTER = 260;   // do not mention a wait nobody noticed
-  var MIN_ON     = 420;   // once mentioned, do not blink
+  const SHOW_AFTER = 260;   // do not mention a wait nobody noticed
+  const MIN_ON     = 420;   // once mentioned, do not blink
 
-  var el = null;
-  var pending = 0;        // timer id for the not-yet-shown loader
-  var shownAt = 0;
-  var hideTimer = 0;
+  let el: HTMLElement | null = null;
+  let pending: ReturnType<typeof setTimeout> | 0 = 0;        // timer id for the not-yet-shown loader
+  let shownAt = 0;
+  let hideTimer: ReturnType<typeof setTimeout> | 0 = 0;
 
-  function build(msg) {
-    var wrap = document.createElement('div');
+  function build(msg?: string) {
+    const wrap = document.createElement('div');
     wrap.className = 'synload';
     wrap.setAttribute('role', 'status');
     /* polite, not assertive: this is progress, and interrupting somebody
@@ -52,16 +50,16 @@ export function run() {
     /* The mark is alive while you wait: its three parts take turns hopping (brand.js). Without it, the masked
        mark above stays as it was. */
     if (window.SynBrand) {
-      var old = wrap.querySelector('.synload-mark');
-      if (old) { var m = SynBrand.mark({ wait: true }); m.setAttribute('aria-hidden', 'true'); old.parentNode.replaceChild(m, old); }
+      const old = wrap.querySelector('.synload-mark');
+      if (old) { const m = window.SynBrand.mark({ wait: true }); m.setAttribute('aria-hidden', 'true'); old.parentNode!.replaceChild(m, old); }
     }
     document.body.appendChild(wrap);
     setMsg(wrap, msg);
     return wrap;
   }
 
-  function setMsg(wrap, msg) {
-    var m = wrap.querySelector('.synload-msg');
+  function setMsg(wrap: HTMLElement, msg?: string) {
+    const m = wrap.querySelector<HTMLElement>('.synload-msg');
     if (!m) return;
     /* textContent, not innerHTML: callers pass their own strings and one of
        them will eventually contain a listing title. */
@@ -69,7 +67,7 @@ export function run() {
     m.hidden = !msg;
   }
 
-  function show(msg) {
+  function show(msg?: string) {
     clearTimeout(hideTimer); hideTimer = 0;
 
     if (el && el.classList.contains('on')) { setMsg(el, msg); return; }
@@ -78,7 +76,7 @@ export function run() {
     pending = setTimeout(function () {
       pending = 0;
       if (!el) el = build(msg); else setMsg(el, msg);
-      el.classList.add('on');
+      el!.classList.add('on');
       shownAt = Date.now();
     }, SHOW_AFTER);
   }
@@ -89,10 +87,10 @@ export function run() {
     if (pending) { clearTimeout(pending); pending = 0; return; }
     if (!el || !el.classList.contains('on')) return;
 
-    var left = MIN_ON - (Date.now() - shownAt);
+    const left = MIN_ON - (Date.now() - shownAt);
     if (left > 0) {
       clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () { el.classList.remove('on'); }, left);
+      hideTimer = setTimeout(function () { el!.classList.remove('on'); }, left);
       return;
     }
     el.classList.remove('on');
@@ -121,17 +119,17 @@ export function run() {
       if (e.defaultPrevented || e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;   // new tab
 
-      var a = e.target.closest && e.target.closest('a[href]');
+      const a = ((e.target as Element).closest && (e.target as Element).closest('a[href]')) as HTMLAnchorElement | null;
       if (!a) return;
       if (a.target && a.target !== '_self') return;                   // new window
       if (a.hasAttribute('download')) return;                         // a file
       if (a.dataset && a.dataset.noLoader !== undefined) return;      // opted out
 
-      var href = a.getAttribute('href') || '';
+      const href = a.getAttribute('href') || '';
       if (!href || href.charAt(0) === '#') return;                    // same page
       if (/^(mailto:|tel:|javascript:|blob:|data:)/i.test(href)) return;
 
-      var url;
+      let url;
       try { url = new URL(a.href, location.href); } catch (err) { return; }
       if (url.origin !== location.origin) return;                     // off site
       /* Same document, different hash: no fetch, no wait, no loader. */

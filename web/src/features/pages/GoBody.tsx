@@ -27,7 +27,7 @@ async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
   return r.json();
 }
 
-/* The app's price style (the same as money() in src/shared/matches-shared.js): the currency's own symbol (narrowSymbol turns NGN
+/* The app's price style (the same as money() in src/shared/matches-shared.ts): the currency's own symbol (narrowSymbol turns NGN
    into ₦), whole units, and millions or billions once the plain figure gets unwieldy. */
 function price(n?: number, cur?: string) {
   const v = Number(n) || 0;

@@ -3,7 +3,7 @@
 // GENERATED from index.html by scripts/port-legacy.mjs, then edited by hand: this file is now the source of the page's <head>.
 // The page's <body> is page.tsx beside the route; its inline scripts and styles are in src/legacy/index/.
 import type { Viewport } from "next";
-import { inline } from "@/legacy/read";
+import { headInline, inline } from "@/legacy/read";
 import { AnalyticsHead } from "@/features/site/Analytics";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1,"viewportFit":"cover"};
@@ -39,7 +39,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href={"https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@125,800&display=swap"} rel="stylesheet" />
         <link rel="stylesheet" href="/app/josefin.css" />
-        <script  dangerouslySetInnerHTML={{ __html: inline("index", "inline-3.js") }} />
+        <script  dangerouslySetInnerHTML={{ __html: headInline("landing-theme") }} />
         <link rel="stylesheet" href="home.css" />
         <link rel="stylesheet" href="app/foil.css" />
         <link rel="stylesheet" href="app/seam.css" />

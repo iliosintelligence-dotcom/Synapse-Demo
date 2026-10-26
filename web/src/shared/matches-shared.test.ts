@@ -1,7 +1,7 @@
 // The card renderer's safety rules (from the Greptile audit): ids cannot break out of attributes, unknown status is never
 // "Verified", and only https links are rendered. Was tests/unit/cards.test.js, which checked the old static site's copy.
 import { beforeAll, describe, expect, it } from "vitest";
-import { run } from "./matches-shared.js";
+import { run } from "./matches-shared";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 let M: any;

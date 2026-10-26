@@ -17,7 +17,7 @@ gsap.registerPlugin(useGSAP);
 /* Motion only for people who have not asked their phone for less of it. */
 const MOTION = "(prefers-reduced-motion: no-preference)";
 
-/* The same line icons as src/shared/icons.js, so the bar matches the rest of the app. */
+/* The same line icons as src/shared/icons.ts, so the bar matches the rest of the app. */
 const PATHS: Record<string, string> = {
   history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/>',
   heart: '<path d="M12 20s-7-4.5-9.2-9A4.6 4.6 0 0 1 12 6.5 4.6 4.6 0 0 1 21.2 11c-2.2 4.5-9.2 9-9.2 9z"/>',

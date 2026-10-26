@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/motion.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -16,23 +14,23 @@ export function run() {
   const BASE = '/app/motion/';
 
   /* ── lottie-web loader (lazy, one script) ── */
-  let lottieReady = null;
+  let lottieReady: Promise<SynLottie> | null = null;
   function loadLottie() {
     if (lottieReady) return lottieReady;
-    lottieReady = new Promise((resolve, reject) => {
+    lottieReady = new Promise<SynLottie>((resolve, reject) => {
       if (window.lottie) return resolve(window.lottie);
       const s = document.createElement('script');
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie_light.min.js';
-      s.onload = () => resolve(window.lottie);
+      s.onload = () => resolve(window.lottie!);
       s.onerror = reject;
       document.head.appendChild(s);
     });
     return lottieReady;
   }
 
-  const players = new Map();
+  const players = new Map<Element, SynLottieAnim | true>();
 
-  function mount(el) {
+  function mount(el: Element) {
     if (players.has(el) || REDUCED) return;
     const name = el.getAttribute('data-lottie');
     if (!name) return;
@@ -74,17 +72,17 @@ export function run() {
     });
   }, { threshold: 0.12 });
 
-  function initRoot(root) {
+  function initRoot(root: ParentNode) {
     root.querySelectorAll('[data-lottie]').forEach((el) => lottieIO.observe(el));
     // auto-tag cards + sections for reveal, staggered within their parent
-    const autoTargets = root.querySelectorAll('.card:not([data-reveal]), [data-reveal]:not(.in)');
-    const counters = new Map();
+    const autoTargets = root.querySelectorAll<HTMLElement>('.card:not([data-reveal]), [data-reveal]:not(.in)');
+    const counters = new Map<Element | null, number>();
     autoTargets.forEach((el) => {
       if (!el.hasAttribute('data-reveal')) el.setAttribute('data-reveal', '');
       const parent = el.parentElement;
       const i = (counters.get(parent) || 0);
       counters.set(parent, i + 1);
-      el.style.setProperty('--reveal-i', Math.min(i, 6));
+      el.style.setProperty('--reveal-i', Math.min(i, 6) as unknown as string);
       revealIO.observe(el);
     });
     root.querySelectorAll('button, .btn, .f, .wa, .chip, nav a').forEach((el) => el.classList.add('m-press'));
@@ -93,7 +91,7 @@ export function run() {
   function api() {
     return {
       mount,
-      play: (el) => { const p = players.get(el); if (p && p !== true) { p.goToAndStop(0, true); p.play(); } },
+      play: (el: Element) => { const p = players.get(el); if (p && p !== true) { p.goToAndStop(0, true); p.play(); } },
       refresh: () => initRoot(document),
     };
   }
@@ -111,12 +109,12 @@ export function run() {
    contracts once you scroll. Works for window scroll (consumer pages) and the
    agency portal's inner .content scroll container. */
 (function () {
-  var bar = document.querySelector('.appbar');
+  const bar = document.querySelector('.appbar');
   if (!bar) return;
-  var upd = function (y) { bar.classList.toggle('scrolled', y > 16); };
+  const upd = function (y: number) { bar!.classList.toggle('scrolled', y > 16); };
   window.addEventListener('scroll', function () { upd(window.scrollY); }, { passive: true });
-  var content = document.querySelector('.content');
-  if (content) content.addEventListener('scroll', function () { upd(content.scrollTop); }, { passive: true });
+  const content = document.querySelector('.content');
+  if (content) content.addEventListener('scroll', function () { upd(content!.scrollTop); }, { passive: true });
   upd(window.scrollY || 0);
 })();
 
@@ -131,7 +129,7 @@ export function run() {
   function toTop() {
     if (location.hash && document.getElementById(location.hash.slice(1))) return;
     window.scrollTo(0, 0);
-    var c = document.querySelector('.content'); if (c) c.scrollTop = 0;
+    const c = document.querySelector('.content'); if (c) c.scrollTop = 0;
   }
   if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', toTop);
   else toTop();
@@ -144,13 +142,13 @@ export function run() {
   //    'syn:relayout' hook pages can listen to. Coalesced to one rAF; the
   //    dispatched relayout never changes the observed boxes, so no loop.
   if (!('ResizeObserver' in window)) return;
-  var raf = 0;
+  let raf = 0;
   function relayout() {
     raf = 0;
     try { window.dispatchEvent(new Event('resize')); } catch (e) {}
     document.dispatchEvent(new CustomEvent('syn:relayout'));
   }
-  var ro = new ResizeObserver(function () { if (!raf) raf = requestAnimationFrame(relayout); });
+  const ro = new ResizeObserver(function () { if (!raf) raf = requestAnimationFrame(relayout); });
   function watch() {
     document.querySelectorAll('.leaflet-container, .pv-canvas, .tj-canvas, .content, .pv-split')
       .forEach(function (el) { try { ro.observe(el); } catch (e) {} });

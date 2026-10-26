@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/map/card.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -30,7 +28,7 @@ export function run() {
 
   function css() {
     if (document.getElementById('syn-mapcard-css')) return;
-    var st = document.createElement('style');
+    const st = document.createElement('style');
     st.id = 'syn-mapcard-css';
     st.textContent = [
       /* THE CARD STOPS SITTING IN THE MIDDLE OF THE MAP.
@@ -112,7 +110,10 @@ export function run() {
     document.head.appendChild(st);
   }
 
-  function esc(s) {
+  /* A row of property_nearby: the nearest place of one category, and how far it is. */
+  type NearRow = { category: string; nearest_name?: string; nearest_m: number };
+
+  function esc(s: unknown) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -124,10 +125,10 @@ export function run() {
    * @param opts.href function(id) -> the property page url
    * @param opts.ask  function(id) -> a url for "Ask Tayo about this", or null
    */
-  function attach(renderer, host, opts) {
+  function attach(renderer: SynMapCardRenderer, host: HTMLElement, opts?: SynMapCardOpts) {
     css();
-    var o = opts || {};
-    var el = document.createElement('div');
+    const o = opts || {};
+    const el = document.createElement('div');
     el.className = 'syn-mcard';
     el.innerHTML =
       '<button class="syn-mcard-x" type="button" aria-label="Close">&#215;</button>'
@@ -151,8 +152,8 @@ export function run() {
       + '</div>';
     host.appendChild(el);
 
-    var q = function (s) { return el.querySelector(s); };
-    var set = null, idx = 0;
+    const q = function <T extends HTMLElement = HTMLElement>(s: string) { return el.querySelector(s) as T; };
+    let set: string[] | null = null, idx = 0;
 
     /* ── WHERE THE CARD STANDS ───────────────────────────────────────────
        Measured against the map, not the viewport. The same card is used by
@@ -165,11 +166,11 @@ export function run() {
        width, less the gutter it sits in. Where that leaves too little to read
        a price in, there is no side to stand on and the bottom sheet is the
        honest answer -- which is also the phone case. */
-    var CARD_MIN = 240, CARD_MAX = 360;
+    const CARD_MIN = 240, CARD_MAX = 360;
 
     function place() {
-      var w = host.clientWidth || 0;
-      var third = Math.floor(w / 3) - 16;
+      const w = host.clientWidth || 0;
+      const third = Math.floor(w / 3) - 16;
       if (third >= CARD_MIN) {
         el.style.setProperty('--syn-mcard-w', Math.min(CARD_MAX, third) + 'px');
         el.classList.add('side');
@@ -200,10 +201,12 @@ export function run() {
        the surroundings of five hundred homes, only of the one they pressed.
        Cached per property, because stepping back and forth through a cluster
        would otherwise re-ask for the same rows. */
-    var nearCache = {};
+    const nearCache: Record<string, NearRow[]> = {};
+    /* The home the card is showing now: a reply for any other one arrived too late. */
+    let nearFor: string | null = null;
 
-    function renderNear(id) {
-      var box = q('[data-near]');
+    function renderNear(id: string) {
+      const box = q('[data-near]');
       if (!o.sb) { box.hidden = true; return; }
 
       if (nearCache[id]) { paintNear(box, nearCache[id]); return; }
@@ -223,11 +226,11 @@ export function run() {
           nearCache[id] = rows || [];
           /* The card may already have moved on to another home while this was
              in flight -- stepping through a cluster is faster than a request. */
-          if (renderNear.current === id) paintNear(box, nearCache[id]);
+          if (nearFor === id) paintNear(box, nearCache[id]);
         })
         .catch(function () {
           nearCache[id] = [];
-          if (renderNear.current === id) paintNear(box, []);
+          if (nearFor === id) paintNear(box, []);
         });
     }
 
@@ -235,11 +238,11 @@ export function run() {
        is the most that can be read at a glance, and these are the four that
        decide whether somebody could actually live somewhere. Ordered by what
        the data says is closest, not by this list. */
-    var WANTED = ['transit', 'hospital', 'school', 'supermarket', 'market',
+    const WANTED = ['transit', 'hospital', 'school', 'supermarket', 'market',
       'pharmacy', 'bank', 'university', 'park'];
 
-    function paintNear(box, rows) {
-      var pick = (rows || [])
+    function paintNear(box: HTMLElement, rows: NearRow[]) {
+      const pick = (rows || [])
         .filter(function (r) { return WANTED.indexOf(r.category) !== -1; })
         .slice(0, 4);
       if (!pick.length) {
@@ -251,7 +254,7 @@ export function run() {
         return;
       }
       box.innerHTML = '<h6>Nearby</h6><ul>' + pick.map(function (r) {
-        var m = r.nearest_m >= 1000
+        const m = r.nearest_m >= 1000
           ? (Math.round(r.nearest_m / 100) / 10) + ' km'
           : r.nearest_m + ' m';
         return '<li><span class="cat">' + esc(r.category) + '</span>'
@@ -264,42 +267,42 @@ export function run() {
        second `opts` in here shadows it. It happens to be harmless because
        nothing below reads the outer one directly, which is exactly the kind of
        accident that stops being harmless during the next edit. */
-    function show(id, how) {
-      var moveCamera = !(how && how.moveCamera === false);
-      var rec = renderer.select(id);
+    function show(id: string, how?: { moveCamera?: boolean }) {
+      const moveCamera = !(how && how.moveCamera === false);
+      const rec = renderer.select(id);
       if (!rec) { hide(); return; }
-      var p = rec.props;
+      const p = rec.props;
       q('[data-price]').textContent = p.price || '';
       q('[data-ttl]').textContent = p.title || '';
       q('[data-loc]').textContent = p.loc || '';
 
-      var img = q('[data-img]');
+      const img = q('[data-img]');
       if (p.img) { img.style.backgroundImage = 'url("' + p.img + '")'; img.textContent = ''; }
       else { img.style.backgroundImage = ''; img.textContent = 'no photo'; }
 
       /* Verification is the one claim on this card that must never be
          decorative: it is the thing Synapse is for. An unverified home says so
          plainly rather than being left blank and read as verified. */
-      var ver = (p.verified === true || p.verified === 'true');
+      const ver = (p.verified === true || p.verified === 'true');
       q('[data-chips]').innerHTML =
         '<span class="syn-mcard-chip">' + esc(p.beds || '-') + '</span>'
         + '<span class="syn-mcard-chip ' + (ver ? 'ok' : 'no') + '">'
         + (ver ? 'Verified' : 'Not verified') + '</span>';
 
-      var nav = q('[data-nav]');
+      const nav = q('[data-nav]');
       if (set && set.length > 1) {
         nav.hidden = false;
         q('[data-count]').textContent = (idx + 1) + ' of ' + set.length + ' here';
-        q('[data-prev]').disabled = idx === 0;
-        q('[data-next]').disabled = idx === set.length - 1;
+        q<HTMLButtonElement>('[data-prev]').disabled = idx === 0;
+        q<HTMLButtonElement>('[data-next]').disabled = idx === set.length - 1;
       } else { nav.hidden = true; }
 
       q('[data-open]').setAttribute('href', o.href ? o.href(id) : '#');
-      var ask = q('[data-ask]');
+      const ask = q('[data-ask]');
       if (o.ask) { ask.hidden = false; ask.setAttribute('href', o.ask(id)); }
       else ask.hidden = true;
 
-      renderNear.current = id;
+      nearFor = id;
       renderNear(id);
 
       el.classList.add('on');
@@ -316,10 +319,10 @@ export function run() {
          card would be sitting on top of it. Otherwise leave the view alone --
          the user chose it. */
       if (moveCamera && renderer.map) {
-        var m = renderer.map;
-        var pt = m.project([rec.lng, rec.lat]);
-        var box = m.getContainer().getBoundingClientRect();
-        var cb = el.getBoundingClientRect();
+        const m = renderer.map;
+        const pt = m.project([rec.lng, rec.lat]);
+        const box = m.getContainer().getBoundingClientRect();
+        const cb = el.getBoundingClientRect();
 
         /* THE CARD'S ACTUAL RECTANGLE, not an assumption about where it is.
            This used to test `pt.y > height - (cardHeight + 24)` -- true for
@@ -328,21 +331,21 @@ export function run() {
            of the right it moves the camera for pins that were never covered,
            and the whole point of this block is to leave the view alone when
            it can. */
-        var pad = 18;
-        var behindCard = pt.x > (cb.left - box.left) - pad
+        const pad = 18;
+        const behindCard = pt.x > (cb.left - box.left) - pad
           && pt.x < (cb.right - box.left) + pad
           && pt.y > (cb.top - box.top) - pad
           && pt.y < (cb.bottom - box.top) + pad;
 
         /* `pt.y < 0` was written twice and `pt.y > box.height` not at all, so
            a pin below the map's bottom edge did not count as off screen. */
-        var offScreen = pt.x < 0 || pt.y < 0 || pt.x > box.width || pt.y > box.height;
+        const offScreen = pt.x < 0 || pt.y < 0 || pt.x > box.width || pt.y > box.height;
 
         if (behindCard || offScreen) {
           /* Put the pin in the part of the map that is still showing. With
              the card on the right that is left of centre; with the bottom
              sheet it is above centre, as before. */
-          var off = el.classList.contains('side')
+          const off: [number, number] = el.classList.contains('side')
             ? [-(cb.width / 2 + 10), 0]
             : [0, -(el.offsetHeight / 2)];
           m.easeTo({ center: [rec.lng, rec.lat], offset: off, duration: 420 });
@@ -356,7 +359,7 @@ export function run() {
       renderer.clearSelection();
     }
 
-    function step(d) {
+    function step(d: number) {
       if (!set || !set.length) return;
       idx = Math.max(0, Math.min(set.length - 1, idx + d));
       show(set[idx]);

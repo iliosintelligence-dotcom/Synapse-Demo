@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 /* Was public/app/ng-places.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -30,7 +28,7 @@ export function run() {
   'use strict';
 
   /* 36 states plus the Federal Capital Territory, alphabetical. */
-  var STATES = [
+  const STATES = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
     'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
     'Federal Capital Territory', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano',
@@ -41,7 +39,7 @@ export function run() {
 
   /* Main towns per state, the capital first, then the places somebody would
      plausibly list a home in. Not exhaustive by design. */
-  var CITIES = {
+  const CITIES: Record<string, string[]> = {
     'Abia': ['Umuahia', 'Aba', 'Ohafia', 'Arochukwu'],
     'Adamawa': ['Yola', 'Mubi', 'Numan', 'Jimeta'],
     'Akwa Ibom': ['Uyo', 'Eket', 'Ikot Ekpene', 'Oron'],
@@ -82,7 +80,7 @@ export function run() {
   };
 
   /* Areas, for the cities this product serves. Keyed by city. */
-  var AREAS = {
+  const AREAS: Record<string, string[]> = {
     'Lagos': [
       'Lekki Phase 1', 'Lekki Phase 2', 'Ikoyi', 'Victoria Island', 'Ikeja GRA',
       'Ajah', 'Sangotedo', 'Yaba', 'Surulere', 'Maryland', 'Magodo', 'Gbagada',
@@ -123,16 +121,16 @@ export function run() {
   };
 
   /** The state a city sits in, so choosing the city can fill the state in. */
-  var STATE_OF = {};
+  const STATE_OF: Record<string, string> = {};
   Object.keys(CITIES).forEach(function (st) {
     CITIES[st].forEach(function (c) { if (!STATE_OF[c]) STATE_OF[c] = st; });
   });
 
-  function citiesIn(state) { return (CITIES[state] || []).slice(); }
+  function citiesIn(state: string) { return (CITIES[state] || []).slice(); }
 
   /** Areas for a city, plus anything already listed there. */
-  function areasIn(city, extra) {
-    var base = (AREAS[city] || []).slice();
+  function areasIn(city: string, extra?: string[]) {
+    const base = (AREAS[city] || []).slice();
     (extra || []).forEach(function (a) {
       if (a && base.indexOf(a) === -1) base.push(a);
     });
@@ -142,7 +140,7 @@ export function run() {
   /* Every city we know, for when no state is chosen yet. Typing the city first
      is a perfectly reasonable order and should not be punished. */
   function allCities() {
-    var out = [];
+    const out: string[] = [];
     Object.keys(CITIES).forEach(function (st) {
       CITIES[st].forEach(function (c) { if (out.indexOf(c) === -1) out.push(c); });
     });
@@ -159,12 +157,12 @@ export function run() {
      So a stored value is mapped onto the canonical list before the select is
      set: trailing "state", case and spacing are all forgiven. Anything that
      still does not match is returned as-is and the agency picks. */
-  function canonicalState(raw) {
-    var v = String(raw || '').trim();
+  function canonicalState(raw: unknown) {
+    const v = String(raw || '').trim();
     if (!v) return '';
-    var probe = v.toLowerCase().replace(/\s+state$/, '').replace(/\s+/g, ' ').trim();
-    for (var i = 0; i < STATES.length; i++) {
-      var st = STATES[i].toLowerCase();
+    const probe = v.toLowerCase().replace(/\s+state$/, '').replace(/\s+/g, ' ').trim();
+    for (let i = 0; i < STATES.length; i++) {
+      const st = STATES[i].toLowerCase();
       if (st === probe) return STATES[i];
     }
     /* The FCT goes by several names in the wild. */
@@ -178,7 +176,7 @@ export function run() {
     citiesIn: citiesIn,
     areasIn: areasIn,
     allCities: allCities,
-    stateOf: function (city) { return STATE_OF[city] || ''; },
+    stateOf: function (city: string) { return STATE_OF[city] || ''; },
   };
 })();
 }

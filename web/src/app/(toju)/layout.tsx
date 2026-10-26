@@ -3,7 +3,7 @@
 // GENERATED from app/toju.html by scripts/port-legacy.mjs, then edited by hand: this file is now the source of the page's <head>.
 // The page's <body> is page.tsx beside the route; its inline scripts and styles are in src/legacy/toju/.
 import type { Viewport } from "next";
-import { inline } from "@/legacy/read";
+import { headInline, inline } from "@/legacy/read";
 import { AnalyticsHead } from "@/features/site/Analytics";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1,"viewportFit":"cover","interactiveWidget":"resizes-content"};
@@ -33,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="theme-dark.css" />
         <link rel="stylesheet" href="scene.css" />
         <style id="tjExtras" dangerouslySetInnerHTML={{ __html: inline("toju", "inline-3.css") }} />
-        <script  dangerouslySetInnerHTML={{ __html: inline("toju", "inline-4.js") }} />
+        <script  dangerouslySetInnerHTML={{ __html: headInline("toju-bg") }} />
         <script src="theme.js" />
         <script src="brand.js" />
         <link rel="stylesheet" href="tapfix.css" />
