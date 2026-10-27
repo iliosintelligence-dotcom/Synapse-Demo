@@ -32,7 +32,7 @@ export function run() {
 
   function known(state: string) { return IDS.indexOf(state) > -1 ? state : 'happy'; }
   /* ?v= changes whenever the pictures are redrawn (cat ears, 2026-10-27): images are cached a week, so a new look needs a new address */
-  function url(state: string) { return BASE + 'zyn-' + known(state) + '.webp?v=cat'; }
+  function url(state: string) { return BASE + 'zyn-' + known(state) + '.webp?v=cat3d'; }
   function cls(state: string, still?: boolean) { return 'zyn ' + (still ? 'zm-still' : (MOTION[known(state)] || 'zm-bob')) + ' zd' + Math.floor(Math.random() * 6); }
 
   function img(state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string }) {

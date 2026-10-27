@@ -2,11 +2,13 @@
    (a bounce when excited, a slow sway when sorry). Stops entirely under
    prefers-reduced-motion. */
 .zyn { display: block; object-fit: contain; transform-origin: 50% 92%; -webkit-user-drag: none; user-select: none; pointer-events: none; }
-@keyframes zBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.6%); } }
-@keyframes zSway { 0%, 100% { transform: rotate(-2.6deg) translateY(0); } 50% { transform: rotate(2.6deg) translateY(-1.6%); } }
-@keyframes zBounce { 0%, 100% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-8%) scale(.98, 1.03); } 52% { transform: translateY(0) scale(1.035, .965); } 68% { transform: translateY(-2.5%) scale(1, 1); } }
-@keyframes zSlow { 0%, 100% { transform: rotate(-1.6deg) translateY(0); } 50% { transform: rotate(1.6deg) translateY(1.4%); } }
-@keyframes zPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+/* Motion uses translate/rotate/scale, never transform: a page that places Zyn with transform (centring, a fixed corner) keeps that
+   placement while he moves. Animating transform replaced it, so he jumped to the centre whenever his mood changed (2026-10-27). */
+@keyframes zBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -2.6%; } }
+@keyframes zSway { 0%, 100% { rotate: -2.6deg; translate: 0 0; } 50% { rotate: 2.6deg; translate: 0 -1.6%; } }
+@keyframes zBounce { 0%, 100% { translate: 0 0; scale: 1 1; } 30% { translate: 0 -8%; scale: .98 1.03; } 52% { translate: 0 0; scale: 1.035 .965; } 68% { translate: 0 -2.5%; scale: 1 1; } }
+@keyframes zSlow { 0%, 100% { rotate: -1.6deg; translate: 0 0; } 50% { rotate: 1.6deg; translate: 0 1.4%; } }
+@keyframes zPulse { 0%, 100% { scale: 1; } 50% { scale: 1.035; } }
 .zm-bob { animation: zBob 3.4s ease-in-out infinite; }
 .zm-sway { animation: zSway 3.8s ease-in-out infinite; }
 .zm-bounce { animation: zBounce 1.5s ease-in-out infinite; }

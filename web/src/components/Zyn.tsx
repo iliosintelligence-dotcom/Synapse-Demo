@@ -18,7 +18,7 @@ const MOTION: Record<string, string> = {};
 MOTION.loading = s.pulse;
 
 const known = (state: string) => (ZYN_STATES.includes(state) ? state : "happy");
-const zynUrl = (state: string) => `/images/zyn/zyn-${known(state)}.webp?v=cat`;   // same version as src/shared/zyn.ts
+const zynUrl = (state: string) => `/images/zyn/zyn-${known(state)}.webp?v=cat3d`;   // same version as src/shared/zyn.ts
 const EMOTES = ["celebrating", "excited", "waving", "delighted", "winking"];
 
 

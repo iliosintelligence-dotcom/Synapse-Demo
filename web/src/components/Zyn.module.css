@@ -1,10 +1,11 @@
 /* Zyn's idle motion. Every state moves a little; the way it moves says something (a bounce when excited, a slow sway when sorry). */
+/* translate/rotate/scale, not transform: see public/app/zyn.css */
 .zyn { display: block; object-fit: contain; transform-origin: 50% 92%; user-select: none; }
-@keyframes bobK { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.6%); } }
-@keyframes swayK { 0%, 100% { transform: rotate(-2.6deg) translateY(0); } 50% { transform: rotate(2.6deg) translateY(-1.6%); } }
-@keyframes bounceK { 0%, 100% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-8%) scale(0.98, 1.03); } 52% { transform: translateY(0) scale(1.03, 0.97); } 70% { transform: translateY(-3%) scale(1, 1); } }
-@keyframes slowK { 0%, 100% { transform: rotate(-1.6deg) translateY(0); } 50% { transform: rotate(1.6deg) translateY(1.4%); } }
-@keyframes pulseK { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes bobK { 0%, 100% { translate: 0 0; } 50% { translate: 0 -2.6%; } }
+@keyframes swayK { 0%, 100% { rotate: -2.6deg; translate: 0 0; } 50% { rotate: 2.6deg; translate: 0 -1.6%; } }
+@keyframes bounceK { 0%, 100% { translate: 0 0; scale: 1 1; } 30% { translate: 0 -8%; scale: 0.98 1.03; } 52% { translate: 0 0; scale: 1.03 0.97; } 70% { translate: 0 -3%; scale: 1 1; } }
+@keyframes slowK { 0%, 100% { rotate: -1.6deg; translate: 0 0; } 50% { rotate: 1.6deg; translate: 0 1.4%; } }
+@keyframes pulseK { 0%, 100% { scale: 1 1; } 50% { scale: 1.035 1.035; } }
 .bob { animation: bobK 3.4s ease-in-out infinite; }
 .sway { animation: swayK 3.8s ease-in-out infinite; }
 .bounce { animation: bounceK 1.5s ease-in-out infinite; }

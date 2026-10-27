@@ -87,7 +87,7 @@ export function AdvisorFab() {
   return (
     <button className="toju-fab" id="tojuFab" aria-label="Ask Tayo" onClick={() => window.dispatchEvent(new CustomEvent("syn:advisor-open"))}
       onMouseEnter={() => zyn(img.current, "waving")} onMouseLeave={() => zyn(img.current, "happy")}>
-      <img ref={img} className="zyn zm-bob" src="../images/zyn/zyn-happy.webp?v=cat" width="92" height="92" alt="" aria-hidden="true" draggable="false" />
+      <img ref={img} className="zyn zm-bob" src="../images/zyn/zyn-happy.webp?v=cat3d" width="92" height="92" alt="" aria-hidden="true" draggable="false" />
     </button>
   );
 }
@@ -173,7 +173,7 @@ export function AdvisorPanel() {
       <div className={"tpanel-scrim" + (on ? " on" : "")} id="tpScrim" onClick={close}></div>
       <aside className={"tpanel" + (on ? " on" : "")} id="tpanel" aria-label="Ask Tayo">
         <div className="thd">
-          <img ref={face} className="zyn zm-bob o-zyn" id="tpZyn" src="../images/zyn/zyn-waving.webp?v=cat" width="58" height="58" alt="" aria-hidden="true"
+          <img ref={face} className="zyn zm-bob o-zyn" id="tpZyn" src="../images/zyn/zyn-waving.webp?v=cat3d" width="58" height="58" alt="" aria-hidden="true"
             onClick={() => { if (W().Zyn) W().Zyn.emote(face.current); }} />
           <div>
             <div className="tt" id="tpTitle">{head.title}</div>
