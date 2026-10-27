@@ -35,7 +35,7 @@ declare global {
   interface SynLottie { loadAnimation: (o: { container: Element; renderer: string; loop: boolean; autoplay: boolean; path: string }) => SynLottieAnim }
   /* icons.ts */
   interface SynIcons {
-    svg: (name: string, opts?: { cls?: string; size?: number }) => string;
+    svg: (name: string, opts?: { cls?: string; size?: number | string }) => string;
     brand: (name: string, opts?: { cls?: string; size?: number }) => string;
     hydrate: (root?: ParentNode | null) => void;
     has: (n: string) => boolean;

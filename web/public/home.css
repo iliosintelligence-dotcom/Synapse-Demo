@@ -555,8 +555,14 @@ a { color: inherit; }
 .foot { margin-top: clamp(64px, 8vw, 110px); padding: 36px 0 44px; border-top: 1px solid var(--line); }
 .foot-in { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px 40px; flex-wrap: wrap; }
 .foot-tag { margin: 14px 0 0; font-size: 15px; color: var(--muted); max-width: 36ch; }
-.foot-links { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 15px; }
+.foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 15px; }
+/* tall enough to hit (Fluent 2: 24px with a mouse, 44px with a thumb); the words do not move */
+.foot-links a, .mini-foot a, .ask-foot a { display: inline-flex; align-items: center; min-height: 24px; }
 .foot-links a { color: var(--ink-2); text-decoration: none; }
+@media (pointer: coarse) {
+  .foot-links, .mini-foot .wrap, .ask-foot { row-gap: 0; }
+  .foot-links a, .mini-foot a, .ask-foot a { min-height: 44px; }
+}
 .foot-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── Night: no hairlines ────────────────────────────────────────────────────

@@ -1618,7 +1618,7 @@ export function run() {
       var rows = keys.map(function (t) {
         var m = metaFor(t);
         return '<button class="pvo-row" data-cat="' + escHtml(t) + '" type="button">'
-          + '<span class="ic">' + poiSvg(m.i, 12) + '</span>'
+          + '<span class="ic">' + poiSvg(m.i, '.8em') + '</span>'
           + '<span class="lb">' + escHtml(AMENITY_LABEL[t] || m.lbl) + '</span>'
           + '<span class="n">' + (nearest[t] != null ? formatDist(nearest[t]) + ' · ' : '') + counts[t] + '</span></button>';
       });
@@ -1627,11 +1627,11 @@ export function run() {
          it is just another question about the same house. */
       if (DEST.length) {
         rows.unshift('<button class="pvo-row" data-cat="' + COMMUTE_KEY + '" type="button">'
-          + '<span class="ic">' + poiSvg('commute', 12) + '</span>'
+          + '<span class="ic">' + poiSvg('commute', '.8em') + '</span>'
           + '<span class="lb">Commute</span>'
           + '<span class="n">' + DEST.length + '</span></button>');
       }
-      rows.unshift('<button class="pvo-row" data-cat="__flood" type="button"><span class="ic">' + poiSvg('waves', 12) + '</span><span class="lb">Flood map</span><span class="n">View</span></button>');
+      rows.unshift('<button class="pvo-row" data-cat="__flood" type="button"><span class="ic">' + poiSvg('waves', '.8em') + '</span><span class="lb">Flood map</span><span class="n">View</span></button>');
       if (!rows.length) { overlay.innerHTML = NO_DATA; fit([PROP]); return; }
 
       overlay.innerHTML = '<div class="pvo-k">What\'s around this home</div>'
@@ -1677,7 +1677,7 @@ export function run() {
       var host = document.getElementById('piRows'), p = window.__pvListing;
       if (!host || !p) return;
       loadFlood();
-      var ic = function (n) { return poiSvg(n, 18); };
+      var ic = function (n) { return poiSvg(n, '1.4em'); };
       var am = (Array.isArray(p.amenities) ? p.amenities : []).map(String);
       var has = function (re) { return am.filter(function (a) { return re.test(a); }); };
       var rows = [];
