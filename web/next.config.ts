@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 /**
  * Static export: the build is plain HTML/JS/CSS in `out/`. All server logic lives in Supabase (database, auth, edge
@@ -11,4 +12,14 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
 };
 
-export default nextConfig;
+// `next dev` has no cleanUrls, so links like /app/signin.html 404 locally; map them to the page the way Vercel does.
+// Dev only: a static export does not support rewrites, and production gets this from vercel.json.
+export default function config(phase: string): NextConfig {
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
+  return {
+    ...nextConfig,
+    async rewrites() {
+      return [{ source: "/:path*.html", destination: "/:path*" }];
+    },
+  };
+}
