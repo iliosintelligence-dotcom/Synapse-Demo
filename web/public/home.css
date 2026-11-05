@@ -21,26 +21,24 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:        #f7f4ee;
-  --bg-2:      #efe9df;
-  --surface:   #fdfbf7;
-  --ink:       #1f1b16;
-  --ink-2:     #5e554a;
-  --muted:     #7b7266;
-  --soft:      #9a9285;
-  --line:      rgba(31, 27, 22, 0.08);
-  --line-2:    rgba(31, 27, 22, 0.12);
-  --edge:      rgba(31, 27, 22, 0.08);
-  --tint:      rgba(255, 138, 45, 0.12);
-  --orange:    #ff8a2d;
-  --orange-dim: #e8761b;
-  --orange-soft: rgba(255, 138, 45, 0.12);
-  --btn:       #1f1b16;
-  --btn-ink:   #f7f4ee;
-  --frame-edge: rgba(31, 27, 22, 0.08);
-  --shot-shadow: 0 2px 8px rgba(31, 27, 22, 0.06), 0 8px 24px rgba(31, 27, 22, 0.1);
+  --bg:        #FAF6F0;
+  --bg-2:      #F4ECE2;
+  --surface:   #FFFFFF;
+  --ink:       #15120F;
+  --ink-2:     #3B352F;
+  --muted:     #6B6259;   /* 5.6:1 on --bg */
+  --soft:      #8C8278;   /* headline second halves only: large text, 3.5:1 */
+  --line:      #E8DDD0;
+  --line-2:    #D9CAB8;
+  --edge:      #D9CAB8;   /* text boxes: the one edge that stays at night */
+  --tint:      #FFF1E4;
+  --orange:    #FF8A2D;
+  --btn:       #15120F;
+  --btn-ink:   #FFFFFF;
+  --frame-edge: rgba(255, 255, 255, 0.55);
+  --shot-shadow: 0 30px 60px -20px rgba(92, 46, 12, 0.35), 0 12px 24px -12px rgba(92, 46, 12, 0.18);
 
-  --f: 'Ubuntu', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f: 'Josefin Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --wrap: 1200px;
   --gutter: clamp(16px, 4vw, 40px);
   --r-frame: clamp(16px, 2.2vw, 28px);
@@ -51,24 +49,22 @@
    paint; without script the device's setting decides. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161513; --bg-2: #262421; --surface: #1c1a18;
-    --ink: #efe9de; --ink-2: #aaa398; --muted: #8a847a; --soft: #7a7368;
-    --line: rgba(239, 233, 222, 0.12); --line-2: rgba(239, 233, 222, 0.16); --edge: rgba(239, 233, 222, 0.08); --tint: rgba(255, 158, 77, 0.16);
-    --orange: #ff9e4d; --orange-dim: #ff8a2d; --orange-soft: rgba(255, 158, 77, 0.16);
-    --btn: #efe9de; --btn-ink: #161513;
-    --frame-edge: rgba(239, 233, 222, 0.12);
-    --shot-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+    --bg: #000000; --bg-2: #0B0C0E; --surface: #16181C;
+    --ink: #E7E9EA; --ink-2: #C9CDD1; --muted: #A3A8AE; --soft: #71767B;
+    --line: transparent; --line-2: transparent; --edge: #2F3336; --tint: #1C140D;
+    --btn: #FFFFFF; --btn-ink: #000000;
+    --frame-edge: rgba(255, 255, 255, 0.08);
+    --shot-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161513; --bg-2: #262421; --surface: #1c1a18;
-  --ink: #efe9de; --ink-2: #aaa398; --muted: #8a847a; --soft: #7a7368;
-  --line: rgba(239, 233, 222, 0.12); --line-2: rgba(239, 233, 222, 0.16); --edge: rgba(239, 233, 222, 0.08); --tint: rgba(255, 158, 77, 0.16);
-  --orange: #ff9e4d; --orange-dim: #ff8a2d; --orange-soft: rgba(255, 158, 77, 0.16);
-  --btn: #efe9de; --btn-ink: #161513;
-  --frame-edge: rgba(239, 233, 222, 0.12);
-  --shot-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --bg: #000000; --bg-2: #0B0C0E; --surface: #16181C;
+  --ink: #E7E9EA; --ink-2: #C9CDD1; --muted: #A3A8AE; --soft: #71767B;
+  --line: transparent; --line-2: transparent; --edge: #2F3336; --tint: #1C140D;
+  --btn: #FFFFFF; --btn-ink: #000000;
+  --frame-edge: rgba(255, 255, 255, 0.08);
+  --shot-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.8);
   color-scheme: dark;
 }
 
@@ -680,24 +676,6 @@ a { color: inherit; }
   .rail-copy { display: none !important; }
   .rail-vp { overflow-x: auto; }
   .rl-track { scroll-behavior: auto; }
-}
-
-/* Fade-in animations for single-read experience */
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 400ms cubic-bezier(0.22, 1, 0.36, 1), transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal-1 { transition-delay: 0ms; }
-.reveal-2 { transition-delay: 80ms; }
-.reveal-3 { transition-delay: 160ms; }
-.reveal-4 { transition-delay: 240ms; }
-.reveal-5 { transition-delay: 320ms; }
-.reveal-6 { transition-delay: 400ms; }
-
-@media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
 }
 
 
