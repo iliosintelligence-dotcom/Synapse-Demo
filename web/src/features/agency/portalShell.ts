@@ -810,9 +810,4 @@ export function run() {
     /* ═══ Brand page ═══ is React: src/features/agency/BrandPage.tsx. */
 
     // simple toggles in social studio
-
-    /* portalData runs first and starts the leads request; on a slow line the leads land before this file has loaded, when
-       it skips the handoffs and the agents' workload (they live here). Catch up from what it already holds. Last in run():
-       buildHandoffs needs HANDOFFS, declared above. */
-    if (w.SynLeads && w.SynLeads().length) { buildHandoffs(w.SynLeads()); renderHandoffs(); renderAgents(); }
 }
