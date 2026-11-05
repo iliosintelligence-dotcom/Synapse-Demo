@@ -127,12 +127,13 @@ export function run() {
       + ' viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' + inner + '</svg>';
   }
 
-  /* size: a number is px; a string ('1.4em') is used as written, for icons that should grow with the text beside them */
+  /* size: a number is px; a string ('1.4em') is used as written, for icons that should grow with the text beside them.
+     0 or nothing means no inline size, so the stylesheet sizes the icon (hydrate passes 0 for a span without data-size). */
   function svg(name: string, opts?: { cls?: string; size?: number | string }) {
     const o = opts || {};
     const inner = PATHS[name] || '';
     const cls = 'syn-i' + (o.cls ? ' ' + o.cls : '');
-    const len = typeof o.size === 'number' ? o.size + 'px' : o.size;
+    const len = typeof o.size === 'number' ? (o.size > 0 ? o.size + 'px' : '') : o.size;
     const sz = len ? ' style="width:' + len + ';height:' + len + '"' : '';
     return '<svg class="' + cls + '"' + sz + ' viewBox="0 0 24 24" fill="none" stroke="currentColor" '
       + 'stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
