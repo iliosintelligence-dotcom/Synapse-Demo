@@ -199,6 +199,28 @@ function verticalReel(): (() => void) | void {
   };
 }
 
+/* Reveal animations: IntersectionObserver for .reveal elements */
+function revealAnimations(): () => void {
+  const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (calm()) {
+    document.querySelectorAll<HTMLElement>(".reveal").forEach((el) => el.classList.add("visible"));
+    return () => {};
+  }
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { rootMargin: "0px 0px -50px 0px", threshold: 0.1 }
+  );
+  document.querySelectorAll<HTMLElement>(".reveal").forEach((el) => observer.observe(el));
+  return () => observer.disconnect();
+}
+
 /* The iridescent foil: each .irid card learns where the pointer is inside it (--gx --gy --fx) and where it sits in the window
    as the page scrolls (--fy). Reduced motion: drawn, and still. */
 function foil(): () => void {
@@ -238,6 +260,8 @@ function foil(): () => void {
 
 export function LandingEffects() {
   useEffect(() => {
+    /* Reveal animations for .reveal elements */
+    const revealCleanup = revealAnimations();
     /* The bar's hairline once the page scrolls. */
     const nav = document.getElementById("nav");
     const scrolled = () => nav?.classList.toggle("scrolled", window.scrollY > 8);
@@ -251,6 +275,7 @@ export function LandingEffects() {
     return () => {
       window.removeEventListener("scroll", scrolled); window.removeEventListener("load", top); window.removeEventListener("pageshow", shown);
       offs.forEach((f) => f && f());
+      revealCleanup();
     };
   }, []);
   return null;
