@@ -388,7 +388,7 @@ export function BrandPage() {
           <span className="bk-hex">{stored.bkColor2 ? c2.toUpperCase() : "Not set"}</span>
           <span className="bk-role">Accent</span></button>
       </div></div>
-      <div className="bk-card half"><div className="bk-k">Typeface</div>
+      <div className="bk-card third bk-first"><div className="bk-k">Typeface</div>
         {font ? (
           <>
             <div className="bk-type-name">{font}</div>
@@ -397,19 +397,19 @@ export function BrandPage() {
           </>
         ) : <None>No typeface chosen {"—"} captions use the default.</None>}
       </div>
-      <div className="bk-card half"><div className="bk-k">Voice</div>
+      <div className="bk-card third"><div className="bk-k">Voice</div>
         {val("bkVoice") ? <div style={{ fontSize: "13.5px", lineHeight: 1.6 }}>{val("bkVoice")}</div> : <None>Not set {"—"} Tayo writes in a neutral voice.</None>}
       </div>
-      <div className="bk-card half"><div className="bk-k">About</div>
+      <div className="bk-card third"><div className="bk-k">About</div>
         {val("bkDesc") ? <div style={{ fontSize: "13.5px", lineHeight: 1.6 }}>{val("bkDesc")}</div> : <None>No description yet.</None>}
       </div>
-      <div className="bk-card"><div className="bk-k">Post templates</div></div>
       <div className="bk-card half"><div className="bk-k">Where to find you</div><div className="bk-rows">
         <Row lab="Website"><Link v={val("bkWebsite")} href={val("bkWebsite")} /></Row>
         <Row lab="Instagram">{ig ? <Link v={ig} href={igHref} /> : <None>Not added</None>}</Row>
         {wa ? <Row lab="WhatsApp" text={wa} /> : <Row lab="WhatsApp"><None>Not added</None></Row>}
         {val("bkCity") ? <Row lab="City" text={val("bkCity")} /> : <Row lab="City"><None>Not set</None></Row>}
       </div></div>
+      <div className="bk-card half"><div className="bk-k">Post templates</div><None>No templates to show yet.</None></div>
     </div>
   );
 

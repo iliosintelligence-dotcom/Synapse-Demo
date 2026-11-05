@@ -1472,12 +1472,19 @@
        A page you look at, not a form you fill. Sections are cards on a grid
        so a partly-filled brand still reads as a layout rather than as gaps. */
     .bk-actions { display: flex; gap: 8px; align-items: center; }
-    .bk-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
-    .bk-card { grid-column: span 12; border: 1px solid var(--border); border-radius: 14px;
+    /* The columns follow the room the pane really has (beside the side rail, inside the capped column in
+       /app/portal-ui.css), not the window: one column, then halves, then thirds. */
+    #pane-brand { container-type: inline-size; }
+    .bk-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+    .bk-card { grid-column: span 12; min-width: 0; border: 1px solid var(--border); border-radius: 14px;
       background: var(--surface, #fff); padding: 18px; }
-    .bk-card.half { grid-column: span 6; }
-    .bk-card.third { grid-column: span 4; }
-    @media (max-width: 900px) { .bk-card.half, .bk-card.third { grid-column: span 12; } }
+    @container (min-width: 600px) {
+      .bk-card.half, .bk-card.third { grid-column: span 6; }
+      .bk-card.third.bk-first { grid-column: span 12; }   /* three cards in two columns: the first takes the row */
+    }
+    @container (min-width: 900px) {
+      .bk-card.third, .bk-card.third.bk-first { grid-column: span 4; }
+    }
     .bk-k { font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase;
       color: var(--ink-dim); margin-bottom: 12px; }
 

@@ -257,8 +257,10 @@
   /* A LOGO REACT DREW WAITS FOR REACT (2026-10-24). On a page whose markup is React's own (the move to React), swapping the
      <img> for an <svg> before React has taken the page over makes React find something it did not draw (error #418). Such a
      logo is upgraded once the page's React layer says it is ready (syn:react-ready, src/features/site/SiteReact.tsx), or after
-     four seconds if it never does. A logo inside the protected old markup (#syn-legacy), or on a page without React, is
-     upgraded at once, as before. */
+     twenty seconds if it never does. A logo inside the protected old markup (#syn-legacy), or on a page without React, is
+     upgraded at once, as before. The fallback was four seconds, which a slow connection outran: React was still loading,
+     the swap went in first, and the whole page was thrown away and redrawn (2026-11-05). Every page that loads this file
+     mounts SiteReact, so the event is what normally does it. */
   const waiting: HTMLImageElement[] = [];
   function reactOwned(img: Element) {
     return !!document.querySelector('script[src*="/_next/static/"]') && !(img.closest && img.closest('#syn-legacy'))
@@ -267,7 +269,7 @@
   function upgradeSoon(img: HTMLImageElement) { if (reactOwned(img)) { if (waiting.indexOf(img) < 0) waiting.push(img); } else upgrade(img); }
   function flush() { waiting.splice(0).forEach(function (i) { if (i.isConnected) upgrade(i); }); }
   window.addEventListener('syn:react-ready', flush);
-  setTimeout(flush, 4000);
+  setTimeout(flush, 20000);
   function scan(root: Document | Element) {
     (root.querySelectorAll ? root.querySelectorAll<HTMLImageElement>('img[src*="brand/mark-"]') : [] as HTMLImageElement[]).forEach(upgradeSoon);
   }
