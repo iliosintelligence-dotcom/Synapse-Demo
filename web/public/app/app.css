@@ -148,10 +148,13 @@
 
   --radius: 10px;
   --radius-sm: 8px;
-  --f-sans: 'Josefin Sans', system-ui, sans-serif;
-  --f-serif: 'Josefin Sans', system-ui, sans-serif;
-  --f-accent: 'Josefin Sans', system-ui, sans-serif;
+  /* Ubuntu is the site's face (2026-11-05; ubuntu.css, self-hosted). Josefin Sans stays for the wordmark only, below. */
+  --f-sans: 'Ubuntu', system-ui, sans-serif;
+  --f-serif: 'Ubuntu', system-ui, sans-serif;
+  --f-accent: 'Ubuntu', system-ui, sans-serif;
 }
+/* The SYNAPSE wordmark is drawn in the brand's own face, whatever the text around it is set in. */
+.logo-word, .nav-logo-word, .appbar .brand, .bw-split { font-family: 'Josefin Sans', system-ui, sans-serif; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Form controls do not inherit font-family. Every <button>, <input> and
@@ -370,15 +373,15 @@ a { color: inherit; text-decoration: none; }
 /* ── Map pins ──────────────────────────────────────────────────────────────
    A price pill on a pointer tail, so the pin points AT the property instead of
    floating beside it. The ring keeps it readable over any tile, and a verified
-   dot carries the same trust signal the cards do. Josefin Sans has no ₦ glyph,
-   so the pin explicitly falls back to a face that does, otherwise ₦ renders
-   as a mangled N and prices become unreadable at pin size. */
+   dot carries the same trust signal the cards do. Josefin Sans had no ₦ glyph,
+   so the pin fell back to a face that does; Ubuntu has one (its Latin Extended
+   file), and Segoe UI stays behind it in case that file has not loaded. */
 .pin-wrap { position: relative; width: 0 !important; height: 0 !important; overflow: visible; }
 .price-pin {
   position: absolute; left: 0; bottom: 9px; transform: translateX(-50%);
   display: inline-flex; align-items: center; gap: 5px;
   background: #121212; color: #fff; white-space: nowrap;
-  font: 700 12px/1 'Josefin Sans', 'Segoe UI', system-ui, sans-serif;
+  font: 700 12px/1 'Ubuntu', 'Segoe UI', system-ui, sans-serif;
   padding: 6px 10px; border-radius: 100px;
   border: 1.5px solid #fff;
   box-shadow: 0 5px 14px rgba(20,20,20,0.38);

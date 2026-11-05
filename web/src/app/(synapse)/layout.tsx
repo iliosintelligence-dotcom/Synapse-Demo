@@ -16,6 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href="/app/josefin.css" />
+        <link rel="stylesheet" href="/app/ubuntu.css" />
         <script src="theme.js" />
         <script src="brand.js" />
         <style  dangerouslySetInnerHTML={{ __html: inline("synapse", "inline-1.css") }} />

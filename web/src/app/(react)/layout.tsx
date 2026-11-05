@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Josefin_Sans } from "next/font/google";
+import { Ubuntu } from "next/font/google";
 import { ArrivalCapture } from "@/components/ArrivalCapture";
 import { IdleGuard } from "@/components/IdleGuard";
 import "./globals.css";
 
-const sans = Josefin_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-sans", display: "swap" });
+/* Ubuntu, the site's face (2026-11-05). It has no 600: 500 and 700 cover the weights these pages ask for. */
+const sans = Ubuntu({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "700"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Synapse",

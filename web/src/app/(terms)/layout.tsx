@@ -37,6 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href="/app/josefin.css" />
+        <link rel="stylesheet" href="/app/ubuntu.css" />
         <link rel="stylesheet" href="landing.css" />
         <link rel="stylesheet" href="landing-mobile.css" />
         <link rel="stylesheet" href="app/motion.css" />
