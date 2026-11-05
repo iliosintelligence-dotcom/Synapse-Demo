@@ -1,0 +1,59 @@
+/* The agency portal's reading layer (2026-11-05), after shadcn/ui's dashboard conventions, without Tailwind.
+   Loaded last, and only by the portal's layout, so the public pages are untouched:
+   - Inter for every face the portal draws (next/font self-hosts it as --font-inter);
+   - the content column capped and centred, so a wide screen does not stretch every card into a strip;
+   - the "no WhatsApp number" notice as an alert: icon, title, description, a compact field beside them. */
+
+body.portal {
+  --f-sans: var(--font-inter), system-ui, sans-serif;
+  --f-serif: var(--font-inter), system-ui, sans-serif;
+  --f-accent: var(--font-inter), system-ui, sans-serif;
+  /* No font-size-adjust here, though Inter's lowercase is taller than Josefin's: it makes `font-size: 0` (how the portal
+     hides the wordmark letters and rail labels) draw text again. */
+  font-feature-settings: "cv11" 1;   /* single-storey a: closer to the brand's geometric feel */
+}
+/* The Synapse wordmark is the brand, not reading text: it stays in Josefin Sans (josefin.css is still loaded). */
+body.portal :is(.brand, .bw-split) { font-family: 'Josefin Sans', system-ui, sans-serif; }
+/* An agency's own typeface, previewed on the Brand page, is shown as it really is. */
+body.portal :is(.bk-nm, .bk-glyphs, .bk-sample) { font-feature-settings: normal; }
+
+body.portal .content > main,
+body.portal .content > .need-phone { max-width: 1120px; margin-inline: auto; }
+
+/* ── the notice ── */
+body.portal .need-phone {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px 16px;
+  padding: 16px; border-radius: 12px;
+  background: var(--surface); color: var(--charcoal);
+  border: 1px solid var(--line); box-shadow: none;
+}
+body.portal .need-phone[hidden] { display: none; }
+body.portal .need-phone .np-ic {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; align-self: start;
+  background: rgba(255, 138, 45, 0.12); color: var(--orange);
+}
+body.portal .need-phone .np-ic svg { width: 18px; height: 18px; }
+body.portal .need-phone .np-txt { min-width: 0; font-size: 13px; line-height: 1.5; }
+body.portal .need-phone .np-txt b { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+body.portal .need-phone form { display: flex; gap: 8px; flex-wrap: nowrap; }
+body.portal .need-phone input { width: 200px; min-width: 0; height: 40px; min-height: 40px; }
+body.portal .need-phone button { height: 40px; }
+body.portal .need-phone .np-err { grid-column: 1 / -1; }
+/* ── Social studio: the campaign card read as steps ──
+   One card held the listing, the platforms (unlabelled), the channels and the comment auto-reply with nothing between
+   them. The platforms get a label like Channels has, the channels start a new section, and the auto-reply's message
+   box stops at a readable width instead of running the length of the card. */
+body.portal .cmp-gen .cmp-pick { margin-top: 18px; }
+body.portal .cmp-gen .cmp-pick::before {
+  content: "Post to"; flex-basis: 100%; margin-bottom: 3px;
+  font: 700 10.5px/1 var(--f-sans); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim);
+}
+body.portal .cmp-gen .cmp-channels { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+body.portal .cmp-gen .cmp-reply { margin-top: 18px; max-width: 720px; }
+
+@media (max-width: 760px) {
+  body.portal .need-phone { grid-template-columns: auto minmax(0, 1fr); }
+  body.portal .need-phone form { grid-column: 1 / -1; }
+  body.portal .need-phone input { flex: 1; width: auto; }
+  body.portal .need-phone button { width: auto; }
+}

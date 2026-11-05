@@ -3,14 +3,18 @@
 // GENERATED from app/agency.html by scripts/port-legacy.mjs, then edited by hand: this file is now the source of the page's <head>.
 // The page's <body> is page.tsx beside the route; its inline scripts and styles are in src/legacy/agency/.
 import type { Viewport } from "next";
+import { Inter } from "next/font/google";
 import { inline } from "@/legacy/read";
 import { AnalyticsHead } from "@/features/site/Analytics";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1,"viewportFit":"cover"};
 
+/* The portal reads in Inter (self-hosted by next/font); the public pages keep Josefin Sans. inline-2.css points --f-sans at it. */
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-inter", display: "swap" });
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <AnalyticsHead />
         <script src="/app/native.js" defer />
@@ -38,6 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <link rel="stylesheet" href="tapfix.css" />
         <link rel="stylesheet" href="loaders.css" />
         <script src="loaders.js" defer />
+        <link rel="stylesheet" href="portal-ui.css" />
       </head>
       <body suppressHydrationWarning className="portal">{children}</body>
     </html>

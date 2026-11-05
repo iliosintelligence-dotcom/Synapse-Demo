@@ -153,6 +153,11 @@ export function NeedPhone() {
     <div className="need-phone" id="needPhone" hidden={!shown}>
       {shown ? (
         <>
+          <span className="np-ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.6 3.5h2.6l1.4 3.6-1.9 1.2a11 11 0 0 0 5 5l1.2-1.9 3.6 1.4v2.6a2 2 0 0 1-2.2 2A15.5 15.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2Z" />
+            </svg>
+          </span>
           <div className="np-txt"><b>Tayo has no way to reach you</b>
             <span>Leads are handed over on WhatsApp. Without a number here, a lead assigned to you cannot be sent anywhere.</span></div>
           <form id="npForm" noValidate onSubmit={save}>
