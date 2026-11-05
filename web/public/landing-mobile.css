@@ -72,8 +72,16 @@
 /* .m-intro is ink like .m-proximity, so it takes the same treatment: its own
    ground IS the partition, and a dark hairline drawn on black is invisible. */
 .m-intro {
-  background: #0e0e0e; color: #f5f5f5; text-align: center;
+  background: var(--bg); color: var(--text); text-align: center;
   padding-top: 76px; padding-bottom: 76px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .m-intro {
+    background: var(--bg); color: var(--text);
+  }
+}
+:root[data-theme="dark"] .m-intro {
+  background: var(--bg); color: var(--text);
 }
 .m-intro .intro-line { max-width: 26ch; }
 .m-intro .intro-word { font-size: clamp(52px, 19vw, 96px); }
@@ -368,18 +376,18 @@
    should follow the same headline→proof rhythm the rest of the page
    uses, or the section reads inconsistently against its neighbours. */
 .m-proximity {
-  background: #0e0e0e; padding-top: 64px; padding-bottom: 72px;
-  --text: #f5f5f5; --text-muted: #d4d4d4; --text-dim: #a8a8a8;
-  --brand-text: #c9c9c9; color: var(--text);
+  background: var(--bg); padding-top: 64px; padding-bottom: 72px;
+  --text: var(--text); --text-muted: var(--text-muted); --text-dim: var(--text-dim);
+  --brand-text: var(--brand-text); color: var(--text);
   /* deliberately NOT overriding --brand here: several shared components use
      it as a BACKGROUND with --bg as their text (.d-tag does exactly this),
      so flipping it to white rendered white-on-white. The headings that need
      to go light are coloured explicitly below instead. */
 }
-.m-proximity .m-h2 { color: #f5f5f5; }
-.m-proximity .m-h2 em { color: #fff; }
+.m-proximity .m-h2 { color: var(--text); }
+.m-proximity .m-h2 em { color: var(--text); }
 .m-prox-map { position: relative; height: 260px; border-radius: 18px; overflow: hidden;
-  background: #1c1c1c; margin-top: 26px; }
+  background: var(--bg); margin-top: 26px; }
 .m-prox-ping { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--tint-ink);
   box-shadow: 0 0 0 5px rgba(var(--tint),0.28); }
 .m-prox-ping::after { content: ''; position: absolute; inset: -5px; border-radius: 50%;
@@ -416,7 +424,7 @@
   color: #f5f5f5; font-size: 9px; display: flex; align-items: center; justify-content: center; flex: none; }
 
 /* ═══ FINAL CTA ═════════════════════════════════════════════════════ */
-.m-final-cta { padding-top: 72px; padding-bottom: 80px; text-align: center; background: var(--bg-1); }
+.m-final-cta { padding-top: 72px; padding-bottom: 80px; text-align: center; background: var(--bg); }
 .m-final-cta .m-h2 { text-align: center; font-size: 30px; }
 .m-final-cta .m-body { text-align: center; margin: 10px auto 24px; }
 .m-final-btns { display: flex; flex-direction: column; gap: 10px; }
@@ -426,10 +434,10 @@
   min-height: 50px; border-radius: 100px; font-size: 15px; font-family: var(--f-sans);
   display: flex; align-items: center; justify-content: center; text-decoration: none;
 }
-.m-btn-primary { border: none; background: var(--brand); color: #f5f5f5; font-weight: 600; }
+.m-btn-primary { border: none; background: var(--accent); color: var(--black); font-weight: 500; }
 .m-btn-ghost {
-  border: 1px solid var(--crystal-border-bright);
-  background: transparent; color: var(--text-muted); font-weight: 500;
+  border: 1px solid var(--line-soft);
+  background: transparent; color: var(--text-dim); font-weight: 400;
 }
 .m-final-email { margin-top: 18px; font-size: 12.5px; color: var(--text-dim); }
 
@@ -440,12 +448,14 @@
    + Agencies as a 2-col mini-grid (the two links a buyer might actually
    use again), Company folded into one inline legal-style row instead of
    its own titled column. */
-.m-footer { padding-top: 56px; padding-bottom: 40px; border-top: 1px solid rgba(20,20,20,0.06); }
-.m-footer-links { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 28px; }
-.m-footer-col-title { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
-.m-footer-links a { display: block; font-size: 13.5px; color: var(--text-muted); text-decoration: none; padding: 7px 0; min-height: 32px; }
-.m-footer-legal-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px; font-size: 12px; color: var(--text-dim); }
+.m-footer { padding-top: 56px; padding-bottom: 40px; border-top: 1px solid var(--line-soft); }
+.m-footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-7); margin-top: 28px; }
+.m-footer-col-title { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.m-footer-links a { display: block; font-size: 14px; color: var(--text-dim); line-height: 2; text-decoration: none; transition: color var(--fast) var(--ease); }
+.m-footer-links a:hover { color: var(--accent); }
+.m-footer-legal-row { display: flex; gap: var(--s-5); flex-wrap: wrap; margin-top: var(--s-4); font-size: 12px; color: var(--text-dim); }
 .m-footer-legal-row a { color: inherit; text-decoration: none; }
+.m-footer-legal-row a:hover { color: var(--accent); text-decoration: underline; }
 .m-footer-tagline { font-size: 13px; line-height: 1.55; color: var(--text-muted); margin-top: 14px; max-width: 40ch; }
 
 /* ═══ remaining demo-mock variants ══════════════════════════════════
@@ -488,18 +498,36 @@
 
 @keyframes ping { to { transform: scale(2.2); opacity: 0; } }
 
+/* Fade-in animations for single-read experience */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 400ms cubic-bezier(0.22, 1, 0.36, 1), transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-1 { transition-delay: 0ms; }
+.reveal-2 { transition-delay: 80ms; }
+.reveal-3 { transition-delay: 160ms; }
+.reveal-4 { transition-delay: 240ms; }
+.reveal-5 { transition-delay: 320ms; }
+.reveal-6 { transition-delay: 400ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    AGENCIES PAGE (agencies.html), reuses every primitive above; only the
    pieces that exist solely on the B2B page are defined here.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* the one-line promise band, a hard beat between hero and the proof */
-.m-statement { background: #0e0e0e; padding-top: 56px; padding-bottom: 56px; }
+.m-statement { background: var(--bg); padding-top: 56px; padding-bottom: 56px; }
 .m-statement p {
   font-size: 25px; line-height: 1.2; font-weight: 500; letter-spacing: -0.01em;
-  color: #f5f5f5; margin: 0;
+  color: var(--text); margin: 0;
 }
-.m-statement em { font-style: normal; color: #fff; }
+.m-statement em { font-style: normal; color: var(--text); }
 
 /* portal header strip inside the hero peek */
 .m-peek-head {

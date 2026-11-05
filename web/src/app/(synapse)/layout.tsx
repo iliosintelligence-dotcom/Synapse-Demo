@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <title>{"Synapse studio"}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="stylesheet" href="/app/josefin.css" />
+        <link href={"https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"} rel="stylesheet" />
         <script src="theme.js" />
         <script src="brand.js" />
         <style  dangerouslySetInnerHTML={{ __html: inline("synapse", "inline-1.css") }} />

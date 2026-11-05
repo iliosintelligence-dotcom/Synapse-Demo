@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta name="robots" content="noindex, follow" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="stylesheet" href="/app/josefin.css" />
+        <link href={"https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"} rel="stylesheet" />
         <link rel="stylesheet" href="/app/app.css" />
         <style  dangerouslySetInnerHTML={{ __html: inline("go", "inline-2.css") }} />
         <link rel="stylesheet" href="/app/theme.css" />

@@ -36,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#FAF6F0" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="stylesheet" href="/app/josefin.css" />
+        <link href={"https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"} rel="stylesheet" />
         <script  dangerouslySetInnerHTML={{ __html: headInline("landing-theme") }} />
         <link rel="stylesheet" href="home.css" />
         <link rel="stylesheet" href="app/seam.css" />

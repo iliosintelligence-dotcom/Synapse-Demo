@@ -18,7 +18,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <title>{"Your matches · Synapse"}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="stylesheet" href="/app/josefin.css" />
+        <link href={"https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"} rel="stylesheet" />
         <link rel="stylesheet" href="app.css" />
         <link rel="stylesheet" href="motion.css" />
         <link rel="stylesheet" href="loader.css" />
