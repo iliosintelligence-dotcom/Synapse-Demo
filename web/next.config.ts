@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
@@ -12,14 +14,30 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
 };
 
-// `next dev` has no cleanUrls, so links like /app/signin.html 404 locally; map them to the page the way Vercel does.
-// Dev only: a static export does not support rewrites, and production gets this from vercel.json.
+/* `next dev` knows nothing of vercel.json, so locally /index.html, /agencies, /tayo and /your-data 404'd and /portal, /chat
+   opened the parked React pages instead of where the live site sends them. In dev, vercel.json's own redirects and
+   rewrites are applied, plus cleanUrls (x.html -> x, index.html -> /), so every link goes where it goes live.
+   Rewrites to another host (the /s/ short links and /m/ images, both on production's Supabase) are left out, so a PC
+   pointed at staging never reaches production through them.
+   Dev only: a static export does not support redirects or rewrites, and production gets these from vercel.json. */
+type VercelRoute = { source: string; destination: string; permanent?: boolean };
+const vercel = JSON.parse(readFileSync(join(__dirname, "vercel.json"), "utf8")) as { redirects?: VercelRoute[]; rewrites?: VercelRoute[] };
+const sameSite = (r: VercelRoute) => !/^https?:\/\//.test(r.destination);
+
 export default function config(phase: string): NextConfig {
   if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
   return {
     ...nextConfig,
+    async redirects() {
+      return (vercel.redirects ?? []).filter(sameSite)
+        .map((r) => ({ source: r.source, destination: r.destination, permanent: Boolean(r.permanent) }));
+    },
     async rewrites() {
-      return [{ source: "/:path*.html", destination: "/:path*" }];
+      return [
+        { source: "/index.html", destination: "/" },
+        ...(vercel.rewrites ?? []).filter(sameSite).map((r) => ({ source: r.source, destination: r.destination })),
+        { source: "/:path*.html", destination: "/:path*" },
+      ];
     },
   };
 }
