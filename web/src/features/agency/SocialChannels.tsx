@@ -24,7 +24,7 @@ export const toastOrAlert = (msg: string) => { if (typeof W().toast === "functio
 /* For the task bodies, which the task card renders as markup. */
 const esc = (s: unknown) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export const CONNECTABLE: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", telegram: "Telegram", tiktok: "TikTok" };
+export const CONNECTABLE: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", telegram: "Telegram", tiktok: "TikTok", youtube: "YouTube" };
 const SOON: Record<string, [string, string]> = {
   linkedin: ["LinkedIn", "not built yet"],
   x: ["X (your X posts go out on Synapse’s X for now)", "not built yet"],
@@ -451,6 +451,15 @@ function MetaStep({ pl }: { pl: string }) {
   );
 }
 
+/* YOUTUBE TAKES VIDEO ONLY, and Google asks which account to use -- both said before connecting. */
+const YoutubeStep = () => (
+  <div className="ch-step">
+    <div className="cmp-ch-note">You will be sent to Google to sign in. Choose the Google account that owns <b>this agency’s</b> YouTube channel, and allow Synapse to manage its videos.</div>
+    <div className="cmp-ch-note">YouTube only takes <b>video</b>: a listing with a video tour goes out on YouTube; a listing with photos only does not, for now.</div>
+    <div><ConnectButton platform="youtube">Continue to YouTube →</ConnectButton></div>
+  </div>
+);
+
 /* TIKTOK SENDS TO THE INBOX, and authorises whoever is already signed in without asking -- both said before connecting. */
 const TiktokStep = () => (
   <div className="ch-step">
@@ -552,7 +561,7 @@ function AddPanel() {
         })}
       </div>
       <div className="ch-soon">Coming later: {Object.keys(SOON).map((k) => SOON[k][0]).join(" · ")}</div>
-      {add.pick === "facebook" || add.pick === "instagram" ? <MetaStep pl={add.pick} /> : add.pick === "tiktok" ? <TiktokStep /> : add.pick === "telegram" ? <TgStep /> : null}
+      {add.pick === "facebook" || add.pick === "instagram" ? <MetaStep pl={add.pick} /> : add.pick === "tiktok" ? <TiktokStep /> : add.pick === "youtube" ? <YoutubeStep /> : add.pick === "telegram" ? <TgStep /> : null}
     </div>
   );
 }
