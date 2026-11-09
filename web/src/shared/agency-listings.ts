@@ -2096,6 +2096,9 @@ export function run() {
               + 'short_links(token, click_count, human_click_count, last_clicked_at)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
+        /* A cancelled post leaves the board, as a removed one always has; the row stays in the database as the record
+           that it was planned and stopped (cancel_social_post). */
+        .neq('status', 'cancelled')
         .order('scheduled_at', { ascending: true, nullsFirst: false })
         .limit(500);
     }).then(function (r) {
@@ -2449,6 +2452,15 @@ export function run() {
     return client().then(function (c) {
       return c.rpc('discard_social_post', { p_post_id: id });
     }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** Stop a post that has not gone out yet. Unlike deleteSocialPost it is KEPT, as status 'cancelled', with its Synapse
+   *  copies, so the history shows it was planned and stopped. The RPC refuses anything already sent or failed. */
+  function cancelSocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.rpc('cancel_social_post', { p_post_id: id });
+    }).then(function (r) { if (r.error) throw r.error; return r.data; });
   }
 
   /** Engagement from the platforms themselves -- likes, comments, shares --
@@ -3177,6 +3189,7 @@ export function run() {
     schedulePost: schedulePost,
     updateSocialPost: updateSocialPost,
     deleteSocialPost: deleteSocialPost,
+    cancelSocialPost: cancelSocialPost,
     retrySocialPost: retrySocialPost,
     socialPostStats: socialPostStats,
     postMetrics: postMetrics,
