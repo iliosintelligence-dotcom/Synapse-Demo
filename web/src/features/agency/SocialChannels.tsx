@@ -75,7 +75,9 @@ let tgPoll: ReturnType<typeof setInterval> | null = null, tgUntil = 0;
 function platformReady(pl: string) {
   const ready = state.ready;
   if (!ready) return true;                  // unknown: behave as before
-  return !ready[pl] || ready[pl].ready !== false;
+  /* The server answered and does not list this platform: its backend cannot connect it (YouTube's tile reached live before
+     its backend did, and every tap ended in "Unsupported platform: youtube"). Not listed is not ready. */
+  return !!ready[pl] && ready[pl].ready !== false;
 }
 
 function loadConnectStatus() {
