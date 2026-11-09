@@ -28,10 +28,20 @@ const CH_LABEL: Record<string, string> = { instagram: "Instagram", tiktok: "TikT
 const MK_KEY = "synapse_agency_campaigns_v1";
 
 type Camp = { id: string; nm: string; live: boolean; until: string | null; chans: string[] };
-type Row = { id: string; propertyId: string; platform: string; when: string; angle: string | null; clicks: number; visits: number; leads: number; caption: string };
+/* views / likes / comments / shares are what the platform reports (null = it reports nothing for this post, shown as "–",
+   never as a 0 it did not say). Views: YouTube. Likes: Facebook, Instagram, YouTube, and Telegram reactions. */
+type Row = { id: string; propertyId: string; platform: string; when: string; angle: string | null; clicks: number; visits: number; leads: number; caption: string;
+  views: number | null; likes: number | null; comments: number | null; shares: number | null };
+type SortKey = "leads" | "clicks" | "views" | "likes";
+const SORT_NEXT: Record<SortKey, SortKey> = { leads: "clicks", clicks: "views", views: "likes", likes: "leads" };
+const SORT_LABEL: Record<SortKey, string> = { leads: "Enquiries", clicks: "Taps", views: "Views", likes: "Likes" };
+/* Engagement = likes + comments + shares, the reactions a post earned on the platform. */
+const engagement = (r: Row) => (r.likes == null && r.comments == null && r.shares == null) ? null : (r.likes || 0) + (r.comments || 0) + (r.shares || 0);
+const sortValue = (r: Row, k: SortKey) => (k === "leads" ? r.leads : k === "clicks" ? r.clicks : k === "views" ? (r.views ?? -1) : (engagement(r) ?? -1));
+const num = (n: number | null) => (n == null ? "–" : n >= 10000 ? Math.round(n / 1000) + "k" : String(n));
 type St = {
   camps: Camp[]; mk: { loaded: boolean; error: string | null }; perf: Record<string, any> | null; now: number; sorted: boolean;
-  rows: Row[]; board: { loaded: boolean; error: string | null }; sort: "leads" | "clicks"; view: "board" | "campaigns"; tick: number;
+  rows: Row[]; board: { loaded: boolean; error: string | null }; sort: SortKey; view: "board" | "campaigns"; tick: number;
 };
 let state: St = { camps: [], mk: { loaded: false, error: null }, perf: null, now: 0, sorted: false, rows: [], board: { loaded: false, error: null }, sort: "leads", view: "board", tick: 0 };
 const subs = new Set<() => void>();
@@ -86,7 +96,8 @@ function loadBoard() {
         const st = (stats || {})[p.id] || {};
         return { id: p.id, propertyId: p.property_id, platform: p.platform, when: p.published_at,
           angle: (p.payload && (p.payload.angle || p.payload.angleKey)) || null,
-          clicks: st.clicks || 0, visits: st.visits || 0, leads: st.leads || 0, caption: p.caption || "" };
+          clicks: st.clicks || 0, visits: st.visits || 0, leads: st.leads || 0, caption: p.caption || "",
+          views: p.views ?? null, likes: p.likes ?? null, comments: p.comments ?? null, shares: p.shares ?? null };
       });
       set({ rows, board: { loaded: true, error: null }, now: Date.now() });
     })
@@ -182,8 +193,9 @@ export function MkBoard() {
   const { rows, board, sort, view } = useMk();
   usePageScripts();
   const style = { display: view === "board" ? "block" : "none" };
-  /* Sorted by enquiries by default: a tap is interest and an enquiry is a person. Each breaks the other's ties. */
-  const list = rows.slice().sort((x, y) => (sort === "leads" ? (y.leads - x.leads) || (y.clicks - x.clicks) : (y.clicks - x.clicks) || (y.leads - x.leads)));
+  /* Sorted by enquiries by default: a tap is interest and an enquiry is a person. Views and likes are the platform's own
+     counts; a post the platform reports nothing for sorts below one it reports zero for. Ties fall to enquiries, then taps. */
+  const list = rows.slice().sort((x, y) => (sortValue(y, sort) - sortValue(x, sort)) || (y.leads - x.leads) || (y.clicks - x.clicks));
   if (!list.length) {
     return (
       <div id="mkBoard" style={style}>
@@ -199,7 +211,7 @@ export function MkBoard() {
         const L = data.find((l) => l.id === r.propertyId);
         const title = L ? (L.t || L.title || "This listing") : "This listing";
         /* TOP ONLY WHEN IT EARNED IT: no winner's rosette on a row of zeros. */
-        const win = i === 0 && (r.leads > 0 || r.clicks > 0);
+        const win = i === 0 && sortValue(r, sort) > 0;
         const ch = CHS()[r.platform];
         return (
           <div className={"lbrow " + (win ? "win" : "")} key={r.id}>
@@ -214,6 +226,10 @@ export function MkBoard() {
               </div>
             </div>
             <div className="lbperf"><div className="lbctr"><b>{r.clicks}</b> taps</div><div className="lbctr" style={{ color: "var(--ink-dim)" }}><b>{r.visits}</b> opened</div></div>
+            <div className="lbperf" title="Reported by the platform. – means it reports nothing for this post.">
+              <div className="lbctr"><b>{num(r.views)}</b> views</div>
+              <div className="lbctr" style={{ color: "var(--ink-dim)" }}><b>{num(engagement(r))}</b> {r.platform === "telegram" ? "reactions" : "likes · comments"}</div>
+            </div>
             <div className="lbleads"><b>{r.leads}</b><span>{r.leads === 1 ? "enquiry" : "enquiries"}</span></div>
           </div>
         );
@@ -289,9 +305,9 @@ export function MkSort() {
   const ready = usePageScripts();
   const icon = sorted ? "sort" : "sliders";
   return (
-    <button className="tbtn" id="mkSort" style={view === "board" ? undefined : { display: "none" }} onClick={() => set({ sort: sort === "leads" ? "clicks" : "leads", sorted: true })}>
+    <button className="tbtn" id="mkSort" style={view === "board" ? undefined : { display: "none" }} onClick={() => set({ sort: SORT_NEXT[sort], sorted: true })}>
       <span data-icon={icon} className="has-icon" dangerouslySetInnerHTML={{ __html: ready ? svg(icon) : "" }}></span>
-      {" Sort: " + (sort === "leads" ? "Enquiries" : "Taps")}
+      {" Sort: " + SORT_LABEL[sort]}
     </button>
   );
 }
