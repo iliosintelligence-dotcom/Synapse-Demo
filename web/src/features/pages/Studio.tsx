@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * The Synapse studio, the team's own social desk (React since 2026-10-24, was src/legacy/synapse/inline-2.js).
  *
@@ -14,8 +15,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-location-assign-relative-destination */
-const SB_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const SB_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SB_URL = SUPABASE_URL_ENV;
+const SB_KEY = SUPABASE_KEY_ENV;
 const SB_FN = SB_URL + "/functions/v1/social-connect";
 const auth = () => (window as any).SynAuth;
 const PL: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", linkedin: "LinkedIn", x: "X", telegram: "Telegram", youtube: "YouTube" };

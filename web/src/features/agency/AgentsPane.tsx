@@ -30,7 +30,7 @@ type Agent = { id: string; nm: string; rl: string; phone?: string; avatar?: stri
   languages?: string[]; certifications?: string[]; responseRate?: number | null; closed?: number | null; rating?: number | null; followers?: number | null; likes?: number | null;
   active: number; pending: false };
 type Pending = { inviteId: string; token: string; nm: string; rl: string; pending: true };
-const AG_ROLE: Record<string, string> = { agent: "Agent", agency_admin: "Admin", agency_owner: "Owner", platform_admin: "Platform admin", consumer: "Consumer" };
+const AG_ROLE: Record<string, string> = { agent: "Editor", agency_admin: "Manager", agency_owner: "Owner", agency_viewer: "Viewer", platform_admin: "Platform admin", consumer: "Consumer" };
 
 type State = { agents: Agent[]; pending: Pending[]; loaded: boolean; error: string | null; sort: "name" | "leads"; tick: number };
 let state: State = { agents: [], pending: [], loaded: false, error: null, sort: "name", tick: 0 };
@@ -53,7 +53,7 @@ function load() {
   if (!L || !L.roster) { set({ loaded: true, error: "the data layer did not load" }); return; }
   L.roster().then((people: any[]) => {
     if (L.invites) {
-      L.invites().then((rows: any[]) => set({ pending: rows.map((r) => ({ inviteId: r.id, token: r.token, nm: r.email, pending: true as const, rl: r.role === "agency_admin" ? "Admin" : "Agent" })) }))
+      L.invites().then((rows: any[]) => set({ pending: rows.map((r) => ({ inviteId: r.id, token: r.token, nm: r.email, pending: true as const, rl: AG_ROLE[r.role] || "Editor" })) }))
         .catch(() => {});
     }
     set({
@@ -318,7 +318,7 @@ function Invite() {
             aria-invalid={showing ? true : undefined} aria-describedby={showing ? "invErr" : undefined} />
           <span className="err" id="invErr" role="alert" style={{ display: showing ? "block" : "none" }}>⚠ Enter a valid email address</span></div>
         <div className="field"><label htmlFor="invRole">Role</label>
-          <select id="invRole" value={role} onChange={(e) => setRole(e.target.value)}><option value="agent">Agent — works leads and shows homes</option><option value="agency_admin">Admin — can also invite and manage</option></select></div>
+          <select id="invRole" value={role} onChange={(e) => setRole(e.target.value)}><option value="agent">Editor (agent) — works leads, listings and posts</option><option value="agency_admin">Manager (admin) — can also invite and manage the team</option><option value="agency_viewer">Viewer — can see everything, change nothing</option></select></div>
         <button className="send" id="invSend" disabled={!ok || busy} aria-disabled={!ok} onClick={send}>{busy ? "Creating…" : "Send invite"}</button>
       </div>
     </>

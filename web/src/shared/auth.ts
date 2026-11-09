@@ -1,5 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /* Was public/app/auth.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
 export function run() {
@@ -24,8 +25,8 @@ export function run() {
 (function () {
   'use strict';
 
-  var SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-  var PUBLISHABLE_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  var SUPABASE_URL = SUPABASE_URL_ENV;
+  var PUBLISHABLE_KEY = SUPABASE_KEY_ENV;
   var CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
 
   /* A RESET LINK'S SESSION, TAKEN BEFORE THE CLIENT SEES IT (28 Sept 2026).
@@ -111,7 +112,7 @@ export function run() {
   // sending real enum values and classifying the full vocabulary here, so the
   // rest of the app keeps its simple two-sided model without knowing this
   // enum exists.
-  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'platform_admin'];
+  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'agency_viewer', 'platform_admin'];
   function roleOf(u) {
     if (!u) return null;
     var m = u.user_metadata || {};

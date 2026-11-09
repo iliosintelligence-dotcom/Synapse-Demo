@@ -1,5 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /* The property page's map engine: the map beside the listing (MapLibre, through SynMapRender), what is nearby (the stored survey,
    else OpenStreetMap), routes and commutes, the cost slip and the neighbourhood read. Was the page's inline script
    (legacy/property/inline-4.js, with the names it read in engine-globals.js); moved as it was, and run at the same point (last in
@@ -7,8 +8,8 @@
 export function run() {
   /* What the engine reads from the page: the listing's id, the public Supabase values, escaping and title-type labels. */
   const PROP_ID = new URLSearchParams(window.location.search).get('id') || '';
-  const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-  const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  const SUPABASE_URL = SUPABASE_URL_ENV;
+  const ANON_KEY = SUPABASE_KEY_ENV;
   const esc = (t) => String(t == null ? '' : t)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const TITLE_LABEL = { c_of_o: 'Certificate of Occupancy', governors_consent: 'Governor’s Consent',
@@ -1646,7 +1647,7 @@ export function run() {
        stored in property_flood. A RIVER model (no drainage or coastal flooding), which the legend and
        tooltips say; the card shows a 1-10 score so a buyer can compare homes at a glance. */
     var FLOOD = { state: 'idle', row: null };
-    var FN_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co', FN_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    var FN_URL = SUPABASE_URL_ENV, FN_KEY = SUPABASE_KEY_ENV;
     function fnHeaders() { return { apikey: FN_KEY, Authorization: 'Bearer ' + FN_KEY, 'Content-Type': 'application/json' }; }
     function loadFlood() {
       var id = propIdForFetch();

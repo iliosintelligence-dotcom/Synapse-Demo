@@ -2096,6 +2096,9 @@ export function run() {
               + 'short_links(token, click_count, human_click_count, last_clicked_at)')
         .eq('agency_id', aid)
         .is('deleted_at', null)
+        /* A cancelled post leaves the board, as a removed one always has; the row stays in the database as the record
+           that it was planned and stopped (cancel_social_post). */
+        .neq('status', 'cancelled')
         .order('scheduled_at', { ascending: true, nullsFirst: false })
         .limit(500);
     }).then(function (r) {
@@ -2449,6 +2452,78 @@ export function run() {
     return client().then(function (c) {
       return c.rpc('discard_social_post', { p_post_id: id });
     }).then(function (r) { if (r.error) throw r.error; return true; });
+  }
+
+  /** The Activity screen: the agency's social history (social_audit_log -- who created, changed, cancelled, published
+   *  each post and connected each account) and where its listings were routed on Synapse's own channels
+   *  (social_routing_log), newest first. RLS limits both tables to this agency's rows; the database writes them, the
+   *  browser only reads. Post platforms, listing titles and people's names are looked up afterwards, and a lookup that
+   *  fails only costs the label, never the list. */
+  function socialActivity(limit) {
+    var c1, me, n = Math.min(Math.max(Number(limit) || 200, 1), 500);
+    return client().then(function (c) { c1 = c; return c.auth.getUser(); }).then(function (u) {
+      me = u && u.data && u.data.user && u.data.user.id;
+      return agencyId();
+    }).then(function (aid) {
+      if (!aid) return { audit: [], routing: [], me: me };
+      return Promise.all([
+        c1.from('social_audit_log')
+          .select('id, created_at, entity, entity_id, action, from_status, to_status, changes, actor_id, actor_kind')
+          .eq('agency_id', aid).order('created_at', { ascending: false }).limit(n),
+        c1.from('social_routing_log')
+          .select('id, created_at, property_id, source_post_id, platform, channel_kind, decision, reason')
+          .eq('agency_id', aid).order('created_at', { ascending: false }).limit(n),
+      ]).then(function (rs) {
+        if (rs[0].error) throw rs[0].error;
+        if (rs[1].error) throw rs[1].error;
+        var audit = rs[0].data || [], routing = rs[1].data || [];
+        var postIds = {}, people = {}, acctIds = {};
+        audit.forEach(function (a) {
+          if (a.entity === 'social_post') postIds[a.entity_id] = 1; else acctIds[a.entity_id] = 1;
+          if (a.actor_id) people[a.actor_id] = 1;
+        });
+        var soft = function (q) { return q.then(function (r) { return (r && !r.error && r.data) || []; }, function () { return []; }); };
+        return Promise.all([
+          Object.keys(postIds).length ? soft(c1.from('social_posts').select('id, platform, property_id').in('id', Object.keys(postIds))) : [],
+          Object.keys(people).length ? soft(c1.from('profiles').select('id, full_name').in('id', Object.keys(people))) : [],
+          Object.keys(acctIds).length ? soft(c1.from('social_accounts').select('id, platform, platform_username').in('id', Object.keys(acctIds))) : [],
+        ]).then(function (look) {
+          var posts = {}, names = {}, props = {};
+          look[0].forEach(function (p) { posts[p.id] = p; props[p.property_id] = 1; });
+          look[1].forEach(function (p) { names[p.id] = p.full_name; });
+          routing.forEach(function (r) { if (r.property_id) props[r.property_id] = 1; });
+          return soft(Object.keys(props).length ? c1.from('properties').select('id, title').in('id', Object.keys(props)) : Promise.resolve({ data: [] }))
+            .then(function (pr) {
+              var titles = {};
+              pr.forEach(function (p) { titles[p.id] = p.title; });
+              var accts = {};
+              look[2].forEach(function (a) { accts[a.id] = a; });
+              return {
+                me: me,
+                audit: audit.map(function (a) {
+                  var p = posts[a.entity_id], ac = accts[a.entity_id];
+                  return Object.assign({}, a, {
+                    platform: (p && p.platform) || (ac && ac.platform) || (a.changes && a.changes.platform) || '',
+                    listing: (p && titles[p.property_id]) || '',
+                    account: (ac && ac.platform_username) || (a.changes && a.changes.account) || '',
+                    actor_name: a.actor_id ? (a.actor_id === me ? 'You' : (names[a.actor_id] || 'A team member')) : '',
+                  });
+                }),
+                routing: routing.map(function (r) { return Object.assign({}, r, { listing: titles[r.property_id] || '' }); }),
+              };
+            });
+        });
+      });
+    });
+  }
+
+  /** Stop a post that has not gone out yet. Unlike deleteSocialPost it is KEPT, as status 'cancelled', with its Synapse
+   *  copies, so the history shows it was planned and stopped. The RPC refuses anything already sent or failed. */
+  function cancelSocialPost(id) {
+    if (!id) return Promise.reject(new Error('no post'));
+    return client().then(function (c) {
+      return c.rpc('cancel_social_post', { p_post_id: id });
+    }).then(function (r) { if (r.error) throw r.error; return r.data; });
   }
 
   /** Engagement from the platforms themselves -- likes, comments, shares --
@@ -3177,6 +3252,8 @@ export function run() {
     schedulePost: schedulePost,
     updateSocialPost: updateSocialPost,
     deleteSocialPost: deleteSocialPost,
+    cancelSocialPost: cancelSocialPost,
+    socialActivity: socialActivity,
     retrySocialPost: retrySocialPost,
     socialPostStats: socialPostStats,
     postMetrics: postMetrics,

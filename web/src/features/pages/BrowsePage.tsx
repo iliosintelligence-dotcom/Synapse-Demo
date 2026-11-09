@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * Your matches (React since 2026-10-24, was src/legacy/browse/inline-3.js).
  *
@@ -14,8 +15,8 @@
 import { useEffect, useRef, useState } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 const PREFS_KEY = "synapse_browse_prefs";
 const VISIT_KEY = "synapse_last_visit";
 const DEALS = ["sale", "rent", "shared", "land", "offplan", "invest", "shortlet"];

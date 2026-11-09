@@ -156,7 +156,7 @@ function Card({ p, stage, i, peek, touch, dragging }: { p: any; stage: string; i
   } else if (stage === "scheduled") {
     chip = p.failure ? <Chip tone="warn" text="Retrying" tip={"Tried already: " + p.failure} /> : null;
     line = <span className="pc-l">{PCI.clock}{p.when || "No time set"}</span>;
-    acts = <>{Btn({ act: "sendnow", ico: "send", label: "Send now", cls: "ok" })}{Ib({ act: "reschedule", ico: "move", label: "Move to another time" })}{Ib({ act: "duplicate", ico: "copy", label: "Copy" })}{Ib({ act: "remove", ico: "trash", label: hold("Hold to remove"), extra: "hold" })}</>;
+    acts = <>{Btn({ act: "sendnow", ico: "send", label: "Send now", cls: "ok" })}{Ib({ act: "reschedule", ico: "move", label: "Move to another time" })}{Ib({ act: "duplicate", ico: "copy", label: "Copy" })}{Ib({ act: "cancel", ico: "trash", label: hold("Hold to cancel"), extra: "hold" })}</>;
   } else if (stage === "published") {
     const up = p.mineLive || (p.ampLive && p.ampLive.length);
     /* A TikTok "published" is a draft in the agent's TikTok inbox, not a public post, and the card must not claim otherwise. */
@@ -236,6 +236,14 @@ function act(b: HTMLElement) {
     L.deleteSocialPost(p.postId)
       .then(() => { toast("Taken off the schedule"); call("pipeSoon"); })
       .catch((err: any) => { toast((err && err.message) || "Could not remove that"); call("loadPipeline"); });
+  } else if (a === "cancel") {
+    /* A scheduled post is CANCELLED, not erased: it leaves the board and stays on record (cancel_social_post), with its
+       Synapse copies. Failed posts keep "remove" below. */
+    if (!p.postId) return;
+    call("pipeDrop", [p]);
+    L.cancelSocialPost(p.postId)
+      .then(() => { toast("Cancelled"); call("pipeSoon"); })
+      .catch((err: any) => { toast((err && err.message) || "Could not cancel that"); call("loadPipeline"); });
   } else if (a === "openlink") {
     /* The same URL as in the caption, so opening it records a click like any other, which is honest: somebody did look. */
     if (!p.token) { toast("No tracked link on this one"); return; }

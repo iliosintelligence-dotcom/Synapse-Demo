@@ -1,5 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /* What the agency portal needs between its panes: who you are in the agency (the role, an invite link, the welcome after
    joining), the toast and the paywall prompt it can turn into, the to-do registry behind the task card and the bell, Paystack
    checkout and its return, the paywall and referral reads, the dynamic button, the magnetic drop zone and the verified stamp,
@@ -299,8 +300,8 @@ export function run() {
 
 
     // ── social composer: New post → AI captions (edge fn) → schedule ──
-    const SB_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-    const SB_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+    const SB_URL = SUPABASE_URL_ENV;
+    const SB_KEY = SUPABASE_KEY_ENV;
     window.SynSB = { url: SB_URL, key: SB_KEY };
     /* The social composer posts about YOUR listings. This was four invented
        Lagos properties with invented trust scores, so an agency could compose
@@ -810,4 +811,9 @@ export function run() {
     /* ═══ Brand page ═══ is React: src/features/agency/BrandPage.tsx. */
 
     // simple toggles in social studio
+
+    /* portalData runs first and starts the leads request; on a slow line the leads land before this file has loaded, when
+       it skips the handoffs and the agents' workload (they live here). Catch up from what it already holds. Last in run():
+       buildHandoffs needs HANDOFFS, declared above. */
+    if (w.SynLeads && w.SynLeads().length) { buildHandoffs(w.SynLeads()); renderHandoffs(); renderAgents(); }
 }

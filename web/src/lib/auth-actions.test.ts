@@ -45,7 +45,7 @@ describe("normalisePhone: every way Nigerians write a number becomes E.164", () 
 describe("roleOf: the database role enum maps to the app's two sides", () => {
   const user = (role?: string) => ({ user_metadata: { role } }) as never;
   it("agency roles", () => {
-    for (const r of ["agency_owner", "agency_admin", "agent", "platform_admin"]) expect(roleOf(user(r))).toBe("agency");
+    for (const r of ["agency_owner", "agency_admin", "agent", "agency_viewer", "platform_admin"]) expect(roleOf(user(r))).toBe("agency");
   });
   it("everything else is a customer; nobody is null", () => {
     expect(roleOf(user("consumer"))).toBe("customer");

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * Tayo's chat engine (was src/legacy/toju/inline-5.js; a module since 2026-10-24).
  *
@@ -14,8 +15,8 @@
 
 import { listingAgentFor, type ListingAgent } from "@/lib/listingAgent";
 
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 const ANON_HEADERS = { "Content-Type": "application/json", apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY };
 
 /* ── a small store the React parts subscribe to ── */

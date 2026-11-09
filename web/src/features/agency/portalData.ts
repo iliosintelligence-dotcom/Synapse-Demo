@@ -330,11 +330,13 @@ export function run() {
         leads = rows.map(mapLead);
         CRM.loaded = true; CRM.error = null;
         renderCrm();
-        // the negotiator pane reads the same rows, no second fetch
-        buildHandoffs(leads); renderHandoffs();
+        // the negotiator pane reads the same rows, no second fetch. buildHandoffs and renderAgents live in portalShell, which
+        // loads after this file: if it is not there yet it catches up from SynLeads when it runs (an unguarded call threw
+        // "buildHandoffs is not defined" and the leads were reported as failed although they had loaded).
+        if (typeof buildHandoffs === 'function') { buildHandoffs(leads); renderHandoffs(); }
         /* Whichever of the two requests lands second completes the picture:
            the roster supplies the people, the leads supply their workload. */
-        renderAgents();
+        if (typeof renderAgents === 'function') renderAgents();
         bootDone('leads');
       }).catch(err => {
         CRM.loaded = true;

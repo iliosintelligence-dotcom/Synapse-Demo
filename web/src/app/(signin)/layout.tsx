@@ -5,6 +5,7 @@
 import type { Viewport } from "next";
 import { headInline, inline } from "@/legacy/read";
 import { AnalyticsHead } from "@/features/site/Analytics";
+import { SUPABASE_URL } from "@/lib/supabase-env";
 
 export const viewport: Viewport = {"width":"device-width","initialScale":1,"viewportFit":"cover"};
 
@@ -32,7 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <script src="brand.js" />
         <link rel="stylesheet" href="tapfix.css" />
         <script src="ref.js" />
-        <link rel="preconnect" href="https://bhrhejpekmhbhwryjhgk.supabase.co" crossOrigin="" />
+        <link rel="preconnect" href={SUPABASE_URL} crossOrigin="" />
       </head>
       <body suppressHydrationWarning>{children}</body>
     </html>

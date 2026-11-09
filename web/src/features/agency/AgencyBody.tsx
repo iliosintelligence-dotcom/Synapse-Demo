@@ -14,6 +14,7 @@ import { SetupButton, SetupPop } from "./SetupRing";
 import { AdvisorFab, AdvisorPanel } from "./AdvisorPanel";
 import { VerificationPane } from "./VerificationPane";
 import { ToursPane } from "./ToursPane";
+import { ActivityPane } from "./ActivityPane";
 import { BillingPane } from "./BillingPane";
 import { SubscriptionPane, PlanGate, FreeAccess } from "./SubscriptionPane";
 import { NegotiatorPane } from "./NegotiatorPane";
@@ -285,6 +286,9 @@ export function AgencyBody() {
             </Pane>
             <Pane id="tours">
               <ToursPane />
+            </Pane>
+            <Pane id="activity">
+              <ActivityPane />
             </Pane>
             <Pane id="listings">
               <div className="eyebrow">

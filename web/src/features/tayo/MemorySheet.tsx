@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * "What Tayo remembers" as a React component (stage 2 of the move to React, 2026-10-23).
  *
@@ -13,8 +14,8 @@ import styles from "./MemorySheet.module.css";
 
 gsap.registerPlugin(useGSAP);
 const MOTION = "(prefers-reduced-motion: no-preference)";
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 const VKEY = "toju_visitor_v1"; // the same visitor id the chat uses
 
 type Fact = { key: string; label: string; value: string };
