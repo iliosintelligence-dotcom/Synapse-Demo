@@ -28,6 +28,7 @@ const NAV: Group[] = [
   { sec: "growth", name: "Growth", items: [
     { pane: "social", icon: "share", label: "Social studio" },
     { pane: "marketing", icon: "chart", label: "Marketing" },
+    { pane: "activity", icon: "history", label: "Activity" },
   ] },
   { sec: "team", name: "Team", items: [
     { pane: "agents", icon: "user", label: "Agents" },
@@ -48,7 +49,7 @@ NAV.forEach((g) => g.items.forEach((i) => { SEC_OF[i.pane] = g.sec; }));
    This is the second lock, never the only one: the database policies are what stop an agent writing the brand. */
 const ROLE_PANES: Record<string, string[] | null> = {
   agency_owner: null, /* null = every pane */
-  agency_admin: ["overview", "crm", "negotiator", "listings", "social", "marketing", "agents", "tours", "brand", "verification"],
+  agency_admin: ["overview", "crm", "negotiator", "listings", "social", "marketing", "activity", "agents", "tours", "brand", "verification"],
   agent: ["overview", "crm", "negotiator", "listings", "social", "tours"],
 };
 /* The leads notification asks for 'leads'; the CRM pane is 'crm'. Old names are translated. */
@@ -99,6 +100,7 @@ function goToPane(name: string, step?: number) {
   const pane = ALIAS[name] || name;
   if (!pane || PANES.indexOf(pane) < 0 || !allowed(pane)) return;
   if (pane === "tours") W().loadTours?.();
+  if (pane === "activity") window.dispatchEvent(new Event("syn:activity-load"));
   /* Recount on arrival: a message queued in another tab changes what this should say. */
   if (pane === "crm") W().paintOutboxWaiting?.();
   if (pane === "verification") W().loadVerification?.();
