@@ -112,7 +112,7 @@ export function run() {
   // sending real enum values and classifying the full vocabulary here, so the
   // rest of the app keeps its simple two-sided model without knowing this
   // enum exists.
-  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'platform_admin'];
+  var AGENCY_DB_ROLES = ['agency_owner', 'agency_admin', 'agent', 'agency_viewer', 'platform_admin'];
   function roleOf(u) {
     if (!u) return null;
     var m = u.user_metadata || {};

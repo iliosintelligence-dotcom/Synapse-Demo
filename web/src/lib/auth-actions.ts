@@ -12,7 +12,7 @@ export type Role = "customer" | "agency";
 /* ── roles ───────────────────────────────────────────────────────────────────
    The database trigger that provisions `profiles` on sign-up casts `role` to a real Postgres enum (consumer, agent, agency_admin,
    agency_owner, platform_admin). Sending any other value aborts the sign-up. The app only has two sides, so these map to them. */
-const AGENCY_DB_ROLES = ["agency_owner", "agency_admin", "agent", "platform_admin"];
+const AGENCY_DB_ROLES = ["agency_owner", "agency_admin", "agent", "agency_viewer", "platform_admin"];
 
 export function roleOf(user: User | null | undefined): Role | null {
   if (!user) return null;

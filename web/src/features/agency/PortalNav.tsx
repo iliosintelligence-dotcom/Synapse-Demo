@@ -51,6 +51,8 @@ const ROLE_PANES: Record<string, string[] | null> = {
   agency_owner: null, /* null = every pane */
   agency_admin: ["overview", "crm", "negotiator", "listings", "social", "marketing", "activity", "agents", "tours", "brand", "verification"],
   agent: ["overview", "crm", "negotiator", "listings", "social", "tours"],
+  /* Viewer: sees the work and changes nothing. The database is the real lock (agency_can_edit); these are the screens worth looking at. */
+  agency_viewer: ["overview", "crm", "listings", "social", "marketing", "tours"],
 };
 /* The leads notification asks for 'leads'; the CRM pane is 'crm'. Old names are translated. */
 const ALIAS: Record<string, string> = { leads: "crm", lead: "crm", posts: "social", post: "social" };
