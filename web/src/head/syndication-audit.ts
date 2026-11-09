@@ -25,8 +25,9 @@
 (function () {
   'use strict';
 
-  const SUPABASE_URL = 'https://bhrhejpekmhbhwryjhgk.supabase.co';
-  const ANON_KEY = 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
+  /* Filled in by scripts/build-head.mjs from .env.local or Vercel's settings; production's when neither is set. */
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bhrhejpekmhbhwryjhgk.supabase.co';
+  const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV';
 
   /* Every platform syndication.js knows about. Deliberately not filtered to
      the ones we can currently post to: the point is to know the whole surface

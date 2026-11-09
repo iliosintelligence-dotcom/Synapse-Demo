@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * The bio-link page, /go/<handle> (React since 2026-10-24, was src/legacy/go/inline-3.js).
  *
@@ -8,8 +9,8 @@
  */
 import { Fragment, useEffect, useState } from "react";
 
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 
 type Home = {
   property_id: string; token?: string | null; platform?: string; listing_type?: string; bedrooms?: number | null; city?: string;

@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * The listing page itself (React since 2026-10-24, was src/legacy/property/inline-3.js): the photographs and their
  * full-size viewer, the swipe deck of cards, save and share, every fact about the home, what was checked, the deal, who
@@ -17,8 +18,8 @@ import { flushSync } from "react-dom";
 import { usePageScripts } from "@/legacy/usePageScripts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-location-assign-relative-destination */
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 const ANON = { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY };
 const W = () => window as any;
 const STOCK_HERO = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80";

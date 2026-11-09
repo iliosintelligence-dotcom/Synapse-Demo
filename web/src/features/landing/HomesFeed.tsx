@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * The properties feed that ends the landing pages (Eden, 2026-10-11; React since 2026-10-24, was public/home-feed.js).
  *
@@ -8,8 +9,8 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const URL_ = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const URL_ = SUPABASE_URL_ENV;
+const KEY = SUPABASE_KEY_ENV;
 const SAVES = "synapse_saved";
 
 type Row = { id: string; title: string; sub: string; deals: string[] };

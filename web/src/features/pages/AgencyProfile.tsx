@@ -1,4 +1,5 @@
 "use client";
+import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } from "@/lib/supabase-env";
 /**
  * An agency's public page (React since 2026-10-24, was src/legacy/agency-profile/inline-3.js).
  *
@@ -8,8 +9,8 @@
  */
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 
-const SUPABASE_URL = "https://bhrhejpekmhbhwryjhgk.supabase.co";
-const ANON_KEY = "sb_publishable_D25gO3eui5oI4L3h7bx-vg_fCHbo3LV";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const ANON_KEY = SUPABASE_KEY_ENV;
 const H = { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY };
 const PERIOD: Record<string, string> = { total: "", per_year: "/yr", per_month: "/mo", per_night: "/night" };
 const TIER: Record<string, string> = { gold: "Gold verified", basic: "Verified", verified: "Verified" };
