@@ -54,6 +54,29 @@ const ROLE_PANES: Record<string, string[] | null> = {
   /* Viewer: sees the work and changes nothing. The database is the real lock (agency_can_edit); these are the screens worth looking at. */
   agency_viewer: ["overview", "crm", "listings", "social", "marketing", "tours"],
 };
+/* A VIEWER SEES NO BUTTON THAT WOULD BE REFUSED (2026-11-10). The database already refuses a Viewer every change
+   (agency_can_edit); this only stops the screen offering them. A <style> added for a Viewer alone -- for every other role
+   it does not exist, so no other layout can move. Reading actions stay: View leads, Open in Listings, Open the link,
+   Sort, Export, Refresh. */
+const VIEWER_HIDE = [
+  "#agdAddFab", "#newListingBtn", "#newPostBtn", "#newCampBtn",                         // the + menu
+  "[data-ov-add]", "#pane-overview .wa",                                               // overview: add, WhatsApp a lead
+  "#crmAdd", "#crmBlankAdd", "[data-bulk]", "#pane-crm .dgr", "#obQueue", "#obSend",  // leads
+  "#pane-listings .edit", "#pane-listings .relist", "#relistAllBtn", "[data-post]", "[data-relist]",
+  "[data-draft-open]", "[data-draft-discard]", "[data-sd-open]", "[data-sd-discard]",  // listings
+  "#pane-social [data-act]:not([data-act=\"openlink\"])", ".pl-del", "[data-pl]",       // post cards
+  ".ch-add", "[data-ch-add]", "[data-connect]", "[data-disconnect]", "#rpEdit", "#rpSave", // channels, auto-replies
+  "[data-mk-new]", "#cfSave", "#cmpRun", "#cmpLive", "[data-dg-post]",                 // marketing, campaigns
+  ".tour-acts",                                                                        // tours
+].join(",");
+function viewerLock(role: string | null) {
+  const id = "syn-viewer-lock";
+  const el = document.getElementById(id);
+  if (role !== "agency_viewer") { if (el) el.remove(); return; }
+  const s = el || document.head.appendChild(Object.assign(document.createElement("style"), { id }));
+  s.textContent = VIEWER_HIDE + "{display:none!important}";
+}
+
 /* The leads notification asks for 'leads'; the CRM pane is 'crm'. Old names are translated. */
 const ALIAS: Record<string, string> = { leads: "crm", lead: "crm", posts: "social", post: "social" };
 
@@ -222,6 +245,7 @@ export function PortalNavHost() {
        it is known which panes exist. */
     const onRole = (e: Event) => {
       const role = (e as CustomEvent).detail || null;
+      viewerLock(role);
       setNow({ role });
       const h = (location.hash || "").replace(/^#/, "");
       if (h && PANES.indexOf(h) > -1 && allowed(h)) goToPane(h);
