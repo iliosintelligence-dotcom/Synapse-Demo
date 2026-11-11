@@ -10,8 +10,9 @@
  * REDESIGNED (Eden, 2026-10-09): the post, the time, and one button. The quick times answer "when" in one tap, and the two
  * caveats are short lines with the full wording in a tooltip.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { showDrawer } from "./SideDrawer";
+import { TikTokPanel, type TikTokChoice } from "./TikTokPanel";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -92,6 +93,9 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
   const [quick, setQuick] = useState(-1);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<"" | "save" | "now">("");
+  /* null = TikTok is in inbox mode (as before); otherwise the TikTok panel's choices, which a TikTok row needs. */
+  const [tt, setTt] = useState<TikTokChoice>(null);
+  const onTt = useCallback((c: TikTokChoice) => setTt(c), []);
   const story = useRef<HTMLInputElement>(null), camp = useRef<HTMLSelectElement>(null);
   const [opts] = useState(() => {
     /* ONE TAP FOR THE USUAL ANSWERS. They set the last row, so with several rows each can be given its own. */
@@ -129,6 +133,12 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
       setNote("This caption was written for " + nm(cardPlat) + ". To post on " + nm(off.platform) + " too, write its own version in the composer.");
       return;
     }
+    /* TikTok DIRECT mode: a TikTok row needs the panel completed (TikTok's own rule), and each TikTok row carries the
+       choices plus the moment of consent. In inbox mode (tt null) nothing changes. */
+    const hasTt = list.some((r) => r.platform === "tiktok");
+    if (hasTt && tt && !tt.valid) { setNote(tt.reason); return; }
+    const ttPayload = hasTt && tt && tt.valid ? { ...tt.tiktok, consent_at: new Date().toISOString() } : null;
+    const withTt = (rs: typeof list) => rs.map((r) => (r.platform === "tiktok" && ttPayload ? { ...r, tiktok: ttPayload } : r));
     setNote(""); setBusy(now ? "now" : "save");
     const L = W().SynListings;
     /* Rescheduling reuses the row that already exists and only creates rows for the extra slots, so moving a post does not leave
@@ -139,7 +149,7 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
       /* NO MEDIA NAMED: queue_social_post reads the listing's whole gallery itself, in display order, capped at ten. Stories and the
          campaign are read at commit, since somebody can tick them after adding a row. Both buttons are real sends; they differ
          only in WHEN. */
-      .then(() => (extra.length ? L.schedulePost({ propertyId: p.propertyId, contentId: p.contentId || null, caption: p.caption || "", mediaUrls: null, slots: extra,
+      .then(() => (extra.length ? L.schedulePost({ propertyId: p.propertyId, contentId: p.contentId || null, caption: p.caption || "", mediaUrls: null, slots: withTt(extra),
         stories: !!(story.current && story.current.checked), campaignId: (camp.current && camp.current.value) || null }) : null))
       .then(() => {
         /* DRAIN IT RATHER THAN WAIT: "Post now" that takes a minute to do anything visible reads as broken. A failure here leaves
@@ -214,7 +224,13 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
           );
         })}
       </div>
-      <div className="sch-note" id="schTt" hidden={!rows.some((r) => r.plat === "tiktok")} title="Open TikTok, add a sound, and post it from there.">TikTok goes to your inbox as a draft.</div>
+      <div className="sch-note" id="schTt" hidden={!rows.some((r) => r.plat === "tiktok") || tt !== null} title="Open TikTok, add a sound, and post it from there.">TikTok goes to your inbox as a draft.</div>
+      {/* TikTok's required posting panel, only when a TikTok row exists and the backend is in direct mode (it renders nothing
+          otherwise). Re-mounts per account, so creator info is fetched fresh for the account the post goes to. */}
+      {rows.some((r) => r.plat === "tiktok") ? (
+        <TikTokPanel key={(rows.find((r) => r.plat === "tiktok") || { acct: "" }).acct || "default"}
+          accountId={(rows.find((r) => r.plat === "tiktok") || { acct: null }).acct || null} caption={p.caption || ""} onChange={onTt} />
+      ) : null}
       <div className="sch2-more">
         <button type="button" className="sch2-ghost" id="schAdd" onClick={add}>+ Add another time</button>
         {mode === "reschedule" ? null : (
