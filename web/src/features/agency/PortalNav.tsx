@@ -67,7 +67,7 @@ const VIEWER_HIDE = [
   "#pane-social [data-act]:not([data-act=\"openlink\"])", ".pl-del", "[data-pl]",       // post cards
   ".ch-add", "[data-ch-add]", "[data-connect]", "[data-disconnect]", "#rpEdit", "#rpSave", // channels, auto-replies
   "[data-mk-new]", "#cfSave", "#cmpRun", "#cmpLive", "[data-dg-post]",                 // marketing, campaigns
-  ".tour-acts",                                                                        // tours
+  ".tour-acts", "[data-direct-toggle]",                                                // tours, TikTok direct posting
 ].join(",");
 function viewerLock(role: string | null) {
   const id = "syn-viewer-lock";
