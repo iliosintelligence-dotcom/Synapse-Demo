@@ -31,7 +31,7 @@ const SOON: Record<string, [string, string]> = {
 };
 
 type Acct = { id: string; platform: string; platform_username?: string | null; is_active?: boolean; token_expires_at?: string | null;
-  connected_at?: string | null; page_cta_type?: string | null; page_cta_url?: string | null };
+  connected_at?: string | null; page_cta_type?: string | null; page_cta_url?: string | null; direct_post?: boolean };
 /* The Pages Facebook shared, waiting for this agency to say which are its own (social-connect action=facebook-pick). id is the stash. */
 type Fbp = { id: string; data: any; chosen: Record<string, boolean>; busy: boolean; note: string };
 /* linked: undefined = not asked yet, null = not linked, object = linked. code/exp/st: the "/connect CODE" this person was given,
@@ -127,7 +127,7 @@ function loadChannels(): Promise<void> {
       let ok = false;
       return fetch(sbUrl() + "/rest/v1/social_accounts"
           + "?select=id,platform,platform_username,is_active,token_expires_at,connected_at"
-          + ",page_cta_type,page_cta_url"
+          + ",page_cta_type,page_cta_url,direct_post"
           + "&is_active=eq.true&deleted_at=is.null", {
           headers: { apikey: sbKey(), Authorization: "Bearer " + t },
         })
@@ -204,6 +204,38 @@ function ConnectButton({ platform, children }: { platform: string; children: Rea
     startConnect(platform).catch((err) => { setBusy(false); toastOrAlert(err.message || "Could not open the connection."); });
   };
   return <button type="button" className="cmp-ch-btn primary" data-connect={platform} disabled={busy} onClick={go}>{busy ? "Opening…" : children}</button>;
+}
+
+/* EACH AGENCY CHOOSES (2026-11-11): TikTok posts straight to the profile, or to the TikTok inbox as before. Shown only
+   when TikTok direct posting is switched on for Synapse (status mode 'direct'). Off by default; on needs the account to
+   have granted direct posting, which one connected earlier has not -- then the answer says to reconnect. Direct posts
+   still go through TikTok's panel and consent in the scheduler; this only picks inbox or profile. */
+function DirectToggle({ a }: { a: Acct }) {
+  const [busy, setBusy] = useState(false);
+  const on = !!a.direct_post;
+  const flip = () => {
+    setBusy(true);
+    token().then((t) => {
+      if (!t) throw new Error("Sign in again.");
+      return fetch(sbUrl() + "/rest/v1/rpc/set_tiktok_direct_post", {
+        method: "POST",
+        headers: { apikey: sbKey(), Authorization: "Bearer " + t, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_account_id: a.id, p_on: !on }),
+      });
+    }).then((r) => r.json().catch(() => null).then((j) => {
+      if (!r.ok) throw new Error((j && j.message) || "Could not change that (" + r.status + ").");
+      if (j === "needs_reconnect") toastOrAlert("To post directly, reconnect TikTok and allow direct posting: Disconnect, then connect TikTok again.");
+      else toastOrAlert(j === "on" ? "TikTok posts will go straight to your profile." : "TikTok posts will go to your TikTok inbox.");
+      return loadChannels();
+    })).then(() => setBusy(false))
+      .catch((err) => { setBusy(false); toastOrAlert(err.message || "Could not change that."); });
+  };
+  return (
+    <label className="cmp-ch-direct" data-direct-toggle={a.id} title="Off: posts go to your TikTok inbox to finish in the app. On: posts go straight to your profile, with TikTok’s options and consent each time."
+      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: busy ? "wait" : "pointer" }}>
+      <input type="checkbox" checked={on} disabled={busy} onChange={flip} /> Post directly to profile
+    </label>
+  );
 }
 
 function DisconnectButton({ id, stale, onDone }: { id: string; stale: boolean; onDone?: () => void }) {
@@ -651,6 +683,7 @@ export function ChannelStrip({ onDisconnect }: { onDisconnect?: () => void }) {
               <span className="cmp-ch-nm"><Mark pl={pl} />{CONNECTABLE[pl]}</span>
               {/* Telegram stores its own label: the @name, or the title of a channel that has none. */}
               <span className="cmp-ch-at">{stale ? "session expired" : pl === "telegram" ? (a.platform_username || "channel") : "@" + (a.platform_username || "connected")}</span>
+              {pl === "tiktok" && !stale && state.ready && state.ready.tiktok && state.ready.tiktok.mode === "direct" ? <DirectToggle a={a} /> : null}
               <DisconnectButton id={a.id} stale={stale} onDone={onDisconnect} />
             </div>
           );
