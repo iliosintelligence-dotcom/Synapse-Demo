@@ -2350,7 +2350,11 @@ export function run() {
                every regeneration rewrites the same three. This is why the RPC
                grew a payload parameter: without it, moving off the direct
                insert would have silently dropped the rotation. */
-            p_payload: sl.angle ? { angle: sl.angle } : null,
+            /* And, for a TikTok slot in direct mode, the TikTok panel's choices and the moment of consent
+               (social-publish posts straight to the profile only with these). */
+            p_payload: (sl.angle || sl.tiktok)
+              ? Object.assign({}, sl.angle ? { angle: sl.angle } : {}, sl.tiktok ? { tiktok: sl.tiktok } : {})
+              : null,
           }).then(function (r) {
             if (r.error) throw r.error;
             made.push({ id: r.data, platform: sl.platform, scheduled_at: at });
