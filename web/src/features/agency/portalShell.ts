@@ -526,14 +526,16 @@ export function run() {
       return all.find(function (t) { return t.id === id; }) || TASKS.shown[id] || null;
     }
 
-    function setTasks(source, list) {
+    /* opts.quiet: listed in the bell only, never popped up (2026-11-13: the card that appeared after every channel
+       connection is gone at the client's request; its steps wait in the bell). */
+    function setTasks(source, list, opts) {
       TASKS.bySource[source] = list || [];
       var done = taskMarks('done'), later = taskMarks('later');
       var fresh = TASKS.bySource[source].filter(function (t) {
         return !done[t.id] && !later[t.id] && !TASKS.popped[t.id];
       });
       if (typeof renderNoti === 'function') { try { renderNoti(); } catch (e) { /* bell not ready yet */ } }
-      if (fresh.length) showTasks(fresh);
+      if (fresh.length && !(opts && opts.quiet)) showTasks(fresh);
     }
 
     /* The card is React (src/features/agency/TaskCard.tsx): it joins an open card rather than replacing it, and marks a task
