@@ -24,6 +24,12 @@ const fmtWhen = (iso: string) => (W().fmtWhen ? W().fmtWhen(iso) : "");
 
 /* Telegram was connectable for a day before it was schedulable: an agency could add its channel and find nowhere to send. */
 const SCHED_PLATS = ["instagram", "tiktok", "youtube", "facebook", "whatsapp", "telegram"];
+/* LinkedIn and X (2026-11-13) are offered only to an agency that has connected one: without it a LinkedIn post has
+   nowhere to go, and an X post would go out on Synapse's X instead. */
+const schedPlats = (current: string): string[] => {
+  const l = SCHED_PLATS.concat(["linkedin", "x"].filter((p) => acctsFor(p).length > 0));
+  return l.indexOf(current) < 0 ? l.concat([current]) : l;
+};
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const dateVal = (d: Date) => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
 const timeVal = (d: Date) => pad2(d.getHours()) + ":" + pad2(d.getMinutes());
@@ -214,7 +220,7 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
             <div className="slot" data-slot="" key={r.k}>
               {/* THE ACCOUNTS FOLLOW THE CHANNEL: queue_social_post refuses an account from another platform. */}
               <select className="slot-p" aria-label="Channel" value={r.plat} onChange={(e) => edit(r.k, { plat: e.target.value, acct: firstAcct(e.target.value) })}>
-                {SCHED_PLATS.map((c) => <option key={c} value={c}>{chLabel(c)}</option>)}
+                {schedPlats(r.plat).map((c) => <option key={c} value={c}>{chLabel(c)}</option>)}
               </select>
               <input type="date" className="slot-d" value={r.d} aria-label="Date" onChange={(e) => edit(r.k, { d: e.target.value })} />
               <input type="time" className="slot-t" value={r.t} aria-label="Time" onChange={(e) => edit(r.k, { t: e.target.value })} />

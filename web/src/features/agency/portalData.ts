@@ -122,6 +122,7 @@ export function run() {
       youtube:   { label: 'YouTube',   color: '#FF0000', short: 'YT' },
       whatsapp:  { label: 'WhatsApp',  color: '#25D366', short: 'WA' },
       x:         { label: 'X',         color: '#161616', short: 'X'  },
+      linkedin:  { label: 'LinkedIn',  color: '#0A66C2', short: 'in' },
       telegram:  { label: 'Telegram',  color: '#229ED9', short: 'TG' },
       proximity: { label: 'Proximity', color: '#121212', short: '◎' },
       direct:    { label: 'Direct app',color: '#8a8f98', short: '·' },
