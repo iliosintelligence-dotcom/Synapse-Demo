@@ -27,8 +27,14 @@ const naira = (n: number) => (W().SynNaira ? W().SynNaira(n) : String(n));
 const html = (s: string) => ({ __html: s });
 
 const CHANNELS = ["instagram", "tiktok", "youtube", "facebook", "whatsapp", "x", "telegram"];
+/* The agency's connected accounts on a platform (Channels keeps them in window.SOCIAL_ACCOUNTS). */
+/* Never on the server: the page is pre-rendered with no window, and the accounts only exist in the browser. */
+const hasAcct = (p: string) => typeof window !== "undefined"
+  && (W().SOCIAL_ACCOUNTS || []).some((a: any) => a && a.platform === p && a.is_active);
+/* LinkedIn (2026-11-13) is offered once the agency has connected it: there is no Synapse LinkedIn to fall back on. */
+const channels = () => (hasAcct("linkedin") ? CHANNELS.concat(["linkedin"]) : CHANNELS);
 /* Where each platform folds a caption behind "more". */
-const CAP_FOLD: Record<string, number> = { instagram: 125, facebook: 250, x: 200, telegram: 400, tiktok: 120, whatsapp: 300, youtube: 150 };
+const CAP_FOLD: Record<string, number> = { instagram: 125, facebook: 250, x: 200, telegram: 400, tiktok: 120, whatsapp: 300, youtube: 150, linkedin: 210 };
 const TICK = <svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7" /></svg>;
 
 function ChnBadge({ c }: { c: string }) {
@@ -291,9 +297,11 @@ export function ComposerHost() {
         {/* X goes out on SYNAPSE'S X account (agencies cannot connect their own yet). Said on the chip, where the choice is made;
             the post's link is still theirs, so the enquiries are too. */}
         <div className="cmp-chans">
-          {CHANNELS.map((id) => {
+          {channels().map((id) => {
             const on = c.chans.includes(id);
-            const nm = chLabel(id) + (id === "x" ? " (posted on Synapse’s X account; enquiries still come to you)" : "");
+            const nm = chLabel(id) + (id === "x"
+              ? (hasAcct("x") ? " (posted on your X account)" : " (posted on Synapse’s X account; enquiries still come to you)")
+              : "");
             return (
               <button key={id} type="button" className={"cmp-chan" + (on ? " on" : "")} data-chan={id} aria-pressed={on} aria-label={nm} title={nm} onClick={() => toggle(id)}>
                 <ChnBadge c={id} /><span className="cc-tick" aria-hidden="true">{TICK}</span>

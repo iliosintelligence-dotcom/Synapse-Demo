@@ -24,11 +24,14 @@ export const toastOrAlert = (msg: string) => { if (typeof W().toast === "functio
 /* For the task bodies, which the task card renders as markup. */
 const esc = (s: unknown) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export const CONNECTABLE: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", telegram: "Telegram", tiktok: "TikTok", youtube: "YouTube" };
-const SOON: Record<string, [string, string]> = {
-  linkedin: ["LinkedIn", "not built yet"],
-  x: ["X (your X posts go out on Synapse’s X for now)", "not built yet"],
+/* LinkedIn and X (2026-11-13) connect through PostPeer. Their tiles work only once the server lists them as ready
+   (ONLY_WHEN_LISTED): until then they say "not available yet", never a button that ends in an error. */
+export const CONNECTABLE: Record<string, string> = {
+  instagram: "Instagram", facebook: "Facebook", telegram: "Telegram", tiktok: "TikTok", youtube: "YouTube",
+  linkedin: "LinkedIn", x: "X",
 };
+const ONLY_WHEN_LISTED = new Set(["linkedin", "x"]);
+const SOON: Record<string, [string, string]> = {};
 
 type Acct = { id: string; platform: string; platform_username?: string | null; is_active?: boolean; token_expires_at?: string | null;
   connected_at?: string | null; page_cta_type?: string | null; page_cta_url?: string | null; direct_post?: boolean };
@@ -74,7 +77,7 @@ let tgPoll: ReturnType<typeof setInterval> | null = null, tgUntil = 0;
 
 function platformReady(pl: string) {
   const ready = state.ready;
-  if (!ready) return true;                  // unknown: behave as before
+  if (!ready) return !ONLY_WHEN_LISTED.has(pl);   // unknown: behave as before; a new platform waits to be listed
   /* The server answered and does not list this platform: its backend cannot connect it (YouTube's tile reached live before
      its backend did, and every tap ended in "Unsupported platform: youtube"). Not listed is not ready. */
   return !!ready[pl] && ready[pl].ready !== false;
@@ -485,6 +488,24 @@ function MetaStep({ pl }: { pl: string }) {
   );
 }
 
+/* LINKEDIN: a personal profile or a company page the person manages -- LinkedIn's own screen asks. */
+const LinkedinStep = () => (
+  <div className="ch-step">
+    <div className="cmp-ch-note">You will be sent to LinkedIn to sign in. Use the LinkedIn account that posts for <b>this agency</b>; if you manage the agency’s company page, LinkedIn lets you choose it.</div>
+    <div className="cmp-ch-note">Posts can carry up to 9 photos or one video. A post with neither shows the listing’s link as a preview card.</div>
+    <div><ConnectButton platform="linkedin">Continue to LinkedIn →</ConnectButton></div>
+  </div>
+);
+
+/* X: once connected, the agency's X posts go to its own account instead of Synapse's. */
+const XStep = () => (
+  <div className="ch-step">
+    <div className="cmp-ch-note">You will be sent to X to sign in. Use <b>this agency’s</b> X account.</div>
+    <div className="cmp-ch-note">Once it is connected, your X posts go out on your own account instead of Synapse’s. A post on X is kept to 280 characters, with up to 4 photos or one video.</div>
+    <div><ConnectButton platform="x">Continue to X →</ConnectButton></div>
+  </div>
+);
+
 /* YOUTUBE TAKES VIDEO ONLY, and Google asks which account to use -- both said before connecting. */
 const YoutubeStep = () => (
   <div className="ch-step">
@@ -594,8 +615,8 @@ function AddPanel() {
           );
         })}
       </div>
-      <div className="ch-soon">Coming later: {Object.keys(SOON).map((k) => SOON[k][0]).join(" · ")}</div>
-      {add.pick === "facebook" || add.pick === "instagram" ? <MetaStep pl={add.pick} /> : add.pick === "tiktok" ? <TiktokStep /> : add.pick === "youtube" ? <YoutubeStep /> : add.pick === "telegram" ? <TgStep /> : null}
+      {Object.keys(SOON).length ? <div className="ch-soon">Coming later: {Object.keys(SOON).map((k) => SOON[k][0]).join(" · ")}</div> : null}
+      {add.pick === "facebook" || add.pick === "instagram" ? <MetaStep pl={add.pick} /> : add.pick === "tiktok" ? <TiktokStep /> : add.pick === "youtube" ? <YoutubeStep /> : add.pick === "telegram" ? <TgStep /> : add.pick === "linkedin" ? <LinkedinStep /> : add.pick === "x" ? <XStep /> : null}
     </div>
   );
 }
