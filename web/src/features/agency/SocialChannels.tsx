@@ -935,7 +935,8 @@ export function ChannelsHost() {
   }, []);
   useEffect(() => {
     if (!s.drawn || typeof W().setTasks !== "function") return;
-    W().setTasks("channels", channelTasks());
+    /* Quiet: no card pops up after a connection; the steps wait in the bell. */
+    W().setTasks("channels", channelTasks(), { quiet: true });
   }, [s.drawn, s.accounts, s.known, s.ready, s.role, s.brandTick]);
   return <ConnectErr />;
 }
