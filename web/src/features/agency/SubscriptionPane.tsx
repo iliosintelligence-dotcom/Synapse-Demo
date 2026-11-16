@@ -279,8 +279,9 @@ export function PlanGate() {
   );
 }
 
-/* FOR NOW, NOBODY PAYS (Eden, 2026-10-16): pressing Pay on any plan or add-on shows this instead of opening Paystack. It is true
-   because the paywall is off: every agency already has everything. portalShell's FREE_30_DAYS decides whether it shows. */
+/* THE FREE PILOT HAS ENDED (2026-11-16): this prompt only ever showed while portalShell's FREE_30_DAYS was true, which it no
+   longer is -- nothing dispatches 'syn:free-access' now, so this never opens. Left in place rather than removed: harmless,
+   and startCheckout's own comment is the one place that says whether it is reachable. */
 export function FreeAccess() {
   const [open, setOpen] = useState(false);
   const [turn, setTurn] = useState(0);

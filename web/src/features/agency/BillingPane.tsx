@@ -7,7 +7,7 @@
  * show one number and charge another. The annual offer is per agency: those that joined before it closes keep two months free.
  * Owner only, like Subscription: ROLE_PANES leaves it out for admins and agents, and the checkout refuses anyone else.
  *
- * Paying is still portalShell's startCheckout(what, btn) (the pricing cards share it, and for now it only says the pilot is free).
+ * Paying is still portalShell's startCheckout(what, btn) (the pricing cards share it; it opens the real Paystack checkout).
  * portalShell's loadBilling(), openBilling(planId) and blRender() survive as names and fire `syn:billing-load`, `syn:billing-plan`
  * and `syn:billing-render`.
  */

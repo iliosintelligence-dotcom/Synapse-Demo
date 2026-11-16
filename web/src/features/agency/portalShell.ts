@@ -596,11 +596,12 @@ export function run() {
     }
     /* what: 'accelerator' (a month of it, the old call), or
        { plan, period } or { addon }. The function prices it, never the page. */
-    /* FOR NOW, NOBODY PAYS (Eden, 2026-10-16: "when users want to pay any tier, tell them they have free 30 days access to
-       the highest tier"). Pressing Pay on any plan or add-on shows this instead of opening Paystack. It is true because the
-       paywall is off (platform_settings paywall_enabled): every agency already has everything, which is the highest plan.
-       To bring payments back, set FREE_30_DAYS to false and the original checkout below runs again. */
-    const FREE_30_DAYS = true;
+    /* THE FREE PILOT HAS ENDED (2026-11-16: "remove the free pilot and put back the previous paywall that was
+       already in place"). The database's paywall is back on (platform_settings paywall_enabled, set_paywall(true)
+       -- see the migration), so pressing Pay on a plan or add-on now opens the real checkout below instead of the
+       "nothing to pay" prompt. showFreeAccess/FreeAccess (SubscriptionPane.tsx) are left in place, unreachable:
+       nothing dispatches 'syn:free-access' while this is false. */
+    const FREE_30_DAYS = false;
     function showFreeAccess() { window.dispatchEvent(new CustomEvent('syn:free-access')); }   // the prompt is React (SubscriptionPane.tsx)
     function startCheckout(what, btn) {
       if (FREE_30_DAYS) { showFreeAccess(); return; }
