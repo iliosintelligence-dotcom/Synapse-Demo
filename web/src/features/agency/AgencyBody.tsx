@@ -192,12 +192,6 @@ export function AgencyBody() {
               <div className="h1">
                 Billing
               </div>
-              <div className="pilot-banner">
-                <b>
-                  Free pilot.
-                </b>
-                {" Everything is open and nothing is charged while the pilot runs. This page stays so you can see how billing will work."}
-              </div>
               <p className="sub">
                 Your plan, what you have paid, and extras. Payments go through Paystack to ILIOS Digital, the company behind Synapse. Card details never touch Synapse.
               </p>

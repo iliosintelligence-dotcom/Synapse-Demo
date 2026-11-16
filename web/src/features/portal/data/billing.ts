@@ -3,10 +3,11 @@ import { accessToken, callFunction } from "@/lib/functions";
 import { agencyId } from "./agency";
 
 /**
- * FOR NOW, NOBODY PAYS (Eden, 2026-10-16). Pressing Pay shows the free-pilot notice instead of opening Paystack, true because the paywall is
- * off in platform_settings. Set to false and the real checkout below runs again.
+ * THE FREE PILOT HAS ENDED (2026-11-16): the paywall is back on in platform_settings (set_paywall(true)), so this
+ * is false and the real checkout runs. This whole /portal tree is unreachable in production either way --
+ * vercel.json redirects /portal to /app/agency -- kept in step for whoever next works on it.
  */
-export const FREE_PILOT = true;
+export const FREE_PILOT = false;
 
 export type PlanCode = "accelerator" | "market_leader";
 export type Period = "monthly" | "annual";

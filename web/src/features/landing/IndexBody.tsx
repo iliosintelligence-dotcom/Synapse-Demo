@@ -34,7 +34,7 @@ export function IndexBody() {
             </a>
             {" "}
             <a href="#pricing">
-              Free pilot
+              Pricing
             </a>
           </nav>
           <div className="aud" role="group" aria-label="Who Synapse is for">
@@ -78,7 +78,7 @@ export function IndexBody() {
               </a>
               {" "}
               <a className="btn btn-ghost" href="#pricing">
-                About the free pilot
+                See pricing
               </a>
             </div>
           </div>
@@ -796,25 +796,22 @@ export function IndexBody() {
           <div className="wrap">
             <div className="sec-head">
               <h2 className="h2">
-                {"A free pilot. "}
+                {"Free to start. "}
                 <em>
-                  Everything open.
+                  Pay as you grow.
                 </em>
               </h2>
               <p className="lede">
-                Synapse is free while we test it, with no card and no cut of your deals.
+                A small agency pays nothing. Upgrade only once you need more listings, seats or social reach.
               </p>
             </div>
             <div className="pilot irid neon">
               <div className="pilot-k">
-                Free pilot
+                Free plan
               </div>
               <ul className="pilot-l">
                 <li>
-                  Unlimited listings during the pilot
-                </li>
-                <li>
-                  Publish once, reach every channel you connect
+                  20 active listings and 2 team seats, free forever
                 </li>
                 <li>
                   Tayo answers buyers, negotiates for you and books viewings
@@ -822,9 +819,12 @@ export function IndexBody() {
                 <li>
                   Verification, CRM and handoff by WhatsApp and email
                 </li>
+                <li>
+                  Publish once to Instagram, Facebook, TikTok and more from ₦25,000/month
+                </li>
               </ul>
               <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
-                Join the free pilot
+                Try free
               </a>
             </div>
           </div>
@@ -906,7 +906,7 @@ export function IndexBody() {
             </a>
             {" "}
             <a href="#pricing">
-              Free pilot
+              Pricing
             </a>
             {" "}
             <a href={"app/signin.html?role=agency&reason=agency&next=agency.html"}>
