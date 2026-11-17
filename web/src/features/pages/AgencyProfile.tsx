@@ -67,13 +67,13 @@ function Facts({ a }: { a: Agency }) {
     rows.push(["Office", <>{where} · <a href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(where + ", Nigeria")} target="_blank" rel="noopener">Map</a></>]);
   }
   const site = safeUrl(social.website);
-  if (site) rows.push(["Website", <a href={site} target="_blank" rel="noopener nofollow">{site.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a>]);
+  if (site) rows.push(["Website", <a key="website" href={site} target="_blank" rel="noopener nofollow">{site.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a>]);
   const nets = ["instagram", "facebook", "tiktok", "x", "linkedin", "youtube"].map((k) => [k, safeUrl(social[k])]).filter(([, u]) => u);
   if (nets.length) rows.push(["Social", <>{nets.map(([k, u], i) => <Fragment key={k}>{i ? " · " : ""}<a href={u} target="_blank" rel="noopener nofollow">{k.charAt(0).toUpperCase() + k.slice(1)}</a></Fragment>)}</>]);
   const hours = typeof a.business_hours === "string" ? a.business_hours : (a.business_hours && typeof a.business_hours === "object" && a.business_hours.text) || "";
   if (hours) rows.push(["Hours", hours]);
   const spec = Array.isArray(a.specialties) ? a.specialties.filter(Boolean) : [];
-  if (spec.length) rows.push(["Focus", <span className="ap-tags">{spec.map((s, i) => <span key={i}>{s}</span>)}</span>]);
+  if (spec.length) rows.push(["Focus", <span key="focus" className="ap-tags">{spec.map((s, i) => <span key={i}>{s}</span>)}</span>]);
   if (a.avg_response_minutes) rows.push(["Replies in", "about " + (a.avg_response_minutes < 90 ? Math.round(a.avg_response_minutes) + " min" : Math.round(a.avg_response_minutes / 60) + " h")]);
   return <>{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</>;
 }
