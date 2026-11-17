@@ -693,13 +693,15 @@ export function PropertyPage({ canvas }: { canvas: ReactNode }) {
       rows: [] as any[],
     };
   })();
-  /* Availability, stated as its own claim with its own date. */
+  /* Availability, stated as its own claim with its own date. "Now" is read once when the page opens, so
+     every redraw agrees on it (react-hooks/purity). */
+  const [now] = useState(() => Date.now());
   const avail = (() => {
     if (!P) return { text: "-", stale: false };
     const conf = P.availability_confirmed_at, exp = P.expires_at ? new Date(P.expires_at) : null;
-    if (exp && exp.getTime() < Date.now()) return { text: "Not confirmed since " + (conf ? fmtDate(conf) : "listing") + ", ask the agency before viewing", stale: true };
+    if (exp && exp.getTime() < now) return { text: "Not confirmed since " + (conf ? fmtDate(conf) : "listing") + ", ask the agency before viewing", stale: true };
     if (!conf) return { text: "Not confirmed yet", stale: true };
-    const days = Math.floor((Date.now() - new Date(conf).getTime()) / 864e5);
+    const days = Math.floor((now - new Date(conf).getTime()) / 864e5);
     return { text: (days <= 0 ? "Confirmed today" : days === 1 ? "Confirmed yesterday" : "Confirmed " + days + " days ago") + " · " + fmtDate(conf), stale: days > 21 };
   })();
 
