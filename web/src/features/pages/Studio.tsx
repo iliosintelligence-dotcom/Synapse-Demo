@@ -731,6 +731,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
           <div className="gstep"><span className="dot">2</span><div className="grow"><b>Post to it straight away</b><p className="muted small" style={{ margin: "4px 0 0" }}>The account becomes a channel you can post to from Create at once. It only posts by itself (Autopilot, agencies’ posts) once you switch that on in Channels.</p></div></div>
           {p === "youtube" ? <div className="callout">YouTube takes videos only. A post without a video is not sent there.</div> : null}
           {p === "tiktok" ? <div className="callout">TikTok posts go out straight away, public, with comments, duets and stitches on.</div> : null}
+          {p === "tiktok" ? <div className="callout" role="note" style={{ borderLeft: "4px solid var(--orange)", fontWeight: 500 }}><b>One thing to know:</b> TikTok only accepts a public post if Synapse’s TikTok account allows public posts. If the account is set to private, TikTok will refuse the post, and Studio will show TikTok’s reason.</div> : null}
         </div>
         <div className="row" style={{ marginTop: "22px" }}>{back}<span className="spacer"></span><button className="btn orange big" type="button" id="wzPp" disabled={wzBusy} onClick={() => startPostPeer(p)}>{wzBusy ? "Opening " + PL[p] + "…" : "Continue with " + PL[p]}</button></div>
       </>;
