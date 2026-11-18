@@ -712,7 +712,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
   /* The wizard's body for the step it is on. */
   const wizard = () => {
     if (W.step === 1) return <>
-      <h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Which network?</h2><p className="lede">Synapse connects these directly. Other networks will appear here as Synapse connects to them.</p>
+      <h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Which network?</h2><p className="lede">The same networks agencies can connect. A network switched on for agencies appears here too.</p>
       <div className="tiles" style={{ marginTop: "18px" }}>{connectable.map((p) => (
         <button key={p} type="button" className="tile" data-plat={p} onClick={() => goStep({ platform: p, step: 2 })}><Badge p={p} size="lg" /><span>{PL[p]}</span><small>{TILE_NOTE[p] || (MAKE[p] ? MAKE[p].what : "posts")}</small></button>
       ))}</div>
