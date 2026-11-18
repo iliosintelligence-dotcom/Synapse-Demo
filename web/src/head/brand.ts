@@ -115,6 +115,10 @@
   ].join('\n');
   const style = document.createElement('style');
   style.setAttribute('data-synbrand', '');
+  /* React hydrates the <head> it rendered, and took this block (added before it hydrates) for the layout's own <style>:
+     a hydration-mismatch error on every page that loads brand.js. React skips a <style> marked with data-precedence
+     while hydrating, so this one is left alone. */
+  style.setAttribute('data-precedence', 'synbrand');
   style.textContent = css;
   (document.head || document.documentElement).appendChild(style);
 
