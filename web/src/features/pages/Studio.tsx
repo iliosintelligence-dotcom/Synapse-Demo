@@ -5,7 +5,8 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
  *
  * Every rule of the old page is kept:
  *  - only the team gets in: signed out goes to sign-in, signed in but not on the team is told which address is signed in
- *  - Synapse connects Facebook (our own Facebook login, then a Page choice on return) and Telegram (our bot) itself
+ *  - Synapse connects Facebook (our own Facebook login, then a Page choice on return) and Telegram (our bot) itself, and
+ *    every other platform the agency studio offers through PostPeer (2026-11-18)
  *  - a channel takes a listing only when it matches all of its rules; a rule left blank matches anything
  *  - a channel card does not redraw under someone typing in it; it catches up when they leave the box
  *  - "Schedule and write another" keeps the accounts and times and clears only the post
@@ -25,9 +26,13 @@ const GLYPH: Record<string, string> = { instagram: "◎", facebook: "f", tiktok:
 const MAKE: Record<string, { url: string; tip: string; what: string }> = {
   facebook: { url: "https://www.facebook.com/pages/create", tip: "Make a Page, not a personal profile. Posts go to the Page.", what: "Page posts" },
 };
-/* What Synapse can connect to itself today (2026-10-23, TryPost disconnected): a Facebook Page through our own Facebook
-   login, and a Telegram channel through our bot. Other networks are added here when Synapse connects to them directly. */
-const CONNECTABLE = ["facebook", "telegram"];
+/* What the studio can connect (2026-11-18): a Facebook Page through our own Facebook login, a Telegram channel through our
+   bot, and through PostPeer exactly the platforms the agency studio offers -- the server says which (social-connect status,
+   `studio: true`). Until it answers, only the two the studio has always had. */
+const ORDER = ["facebook", "instagram", "tiktok", "youtube", "x", "linkedin", "telegram"];
+const ALWAYS = ["facebook", "telegram"];
+const VIA_POSTPEER = new Set(["instagram", "tiktok", "youtube", "x", "linkedin"]);
+const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos", tiktok: "drafts to post" };
 const VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
 type Tab = "home" | "channels" | "compose" | "auto" | "activity" | "guide" | "team";
 type Overview = { channels: any[]; legacy: any[]; twins_enabled: boolean; live_listings: number };
@@ -247,7 +252,15 @@ export function Studio({ guide }: { guide: ReactNode }) {
   const wzRef = useRef<HTMLDivElement>(null);
   const tgRef = useRef<HTMLInputElement>(null);
   const tgCityRef = useRef<HTMLInputElement>(null);
-  const openWizard = () => { setW(NEW_WIZ); setWzBusy(false); setWizOpen(true); };
+  const [connectable, setConnectable] = useState<string[]>(ALWAYS);
+  const openWizard = () => {
+    setW(NEW_WIZ); setWzBusy(false); setWizOpen(true);
+    fetch(SB_FN + "?action=status").then((r) => r.json()).then((j: any) => {
+      const pl = (j && j.platforms) || {};
+      const on = ORDER.filter((p) => pl[p] && pl[p].studio === true);
+      if (on.length) setConnectable(on);
+    }).catch(() => { /* keep the two the studio always has */ });
+  };
   const closeWizard = () => setWizOpen(false);
   useEffect(() => {
     document.body.style.overflow = wizOpen ? "hidden" : "";
@@ -266,6 +279,13 @@ export function Studio({ guide }: { guide: ReactNode }) {
     setWzBusy(true);
     connectApi("?action=start&platform=facebook&for=studio")
       .then((d) => { if (!d.url) throw new Error("Facebook could not be opened. Try again."); location.href = d.url; })
+      .catch((er) => { setWzBusy(false); toast(er.message); });
+  };
+  /* Every other platform: PostPeer runs its sign-in, then brings the person back here (?connected=<platform>). */
+  const startPostPeer = (p: string) => {
+    setWzBusy(true);
+    connectApi("?action=start&platform=" + encodeURIComponent(p) + "&for=studio")
+      .then((d) => { if (!d.url) throw new Error((PL[p] || p) + " could not be opened. Try again."); location.href = d.url; })
       .catch((er) => { setWzBusy(false); toast(er.message); });
   };
   const addPages = () => {
@@ -298,7 +318,13 @@ export function Studio({ guide }: { guide: ReactNode }) {
     const status = q.get("connected"); if (!status) return;
     const detail = q.get("detail") || "";
     try { history.replaceState(null, "", location.pathname + location.hash); } catch { /* cosmetic */ }
-    if (status !== "choose") { toast(status === "cancelled" ? "Facebook was cancelled. Nothing was connected." : (detail || "Facebook did not connect.")); return; }
+    /* Back from PostPeer with an account: it is a channel now, quiet until switched on. */
+    if (VIA_POSTPEER.has(status)) {
+      toast("Added " + PL[status] + (detail ? ": " + detail : "") + ". Switch on what it should do in Channels.");
+      loadOverview().then(() => show("channels"));
+      return;
+    }
+    if (status !== "choose") { toast(status === "cancelled" ? (detail || "Cancelled. Nothing was connected.") : (detail || "That did not connect.")); return; }
     connectApi("?action=studio-pick&pick=" + encodeURIComponent(detail))
       .then((d) => {
         const pages = d.pages || [], chosen: Record<string, boolean> = {};
@@ -687,12 +713,25 @@ export function Studio({ guide }: { guide: ReactNode }) {
   const wizard = () => {
     if (W.step === 1) return <>
       <h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Which network?</h2><p className="lede">Synapse connects these directly. Other networks will appear here as Synapse connects to them.</p>
-      <div className="tiles" style={{ marginTop: "18px" }}>{CONNECTABLE.map((p) => (
-        <button key={p} type="button" className="tile" data-plat={p} onClick={() => goStep({ platform: p, step: 2 })}><Badge p={p} size="lg" /><span>{PL[p]}</span><small>{p === "telegram" ? "channel posts" : MAKE[p].what}</small></button>
+      <div className="tiles" style={{ marginTop: "18px" }}>{connectable.map((p) => (
+        <button key={p} type="button" className="tile" data-plat={p} onClick={() => goStep({ platform: p, step: 2 })}><Badge p={p} size="lg" /><span>{PL[p]}</span><small>{TILE_NOTE[p] || (MAKE[p] ? MAKE[p].what : "posts")}</small></button>
       ))}</div>
       <div className="row" style={{ marginTop: "20px" }}><span className="spacer"></span><button className="btn" type="button" data-wzclose onClick={closeWizard}>Cancel</button></div>
     </>;
     const back = <button className="btn" type="button" data-wzback onClick={() => goStep({ step: Math.max(1, W.step - 1) })}>Back</button>;
+    if (W.platform && VIA_POSTPEER.has(W.platform) && W.step === 2) {
+      const p = W.platform;
+      return <>
+        <div className="row" style={{ gap: "14px" }}><Badge p={p} size="lg" /><div className="grow"><h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Connect {PL[p]}</h2><p className="muted small">{PL[p]} asks you to sign in, then brings you back here.</p></div></div>
+        <div className="stack" style={{ marginTop: "18px" }}>
+          <div className="gstep"><span className="dot">1</span><div className="grow"><b>Sign in as Synapse</b><p className="muted small" style={{ margin: "4px 0 0" }}>Use the {PL[p]} account that is Synapse’s, not a personal one. The sign-in runs through PostPeer, which posts for us.</p></div></div>
+          <div className="gstep"><span className="dot">2</span><div className="grow"><b>It starts quiet</b><p className="muted small" style={{ margin: "4px 0 0" }}>The account becomes a channel. Nothing posts until you switch it on.</p></div></div>
+          {p === "youtube" ? <div className="callout">YouTube takes videos only. A post without a video is not sent there.</div> : null}
+          {p === "tiktok" ? <div className="callout">TikTok posts arrive as drafts in Synapse’s TikTok app, to post from there.</div> : null}
+        </div>
+        <div className="row" style={{ marginTop: "22px" }}>{back}<span className="spacer"></span><button className="btn orange big" type="button" id="wzPp" disabled={wzBusy} onClick={() => startPostPeer(p)}>{wzBusy ? "Opening " + PL[p] + "…" : "Continue with " + PL[p]}</button></div>
+      </>;
+    }
     if (W.platform === "facebook" && W.step === 2) return <>
       <div className="row" style={{ gap: "14px" }}><Badge p="facebook" size="lg" /><div className="grow"><h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Connect a Facebook Page</h2><p className="muted small">Facebook asks you to sign in and choose Pages, then brings you back here to pick which ones are Synapse’s.</p></div></div>
       <div className="stack" style={{ marginTop: "18px" }}>
