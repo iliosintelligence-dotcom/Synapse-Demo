@@ -14,6 +14,7 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { BRAND_LOGOS } from "@/shared/icons";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-location-assign-relative-destination */
 const SB_URL = SUPABASE_URL_ENV;
@@ -32,7 +33,7 @@ const MAKE: Record<string, { url: string; tip: string; what: string }> = {
 const ORDER = ["facebook", "instagram", "tiktok", "youtube", "x", "linkedin", "telegram"];
 const ALWAYS = ["facebook", "telegram"];
 const VIA_POSTPEER = new Set(["instagram", "tiktok", "youtube", "x", "linkedin"]);
-const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos", tiktok: "drafts to post" };
+const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos" };
 const VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
 type Tab = "home" | "channels" | "compose" | "auto" | "activity" | "guide" | "team";
 type Overview = { channels: any[]; legacy: any[]; twins_enabled: boolean; live_listings: number };
@@ -121,7 +122,9 @@ function Badge({ p, size, avatar }: { p: string; size?: string; avatar?: string 
   return (
     <span className={"pf " + (size || "") + " pf-" + k}>
       {avatar ? <img alt="" src={avatar} referrerPolicy="no-referrer" onError={(e) => e.currentTarget.remove()} /> : null}
-      {GLYPH[k] || "?"}
+      {BRAND_LOGOS[k]
+        ? <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ width: "1.05em", height: "1.05em", display: "block" }} dangerouslySetInnerHTML={{ __html: BRAND_LOGOS[k] }} />
+        : (GLYPH[k] || "?")}
     </span>
   );
 }
@@ -725,9 +728,10 @@ export function Studio({ guide }: { guide: ReactNode }) {
         <div className="row" style={{ gap: "14px" }}><Badge p={p} size="lg" /><div className="grow"><h2 className="h" id="wzTitle" style={{ fontSize: "25px" }}>Connect {PL[p]}</h2><p className="muted small">{PL[p]} asks you to sign in, then brings you back here.</p></div></div>
         <div className="stack" style={{ marginTop: "18px" }}>
           <div className="gstep"><span className="dot">1</span><div className="grow"><b>Sign in as Synapse</b><p className="muted small" style={{ margin: "4px 0 0" }}>Use the {PL[p]} account that is Synapse’s, not a personal one. The sign-in runs through PostPeer, which posts for us.</p></div></div>
-          <div className="gstep"><span className="dot">2</span><div className="grow"><b>It starts quiet</b><p className="muted small" style={{ margin: "4px 0 0" }}>The account becomes a channel. Nothing posts until you switch it on.</p></div></div>
+          <div className="gstep"><span className="dot">2</span><div className="grow"><b>Post to it straight away</b><p className="muted small" style={{ margin: "4px 0 0" }}>The account becomes a channel you can post to from Create at once. It only posts by itself (Autopilot, agencies’ posts) once you switch that on in Channels.</p></div></div>
           {p === "youtube" ? <div className="callout">YouTube takes videos only. A post without a video is not sent there.</div> : null}
-          {p === "tiktok" ? <div className="callout">TikTok posts arrive as drafts in Synapse’s TikTok app, to post from there.</div> : null}
+          {p === "tiktok" ? <div className="callout">TikTok posts go out straight away, public, with comments, duets and stitches on.</div> : null}
+          {p === "tiktok" ? <div className="callout" role="note" style={{ borderLeft: "4px solid var(--orange)", fontWeight: 500 }}><b>One thing to know:</b> TikTok only accepts a public post if Synapse’s TikTok account allows public posts. If the account is set to private, TikTok will refuse the post, and Studio will show TikTok’s reason.</div> : null}
         </div>
         <div className="row" style={{ marginTop: "22px" }}>{back}<span className="spacer"></span><button className="btn orange big" type="button" id="wzPp" disabled={wzBusy} onClick={() => startPostPeer(p)}>{wzBusy ? "Opening " + PL[p] + "…" : "Continue with " + PL[p]}</button></div>
       </>;
