@@ -796,22 +796,22 @@ export function IndexBody() {
           <div className="wrap">
             <div className="sec-head">
               <h2 className="h2">
-                {"Free to start. "}
+                {"Free for 14 days. "}
                 <em>
-                  Pay as you grow.
+                  Then pick a plan.
                 </em>
               </h2>
               <p className="lede">
-                A small agency pays nothing. Upgrade only once you need more listings, seats or social reach.
+                Try everything on Synapse free for 14 days, no card needed. Then choose the plan that fits. Your listings stay live either way.
               </p>
             </div>
             <div className="pilot irid neon">
               <div className="pilot-k">
-                Free plan
+                Free trial
               </div>
               <ul className="pilot-l">
                 <li>
-                  20 active listings and 2 team seats, free forever
+                  Everything included for 14 days: unlimited listings, social posting, AI captions
                 </li>
                 <li>
                   Tayo answers buyers, negotiates for you and books viewings
@@ -820,11 +820,11 @@ export function IndexBody() {
                   Verification, CRM and handoff by WhatsApp and email
                 </li>
                 <li>
-                  Publish once to Instagram, Facebook, TikTok and more from ₦25,000/month
+                  Then from ₦25,000/month on Accelerate
                 </li>
               </ul>
               <a className="btn btn-solid" href={"app/signin.html?role=agency&mode=up&reason=agency&next=agency.html"}>
-                Try free
+                Start free trial
               </a>
             </div>
           </div>

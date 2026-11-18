@@ -567,7 +567,7 @@ export function run() {
     const CTA_TOASTS = {
       '+ New listing': 'Listing upload, add photos and the 7-node verification kicks off automatically.',
       '+ New campaign': 'Campaign builder, target Tayo briefs by area, budget and intent.',
-      'Current plan': 'You’re on Free, free forever. Upgrade any time.',
+      'Current plan': 'You’re on the 14-day free trial. Choose a plan any time.',
       'See how it works': 'A 2-minute tour of the agency portal is on the way.',
     };
     document.querySelectorAll('button').forEach((b) => {
@@ -712,7 +712,7 @@ export function run() {
        to arrive as a toast or a red note. Now it opens a prompt that says
        what happened and offers the way through: plans, or a listing pack.
        Only the owner pays, so others are told to ask their owner. */
-    const PLAN_GATE_RX = /plan includes \d+ (active listings|team seats)|on the Accelerate plan and above/i;
+    const PLAN_GATE_RX = /plan includes \d+ (active listings|team seats)|on the Accelerate plan and above|free trial has ended/i;
     function planGate(msg) {
       msg = String(msg || '');
       if (!PLAN_GATE_RX.test(msg)) return false;

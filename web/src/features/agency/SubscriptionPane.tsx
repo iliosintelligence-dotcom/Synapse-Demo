@@ -25,25 +25,25 @@ type Plan = { id: string; name: string; headline: string; price: number | null; 
 /* Edit these to change the plans. ENTERPRISE (Eden, 2026-10-02) has no list price: terms are agreed with the agency -- a monthly
    fee, per project, or a commission on closed deals -- so it says "Negotiated" and its button opens a real conversation. */
 const PLANS: Plan[] = [
-  { id: "foundation", name: "Free", headline: "Everything you need to start winning buyers.", price: 0, unit: "forever" },
+  { id: "foundation", name: "Free trial", headline: "Everything included for 14 days.", price: 0, unit: "14 days" },
   { id: "accelerator", name: "Accelerate", headline: "Grow faster with AI-powered marketing and verification.", price: 25000, unit: "per month", feature: true, badge: "MOST POPULAR" },
   { id: "market-leader", name: "Leader", headline: "Dominate your local market.", price: 75000, unit: "per month", gold: true },
   { id: "enterprise", name: "Enterprise", headline: "Terms built around your business.", price: null, priceLabel: "Negotiated", unit: "" },
 ];
 const TIER_PLAN: Record<string, string> = { free: "foundation", accelerator: "accelerator", market_leader: "market-leader", enterprise: "enterprise" };
-const DEFAULT_CTA: Record<string, string> = { foundation: "Current plan", accelerator: "Upgrade to Accelerate", "market-leader": "Choose Leader", enterprise: "Talk to us" };
+const DEFAULT_CTA: Record<string, string> = { foundation: "Included at sign-up", accelerator: "Upgrade to Accelerate", "market-leader": "Choose Leader", enterprise: "Talk to us" };
 /* Tiers as columns, benefits as rows: read a row across to see which plans include it. */
 const COMPARE_ROWS: { label: string; vals: (string | boolean)[] }[] = [
-  { label: "Active listings", vals: ["20", "100", "Unlimited", "Unlimited"] },
-  { label: "Team seats", vals: ["2", "5", "Unlimited", "Unlimited"] },
+  { label: "Active listings", vals: ["Unlimited, 14 days", "100", "Unlimited", "Unlimited"] },
+  { label: "Team seats", vals: ["Unlimited, 14 days", "5", "Unlimited", "Unlimited"] },
   { label: "CRM with WhatsApp handoff", vals: [true, true, true, true] },
   { label: "Tayo AI buyer referrals", vals: [true, true, true, true] },
   { label: "Verification speed", vals: ["Standard queue", "48 hours", "Dedicated desk", "Dedicated desk"] },
   { label: "Verification badge", vals: ["Verified", "Verified", "Gold Verified", "Gold Verified"] },
-  { label: "Publish once, reach every channel", vals: [false, true, true, true] },
-  { label: "AI writes captions & auto-posts", vals: [false, true, true, true] },
-  { label: "AI-generated marketing campaigns", vals: [false, false, true, true] },
-  { label: "Proximity marketing", vals: [false, false, true, true] },
+  { label: "Publish once, reach every channel", vals: [true, true, true, true] },
+  { label: "AI writes captions & auto-posts", vals: [true, true, true, true] },
+  { label: "AI-generated marketing campaigns", vals: [true, false, true, true] },
+  { label: "Proximity marketing", vals: [true, false, true, true] },
   { label: "Analytics", vals: ["Basic", "Lead + engagement", "Premium, full attribution", "Premium, full attribution"] },
   { label: "Support", vals: ["Standard", "Standard", "Priority", "Dedicated manager"] },
 ];
@@ -63,8 +63,9 @@ function ctaFor(p: Plan, tier: string | null) {
   if (tier == null) return { cta: DEFAULT_CTA[p.id], primary: p.id === "accelerator", off: p.id === "foundation" };
   const current = TIER_PLAN[tier] === p.id;
   if (current && (p.id === "accelerator" || p.id === "market-leader")) return { cta: "Renew or extend", primary: false, off: false };
-  if (current) return { cta: "Current plan", primary: false, off: true };
-  return { cta: p.id === "foundation" ? "Move to Free" : DEFAULT_CTA[p.id], primary: p.id === "accelerator", off: false };
+  if (current) return { cta: p.id === "foundation" ? "Your trial" : "Current plan", primary: false, off: true };
+  if (p.id === "foundation") return { cta: DEFAULT_CTA.foundation, primary: false, off: true };
+  return { cta: DEFAULT_CTA[p.id], primary: p.id === "accelerator", off: false };
 }
 const cellCls = (p: Plan) => (p.feature ? " feature" : "") + (p.gold ? " gold-plan" : "");
 const amount = (p: Plan) => <>{p.price == null ? p.priceLabel || "Let’s talk" : nairaPlan(p.price)}{p.price ? <small> /{p.unit.replace("per ", "")}</small> : null}</>;
@@ -82,7 +83,13 @@ function pick(e: React.MouseEvent, tier: string | null) {
   if (typeof W().toggleRm === "function") W().toggleRm(true, plan.name);
 }
 
-type Usage = { tier: string; listings_used: number; listings_max: number | null; seats_used: number; seats_max: number | null };
+type Usage = { tier: string; listings_used: number; listings_max: number | null; seats_used: number; seats_max: number | null;
+  paywall_on?: boolean; enforced?: boolean; free_until?: string | null };
+/* The 14-day trial (2026-11-18): inside it the paywall does not apply (everything is open); after it an unpaid agency is
+   read-only. Both read from agency_plan_usage. */
+const inTrial = (u: Usage) => !!(u.paywall_on && !u.enforced && u.free_until && new Date(u.free_until) > new Date());
+const trialEnded = (u: Usage) => !!(u.paywall_on && u.enforced && u.tier === "free");
+const longDay = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 const TIER_NAME: Record<string, string> = { free: "Free", accelerator: "Accelerate", market_leader: "Leader", enterprise: "Enterprise" };
 /* null max is unlimited, which is not the same as a ceiling of zero and must never read "3 of 0". */
 function UsageRow({ label, used, max }: { label: string; used: number; max: number | null }) {
@@ -172,9 +179,15 @@ export function SubscriptionPane() {
       <div className="h1">Plans that pay for themselves</div>
       {usage ? (
         <div className="plan-usage" id="planUsage">
-          <div className="pu-plan">You are on <b>{TIER_NAME[usage.tier] || usage.tier}</b></div>
-          <UsageRow label="Active listings" used={usage.listings_used} max={usage.listings_max} />
-          <UsageRow label="Team seats" used={usage.seats_used} max={usage.seats_max} />
+          {trialEnded(usage)
+            ? <div className="pu-plan"><b>Your free trial has ended.</b> Your listings stay live. Choose a plan below to add listings, add team members and post.</div>
+            : inTrial(usage)
+              ? <div className="pu-plan">You are on the <b>free trial</b> until {longDay(String(usage.free_until))}. Everything is included.</div>
+              : <div className="pu-plan">You are on <b>{TIER_NAME[usage.tier] || usage.tier}</b></div>}
+          {trialEnded(usage) ? null : <>
+            <UsageRow label="Active listings" used={usage.listings_used} max={inTrial(usage) ? null : usage.listings_max} />
+            <UsageRow label="Team seats" used={usage.seats_used} max={inTrial(usage) ? null : usage.seats_max} />
+          </>}
         </div>
       ) : <div className="plan-usage" id="planUsage" hidden></div>}
       <ReferralCard />
@@ -254,7 +267,8 @@ export function PlanGate() {
     return () => window.removeEventListener("syn:plan-gate", on);
   }, []);
   if (msg == null) return null;
-  const listing = /active listings/i.test(msg), seats = /team seats/i.test(msg);
+  const trial = /free trial has ended/i.test(msg);
+  const listing = !trial && /active listings/i.test(msg), seats = !trial && /team seats/i.test(msg);
   const owner = document.body.dataset.role === "agency_owner";
   const go = (what: "close" | "plans" | "pack") => {
     setMsg(null);
@@ -264,7 +278,7 @@ export function PlanGate() {
   return createPortal(
     <div className="pg-scrim" id="planGate" onClick={(e) => { if (e.target === e.currentTarget) go("close"); }}>
       <div className="pg" role="dialog" aria-modal="true" aria-labelledby="pgT">
-        <h3 id="pgT">{listing ? "You’ve reached your listing limit" : seats ? "Your team is full on this plan" : "That’s on Accelerate and above"}</h3>
+        <h3 id="pgT">{trial ? "Your free trial has ended" : listing ? "You’ve reached your listing limit" : seats ? "Your team is full on this plan" : "That’s on Accelerate and above"}</h3>
         <p>{msg.replace(/\s*(Upgrade|Subscription in the portal).*$/i, "")}</p>
         {owner ? (
           <div className="pg-b">
