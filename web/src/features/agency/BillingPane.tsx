@@ -259,7 +259,13 @@ export function BillingPane() {
         <div className="bl-k">Your plan</div>
         <div className="bl-plan">{BL_TIER_NAME[tier] || tier}</div>
         {tier === "enterprise" ? <div className="bl-state">Terms agreed with you.</div>
-          : tier === "free" ? <div className="bl-state">Free forever. Upgrade whenever you like.</div>
+          : tier === "free" ? <div className="bl-state">{(() => {
+              const pw = W().SYN_PAYWALL;
+              if (pw && pw.paywall_on && !pw.enforced && pw.free_until && new Date(pw.free_until) > new Date()) {
+                return "Free trial until " + new Date(pw.free_until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) + ". Everything is included.";
+              }
+              return "Your free trial has ended. Your listings stay live; choose a plan to add listings and post.";
+            })()}</div>
           : !paidThrough ? <div className="bl-state">Active.</div>
           : lapsed ? <div className="bl-state warn">Your paid period ended on {longDate(d.period_end!)}. Renew to keep it.</div>
           : <div className="bl-state">Paid through {longDate(d.period_end!)}.</div>}

@@ -125,8 +125,11 @@ function deriveItems(): Item[] {
   const pw = W().SYN_PAYWALL;
   if (pw && pw.paywall_on && !pw.enforced && pw.free_until && new Date(pw.free_until) > new Date()) {
     const until = new Date(pw.free_until).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    out.unshift({ type: "billing", tag: "Plans", icon: "card", pane: "billing", title: "Synapse is free for you until " + until,
-      sub: "After that, your plan’s limits apply. See what each plan includes.", group: "Today" });
+    out.unshift({ type: "billing", tag: "Plans", icon: "card", pane: "subscription", title: "Your free trial ends on " + until,
+      sub: "Everything is included until then. After that, choose a plan to keep adding listings and posting.", group: "Today" });
+  } else if (pw && pw.paywall_on && pw.enforced && pw.tier === "free") {
+    out.unshift({ type: "billing", tag: "Plans", icon: "card", pane: "subscription", title: "Your free trial has ended",
+      sub: "Your listings stay live. Choose a plan to add listings and post.", group: "Today" });
   }
   /* REFERRALS: how far you are toward the next free month. */
   const rf = W().SYN_REFERRAL;
