@@ -440,8 +440,11 @@ function ListingForm({ init, open }: { init: Init; open: boolean }) {
     const SB = W().SynSB || {};
     (typeof W().authToken === "function" ? W().authToken() : Promise.resolve(null)).then((token: string | null) => {
       if (!token) throw new Error("Sign in again to use this.");
+      /* NEVER A SILENT WAIT (2026-11-19): the reader once took 65 s and the button just sat there. It answers within about
+         35 s now; past 45 s this says so and the agent can try again or fill the boxes in. */
       return fetch(SB.url + "/functions/v1/listing-extract", {
         method: "POST", headers: { "Content-Type": "application/json", apikey: SB.key, Authorization: "Bearer " + token },
+        signal: AbortSignal.timeout(45000),
         body: JSON.stringify({ title: fRef.current.lfTitle, description: desc }),
       }).then((r) => r.json().catch(() => ({})).then((dd: any) => ({ ok: r.ok, d: dd })));
     }).then(({ ok, d: dd }: any) => {
@@ -483,7 +486,11 @@ function ListingForm({ init, open }: { init: Init; open: boolean }) {
         const k = STEPS.findIndex((st) => st.errs.some((e) => c[e]));
         setTimeout(() => show(k < 0 ? STEPS.length - 1 : k), 900);
       }
-    }).catch((err: any) => { setFilling(false); toast(err && err.message ? err.message : "Could not read the description just now."); });
+    }).catch((err: any) => {
+      setFilling(false);
+      if (err && (err.name === "TimeoutError" || err.name === "AbortError")) { toast("Reading the description is taking too long. Try again, or fill the boxes in below."); return; }
+      toast(err && err.message ? err.message : "Could not read the description just now.");
+    });
   };
 
   /* ── photos ── */
