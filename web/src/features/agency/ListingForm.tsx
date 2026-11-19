@@ -462,6 +462,18 @@ function ListingForm({ init, open }: { init: Init; open: boolean }) {
         if (opts && opts.indexOf(v) === -1) return;
         cur = applyChange(cur, id, v); hit.push(id); n++;
       });
+      /* THE PLACE (2026-11-19): the state the text names, else the state its city is in, then the city. The text says where
+         the home is, so this replaces whatever the form held (a new form starts on a default state, and an Ibadan listing
+         stayed in Lagos). A city we know takes our spelling; one we do not is kept as written. */
+      const SPf = P();
+      if (SPf) {
+        const said = typeof fl.city === "string" ? fl.city.trim() : "";
+        const city = said ? ((SPf.allCities() as string[]).find((c) => c.toLowerCase() === said.toLowerCase()) || said) : "";
+        const named = typeof fl.state === "string" && SPf.canonicalState ? SPf.canonicalState(fl.state) : "";
+        const st = named && SPf.STATES.indexOf(named) > -1 ? named : (city ? SPf.stateOf(city) || "" : "");
+        if (st && st !== cur.lfState) { cur = applyChange(cur, "lfState", st); hit.push("lfState"); n++; }
+        if (city && city !== cur.lfCity) { cur = applyChange(cur, "lfCity", city); hit.push("lfCity"); n++; }
+      }
       /* No title in the text: make a plain one from what was read, e.g. "4-bed Duplex in Bodija, Ibadan". */
       if (!cur.lfTitle.trim()) {
         const beds = parseInt(cur.lfBeds, 10);
