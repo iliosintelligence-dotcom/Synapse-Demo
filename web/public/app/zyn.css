@@ -34,4 +34,16 @@
 /* power-on when a new state arrives (Zyn.set adds zm-in), then the state's own motion */
 .zyn.zm-in { animation: zIn .5s cubic-bezier(.2, .9, .3, 1.2) both, var(--zm) var(--zmd) var(--zme) .5s infinite; }
 .zyn.zm-still { animation: none; }
-@media (prefers-reduced-motion: reduce) { .zyn, .zyn.zm-in { animation: none !important; } }
+/* THE SPROUT (2026-11-22). He is a <span class="zyn"> holding two pictures: the body, and the sprout on its own (Zyn.img). The span
+   moves as above; the sprout sways on top from its stem (transform-origin set per picture), and data-health says how it is doing:
+   thriving = bright, a little bigger, lively; healthy; thirsty = pale and yellowing, drooping a little, slower; wilting = brown,
+   drooping hard, barely moving. A change of health eases over in about a second. */
+.zyn { position: relative; --sr: 0deg; --sa: 5deg; --sd: 2.6s; --sf: saturate(1); --ss: 1; }
+.zyn > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+.zyn[data-health="thriving"] { --sr: 0deg; --sa: 7deg; --sd: 1.7s; --sf: saturate(1.3) brightness(1.07); --ss: 1.08; }
+.zyn[data-health="thirsty"] { --sr: 13deg; --sa: 3deg; --sd: 3.6s; --sf: saturate(.55) hue-rotate(-20deg) brightness(1.03); --ss: .96; }
+.zyn[data-health="wilting"] { --sr: 30deg; --sa: 1.4deg; --sd: 5.2s; --sf: sepia(.35) saturate(.5) hue-rotate(-42deg) brightness(.82); --ss: .9; }
+.zyn-s { rotate: var(--sr); scale: var(--ss); filter: var(--sf); transition: filter .9s ease, scale .9s ease; animation: zLeaf var(--sd) ease-in-out infinite; }
+@keyframes zLeaf { 0%, 100% { rotate: calc(var(--sr) - var(--sa)); } 50% { rotate: calc(var(--sr) + var(--sa)); } }
+.zyn.zm-still .zyn-s { animation: none; }
+@media (prefers-reduced-motion: reduce) { .zyn, .zyn.zm-in, .zyn-s { animation: none !important; } }

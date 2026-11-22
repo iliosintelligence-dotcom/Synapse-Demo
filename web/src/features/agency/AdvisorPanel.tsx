@@ -11,6 +11,17 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AdvisorBody, advisorHead } from "./AdvisorBodies";
+import { sproutHealth, sproutOrigin } from "@/shared/zynSprout";
+
+/* The robot as Zyn.img draws him: body + a sprout that sways (public/app/zyn.css). Zyn.set changes the state on this element later. */
+function Robot({ r, state, px, cls = "", id, onClick }: { r: React.RefObject<HTMLSpanElement | null>; state: string; px: number; cls?: string; id?: string; onClick?: () => void }) {
+  return (
+    <span ref={r} className={"zyn zm-bob" + cls} id={id} data-zyn={state} data-health={sproutHealth(state)} style={{ width: px, height: px }} aria-hidden="true" onClick={onClick}>
+      <img className="zyn-b" src={`../images/zyn/zyn-${state}-body.webp?v=robot1`} alt="" draggable={false} />
+      <img className="zyn-s" src={`../images/zyn/zyn-${state}-sprout.webp?v=robot1`} alt="" draggable={false} style={{ transformOrigin: sproutOrigin(state) }} />
+    </span>
+  );
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -83,11 +94,11 @@ const setOpen = (v: boolean) => { open = v; subs.forEach((f) => f()); };
 const useOpen = () => useSyncExternalStore((f) => { subs.add(f); return () => subs.delete(f); }, () => open, () => false);
 
 export function AdvisorFab() {
-  const img = useRef<HTMLImageElement>(null);
+  const img = useRef<HTMLSpanElement>(null);
   return (
     <button className="toju-fab" id="tojuFab" aria-label="Ask Tayo" onClick={() => window.dispatchEvent(new CustomEvent("syn:advisor-open"))}
       onMouseEnter={() => zyn(img.current, "waving")} onMouseLeave={() => zyn(img.current, "happy")}>
-      <img ref={img} className="zyn zm-bob" src="../images/zyn/zyn-happy.webp?v=robot1" width="92" height="92" alt="" aria-hidden="true" draggable="false" />
+      <Robot r={img} state="happy" px={92} />
     </button>
   );
 }
@@ -102,7 +113,7 @@ export function AdvisorPanel() {
   const history = useRef<Turn[]>([]);   // the panel's own conversation, this session
   const ids = useRef(0);
   const busyRef = useRef(false);
-  const face = useRef<HTMLImageElement>(null);
+  const face = useRef<HTMLSpanElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,8 +184,7 @@ export function AdvisorPanel() {
       <div className={"tpanel-scrim" + (on ? " on" : "")} id="tpScrim" onClick={close}></div>
       <aside className={"tpanel" + (on ? " on" : "")} id="tpanel" aria-label="Ask Tayo">
         <div className="thd">
-          <img ref={face} className="zyn zm-bob o-zyn" id="tpZyn" src="../images/zyn/zyn-waving.webp?v=robot1" width="58" height="58" alt="" aria-hidden="true"
-            onClick={() => { if (W().Zyn) W().Zyn.emote(face.current); }} />
+          <Robot r={face} state="waving" px={58} cls=" o-zyn" id="tpZyn" onClick={() => { if (W().Zyn) W().Zyn.emote(face.current); }} />
           <div>
             <div className="tt" id="tpTitle">{head.title}</div>
             <div className="sb" id="tpSub">{head.sub}</div>

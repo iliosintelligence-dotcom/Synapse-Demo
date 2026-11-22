@@ -66,15 +66,17 @@ declare global {
   }
 
   /* zyn.ts: the mascot */
-  type SynZynImg = HTMLImageElement & { __emoting?: boolean };
+  /* the mascot element: a <span class="zyn"> holding body + sprout (or an old single <img>) */
+  type SynZynImg = HTMLElement & { __emoting?: boolean };
   interface SynZynReply {
     text?: string; matches?: { verificationStatus?: string }[]; searched?: { live?: number | string };
     priceHistory?: { rows?: unknown[] }; greeting?: boolean; failed?: boolean;
   }
   interface SynZyn {
     emote: (el: SynZynImg | null) => void;
-    img: (state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string }) => string;
+    img: (state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string; health?: "thriving" | "healthy" | "thirsty" | "wilting" }) => string;
     set: (el: SynZynImg | null, state: string, still?: boolean) => void;
+    health: (el: Element | null, level: "thriving" | "healthy" | "thirsty" | "wilting" | null) => void;
     url: (state: string) => string;
     forReply: (r?: SynZynReply | null) => string;
     preload: (list?: string[]) => void;

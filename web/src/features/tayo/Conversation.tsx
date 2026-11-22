@@ -262,7 +262,7 @@ function Actions({ pl }: { pl: Payload }) {
 /* Tap Zyn and he zooms in and does something. */
 function Avatar({ html }: { html: string }) {
   return <div className="av av-toju" dangerouslySetInnerHTML={{ __html: html }}
-    onClick={(e) => { const z = (window as unknown as { Zyn?: { emote: (img: Element | null) => void } }).Zyn; z?.emote(e.currentTarget.querySelector("img")); }} />;
+    onClick={(e) => { const z = (window as unknown as { Zyn?: { emote: (img: Element | null) => void } }).Zyn; z?.emote(e.currentTarget.querySelector(".zyn")); }} />;
 }
 
 function Reply({ it }: { it: Extract<Item, { kind: "toju" }> }) {
