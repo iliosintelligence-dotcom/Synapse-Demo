@@ -2,13 +2,13 @@
 
 import { useRef, useState } from "react";
 import s from "./Zyn.module.css";
-import { sproutHealth, sproutOrigin, type SproutHealth } from "@/shared/zynSprout";
+import { sproutOrigin } from "@/shared/zynSprout";
 
 /**
  * The robot, Synapse's mascot (still called Zyn in code), for every page that shows the advisor. Each state is two pictures with true
  * transparency: the body (public/images/zyn/zyn-<state>-body.webp) and the sprout on its head (zyn-<state>-sprout.webp), so the sprout can
- * sway on its own and show how healthy it is. Each state moves its own way when idle; all motion stops for anyone who has asked their
- * device for less motion. Tap him and he shows one of his moods. `health` fixes the sprout's health; left out, it follows his mood.
+ * sway on its own, bending from its stem. Each state moves its own way when idle; all motion stops for anyone who has asked their
+ * device for less motion. Tap him and he shows one of his moods.
  */
 const ZYN_STATES = ("happy curious thinking excited helpful winking surprised sleepy confused sorry proud delighted searching listening typing " +
   "calculating comparing navigating waving loading scheduling calling celebrating saving home price verified nearby documents offer keys headsup nothing alert intro shared").split(" ");
@@ -28,7 +28,7 @@ const known = (state: string) => (ZYN_STATES.includes(state) ? state : "happy");
 const layerUrl = (state: string, part: "body" | "sprout") => `/images/zyn/zyn-${known(state)}-${part}.webp?v=robot1`;
 const EMOTES = ["celebrating", "excited", "waving", "delighted", "winking"];
 
-export function Zyn({ state, size = 58, health }: { state: string; size?: number; health?: SproutHealth }) {
+export function Zyn({ state, size = 58 }: { state: string; size?: number }) {
   const [emote, setEmote] = useState<string | null>(null);
   const busy = useRef(false);
   const shown = emote ?? known(state);
@@ -43,7 +43,6 @@ export function Zyn({ state, size = 58, health }: { state: string; size?: number
     <span
       key={shown}
       className={`${s.zyn} ${emote ? s.bounce : MOTION[shown] ?? s.bob}`}
-      data-health={health ?? sproutHealth(shown)}
       style={{ width: size, height: size, pointerEvents: "auto", cursor: "pointer" }}
       aria-hidden="true"
       onClick={tap}

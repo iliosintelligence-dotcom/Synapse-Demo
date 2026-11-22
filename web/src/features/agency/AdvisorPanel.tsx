@@ -11,12 +11,12 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AdvisorBody, advisorHead } from "./AdvisorBodies";
-import { sproutHealth, sproutOrigin } from "@/shared/zynSprout";
+import { sproutOrigin } from "@/shared/zynSprout";
 
 /* The robot as Zyn.img draws him: body + a sprout that sways (public/app/zyn.css). Zyn.set changes the state on this element later. */
 function Robot({ r, state, px, cls = "", id, onClick }: { r: React.RefObject<HTMLSpanElement | null>; state: string; px: number; cls?: string; id?: string; onClick?: () => void }) {
   return (
-    <span ref={r} className={"zyn zm-bob" + cls} id={id} data-zyn={state} data-health={sproutHealth(state)} style={{ width: px, height: px }} aria-hidden="true" onClick={onClick}>
+    <span ref={r} className={"zyn zm-bob" + cls} id={id} data-zyn={state} style={{ width: px, height: px }} aria-hidden="true" onClick={onClick}>
       <img className="zyn-b" src={`../images/zyn/zyn-${state}-body.webp?v=robot1`} alt="" draggable={false} />
       <img className="zyn-s" src={`../images/zyn/zyn-${state}-sprout.webp?v=robot1`} alt="" draggable={false} style={{ transformOrigin: sproutOrigin(state) }} />
     </span>

@@ -1,6 +1,6 @@
 /* Was public/app/zyn.js, a script of its own fetched by every page that used it. It is part of the app's code now:
    AfterHydration calls run() at the same point in the page's script order as the file used to load, so it behaves as before. */
-import { sproutHealth, sproutOrigin, SPROUT_HEALTHS, type SproutHealth } from "./zynSprout";
+import { sproutOrigin } from "./zynSprout";
 
 export function run() {
 /* Zyn, Synapse's mascot, for every page that shows the advisor.
@@ -44,14 +44,12 @@ export function run() {
   function layer(state: string, part: 'body' | 'sprout') { return BASE + 'zyn-' + known(state) + '-' + part + '.webp?v=robot1'; }
   function cls(state: string, still?: boolean) { return 'zyn ' + (still ? 'zm-still' : (MOTION[known(state)] || 'zm-bob')) + ' zd' + Math.floor(Math.random() * 6); }
 
-  /* <span class="zyn"> holding the body and the sprout. The span gets the body's motion; the sprout sways on top of it from its stem,
-     as healthy as data-health says (thriving / healthy / thirsty / wilting). */
-  function img(state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string; health?: SproutHealth }) {
+  /* <span class="zyn"> holding the body and the sprout. The span gets the body's motion; the sprout bends on top of it from its stem. */
+  function img(state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string }) {
     o = o || {};
     const s = known(state);
     const label = o.alt ? ' role="img" aria-label="' + String(o.alt).replace(/"/g, '&quot;') + '"' : ' aria-hidden="true"';
-    const fixed = o.health ? ' data-health-fixed="1"' : '';
-    return '<span class="' + cls(s, o.still) + (o.cls ? ' ' + o.cls : '') + '" data-zyn="' + s + '" data-health="' + (o.health || sproutHealth(s)) + '"' + fixed +
+    return '<span class="' + cls(s, o.still) + (o.cls ? ' ' + o.cls : '') + '" data-zyn="' + s + '"' +
       ' style="width:' + px + 'px;height:' + px + 'px"' + label + '>' +
       '<img class="zyn-b" src="' + layer(s, 'body') + '" alt="" decoding="async" draggable="false">' +
       '<img class="zyn-s" src="' + layer(s, 'sprout') + '" alt="" decoding="async" draggable="false" style="transform-origin:' + sproutOrigin(s) + '">' +
@@ -65,19 +63,12 @@ export function run() {
     const b = el.querySelector<HTMLImageElement>('.zyn-b'), sp = el.querySelector<HTMLImageElement>('.zyn-s');
     if (b && sp) {
       b.src = layer(s, 'body'); sp.src = layer(s, 'sprout'); sp.style.transformOrigin = sproutOrigin(s);
-      if (!el.hasAttribute('data-health-fixed')) el.setAttribute('data-health', sproutHealth(s));
     } else if (el instanceof HTMLImageElement) {
       el.src = url(s);                                   // an old single-picture <img>: the sprout stays painted on
     }
     el.className = el.className.replace(/\bzm-\w+\b/g, '').trim() + ' ' + (still ? 'zm-still' : (MOTION[s] || 'zm-bob'));
     /* power on: zm-in replays its pop each time the state changes (the reflow in between restarts it) */
     if (!still) { void el.offsetWidth; el.classList.add('zm-in'); }
-  }
-  /* Set how the sprout is doing, whatever his mood; null hands it back to his mood. */
-  function health(el: Element | null, level: SproutHealth | null) {
-    if (!el) return;
-    if (level && SPROUT_HEALTHS.indexOf(level) > -1) { el.setAttribute('data-health', level); el.setAttribute('data-health-fixed', '1'); }
-    else { el.removeAttribute('data-health-fixed'); el.setAttribute('data-health', sproutHealth(el.getAttribute('data-zyn') || 'happy')); }
   }
   function preload(list?: string[]) {
     (list || ['happy', 'typing', 'searching', 'home', 'nothing', 'waving', 'thinking', 'curious']).forEach(function (s) {
@@ -168,6 +159,6 @@ export function run() {
     an.onfinish = done; an.oncancel = done;
   }
 
-  window.Zyn = { emote: emote, img: img, set: set, health: health, url: url, forReply: forReply, preload: preload, ids: IDS };
+  window.Zyn = { emote: emote, img: img, set: set, url: url, forReply: forReply, preload: preload, ids: IDS };
 })();
 }

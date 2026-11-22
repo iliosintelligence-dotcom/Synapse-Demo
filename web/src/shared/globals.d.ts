@@ -74,9 +74,8 @@ declare global {
   }
   interface SynZyn {
     emote: (el: SynZynImg | null) => void;
-    img: (state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string; health?: "thriving" | "healthy" | "thirsty" | "wilting" }) => string;
+    img: (state: string, px: number, o?: { alt?: string; still?: boolean; cls?: string }) => string;
     set: (el: SynZynImg | null, state: string, still?: boolean) => void;
-    health: (el: Element | null, level: "thriving" | "healthy" | "thirsty" | "wilting" | null) => void;
     url: (state: string) => string;
     forReply: (r?: SynZynReply | null) => string;
     preload: (list?: string[]) => void;

@@ -1,5 +1,4 @@
-/* The robot's sprout is its own picture (zyn-<state>-sprout.webp) laid over the body (zyn-<state>-body.webp), so it can sway and
-   show how healthy it is. These are the stem's base in each picture, in percent of the image: the point the sprout pivots on.
+/* The robot's sprout is its own picture (zyn-<state>-sprout.webp) laid over the body (zyn-<state>-body.webp), so it can sway. These are the stem's base in each picture, in percent of the image: the sprout bends from there and that point never moves.
    Measured from the pictures by the script that cut the sprout out (2026-11-22); redo them whenever the pictures change. */
 export const SPROUT_PIVOT: Record<string, [number, number]> = {
   alert: [54.0, 14.9],
@@ -40,14 +39,4 @@ export const SPROUT_PIVOT: Record<string, [number, number]> = {
   winking: [55.8, 14.4],
 };
 
-/** How the sprout is doing. Thriving: bright and lively; healthy; thirsty: pale, drooping a little; wilting: brown, drooping, barely moving. */
-export type SproutHealth = "thriving" | "healthy" | "thirsty" | "wilting";
-export const SPROUT_HEALTHS: SproutHealth[] = ["thriving", "healthy", "thirsty", "wilting"];
-
-/** The sprout follows his mood unless a page says otherwise. */
-const BY_MOOD: Record<string, SproutHealth> = {};
-"excited celebrating delighted proud keys verified offer".split(" ").forEach((s) => (BY_MOOD[s] = "thriving"));
-"sorry nothing confused alert headsup".split(" ").forEach((s) => (BY_MOOD[s] = "thirsty"));
-BY_MOOD.sleepy = "wilting";
-export function sproutHealth(state: string): SproutHealth { return BY_MOOD[state] ?? "healthy"; }
 export function sproutOrigin(state: string): string { const p = SPROUT_PIVOT[state] ?? [50, 15]; return p[0] + "% " + p[1] + "%"; }

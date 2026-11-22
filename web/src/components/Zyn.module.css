@@ -25,12 +25,9 @@
 .jolt { --zm: joltK; --zmd: 2.6s; }
 .slow { --zm: downK; --zmd: 5.2s; }
 .pulse { --zm: glowK; --zmd: 1.8s; }
-/* the sprout: its own picture over the body, swaying from its stem; data-health sets how it is doing (see public/app/zyn.css) */
-.zyn { position: relative; --sr: 0deg; --sa: 5deg; --sd: 2.6s; --sf: saturate(1); --ss: 1; }
+/* the sprout: its own picture over the body; it sways by bending from the bottom of its stem, which never moves (see public/app/zyn.css) */
+.zyn { position: relative; }
 .body, .sprout { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; user-select: none; }
-.zyn[data-health="thriving"] { --sr: 0deg; --sa: 7deg; --sd: 1.7s; --sf: saturate(1.3) brightness(1.07); --ss: 1.08; }
-.zyn[data-health="thirsty"] { --sr: 13deg; --sa: 3deg; --sd: 3.6s; --sf: saturate(.55) hue-rotate(-20deg) brightness(1.03); --ss: .96; }
-.zyn[data-health="wilting"] { --sr: 30deg; --sa: 1.4deg; --sd: 5.2s; --sf: sepia(.35) saturate(.5) hue-rotate(-42deg) brightness(.82); --ss: .9; }
-.sprout { rotate: var(--sr); scale: var(--ss); filter: var(--sf); transition: filter .9s ease, scale .9s ease; animation: leafK var(--sd) ease-in-out infinite; }
-@keyframes leafK { 0%, 100% { rotate: calc(var(--sr) - var(--sa)); } 50% { rotate: calc(var(--sr) + var(--sa)); } }
+.sprout { animation: leafK 2.8s ease-in-out infinite; }
+@keyframes leafK { 0%, 100% { transform: skewX(8deg); } 50% { transform: skewX(-8deg); } }
 @media (prefers-reduced-motion: reduce) { .zyn, .sprout { animation: none !important; } }
