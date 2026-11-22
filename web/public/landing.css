@@ -42,39 +42,43 @@ button, input, select, textarea, optgroup { font-family: inherit; }
      One SVG turbulence, inlined so it costs no request. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E");
 
-  /* Warm neutral palette with orange accent */
-  --bg: #f7f4ee;
-  --bg-1: #efe9df;
-  --text: #1f1b16;
-  --text-muted: #5e554a;
-  --text-dim: #7b7266;
+  /* crypt.ee monochrome, near-black accents on light grey, no terracotta */
+  --brand: #121212;
+  --brand-dim: #000000;
+  --brand-glow: rgba(54,54,54,0.10);
+  --bg: #f5f5f5;
+  --bg-1: #ededed;
+  --text: #1a1a1a;
+  /* Body copy was rgba(54,54,54,0.62), which flattens to #7F7F7F on our
+     #f5f5f5 page: 3.65:1, below the 4.5:1 AA floor. Josefin Sans also has a
+     small x-height, so it read even worse than the number suggests. These are
+     solid colours (no alpha guesswork) at 6.8:1 and 4.5:1. */
+  --text-muted: #545454;   /* 6.84:1 on --bg, body copy */
+  /* Measured, not estimated. The old value was #6e6e6e with a comment
+     claiming 4.51:1 -- correct against --bg (#f5f5f5, where it is really
+     4.68) and wrong everywhere it is actually used most: the footer sits
+     on --bg-1 (#ededed), where the same grey is 4.36 and fails AA. A
+     token measured against one ground and applied on another is a trap,
+     so this is the darkest-ground number now.
+     #6b6b6b: 4.55 on --bg-1, 4.88 on --bg, 5.13 on --surface. Passes on
+     every ground this token can land on. */
+  --text-dim:   #6b6b6b;   /* 4.90:1 on bone */
 
   /* surface tokens, neutral, flat, monochrome */
-  --surface: #fdfbf7;
-  --border: rgba(31, 27, 22, 0.08);
+  --crystal-bg: rgba(20,20,20,0.025);
+  --crystal-border: rgba(20,20,20,0.10);
+  --crystal-border-bright: rgba(20,20,20,0.22);
+  --crystal-highlight-top: rgba(20,20,20,0.16);
+  --crystal-shadow: rgba(20,20,20,0.12);
+  --crystal-glow: rgba(54,54,54,0.03);
+  --crystal-chroma-r: rgba(54,54,54,0.04);
+  --crystal-chroma-b: rgba(54,54,54,0.04);
 
-  /* Ubuntu font family */
-  --f-sans: 'Ubuntu', system-ui, sans-serif;
-  --f-serif: 'Ubuntu', system-ui, sans-serif;
-  --f-accent: 'Ubuntu', system-ui, sans-serif;
-  --brand-text: #5e554a;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* surface tokens, neutral, flat, monochrome */
-  --crystal-bg: rgba(31, 27, 22, 0.025);
-  --crystal-border: rgba(31, 27, 22, 0.08);
-  --crystal-border-bright: rgba(31, 27, 22, 0.16);
-  --crystal-highlight-top: rgba(31, 27, 22, 0.12);
-  --crystal-shadow: rgba(31, 27, 22, 0.08);
-  --crystal-glow: rgba(31, 27, 22, 0.03);
-  --crystal-chroma-r: rgba(31, 27, 22, 0.03);
-  --crystal-chroma-b: rgba(31, 27, 22, 0.03);
-
-  /* Ubuntu font family */
-  --f-sans: 'Ubuntu', system-ui, sans-serif;
-  --f-serif: 'Ubuntu', system-ui, sans-serif;
-  --f-accent: 'Ubuntu', system-ui, sans-serif;
-  --brand-text: #5e554a;
+  /* Josefin Sans, one family; headings/wordmark 600–700 tracked, body 400 */
+  --f-sans: 'Josefin Sans', system-ui, sans-serif;
+  --f-serif: 'Josefin Sans', system-ui, sans-serif;
+  --f-accent: 'Josefin Sans', system-ui, sans-serif;
+  --brand-text: #363636;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* These two were referenced by the audience toggle but only ever defined
@@ -85,21 +89,18 @@ button, input, select, textarea, optgroup { font-family: inherit; }
      carrying a trace of the same warmth, the way paper stock does in
      print: close enough that nothing looks tinted, far enough that the
      page stops looking like an unstyled document. */
-  --surface: #fdfbf7;
-  --border: rgba(31, 27, 22, 0.08);
+  --surface: #FCFBF9;
+  --border: rgba(20,20,20,0.10);
 
-  /* ── The accent ──────────────────────────────────────────────────
-     Orange accent for primary actions, selected nav, key links, brand highlights */
-  --tint: 255, 138, 45;                          /* #FF8A2D, Primary Orange */
-  --tint-wash: rgba(var(--tint), 0.022);
-  --tint-edge: rgba(var(--tint), 0.08);
-  --tint-ink: rgba(var(--tint), 0.85);
-  --orange: #ff8a2d;
-  --orange-dim: #e8761b;
-  --orange-soft: rgba(255, 138, 45, 0.12);
-  --accent: #ff8a2d;
-  --accent-dim: #e8761b;
-  --accent-soft: rgba(255, 138, 45, 0.12);
+  /* ── The silver lining ──────────────────────────────────────────────────
+     crypt.ee monochrome stays the palette. One warm accent, sampled from the
+     Synapse mark, never touches type or large areas, it survives only on
+     small non-text elements (a pip, a countdown bar, a map ping). That is the
+     whole lining: you feel the warmth, you never see orange. */
+  --tint: 255, 138, 45;                          /* #FF8A2D, Primary Orange, from the
+                                                    brand sheet. Was 199,106,26, which
+                                                    was estimated from the artwork before
+                                                    the real palette existed. */
   --tint-wash: rgba(var(--tint), 0.022);         /* barely-there section wash */
   --tint-edge: rgba(var(--tint), 0.10);          /* hairlines only */
   --tint-ink: rgba(var(--tint), 0.85);           /* pips + pings ONLY, never text */

@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Ubuntu } from "next/font/google";
+import { Josefin_Sans } from "next/font/google";
 import { ArrivalCapture } from "@/components/ArrivalCapture";
 import { IdleGuard } from "@/components/IdleGuard";
 import "./globals.css";
 
-const sans = Ubuntu({ subsets: ["latin"], weight: ["300", "400", "500", "700"], variable: "--font-sans", display: "swap" });
+const sans = Josefin_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Synapse",
