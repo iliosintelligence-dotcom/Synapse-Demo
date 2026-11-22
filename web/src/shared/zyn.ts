@@ -25,9 +25,13 @@ export function run() {
     'searching listening typing calculating comparing navigating waving loading scheduling calling celebrating saving ' +
     'home price verified nearby documents offer keys headsup nothing alert intro shared').split(' ');
   const MOTION: Record<string, string> = {};
-  'excited celebrating delighted surprised keys waving'.split(' ').forEach(function (s) { MOTION[s] = 'zm-bounce'; });
-  'curious confused thinking listening searching comparing navigating winking'.split(' ').forEach(function (s) { MOTION[s] = 'zm-sway'; });
+  /* the robot's motions, public/app/zyn.css (anything not listed hovers) */
+  'excited celebrating delighted keys shared'.split(' ').forEach(function (s) { MOTION[s] = 'zm-bounce'; });
+  'curious confused thinking listening searching comparing navigating winking calling'.split(' ').forEach(function (s) { MOTION[s] = 'zm-sway'; });
+  'typing calculating scheduling documents'.split(' ').forEach(function (s) { MOTION[s] = 'zm-busy'; });
+  'alert headsup surprised'.split(' ').forEach(function (s) { MOTION[s] = 'zm-jolt'; });
   'sleepy sorry nothing'.split(' ').forEach(function (s) { MOTION[s] = 'zm-slow'; });
+  MOTION.waving = 'zm-wave';
   MOTION.loading = 'zm-pulse';
 
   function known(state: string) { return IDS.indexOf(state) > -1 ? state : 'happy'; }
@@ -47,6 +51,8 @@ export function run() {
     el.setAttribute('data-zyn', s);
     el.src = url(s);
     el.className = el.className.replace(/\bzm-\w+\b/g, '').trim() + ' ' + (still ? 'zm-still' : (MOTION[s] || 'zm-bob'));
+    /* power on: zm-in replays its pop each time the state changes (the reflow in between restarts it) */
+    if (!still) { void el.offsetWidth; el.classList.add('zm-in'); }
   }
   function preload(list?: string[]) {
     (list || ['happy', 'typing', 'searching', 'home', 'nothing', 'waving', 'thinking', 'curious']).forEach(function (s) { const i = new Image(); i.src = url(s); });

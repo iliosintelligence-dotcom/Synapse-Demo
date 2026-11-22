@@ -12,9 +12,13 @@ const ZYN_STATES = ("happy curious thinking excited helpful winking surprised sl
   "calculating comparing navigating waving loading scheduling calling celebrating saving home price verified nearby documents offer keys headsup nothing alert intro shared").split(" ");
 
 const MOTION: Record<string, string> = {};
-"excited celebrating delighted surprised keys waving".split(" ").forEach((x) => (MOTION[x] = s.bounce));
-"curious confused thinking listening searching comparing navigating winking".split(" ").forEach((x) => (MOTION[x] = s.sway));
+/* same map as src/shared/zyn.ts; anything not listed hovers */
+"excited celebrating delighted keys shared".split(" ").forEach((x) => (MOTION[x] = s.bounce));
+"curious confused thinking listening searching comparing navigating winking calling".split(" ").forEach((x) => (MOTION[x] = s.sway));
+"typing calculating scheduling documents".split(" ").forEach((x) => (MOTION[x] = s.busy));
+"alert headsup surprised".split(" ").forEach((x) => (MOTION[x] = s.jolt));
 "sleepy sorry nothing".split(" ").forEach((x) => (MOTION[x] = s.slow));
+MOTION.waving = s.wave;
 MOTION.loading = s.pulse;
 
 const known = (state: string) => (ZYN_STATES.includes(state) ? state : "happy");
@@ -32,9 +36,11 @@ export function Zyn({ state, size = 58 }: { state: string; size?: number }) {
     setEmote(EMOTES[Math.floor(Math.random() * EMOTES.length)]);
     setTimeout(() => { setEmote(null); busy.current = false; }, 1800);
   };
+  // key={shown}: a new state mounts a new image, so the power-on pop plays again
   return (
-     
+
     <img
+      key={shown}
       className={`${s.zyn} ${emote ? s.bounce : MOTION[shown] ?? s.bob}`}
       src={zynUrl(shown)}
       width={size}

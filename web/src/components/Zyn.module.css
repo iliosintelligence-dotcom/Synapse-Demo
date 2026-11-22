@@ -1,14 +1,28 @@
-/* Zyn's idle motion. Every state moves a little; the way it moves says something (a bounce when excited, a slow sway when sorry). */
-/* translate/rotate/scale, not transform: see public/app/zyn.css */
-.zyn { display: block; object-fit: contain; transform-origin: 50% 92%; user-select: none; }
-@keyframes bobK { 0%, 100% { translate: 0 0; } 50% { translate: 0 -2.6%; } }
-@keyframes swayK { 0%, 100% { rotate: -2.6deg; translate: 0 0; } 50% { rotate: 2.6deg; translate: 0 -1.6%; } }
-@keyframes bounceK { 0%, 100% { translate: 0 0; scale: 1 1; } 30% { translate: 0 -8%; scale: 0.98 1.03; } 52% { translate: 0 0; scale: 1.03 0.97; } 70% { translate: 0 -3%; scale: 1 1; } }
-@keyframes slowK { 0%, 100% { rotate: -1.6deg; translate: 0 0; } 50% { rotate: 1.6deg; translate: 0 1.4%; } }
-@keyframes pulseK { 0%, 100% { scale: 1 1; } 50% { scale: 1.035 1.035; } }
-.bob { animation: bobK 3.4s ease-in-out infinite; }
-.sway { animation: swayK 3.8s ease-in-out infinite; }
-.bounce { animation: bounceK 1.5s ease-in-out infinite; }
-.slow { animation: slowK 5.2s ease-in-out infinite; }
-.pulse { animation: pulseK 1.6s ease-in-out infinite; }
+/* The robot's motion: the same moves as public/app/zyn.css (read the reasons there). translate/rotate/scale/filter, never transform. */
+.zyn { display: block; object-fit: contain; transform-origin: 50% 92%; user-select: none;
+  --zm: hoverK; --zmd: 3.6s; --zme: ease-in-out;
+  animation: inK .5s cubic-bezier(.2, .9, .3, 1.2) both, var(--zm) var(--zmd) var(--zme) .5s infinite; }
+@keyframes hoverK { 0%, 100% { translate: 0 0; rotate: -0.6deg; } 50% { translate: 0 -3.2%; rotate: 0.6deg; } }
+@keyframes hopK { 0%, 100% { translate: 0 0; scale: 1 1; } 22% { translate: 0 0; scale: 1.04 .95; } 42% { translate: 0 -10%; scale: .97 1.04; }
+  62% { translate: 0 0; scale: 1.04 .96; } 76% { translate: 0 -2%; scale: 1 1; } }
+@keyframes tiltK { 0%, 8% { rotate: 0deg; translate: 0 0; } 18%, 44% { rotate: -5deg; translate: -1% -1.2%; }
+  56%, 82% { rotate: 3.5deg; translate: 1% -1.2%; } 94%, 100% { rotate: 0deg; translate: 0 0; } }
+@keyframes busyK { 0%, 100% { translate: 0 0; } 10% { translate: -0.8% -0.6%; } 20% { translate: 0.8% 0; } 30% { translate: -0.5% -0.8%; }
+  40% { translate: 0.6% -0.3%; } 50%, 90% { translate: 0 -1.6%; } }
+@keyframes waveK { 0%, 100% { rotate: 0deg; } 15% { rotate: 5deg; } 30% { rotate: -2deg; } 45% { rotate: 5deg; } 60% { rotate: -1deg; } 75% { rotate: 0deg; } }
+@keyframes joltK { 0%, 100% { translate: 0 0; scale: 1; } 8% { translate: 0 -6%; scale: 1.05; } 16% { translate: 0 0; scale: .98; }
+  24% { translate: 0 -1.5%; scale: 1; } 32% { translate: 0 0; } }
+@keyframes downK { 0%, 100% { translate: 0 0; rotate: -1.4deg; filter: brightness(1); } 50% { translate: 0 2%; rotate: 1.4deg; filter: brightness(.9) saturate(.9); } }
+@keyframes glowK { 0%, 100% { scale: 1; filter: drop-shadow(0 0 0 rgba(77, 214, 255, 0)); }
+  50% { scale: 1.03; filter: drop-shadow(0 0 .35em rgba(77, 214, 255, .55)); } }
+@keyframes inK { 0% { scale: .86; translate: 0 4%; opacity: 0; filter: brightness(1.5) drop-shadow(0 0 .5em rgba(77, 214, 255, .7)); }
+  55% { scale: 1.04; translate: 0 -1.5%; opacity: 1; } 100% { scale: 1; translate: 0 0; filter: brightness(1) drop-shadow(0 0 0 rgba(77, 214, 255, 0)); } }
+.bob { --zm: hoverK; --zmd: 3.6s; }
+.bounce { --zm: hopK; --zmd: 1.6s; }
+.sway { --zm: tiltK; --zmd: 4.4s; }
+.busy { --zm: busyK; --zmd: 1.4s; --zme: linear; }
+.wave { --zm: waveK; --zmd: 1.8s; }
+.jolt { --zm: joltK; --zmd: 2.6s; }
+.slow { --zm: downK; --zmd: 5.2s; }
+.pulse { --zm: glowK; --zmd: 1.8s; }
 @media (prefers-reduced-motion: reduce) { .zyn { animation: none !important; } }
