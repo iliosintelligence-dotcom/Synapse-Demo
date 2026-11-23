@@ -119,6 +119,26 @@ function rememberAngles(pid: string | undefined, angles: string[]) {
   } catch { /* private mode: rotation still works for this page view */ }
 }
 
+/* ── WRITE THE MISSING CAPTIONS, FROM THE SCHEDULER (2026-11-23) ──
+   Eden: "if the person selects a social media account that they haven't generated captions for, help them generate it".
+   The same generator and the same filing as the composer's Generate + Send for approval, in one step, for just the channels
+   asked for. Returns each channel's new draft so the scheduler can post it in the same press. */
+export async function writeCaptions(propertyId: string, channels: string[]): Promise<Record<string, { contentId: string | null; caption: string }>> {
+  const row = fullListing(propertyId) || postListings().find((l) => l.id === propertyId);
+  if (!row) throw new Error("This listing is not loaded here. Open it in the composer to write its captions.");
+  const { ok, d } = await socialGenerate({ property: row, channels, usedAngles: anglesUsedFor(propertyId), brand: brandPayload() });
+  if (!ok || d.error || !d.captions) throw new Error((d && d.error) || "Couldn’t write that caption right now, please try again.");
+  rememberAngles(propertyId, d.anglesUsed || []);
+  const made = channels.filter((ch) => d.captions[ch]);
+  if (!made.length) throw new Error("No caption came back for that channel. Please try again.");
+  const r = await W().SynListings.saveGeneration(propertyId, made.map((ch) => ({ platform: ch, caption: d.captions[ch], angleKey: (d.angles || {})[ch] })));
+  const CT: Record<string, string> = { instagram_post: "instagram", instagram_reel: "instagram", tiktok_script: "tiktok", youtube_short: "youtube", facebook_post: "facebook",
+    whatsapp_message: "whatsapp", linkedin_post: "linkedin", x_post: "x", telegram_post: "telegram" };
+  const ids: Record<string, string> = {};
+  ((r && r.rows) || []).forEach((x: any) => { const pl = CT[x.content_type]; if (pl) ids[pl] = x.id; });
+  return Object.fromEntries(made.map((ch) => [ch, { contentId: ids[ch] || null, caption: String(d.captions[ch]) }]));
+}
+
 const tagsIn = (text: string) => (String(text || "").match(/#[\wÀ-ɏ]+/g) || []).map((t) => t.slice(1));
 
 type Cmp = {

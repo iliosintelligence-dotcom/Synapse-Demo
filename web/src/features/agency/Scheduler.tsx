@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { showDrawer } from "./SideDrawer";
 import { TikTokPanel, type TikTokChoice } from "./TikTokPanel";
+import { writeCaptions } from "./PostComposer";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -286,14 +287,33 @@ const MAX_POSTS = 60;
 function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; nowAt: number }) {
   const today = new Date(nowAt); today.setHours(0, 0, 0, 0);
   const cardPlat: string | null = p.platform || (Array.isArray(p.channels) && p.channels.length === 1 ? p.channels[0] : null);
-  const [caps] = useState<Record<string, { contentId: string | null; caption: string }>>(() => {
+  const [caps, setCaps] = useState<Record<string, { contentId: string | null; caption: string }>>(() => {
     const sib = (W().pipeCaptionsFor && W().pipeCaptionsFor(p.propertyId)) || {};
     return cardPlat && p.caption ? { ...sib, [cardPlat]: { contentId: p.contentId || null, caption: p.caption } } : sib;
   });
   /* No channel on the card (an older post with no caption yet): any channel, as before. */
   const can = (plat: string) => !cardPlat || !!caps[plat];
-  const plats = schedPlats(cardPlat || (p.channels && p.channels[0]) || "instagram").sort((a, b) => Number(can(b)) - Number(can(a)));
-  const [on, setOn] = useState<Record<string, boolean>>(() => ({ [cardPlat || (p.channels && p.channels[0]) || "instagram"]: true }));
+  /* Channels with a caption first; the order is fixed when the sheet opens, so a chip does not jump when its caption arrives. */
+  const [plats] = useState(() => schedPlats(cardPlat || (p.channels && p.channels[0]) || "instagram").sort((a, b) => Number(can(b)) - Number(can(a))));
+  /* EVERY CHANNEL THAT ALREADY HAS A CAPTION STARTS TICKED (Eden: "if they've drafted content for 5 different platforms for the
+     same property ... let all of them move"). Untick any that should wait. */
+  const [on, setOn] = useState<Record<string, boolean>>(() => {
+    const o: Record<string, boolean> = { [cardPlat || (p.channels && p.channels[0]) || "instagram"]: true };
+    if (cardPlat) Object.keys(caps).forEach((c) => { if (plats.includes(c)) o[c] = true; });
+    return o;
+  });
+  /* A channel with no caption yet is written on the spot (Eden: "help them generate it"), filed as a draft like the
+     composer's, and ticked once it arrives. */
+  const [writing, setWriting] = useState<Record<string, boolean>>({});
+  const write = (c: string) => {
+    if (writing[c]) return;
+    setWriting((w) => ({ ...w, [c]: true })); setNote("");
+    writeCaptions(p.propertyId, [c])
+      .then((got) => { setCaps((x) => ({ ...x, ...got })); if (got[c]) setOn((o) => ({ ...o, [c]: true })); })
+      .catch((e: any) => setNote((e && e.message) || "Couldn’t write that caption right now, please try again."))
+      .then(() => setWriting((w) => ({ ...w, [c]: false })));
+  };
+  const anyWriting = Object.values(writing).some(Boolean);
   const [acct, setAcct] = useState<Record<string, string | null>>(() => Object.fromEntries(plats.map((c) => [c, firstAcct(c)])));
   const b0 = new Date(base);
   const [days, setDays] = useState<Days>(() => ({ [dateVal(b0)]: [timeVal(b0)] }));
@@ -418,7 +438,6 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
   }
 
   const heading = mode === "duplicate" ? "Copy this post" : "Schedule this post";
-  const offNote = (c: string) => "There is no " + chLabel(c) + " caption for this listing yet. Write one in the composer first.";
   return (
     <>
       <div className="sch2-head"><h2>{heading}</h2><button className="x" aria-label="Close" onClick={() => W().closeLead()}>{"×"}</button></div>
@@ -434,16 +453,23 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
       <div className="sch2-lbl">Post to</div>
       <div className="plan-chans" role="group" aria-label="Channels">
         {plats.map((c) => {
-          const ok = can(c), isOn = !!on[c] && ok;
+          const ok = can(c), isOn = !!on[c] && ok, busyC = !!writing[c];
           return (
-            <button type="button" key={c} className={"plan-ch" + (isOn ? " on" : "") + (ok ? "" : " off")} aria-pressed={isOn}
-              title={ok ? (caps[c] && c !== cardPlat ? "Uses this listing's " + chLabel(c) + " caption" : "") : offNote(c)}
-              onClick={() => { if (!ok) { setNote(offNote(c)); return; } setNote(""); setOn((o) => ({ ...o, [c]: !o[c] })); }}>
-              <span className="plan-tick" aria-hidden="true">{isOn ? "✓" : ""}</span>{chLabel(c)}
+            <button type="button" key={c} className={"plan-ch" + (isOn ? " on" : "") + (ok ? "" : " off") + (busyC ? " busy" : "")} aria-pressed={isOn}
+              title={ok ? (caps[c] && c !== cardPlat ? "Uses this listing's " + chLabel(c) + " caption" : "") : "No " + chLabel(c) + " caption yet. Tap to write one."}
+              onClick={() => { if (!ok) { write(c); return; } setNote(""); setOn((o) => ({ ...o, [c]: !o[c] })); }}>
+              <span className="plan-tick" aria-hidden="true">{isOn ? "✓" : busyC ? "" : ok ? "" : "+"}</span>{chLabel(c)}
+              {busyC ? <em>writing…</em> : ok ? null : <em>write caption</em>}
             </button>
           );
         })}
       </div>
+      {chans.length && cardPlat ? (
+        <details className="plan-caps">
+          <summary>Read the {chans.length === 1 ? "caption" : chans.length + " captions"}</summary>
+          {chans.map((c) => <div key={c}><b>{chLabel(c)}</b><p>{(caps[c] && caps[c].caption) || ""}</p></div>)}
+        </details>
+      ) : null}
       {chans.filter((c) => acctsFor(c).length >= 2).map((c) => (
         <label className="plan-acct" key={c}><span>{chLabel(c)} account</span>
           <select value={acct[c] || ""} onChange={(e) => setAcct((a) => ({ ...a, [c]: e.target.value }))}>
@@ -532,8 +558,8 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
           <b>{total ? total + (total === 1 ? " post" : " posts") : "Nothing picked yet"}</b>
           <span>{total ? slots + (slots === 1 ? " time" : " times") + " × " + chans.length + (chans.length === 1 ? " channel" : " channels") : "Pick a channel and a day"}</span>
         </div>
-        <button className="btn btn-primary plan-save" disabled={!!busy || !total} onClick={() => commit(false)}>
-          {busy === "save" ? "Saving…" : total ? "Schedule " + total : "Schedule"}
+        <button className="btn btn-primary plan-save" disabled={!!busy || !total || anyWriting} onClick={() => commit(false)}>
+          {busy === "save" ? "Saving…" : anyWriting ? "Writing…" : total ? "Schedule " + total : "Schedule"}
         </button>
       </div>
       <button type="button" className="sch2-ghost plan-now" disabled={!!busy || !chans.length}

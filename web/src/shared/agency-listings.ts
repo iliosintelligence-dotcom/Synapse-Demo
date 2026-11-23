@@ -2035,9 +2035,11 @@ export function run() {
       });
       if (!rows.length) return { saved: 0 };
 
-      return c1.from('generated_content').insert(rows).then(function (r) {
+      /* The new rows come back (id + content_type) so a caller can schedule them at once: the scheduler writes a missing
+         channel's caption and posts it in the same press. */
+      return c1.from('generated_content').insert(rows).select('id, content_type').then(function (r) {
         if (r.error) throw r.error;
-        return { saved: rows.length };
+        return { saved: rows.length, rows: r.data || [] };
       });
     });
   }
