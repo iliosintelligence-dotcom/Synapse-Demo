@@ -823,6 +823,17 @@ export function run() {
     /* ── THE SCHEDULER is React (src/features/agency/Scheduler.tsx). The name stays: the board, the calendar and the composer
        open it. mode is 'approve', 'reschedule' or 'duplicate'. */
     function openScheduler(p, mode) { window.dispatchEvent(new CustomEvent('syn:schedule', { detail: { p: p, mode: mode } })); }
+    /* The captions waiting for review on one listing, one per channel (the newest wins), so the scheduler can post a listing to
+       several channels at once with each channel's OWN wording. */
+    function pipeCaptionsFor(propertyId) {
+      const out = {};
+      (PIPE.drafts || []).filter((d) => d.property_id === propertyId).forEach((d) => {
+        const plat = PLAT_OF_CT[d.content_type];
+        if (plat && !out[plat] && d.generated_text) out[plat] = { contentId: d.id, caption: d.generated_text };
+      });
+      return out;
+    }
+    window.pipeCaptionsFor = pipeCaptionsFor;
 
     // ── THE PROPERTY PREVIEW is React (src/features/agency/PropPreview.tsx); the names stay for the board and the calendar.
     function openPropPreview(post) { if (post) window.dispatchEvent(new CustomEvent('syn:prop-preview', { detail: post })); }

@@ -269,6 +269,281 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
   );
 }
 
+/* ── THE CALENDAR PLANNER (Eden, 2026-11-23): "allow them to pick the dates on the calendar ... pick multiple dates in one go
+   and then adjust the time during each of the days". Tick the channels, tap (or drag across) days, set each day's times.
+   Every ticked channel × every day × every time becomes one row, each channel with its OWN caption: the card's caption for
+   its own channel, and the listing's other waiting captions (pipeCaptionsFor) for the rest. A channel with no caption is
+   shown but cannot be ticked, which keeps the old rule that one channel's wording never goes out on another.
+   "Move this post" (reschedule) keeps the one-row sheet above: it moves one post. */
+type Days = Record<string, string[]>;
+const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const dayOf = (k: string) => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const fmtT = (t: string) => { const [h, m] = t.split(":").map(Number); return (h % 12 || 12) + (m ? ":" + pad2(m) : "") + (h < 12 ? "am" : "pm"); };
+const uniq = (ts: string[]) => [...new Set(ts.filter(Boolean))].sort();
+const MAX_POSTS = 60;
+
+function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; nowAt: number }) {
+  const today = new Date(nowAt); today.setHours(0, 0, 0, 0);
+  const cardPlat: string | null = p.platform || (Array.isArray(p.channels) && p.channels.length === 1 ? p.channels[0] : null);
+  const [caps] = useState<Record<string, { contentId: string | null; caption: string }>>(() => {
+    const sib = (W().pipeCaptionsFor && W().pipeCaptionsFor(p.propertyId)) || {};
+    return cardPlat && p.caption ? { ...sib, [cardPlat]: { contentId: p.contentId || null, caption: p.caption } } : sib;
+  });
+  /* No channel on the card (an older post with no caption yet): any channel, as before. */
+  const can = (plat: string) => !cardPlat || !!caps[plat];
+  const plats = schedPlats(cardPlat || (p.channels && p.channels[0]) || "instagram").sort((a, b) => Number(can(b)) - Number(can(a)));
+  const [on, setOn] = useState<Record<string, boolean>>(() => ({ [cardPlat || (p.channels && p.channels[0]) || "instagram"]: true }));
+  const [acct, setAcct] = useState<Record<string, string | null>>(() => Object.fromEntries(plats.map((c) => [c, firstAcct(c)])));
+  const b0 = new Date(base);
+  const [days, setDays] = useState<Days>(() => ({ [dateVal(b0)]: [timeVal(b0)] }));
+  const [view, setView] = useState(() => new Date(b0.getFullYear(), b0.getMonth(), 1));
+  const [allT, setAllT] = useState("09:00");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState<"" | "save" | "now">("");
+  const [tt, setTt] = useState<TikTokChoice>(null);
+  const onTt = useCallback((c: TikTokChoice) => setTt(c), []);
+  const story = useRef<HTMLInputElement>(null), camp = useRef<HTMLSelectElement>(null);
+  const drag = useRef<boolean | null>(null);
+  const campaigns: any[] = (W().SynCampaigns && W().SynCampaigns()) || [];
+
+  const chans = plats.filter((c) => on[c] && can(c));
+  const keys = Object.keys(days).sort();
+  const slots = keys.reduce((n, k) => n + days[k].length, 0);
+  const total = chans.length * slots;
+  const ttAcct = on.tiktok ? (acctsFor("tiktok").find((a) => a.id === acct.tiktok)
+    || acctsFor("tiktok").slice().sort((x, y) => String(x.connected_at || "").localeCompare(String(y.connected_at || "")))[0] || null) : null;
+  const ttDirectOn = !!(ttAcct && ttAcct.direct_post);
+
+  /* The time a newly picked day starts with: the last time used, so picking five days after setting 6pm gives five 6pms. */
+  const lastT = () => { const k = keys[keys.length - 1]; return (k && days[k][0]) || timeVal(b0); };
+  const setDay = (k: string, want: boolean) => setDays((d) => {
+    if (want === !!d[k]) return d;
+    const n = { ...d };
+    if (want) n[k] = [lastT()]; else delete n[k];
+    return n;
+  });
+  const pickMany = (ds: Date[]) => {
+    if (!ds.length) return;
+    const t = lastT();
+    setDays((d) => { const n = { ...d }; ds.forEach((x) => { const k = dateVal(x); if (!n[k]) n[k] = [t]; }); return n; });
+    setView(new Date(ds[0].getFullYear(), ds[0].getMonth(), 1));
+  };
+  const quick: [string, () => void][] = [
+    ["Next 3 days", () => pickMany([1, 2, 3].map((n) => addDays(today, n)))],
+    ["Mon, Wed, Fri", () => pickMany([1, 2, 3, 4, 5, 6, 7].map((n) => addDays(today, n)).filter((d) => [1, 3, 5].includes(d.getDay())))],
+    ["Every other day, 2 weeks", () => pickMany([1, 3, 5, 7, 9, 11, 13].map((n) => addDays(today, n)))],
+    ["This weekend", () => pickMany([0, 1, 2, 3, 4, 5, 6].map((n) => addDays(today, n)).filter((d) => d.getDay() === 6 || d.getDay() === 0))],
+  ];
+  const setTime = (k: string, i: number, v: string) => setDays((d) => { if (!v) return d; const ts = d[k].slice(); ts[i] = v; return { ...d, [k]: uniq(ts) }; });
+  const addTime = (k: string) => setDays((d) => {
+    const ts = d[k], last = ts[ts.length - 1] || "09:00";
+    let h = Number(last.slice(0, 2)) + 6; if (h > 21) h = Math.max(7, Number(ts[0].slice(0, 2)) - 3);
+    return { ...d, [k]: uniq(ts.concat(pad2(h) + ":00")) };
+  });
+  const dropTime = (k: string, i: number) => setDays((d) => ({ ...d, [k]: d[k].filter((_, j) => j !== i) }));
+  const everyDay = (ts: string[]) => setDays((d) => Object.fromEntries(Object.keys(d).map((k) => [k, ts.slice()])));
+
+  /* The calendar: Monday first, past days off, the picked ones filled with their time under the date. */
+  const lead = (view.getDay() + 6) % 7, nDays = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const firstMonth = view.getFullYear() === today.getFullYear() && view.getMonth() === today.getMonth();
+  const cells: (Date | null)[] = Array.from({ length: lead }, (): Date | null => null).concat(Array.from({ length: nDays }, (_, i) => new Date(view.getFullYear(), view.getMonth(), i + 1)));
+  const touchMove = (e: React.PointerEvent) => {
+    if (drag.current === null || e.pointerType === "mouse") return;
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const k = el && (el.closest("[data-day]") as HTMLElement | null)?.dataset.day;
+    if (k && dayOf(k) >= today) setDay(k, drag.current);
+  };
+  useEffect(() => { const up = () => { drag.current = null; }; window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up); return () => { window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); }; }, []);
+
+  function commit(now: boolean) {
+    if (!chans.length) { setNote("Tick at least one channel."); return; }
+    if (!now && !slots) { setNote("Pick at least one day on the calendar."); return; }
+    const at = (k: string, t: string) => new Date(k + "T" + t);
+    const past = now ? null : keys.flatMap((k) => days[k].map((t) => [k, t] as const)).find(([k, t]) => at(k, t).getTime() < Date.now());
+    if (past) { setNote(dayOf(past[0]).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) + " at " + fmtT(past[1]) + " has already passed. Pick a later time."); return; }
+    if (!now && total > MAX_POSTS) { setNote("That is " + total + " posts. Keep it to " + MAX_POSTS + " at a time."); return; }
+    const hasTt = chans.includes("tiktok");
+    const ttNow = ttDirectOn ? tt : null;
+    if (hasTt && ttNow && !ttNow.valid) { setNote(ttNow.reason); return; }
+    const ttPayload = hasTt && ttNow && ttNow.valid ? { ...ttNow.tiktok, consent_at: new Date().toISOString() } : null;
+    const nowIso = new Date().toISOString();
+    const perChan = chans.map((c) => ({
+      c,
+      slots: (now ? [nowIso] : keys.flatMap((k) => days[k].map((t) => k + "T" + t))).map((a) => ({
+        platform: c, accountId: acct[c] || null, at: a, ...(c === "tiktok" && ttPayload ? { tiktok: ttPayload } : {}),
+      })),
+    }));
+    const list = perChan.flatMap((x) => x.slots);
+    setNote(""); setBusy(now ? "now" : "save");
+    const L = W().SynListings;
+    const stories = !!(story.current && story.current.checked), campaignId = (camp.current && camp.current.value) || null;
+    /* One call per channel, so each carries its own caption and links back to its own draft. In turn, not at once: the
+       plan gate counts what is already queued. */
+    const used: string[] = [];
+    perChan.reduce((chain: Promise<any>, x) => chain.then(() => {
+      const cap = caps[x.c] || { contentId: p.contentId || null, caption: p.caption || "" };
+      if (cap.contentId) used.push(cap.contentId);
+      return L.schedulePost({ propertyId: p.propertyId, contentId: cap.contentId || null, caption: cap.caption || "", mediaUrls: null, slots: x.slots, stories, campaignId });
+    }), Promise.resolve())
+      .then(() => {
+        if (!now) return null;
+        const sb = W().SynSB || {};
+        return W().authToken().then((t: string) => fetch(sb.url + "/functions/v1/social-publish", {
+          method: "POST", headers: { apikey: sb.key, Authorization: "Bearer " + t, "Content-Type": "application/json" },
+          body: JSON.stringify({ live: true, limit: Math.min(50, list.length * 4) }),
+        })).then((r: Response) => r.json().catch(() => ({})).then((j: any) => (r.ok ? j : { drainFailed: true, error: j && j.error })))
+          .catch(() => ({ drainFailed: true }));
+      })
+      /* Every waiting caption that went out on a schedule leaves the approval column. A duplicated post's caption is already
+         scheduled, so only drafts are touched. */
+      .then((sent: any) => {
+        const drafts = used.filter((id) => id !== p.contentId || mode === "approve");
+        return Promise.all(drafts.map((id) => L.setContentStatus(id, "scheduled").catch(() => {}))).then(() => sent);
+      })
+      .then((sent: any) => {
+        W().closeLead();
+        report(mode, now, list, sent);
+        if (now && sent && Number(sent.published) > 0) W().rememberStatusOffer?.(p.propertyId);
+        const probs: string[] = W().SYN_LAST_SCHEDULE_PROBLEMS || [];
+        W().SYN_LAST_SCHEDULE_PROBLEMS = [];
+        if (probs.length) setTimeout(() => toast("The post is saved, but " + probs.join(" and ") + (probs.length === 1 ? " was" : " were") + " not added. Try again from the post card."), 2800);
+        W().loadPipeline(); W().watchPipeline();
+      })
+      .catch((err: any) => {
+        setBusy("");
+        setNote((err && err.message) || "Could not save that."); W().planGate?.(err && err.message);
+        console.error("schedule failed", err);
+      });
+  }
+
+  const heading = mode === "duplicate" ? "Copy this post" : "Schedule this post";
+  const offNote = (c: string) => "There is no " + chLabel(c) + " caption for this listing yet. Write one in the composer first.";
+  return (
+    <>
+      <div className="sch2-head"><h2>{heading}</h2><button className="x" aria-label="Close" onClick={() => W().closeLead()}>{"×"}</button></div>
+      <div className="sch2-post">
+        <div className="sch2-ph"><Photo url={p.img} /></div>
+        <div className="sch2-pb">
+          <div className="sch2-t">{String(p.listing || "").split(",")[0]}</div>
+          <div className="sch2-p">{p.price || ""}</div>
+          {p.caption ? <div className="sch2-c" title={p.caption}>{p.caption}</div> : null}
+        </div>
+      </div>
+
+      <div className="sch2-lbl">Post to</div>
+      <div className="plan-chans" role="group" aria-label="Channels">
+        {plats.map((c) => {
+          const ok = can(c), isOn = !!on[c] && ok;
+          return (
+            <button type="button" key={c} className={"plan-ch" + (isOn ? " on" : "") + (ok ? "" : " off")} aria-pressed={isOn}
+              title={ok ? (caps[c] && c !== cardPlat ? "Uses this listing's " + chLabel(c) + " caption" : "") : offNote(c)}
+              onClick={() => { if (!ok) { setNote(offNote(c)); return; } setNote(""); setOn((o) => ({ ...o, [c]: !o[c] })); }}>
+              <span className="plan-tick" aria-hidden="true">{isOn ? "✓" : ""}</span>{chLabel(c)}
+            </button>
+          );
+        })}
+      </div>
+      {chans.filter((c) => acctsFor(c).length >= 2).map((c) => (
+        <label className="plan-acct" key={c}><span>{chLabel(c)} account</span>
+          <select value={acct[c] || ""} onChange={(e) => setAcct((a) => ({ ...a, [c]: e.target.value }))}>
+            {acctsFor(c).map((a) => <option key={a.id} value={a.id}>{acctLabel(a)}</option>)}
+          </select>
+        </label>
+      ))}
+
+      <div className="sch2-lbl">Days <span className="plan-hint">tap or drag across days to pick several</span></div>
+      <div className="plan-cal">
+        <div className="plan-mon">
+          <button type="button" aria-label="Previous month" disabled={firstMonth} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}>{"‹"}</button>
+          <b>{view.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</b>
+          <button type="button" aria-label="Next month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}>{"›"}</button>
+        </div>
+        <div className="plan-grid plan-wk" aria-hidden="true">{WD.map((d) => <span key={d}>{d}</span>)}</div>
+        <div className="plan-grid" onPointerMove={touchMove}>
+          {cells.map((d, i) => {
+            if (!d) return <span key={"e" + i} />;
+            const k = dateVal(d), ts = days[k], gone = d < today;
+            return (
+              <button type="button" key={k} data-day={k} disabled={gone} aria-pressed={!!ts}
+                className={"plan-day" + (ts ? " on" : "") + (d.getTime() === today.getTime() ? " today" : "")}
+                aria-label={d.toDateString() + (ts ? ", picked" : "")}
+                onPointerDown={(e) => { if (gone) return; if (e.pointerType !== "mouse") (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId); drag.current = !ts; setDay(k, !ts); }}
+                onPointerEnter={() => { if (drag.current !== null && !gone) setDay(k, drag.current); }}
+                onClick={(e) => { if (e.detail === 0) setDay(k, !ts); /* the keyboard; a tap already toggled on pointerdown */ }}>
+                <span>{d.getDate()}</span>
+                {ts ? <small>{ts.length > 1 ? ts.length + " times" : fmtT(ts[0])}</small> : null}
+              </button>
+            );
+          })}
+        </div>
+        <div className="plan-quick">
+          {quick.map(([l, f]) => <button type="button" key={l} className="sch2-q" onClick={f}>{l}</button>)}
+          {keys.length ? <button type="button" className="sch2-q plan-clear" onClick={() => setDays({})}>Clear</button> : null}
+        </div>
+      </div>
+
+      <div className="sch2-lbl">Times {keys.length ? "(" + keys.length + (keys.length === 1 ? " day)" : " days)") : ""}</div>
+      {keys.length > 1 ? (
+        <div className="plan-all">
+          <span>Every day at</span>
+          <input type="time" value={allT} aria-label="Time for every day" onChange={(e) => setAllT(e.target.value)} />
+          <button type="button" className="sch2-q" onClick={() => everyDay([allT || "09:00"])}>Apply</button>
+          <button type="button" className="sch2-q" onClick={() => everyDay(["09:00", "18:00"])}>9am + 6pm</button>
+        </div>
+      ) : null}
+      <div className="plan-days">
+        {keys.length ? keys.map((k) => {
+          const d = dayOf(k);
+          return (
+            <div className="plan-row" key={k}>
+              <div className="plan-d"><b>{d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</b><span>{d.toLocaleDateString("en-GB", { month: "short" })}</span></div>
+              <div className="plan-ts">
+                {days[k].map((t, i) => (
+                  <span className="plan-t" key={k + i}>
+                    <input type="time" value={t} aria-label={"Time on " + d.toDateString()} onChange={(e) => setTime(k, i, e.target.value)} />
+                    {days[k].length > 1 ? <button type="button" aria-label="Remove this time" onClick={() => dropTime(k, i)}>{"×"}</button> : null}
+                  </span>
+                ))}
+                <button type="button" className="plan-add" onClick={() => addTime(k)}>+ time</button>
+              </div>
+              <button type="button" className="slot-x" aria-label="Remove this day" onClick={() => setDay(k, false)}>{"×"}</button>
+            </div>
+          );
+        }) : <div className="plan-empty">Tap days on the calendar, or use a quick pick.</div>}
+      </div>
+
+      {on.tiktok && !(ttDirectOn && tt !== null) ? <div className="sch-note" title="Open TikTok, add a sound, and post it from there.">TikTok goes to your inbox as a draft.</div> : null}
+      {on.tiktok && ttDirectOn ? <TikTokPanel key={ttAcct ? ttAcct.id : "default"} accountId={ttAcct ? ttAcct.id : null} caption={(caps.tiktok && caps.tiktok.caption) || p.caption || ""} onChange={onTt} /> : null}
+      {campaigns.length ? (
+        <label className="sch-camp"><span>Campaign</span>
+          <select ref={camp} defaultValue=""><option value="">None</option>{campaigns.map((c) => <option key={c.id} value={c.id}>{c.nm}</option>)}</select>
+        </label>
+      ) : null}
+      {on.instagram && can("instagram") ? (
+        <label className="sch2-story" title="Instagram does not allow a tappable link on a Story posted through the API, so this is reach, not clicks. It stays up for 24 hours.">
+          <input type="checkbox" ref={story} /><span className="sw2" aria-hidden="true"></span>
+          <span className="sch2-sl">Also on Instagram Stories<em>no link</em></span>
+        </label>
+      ) : null}
+      <div className="sch-note">{note}</div>
+      <div className="plan-foot">
+        <div className="plan-sum">
+          <b>{total ? total + (total === 1 ? " post" : " posts") : "Nothing picked yet"}</b>
+          <span>{total ? slots + (slots === 1 ? " time" : " times") + " × " + chans.length + (chans.length === 1 ? " channel" : " channels") : "Pick a channel and a day"}</span>
+        </div>
+        <button className="btn btn-primary plan-save" disabled={!!busy || !total} onClick={() => commit(false)}>
+          {busy === "save" ? "Saving…" : total ? "Schedule " + total : "Schedule"}
+        </button>
+      </div>
+      <button type="button" className="sch2-ghost plan-now" disabled={!!busy || !chans.length}
+        onClick={() => { if (!window.confirm(nowQuestion(chans.map((c) => ({ plat: c }) as Row)))) return; commit(true); }}>
+        {busy === "now" ? "Sending…" : "Post now instead" + (chans.length > 1 ? " (" + chans.length + " channels)" : "")}
+      </button>
+    </>
+  );
+}
+
 /* Listens for openScheduler(p, mode). Rendered once, beside the board. */
 export function SchedulerHost() {
   useEffect(() => {
@@ -279,7 +554,9 @@ export function SchedulerHost() {
       const nowAt = Date.now();
       const base = p.scheduledAt ? new Date(p.scheduledAt) : new Date(nowAt + 36e5);
       if (!p.scheduledAt) base.setMinutes(0, 0, 0);
-      showDrawer(<Sheet p={p} mode={mode} base={base.getTime()} nowAt={nowAt} />, { bare: true });
+      showDrawer(mode === "reschedule"
+        ? <Sheet p={p} mode={mode} base={base.getTime()} nowAt={nowAt} />
+        : <PlanSheet p={p} mode={mode} base={base.getTime()} nowAt={nowAt} />, { bare: true });
     };
     window.addEventListener("syn:schedule", open);
     return () => window.removeEventListener("syn:schedule", open);
