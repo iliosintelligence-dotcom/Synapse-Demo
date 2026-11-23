@@ -119,6 +119,9 @@ function rememberAngles(pid: string | undefined, angles: string[]) {
   } catch { /* private mode: rotation still works for this page view */ }
 }
 
+const CT_PLAT: Record<string, string> = { instagram_post: "instagram", instagram_reel: "instagram", tiktok_script: "tiktok", youtube_short: "youtube", facebook_post: "facebook",
+  whatsapp_message: "whatsapp", linkedin_post: "linkedin", x_post: "x", telegram_post: "telegram" };
+
 /* ── WRITE THE MISSING CAPTIONS, FROM THE SCHEDULER (2026-11-23) ──
    Eden: "if the person selects a social media account that they haven't generated captions for, help them generate it".
    The same generator and the same filing as the composer's Generate + Send for approval, in one step, for just the channels
@@ -132,10 +135,8 @@ export async function writeCaptions(propertyId: string, channels: string[]): Pro
   const made = channels.filter((ch) => d.captions[ch]);
   if (!made.length) throw new Error("No caption came back for that channel. Please try again.");
   const r = await W().SynListings.saveGeneration(propertyId, made.map((ch) => ({ platform: ch, caption: d.captions[ch], angleKey: (d.angles || {})[ch] })));
-  const CT: Record<string, string> = { instagram_post: "instagram", instagram_reel: "instagram", tiktok_script: "tiktok", youtube_short: "youtube", facebook_post: "facebook",
-    whatsapp_message: "whatsapp", linkedin_post: "linkedin", x_post: "x", telegram_post: "telegram" };
   const ids: Record<string, string> = {};
-  ((r && r.rows) || []).forEach((x: any) => { const pl = CT[x.content_type]; if (pl) ids[pl] = x.id; });
+  ((r && r.rows) || []).forEach((x: any) => { const pl = CT_PLAT[x.content_type]; if (pl) ids[pl] = x.id; });
   return Object.fromEntries(made.map((ch) => [ch, { contentId: ids[ch] || null, caption: String(d.captions[ch]) }]));
 }
 
@@ -237,7 +238,10 @@ export function ComposerHost() {
     }
   }
 
-  function send() {
+  /* APPROVAL IS OPTIONAL (Eden, 2026-11-23). `direct` files the captions exactly as "Send for approval" does, then opens the
+     scheduler on them at once, every channel just written already ticked, so a post goes from caption to calendar in one press.
+     Send for approval stays for agencies that want someone to read them first. */
+  function send(direct = false) {
     const s = cRef.current;
     const L = postListings()[s.li];
     const caps = s.captions || {};
@@ -250,9 +254,18 @@ export function ComposerHost() {
     W().SynListings.saveGeneration(L.id, variants).then((r: any) => {
       const n = (r && r.saved) || 0;
       if (!n) throw new Error("Nothing could be filed, none of those channels has a content type yet.");
-      toast(n + (n === 1 ? " caption" : " captions") + " sent for approval, review them in Draft");
       setOpen(false); setC((x) => ({ ...x, sending: false }));
       if (typeof W().loadPipeline === "function") W().loadPipeline();
+      if (!direct || typeof W().openScheduler !== "function") { toast(n + (n === 1 ? " caption" : " captions") + " sent for approval, review them in Draft"); return; }
+      const ids: Record<string, string> = {};
+      ((r && r.rows) || []).forEach((x: any) => { const pl = CT_PLAT[x.content_type]; if (pl && !ids[pl]) ids[pl] = x.id; });
+      const first = chans[0];
+      W().openScheduler({
+        propertyId: L.id, contentId: ids[first] || null, platform: first, channels: [first], caption: caps[first],
+        listing: L.title || "", price: naira(L.price), img: typeof L.img === "string" ? L.img : "",
+        /* The scheduler starts with exactly these ticked. */
+        captions: Object.fromEntries(chans.map((ch) => [ch, { contentId: ids[ch] || null, caption: caps[ch] }])),
+      }, "approve");
     }).catch((err: any) => {
       setC((x) => ({ ...x, sending: false }));
       toast((err && err.message) || "Could not send those for approval");
@@ -356,8 +369,9 @@ export function ComposerHost() {
             ))}
             {c.hashtags.length ? <div className="cmp-tags">{c.hashtags.join("  ")}</div> : null}
             {c.note ? <div className="cmp-note"><b>Tayo&apos;s tip:</b> {c.note}</div> : null}
+            <button type="button" className="cmp-approve" id="cmpApprove" onClick={() => send(false)} disabled={c.sending}>Want someone to check them first? Send for approval instead</button>
             <div className="cmp-foot">{genBtn}
-              <button className="btn btn-primary dyn-enter" id="cmpSchedule" onClick={send} disabled={c.sending}>{c.sending ? "Sending…" : "Send for approval →"}</button>
+              <button className="btn btn-primary dyn-enter" id="cmpSchedule" onClick={() => send(true)} disabled={c.sending}>{c.sending ? "Saving…" : "Schedule →"}</button>
             </div>
           </>
         ) : null}

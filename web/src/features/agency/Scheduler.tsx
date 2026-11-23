@@ -288,7 +288,7 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
   const today = new Date(nowAt); today.setHours(0, 0, 0, 0);
   const cardPlat: string | null = p.platform || (Array.isArray(p.channels) && p.channels.length === 1 ? p.channels[0] : null);
   const [caps, setCaps] = useState<Record<string, { contentId: string | null; caption: string }>>(() => {
-    const sib = (W().pipeCaptionsFor && W().pipeCaptionsFor(p.propertyId)) || {};
+    const sib = { ...((W().pipeCaptionsFor && W().pipeCaptionsFor(p.propertyId)) || {}), ...(p.captions || {}) };
     return cardPlat && p.caption ? { ...sib, [cardPlat]: { contentId: p.contentId || null, caption: p.caption } } : sib;
   });
   /* No channel on the card (an older post with no caption yet): any channel, as before. */
@@ -299,7 +299,9 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
      same property ... let all of them move"). Untick any that should wait. */
   const [on, setOn] = useState<Record<string, boolean>>(() => {
     const o: Record<string, boolean> = { [cardPlat || (p.channels && p.channels[0]) || "instagram"]: true };
-    if (cardPlat) Object.keys(caps).forEach((c) => { if (plats.includes(c)) o[c] = true; });
+    /* Straight from the composer: exactly the channels just written, not older drafts as well. */
+    if (p.captions) Object.keys(p.captions).forEach((c) => { o[c] = true; });
+    else if (cardPlat) Object.keys(caps).forEach((c) => { if (plats.includes(c)) o[c] = true; });
     return o;
   });
   /* A channel with no caption yet is written on the spot (Eden: "help them generate it"), filed as a draft like the
