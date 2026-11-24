@@ -4,7 +4,7 @@
 // Its shared scripts run once React has taken the page over (AfterHydration), in their original order; then the chat engine
 // (engine.ts, was inline-5.js) starts.
 import { AfterHydration, type PageScript } from "@/legacy/AfterHydration";
-import { ChatsMenu, EngineStart, HandoffStatus, MemoryNote, VoiceHint } from "./EngineParts";
+import { ChatsMenu, EngineStart, HandoffBell, MemoryNote, VoiceHint } from "./EngineParts";
 import { ShareHost } from "@/features/shared/ShareSheet";
 
 const SCRIPTS: PageScript[] = [
@@ -55,6 +55,7 @@ export function TojuBody() {
             </a>
           </nav>
           <span className="spacer"></span>
+          <HandoffBell className="tj-bell-desk" />
           <ChatsMenu />
           <span data-auth-slot=""></span>
           {" "}
@@ -79,7 +80,6 @@ export function TojuBody() {
                 </a>
               </div>
             </div>
-            <HandoffStatus />
             <div className="convo-scroll" aria-live="polite">
               <MemoryNote />
               <div className="convo" id="convo"></div>
