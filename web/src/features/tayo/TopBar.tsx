@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { HandoffBell } from "./EngineParts";
 
 gsap.registerPlugin(useGSAP);
 /* Motion only for people who have not asked their phone for less of it. */
@@ -94,7 +95,10 @@ export function TopBar() {
         <a href="browse.html">Matches</a>
         <a href="dream.html">Boards</a>
       </nav>
-      <button ref={again} className="tjm-act" type="button" aria-label="New chat" onClick={startAgain}>↺</button>
+      <div className="tjm-right">
+        <HandoffBell />
+        <button ref={again} className="tjm-act" type="button" aria-label="New chat" onClick={startAgain}>↺</button>
+      </div>
       <div ref={menu} className="tjm-menu" id="tjmMenu" role="menu" aria-label="Chats" hidden={!open}>
         {MENU.map((m) => (
           <button key={m.control} type="button" role="menuitem" onClick={() => { setOpen(false); press(m.control); }}>
