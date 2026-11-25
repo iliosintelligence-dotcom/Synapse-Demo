@@ -15,6 +15,7 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { BRAND_LOGOS } from "@/shared/icons";
+import { StudioListings, type StudioHome } from "./StudioListings";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-location-assign-relative-destination */
 const SB_URL = SUPABASE_URL_ENV;
@@ -35,7 +36,7 @@ const ALWAYS = ["facebook", "telegram"];
 const VIA_POSTPEER = new Set(["instagram", "tiktok", "youtube", "x", "linkedin"]);
 const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos" };
 const VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
-type Tab = "home" | "channels" | "compose" | "auto" | "activity" | "guide" | "team";
+type Tab = "home" | "channels" | "compose" | "listings" | "auto" | "activity" | "guide" | "team";
 type Overview = { channels: any[]; legacy: any[]; twins_enabled: boolean; live_listings: number };
 const EMPTY: Overview = { channels: [], legacy: [], twins_enabled: false, live_listings: 0 };
 
@@ -166,6 +167,8 @@ export function Studio({ guide }: { guide: ReactNode }) {
   const [name, setName] = useState("");
   const [canManage, setCanManage] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
+  /* The Listings page keeps its place (search, how far it was scrolled) once opened. */
+  const [listingsSeen, setListingsSeen] = useState(false);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const ovRef = useRef<Overview | null>(null);
@@ -239,6 +242,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
   /* ── navigation ───────────────────────────────────────────────────── */
   const show = (t: Tab) => {
     setTab(t);
+    if (t === "listings") setListingsSeen(true);
     if (t === "compose") loadPosts();
     if (t === "activity" || t === "home") loadActivity();
     if (t === "team") loadStaff();
@@ -519,6 +523,8 @@ export function Studio({ guide }: { guide: ReactNode }) {
     if (link && cap.indexOf(link) < 0) cap += "\n\n" + link;
     setCaption(cap); captionRef.current?.focus();
   };
+  /* From the Listings page: open Create with that home already in. */
+  const marketHome = (h: StudioHome) => { show("compose"); pickHome(h); };
   const pickHome = (h: any) => {
     setMedia(h.pics.slice(0, 3));
     setLink("https://www.synapsecore.dev/app/property.html?id=" + encodeURIComponent(h.id));
@@ -533,31 +539,62 @@ export function Studio({ guide }: { guide: ReactNode }) {
   /* pictures: your own uploads, or the ones taken from a home */
   const mediaRef = useRef<string[]>(media);
   mediaRef.current = media;
-  const onPics = () => {
-    const input = picRef.current!;
-    const files = Array.from(input.files || []).slice(0, 10 - mediaRef.current.length);
+  /* Phone photos are often 5–15MB, over what a post needs and what the upload took (8MB): they were refused outright, which is
+     what "I can't add pictures" was. Big or HEIC pictures are now redrawn as a JPEG no wider than 2560px before they go up
+     (a 12MB photo comes out near 1MB). A browser that cannot read HEIC says so. Videos go up as they are. */
+  const shrink = (f: File): Promise<Blob> => {
+    const heic = /heic|heif/i.test(f.type) || /\.(heic|heif)$/i.test(f.name);
+    if (!heic && f.size <= 1.5 * 1024 * 1024) return Promise.resolve(f);
+    return createImageBitmap(f).then((bmp) => {
+      const k = Math.min(1, 2560 / Math.max(bmp.width, bmp.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+      cv.getContext("2d")!.drawImage(bmp, 0, 0, cv.width, cv.height);
+      bmp.close?.();
+      return new Promise<Blob>((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error("encode"))), "image/jpeg", 0.85));
+    }).catch(() => {
+      if (heic) throw new Error(f.name + " is a HEIC photo this browser cannot open. Save it as JPG, or add it from a phone, then try again.");
+      return f;
+    });
+  };
+  /* Why an upload failed, in words the person can act on. */
+  const uploadWhy = (e: any) => {
+    const m = String((e && (e.message || e.error)) || "");
+    if (/row-level security|unauthori[sz]ed|permission|403/i.test(m)) return "Your account is not allowed to upload to the Studio yet. Ask an admin to add you on the Team page.";
+    if (/payload too large|exceeded the maximum|413/i.test(m)) return "too large for the upload limit.";
+    return m || "the upload failed.";
+  };
+  const uploadFiles = (picked: File[]) => {
+    const files = picked.slice(0, 10 - mediaRef.current.length);
+    if (picked.length > files.length) toast("A post takes up to 10 pictures. The rest were left out.");
     if (!files.length) return;
     setUploading((n) => n + 1);
     const added: string[] = [];
     auth().client().then((c: any) => files.reduce((p: Promise<void>, f) => p.then(() => {
-      const isVid = /^video\/(mp4|quicktime)$/.test(f.type);
-      if (!isVid && !/^image\/(jpeg|png|webp)$/.test(f.type)) { toast("Use JPG, PNG or WEBP pictures, or an MP4 or MOV video."); return; }
-      if (!isVid && f.size > 8 * 1024 * 1024) { toast(f.name + " is over 8MB."); return; }
+      const isVid = /^video\/(mp4|quicktime)$/.test(f.type) || /\.(mp4|mov)$/i.test(f.name);
+      const isImg = /^image\/(jpeg|png|webp|heic|heif)$/.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name);
+      if (!isVid && !isImg) { toast(f.name + ": use JPG, PNG, WEBP or HEIC pictures, or an MP4 or MOV video."); return; }
       if (isVid && f.size > 50 * 1024 * 1024) { toast(f.name + " is over 50MB. Compress it or trim it, then add it again."); return; }
-      const ext = isVid ? (f.type === "video/quicktime" ? "mov" : "mp4") : f.type === "image/png" ? "png" : f.type === "image/webp" ? "webp" : "jpg";
-      const d = new Date(), path = d.getUTCFullYear() + "/" + (d.getUTCMonth() + 1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) + "." + ext;
-      return c.storage.from("synapse-media").upload(path, f, { contentType: f.type, cacheControl: "31536000", upsert: false }).then((r: any) => {
-        if (r.error) { toast("Could not upload " + f.name + "."); return; }
-        added.push(c.storage.from("synapse-media").getPublicUrl(path).data.publicUrl);
-      });
+      return (isVid ? Promise.resolve(f as Blob) : shrink(f)).then((blob) => {
+        if (!isVid && blob.size > 8 * 1024 * 1024) { toast(f.name + " is still over 8MB after shrinking. Try a smaller picture."); return; }
+        const type = isVid ? (/quicktime|\.mov$/i.test(f.type + f.name) ? "video/quicktime" : "video/mp4") : (blob.type || f.type || "image/jpeg");
+        const ext = isVid ? (type === "video/quicktime" ? "mov" : "mp4") : type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+        const d = new Date(), path = d.getUTCFullYear() + "/" + (d.getUTCMonth() + 1) + "/" + (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())) + "." + ext;
+        return c.storage.from("synapse-media").upload(path, blob, { contentType: type, cacheControl: "31536000", upsert: false }).then((r: any) => {
+          if (r.error) { toast("Could not upload " + f.name + ": " + uploadWhy(r.error)); return; }
+          added.push(c.storage.from("synapse-media").getPublicUrl(path).data.publicUrl);
+        });
+      }).catch((e: any) => toast(e && e.message ? e.message : "Could not upload " + f.name + "."));
     }), Promise.resolve()))
-      .catch(() => toast("Upload failed. Try again."))
+      .catch((e: any) => toast("Upload failed: " + uploadWhy(e)))
       .then(() => {
         setMedia((m) => m.concat(added));
         setUploading((n) => Math.max(0, n - 1));
-        input.value = "";
+        if (picRef.current) picRef.current.value = "";
       });
   };
+  const onPics = () => uploadFiles(Array.from(picRef.current?.files || []));
+  const [dragOver, setDragOver] = useState(false);
 
   /* ── when: now, one time, or several ─────────────────────────────── */
   const addTime = () => {
@@ -806,6 +843,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
             {navBtn("home", "Home", <svg className="i" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9.5h13V10" /></svg>)}
             {navBtn("channels", "Channels", <svg className="i" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.6" /><circle cx="18" cy="6" r="2.6" /><circle cx="18" cy="18" r="2.6" /><path d="M8.3 10.8 15.7 7.2M8.3 13.2l7.4 3.6" /></svg>)}
             {navBtn("compose", "Create", <svg className="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></svg>)}
+            {navBtn("listings", "Listings", <svg className="i" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9.5h13V10" /><path d="M10 19.5v-5h4v5" /></svg>)}
             {navBtn("auto", "Automation", <svg className="i" viewBox="0 0 24 24"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></svg>)}
             {navBtn("activity", "Activity", <svg className="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4" /></svg>)}
             {navBtn("guide", "Guide", <svg className="i" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z" /><path d="M4 5.5V21.5M9 8h7M9 12h5" /></svg>)}
@@ -892,7 +930,10 @@ export function Studio({ guide }: { guide: ReactNode }) {
                 <div className="stack">
                   <div className="card stack">
                     <div>
-                      <label className="f">{"1 · Start from a real home "}<span className="muted">(optional)</span></label>
+                      <div className="row" style={{ alignItems: "baseline" }}>
+                        <label className="f grow">{"1 · Start from a real home "}<span className="muted">(optional)</span></label>
+                        <button type="button" className="btn sm" id="allHomes" onClick={() => show("listings")}>See all listings</button>
+                      </div>
                       <p className="muted small" style={{ margin: "-2px 0 10px" }}>Pick a live listing: its photos are added and the captions are written from its real details.</p>
                       <div className="homes" id="homes">{homesErr ? <div className="empty">Could not load homes.</div> : !homes ? <div className="empty">Loading homes…</div>
                         : homes.length ? homes.map((h, i) => (
@@ -919,14 +960,17 @@ export function Studio({ guide }: { guide: ReactNode }) {
                   <div className="card stack">
                     <div>
                       <label className="f">3 · Pictures, or a video for YouTube</label>
+                      <p className="muted small" style={{ margin: "-2px 0 10px" }}>Up to 10. Tap Add or drop files on it. Large phone photos are shrunk for you; videos up to 50MB.</p>
                       <div className="thumbs" id="thumbs">
                         {media.map((u, i) => (
                           <div className="thumb" key={i + u}>{VIDEO_RE.test(u) ? <video src={u + "#t=0.1"} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }}></video> : <img alt="" src={u} />}
                             <button type="button" data-rm={i} aria-label="Remove" onClick={() => setMedia((m) => m.filter((_, j) => j !== i))}>×</button></div>
                         ))}
-                        {media.length < 10 ? <button type="button" className="drop" id="addPic" disabled={!!uploading} onClick={() => picRef.current?.click()}>{PLUS}<span>{uploading ? "Uploading…" : "Add"}</span></button> : null}
+                        {media.length < 10 ? <button type="button" className={"drop" + (dragOver ? " over" : "")} id="addPic" disabled={!!uploading} onClick={() => picRef.current?.click()}
+                          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+                          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!uploading) uploadFiles(Array.from(e.dataTransfer.files || [])); }}>{PLUS}<span>{uploading ? "Uploading…" : "Add"}</span></button> : null}
                       </div>
-                      <input type="file" id="pic" ref={picRef} accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" multiple hidden onChange={onPics} />
+                      <input type="file" id="pic" ref={picRef} accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,video/mp4,video/quicktime" multiple hidden onChange={onPics} />
                     </div>
                   </div>
                   <div className="card stack">
@@ -1043,6 +1087,9 @@ export function Studio({ guide }: { guide: ReactNode }) {
                   ? home.mir + " channel" + (home.mir === 1 ? "" : "s") + " will receive the next agency post."
                   : (loadFailed ? "The setting could not be loaded. Reload to see it." : "Off. Agencies’ posts stay on their own accounts.")}</div>
               </div>
+            </section>
+            <section className="pane" id="p-listings" hidden={tab !== "listings"}>
+              {tab === "listings" || listingsSeen ? <StudioListings money={money} onMarket={marketHome} /> : null}
             </section>
             <section className="pane" id="p-activity" hidden={tab !== "activity"}>
               <div className="page-head">

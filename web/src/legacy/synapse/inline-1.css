@@ -62,7 +62,7 @@
   .btn[disabled] { opacity: .5; cursor: default; }
   .btn.sm { min-height: 36px; padding: 0 15px; font-size: 14px; }
   .btn.big { min-height: 52px; padding: 0 26px; font-size: 16.5px; }
-  input[type=text], input[type=email], input[type=number], input[type=datetime-local], select, textarea {
+  input[type=text], input[type=search], input[type=email], input[type=number], input[type=datetime-local], select, textarea {
     width: 100%; min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
   html[data-theme="dark"] input[type=text], html[data-theme="dark"] input[type=email], html[data-theme="dark"] input[type=number],
   html[data-theme="dark"] input[type=datetime-local], html[data-theme="dark"] select, html[data-theme="dark"] textarea { background: #000; border-color: rgba(255,255,255,0.28); }
@@ -252,3 +252,19 @@
     .mtop { display: flex; }
   }
   @media (prefers-reduced-motion: reduce) { .btn, .sw, .sw::after, .nb { transition: none; } }
+
+  /* ── Listings: every live home, to market from Create (2026-11-25) ── */
+  .lst-tools { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .lst-tools input { min-width: 220px; }
+  .lst-seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface-2); }
+  .lst-seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .lst-seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .lst-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .lst-card { border: 1.5px solid var(--line); border-radius: 16px; background: var(--surface); overflow: hidden; display: flex; flex-direction: column; }
+  .lst-card .ph { position: relative; height: 130px; background: var(--surface-2) center / cover; }
+  .lst-card .ph .n { position: absolute; left: 8px; bottom: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.62); color: #fff; font-size: 11.5px; font-weight: 600; }
+  .lst-card .t { padding: 10px 12px 4px; font-size: 13.5px; line-height: 1.4; display: grid; gap: 2px; flex: 1; }
+  .lst-card .t b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lst-acts { display: flex; gap: 8px; padding: 8px 12px 12px; }
+  .lst-acts .btn { flex: 1; justify-content: center; }
+  .drop.over { border-color: var(--orange); color: var(--ink); background: rgba(255,138,45,.08); }
