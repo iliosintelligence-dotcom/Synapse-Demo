@@ -226,7 +226,7 @@ export function MkBoard() {
               </div>
             </div>
             <div className="lbperf"><div className="lbctr"><b>{r.clicks}</b> taps</div><div className="lbctr" style={{ color: "var(--ink-dim)" }}><b>{r.visits}</b> opened</div></div>
-            <div className="lbperf" title="Reported by the platform. – means it reports nothing for this post.">
+            <div className="lbperf lbeng" title="Reported by the platform. – means it reports nothing for this post.">
               <div className="lbctr"><b>{num(r.views)}</b> views</div>
               <div className="lbctr" style={{ color: "var(--ink-dim)" }}><b>{num(engagement(r))}</b> {r.platform === "telegram" ? "reactions" : "likes · comments"}</div>
             </div>

@@ -2753,11 +2753,13 @@
         /* auto on the first column so the stats row sizes itself to the CTR
            block instead of me guessing a margin. The thumbnail is fixed at
            56px and takes the slack. */
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: auto auto minmax(0, 1fr) auto;
+        /* Two stat blocks now (our taps/opened, and the platform's views/likes): each needs its own cell. Both used to sit in
+           "perf", one on top of the other, so the numbers and labels printed over each other (2026-11-25). */
         grid-template-areas:
-          "thumb  main   main"
-          "divide divide divide"
-          "perf   leads  scale";
+          "thumb  main   main   main"
+          "divide divide divide divide"
+          "perf   eng    leads  scale";
         align-items: start;
         gap: 12px;
         padding: 14px;
@@ -2803,6 +2805,7 @@
       }
 
       /* Numbers and action on one line, with the labels restored. */
+      .lbperf.lbeng { grid-area: eng; }
       .lbperf {
         grid-area: perf; align-self: center; justify-self: start;
         display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
@@ -2817,7 +2820,7 @@
       .lbctr b { font-size: 14px; }
 
       .lbleads {
-        grid-area: leads; align-self: center; justify-self: start;
+        grid-area: leads; align-self: center; justify-self: end;
         display: flex; align-items: baseline; gap: 5px; text-align: left;
         min-width: 0;
       }
