@@ -218,7 +218,8 @@ def phase_profiles():
     seen = {}
     for c in read_jsonl(LIST_FILE):
         seen.setdefault(c["profile_url"], c)
-    done = {p["profile_url"] for p in read_jsonl(PROFILE_FILE)}
+    # failed fetches (network errors) are retried on the next run; the newest record wins
+    done = {p["profile_url"] for p in read_jsonl(PROFILE_FILE) if not p.get("error")}
     todo = [u for u in seen if u not in done]
     log(f"profiles: {len(seen)} unique, {len(done)} done, {len(todo)} to go")
     for i, url in enumerate(todo, 1):
