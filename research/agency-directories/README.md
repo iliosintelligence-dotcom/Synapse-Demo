@@ -13,6 +13,12 @@ Lead list for Synapse outreach, built from the public agent and developer direct
 | `scripts/scrape_npc.py` | Resumable, rate-limited scraper (1 request at a time, ~1 s apart, browser User-Agent) |
 | `scripts/build_outputs.py` | Builds the CSVs and workbook from the scraped JSONL |
 
+## Results (collected 2026-11-25)
+
+- 19,116 rows from Nigeria Property Centre: 17,194 agencies and 1,922 developers. All 19,116 profiles were opened.
+- 18,469 unique companies after deduplication.
+- 0 companies have an email address, because NPC does not publish them. 18,940 rows have a phone number, 18,332 have WhatsApp and 3,730 have a website.
+
 ## Sources
 
 | Platform | Result |
