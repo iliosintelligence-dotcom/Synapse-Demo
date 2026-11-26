@@ -11,6 +11,13 @@ export function orderedMedia(media: PropertyMedia[] | null | undefined): Propert
   return list;
 }
 
+/** A video thumbnail shows its MIDDLE frame (2026-11-26, Eden: "the very first frame can be black ... the frame in the
+ *  middle is what should display"). Once the length is known, the paused video jumps to halfway, which is what it then
+ *  shows. A video whose length cannot be read keeps its first frame (#t=0.1), so nothing ever goes blank. */
+export function seekToMiddle(v: HTMLVideoElement): void {
+  const d = v.duration;
+  if (Number.isFinite(d) && d > 0.4) v.currentTime = d / 2;
+}
 /** A video file by its address alone (no media_type to go on). */
 export const isVideoUrl = (u: string | null | undefined): boolean => /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(u ?? ""));
 

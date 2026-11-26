@@ -16,6 +16,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { BRAND_LOGOS } from "@/shared/icons";
 import { StudioListings, type StudioHome } from "./StudioListings";
+import { seekToMiddle } from "@/lib/media";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-location-assign-relative-destination */
 const SB_URL = SUPABASE_URL_ENV;
@@ -944,7 +945,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
                       <p className="muted small" style={{ margin: "-2px 0 10px" }}>Pick a live listing: its photos are added and the captions are written from its real details.</p>
                       <div className="homes" id="homes">{homesErr ? <div className="empty">Could not load homes.</div> : !homes ? <div className="empty">Loading homes…</div>
                         : homes.length ? homes.map((h, i) => (
-                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={VIDEO_RE.test(h.pics[0]) ? { position: "relative" } : { backgroundImage: "url('" + h.pics[0] + "')" }}>{VIDEO_RE.test(h.pics[0]) ? <video src={h.pics[0] + "#t=0.1"} muted playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}></video> : null}</div><div className="t"><b>{h.title}</b>
+                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={VIDEO_RE.test(h.pics[0]) ? { position: "relative" } : { backgroundImage: "url('" + h.pics[0] + "')" }}>{VIDEO_RE.test(h.pics[0]) ? <video src={h.pics[0] + "#t=0.1"} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}></video> : null}</div><div className="t"><b>{h.title}</b>
                             <span className="muted">{[h.area, h.city].filter(Boolean).join(", ")}</span><br /><span>{money(h.price, h.type === "rent" ? h.per : "")}</span></div></button>
                         )) : <div className="empty">No live homes with photos right now.</div>}</div>
                     </div>
@@ -970,7 +971,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
                       <p className="muted small" style={{ margin: "-2px 0 10px" }}>Up to 10. Tap Add or drop files on it. Large phone photos are shrunk for you; videos up to 50MB.</p>
                       <div className="thumbs" id="thumbs">
                         {media.map((u, i) => (
-                          <div className="thumb" key={i + u}>{VIDEO_RE.test(u) ? <video src={u + "#t=0.1"} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }}></video> : <img alt="" src={u} />}
+                          <div className="thumb" key={i + u}>{VIDEO_RE.test(u) ? <video src={u + "#t=0.1"} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)} style={{ width: "100%", height: "100%", objectFit: "cover" }}></video> : <img alt="" src={u} />}
                             <button type="button" data-rm={i} aria-label="Remove" onClick={() => setMedia((m) => m.filter((_, j) => j !== i))}>×</button></div>
                         ))}
                         {media.length < 10 ? <button type="button" className={"drop" + (dragOver ? " over" : "")} id="addPic" disabled={!!uploading} onClick={() => picRef.current?.click()}
@@ -1044,7 +1045,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
                     </div>
                     <div className="ph-img" id="pvImg" style={{ gridTemplateColumns: media.length > 1 ? "repeat(" + Math.min(media.length, 2) + ", 1fr)" : undefined }}>
                       {media.length ? media.slice(0, 4).map((u, i) => (VIDEO_RE.test(u)
-                        ? <video key={i} src={u + "#t=0.1"} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }}></video>
+                        ? <video key={i} src={u + "#t=0.1"} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)} style={{ width: "100%", height: "100%", objectFit: "cover" }}></video>
                         : <img key={i} alt="" src={u} />)) : "Pictures show here"}
                     </div>
                     <div className={"ph-cap" + (pvCap ? "" : " none")} id="pvCap">{pvCap || "Your caption shows here."}</div>

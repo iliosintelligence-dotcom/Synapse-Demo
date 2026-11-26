@@ -282,6 +282,8 @@ export function run() {
         img.style.backgroundImage = ''; img.textContent = '';
         const v = document.createElement('video');
         v.src = String(p.img).split('#')[0] + '#t=0.1'; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+        /* The middle frame, not the first (see seekToMiddle in lib/media). */
+        v.addEventListener('loadedmetadata', () => { if (isFinite(v.duration) && v.duration > 0.4) v.currentTime = v.duration / 2; });
         v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
         img.appendChild(v);
       } else if (p.img) { img.style.backgroundImage = 'url("' + p.img + '")'; img.textContent = ''; }

@@ -427,7 +427,7 @@ export function run() {
           ${img
             /* A video cover (a listing with only videos) is drawn as its first frame, not a broken <img> (2026-11-26). */
             ? (/\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(img)
-              ? `<video src="${esc(img.split('#')[0])}#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.closest('.img').classList.add('no-photo');this.remove()"></video>`
+              ? `<video src="${esc(img.split('#')[0])}#t=0.1" muted playsinline preload="metadata" onloadedmetadata="if(isFinite(this.duration)&&this.duration>0.4)this.currentTime=this.duration/2" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.closest('.img').classList.add('no-photo');this.remove()"></video>`
               : `<img src="${esc(img)}" alt="" loading="lazy" onerror="this.closest('.img').classList.add('no-photo');this.remove()" />`)
             : ''}
           ${isVerified && window.SynStamp ? SynStamp.html() : ''}

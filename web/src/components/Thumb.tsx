@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ImgHTMLAttributes, SyntheticEvent } from "react";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, seekToMiddle } from "@/lib/media";
 
 /**
  * A listing picture: the photo as an <img>, exactly as before, or for a video its first frame (2026-11-26: videos showed
@@ -20,6 +20,7 @@ export function Thumb({ src, video, className, style, onError, alt = "", ...rest
     return (
       <video
         src={src.split("#")[0] + "#t=0.1"} muted playsInline preload="metadata" aria-label={alt || undefined}
+        onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)}
         className={className} style={fill}
         onError={onError as unknown as (e: SyntheticEvent<HTMLVideoElement>) => void}
       />
