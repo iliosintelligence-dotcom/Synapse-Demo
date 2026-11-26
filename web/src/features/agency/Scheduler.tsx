@@ -27,10 +27,19 @@ const fmtWhen = (iso: string) => (W().fmtWhen ? W().fmtWhen(iso) : "");
 const SCHED_PLATS = ["instagram", "tiktok", "youtube", "facebook", "whatsapp", "telegram"];
 /* LinkedIn and X (2026-11-13) are offered only to an agency that has connected one: without it a LinkedIn post has
    nowhere to go, and an X post would go out on Synapse's X instead. */
+/* ONLY A CONNECTED CHANNEL (2026-11-26). Every channel above used to be offered whether or not the agency had connected it,
+   and the bulk planner ticks every channel with a caption: 34 Telegram posts were queued for an agency with no Telegram
+   connected, each certain to fail on the day ("No telegram account is connected"). WhatsApp is always offered, as before
+   (Eden, 2026-11-26: "the whatsapp has to be there"): it is not connected per agency like the others. */
+const ALWAYS_OFFERED = new Set(["whatsapp"]);
+const connectedPlat = (p: string) => ALWAYS_OFFERED.has(p) || acctsFor(p).length > 0;
 const schedPlats = (current: string): string[] => {
-  const l = SCHED_PLATS.concat(["linkedin", "x"].filter((p) => acctsFor(p).length > 0));
-  return l.indexOf(current) < 0 ? l.concat([current]) : l;
+  const l = SCHED_PLATS.concat(["linkedin", "x"]).filter(connectedPlat);
+  return l.indexOf(current) < 0 && connectedPlat(current) ? l.concat([current]) : l;
 };
+/* The channel a new row starts on: the card's, if connected, else the first connected one. */
+const startPlat = (pref: string) => (connectedPlat(pref) ? pref : (schedPlats(pref)[0] || pref));
+const notConnectedNote = (plat: string) => "Connect " + chLabel(plat) + " under Channels first, then schedule to it.";
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const dateVal = (d: Date) => d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
 const timeVal = (d: Date) => pad2(d.getHours()) + ":" + pad2(d.getMinutes());
@@ -83,19 +92,24 @@ function report(mode: string, now: boolean, rows: { platform: string; at: string
   const n = rows.length;
   if (mode === "reschedule") toast("Moved to " + fmtWhen(rows[0].at));
   else if (!now) toast(n + (n === 1 ? " post scheduled" : " posts scheduled") + ", going out for real at that time");
+  /* WHAT THE PLAN WOULD NOT ALLOW, said as itself (2026-11-26): "this can't be posted right now, and here is why", never a bare
+     "could not go out". The publisher sends at most one message per kind. */
+  else if (sent && Array.isArray(sent.limits) && sent.limits.length) toast(String(sent.limits[0].message || ""));
   else if (sent && typeof sent.published === "number") {
     /* Every row the drain sent, the Synapse twins included: one press does put the listing on several channels. */
     const n2 = sent.published, tt = rows.some((r) => r.platform === "tiktok");
     toast(n2
       ? n2 + (n2 === 1 ? " post is live" : " posts are live") + (tt ? " · TikTok: open the app, it is in your inbox to finish" : "")
         + (sent.failed ? " · " + sent.failed + " could not go out — see Needs attention" : "")
-      : (sent.failed ? sent.failed + " could not go out — see Needs attention" : "Queued — going out within the minute"));
+      : (sent.failed ? sent.failed + " could not go out — see Needs attention"
+        : sent.deferred ? "Saved. " + String((sent.results || []).find((x: any) => x && x.status === "deferred")?.reason || "It goes out automatically later.")
+        : "Queued — going out within the minute"));
   } else if (sent && sent.drainFailed) toast("Saved. Sending didn’t start just now, so it goes out with the next queue run, within a few minutes.");
   else toast("Queued — going out within the minute");
 }
 
 function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; nowAt: number }) {
-  const plat = (p.channels && p.channels[0]) || "instagram";
+  const plat = startPlat((p.channels && p.channels[0]) || "instagram");
   const [rows, setRows] = useState<Row[]>(() => [row(plat, new Date(base))]);
   const [quick, setQuick] = useState(-1);
   const [note, setNote] = useState("");
@@ -138,6 +152,8 @@ function Sheet({ p, mode, base, nowAt }: { p: any; mode: string; base: number; n
       .filter((r) => r.at && r.at.indexOf("undefined") < 0);
     const bad = list.find((r) => isNaN(new Date(r.at).getTime()));
     if (!list.length || bad) { setNote("Give every row a date and a time."); return; }
+    const unconnected = list.find((r) => !connectedPlat(r.platform));
+    if (unconnected) { setNote(notConnectedNote(unconnected.platform)); return; }
     /* A caption is written for one channel (Greptile: adding Facebook to an Instagram post sent the Instagram wording there). */
     const cardPlat = p.platform || (Array.isArray(p.channels) && p.channels.length === 1 ? p.channels[0] : null);
     const off = cardPlat && p.caption && list.find((r) => r.platform && r.platform !== cardPlat);
@@ -379,6 +395,7 @@ function PlanSheet({ p, mode, base, nowAt }: { p: any; mode: string; base: numbe
   useEffect(() => { const up = () => { drag.current = null; }; window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up); return () => { window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); }; }, []);
 
   function commit(now: boolean) {
+    if (!plats.length) { setNote("Connect a channel under Channels first, then schedule to it."); return; }
     if (!chans.length) { setNote("Tick at least one channel."); return; }
     if (!now && !slots) { setNote("Pick at least one day on the calendar."); return; }
     const at = (k: string, t: string) => new Date(k + "T" + t);
