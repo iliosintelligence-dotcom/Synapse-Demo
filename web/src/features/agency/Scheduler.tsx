@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { showDrawer } from "./SideDrawer";
 import { TikTokPanel, type TikTokChoice } from "./TikTokPanel";
 import { writeCaptions } from "./PostComposer";
+import { Thumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -58,7 +59,7 @@ const row = (plat: string, d: Date): Row => ({ k: ++rowKey, plat, d: dateVal(d),
 function Photo({ url }: { url: string }) {
   const [bad, setBad] = useState(false);
   const u = typeof url === "string" ? url.trim() : "";
-  return <div className={"lph" + (bad ? " no-photo" : "")}>{u && !bad ? <img src={u} alt="" loading="lazy" onError={() => setBad(true)} /> : null}</div>;
+  return <div className={"lph" + (bad ? " no-photo" : "")}>{u && !bad ? <Thumb src={u} loading="lazy" onError={() => setBad(true)} /> : null}</div>;
 }
 
 /* "Post now" is the only irreversible button here, so it is the only one that asks, naming the count and the word "public".

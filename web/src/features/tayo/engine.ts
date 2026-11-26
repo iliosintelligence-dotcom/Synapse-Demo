@@ -454,7 +454,8 @@ export function startEngine() {
   const coverOf = (media: any) => {
     const s = (Array.isArray(media) ? media : []).filter((m) => m && m.url).slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
     const photo = s.find((m) => !coverIsVideo(m));
-    return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+    /* No photo: the Cloudinary frame, else the video itself, drawn as its first frame by <Thumb> (2026-11-26). */
+    return photo ? photo.url : (s.length ? (coverFrame(s[0].url) || s[0].url) : null);
   };
   /* A properties row as a Tayo match: same field names the API emits, so the card is identical to every other card on the canvas
      -- a home you asked about should not look like a different kind of object from a home Tayo found. */

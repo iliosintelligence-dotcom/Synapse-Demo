@@ -14,6 +14,7 @@
 import { Fragment, type MouseEvent as RMouseEvent, type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { Thumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -97,7 +98,7 @@ const where = (p: any) => (carriedBy(p) + (p.waitMine || (p.waitAmp && p.waitAmp
 function Photo({ url }: { url: string }) {
   const [bad, setBad] = useState(false);
   const u = typeof url === "string" ? url.trim() : "";
-  return <div className={"lph" + (bad ? " no-photo" : "")}>{u && !bad ? <img src={u} alt="" loading="lazy" onError={() => setBad(true)} /> : null}</div>;
+  return <div className={"lph" + (bad ? " no-photo" : "")}>{u && !bad ? <Thumb src={u} loading="lazy" onError={() => setBad(true)} /> : null}</div>;
 }
 const Cav = ({ c, px }: { c: string; px: number }) => (
   <span className="cav" title={chLabel(c)} style={{ background: (CHS()[c] && CHS()[c].color) || "#161616" }} dangerouslySetInnerHTML={{ __html: mark(c, px) }}></span>

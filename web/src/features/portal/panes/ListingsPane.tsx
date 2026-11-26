@@ -7,6 +7,7 @@ import { ListingWizard } from "../listing-form/ListingWizard";
 import { useIntent } from "../intent";
 import { useToast } from "../ui/Toast";
 import s from "./Listings.module.css";
+import { Thumb } from "@/components/Thumb";
 
 const FILTERS: Array<[ListingFilter, string]> = [["all", "All"], ["verified", "Verified"], ["pending", "Pending"], ["expiring", "Expiring soon"]];
 const reason = (e: unknown, fb: string) => (e instanceof Error && e.message ? e.message : fb);
@@ -58,7 +59,7 @@ export function ListingsPane() {
             const f = freshness(l);
             return (
               <article key={l.id} className={s.lcard}>
-                <div className={s.ph}>{l.cover ? <img src={l.cover} alt="" loading="lazy" /> : null}</div>
+                <div className={s.ph}>{l.cover ? <Thumb src={l.cover} loading="lazy" /> : null}</div>
                 <div className={s.lbody}>
                   <div className={s.tt}>{l.title}</div>
                   <div className={s.lc}>◍ {locationOf(l)}</div>

@@ -16,6 +16,7 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { Thumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-location-assign-relative-destination */
 const SUPABASE_URL = SUPABASE_URL_ENV;
@@ -33,7 +34,8 @@ const coverFrame = (u: any) => /res\.cloudinary\.com\/.+\/video\/upload\//.test(
 const coverOf = (media: any) => {
   const s = (Array.isArray(media) ? media : []).filter((m: any) => m && m.url).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
   const photo = s.find((m: any) => !coverIsVideo(m));
-  return photo ? photo.url : (s.length ? coverFrame(s[0].url) : null);
+  /* No photo: the Cloudinary frame, else the video itself, drawn as its first frame by <Thumb> (2026-11-26). */
+  return photo ? photo.url : (s.length ? (coverFrame(s[0].url) || s[0].url) : null);
 };
 const isVid = (u: any) => (W().SynListings && W().SynListings.isVideoUrl) ? W().SynListings.isVideoUrl(u) : /\.(mp4|mov|m4v|qt)(\?|#|$)/i.test(String(u || ""));
 const fmtDate = (iso: any) => { const d = new Date(iso); return isNaN(+d) ? "" : d.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }); };
@@ -885,7 +887,7 @@ export function PropertyPage({ canvas }: { canvas: ReactNode }) {
               const img = coverOf(r.property_media);
               return (
                 <a key={r.id} href={"property.html?id=" + encodeURIComponent(r.id)}>
-                  {img ? <img src={img} alt="" loading="lazy" /> : <div className="simph"></div>}
+                  {img ? <Thumb src={img} loading="lazy" /> : <div className="simph"></div>}
                   <div className="b"><div className="p">{naira(r.price)}</div><div className="t">{r.title || "Listing"}</div><div className="m">{r.verification_status === "verified" ? "Verified" : "Not yet verified"}</div></div>
                 </a>
               );

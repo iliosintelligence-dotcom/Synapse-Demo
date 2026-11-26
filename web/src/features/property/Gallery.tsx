@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isVideo, orderedMedia } from "@/lib/media";
 import type { PropertyMedia } from "@/lib/types";
 import s from "./Property.module.css";
+import { Thumb } from "@/components/Thumb";
 
 /** Hero image or video with thumbnails and a full-screen viewer. Keyboard: arrows step, Escape closes. */
 export function Gallery({ media, verified }: { media: PropertyMedia[] | null; verified: boolean }) {
@@ -49,7 +50,7 @@ export function Gallery({ media, verified }: { media: PropertyMedia[] | null; ve
         <div className={s.thumbs}>
           {items.map((m, k) => (
             <button key={m.url} type="button" className={k === i ? s.thumbOn : ""} aria-label={`Show photo ${k + 1}`} onClick={() => setI(k)}>
-              {isVideo(m) ? <span>▶</span> :   <img src={m.url} alt="" loading="lazy" />}
+              {isVideo(m) ? <span style={{ position: "relative", display: "block", width: "100%", height: "100%" }}><Thumb src={m.url} video /><span aria-hidden="true" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,.6)" }}>▶</span></span> :   <img src={m.url} alt="" loading="lazy" />}
             </button>
           ))}
         </div>

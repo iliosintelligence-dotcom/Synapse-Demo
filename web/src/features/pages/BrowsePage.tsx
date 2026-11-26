@@ -42,7 +42,8 @@ const coverFrame = (u: string) => (/res\.cloudinary\.com\/.+\/video\/upload\//.t
 const coverOf = (media: any) => {
   const s = (Array.isArray(media) ? media : []).filter((m: any) => m && m.url).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
   const photo = s.find((m: any) => !coverIsVideo(m));
-  return photo ? photo.url : s.length ? coverFrame(s[0].url) : null;
+  /* No photo: the Cloudinary frame, else the video itself, drawn as its first frame by <Thumb> (2026-11-26). */
+  return photo ? photo.url : s.length ? (coverFrame(s[0].url) || s[0].url) : null;
 };
 function shapeRow(p: any): Item {
   const cats = [p.property_type === "shared" ? "shared" : p.listing_type === "rent" ? "rent" : "sale"];

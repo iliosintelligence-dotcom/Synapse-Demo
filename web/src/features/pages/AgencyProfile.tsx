@@ -8,6 +8,7 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
  * are only ever http(s); anything else is dropped.
  */
 import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Thumb } from "@/components/Thumb";
 
 const SUPABASE_URL = SUPABASE_URL_ENV;
 const ANON_KEY = SUPABASE_KEY_ENV;
@@ -39,7 +40,8 @@ const cover = (media?: Media[]) => {
   const ph = s.find((m) => !isVid(m));
   if (ph) return ph.url!;
   const u = s.length ? String(s[0].url) : "";
-  return /res\.cloudinary\.com\/.+\/video\/upload\//.test(u) ? u.replace("/video/upload/", "/video/upload/so_0/").replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, ".jpg") : null;
+  /* No photo: the Cloudinary frame, else the video itself, drawn as its first frame by <Thumb> (2026-11-26). */
+  return /res\.cloudinary\.com\/.+\/video\/upload\//.test(u) ? u.replace("/video/upload/", "/video/upload/so_0/").replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, ".jpg") : (u || null);
 };
 const kindOf = (p: Prop) => (p.property_type === "land" ? "land" : p.listing_type === "shortlet" ? "shortlet" : p.listing_type === "rent" ? "rent" : "sale");
 
@@ -85,7 +87,7 @@ function Listing({ p }: { p: Prop }) {
   const meta = [p.bedrooms ? p.bedrooms + " bed" : "", p.verification_status === "verified" ? "Verified" : "Not yet verified"].filter(Boolean).join(" · ");
   return (
     <a className="ap-l" href={"property.html?id=" + encodeURIComponent(p.id)}>
-      <div className="ph">{img ? <img src={img} alt="" loading="lazy" /> : "No photo yet"}</div>
+      <div className="ph">{img ? <Thumb src={img} loading="lazy" /> : "No photo yet"}</div>
       <div className="b">
         <div className="kind">{KIND_LABEL[kindOf(p)]}</div>
         <div className="pr">{Number(p.price) > 0 ? naira(p.price) + (PERIOD[p.price_period || ""] || "") : "Price on request"}</div>

@@ -7,6 +7,7 @@ import { moneyShort } from "@/lib/money";
 import { routes } from "@/lib/routes";
 import type { BrowseItem, DealInfo } from "./types";
 import s from "./Browse.module.css";
+import { Thumb } from "@/components/Thumb";
 
 const DEAL_WORD: Record<string, string> = {
   off_plan: "Off-plan", joint_venture: "Joint venture", development_financing: "Investment", rent_to_own: "Rent to own", lease: "Long lease", shortlet: "Short-let",
@@ -98,7 +99,7 @@ export function ListingCard({ l, saved, compareOn, picked, onSave, onPick, onOpe
       </div>
       <div className={s.img}>
         <span className={s.noPhoto}>No photo yet</span>
-        {l.img && <img src={l.img} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} />}
+        {l.img && <Thumb src={l.img} loading="lazy" onError={(e) => e.currentTarget.remove()} />}
         <button type="button" className={`${s.save} ${saved ? s.saveOn : ""}`} aria-pressed={saved} aria-label={`${saved ? "Remove" : "Save"} ${l.title}`} onClick={onSave}>
           {saved ? "♥" : "♡"}
         </button>

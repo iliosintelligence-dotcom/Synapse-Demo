@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { showDrawer } from "./SideDrawer";
+import { Thumb as MediaThumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -185,7 +186,7 @@ export function MkDigest() {
 function Thumb({ url }: { url: string }) {
   const [bad, setBad] = useState(false);
   const u = typeof url === "string" ? url.trim() : "";
-  return <div className={"lph lph-sm" + (bad ? " no-photo" : "")}>{u && !bad ? <img src={u} alt="" loading="lazy" onError={() => setBad(true)} /> : null}</div>;
+  return <div className={"lph lph-sm" + (bad ? " no-photo" : "")}>{u && !bad ? <MediaThumb src={u} loading="lazy" onError={() => setBad(true)} /> : null}</div>;
 }
 const rankColor = (i: number) => (i === 0 ? "#C9A227" : i === 1 ? "#9AA0A6" : i === 2 ? "#B08D57" : "var(--ink-dim)");
 

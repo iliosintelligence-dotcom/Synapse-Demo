@@ -7,6 +7,7 @@ import { coverUrl } from "@/lib/media";
 import { fetchSimilar } from "./queries";
 import type { SimilarHome } from "./types";
 import s from "./Property.module.css";
+import { Thumb } from "@/components/Thumb";
 
 /** More live homes in the same city. Stays out of the page entirely unless it finds some. */
 export function SimilarHomes({ city, excludeId }: { city: string | null; excludeId: string }) {
@@ -26,7 +27,7 @@ export function SimilarHomes({ city, excludeId }: { city: string | null; exclude
           const img = coverUrl(r.property_media);
           return (
             <a key={r.id} href={routes.property(r.id)}>
-              {img ?   <img src={img} alt="" loading="lazy" /> : <div className={s.simPh} />}
+              {img ?   <Thumb src={img} loading="lazy" /> : <div className={s.simPh} />}
               <div className={s.simBody}>
                 <div className={s.simPrice}>{naira(r.price)}</div>
                 <div className={s.simTitle}>{r.title ?? "Listing"}</div>
