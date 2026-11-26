@@ -629,7 +629,10 @@ export function Studio({ guide }: { guide: ReactNode }) {
     const wantsVideo = chosenList.some((c) => c.platform === "youtube");
     const hasVid = media.some((u) => VIDEO_RE.test(u));
     if (wantsVideo && !(media.length === 1 && hasVid)) { toast("YouTube takes one video and nothing else. Add the video and remove any pictures, or untick YouTube."); return; }
-    if (hasVid && chosenList.some((c) => c.platform !== "youtube")) { toast("Only YouTube takes a video from here. Untick the other accounts, or remove the video."); return; }
+    /* Only YouTube used to take a video from here. Channels connected through PostPeer (Instagram Reels, TikTok, Facebook, X)
+       take one too since 2026-11-26, and the server checks each channel's own rules when the post is saved, saying which
+       channel cannot take it. What stays here: one video per post. */
+    if (media.filter((u) => VIDEO_RE.test(u)).length > 1) { toast("Add one video at a time. Remove the others, then post."); return; }
     const body: Record<string, any> = { caption, media_urls: media, channel_ids: ids };
     if (whenMode === "later") {
       if (!at) { toast("Pick a date and time, or choose Now."); return; }
