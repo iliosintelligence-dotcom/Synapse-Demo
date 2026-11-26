@@ -8,6 +8,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { SUPABASE_URL, SUPABASE_KEY } from "@/lib/supabase-env";
+import { Thumb } from "@/components/Thumb";
+import { isVideoUrl } from "@/lib/media";
 
 export type StudioHome = {
   id: string; title: string; city?: string; area?: string; price?: number; per?: string; beds?: number; type?: string;
@@ -20,9 +22,15 @@ const SELECT = "id,title,city,area_name,price,price_period,bedrooms,listing_type
 /* PostgREST's or=() takes commas and parentheses as syntax: keep them out of what is searched for. */
 const clean = (q: string) => q.replace(/[(),*%]/g, " ").trim();
 
+const isVideoMedia = (m: any) => /video/i.test(String(m.media_type || "")) || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || ""));
+
 export function toHome(p: any): StudioHome {
-  const pics = (p.property_media || []).filter((m: any) => m && m.url && (!m.media_type || /image|photo/i.test(m.media_type)))
-    .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)).map((m: any) => m.url);
+  const all = (p.property_media || []).filter((m: any) => m && m.url)
+    .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+  /* Photos, as before. A home with only videos used to have nothing here, so "Market this" was greyed out ("No photos")
+     and the home could not be posted at all (2026-11-26): it now hands Create its first video. */
+  const photos = all.filter((m: any) => !isVideoMedia(m)).map((m: any) => m.url);
+  const pics = photos.length ? photos : all.filter(isVideoMedia).slice(0, 1).map((m: any) => m.url);
   return { id: p.id, title: p.title, city: p.city, area: p.area_name, price: p.price, per: p.price_period, beds: p.bedrooms,
     type: p.listing_type, pics, agency: p.agencies && p.agencies.name };
 }
@@ -92,7 +100,7 @@ export function StudioListings({ money, onMarket }: { money: (p: any, per?: any)
             <div className="lst-grid">
               {rows.map((h) => (
                 <div className="lst-card" key={h.id}>
-                  <div className="ph" style={h.pics[0] ? { backgroundImage: "url('" + h.pics[0] + "')" } : undefined}>{h.pics.length ? <span className="n">{h.pics.length} photo{h.pics.length === 1 ? "" : "s"}</span> : <span className="n">No photos</span>}</div>
+                  <div className="ph" style={h.pics[0] && !isVideoUrl(h.pics[0]) ? { backgroundImage: "url('" + h.pics[0] + "')" } : { position: "relative" }}>{h.pics[0] && isVideoUrl(h.pics[0]) ? <Thumb src={h.pics[0]} style={{ position: "absolute", inset: 0 }} /> : null}{h.pics.length ? <span className="n">{isVideoUrl(h.pics[0]) ? "Video" : h.pics.length + " photo" + (h.pics.length === 1 ? "" : "s")}</span> : <span className="n">No photos</span>}</div>
                   <div className="t">
                     <b title={h.title}>{h.title}</b>
                     <span className="muted">{[h.area, h.city].filter(Boolean).join(", ")}</span>
@@ -100,7 +108,7 @@ export function StudioListings({ money, onMarket }: { money: (p: any, per?: any)
                     {h.agency ? <span className="muted small">by {h.agency}</span> : null}
                   </div>
                   <div className="lst-acts">
-                    <button type="button" className="btn sm orange" disabled={!h.pics.length} title={h.pics.length ? "" : "This home has no photos to post yet"} onClick={() => onMarket(h)}>Market this</button>
+                    <button type="button" className="btn sm orange" disabled={!h.pics.length} title={h.pics.length ? "" : "This home has no photos or videos to post yet"} onClick={() => onMarket(h)}>Market this</button>
                     <a className="btn sm" href={"property.html?id=" + encodeURIComponent(h.id)} target="_blank" rel="noopener noreferrer">View</a>
                   </div>
                 </div>

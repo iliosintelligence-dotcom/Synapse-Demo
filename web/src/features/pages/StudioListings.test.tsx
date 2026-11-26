@@ -77,6 +77,16 @@ describe("StudioListings", () => {
     expect(h.agency).toBe("Agency 1");
   });
 
+  it("a home with only videos can be marketed with its first video; photos still win when there are any", () => {
+    const vidOnly = toHome({ id: "v", title: "T", property_media: [
+      { url: "https://x/a.mp4", display_order: 1, media_type: "video" }, { url: "https://x/b.mp4", display_order: 2, media_type: "video" }] });
+    expect(vidOnly.pics).toEqual(["https://x/a.mp4"]);
+    const mixed = toHome({ id: "m", title: "T", property_media: [
+      { url: "https://x/a.mp4", display_order: 0, media_type: "video" }, { url: "https://x/1.jpg", display_order: 1, media_type: "image" }] });
+    expect(mixed.pics).toEqual(["https://x/1.jpg"]);
+    expect(toHome({ id: "e", title: "T", property_media: [] }).pics).toEqual([]);
+  });
+
   it("keeps search text out of the PostgREST syntax", () => {
     expect(toHome(row(1)).title).toBe("Home 1");
   });

@@ -208,8 +208,11 @@ export function Studio({ guide }: { guide: ReactNode }) {
       + "&status=eq.live&is_active=eq.true&deleted_at=is.null&order=created_at.desc&limit=14";
     fetch(q, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY } }).then((r) => (r.ok ? r.json() : [])).then((rows) => {
       setHomes((Array.isArray(rows) ? rows : []).map((p: any) => {
-        const pics = (p.property_media || []).filter((m: any) => m && m.url && (!m.media_type || /image|photo/i.test(m.media_type)))
-          .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)).map((m: any) => m.url);
+        /* Photos, or a video-only home's first video (2026-11-26: those homes were left out of the strip). */
+        const all = (p.property_media || []).filter((m: any) => m && m.url).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+        const vidM = (m: any) => /video/i.test(String(m.media_type || "")) || VIDEO_RE.test(String(m.url || ""));
+        const photos = all.filter((m: any) => !vidM(m)).map((m: any) => m.url);
+        const pics = photos.length ? photos : all.filter(vidM).slice(0, 1).map((m: any) => m.url);
         return { id: p.id, title: p.title, city: p.city, area: p.area_name, price: p.price, per: p.price_period, beds: p.bedrooms, type: p.listing_type, pics };
       }).filter((h: any) => h.pics.length));
     }).catch(() => setHomesErr(true));
@@ -532,7 +535,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
     const price = money(h.price, h.type === "rent" ? h.per : "");
     const b = (h.type === "rent" ? "A home to rent" : "A home for sale") + ": " + h.title + (where ? " in " + where : "") + (h.beds ? ", " + h.beds + " bedroom" + (h.beds === 1 ? "" : "s") : "") + (price ? ", " + price : "") + ". Checked on Synapse.";
     setBrief(b);
-    toast("Photos added. Writing captions…");
+    toast((h.pics[0] && VIDEO_RE.test(h.pics[0]) ? "Video added." : "Photos added.") + " Writing captions…");
     suggest(b);
   };
 
@@ -937,7 +940,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
                       <p className="muted small" style={{ margin: "-2px 0 10px" }}>Pick a live listing: its photos are added and the captions are written from its real details.</p>
                       <div className="homes" id="homes">{homesErr ? <div className="empty">Could not load homes.</div> : !homes ? <div className="empty">Loading homes…</div>
                         : homes.length ? homes.map((h, i) => (
-                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={{ backgroundImage: "url('" + h.pics[0] + "')" }}></div><div className="t"><b>{h.title}</b>
+                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={VIDEO_RE.test(h.pics[0]) ? { position: "relative" } : { backgroundImage: "url('" + h.pics[0] + "')" }}>{VIDEO_RE.test(h.pics[0]) ? <video src={h.pics[0] + "#t=0.1"} muted playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}></video> : null}</div><div className="t"><b>{h.title}</b>
                             <span className="muted">{[h.area, h.city].filter(Boolean).join(", ")}</span><br /><span>{money(h.price, h.type === "rent" ? h.per : "")}</span></div></button>
                         )) : <div className="empty">No live homes with photos right now.</div>}</div>
                     </div>
