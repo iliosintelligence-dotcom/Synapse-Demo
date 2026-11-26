@@ -17,6 +17,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { flushSync } from "react-dom";
 import { usePageScripts } from "@/legacy/usePageScripts";
 import { Thumb } from "@/components/Thumb";
+import { seekToMiddle } from "@/lib/media";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-location-assign-relative-destination */
 const SUPABASE_URL = SUPABASE_URL_ENV;
@@ -781,7 +782,7 @@ export function PropertyPage({ canvas }: { canvas: ReactNode }) {
         </div>
         <div className="thumbs" id="thumbs" ref={thumbsRef}>
           {(photos || []).map((p, i) => (isVid(p)
-            ? <span key={i} className={"th-v" + (i === photoIndex ? " on" : "")} data-i={i} onClick={() => goToPhoto(i)}><video src={p} muted playsInline preload="metadata"></video><i aria-hidden="true">▶</i></span>
+            ? <span key={i} className={"th-v" + (i === photoIndex ? " on" : "")} data-i={i} onClick={() => goToPhoto(i)}><video src={p} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)}></video><i aria-hidden="true">▶</i></span>
             : <img key={i} src={p} data-i={i} className={i === photoIndex ? "on" : ""} alt="" onClick={() => goToPhoto(i)} />))}
         </div>
         <div className={"pvlb" + (lbOpen ? (nPhotos < 2 ? " single on" : " on") : "")} id="pvlb" role="dialog" aria-modal="true" aria-label="Photos"
