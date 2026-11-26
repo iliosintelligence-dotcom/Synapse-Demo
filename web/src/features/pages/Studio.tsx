@@ -35,7 +35,8 @@ const ORDER = ["facebook", "instagram", "tiktok", "youtube", "x", "linkedin", "t
 const ALWAYS = ["facebook", "telegram"];
 const VIA_POSTPEER = new Set(["instagram", "tiktok", "youtube", "x", "linkedin"]);
 const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos" };
-const VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
+/* The same formats the server treats as video (postpeer.ts mediaTypeOf, synapse-studio VIDEO_URL): mp4, mov, m4v, qt. */
+const VIDEO_RE = /\.(mp4|mov|m4v|qt)(\?|#|$)/i;
 type Tab = "home" | "channels" | "compose" | "listings" | "auto" | "activity" | "guide" | "team";
 type Overview = { channels: any[]; legacy: any[]; twins_enabled: boolean; live_listings: number };
 const EMPTY: Overview = { channels: [], legacy: [], twins_enabled: false, live_listings: 0 };

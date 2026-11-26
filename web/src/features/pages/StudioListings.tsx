@@ -22,6 +22,8 @@ const SELECT = "id,title,city,area_name,price,price_period,bedrooms,listing_type
 /* PostgREST's or=() takes commas and parentheses as syntax: keep them out of what is searched for. */
 const clean = (q: string) => q.replace(/[(),*%]/g, " ").trim();
 
+/* Video by its type or address; only the formats Create and the server post as video are handed over (mp4, mov, m4v, qt). */
+const POSTABLE_VIDEO = /\.(mp4|mov|m4v|qt)(\?|#|$)/i;
 const isVideoMedia = (m: any) => /video/i.test(String(m.media_type || "")) || /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(String(m.url || ""));
 
 export function toHome(p: any): StudioHome {
@@ -30,7 +32,7 @@ export function toHome(p: any): StudioHome {
   /* Photos, as before. A home with only videos used to have nothing here, so "Market this" was greyed out ("No photos")
      and the home could not be posted at all (2026-11-26): it now hands Create its first video. */
   const photos = all.filter((m: any) => !isVideoMedia(m)).map((m: any) => m.url);
-  const pics = photos.length ? photos : all.filter(isVideoMedia).slice(0, 1).map((m: any) => m.url);
+  const pics = photos.length ? photos : all.filter((m: any) => isVideoMedia(m) && POSTABLE_VIDEO.test(String(m.url))).slice(0, 1).map((m: any) => m.url);
   return { id: p.id, title: p.title, city: p.city, area: p.area_name, price: p.price, per: p.price_period, beds: p.bedrooms,
     type: p.listing_type, pics, agency: p.agencies && p.agencies.name };
 }
