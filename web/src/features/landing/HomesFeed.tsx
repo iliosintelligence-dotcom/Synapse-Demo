@@ -8,6 +8,7 @@ import { SUPABASE_URL as SUPABASE_URL_ENV, SUPABASE_KEY as SUPABASE_KEY_ENV } fr
  * here and nothing is invented. Share buttons are picked up by the shared share sheet (src/features/shared/ShareSheet.tsx, data-share).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Thumb } from "@/components/Thumb";
 
 const URL_ = SUPABASE_URL_ENV;
 const KEY = SUPABASE_KEY_ENV;
@@ -81,7 +82,7 @@ function Card({ p, saved, onSave }: { p: Listing; saved: boolean; onSave: (id: s
     <article className="hf-card">
       <a className="hf-link" href={"app/property.html?id=" + encodeURIComponent(p.id)} aria-label={title} />
       <div className={"img" + (broken ? " no-photo" : "")}>
-        {img && !broken ? <img src={img} alt="" loading="lazy" decoding="async" onError={() => setBroken(true)} /> : null}
+        {img && !broken ? <Thumb src={img} loading="lazy" decoding="async" onError={() => setBroken(true)} /> : null}
         {p.verification_status === "verified" ? <VerifiedStamp /> : null}
         <button type="button" className={"hf-save" + (saved ? " on" : "")} aria-pressed={saved} aria-label={(saved ? "Remove from saved" : "Save") + " " + title}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSave(p.id); }}>{saved ? "♥" : "♡"}</button>

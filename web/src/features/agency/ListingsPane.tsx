@@ -13,6 +13,7 @@ import { usePageScripts } from "@/legacy/usePageScripts";
 import { useRevealed } from "./useRevealed";
 import { leadsOn } from "./OverviewPane";
 import { openListingTrust } from "./ListingTrust";
+import { Thumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -180,7 +181,7 @@ export function ListingGate() {
 function Photo({ url }: { url: string | null | undefined }) {
   const u = typeof url === "string" ? url.trim() : "";
   /* A URL that does not load drops the broken <img> and tags the wrapper, as photoHtml() did. */
-  return <div className="lph">{u ? <img src={u} alt="" loading="lazy" onError={(e) => { const p = e.currentTarget.closest(".lph"); p?.classList.add("no-photo"); e.currentTarget.remove(); }} /> : null}</div>;
+  return <div className="lph">{u ? <Thumb src={u} loading="lazy" onError={(e) => { const p = e.currentTarget.closest(".lph"); p?.classList.add("no-photo"); e.currentTarget.remove(); }} /> : null}</div>;
 }
 function VStamp() {
   return (

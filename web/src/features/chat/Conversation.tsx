@@ -11,6 +11,7 @@ import type { ReplyTo } from "./types";
 import type { TourSlot } from "@/features/property/queries";
 import { hasYourMessage, initials, type ListingAgent } from "@/lib/listingAgent";
 import s from "./Chat.module.css";
+import { Thumb } from "@/components/Thumb";
 
 export function UserMessage({ text }: { text: string }) {
   return (
@@ -112,7 +113,7 @@ export function IntroTicket({ listing, lead, agent }: { listing: ReplyTo; lead: 
         <div className={s.tktMain}>
           <div className={s.tktKicker}><span>INTRODUCTION</span><span>{when}</span></div>
           <div className={s.tktHero}>
-            {img &&   <img className={s.tktPh} src={img} alt="" />}
+            {img &&   <Thumb className={s.tktPh} src={img} />}
             <div className={s.tktT}>{listing.title || "This home"}<small>{where}</small></div>
           </div>
           <div className={s.tktGrid}><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>{agent ? agent.name : "The agency"}</b></div><div><i>Status</i><b>{sent ? "Sent" : "Saved"}</b></div></div>

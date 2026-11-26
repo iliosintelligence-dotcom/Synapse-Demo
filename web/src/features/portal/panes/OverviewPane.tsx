@@ -7,6 +7,7 @@ import { fetchLeads, nairaShort, type Lead } from "../data/leads";
 import { VERIFICATION_CHECKS, fetchListings, filterListings, freshness, locationOf, priceLabel, type Listing, type ListingFilter } from "../data/listings";
 import { NextCard } from "../Setup";
 import s from "./Listings.module.css";
+import { Thumb } from "@/components/Thumb";
 
 const FILTERS: Array<[ListingFilter, string]> = [["all", "All"], ["verified", "Verified"], ["pending", "Pending"], ["expiring", "Expiring soon"]];
 const TABS = [["details", "Details"], ["verification", "Verification"], ["leads", "Leads"], ["performance", "Performance"]] as const;
@@ -71,7 +72,7 @@ export function OverviewPane() {
           <div className={s.list}>
             {shown.map((l) => (
               <button key={l.id} type="button" className={s.item} aria-current={sel?.id === l.id} onClick={() => setSelId(l.id)}>
-                <span className={s.ph}>{l.cover ? <img src={l.cover} alt="" loading="lazy" /> : null}</span>
+                <span className={s.ph}>{l.cover ? <Thumb src={l.cover} loading="lazy" /> : null}</span>
                 <span className={s.mid}><span className={s.tt} style={{ display: "block" }}>{l.title.split(",")[0]}</span><span className={s.lc} style={{ display: "block" }}>◍ {locationOf(l)}</span></span>
                 <span className={s.rt}><span className={s.pr}>{priceLabel(l)}</span><span className={`${s.st} ${s[l.state_]}`}>{l.state_ === "verified" ? "✓ Verified" : l.state_ === "pending" ? "◷ Pending" : "Inactive"}</span></span>
               </button>

@@ -1198,9 +1198,10 @@ export function run() {
       const photo = s.find((m) => !isV(m));
       if (photo) return photo.url;
       const u = s.length ? String(s[0].url) : '';
+      /* No photo: the Cloudinary frame, else the video itself, drawn as its first frame by <Thumb> (2026-11-26). */
       return /res\.cloudinary\.com\/.+\/video\/upload\//.test(u)
         ? u.replace('/video/upload/', '/video/upload/so_0/').replace(/\.(mp4|mov|m4v|qt|webm|3gp)(\?.*)?$/i, '.jpg')
-        : null;
+        : (u || null);
     }
 
     const WZ_TOTAL = 6;

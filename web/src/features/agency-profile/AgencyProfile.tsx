@@ -8,6 +8,7 @@ import { routes } from "@/lib/routes";
 import type { Agency, PropertyCard } from "@/lib/types";
 import { fetchAgency, fetchAgencyListings } from "./queries";
 import s from "./AgencyProfile.module.css";
+import { Thumb } from "@/components/Thumb";
 
 type Kind = "sale" | "rent" | "land" | "shortlet";
 const KIND_LABEL: Record<Kind, string> = { sale: "For sale", rent: "For rent", land: "Land", shortlet: "Shortlet" };
@@ -17,7 +18,8 @@ const kindOf = (p: PropertyCard): Kind =>
 const coverOf = (media: PropertyCard["property_media"]): string | null => {
   const list = (media ?? []).filter((m) => m?.url).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
   const photo = list.find((m) => m.media_type !== "video" && !/\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(m.url));
-  return photo?.url ?? null;
+  /* No photo: the first video, drawn as its first frame by <Thumb> (2026-11-26). */
+  return photo?.url ?? list[0]?.url ?? null;
 };
 
 /** What a buyer should be told about the agency's CAC standing: the number if given, else whether a certificate is on file. */
@@ -149,7 +151,7 @@ function ListingTile({ p }: { p: PropertyCard }) {
       <div className={s.photo}>
         {img ? (
            
-          <img src={img} alt="" loading="lazy" />
+          <Thumb src={img} loading="lazy" />
         ) : (
           "No photo yet"
         )}

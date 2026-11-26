@@ -13,6 +13,7 @@
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePageScripts } from "@/legacy/usePageScripts";
+import { Thumb as MediaThumb } from "@/components/Thumb";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -103,7 +104,7 @@ function focusMap(l: any, i: number) {
 function Thumb({ url }: { url: string }) {
   const [bad, setBad] = useState(false);
   const u = typeof url === "string" ? url.trim() : "";
-  return <div className={"lph lph-sm" + (bad ? " no-photo" : "")}>{u && !bad ? <img src={u} alt="" loading="lazy" onError={() => setBad(true)} /> : null}</div>;
+  return <div className={"lph lph-sm" + (bad ? " no-photo" : "")}>{u && !bad ? <MediaThumb src={u} loading="lazy" onError={() => setBad(true)} /> : null}</div>;
 }
 
 function Detail({ l }: { l: any }) {

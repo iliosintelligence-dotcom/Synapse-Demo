@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { useEngineReady } from "./useEngineReady";
 import { hasYourMessage, initials, type ListingAgent } from "@/lib/listingAgent";
 import { flushSync } from "react-dom";
+import { Thumb } from "@/components/Thumb";
 
 /* ── what the engine records ── */
 type Match = { id: string; title?: string; price?: number } & Record<string, unknown>;
@@ -355,7 +356,7 @@ function Ticket({ it }: { it: Extract<Item, { kind: "ticket" }> }) {
           <div className="tkt-main">
             <div className="tkt-kicker"><span>INTRODUCTION</span><span>{it.when}</span></div>
             <div className="tkt-hero">
-              {it.img ? <span className="tkt-ph"><img src={it.img} alt="" /></span> : null}
+              {it.img ? <span className="tkt-ph"><Thumb src={it.img} /></span> : null}
               <div className="tkt-t">{it.title}<small>{it.where}</small></div>
             </div>
             <div className="tkt-grid"><div><i>From</i><b>You, via Tayo</b></div><div><i>To</i><b>{it.agent ? it.agent.name : "The agency"}</b></div><div><i>Status</i><b>{it.sent ? "Sent" : "Saved"}</b></div></div>

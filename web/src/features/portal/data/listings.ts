@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { agencyId } from "./agency";
 import { nairaShort } from "./leads";
+import { isVideoUrl } from "@/lib/media";
 
 export const FRESH_DAYS = 21;
 export const PERIOD_SUFFIX: Record<string, string> = { monthly: "/mo", yearly: "/yr", annual: "/yr", weekly: "/wk", daily: "/night", per_night: "/night" };
@@ -29,7 +30,7 @@ export function mapListing(p: Row): Listing {
     address: (p.address as string) || "", city: (p.city as string) || "", state: (p.state as string) || "", area: typed || hood?.name || "",
     lat: num(p.latitude), lng: num(p.longitude), active, state_: !active ? "inactive" : verification === "verified" ? "verified" : "pending", verification,
     passedChecks: nodes.filter((n) => n && n.status === "passed").length, expiresAt: (p.expires_at as string) ?? null, listedAt: (p.listed_at as string) ?? null,
-    cover: media.find((m) => m.url)?.url ?? null, photos: media.filter((m) => m.url).length, bedrooms: num(p.bedrooms), listingType: (p.listing_type as string) || "sale",
+    cover: (media.find((m) => m.url && !isVideoUrl(m.url)) ?? media.find((m) => m.url))?.url ?? null, photos: media.filter((m) => m.url).length, bedrooms: num(p.bedrooms), listingType: (p.listing_type as string) || "sale",
   };
 }
 

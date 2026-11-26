@@ -1300,13 +1300,13 @@
        listingCardHtml() (matches-shared.js).
 
        Two selectors, because there are two ways to have no photo:
-       :not(:has(img)) is "we never had a URL", .no-photo is "the URL did not
+       :not(:has(img, video)) is "we never had a URL", .no-photo is "the URL did not
        load", photoHtml()'s onerror drops the broken <img> and adds it. */
     .lph { position: relative; overflow: hidden; flex: none;
       display: flex; align-items: center; justify-content: center;
       background: repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px); }
     .lph img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .lph:not(:has(img))::after, .lph.no-photo::after {
+    .lph:not(:has(img, video))::after, .lph.no-photo::after {
       content: 'No photo yet';
       font: 600 12px var(--f-sans); letter-spacing: .02em; color: var(--ink-muted);
       background: rgba(255,255,255,0.86); padding: 5px 11px; border-radius: 100px;
@@ -1314,7 +1314,7 @@
     /* A 38-62px thumbnail cannot hold the pill legibly. Those keep the hatch,
        which reads as "nothing here", and carry the words in a title tooltip
        rather than shrinking the label to something unreadable. */
-    .lph-sm:not(:has(img))::after, .lph-sm.no-photo::after { content: none; }
+    .lph-sm:not(:has(img, video))::after, .lph-sm.no-photo::after { content: none; }
 
     .lcard .media { position: relative; }
     /* ── the calmer card ── */

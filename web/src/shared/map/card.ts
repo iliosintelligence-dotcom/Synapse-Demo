@@ -277,7 +277,14 @@ export function run() {
       q('[data-loc]').textContent = p.loc || '';
 
       const img = q('[data-img]');
-      if (p.img) { img.style.backgroundImage = 'url("' + p.img + '")'; img.textContent = ''; }
+      /* A video cover is drawn as its first frame: a background-image cannot show a video (2026-11-26). */
+      if (p.img && /\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(p.img)) {
+        img.style.backgroundImage = ''; img.textContent = '';
+        const v = document.createElement('video');
+        v.src = String(p.img).split('#')[0] + '#t=0.1'; v.muted = true; v.playsInline = true; v.preload = 'metadata';
+        v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+        img.appendChild(v);
+      } else if (p.img) { img.style.backgroundImage = 'url("' + p.img + '")'; img.textContent = ''; }
       else { img.style.backgroundImage = ''; img.textContent = 'no photo'; }
 
       /* Verification is the one claim on this card that must never be
