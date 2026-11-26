@@ -33,7 +33,12 @@ const SCHED_PLATS = ["instagram", "tiktok", "youtube", "facebook", "whatsapp", "
    connected, each certain to fail on the day ("No telegram account is connected"). WhatsApp is always offered, as before
    (Eden, 2026-11-26: "the whatsapp has to be there"): it is not connected per agency like the others. */
 const ALWAYS_OFFERED = new Set(["whatsapp"]);
-const connectedPlat = (p: string) => ALWAYS_OFFERED.has(p) || acctsFor(p).length > 0;
+/* Only once the account list has really loaded (Greptile on #57): before that, or if it failed, every channel is offered
+   as it always was, rather than none. "Connected" means usable: an account whose sign-in expired is not (SYN_CONNECTED
+   leaves those out), since a post to it cannot go out until it is reconnected. */
+const accountsKnown = () => W().SOCIAL_ACCOUNTS_KNOWN === true && Array.isArray(W().SYN_CONNECTED);
+const connectedPlat = (p: string) => ALWAYS_OFFERED.has(p)
+  || (accountsKnown() ? (W().SYN_CONNECTED as string[]).includes(p) : SCHED_PLATS.includes(p) || acctsFor(p).length > 0);
 const schedPlats = (current: string): string[] => {
   const l = SCHED_PLATS.concat(["linkedin", "x"]).filter(connectedPlat);
   return l.indexOf(current) < 0 && connectedPlat(current) ? l.concat([current]) : l;

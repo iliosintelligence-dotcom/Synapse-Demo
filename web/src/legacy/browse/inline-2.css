@@ -140,13 +140,13 @@
     .listing .img img { width: 100%; height: 100%; object-fit: cover; }
     /* A listing with no photo of its own. Says so, rather than borrowing a
        stock flat -- see listingCardHtml in matches-shared.js. */
-    .listing .img:not(:has(img)),
+    .listing .img:not(:has(img, video)),
     .listing .img.no-photo {
       display: flex; align-items: center; justify-content: center;
       background:
         repeating-linear-gradient(135deg, rgba(20,20,20,0.030) 0 10px, rgba(20,20,20,0.055) 10px 20px);
     }
-    .listing .img:not(:has(img))::after,
+    .listing .img:not(:has(img, video))::after,
     .listing .img.no-photo::after {
       content: 'No photo yet';
       font-size: 12px; font-weight: 600; letter-spacing: .02em;

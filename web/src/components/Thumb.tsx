@@ -12,7 +12,11 @@ import { isVideoUrl } from "@/lib/media";
  */
 export function Thumb({ src, video, className, style, onError, alt = "", ...rest }: ImgHTMLAttributes<HTMLImageElement> & { src: string; video?: boolean }) {
   if (video || isVideoUrl(src)) {
-    const fill: CSSProperties = { width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none", ...style };
+    /* A caller's class sizes it (Tayo's 54px ticket picture); with no class it fills the box an <img> would have, since
+       rules written as `.card img` do not reach a <video> (Greptile on #57). */
+    const fill: CSSProperties = className
+      ? { objectFit: "cover", display: "block", pointerEvents: "none", ...style }
+      : { width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none", ...style };
     return (
       <video
         src={src.split("#")[0] + "#t=0.1"} muted playsInline preload="metadata" aria-label={alt || undefined}

@@ -122,7 +122,7 @@ function publishConnected(accounts: Acct[]) {
 function loadChannels(): Promise<void> {
   /* The status first, so the strip is drawn once and correctly. Drawing it twice -- buttons, then buttons removed a moment
      later -- is worse than drawing it late. */
-  const none = () => { W().SOCIAL_ACCOUNTS = []; publishConnected([]); set({ accounts: [], known: false, drawn: true }); };
+  const none = () => { W().SOCIAL_ACCOUNTS = []; W().SOCIAL_ACCOUNTS_KNOWN = false; publishConnected([]); set({ accounts: [], known: false, drawn: true }); };
   return loadConnectStatus()
     .then(() => loadReplySettings())
     .then(() => token()).then((t) => {
@@ -139,6 +139,7 @@ function loadChannels(): Promise<void> {
           const accounts = rowsIn || [];
           /* The scheduler reads these rows and must not fetch them again: two copies of the same list drift. */
           W().SOCIAL_ACCOUNTS = accounts;
+          W().SOCIAL_ACCOUNTS_KNOWN = ok;   // the scheduler offers only connected channels once this is true
           publishConnected(accounts);
           set({ accounts, known: ok, drawn: true });
         })
