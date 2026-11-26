@@ -13,6 +13,7 @@
  * missing with a button back to it. EDITING keeps the single form.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { seekToMiddle } from "@/lib/media";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const W = () => window as any;
@@ -987,7 +988,7 @@ function ListingForm({ init, open }: { init: Init; open: boolean }) {
           {photos.map((u, i) => (
             <div key={u + i} className={"lf-ph" + (isVid(u) ? " is-vid" : "") + (pending[u] ? " pending" : "")} data-i={i}>
               {isVid(u)
-                ? <><video src={u} muted playsInline preload="metadata" onError={() => setPending((p) => ({ ...p, [u]: true }))}></video><span className="vid-badge" aria-hidden="true">▶</span></>
+                ? <><video src={u} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)} onError={() => setPending((p) => ({ ...p, [u]: true }))}></video><span className="vid-badge" aria-hidden="true">▶</span></>
                 : <img src={u} alt="" loading="lazy" onError={() => setPending((p) => ({ ...p, [u]: true }))} />}
               {i === 0 ? <span className="cover">Cover</span>
                 : <button type="button" className="mv" data-up={i} aria-label="Make this the cover"

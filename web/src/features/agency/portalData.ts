@@ -1103,7 +1103,7 @@ export function run() {
       if (!u) return `<div class="${cls}"></div>`;
       /* A video is drawn as its first frame, not as a broken <img> (2026-11-26). */
       if (/\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(u)) {
-        return `<div class="${cls}"><video src="${esc2(u.split('#')[0])}#t=0.1" muted playsinline preload="metadata"`
+        return `<div class="${cls}"><video src="${esc2(u.split('#')[0])}#t=0.1" muted playsinline preload="metadata" onloadedmetadata="if(isFinite(this.duration)&&this.duration>0.4)this.currentTime=this.duration/2"`
           + ` style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"`
           + ` onerror="this.closest('.lph').classList.add('no-photo');this.remove()"></video></div>`;
       }

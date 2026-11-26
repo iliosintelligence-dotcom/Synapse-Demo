@@ -11,6 +11,7 @@ import {
 } from "./schema";
 import { PartialSave, checkFile, clearDraft, createListing, ensurePin, findPin, getFloor, loadForEdit, readDraft, setFloor, updateListing, uploadPhoto, writeDraft } from "./write";
 import s from "./Wizard.module.css";
+import { seekToMiddle } from "@/lib/media";
 
 const IBADAN: [number, number] = [3.947, 7.3775];
 const reason = (e: unknown, fb: string) => (e instanceof Error && e.message ? e.message : fb);
@@ -304,7 +305,7 @@ function Photos({ photos, onAdd, onChange }: { photos: string[]; onAdd: (f: File
         <ul className={s.gal}>
           {photos.map((u, i) => (
             <li key={`${u}${i}`}>
-              {/\.(mp4|mov)(\?|$)/i.test(u) ? <video src={u} muted /> : <img src={u} alt="" />}
+              {/\.(mp4|mov)(\?|$)/i.test(u) ? <video src={u} muted playsInline preload="metadata" onLoadedMetadata={(e) => seekToMiddle(e.currentTarget)} /> : <img src={u} alt="" />}
               {i === 0 && <span className={s.cover}>Cover</span>}
               <div className={s.tile}>
                 <button type="button" aria-label="Move earlier" disabled={i === 0} onClick={() => move(i, -1)}>←</button>
