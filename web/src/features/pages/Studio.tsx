@@ -35,7 +35,8 @@ const ORDER = ["facebook", "instagram", "tiktok", "youtube", "x", "linkedin", "t
 const ALWAYS = ["facebook", "telegram"];
 const VIA_POSTPEER = new Set(["instagram", "tiktok", "youtube", "x", "linkedin"]);
 const TILE_NOTE: Record<string, string> = { telegram: "channel posts", youtube: "videos" };
-const VIDEO_RE = /\.(mp4|mov)(\?|#|$)/i;
+/* The same formats the server treats as video (postpeer.ts mediaTypeOf, synapse-studio VIDEO_URL): mp4, mov, m4v, qt. */
+const VIDEO_RE = /\.(mp4|mov|m4v|qt)(\?|#|$)/i;
 type Tab = "home" | "channels" | "compose" | "listings" | "auto" | "activity" | "guide" | "team";
 type Overview = { channels: any[]; legacy: any[]; twins_enabled: boolean; live_listings: number };
 const EMPTY: Overview = { channels: [], legacy: [], twins_enabled: false, live_listings: 0 };
@@ -208,8 +209,11 @@ export function Studio({ guide }: { guide: ReactNode }) {
       + "&status=eq.live&is_active=eq.true&deleted_at=is.null&order=created_at.desc&limit=14";
     fetch(q, { headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY } }).then((r) => (r.ok ? r.json() : [])).then((rows) => {
       setHomes((Array.isArray(rows) ? rows : []).map((p: any) => {
-        const pics = (p.property_media || []).filter((m: any) => m && m.url && (!m.media_type || /image|photo/i.test(m.media_type)))
-          .sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0)).map((m: any) => m.url);
+        /* Photos, or a video-only home's first video (2026-11-26: those homes were left out of the strip). */
+        const all = (p.property_media || []).filter((m: any) => m && m.url).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+        const vidM = (m: any) => /video/i.test(String(m.media_type || "")) || VIDEO_RE.test(String(m.url || ""));
+        const photos = all.filter((m: any) => !vidM(m)).map((m: any) => m.url);
+        const pics = photos.length ? photos : all.filter(vidM).slice(0, 1).map((m: any) => m.url);
         return { id: p.id, title: p.title, city: p.city, area: p.area_name, price: p.price, per: p.price_period, beds: p.bedrooms, type: p.listing_type, pics };
       }).filter((h: any) => h.pics.length));
     }).catch(() => setHomesErr(true));
@@ -532,7 +536,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
     const price = money(h.price, h.type === "rent" ? h.per : "");
     const b = (h.type === "rent" ? "A home to rent" : "A home for sale") + ": " + h.title + (where ? " in " + where : "") + (h.beds ? ", " + h.beds + " bedroom" + (h.beds === 1 ? "" : "s") : "") + (price ? ", " + price : "") + ". Checked on Synapse.";
     setBrief(b);
-    toast("Photos added. Writing captions…");
+    toast((h.pics[0] && VIDEO_RE.test(h.pics[0]) ? "Video added." : "Photos added.") + " Writing captions…");
     suggest(b);
   };
 
@@ -626,7 +630,10 @@ export function Studio({ guide }: { guide: ReactNode }) {
     const wantsVideo = chosenList.some((c) => c.platform === "youtube");
     const hasVid = media.some((u) => VIDEO_RE.test(u));
     if (wantsVideo && !(media.length === 1 && hasVid)) { toast("YouTube takes one video and nothing else. Add the video and remove any pictures, or untick YouTube."); return; }
-    if (hasVid && chosenList.some((c) => c.platform !== "youtube")) { toast("Only YouTube takes a video from here. Untick the other accounts, or remove the video."); return; }
+    /* Only YouTube used to take a video from here. Channels connected through PostPeer (Instagram Reels, TikTok, Facebook, X)
+       take one too since 2026-11-26, and the server checks each channel's own rules when the post is saved, saying which
+       channel cannot take it. What stays here: one video per post. */
+    if (media.filter((u) => VIDEO_RE.test(u)).length > 1) { toast("Add one video at a time. Remove the others, then post."); return; }
     const body: Record<string, any> = { caption, media_urls: media, channel_ids: ids };
     if (whenMode === "later") {
       if (!at) { toast("Pick a date and time, or choose Now."); return; }
@@ -937,7 +944,7 @@ export function Studio({ guide }: { guide: ReactNode }) {
                       <p className="muted small" style={{ margin: "-2px 0 10px" }}>Pick a live listing: its photos are added and the captions are written from its real details.</p>
                       <div className="homes" id="homes">{homesErr ? <div className="empty">Could not load homes.</div> : !homes ? <div className="empty">Loading homes…</div>
                         : homes.length ? homes.map((h, i) => (
-                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={{ backgroundImage: "url('" + h.pics[0] + "')" }}></div><div className="t"><b>{h.title}</b>
+                          <button type="button" className="home" data-h={i} key={h.id} onClick={() => pickHome(h)}><div className="ph" style={VIDEO_RE.test(h.pics[0]) ? { position: "relative" } : { backgroundImage: "url('" + h.pics[0] + "')" }}>{VIDEO_RE.test(h.pics[0]) ? <video src={h.pics[0] + "#t=0.1"} muted playsInline preload="metadata" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}></video> : null}</div><div className="t"><b>{h.title}</b>
                             <span className="muted">{[h.area, h.city].filter(Boolean).join(", ")}</span><br /><span>{money(h.price, h.type === "rent" ? h.per : "")}</span></div></button>
                         )) : <div className="empty">No live homes with photos right now.</div>}</div>
                     </div>

@@ -1101,6 +1101,12 @@ export function run() {
       const cls = 'lph' + (opts.small ? ' lph-sm' : '') + (opts.cls ? ' ' + opts.cls : '');
       const u = typeof url === 'string' ? url.trim() : '';
       if (!u) return `<div class="${cls}"></div>`;
+      /* A video is drawn as its first frame, not as a broken <img> (2026-11-26). */
+      if (/\.(mp4|mov|m4v|qt|webm|3gp)(\?|#|$)/i.test(u)) {
+        return `<div class="${cls}"><video src="${esc2(u.split('#')[0])}#t=0.1" muted playsinline preload="metadata"`
+          + ` style="width:100%;height:100%;object-fit:cover;display:block;pointer-events:none"`
+          + ` onerror="this.closest('.lph').classList.add('no-photo');this.remove()"></video></div>`;
+      }
       return `<div class="${cls}"><img src="${esc2(u)}" alt="" loading="lazy"`
         + ` onerror="this.closest('.lph').classList.add('no-photo');this.remove()"></div>`;
     }
